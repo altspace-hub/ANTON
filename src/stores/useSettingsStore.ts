@@ -126,7 +126,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set({ health, isLoading: false });
     } catch (error) {
       set({
-        health: { status: 'error', apiKeyConfigured: false, database: false, version: '0.1.0' },
+        health: { status: 'error', apiKeyConfigured: true, database: false, version: '0.1.0' },
         isLoading: false,
         error: error instanceof Error ? error.message : 'Failed to connect',
       });

@@ -289,7 +289,7 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-6xl">
       {/* API key warning — shown on first run before key is configured */}
-      {health !== null && health.apiKeyConfigured === false && (
+      {health !== null && health.status === 'ok' && health.apiKeyConfigured === false && (
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-adv-red/40 bg-adv-red/10 px-5 py-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-adv-red" />
           <div>
