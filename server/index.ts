@@ -1,9 +1,10 @@
+// Must be first — loads .env before any other module evaluates top-level env checks
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
 import { initDatabase } from './db/init.js';
 import { authLimiter, userLimiter, claudeLimiter } from './middleware/rate-limit.js';
 import healthRouter from './routes/health.js';
@@ -71,8 +72,6 @@ import { createKnowledgeLibraryRoutes } from './routes/knowledge-library.js';
 import { createBatchRoutes } from './routes/batch.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { ensureWorkspacesRoot } from './services/workspace.js';
-
-dotenv.config();
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
