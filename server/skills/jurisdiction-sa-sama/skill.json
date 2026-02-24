@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-sa-sama",
+  "label": "Saudi Arabia — Saudi Central Bank (SAMA)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "islamic-finance", "insurance", "mobile-money"],
+  "description": "Saudi Arabian financial regulatory framework: SAMA regulations, AML/CFT framework, Islamic finance dominance (85%+ Sharia-compliant), Vision 2030 fintech agenda, and GCC context.",
+  "tags": ["saudi-arabia", "sama", "gcc", "middle-east", "islamic-finance", "vision2030"]
+}

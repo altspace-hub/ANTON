@@ -1,0 +1,195 @@
+import { useRef, useEffect, memo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import type { Message } from '@/lib/types';
+import { User, Bot, Brain, Pencil, BookOpen } from 'lucide-react';
+import QualityIndicatorBar from '@/components/shared/QualityIndicatorBar';
+import MessageWithThinking from '@/components/shared/MessageWithThinking';
+
+// ── Memoized message row — prevents re-render when streamingText changes ──
+
+interface MemoMessageProps {
+  msg: Message;
+  moduleId?: string;
+  canEdit: boolean;
+  onEditMessage?: (msg: Message) => void;
+}
+
+function extractCitations(content: string): string[] {
+  const citations: string[] = [];
+  const sourcePattern = /Source \d+: ([^\n]+)/gi;
+  let match;
+  while ((match = sourcePattern.exec(content)) !== null) {
+    citations.push(match[1].trim());
+  }
+  return citations;
+}
+
+const MemoMessage = memo(function MemoMessage({ msg, moduleId, canEdit, onEditMessage }: MemoMessageProps) {
+  const citations = msg.role === 'assistant' ? extractCitations(msg.content) : [];
+
+  return (
+    <div className="group flex gap-3">
+      <div
+        className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+          msg.role === 'user' ? 'bg-adv-blue/10 text-adv-blue' : 'bg-adv-teal/10 text-adv-teal'
+        }`}
+      >
+        {msg.role === 'user' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+      </div>
+      <div className="relative min-w-0 flex-1">
+        {msg.role === 'assistant' && msg.thinkingContent ? (
+          <MessageWithThinking
+            outputContent={msg.content}
+            thinkingContent={msg.thinkingContent}
+          />
+        ) : (
+          <div className="prose-output max-w-none text-adv-off-white">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          </div>
+        )}
+        {msg.role === 'assistant' && (
+          <QualityIndicatorBar content={msg.content} moduleId={moduleId} />
+        )}
+        {citations.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-adv-gray-med/30">
+            <div className="flex items-center gap-1.5 mb-2">
+              <BookOpen className="h-3.5 w-3.5 text-adv-teal" />
+              <h4 className="text-xs font-semibold text-adv-off-white">Sources Referenced</h4>
+            </div>
+            <div className="space-y-1">
+              {citations.map((citation, idx) => (
+                <div key={idx} className="text-xs text-adv-gray flex items-start gap-2">
+                  <span className="text-adv-teal font-mono flex-shrink-0">[{idx + 1}]</span>
+                  <span className="flex-1">{citation}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {msg.role === 'user' && canEdit && onEditMessage && (
+          <button
+            onClick={() => onEditMessage(msg)}
+            className="absolute -right-1 top-0 rounded p-1 text-adv-gray opacity-0 transition-all group-hover:opacity-100 hover:text-adv-teal"
+            title="Edit and resend"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
+
+// ── Streaming text renderer — uses plain text for large outputs ──
+
+const MARKDOWN_THRESHOLD = 4000; // chars; above this, show plain text during streaming
+const remarkPlugins = [remarkGfm];
+
+function StreamingContent({ text }: { text: string }) {
+  if (text.length > MARKDOWN_THRESHOLD) {
+    // Large output: show plain text to avoid expensive markdown parsing
+    return (
+      <div className="prose-output max-w-none text-adv-off-white whitespace-pre-wrap leading-relaxed text-sm">
+        {text}
+      </div>
+    );
+  }
+  return (
+    <div className="prose-output max-w-none text-adv-off-white">
+      <ReactMarkdown remarkPlugins={remarkPlugins}>{text}</ReactMarkdown>
+    </div>
+  );
+}
+
+// ── Main component ──
+
+interface ConversationThreadProps {
+  messages: Message[];
+  streamingText: string;
+  streamingThinking: string;
+  isStreaming: boolean;
+  onEditMessage?: (msg: Message) => void;
+  moduleId?: string;
+}
+
+export default function ConversationThread({
+  messages,
+  streamingText,
+  streamingThinking,
+  isStreaming,
+  onEditMessage,
+  moduleId,
+}: ConversationThreadProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
+
+  // Scroll when a completed message is added or removed
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // During streaming: gate scrollIntoView to one call per animation frame (~60fps)
+  // to avoid calling it 100+ times per second as tokens arrive.
+  useEffect(() => {
+    if (!isStreaming || !streamingText) return;
+    if (scrollRafRef.current !== null) return; // RAF already pending
+    scrollRafRef.current = requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      scrollRafRef.current = null;
+    });
+  }, [isStreaming, streamingText]);
+
+  // Cancel any pending RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current !== null) cancelAnimationFrame(scrollRafRef.current);
+    };
+  }, []);
+
+  if (messages.length === 0 && !isStreaming) return null;
+
+  return (
+    <div className="space-y-4">
+      {messages.map((msg) => (
+        <MemoMessage
+          key={msg.id}
+          msg={msg}
+          moduleId={moduleId}
+          canEdit={!isStreaming}
+          onEditMessage={onEditMessage}
+        />
+      ))}
+
+      {/* Streaming indicator */}
+      {isStreaming && (
+        <div className="flex gap-3">
+          <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-adv-teal/10 text-adv-teal">
+            <Bot className="h-3.5 w-3.5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            {streamingThinking && (
+              <div className="mb-2 flex items-center gap-1.5 text-xs text-adv-gray-med">
+                <Brain className="h-3 w-3 animate-pulse" />
+                <span className="italic">Thinking...</span>
+              </div>
+            )}
+            {streamingText ? (
+              <StreamingContent text={streamingText} />
+            ) : (
+              <div className="flex items-center gap-1.5 text-sm text-adv-gray">
+                <div className="flex gap-1">
+                  <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-adv-teal [animation-delay:0ms]" />
+                  <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-adv-teal [animation-delay:150ms]" />
+                  <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-adv-teal [animation-delay:300ms]" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div ref={bottomRef} />
+    </div>
+  );
+}

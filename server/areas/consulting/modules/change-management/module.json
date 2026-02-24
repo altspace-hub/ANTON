@@ -1,0 +1,123 @@
+{
+  "formatVersion": "1.0",
+  "id": "change-management",
+  "label": "Change Management",
+  "shortLabel": "Change Mgmt",
+  "description": "Design change management strategies for regulatory and transformation programmes: readiness assessment, resistance management, training, and embedding.",
+  "icon": "RefreshCw",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "change_description",
+      "type": "textarea",
+      "label": "Describe the change",
+      "required": true,
+      "placeholder": "e.g., Implementing new CDD procedures for all relationship managers following AMLR requirements. Affects 200+ staff across 5 countries. Effective date: July 2025."
+    },
+    {
+      "id": "change_drivers",
+      "type": "multi-select",
+      "label": "What is driving this change?",
+      "options": [
+        {
+          "value": "regulatory",
+          "label": "Regulatory requirement"
+        },
+        {
+          "value": "supervisory_finding",
+          "label": "Supervisory finding / enforcement"
+        },
+        {
+          "value": "technology",
+          "label": "Technology change / system implementation"
+        },
+        {
+          "value": "strategic",
+          "label": "Strategic decision"
+        },
+        {
+          "value": "operational",
+          "label": "Operational improvement"
+        }
+      ]
+    },
+    {
+      "id": "affected_population",
+      "type": "textarea",
+      "label": "Affected population",
+      "placeholder": "Who is affected, how many people, in which roles and locations?"
+    },
+    {
+      "id": "resistance_level",
+      "type": "select",
+      "label": "Expected resistance level",
+      "options": [
+        {
+          "value": "low",
+          "label": "Low — people understand the need for change"
+        },
+        {
+          "value": "medium",
+          "label": "Medium — some concerns but manageable"
+        },
+        {
+          "value": "high",
+          "label": "High — significant resistance expected"
+        }
+      ]
+    },
+    {
+      "id": "change_task",
+      "type": "select",
+      "label": "What do you need?",
+      "options": [
+        {
+          "value": "readiness",
+          "label": "Change readiness assessment"
+        },
+        {
+          "value": "strategy",
+          "label": "Change management strategy"
+        },
+        {
+          "value": "communication",
+          "label": "Communication plan"
+        },
+        {
+          "value": "training_plan",
+          "label": "Training plan"
+        },
+        {
+          "value": "resistance",
+          "label": "Resistance management approach"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "change-management",
+    "transformation",
+    "communication",
+    "training",
+    "adkar"
+  ]
+}

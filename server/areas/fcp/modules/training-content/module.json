@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "training-content",
+  "label": "Training Content",
+  "shortLabel": "Training",
+  "icon": "GraduationCap",
+  "description": "Generate training materials for different audiences: Board, Compliance, Front-line staff, Relationship managers, and Operations/IT.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "creative",
+    "outputFormats": [
+      "training-material"
+    ],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Target Audience",
+      "required": true,
+      "options": [
+        {
+          "value": "board",
+          "label": "Board / Senior Management"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance / AML Team"
+        },
+        {
+          "value": "frontline",
+          "label": "Front-line / Customer-facing Staff"
+        },
+        {
+          "value": "rm",
+          "label": "Relationship Managers"
+        },
+        {
+          "value": "ops-it",
+          "label": "Operations / IT"
+        },
+        {
+          "value": "new-starters",
+          "label": "New Starters (General)"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "type": "textarea",
+      "label": "Training Topic",
+      "required": true,
+      "placeholder": "e.g. Identifying red flags in corporate customer onboarding; Understanding the new AMLR requirements for PEPs..."
+    },
+    {
+      "id": "format_preference",
+      "type": "select",
+      "label": "Content Format",
+      "options": [
+        {
+          "value": "module",
+          "label": "Full Training Module (objectives, content, cases, quiz)"
+        },
+        {
+          "value": "quick-guide",
+          "label": "Quick Reference Guide"
+        },
+        {
+          "value": "scenarios",
+          "label": "Case Studies / Scenarios"
+        },
+        {
+          "value": "slides",
+          "label": "Presentation Outline"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "training",
+    "education",
+    "compliance-training"
+  ]
+}

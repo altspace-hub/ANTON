@@ -1,0 +1,890 @@
+{
+  "nav": {
+    "home": "होम",
+    "briefMe": "संक्षेप में बताएं",
+    "guideMe": "मार्गदर्शन करें",
+    "openChat": "खुली चैट",
+    "workflows": "कार्यप्रवाह",
+    "projects": "परियोजनाएं",
+    "buildModule": "मॉड्यूल बनाएं",
+    "skillsLibrary": "कौशल पुस्तकालय",
+    "batchCreate": "बैच निर्माण",
+    "auditLog": "ऑडिट लॉग",
+    "exchange": "आदान-प्रदान",
+    "fillForm": "यह फ़ॉर्म भरें",
+    "challengeThis": "इसे चुनौती दें",
+    "dualInterpret": "दोहरी व्याख्या",
+    "recentSessions": "हाल की सत्र",
+    "noRecentSessions": "कोई हाल की सत्र नहीं",
+    "expandSidebar": "साइडबार विस्तृत करें",
+    "collapseSidebar": "साइडबार संकुचित करें",
+    "reviewEngine": "समीक्षा इंजन",
+    "soundingBoard": "सलाह मंच",
+    "analytics": "विश्लेषण",
+    "dataInsights": "डेटा अंतर्दृष्टि",
+    "closeSidebar": "साइडबार बंद करें",
+    "openSidebar": "साइडबार खोलें",
+    "setupProfile": "प्रोफ़ाइल सेट करें"
+  },
+  "header": {
+    "appName": "Anton",
+    "apiConnected": "API जुड़ा हुआ है",
+    "apiNotConfigured": "API कॉन्फ़िगर नहीं किया गया",
+    "switchToLight": "हल्के मोड पर जाएं",
+    "switchToCorporate": "कॉर्पोरेट मोड पर जाएं",
+    "switchToDark": "गहरे मोड पर जाएं",
+    "settings": "सेटिंग्स",
+    "buildModule": "मॉड्यूल बनाएं",
+    "skillsLibrary": "कौशल पुस्तकालय",
+    "projects": "परियोजनाएं",
+    "workflows": "कार्यप्रवाह",
+    "openChat": "खुली चैट"
+  },
+  "dashboard": {
+    "title": "Anton",
+    "byLine": "openEXPERT द्वारा",
+    "subtitle": "AI-संचालित विशेषज्ञ विश्लेषण। प्रारंभ करने के लिए एक मॉड्यूल चुनें, या किसी हालिया सत्र को फिर से शुरू करें।",
+    "sessions": "सत्र",
+    "aiResponses": "AI प्रतिक्रियाएं",
+    "outputTokens": "आउटपुट टोकन",
+    "favourites": "पसंदीदा",
+    "searchPlaceholder": "मॉड्यूल खोजें — जैसे GDPR, तनाव परीक्षण, अनुबंध समीक्षा...",
+    "noModulesMatch": "कोई मॉड्यूल मेल नहीं खाता",
+    "clearSearch": "खोज साफ़ करें",
+    "communityModules": "समुदाय मॉड्यूल",
+    "community": "समुदाय",
+    "openModule": "मॉड्यूल खोलें",
+    "recentSessions": "हाल की सत्र",
+    "noSessionsYet": "अभी तक कोई सत्र नहीं। ऊपर एक मॉड्यूल चुनकर शुरू करें।",
+    "renameSession": "सत्र का नाम बदलें",
+    "deleteSession": "सत्र हटाएं",
+    "removeFromFavourites": "पसंदीदा से हटाएं",
+    "addToFavourites": "पसंदीदा में जोड़ें",
+    "modules": "मॉड्यूल",
+    "thisWeek": "इस सप्ताह",
+    "thisMonth": "इस महीने",
+    "starterPacks": "स्टार्टर पैक",
+    "personalised": "व्यक्तिगत",
+    "completeProfileToPersonalise": "अपनी",
+    "profileLink": "प्रोफ़ाइल",
+    "toPersonalise": "पूर्ण करें",
+    "show": "दिखाएं",
+    "hide": "छुपाएं",
+    "forYou": "आपके लिए",
+    "getStarted": "शुरू करें",
+    "roiThisMonth": "इस महीने ROI",
+    "roiDescription": "openEXPERT ने आपका अनुमानित",
+    "roiHours": "घंटे",
+    "roiThisMonthLabel": "इस महीने बचाया (अनुमानित मूल्य:",
+    "roiAtRate": "दर पर",
+    "roiPerHour": "/घंटे)।",
+    "roiApiCost": "API लागत:",
+    "roiRatioSuffix": "घंटे प्रति €1 पर बचे"
+  },
+  "module": {
+    "runAnalysis": "विश्लेषण चलाएं",
+    "send": "भेजें",
+    "stop": "रोकें",
+    "thinking": "विश्लेषण स्तर",
+    "creativity": "रचनात्मकता",
+    "model": "मॉडल",
+    "knowledgeSources": "ज्ञान स्रोत",
+    "outputFormats": "आउटपुट प्रारूप",
+    "systemPrompt": "सिस्टम प्रॉम्प्ट",
+    "transparencyLevel": "तर्क पारदर्शिता",
+    "transparencyOff": "बंद",
+    "transparencySummary": "सारांश",
+    "transparencyDetailed": "विस्तृत",
+    "advancedSettings": "उन्नत सेटिंग",
+    "files": "फ़ाइलें और फ़ोल्डर",
+    "moduleSettings": "मॉड्यूल सेटिंग",
+    "customModule": "कस्टम मॉड्यूल",
+    "moduleNotFound": "मॉड्यूल नहीं मिला।",
+    "describeTask": "अपना विश्लेषण कार्य बताएं",
+    "followUp": "अनुवर्ती संदेश",
+    "describeTaskPlaceholder": "जैसे, खुदरा और कॉर्पोरेट बैंकिंग वाले एक नॉर्डिक बैंक के लिए AMLR आवश्यकताओं के विरुद्ध हमारी AML नीति का विश्लेषण करें...",
+    "followUpPlaceholder": "एक अनुवर्ती प्रश्न पूछें या बदलाव का अनुरोध करें...",
+    "outputWillAppear": "आउटपुट यहां दिखाई देगा।",
+    "configureAndRun": "सेटिंग कॉन्फ़िगर करें, अपना कार्य बताएं, और चलाएं पर क्लिक करें।",
+    "reviewStatus": "समीक्षा स्थिति",
+    "draft": "मसौदा",
+    "reviewed": "समीक्षित",
+    "approved": "अनुमोदित",
+    "markReviewed": "समीक्षित के रूप में चिह्नित करें",
+    "approve": "अनुमोदित करें",
+    "saveAsModule": "कस्टम मॉड्यूल के रूप में सहेजें",
+    "saved": "सहेजा गया!",
+    "moduleName": "मॉड्यूल का नाम...",
+    "saving": "सहेज रहा है...",
+    "save": "सहेजें",
+    "saveAsModuleDesc": "इस सत्र के सिस्टम प्रॉम्प्ट, पर्सोना, कौशल और आउटपुट प्रारूपों को पुनः उपयोगी कस्टम मॉड्यूल के रूप में सहेजें।",
+    "tokens": "टोकन",
+    "approachingLimit": "सीमा के पास",
+    "reframeFor": "के लिए पुनः तैयार करें:",
+    "voiceInput": "वॉइस इनपुट",
+    "stopRecording": "रिकॉर्डिंग रोकें",
+    "reframeBoard": "बोर्ड",
+    "reframeCustomer": "ग्राहक",
+    "reframeEmployee": "कर्मचारी",
+    "reframeTechnical": "तकनीकी",
+    "thinkingControls": {
+      "label": "Claude को कितनी गहराई से विश्लेषण करना चाहिए?",
+      "quick": {
+        "label": "त्वरित",
+        "description": "तेज़ प्रतिक्रिया, न्यूनतम विश्लेषण"
+      },
+      "think": {
+        "label": "सोचें",
+        "description": "मानक विश्लेषण गहराई"
+      },
+      "thinkHard": {
+        "label": "गहराई से सोचें",
+        "description": "सावधानीपूर्वक तर्क के साथ गहन विश्लेषण"
+      },
+      "investigate": {
+        "label": "जांच करें",
+        "description": "संपूर्ण जांच, अधिकतम गहराई"
+      },
+      "planFirst": {
+        "label": "पहले योजना बनाएं",
+        "description": "निष्पादन से पहले स्पष्ट योजना बनाएं"
+      }
+    },
+    "modelSelector": {
+      "label": "मॉडल",
+      "recommended": "अनुशंसित",
+      "inputCost": "इनपुट",
+      "outputCost": "आउटपुट",
+      "perMillion": "/M",
+      "localOllama": "स्थानीय (Ollama)",
+      "ollamaNotRunning": "स्थानीय मॉडल का उपयोग करने के लिए Ollama प्रारंभ करें।",
+      "getOllama": "Ollama प्राप्त करें",
+      "ollamaThen": "फिर चलाएं",
+      "ollamaPullCommand": "ollama pull llama3.2",
+      "freeLabelLocal": "निःशुल्क · स्थानीय",
+      "noApiKey": "API कुंजी की आवश्यकता नहीं। आपकी मशीन पर चलता है।"
+    },
+    "knowledgeSource": {
+      "title": "ज्ञान स्रोत",
+      "subtitle": "Claude को नियामक पाठ और संदर्भ सामग्री कहाँ से प्राप्त करनी चाहिए?",
+      "claudeKnowledge": {
+        "title": "Claude का अपना ज्ञान",
+        "description": "Claude नियमों, दिशानिर्देशों और कानूनी ढांचे के अपने निर्मित ज्ञान का उपयोग करता है।",
+        "webSearch": "वेब खोज सक्षम करें (Claude नवीनतम प्रकाशनों के लिए इंटरनेट खोजता है)",
+        "focusArea": "फोकस क्षेत्र (वैकल्पिक):",
+        "focusPlaceholder": "जैसे, AMLR विनियमन 2024/1624, AMLA RTS परामर्श"
+      },
+      "onlineReference": {
+        "title": "ऑनलाइन विनियमन / दस्तावेज़ लिंक",
+        "description": "विशिष्ट नियामक ग्रंथों, दिशानिर्देशों या ऑनलाइन दस्तावेज़ों के URL पेस्ट करें।",
+        "urlPlaceholder": "https://eur-lex.europa.eu/...",
+        "add": "जोड़ें",
+        "fullText": "पूर्ण पाठ",
+        "summaryOnly": "केवल सारांश",
+        "eurLexQuickLoad": "EUR-Lex से त्वरित-लोड:",
+        "regulations": {
+          "amlr": "AMLR",
+          "dora": "DORA",
+          "mica": "MiCA",
+          "gdpr": "GDPR",
+          "amld6": "6AMLD",
+          "nis2": "NIS2"
+        }
+      },
+      "localFolder": {
+        "title": "स्थानीय फ़ोल्डर",
+        "description": "नियमन ग्रंथों, ग्राहक दस्तावेज़ों या संदर्भ सामग्री वाले अपने कंप्यूटर पर फ़ोल्डर इंगित करें।",
+        "pathPlaceholder": "C:\\Users\\...\\Documents\\Regulations",
+        "add": "जोड़ें",
+        "includeSubfolders": "उपफ़ोल्डर शामिल करें"
+      },
+      "combinedMode": {
+        "title": "संयुक्त: खोज + स्थानीय दस्तावेज़",
+        "description": "Claude अपने ज्ञान और आपके स्थानीय दस्तावेज़ों का उपयोग करता है। विनियमों के विरुद्ध ग्राहक दस्तावेज़ों की तुलना के लिए सर्वोत्तम।",
+        "localFirst": "पहले स्थानीय दस्तावेज़",
+        "merged": "मर्ज किया गया",
+        "claudeFirst": "पहले Claude",
+        "specialInstructions": "विशेष निर्देश (वैकल्पिक):",
+        "instructionsPlaceholder": "जैसे, ग्राहक की नीति की विनियमन से तुलना करें। जहां ग्राहक दस्तावेज़ मौन है, अंतर की पहचान करने के लिए विनियमन पाठ का उपयोग करें।"
+      },
+      "indexedKnowledge": {
+        "title": "अनुक्रमित ज्ञान आधार (फ़ोल्डर)",
+        "description": "आपके अनुक्रमित दस्तावेज़ पुस्तकालय में अर्थपूर्ण खोज। सबसे प्रासंगिक अनुच्छेद पुनर्प्राप्त करता है — पूर्ण दस्तावेज़ नहीं।",
+        "badge": "मोड 5a",
+        "retrieve": "पुनर्प्राप्त करें",
+        "passages": "अनुच्छेद",
+        "focused": "केंद्रित",
+        "broad": "व्यापक",
+        "loadingFolders": "अनुक्रमित फ़ोल्डर लोड हो रहे हैं...",
+        "notYetIndexed": "अभी तक अनुक्रमित नहीं",
+        "indexNow": "अभी अनुक्रमित करें",
+        "indexing": "अनुक्रमण हो रहा है...",
+        "reindex": "पुनः अनुक्रमित करें",
+        "docs": "दस्तावेज़",
+        "chunks": "खंड",
+        "indexed": "अनुक्रमित",
+        "folderSelected": "खोज के लिए फ़ोल्डर चुना गया",
+        "foldersSelected": "खोज के लिए फ़ोल्डर चुने गए",
+        "noIndexedFolders": "अभी तक कोई अनुक्रमित फ़ोल्डर नहीं। पहले मोड 3 (स्थानीय फ़ोल्डर) में फ़ोल्डर जोड़ें, फिर अर्थपूर्ण खोज के लिए उन्हें यहाँ अनुक्रमित करें।",
+        "justNow": "अभी-अभी",
+        "minutesAgo": "मिनट पहले",
+        "hoursAgo": "घंटे पहले",
+        "daysAgo": "दिन पहले"
+      },
+      "knowledgeCollections": {
+        "title": "ज्ञान संग्रह (RAG)",
+        "description": "मॉड्यूल निष्पादन के दौरान स्वचालित पुनर्प्राप्ति के साथ संगठित ज्ञान संग्रह में अर्थपूर्ण खोज।",
+        "badge": "मोड 5b"
+      }
+    },
+    "creativitySlider": {
+      "label": "लेखन शैली",
+      "strict": {
+        "label": "सख्त",
+        "description": "सटीक, तथ्यात्मक, औपचारिक नियामक भाषा"
+      },
+      "balanced": {
+        "label": "संतुलित",
+        "description": "सटीक और सुलभ, पेशेवर लेकिन पठनीय"
+      },
+      "creative": {
+        "label": "रचनात्मक",
+        "description": "वास्तविक दुनिया के उदाहरणों के साथ आकर्षक, सटीकता बनाए रखता है"
+      }
+    }
+  },
+  "settings": {
+    "title": "सेटिंग",
+    "saved": "सहेजा गया",
+    "apiConnection": "API कनेक्शन",
+    "refresh": "ताज़ा करें",
+    "anthropicApiKey": "Anthropic API कुंजी",
+    "configured": "कॉन्फ़िगर किया गया",
+    "notConfigured": "कॉन्फ़िगर नहीं किया गया",
+    "database": "डेटाबेस",
+    "connected": "जुड़ा हुआ",
+    "notConnected": "नहीं जुड़ा",
+    "version": "संस्करण",
+    "addApiKeyHint": "अपनी Anthropic API कुंजी",
+    "envFile": ".env",
+    "file": "फ़ाइल में जोड़ें:",
+    "additionalProviders": "अतिरिक्त AI प्रदाता",
+    "additionalProvidersDesc": "OpenAI, Google Gemini या Mistral मॉडल उपयोग करने के लिए API कुंजियां कॉन्फ़िगर करें। कुंजियां केवल सर्वर मेमोरी में संग्रहीत होती हैं (रनटाइम)।",
+    "openai": "OpenAI",
+    "googleAi": "Google AI",
+    "mistral": "Mistral",
+    "save": "सहेजें",
+    "defaultSettings": "डिफ़ॉल्ट सेटिंग",
+    "defaultSettingsDesc": "ये डिफ़ॉल्ट मान नया मॉड्यूल सत्र खोलने पर लागू होते हैं।",
+    "defaultModel": "डिफ़ॉल्ट मॉडल",
+    "defaultThinking": "डिफ़ॉल्ट विश्लेषण स्तर",
+    "defaultCreativity": "डिफ़ॉल्ट रचनात्मकता",
+    "language": "भाषा",
+    "languageDesc": "इंटरफ़ेस की भाषा चुनें। मॉड्यूल सामग्री अंग्रेजी में रहती है।",
+    "english": "English",
+    "svenska": "Svenska",
+    "francais": "Français",
+    "deutsch": "Deutsch",
+    "italiano": "Italiano",
+    "espanol": "Español",
+    "hindi": "हिन्दी",
+    "portugues": "Português",
+    "polski": "Polski",
+    "urdu": "اردو",
+    "deployment": "परिनियोजन",
+    "deploymentDesc": "वर्तमान परिनियोजन मोड उपलब्ध सुविधाओं को निर्धारित करता है।",
+    "mode": "मोड",
+    "team": "टीम",
+    "solo": "एकल",
+    "soloModeDesc": "एकल मोड: एकल-उपयोगकर्ता सेटअप। लॉगिन के बिना सभी सुविधाएं उपलब्ध। ऑडिट लॉग आपके व्यक्तिगत उपयोग और लागत को ट्रैक करता है।",
+    "teamModeDesc": "टीम मोड: पूर्ण ऑडिट ट्रेल, समीक्षाओं पर उपयोगकर्ता एट्रिब्यूशन और साझा सत्र प्रबंधन के साथ बहु-उपयोगकर्ता सेटअप।",
+    "theme": "थीम",
+    "themeDesc": "एप्लिकेशन का रंग योजना चुनें।",
+    "myProfile": "मेरी प्रोफ़ाइल",
+    "general": "सामान्य",
+    "navigation": "नेविगेशन",
+    "teamTab": "टीम",
+    "teamMembers": "टीम सदस्य",
+    "addUser": "उपयोगकर्ता जोड़ें",
+    "newUser": "नया उपयोगकर्ता",
+    "username": "उपयोगकर्ता नाम",
+    "password": "पासवर्ड",
+    "displayName": "प्रदर्शन नाम",
+    "role": "भूमिका",
+    "monthlyTokenBudget": "मासिक टोकन बजट (0 = असीमित)",
+    "createUser": "उपयोगकर्ता बनाएं",
+    "cancel": "रद्द करें",
+    "loading": "लोड हो रहा है...",
+    "usernameCol": "उपयोगकर्ता नाम",
+    "displayNameCol": "नाम",
+    "roleCol": "भूमिका",
+    "budgetCol": "बजट (टोकन)",
+    "usedThisMonthCol": "इस माह उपयोग",
+    "lastLoginCol": "अंतिम लॉगिन",
+    "actionsCol": "कार्रवाई",
+    "unlimited": "असीमित",
+    "never": "कभी नहीं",
+    "resetPassword": "पासवर्ड रीसेट करें",
+    "deleteUser": "उपयोगकर्ता हटाएं",
+    "usageThisMonth": "इस महीने का उपयोग",
+    "noUsageRecorded": "अभी तक कोई उपयोग दर्ज नहीं।",
+    "save2": "सहेजें",
+    "budget": "बजट",
+    "budgetDesc": "EUR में मासिक AI खर्च सीमा। 0 = कोई सीमा नहीं।",
+    "spendingThisMonth": "इस महीने खर्च",
+    "budgetCapReached": "मासिक बजट सीमा पहुंच गई। नए AI अनुरोध ब्लॉक हैं।",
+    "over80Pct": "मासिक बजट का 80% से अधिक उपयोग।",
+    "noSpendingLimit": "कोई खर्च सीमा नहीं।",
+    "monthlyBudgetCap": "मासिक AI बजट (€)",
+    "noLimit": "कोई सीमा नहीं",
+    "zeroNoLimit": "0 = कोई सीमा नहीं",
+    "saving": "सहेज रहे हैं...",
+    "notifications": "सूचनाएं",
+    "notificationsDesc": "लंबे विश्लेषण के लिए ईमेल अलर्ट कॉन्फ़िगर करें।",
+    "emailNotification": "लंबा विश्लेषण पूरा होने पर ईमेल भेजें",
+    "emailNotificationDesc": "Claude लंबा कार्य पूरा करने पर ईमेल सूचना पाएं।",
+    "brandTemplates": "ब्रांड टेम्पलेट",
+    "brandTemplatesDesc": "अपनी कंपनी के .docx या .pptx टेम्पलेट अपलोड करें।",
+    "uploadTemplate": "टेम्पलेट अपलोड करें",
+    "uploading": "अपलोड हो रहा है...",
+    "noTemplatesYet": "अभी कोई टेम्पलेट नहीं।",
+    "deleteTemplate": "टेम्पलेट हटाएं",
+    "navConfig": {
+      "title": "नेविगेशन आइटम",
+      "description": "जिन आइटम का उपयोग आप नहीं करते उन्हें अपने साइडबार को सरल बनाने के लिए छुपाएं।",
+      "visibleCount": "{total} में से {visible} दृश्यमान",
+      "refreshToApply": "लागू करने के लिए ताज़ा करें",
+      "showAll": "सभी दिखाएं",
+      "show": "दिखाएं",
+      "hide": "छुपाएं",
+      "categories": {
+        "interaction": "इंटरैक्शन मोड",
+        "tools": "उपकरण और कार्यप्रवाह",
+        "features": "सुविधाएं",
+        "intelligence": "बुद्धिमत्ता और अंतर्दृष्टि",
+        "admin": "व्यवस्थापन और विश्लेषण"
+      }
+    }
+  },
+  "brief": {
+    "title": "संक्षेप में बताएं",
+    "subtitle": "कुछ भी पूछें — तुरंत विशेषज्ञ-स्तरीय संरचित आउटपुट प्राप्त करें",
+    "placeholder": "कुछ भी पूछें — जैसे 'भुगतान संस्थाओं के लिए मुख्य AMLR दायित्व क्या हैं?'",
+    "askAnton": "Anton से पूछें",
+    "goDeeper": "पूर्ण मॉड्यूल के साथ गहराई में जाएं",
+    "ctrlEnter": "भेजने के लिए Ctrl+Enter दबाएं",
+    "whatDoYouNeed": "आपको किस चीज़ में मदद चाहिए?",
+    "emptyStateDesc": "कोई भी पेशेवर प्रश्न पूछें। Anton संरचित, विशेषज्ञ-स्तरीय मार्गदर्शन के साथ उत्तर देगा।",
+    "thinking": "सोच रहा है...",
+    "copy": "कॉपी करें",
+    "copied": "कॉपी हो गया",
+    "downloadMd": ".md",
+    "stop": "रोकें"
+  },
+  "guide": {
+    "title": "मार्गदर्शन करें",
+    "subtitle": "आपके कार्य के लिए सही मॉड्यूल खोजने में हम आपकी मदद करेंगे",
+    "step1": "आपको किस चीज़ में मदद चाहिए?",
+    "step2": "किस प्रकार का आउटपुट?",
+    "step3": "आपका सबसे उचित विवरण क्या है?",
+    "findModules": "मिलान करने वाले मॉड्यूल खोजें",
+    "useThis": "यह मॉड्यूल खोलें",
+    "back": "वापस जाएं"
+  },
+  "batch": {
+    "title": "बैच निर्माण",
+    "subtitle": "एक CSV से अलग-अलग इनपुट के साथ एक ही मॉड्यूल को N बार चलाएं",
+    "uploadCsv": "CSV अपलोड करें",
+    "selectModule": "मॉड्यूल चुनें",
+    "configure": "टेम्पलेट कॉन्फ़िगर करें",
+    "runBatch": "बैच चलाएं",
+    "downloadAll": "सभी परिणाम डाउनलोड करें"
+  },
+  "share": {
+    "sharedAnalysis": "साझा विश्लेषण",
+    "createdWith": "openEXPERT के साथ बनाया गया",
+    "expired": "यह साझा लिंक समाप्त हो गया है या मौजूद नहीं है",
+    "loading": "साझा विश्लेषण लोड हो रहा है..."
+  },
+  "export": {
+    "exportAs": "इस रूप में निर्यात करें",
+    "copy": "कॉपी करें",
+    "copied": "कॉपी किया गया!",
+    "download": "डाउनलोड करें",
+    "export": "निर्यात करें:",
+    "withTemplate": "टेम्पलेट के साथ",
+    "exporting": "निर्यात हो रहा है...",
+    "chooseBrandTemplate": "ब्रांड टेम्पलेट चुनें",
+    "share": "शेयर करें",
+    "sharing": "शेयर हो रहा है...",
+    "linkCopied": "लिंक कॉपी हो गया!",
+    "copyShareableLink": "शेयर लिंक कॉपी करें",
+    "explainDifferently": "अलग तरह से समझाएं",
+    "exportUsingBrandTemplate": "ब्रांड टेम्पलेट से निर्यात करें",
+    "explainFor": "के लिए समझाएं...",
+    "explainForChooseAudience": "दर्शक चुनें",
+    "explainForSubtitle": "Claude उनके लिए आउटपुट को फिर से लिखेगा",
+    "explainForGenerating": "उत्पन्न हो रहा है...",
+    "explainForReady": "तैयार",
+    "explainForOriginal": "मूल",
+    "explainForTryAnother": "अन्य दर्शकों का प्रयास करें",
+    "explainForStop": "रोकें",
+    "explainForCopy": "कॉपी करें",
+    "explainForCopied": "कॉपी हो गया",
+    "explainForDownload": ".md"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "कुछ गलत हो गया",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "close": "बंद करें",
+    "submit": "सबमिट करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "view": "देखें",
+    "search": "खोजें",
+    "filter": "फ़िल्टर करें",
+    "back": "वापस",
+    "next": "अगला",
+    "previous": "पिछला",
+    "noResults": "कोई परिणाम नहीं मिला"
+  },
+  "review": {
+    "title": "समीक्षा इंजन",
+    "subtitle": "कोई भी दस्तावेज़ पेस्ट करें और Anton को विशेषज्ञ दृष्टिकोण से समीक्षा करने दें।",
+    "reviewMode": "समीक्षा मोड",
+    "documentToReview": "समीक्षा के लिए दस्तावेज़",
+    "pasteText": "टेक्स्ट पेस्ट करें",
+    "uploadFiles": "फ़ाइलें अपलोड करें",
+    "pasteTextPlaceholder": "दस्तावेज़, नीति, विश्लेषण, मेमो या योजना यहाँ पेस्ट करें...",
+    "ctrlEnterToRun": "चलाने के लिए Ctrl+Enter",
+    "readingFiles": "फ़ाइलें पढ़ी जा रही हैं…",
+    "uploadPrompt": "अपलोड के लिए क्लिक करें या फ़ाइलें यहाँ खींचें",
+    "uploadFormats": "PDF, DOCX, TXT, MD, XLSX, CSV",
+    "pasteTextToReview": "समीक्षा के लिए ऊपर टेक्स्ट पेस्ट करें",
+    "uploadFileToReview": "समीक्षा के लिए कम से कम एक फ़ाइल अपलोड करें",
+    "stopReview": "समीक्षा रोकें",
+    "startReview": "समीक्षा शुरू करें",
+    "readyToReview": "समीक्षा के लिए तैयार",
+    "readyToReviewDesc": "एक समीक्षा मोड चुनें, अपना दस्तावेज़ पेस्ट करें और समीक्षा शुरू करें पर क्लिक करें।",
+    "reviewing": "समीक्षा हो रही है...",
+    "copy": "कॉपी करें",
+    "copied": "कॉपी हो गया",
+    "downloadMd": ".md",
+    "tokensTotal": "कुल टोकन",
+    "file": "फ़ाइल",
+    "files": "फ़ाइलें"
+  },
+  "connections": {
+    "title": "कनेक्शन",
+    "subtitle": "बाहरी डेटा स्रोतों और एकीकरण का प्रबंधन करें",
+    "addConnection": "कनेक्शन जोड़ें",
+    "noConnections": "अभी तक कोई कनेक्शन कॉन्फ़िगर नहीं किया गया।",
+    "noConnectionsHint": "अपना पहला एकीकरण पंजीकृत करने के लिए \"कनेक्शन जोड़ें\" पर क्लिक करें।",
+    "loadingConnections": "कनेक्शन लोड हो रहे हैं...",
+    "totalConnections": "कुल",
+    "types": {
+      "database": "डेटाबेस",
+      "api": "API",
+      "filesystem": "फ़ाइल सिस्टम",
+      "email": "ईमेल",
+      "scriptLibrary": "स्क्रिप्ट लाइब्रेरी"
+    },
+    "status": {
+      "pending": "लंबित",
+      "active": "सक्रिय",
+      "disabled": "निष्क्रिय",
+      "error": "त्रुटि"
+    },
+    "actions": {
+      "test": "परीक्षण करें",
+      "testConnection": "कनेक्शन का परीक्षण करें",
+      "approve": "अनुमोदित करें",
+      "approveConnection": "कनेक्शन अनुमोदित करें",
+      "disableConnection": "कनेक्शन निष्क्रिय करें",
+      "deleteConnection": "इस कनेक्शन को निष्क्रिय करें? इसे संपादित करके पुनः सक्षम किया जा सकता है।"
+    },
+    "details": {
+      "created": "बनाया गया",
+      "tested": "परीक्षण किया गया",
+      "configSanitized": "कॉन्फ़िगरेशन (साफ किया गया)",
+      "auditLog": "ऑडिट लॉग",
+      "loadingAuditLog": "ऑडिट लॉग लोड हो रहा है...",
+      "noAuditEntries": "अभी तक कोई ऑडिट प्रविष्टि नहीं।",
+      "time": "समय",
+      "action": "कार्रवाई",
+      "result": "परिणाम",
+      "by": "द्वारा"
+    },
+    "testResults": {
+      "networkError": "नेटवर्क त्रुटि"
+    },
+    "sections": {
+      "pendingApproval": "अनुमोदन लंबित",
+      "active": "सक्रिय",
+      "disabledError": "निष्क्रिय / त्रुटि"
+    },
+    "wizard": {
+      "title": "नया कनेक्शन",
+      "steps": {
+        "type": "प्रकार",
+        "configure": "कॉन्फ़िगर करें",
+        "test": "परीक्षण",
+        "save": "सहेजें"
+      },
+      "typeSelection": {
+        "prompt": "बनाने के लिए एकीकरण का प्रकार चुनें:",
+        "errorNoType": "कृपया कनेक्शन प्रकार चुनें।",
+        "database": {
+          "label": "डेटाबेस",
+          "description": "SQLite, PostgreSQL या MySQL डेटाबेस से कनेक्ट करें"
+        },
+        "api": {
+          "label": "API",
+          "description": "bearer, basic या API key auth के साथ REST API से कनेक्ट करें"
+        },
+        "filesystem": {
+          "label": "फ़ाइल सिस्टम",
+          "description": "कॉन्फ़िगर करने योग्य अनुमतियों के साथ स्थानीय फ़ोल्डरों तक पहुंच"
+        },
+        "email": {
+          "label": "ईमेल",
+          "description": "SMTP या IMAP ईमेल एकीकरण"
+        },
+        "scriptLibrary": {
+          "label": "स्क्रिप्ट लाइब्रेरी",
+          "description": "स्वीकृत निष्पादन योग्य स्क्रिप्ट का एक फ़ोल्डर पंजीकृत करें"
+        }
+      },
+      "config": {
+        "displayName": "प्रदर्शन नाम",
+        "displayNamePlaceholder": "जैसे उत्पादन DB, रिपोर्टिंग API",
+        "errorNoName": "प्रदर्शन नाम आवश्यक है।",
+        "database": {
+          "driver": "ड्राइवर",
+          "drivers": {
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL / MariaDB",
+            "mssql": "Microsoft SQL Server",
+            "mongodb": "MongoDB (NoSQL)"
+          },
+          "filePath": "डेटाबेस फ़ाइल पथ",
+          "filePathPlaceholder": "/path/to/database.sqlite",
+          "host": "होस्ट / IP पता",
+          "hostPlaceholder": "localhost या 192.168.1.100",
+          "hostHint": "दूरस्थ सर्वर के लिए IP या होस्टनाम का उपयोग करें",
+          "port": "पोर्ट",
+          "databaseName": "डेटाबेस नाम",
+          "databaseNamePlaceholder": "mydb",
+          "username": "उपयोगकर्ता नाम",
+          "password": "पासवर्ड",
+          "ssl": "SSL/TLS एन्क्रिप्शन सक्षम करें",
+          "sslVerifyCert": "SSL प्रमाणपत्र सत्यापित करें (स्व-हस्ताक्षरित प्रमाणपत्रों के लिए अनचेक करें)",
+          "maxRowsPerQuery": "प्रति क्वेरी अधिकतम पंक्तियाँ",
+          "maxRowsPlaceholder": "10000",
+          "allowedTables": "अनुमत तालिकाएँ (अल्पविराम-पृथक, सभी के लिए खाली छोड़ें)",
+          "allowedTablesPlaceholder": "users, orders, products"
+        },
+        "api": {
+          "baseUrl": "आधार URL",
+          "baseUrlPlaceholder": "https://api.example.com",
+          "authType": "Auth प्रकार",
+          "authTypes": {
+            "bearer": "Bearer टोकन",
+            "basic": "Basic Auth (base64)",
+            "apikey": "API Key हेडर",
+            "none": "कोई Auth नहीं"
+          },
+          "authValue": "Auth मान",
+          "authValuePlaceholder": "टोकन / क्रेडेंशियल्स",
+          "rateLimit": "दर सीमा (req/min, 0 = असीमित)",
+          "rateLimitPlaceholder": "60",
+          "timeout": "टाइमआउट (सेकंड)",
+          "timeoutPlaceholder": "30",
+          "allowedEndpoints": "अनुमत एंडपॉइंट",
+          "endpointPathPlaceholder": "/api/endpoint या /api/*",
+          "addEndpoint": "जोड़ें",
+          "methods": {
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE",
+            "all": "*"
+          }
+        },
+        "filesystem": {
+          "basePath": "आधार पथ",
+          "basePathPlaceholder": "/path/to/folder या C:\\Users\\...",
+          "basePathHint": "सभी फ़ाइल एक्सेस इस निर्देशिका और इसकी उप-निर्देशिकाओं तक सीमित है।",
+          "allowedExtensions": "अनुमत एक्सटेंशन (कोई नहीं = सभी अनुमत)",
+          "permissions": "अनुमतियाँ",
+          "permissionRead": "पढ़ें",
+          "permissionWrite": "लिखें",
+          "maxFileSize": "अधिकतम फ़ाइल आकार (MB)",
+          "maxFileSizePlaceholder": "50"
+        },
+        "generic": {
+          "configJson": "कॉन्फ़िगरेशन (JSON)",
+          "invalidJson": "अमान्य JSON"
+        }
+      },
+      "test": {
+        "prompt": "सहेजने से पहले कॉन्फ़िगरेशन मान्य करें:",
+        "summary": "कनेक्शन सारांश",
+        "validate": "कॉन्फ़िगरेशन सत्यापित करें",
+        "validating": "सत्यापन हो रहा है...",
+        "validated": "कॉन्फ़िगरेशन सत्यापित। सहेजने के बाद पूर्ण कनेक्टिविटी परीक्षण उपलब्ध।",
+        "failed": "सत्यापन विफल"
+      },
+      "confirm": {
+        "prompt": "अपने कनेक्शन की समीक्षा करें और सहेजें:",
+        "name": "नाम",
+        "type": "प्रकार",
+        "statusAfterSave": "सहेजने के बाद स्थिति",
+        "pendingNotice": "कनेक्शन \"लंबित\" स्थिति में होगा जब तक कि कोई व्यवस्थापक इसे अनुमोदित नहीं करता। सक्रिय कनेक्शन सभी उपयोगकर्ताओं के लिए उपलब्ध हैं।",
+        "saveConnection": "कनेक्शन सहेजें",
+        "saving": "सहेजा जा रहा है..."
+      },
+      "navigation": {
+        "back": "वापस",
+        "next": "अगला"
+      },
+      "errors": {
+        "networkError": "नेटवर्क त्रुटि — कनेक्शन सहेज नहीं सके",
+        "saveFailed": "कनेक्शन बनाने में विफल"
+      }
+    }
+  },
+  "scripts": {
+    "title": "स्क्रिप्ट लाइब्रेरी",
+    "subtitle": "स्वीकृत निष्पादन योग्य स्क्रिप्ट का प्रबंधन करें",
+    "totalScripts": "स्क्रिप्ट",
+    "registerScript": "स्क्रिप्ट पंजीकृत करें",
+    "noScripts": "लाइब्रेरी में कोई स्क्रिप्ट नहीं।",
+    "noScriptsHint": "स्वीकृत स्क्रिप्ट पंजीकृत करें ताकि उन्हें कार्यप्रवाहों के लिए उपलब्ध कराया जा सके।",
+    "loadingScripts": "स्क्रिप्ट लोड हो रही हैं...",
+    "deleteScript": "स्क्रिप्ट हटाएं",
+    "deleteConfirm": "इस स्क्रिप्ट को लाइब्रेरी से हटाएं?",
+    "status": {
+      "approved": "अनुमोदित",
+      "pending": "लंबित"
+    },
+    "details": {
+      "scriptPath": "स्क्रिप्ट पथ",
+      "maxRuntime": "अधिकतम रनटाइम",
+      "runtimeSeconds": "सेकंड",
+      "memoryLimit": "मेमोरी सीमा",
+      "memoryMb": "MB",
+      "sandbox": "सैंडबॉक्स",
+      "sandboxEnabled": "सक्षम",
+      "sandboxDisabled": "निष्क्रिय",
+      "networkAccess": "नेटवर्क एक्सेस",
+      "networkAllowed": "अनुमत",
+      "networkBlocked": "अवरुद्ध",
+      "fileHash": "फ़ाइल हैश (SHA-256)",
+      "parameters": "पैरामीटर",
+      "version": "संस्करण"
+    },
+    "languages": {
+      "python": "Python",
+      "bash": "Bash",
+      "r": "R",
+      "powershell": "PowerShell",
+      "node": "Node.js"
+    },
+    "form": {
+      "title": "नई स्क्रिप्ट पंजीकृत करें",
+      "displayName": "प्रदर्शन नाम",
+      "displayNamePlaceholder": "डेटा निर्यात स्क्रिप्ट",
+      "language": "भाषा",
+      "description": "विवरण",
+      "descriptionPlaceholder": "यह स्क्रिप्ट क्या करती है?",
+      "scriptPath": "स्क्रिप्ट फ़ाइल पथ",
+      "scriptPathPlaceholder": "/path/to/script.py",
+      "maxRuntime": "अधिकतम रनटाइम (सेकंड)",
+      "memoryLimit": "मेमोरी सीमा (MB)",
+      "networkAccess": "नेटवर्क एक्सेस की अनुमति दें",
+      "parametersSchema": "पैरामीटर स्कीमा (JSON)",
+      "parametersPlaceholder": "{\"param1\": {\"type\": \"string\", \"description\": \"...\"}}",
+      "invalidJson": "पैरामीटर में अमान्य JSON",
+      "errorRequired": "प्रदर्शन नाम और स्क्रिप्ट पथ आवश्यक हैं",
+      "errorSave": "नेटवर्क त्रुटि",
+      "registerScript": "स्क्रिप्ट पंजीकृत करें",
+      "registering": "पंजीकृत हो रहा है...",
+      "cancel": "रद्द करें"
+    }
+  },
+  "analytics": {
+    "title": "उपयोग विश्लेषण",
+    "subtitle": "अपने openEXPERT उपयोग, लागत और ROI को ट्रैक करें",
+    "stats": {
+      "totalSessions": "कुल सत्र",
+      "totalCost": "कुल लागत",
+      "tokensUsed": "उपयोग किए गए टोकन",
+      "uniqueModules": "अद्वितीय मॉड्यूल",
+      "messages": "संदेश",
+      "avgPerSession": "औसत {amount} / सत्र",
+      "acrossAllSessions": "सभी सत्रों में",
+      "modulesUsed": "उपयोग किए गए मॉड्यूल"
+    },
+    "charts": {
+      "sessionActivity": "सत्र गतिविधि — पिछले 30 दिन",
+      "dailyCost": "दैनिक लागत — पिछले 30 दिन",
+      "mostUsedModules": "सबसे अधिक उपयोग किए गए मॉड्यूल",
+      "noModuleData": "अभी तक कोई मॉड्यूल उपयोग डेटा नहीं",
+      "sessions": "सत्र",
+      "sessionPlural": "सत्र"
+    },
+    "roi": {
+      "title": "ROI अनुमान",
+      "sessionMultiplier": "{count} सत्र × {hours}घंटे औसत × €{rate}/घंटा =",
+      "estimatedValue": "€{value} अनुमानित मूल्य",
+      "equivalentTo": "लगभग बराबर",
+      "workingDays": "{days} कार्य दिवस",
+      "workingDaysPlural": "{days} कार्य दिवस",
+      "consultingTimeSaved": "परामर्श समय की बचत।",
+      "basedOn": "€{rate}/घंटा की विशिष्ट अनुपालन परामर्श दरों और प्रति AI सत्र {hours} घंटे के अनुमानित समकक्ष मैनुअल कार्य के आधार पर।"
+    }
+  },
+  "insights": {
+    "title": "डेटा अंतर्दृष्टि",
+    "subtitle": "अपने डेटा को दृश्य बुद्धिमत्ता में रूपांतरित करें",
+    "input": {
+      "pasteDataTab": "डेटा पेस्ट करें",
+      "uploadFileTab": "फ़ाइल अपलोड करें",
+      "pasteDataPlaceholder": "यहाँ CSV, तालिका या संरचित डेटा पेस्ट करें...\n\nउदाहरण:\nमहीना,SAR गिनती,मूल्य (EUR)\nजन 2024,12,450000\nफ़र 2024,18,820000",
+      "chooseFile": "फ़ाइल चुनें",
+      "acceptedFormats": ".csv, .xlsx, .txt स्वीकार करता है",
+      "loadedFile": "लोड किया गया: {fileName}",
+      "questionLabel": "आप क्या देखना चाहेंगे?",
+      "questionPlaceholder": "जैसे समय के साथ रुझान दिखाएं, श्रेणी के अनुसार तुलना करें...",
+      "exampleShowTrends": "समय के साथ रुझान दिखाएं",
+      "exampleCompareCategory": "श्रेणी के अनुसार तुलना करें",
+      "exampleHighlightOutliers": "आउटलायर को हाइलाइट करें",
+      "exampleShowDistribution": "वितरण दिखाएं",
+      "exampleTimelineView": "टाइमलाइन दृश्य",
+      "modelNote": "Anton आपके डेटा का विश्लेषण करेगा और Claude Opus 4.6 का उपयोग करके इंटरैक्टिव चार्ट उत्पन्न करेगा।",
+      "errorMessage": "कृपया पहले डेटा पेस्ट या अपलोड करें।",
+      "errorQuestion": "कृपया बताएं कि आप क्या देखना चाहेंगे।"
+    },
+    "actions": {
+      "generateInsights": "अंतर्दृष्टि उत्पन्न करें",
+      "stop": "रोकें",
+      "analyzing": "Anton आपके डेटा का विश्लेषण कर रहा है...",
+      "copyRawData": "कच्चा डेटा कॉपी करें",
+      "downloadChartData": "चार्ट डेटा डाउनलोड करें (.csv)"
+    },
+    "output": {
+      "summaryTitle": "सारांश",
+      "narrativeTitle": "कथात्मक विश्लेषण"
+    }
+  },
+  "soundingBoard": {
+    "title": "सलाह मंच",
+    "subtitle": "आपका व्यक्तिगत सलाहकार तैयार है",
+    "talkingWith": "बात कर रहे हैं:",
+    "advisorSettings": "सलाहकार सेटिंग",
+    "newConversation": "नई बातचीत",
+    "changePersonaWarning": "सलाहकार पर्सोना बदलने से बातचीत रीसेट हो जाएगी। जारी रखें?",
+    "personas": {
+      "strategic": {
+        "label": "सामान्य रणनीतिक सलाहकार",
+        "description": "बड़ी तस्वीर सोच, रणनीतिक विकल्प, हितधारक गतिशीलता"
+      },
+      "legal": {
+        "label": "कानूनी सलाहकार",
+        "description": "कानूनी जोखिम, अनुबंध, नियामक दायित्व, दायित्व"
+      },
+      "risk": {
+        "label": "जोखिम विशेषज्ञ",
+        "description": "जोखिम पहचान, मूल्यांकन, शमन, नियंत्रण"
+      },
+      "regulatory": {
+        "label": "नियामक विशेषज्ञ",
+        "description": "पर्यवेक्षी अपेक्षाएं, नियामक व्याख्या, अनुपालन ढांचे"
+      },
+      "financialCrime": {
+        "label": "वित्तीय अपराध विशेषज्ञ",
+        "description": "AML/CFT, प्रतिबंध, धोखाधड़ी, टाइपोलॉजी, वित्तीय अपराध जोखिम"
+      }
+    },
+    "context": {
+      "personaLabel": "सलाहकार पर्सोना",
+      "aboutYouLabel": "आपके बारे में",
+      "aboutYouPlaceholder": "मैं एक नॉर्डिक बैंक में अनुपालन प्रमुख हूं। मेरा फोकस AML/CFT है। मेरी वर्तमान चुनौती AMLA पर्यवेक्षण की तैयारी करना है।",
+      "contextNote": "यह संदर्भ स्थानीय रूप से सहेजा जाता है और आपके सलाहकार को हर संदेश में शामिल किया जाता है।"
+    },
+    "emptyState": {
+      "title": "आपका व्यक्तिगत सलाहकार तैयार है",
+      "description": "कुछ भी पूछें — रणनीतिक दुविधाएं, मुश्किल स्थितियां, नियामक प्रश्न, या बस जोर से सोचना। आपका {persona} केंद्रित, विशेषज्ञ-स्तरीय मार्गदर्शन के साथ प्रतिक्रिया देगा।",
+      "tipNoContext": "सुझाव: ऊपर अपना संदर्भ जोड़ें ताकि आपका सलाहकार अधिक प्रासंगिक सलाह दे सके।",
+      "example1": "मुझे आगामी पर्यवेक्षी निरीक्षण से कैसे निपटना चाहिए?",
+      "example2": "हमारी AMLR कार्यान्वयन योजना में सबसे बड़े जोखिम क्या हैं?",
+      "example3": "एक कठिन हितधारक बातचीत पर विचार करने में मेरी मदद करें",
+      "example4": "एक नियामक de-risking समीक्षा में क्या ध्यान केंद्रित करेगा?"
+    },
+    "chat": {
+      "inputPlaceholder": "अपने {persona} से पूछें...",
+      "askAdvisor": "सलाहकार से पूछें",
+      "stop": "रोकें",
+      "ctrlEnterToSend": "भेजने के लिए Ctrl+Enter",
+      "copy": "कॉपी करें",
+      "copied": "कॉपी हो गया",
+      "thinking": "सोच रहा है"
+    }
+  },
+  "formTools": {
+    "fillForm": {
+      "title": "यह फ़ॉर्म भरें",
+      "subtitle": "कोई भी फ़ॉर्म, प्रश्नावली या टेम्पलेट पेस्ट करें — ANTON इसे विशेषज्ञ मार्गदर्शन और उद्धरणों के साथ फ़ील्ड दर फ़ील्ड भरेगा।",
+      "formLabel": "फ़ॉर्म या प्रश्नावली",
+      "formPlaceholder": "अपना फ़ॉर्म या प्रश्नावली यहाँ पेस्ट करें...",
+      "contextLabel": "अतिरिक्त संदर्भ",
+      "contextOptional": "(वैकल्पिक)",
+      "contextPlaceholder": "जैसे यह AMLR के अधीन एक नॉर्डिक बैंक के लिए है",
+      "fillForm": "फ़ॉर्म भरें",
+      "stop": "रोकें",
+      "fillingForm": "फ़ॉर्म भरा जा रहा है...",
+      "copy": "कॉपी करें",
+      "copied": "कॉपी हो गया",
+      "download": ".md"
+    },
+    "challengeThis": {
+      "title": "इसे चुनौती दें",
+      "subtitle": "कोई भी दस्तावेज़, योजना या तर्क पेस्ट करें — ANTON सबसे मजबूत संभव आलोचना के साथ इसका तनाव-परीक्षण करेगा।",
+      "documentLabel": "चुनौती देने के लिए दस्तावेज़, योजना या तर्क",
+      "documentPlaceholder": "चुनौती देने के लिए दस्तावेज़, योजना या तर्क पेस्ट करें...",
+      "contextLabel": "संदर्भ",
+      "contextOptional": "(वैकल्पिक)",
+      "contextPlaceholder": "जैसे यह एक डेनिश भुगतान संस्था के लिए AML नीति है",
+      "challengeIt": "इसे चुनौती दें",
+      "stop": "रोकें",
+      "challengeMode": "Anton — चुनौती मोड",
+      "analyzing": "विश्लेषण हो रहा है...",
+      "copy": "कॉपी करें",
+      "copied": "कॉपी हो गया",
+      "download": ".md"
+    },
+    "dualInterpret": {
+      "title": "दोहरी व्याख्या",
+      "subtitle": "कानूनी/नियामक पाठ अपलोड या पेस्ट करें — ANTON इसकी एक साथ नियामक और नियमित इकाई दोनों के रूप में व्याख्या करेगा।",
+      "pasteTextTab": "टेक्स्ट पेस्ट करें",
+      "enterUrlTab": "URL दर्ज करें",
+      "textLabel": "कानूनी या नियामक पाठ",
+      "textPlaceholder": "व्याख्या के लिए कानूनी या नियामक पाठ पेस्ट करें...",
+      "urlLabel": "नियामक पाठ के लिए URL",
+      "urlPlaceholder": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj",
+      "urlNote": "URL प्राप्ति ऑनलाइन संदर्भ ज्ञान स्रोत का उपयोग करती है। पूर्ण दस्तावेज़ निष्कर्षण के लिए, मॉड्यूल में ज्ञान स्रोत पैनल का उपयोग करें। यहां, Anton URL सामग्री के अपने प्रशिक्षण ज्ञान और वेब खोज का उपयोग करेगा।",
+      "interpret": "व्याख्या करें",
+      "stop": "रोकें",
+      "dualMode": "Anton — दोहरी व्याख्या",
+      "interpreting": "व्याख्या हो रही है...",
+      "copy": "कॉपी करें",
+      "copied": "कॉपी हो गया",
+      "download": ".md"
+    }
+  }
+}

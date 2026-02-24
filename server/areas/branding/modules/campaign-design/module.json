@@ -1,0 +1,149 @@
+{
+  "formatVersion": "1.0",
+  "id": "campaign-design",
+  "label": "Campaign Design Planner",
+  "shortLabel": "Campaign Design",
+  "description": "Plan integrated marketing campaigns from concept to execution. Covers campaign strategy, creative concepts, channel planning, content calendars, budget allocation, and performance measurement.",
+  "icon": "Megaphone",
+  "color": "adv-red",
+  "areaId": "branding",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "creative",
+    "outputFormats": [
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Marketing campaign best practices, channel trends"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "campaign_type",
+      "type": "select",
+      "label": "Campaign type",
+      "required": true,
+      "options": [
+        {
+          "value": "brand_awareness",
+          "label": "Brand awareness campaign"
+        },
+        {
+          "value": "lead_gen",
+          "label": "Lead generation campaign"
+        },
+        {
+          "value": "product_launch",
+          "label": "Product / service launch"
+        },
+        {
+          "value": "event",
+          "label": "Event promotion"
+        },
+        {
+          "value": "thought_leadership",
+          "label": "Thought leadership campaign"
+        },
+        {
+          "value": "recruitment",
+          "label": "Employer brand / recruitment campaign"
+        },
+        {
+          "value": "seasonal",
+          "label": "Seasonal / time-bound campaign"
+        },
+        {
+          "value": "abm",
+          "label": "Account-based marketing (ABM)"
+        }
+      ]
+    },
+    {
+      "id": "objective",
+      "type": "textarea",
+      "label": "Campaign objective",
+      "placeholder": "e.g., Generate 100 marketing qualified leads for our new AML advisory service among Nordic banks with 500+ employees within Q2 2026",
+      "required": true
+    },
+    {
+      "id": "target_audience",
+      "type": "textarea",
+      "label": "Target audience",
+      "placeholder": "e.g., Chief Compliance Officers and Heads of AML at Nordic banks with 500+ employees. They are overwhelmed by regulatory change and looking for practical, experienced partners."
+    },
+    {
+      "id": "channels",
+      "type": "multi-select",
+      "label": "Available channels",
+      "options": [
+        {
+          "value": "linkedin",
+          "label": "LinkedIn (organic + paid)"
+        },
+        {
+          "value": "email",
+          "label": "Email marketing"
+        },
+        {
+          "value": "website",
+          "label": "Website / landing pages"
+        },
+        {
+          "value": "events",
+          "label": "Events / webinars"
+        },
+        {
+          "value": "google_ads",
+          "label": "Google Ads / SEM"
+        },
+        {
+          "value": "content",
+          "label": "Content marketing"
+        },
+        {
+          "value": "pr",
+          "label": "PR / media relations"
+        },
+        {
+          "value": "direct",
+          "label": "Direct outreach / sales"
+        },
+        {
+          "value": "partner",
+          "label": "Partner / co-marketing"
+        }
+      ]
+    },
+    {
+      "id": "budget",
+      "type": "text",
+      "label": "Budget (approximate)",
+      "placeholder": "e.g., EUR 30,000 for paid media, EUR 10,000 for content production, internal team time for organic"
+    },
+    {
+      "id": "timeline",
+      "type": "text",
+      "label": "Campaign timeline",
+      "placeholder": "e.g., 6-week campaign running March-April 2026"
+    },
+    {
+      "id": "key_message",
+      "type": "textarea",
+      "label": "Key message or creative direction",
+      "placeholder": "e.g., Core message: 'Compliance should protect your business, not slow it down.' Tone: confident, practical, no fear-mongering."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "branding",
+    "campaign",
+    "marketing",
+    "lead-generation",
+    "advertising",
+    "planning"
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "formatVersion": "1.0",
+  "id": "marketing-strategy",
+  "label": "Marketing Strategy Builder",
+  "shortLabel": "Strategy",
+  "description": "Create comprehensive marketing strategies aligned to business objectives. Covers market positioning, audience segmentation, channel mix, value proposition, competitive differentiation, and go-to-market planning.",
+  "icon": "TrendingUp",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "action-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Marketing strategy frameworks, competitive intelligence, industry benchmarks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "Business type",
+      "required": true,
+      "options": [
+        { "value": "b2b_enterprise", "label": "B2B — Enterprise / Large accounts" },
+        { "value": "b2b_smb", "label": "B2B — SMB / Mid-market" },
+        { "value": "b2c_mass", "label": "B2C — Mass market / Consumer" },
+        { "value": "b2c_premium", "label": "B2C — Premium / Luxury" },
+        { "value": "b2b2c", "label": "B2B2C — Sell through intermediaries" },
+        { "value": "marketplace", "label": "Marketplace / Platform" },
+        { "value": "saas", "label": "SaaS / Software" },
+        { "value": "ecommerce", "label": "E-commerce / Retail" },
+        { "value": "professional_services", "label": "Professional Services" },
+        { "value": "nonprofit", "label": "Non-profit / Social enterprise" }
+      ]
+    },
+    {
+      "id": "strategy_horizon",
+      "type": "select",
+      "label": "Strategy horizon",
+      "required": true,
+      "options": [
+        { "value": "90_day", "label": "90-day sprint / Quick-wins" },
+        { "value": "6_month", "label": "6-month plan" },
+        { "value": "12_month", "label": "12-month annual plan" },
+        { "value": "3_year", "label": "3-year strategic roadmap" }
+      ]
+    },
+    {
+      "id": "business_context",
+      "type": "textarea",
+      "label": "Business context",
+      "description": "Describe the business: what it does, its products or services, current market position, primary competitors, and the main marketing challenge you are trying to solve.",
+      "placeholder": "e.g., We are a B2B SaaS company providing HR software to Nordic mid-market companies. We have 120 customers and €3M ARR. Our main competitors are Personio and HiBob. We want to accelerate growth into the DACH region..."
+    },
+    {
+      "id": "target_audience",
+      "type": "textarea",
+      "label": "Target audience(s)",
+      "description": "Who are you trying to reach? Include job titles, industries, company sizes, pain points, and current buying behaviour if known.",
+      "placeholder": "e.g., HR Directors and CHROs in companies of 200-1000 employees in financial services and professional services sectors..."
+    },
+    {
+      "id": "budget_range",
+      "type": "select",
+      "label": "Annual marketing budget (approximate)",
+      "options": [
+        { "value": "under_50k", "label": "Under €50k" },
+        { "value": "50k_200k", "label": "€50k – €200k" },
+        { "value": "200k_1m", "label": "€200k – €1M" },
+        { "value": "1m_5m", "label": "€1M – €5M" },
+        { "value": "over_5m", "label": "Over €5M" },
+        { "value": "unknown", "label": "Not yet defined" }
+      ]
+    },
+    {
+      "id": "primary_objective",
+      "type": "chips",
+      "label": "Primary marketing objective(s)",
+      "description": "Select the main goals this strategy must achieve.",
+      "options": [
+        { "value": "brand_awareness", "label": "Build brand awareness" },
+        { "value": "demand_generation", "label": "Generate demand / pipeline" },
+        { "value": "lead_generation", "label": "Capture leads" },
+        { "value": "customer_retention", "label": "Retain and grow customers" },
+        { "value": "market_entry", "label": "Enter a new market" },
+        { "value": "product_launch", "label": "Launch a new product" },
+        { "value": "repositioning", "label": "Reposition the brand" },
+        { "value": "revenue_growth", "label": "Drive direct revenue growth" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "pragmatist"
+  ],
+  "tags": [
+    "marketing-strategy",
+    "go-to-market",
+    "brand",
+    "positioning",
+    "SOSTAC",
+    "RACE",
+    "segmentation",
+    "value-proposition"
+  ]
+}

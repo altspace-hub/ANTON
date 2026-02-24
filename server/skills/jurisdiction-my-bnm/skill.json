@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-my-bnm",
+  "label": "Malaysia — Bank Negara Malaysia (BNM)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "islamic-finance", "insurance", "mobile-money"],
+  "description": "Malaysian financial regulatory framework: AMLA 2001, Islamic Financial Services Act 2013 (global centre for Islamic finance), SC Malaysia, BNM e-KYC, digital bank licensing, and ASEAN financial integration.",
+  "tags": ["malaysia", "bnm", "southeast-asia", "islamic-finance", "asean"]
+}

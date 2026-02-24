@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "collateral-explainer",
+  "label": "Collateral & Security Explainer",
+  "shortLabel": "What I'm Pledging",
+  "icon": "Home",
+  "description": "What happens to my property if I can't repay? Understand what you're pledging as security and the real risk.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Clear protective guidance on asset risk works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Collateral requirements in microfinance, asset seizure laws in developing economies, guarantor liability, land and property as loan security"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "collateral_type",
+      "type": "select",
+      "label": "What security or collateral is the lender asking for?",
+      "required": true,
+      "options": [
+        { "value": "land-house", "label": "Land or house" },
+        { "value": "household-items", "label": "Household items or furniture" },
+        { "value": "business-equipment", "label": "Business equipment or tools" },
+        { "value": "vehicle", "label": "Vehicle or motorbike" },
+        { "value": "guarantor", "label": "A guarantor (someone to co-sign)" },
+        { "value": "none", "label": "No collateral (unsecured)" },
+        { "value": "group-guarantee", "label": "Group guarantee" }
+      ]
+    },
+    {
+      "id": "loan_amount",
+      "type": "select",
+      "label": "How much are you borrowing?",
+      "required": true,
+      "options": [
+        { "value": "under-100", "label": "Under $100" },
+        { "value": "100-500", "label": "$100 to $500" },
+        { "value": "500-2000", "label": "$500 to $2,000" },
+        { "value": "over-2000", "label": "Over $2,000" }
+      ]
+    },
+    {
+      "id": "concern",
+      "type": "select",
+      "label": "What is your main concern?",
+      "required": true,
+      "options": [
+        { "value": "understand-signing", "label": "I want to understand what I am signing" },
+        { "value": "worried-repay", "label": "I am worried I cannot repay" },
+        { "value": "too-much-collateral", "label": "The lender is asking for too much collateral" },
+        { "value": "taken-unfairly", "label": "Collateral was taken from me unfairly" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "collateral",
+    "loan-security",
+    "guarantor",
+    "asset-risk",
+    "property-rights",
+    "consumer-protection",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

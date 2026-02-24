@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "financial-inclusion-strategy",
+  "label": "Financial Inclusion Strategy Design",
+  "shortLabel": "Inclusion Strategy",
+  "description": "Design comprehensive financial inclusion strategies for governments, central banks, development organizations, and private sector actors. Covers demand-side barriers, supply-side gaps, regulatory enablers, and measurement frameworks.",
+  "perspective": "strategic",
+  "icon": "Target",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "action-plan",
+      "impact-assessment"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AFI Maya Declaration, G20 GPFI principles, Global Findex database, FinScope surveys, financial inclusion measurement frameworks, UNSGSA annual reports, World Bank financial inclusion data"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation_type",
+      "type": "select",
+      "label": "Organisation Type",
+      "description": "What type of organisation is designing or commissioning the strategy?",
+      "required": true,
+      "options": [
+        { "value": "government", "label": "Government" },
+        { "value": "central-bank", "label": "Central Bank" },
+        { "value": "development-bank", "label": "Development Bank" },
+        { "value": "ngo", "label": "NGO" },
+        { "value": "private-sector", "label": "Private Sector" },
+        { "value": "donor", "label": "Donor" }
+      ]
+    },
+    {
+      "id": "target_population",
+      "type": "chips",
+      "label": "Target Population",
+      "description": "Which underserved populations does the strategy aim to reach? Select all that apply.",
+      "options": [
+        { "value": "rural-unbanked", "label": "Rural unbanked" },
+        { "value": "women", "label": "Women" },
+        { "value": "youth", "label": "Youth" },
+        { "value": "smallholder-farmers", "label": "Smallholder farmers" },
+        { "value": "micro-businesses", "label": "Micro-businesses" },
+        { "value": "refugees", "label": "Refugees" },
+        { "value": "disability", "label": "Disability" }
+      ]
+    },
+    {
+      "id": "geographic_scope",
+      "type": "select",
+      "label": "Geographic Scope",
+      "description": "What is the geographic focus of the strategy?",
+      "required": true,
+      "options": [
+        { "value": "national", "label": "National" },
+        { "value": "regional", "label": "Regional" },
+        { "value": "urban", "label": "Urban" },
+        { "value": "peri-urban", "label": "Peri-urban" },
+        { "value": "rural", "label": "Rural" }
+      ]
+    },
+    {
+      "id": "existing_infrastructure",
+      "type": "textarea",
+      "label": "Existing Financial Infrastructure",
+      "description": "Describe the current state of financial infrastructure: bank branches, mobile money coverage, agent networks, payment systems, regulatory environment.",
+      "placeholder": "e.g. Country has 2 commercial banks with urban presence, 1 mobile money operator with 500k registered accounts, agent banking regulations enacted in 2022 but not yet operationalised, financial literacy levels low in rural areas..."
+    }
+  ],
+  "recommendedPersonas": [
+    "microfinance-director",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "jurisdiction-ke-cbk",
+    "jurisdiction-ng-cbn",
+    "jurisdiction-in-rbi"
+  ],
+  "tags": [
+    "financial-inclusion",
+    "strategy",
+    "afi",
+    "maya-declaration",
+    "global-findex",
+    "finscope",
+    "gpfi",
+    "unsgsa",
+    "development-finance"
+  ]
+}

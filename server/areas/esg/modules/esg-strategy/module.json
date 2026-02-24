@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "esg-strategy",
+  "label": "ESG Strategy & Governance",
+  "shortLabel": "ESG Strategy",
+  "icon": "Compass",
+  "description": "Develop or sharpen ESG strategy: ambition, target-setting, governance structures, board oversight, and stakeholder communication.",
+  "color": "adv-green",
+  "areaId": "esg",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "SBTi guidance, TCFD recommendations, GRI Standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "strategy_task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "develop",
+          "label": "Develop ESG strategy from scratch"
+        },
+        {
+          "value": "review",
+          "label": "Review and strengthen existing strategy"
+        },
+        {
+          "value": "targets",
+          "label": "Set credible ESG targets"
+        },
+        {
+          "value": "governance",
+          "label": "Design ESG governance structure"
+        }
+      ]
+    },
+    {
+      "id": "maturity",
+      "type": "select",
+      "label": "Current ESG maturity",
+      "options": [
+        {
+          "value": "starting",
+          "label": "Starting out - no formal programme"
+        },
+        {
+          "value": "developing",
+          "label": "Developing - some initiatives"
+        },
+        {
+          "value": "established",
+          "label": "Established - needs strengthening"
+        },
+        {
+          "value": "advanced",
+          "label": "Advanced - looking to lead"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation context",
+      "placeholder": "e.g., Mid-cap Nordic bank, targeting SBTi net zero."
+    }
+  ],
+  "recommendedPersonas": [
+    "board-member",
+    "systems-thinker"
+  ],
+  "tags": [
+    "esg-strategy",
+    "sbti",
+    "tcfd",
+    "governance",
+    "sustainability"
+  ]
+}

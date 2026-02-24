@@ -1,0 +1,114 @@
+{
+  "formatVersion": "1.0",
+  "id": "financial-statement",
+  "label": "Financial Statement Analysis",
+  "shortLabel": "Financials",
+  "description": "Analyse financial statements for banks and financial institutions: profitability, capital adequacy, asset quality, funding, and liquidity with regulatory context.",
+  "icon": "BarChart2",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_type",
+      "type": "select",
+      "label": "Institution type",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment Firm"
+        },
+        {
+          "value": "asset_manager",
+          "label": "Asset Manager"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment / E-Money Institution"
+        },
+        {
+          "value": "corporate",
+          "label": "Non-financial corporate"
+        }
+      ]
+    },
+    {
+      "id": "analysis_purpose",
+      "type": "select",
+      "label": "Purpose of analysis",
+      "options": [
+        {
+          "value": "credit_assessment",
+          "label": "Credit / counterparty assessment"
+        },
+        {
+          "value": "investment",
+          "label": "Investment analysis"
+        },
+        {
+          "value": "supervisory",
+          "label": "Supervisory / regulatory review"
+        },
+        {
+          "value": "m_and_a",
+          "label": "M&A / due diligence"
+        },
+        {
+          "value": "internal_review",
+          "label": "Internal management review"
+        }
+      ]
+    },
+    {
+      "id": "period",
+      "type": "text",
+      "label": "Period covered",
+      "placeholder": "e.g., FY2022, FY2023, H1 2024"
+    },
+    {
+      "id": "specific_focus",
+      "type": "textarea",
+      "label": "Specific areas of focus",
+      "placeholder": "e.g., Focus on NPL development, IFRS 9 provisioning adequacy, and capital buffer headroom under stress."
+    }
+  ],
+  "recommendedPersonas": [
+    "business-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "financial-analysis",
+    "banking",
+    "capital",
+    "ifrs9",
+    "supervisory"
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "formatVersion": "1.0",
+  "id": "contract-clause-checker",
+  "label": "Contract Clause Compliance Checker",
+  "shortLabel": "Clause Checker",
+  "description": "Reviews contracts against a standard clause library or regulatory requirements. Identifies missing, non-standard, or risky clauses with specific recommendations.",
+  "perspective": "operational",
+  "icon": "FileCheck",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Financial services contract requirements, outsourcing regulations, DORA, EBA outsourcing guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "contract_text",
+      "type": "textarea",
+      "label": "Contract Text",
+      "description": "Paste the contract text here, or upload the contract document via the file uploader below.",
+      "placeholder": "Paste the full contract or relevant sections here. Alternatively, upload the contract document using the file uploader...",
+      "required": true
+    },
+    {
+      "id": "contract_type",
+      "type": "select",
+      "label": "Contract Type",
+      "description": "What type of contract is being reviewed?",
+      "required": true,
+      "options": [
+        { "value": "outsourcing", "label": "Outsourcing / Service Agreement" },
+        { "value": "cloud_it", "label": "Cloud / IT Services Agreement" },
+        { "value": "data_processing", "label": "Data Processing Agreement (DPA / GDPR)" },
+        { "value": "third_party_aml", "label": "Third-Party AML / KYC Services" },
+        { "value": "correspondent_banking", "label": "Correspondent Banking Agreement" },
+        { "value": "vendor", "label": "Vendor / Supplier Agreement" },
+        { "value": "employment", "label": "Employment Contract" },
+        { "value": "nda", "label": "NDA / Confidentiality Agreement" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "regulatory_framework",
+      "type": "chips",
+      "label": "Applicable Regulatory Requirements",
+      "description": "Which regulatory frameworks should the contract be checked against?",
+      "options": [
+        { "value": "dora", "label": "DORA (Operational Resilience)" },
+        { "value": "eba_outsourcing", "label": "EBA Outsourcing Guidelines" },
+        { "value": "gdpr", "label": "GDPR (Data Processing)" },
+        { "value": "amlr", "label": "AMLR (AML Outsourcing)" },
+        { "value": "crd_crr", "label": "CRD / CRR (Banking)" },
+        { "value": "internal_standards", "label": "Internal Clause Library / Standards" }
+      ]
+    },
+    {
+      "id": "counterparty_type",
+      "type": "select",
+      "label": "Counterparty Type",
+      "description": "What type of entity is the counterparty?",
+      "options": [
+        { "value": "critical_ict", "label": "Critical ICT / Technology Provider" },
+        { "value": "financial_institution", "label": "Financial Institution / Bank" },
+        { "value": "aml_kyc_provider", "label": "AML / KYC Service Provider" },
+        { "value": "data_processor", "label": "Data Processor / Cloud Provider" },
+        { "value": "professional_services", "label": "Professional Services / Consultancy" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "specific_concerns",
+      "type": "textarea",
+      "label": "Specific Concerns to Investigate",
+      "description": "Any particular clauses, risks, or requirements you want the review to focus on.",
+      "placeholder": "e.g. Check whether audit rights are sufficient for DORA compliance. Verify data residency requirements are met. Assess whether the SLA is appropriate for a critical outsourcing..."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "contract",
+    "clause-review",
+    "outsourcing",
+    "gdpr",
+    "dora",
+    "operational"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "skill-financial-literacy",
+  "label": "Financial Literacy Fundamentals (Plain Language)",
+  "category": "methodology",
+  "applicableAreas": ["personal-finance-bop", "credit-navigator", "micro-business"],
+  "description": "Financial concepts explained in plain language for low-literacy users: interest, savings, budgeting, debt, insurance, and mobile money basics with real-world examples in local context.",
+  "tags": ["financial-literacy", "plain-language", "bop", "savings", "budgeting", "micro-finance"]
+}

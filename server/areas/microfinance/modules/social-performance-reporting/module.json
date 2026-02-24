@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "social-performance-reporting",
+  "label": "Social Performance Measurement & Reporting",
+  "shortLabel": "Social Performance",
+  "description": "Measure and report social performance of microfinance institutions using SPI4, USSPM, and other frameworks. Supports investor reporting, rating agency requirements, and social mission management.",
+  "perspective": "analytical",
+  "icon": "Heart",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "impact-assessment"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "CERISE SPI4 methodology, Universal Standards for Social Performance Management (USSPM), Client Protection Principles, Smart Campaign, SPTF, MIX Market social performance reporting, impact investment reporting standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "framework",
+      "type": "select",
+      "label": "Reporting Framework",
+      "description": "Which social performance framework is the primary reference?",
+      "required": true,
+      "options": [
+        { "value": "spi4", "label": "SPI4 (CERISE)" },
+        { "value": "usspm", "label": "USSPM" },
+        { "value": "sptf", "label": "SPTF" },
+        { "value": "giirs", "label": "GIIRS" },
+        { "value": "custom", "label": "Custom" }
+      ]
+    },
+    {
+      "id": "dimensions",
+      "type": "chips",
+      "label": "Social Performance Dimensions",
+      "description": "Which dimensions are in scope for this assessment? Select all that apply.",
+      "options": [
+        { "value": "client-protection", "label": "Client protection" },
+        { "value": "human-resources", "label": "Human resources" },
+        { "value": "social-goals", "label": "Social goals" },
+        { "value": "products", "label": "Products" },
+        { "value": "outreach", "label": "Outreach" },
+        { "value": "environmental", "label": "Environmental" }
+      ]
+    },
+    {
+      "id": "investor_requirements",
+      "type": "textarea",
+      "label": "Investor or Funder Reporting Requirements",
+      "description": "Describe any specific social performance reporting requirements from investors, donors, or rating agencies.",
+      "placeholder": "e.g. Symbiotics requires annual SPI4 assessment; Triple Jump requires client protection certification; our DFI funder requires quarterly gender disaggregated data on new borrowers..."
+    }
+  ],
+  "recommendedPersonas": [
+    "microfinance-director",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "jurisdiction-ke-cbk",
+    "jurisdiction-in-rbi"
+  ],
+  "tags": [
+    "social-performance",
+    "spi4",
+    "usspm",
+    "client-protection",
+    "smart-campaign",
+    "sptf",
+    "impact-reporting",
+    "responsible-finance"
+  ]
+}

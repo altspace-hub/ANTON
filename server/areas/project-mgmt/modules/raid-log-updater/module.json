@@ -1,0 +1,79 @@
+{
+  "formatVersion": "1.0",
+  "id": "raid-log-updater",
+  "label": "RAID Log Reviewer",
+  "shortLabel": "RAID Log",
+  "description": "Systematically reviews and updates project RAID logs (Risks, Assumptions, Issues, Dependencies). Reassesses risk ratings, identifies stale items, and generates updated RAID register with management actions.",
+  "perspective": "operational",
+  "icon": "AlertTriangle",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "monitoring-plan",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "RAID log management, project risk management (PMI, PRINCE2), risk assessment frameworks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "project_context",
+      "type": "textarea",
+      "label": "Project context",
+      "required": true,
+      "placeholder": "Brief description of the project: type, stage, key milestones, and current status.\ne.g. AMLR Implementation Programme, Phase 2 (Data & Systems), currently 60% complete. Go-live target: 1 September 2025."
+    },
+    {
+      "id": "current_raid",
+      "type": "textarea",
+      "label": "Current RAID log",
+      "required": true,
+      "placeholder": "Paste your RAID log. Include: ID, Category (R/A/I/D), Description, Owner, Date raised, Last reviewed, Current rating, Status, and any notes.\n\ne.g.\nR-001 | Risk | Key IT architect may leave before go-live | CTO | 2024-10-15 | 2024-12-01 | High | Open\nR-002 | Risk | Data migration quality insufficient for regulatory reporting | Data Lead | 2024-11-02 | 2025-01-15 | Medium | Open\nA-001 | Assumption | AMLA technical standards finalized by Q1 2025 | PM | 2024-10-01 | 2024-10-01 | N/A | Open\nI-001 | Issue | Vendor delivery delayed by 6 weeks | PM | 2025-01-10 | 2025-02-01 | Critical | Open\nD-001 | Dependency | Data dictionary approval by Compliance Committee | Data Lead | 2024-11-15 | 2025-01-15 | Medium | Awaiting"
+    },
+    {
+      "id": "review_date",
+      "type": "text",
+      "label": "Review date",
+      "placeholder": "e.g. 19 February 2025"
+    },
+    {
+      "id": "recent_developments",
+      "type": "textarea",
+      "label": "Recent project developments",
+      "placeholder": "Describe any significant events since the last RAID review that may affect existing items or create new ones.\ne.g. AMLA published draft technical standards last week. Key architect announced resignation effective 1 April. Data migration dry run completed — 3% error rate (threshold is 1%)."
+    },
+    {
+      "id": "escalation_threshold",
+      "type": "select",
+      "label": "Escalation threshold",
+      "description": "Which risk/issue rating triggers escalation to steering committee?",
+      "options": [
+        { "value": "critical", "label": "Critical only" },
+        { "value": "high_critical", "label": "High and Critical" },
+        { "value": "medium_plus", "label": "Medium and above" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "project-management",
+    "raid",
+    "risk",
+    "issues",
+    "dependencies",
+    "operational"
+  ]
+}

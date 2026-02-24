@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "third-party-risk",
+  "label": "Third-Party Risk Management",
+  "shortLabel": "Third-Party Risk",
+  "description": "Third-party risk assessment, outsourcing register review, due diligence frameworks, and DORA/EBA outsourcing compliance for financial institutions.",
+  "icon": "Share2",
+  "color": "adv-red",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "framework_design",
+          "label": "Third-party risk framework design"
+        },
+        {
+          "value": "due_diligence",
+          "label": "Due diligence framework / template"
+        },
+        {
+          "value": "outsourcing_register",
+          "label": "Outsourcing register review"
+        },
+        {
+          "value": "contract_review",
+          "label": "Outsourcing contract requirements (EBA/DORA)"
+        },
+        {
+          "value": "concentration_risk",
+          "label": "Third-party concentration risk analysis"
+        },
+        {
+          "value": "incident_response",
+          "label": "Third-party incident response"
+        }
+      ]
+    },
+    {
+      "id": "regulatory_context",
+      "type": "multi-select",
+      "label": "Applicable regulatory requirements",
+      "options": [
+        {
+          "value": "eba_outsourcing",
+          "label": "EBA Outsourcing Guidelines"
+        },
+        {
+          "value": "dora",
+          "label": "DORA (ICT third-party risk)"
+        },
+        {
+          "value": "aml",
+          "label": "AML outsourcing requirements (AMLR)"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR (data processor requirements)"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context",
+      "placeholder": "Describe the current state of third-party management, key vendors, known issues, or specific third parties to assess."
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "legal-expert"
+  ],
+  "tags": [
+    "third-party",
+    "outsourcing",
+    "dora",
+    "eba",
+    "vendor-risk"
+  ]
+}

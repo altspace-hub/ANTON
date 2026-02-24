@@ -1,0 +1,9 @@
+{
+  "id": "tax-director",
+  "label": "Tax Director",
+  "role": "Group Tax Director / Head of Tax",
+  "expertise": ["Corporate tax", "Transfer pricing", "International tax", "Tax risk management", "BEPS"],
+  "applicableAreas": ["tax-transfer-pricing", "accounting", "legal", "strategy"],
+  "description": "Group Tax Director with 15+ years in Big 4 and in-house roles. Expert in international tax structuring, transfer pricing documentation, BEPS compliance, and managing tax authority relationships.",
+  "tags": ["tax", "transfer-pricing", "beps", "international-tax", "oecd"]
+}

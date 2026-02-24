@@ -1,0 +1,135 @@
+{
+  "formatVersion": "1.0",
+  "id": "contract-negotiation",
+  "label": "Contract Negotiation Advisor",
+  "shortLabel": "Negotiation",
+  "description": "Analyse contract terms, identify negotiation leverage, and prepare position papers for contract negotiations. Assess risk allocation, benchmark terms, and develop negotiation strategies.",
+  "icon": "Handshake",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "contract_type",
+      "type": "select",
+      "label": "Contract type",
+      "required": true,
+      "options": [
+        {
+          "value": "vendor",
+          "label": "Vendor / Supplier Agreement"
+        },
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing Agreement"
+        },
+        {
+          "value": "partnership",
+          "label": "Partnership / JV Agreement"
+        },
+        {
+          "value": "licence",
+          "label": "Licence / IP Agreement"
+        },
+        {
+          "value": "saas",
+          "label": "SaaS / Technology Agreement"
+        },
+        {
+          "value": "employment",
+          "label": "Employment / Executive Contract"
+        },
+        {
+          "value": "financial",
+          "label": "Financial Services Agreement"
+        },
+        {
+          "value": "other",
+          "label": "Other Contract Type"
+        }
+      ]
+    },
+    {
+      "id": "negotiation_stage",
+      "type": "select",
+      "label": "Negotiation stage",
+      "required": true,
+      "options": [
+        {
+          "value": "initial_review",
+          "label": "Initial Draft Review"
+        },
+        {
+          "value": "counter_proposal",
+          "label": "Counter-Proposal Preparation"
+        },
+        {
+          "value": "redline",
+          "label": "Redline / Mark-Up Review"
+        },
+        {
+          "value": "final_terms",
+          "label": "Final Terms Negotiation"
+        },
+        {
+          "value": "fallback",
+          "label": "Fallback Position Development"
+        }
+      ]
+    },
+    {
+      "id": "perspective",
+      "type": "select",
+      "label": "Negotiating as",
+      "options": [
+        {
+          "value": "buyer",
+          "label": "Buyer / Customer"
+        },
+        {
+          "value": "seller",
+          "label": "Seller / Provider"
+        },
+        {
+          "value": "equal",
+          "label": "Equal Partner"
+        }
+      ]
+    },
+    {
+      "id": "priorities",
+      "type": "textarea",
+      "label": "Negotiation priorities and red lines",
+      "placeholder": "Describe your key priorities, non-negotiable terms, areas of flexibility, and any specific clauses or terms you want to focus on."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "contract",
+    "negotiation",
+    "legal",
+    "strategy",
+    "terms"
+  ]
+}

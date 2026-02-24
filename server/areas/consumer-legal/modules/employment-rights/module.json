@@ -1,0 +1,143 @@
+{
+  "formatVersion": "1.0",
+  "id": "employment-rights",
+  "label": "Employment Rights Advisor",
+  "shortLabel": "Employment",
+  "description": "Analyse employment law issues, assess rights and obligations under employment contracts and labour legislation, and structure advice on workplace disputes.",
+  "icon": "Users",
+  "color": "adv-red",
+  "areaId": "consumer-legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "issue_type",
+      "type": "select",
+      "label": "Employment issue",
+      "required": true,
+      "options": [
+        {
+          "value": "dismissal",
+          "label": "Dismissal / Termination"
+        },
+        {
+          "value": "redundancy",
+          "label": "Redundancy"
+        },
+        {
+          "value": "discrimination",
+          "label": "Discrimination / Harassment"
+        },
+        {
+          "value": "wages",
+          "label": "Wages / Pay Disputes"
+        },
+        {
+          "value": "working_conditions",
+          "label": "Working Conditions / Hours"
+        },
+        {
+          "value": "contract_terms",
+          "label": "Contract Terms Review"
+        },
+        {
+          "value": "whistleblowing",
+          "label": "Whistleblowing Protection"
+        },
+        {
+          "value": "parental",
+          "label": "Parental Leave / Family Rights"
+        },
+        {
+          "value": "other",
+          "label": "Other Employment Issue"
+        }
+      ]
+    },
+    {
+      "id": "perspective",
+      "type": "select",
+      "label": "Advising from perspective of",
+      "required": true,
+      "options": [
+        {
+          "value": "employee",
+          "label": "Employee"
+        },
+        {
+          "value": "employer",
+          "label": "Employer"
+        },
+        {
+          "value": "union",
+          "label": "Trade Union / Employee Representative"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction",
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "eu",
+          "label": "EU"
+        }
+      ]
+    },
+    {
+      "id": "situation",
+      "type": "textarea",
+      "label": "Describe the situation",
+      "required": true,
+      "placeholder": "Describe the employment issue, relevant dates, any contractual terms, and what outcome is being sought."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "employment",
+    "labour",
+    "workplace",
+    "consumer",
+    "rights"
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "digital-campaign-planner",
+  "label": "Digital Campaign Planner",
+  "shortLabel": "Campaign Plan",
+  "description": "Plan multi-channel digital campaigns with objectives, audience targeting, channel allocation, budget splits, creative briefs, KPIs, and measurement frameworks.",
+  "icon": "BarChart2",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "action-plan",
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Digital advertising benchmarks, channel best practices, audience targeting options"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "campaign_objective",
+      "type": "select",
+      "label": "Campaign objective",
+      "required": true,
+      "options": [
+        { "value": "awareness", "label": "Brand awareness / Reach" },
+        { "value": "consideration", "label": "Consideration / Engagement" },
+        { "value": "lead_gen", "label": "Lead generation" },
+        { "value": "conversion", "label": "Direct conversion / Sales" },
+        { "value": "retention", "label": "Retention / Upsell" },
+        { "value": "product_launch", "label": "Product / Feature launch" },
+        { "value": "event_promotion", "label": "Event promotion" },
+        { "value": "reactivation", "label": "Win-back / Reactivation" }
+      ]
+    },
+    {
+      "id": "channels",
+      "type": "multi-select",
+      "label": "Channels to include",
+      "description": "Which digital channels should be part of this campaign?",
+      "options": [
+        { "value": "paid_search", "label": "Paid Search (Google / Bing Ads)" },
+        { "value": "paid_social_meta", "label": "Paid Social — Meta (Facebook / Instagram)" },
+        { "value": "paid_social_linkedin", "label": "Paid Social — LinkedIn" },
+        { "value": "paid_social_tiktok", "label": "Paid Social — TikTok" },
+        { "value": "display_programmatic", "label": "Display / Programmatic" },
+        { "value": "youtube_video", "label": "YouTube / Video" },
+        { "value": "email", "label": "Email marketing" },
+        { "value": "seo_content", "label": "SEO / Content" },
+        { "value": "influencer", "label": "Influencer / Creator" },
+        { "value": "affiliate", "label": "Affiliate / Partner" },
+        { "value": "podcast_audio", "label": "Podcast / Audio ads" }
+      ]
+    },
+    {
+      "id": "campaign_budget",
+      "type": "select",
+      "label": "Total campaign budget",
+      "options": [
+        { "value": "under_10k", "label": "Under €10k" },
+        { "value": "10k_50k", "label": "€10k – €50k" },
+        { "value": "50k_200k", "label": "€50k – €200k" },
+        { "value": "200k_1m", "label": "€200k – €1M" },
+        { "value": "over_1m", "label": "Over €1M" }
+      ]
+    },
+    {
+      "id": "campaign_duration",
+      "type": "select",
+      "label": "Campaign duration",
+      "options": [
+        { "value": "2_weeks", "label": "1–2 weeks (burst)" },
+        { "value": "4_weeks", "label": "3–4 weeks" },
+        { "value": "3_months", "label": "3 months (quarterly)" },
+        { "value": "6_months", "label": "6 months" },
+        { "value": "always_on", "label": "Always-on / Ongoing" }
+      ]
+    },
+    {
+      "id": "audience_description",
+      "type": "textarea",
+      "label": "Target audience",
+      "description": "Describe the audience: demographics, interests, behaviours, job roles, or existing customer segments.",
+      "placeholder": "e.g., Decision-makers at Nordic SMBs (50-500 employees), aged 35-55, in HR, Operations, or Finance roles. Have previously visited our pricing page or downloaded a whitepaper..."
+    },
+    {
+      "id": "existing_assets",
+      "type": "textarea",
+      "label": "Existing creative assets / constraints",
+      "description": "What creative assets already exist? Any brand guidelines, approved messaging, or production constraints?",
+      "placeholder": "e.g., We have approved brand visuals and a brand book. No video production budget. All copy must be approved by legal before launch..."
+    }
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "pragmatist"
+  ],
+  "tags": [
+    "digital-campaign",
+    "paid-media",
+    "channel-planning",
+    "KPIs",
+    "budget-allocation",
+    "multi-channel",
+    "performance-marketing"
+  ]
+}

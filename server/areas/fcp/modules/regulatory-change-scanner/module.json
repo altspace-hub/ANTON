@@ -1,0 +1,98 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-change-scanner",
+  "label": "Regulatory Change Impact Scanner",
+  "shortLabel": "Change Scanner",
+  "description": "Analyzes new regulatory publications, guidance, or amendments and assesses their specific impact on current AML/CFT policies, procedures, and systems.",
+  "perspective": "operational",
+  "icon": "ScanLine",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "impact-assessment",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AML/CFT regulatory developments, AMLA technical standards, EBA guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulatory_development",
+      "type": "textarea",
+      "label": "Regulatory Development",
+      "description": "Describe the regulatory change, paste relevant text, or provide the URL. What has been published, amended, or announced?",
+      "placeholder": "e.g. EBA published final Guidelines on internal governance under AMLA (EBA/GL/2025/03) on 15 January 2025. The guidelines set requirements for the compliance function structure, MLRO responsibilities, and three-lines-of-defence design for obliged entities...",
+      "required": true
+    },
+    {
+      "id": "publication_type",
+      "type": "select",
+      "label": "Type of Publication",
+      "description": "What type of regulatory instrument is this?",
+      "required": true,
+      "options": [
+        { "value": "regulation", "label": "Regulation (directly applicable law)" },
+        { "value": "directive", "label": "Directive (requires national transposition)" },
+        { "value": "rts", "label": "Regulatory Technical Standard (RTS/ITS)" },
+        { "value": "eba_guideline", "label": "EBA / AMLA Guideline" },
+        { "value": "national_guidance", "label": "National Supervisory Guidance" },
+        { "value": "consultation", "label": "Consultation Paper (CP)" },
+        { "value": "supervisory_letter", "label": "Supervisory Letter / Dear CEO" },
+        { "value": "faq_qa", "label": "FAQ / Q&A Clarification" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "effective_date",
+      "type": "text",
+      "label": "Effective Date / Implementation Deadline",
+      "description": "When does this change take effect or require implementation?",
+      "placeholder": "e.g. Effective 1 July 2027 / Transposition deadline: 31 December 2025"
+    },
+    {
+      "id": "institution_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of institution does this need to be assessed against?",
+      "options": [
+        { "value": "bank", "label": "Bank / Credit Institution" },
+        { "value": "fintech", "label": "Fintech / Payment Institution" },
+        { "value": "investment", "label": "Investment Firm / Asset Manager" },
+        { "value": "crypto", "label": "Crypto Asset Service Provider" },
+        { "value": "other", "label": "Other Obliged Entity" }
+      ]
+    },
+    {
+      "id": "current_state",
+      "type": "textarea",
+      "label": "Current State (if known)",
+      "description": "Describe the institution's current policies, procedures, or systems relevant to this regulatory change. Upload documents via the file uploader.",
+      "placeholder": "e.g. Current AML policy last updated March 2023. MLRO role defined in Group Governance Framework. Three-lines model documented but compliance function resource levels not formally reviewed against regulatory expectations..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "regulatory-change",
+    "impact-assessment",
+    "aml",
+    "compliance",
+    "operational"
+  ]
+}

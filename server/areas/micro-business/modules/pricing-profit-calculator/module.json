@@ -1,0 +1,98 @@
+{
+  "formatVersion": "1.0",
+  "id": "pricing-profit-calculator",
+  "label": "Pricing & Profit Calculator",
+  "shortLabel": "Pricing Help",
+  "icon": "Calculator",
+  "description": "Am I charging the right price? Calculate your real costs (including your own time) and set a price that makes a profit.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Pricing strategies and cost calculation for informal micro-businesses"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "What do you sell?",
+      "required": true,
+      "options": [
+        { "value": "food-meals", "label": "Food / cooked meals" },
+        { "value": "physical-goods", "label": "Physical goods (clothes, shoes)" },
+        { "value": "crafts", "label": "Crafts" },
+        { "value": "services", "label": "Services (hair, repair)" },
+        { "value": "mixed", "label": "Mixed" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "current_situation",
+      "type": "select",
+      "label": "What is your situation?",
+      "required": true,
+      "options": [
+        { "value": "new-business", "label": "Starting new business" },
+        { "value": "checking-prices", "label": "Checking if current prices are right" },
+        { "value": "market-prices", "label": "Prices are set by market" },
+        { "value": "too-expensive", "label": "Customers say I'm too expensive" }
+      ]
+    },
+    {
+      "id": "main_concern",
+      "type": "select",
+      "label": "What worries you most about pricing?",
+      "required": false,
+      "options": [
+        { "value": "dont-know-cost", "label": "Don't know my true cost" },
+        { "value": "competitors-cheaper", "label": "Competitors charge less" },
+        { "value": "not-enough-profit", "label": "Not making enough profit" },
+        { "value": "want-to-expand", "label": "Want to expand" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "tags": [
+    "micro-business",
+    "bop",
+    "informal-economy",
+    "pricing",
+    "profit-margin",
+    "cost-calculation",
+    "kenya",
+    "nigeria",
+    "india",
+    "philippines"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "pmo-setup-framework",
+  "label": "PMO Framework Design",
+  "shortLabel": "PMO Design",
+  "description": "Designs Project Management Office (PMO) framework including governance structure, methodology standards, reporting cadence, tooling requirements, and capability development plan.",
+  "perspective": "consultant",
+  "icon": "Building2",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "project-plan",
+      "raci-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "PMO design frameworks, PRINCE2, PMI PMBOK, agile at scale, portfolio management, governance design"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation_context",
+      "type": "textarea",
+      "label": "Organisation context",
+      "required": true,
+      "placeholder": "Describe the organisation: size, industry, current state of project management maturity, number of active projects/programmes, and what is driving the need for a PMO.\ne.g. Nordic financial services firm, 1 200 employees, 20 active projects, no formal PMO exists. Currently running 3 major regulatory programmes (DORA, AMLR, CSRD) concurrently. Project managers exist within business units but no central standards or governance."
+    },
+    {
+      "id": "pmo_type",
+      "type": "select",
+      "label": "Desired PMO type",
+      "required": true,
+      "options": [
+        { "value": "supportive", "label": "Supportive PMO — templates, guidance, coaching" },
+        { "value": "controlling", "label": "Controlling PMO — standards compliance, reviews, reporting" },
+        { "value": "directive", "label": "Directive PMO — manages projects directly" },
+        { "value": "centre_excellence", "label": "Centre of Excellence — capability building, methodology" },
+        { "value": "portfolio", "label": "Portfolio PMO — portfolio prioritisation and resource allocation" },
+        { "value": "unknown", "label": "Unsure — recommend based on context" }
+      ]
+    },
+    {
+      "id": "existing_practices",
+      "type": "textarea",
+      "label": "Existing project management practices",
+      "placeholder": "Describe what is already in place: methodologies used (waterfall/agile/hybrid), tools (Jira, MS Project, etc.), reporting processes, and any formal standards."
+    },
+    {
+      "id": "key_challenges",
+      "type": "textarea",
+      "label": "Key challenges to address",
+      "placeholder": "What problems should the PMO solve? What pain points are driving this initiative?\ne.g. Projects consistently over budget, no portfolio visibility for executive team, resource conflicts between projects, inconsistent reporting making it impossible to compare project status."
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints",
+      "placeholder": "Budget, headcount, timeline, technology, or political constraints on the PMO design.\ne.g. PMO must be operational within 3 months, maximum 3 FTE headcount, existing tooling (Jira + Confluence) must be leveraged."
+    },
+    {
+      "id": "pmo_lead",
+      "type": "text",
+      "label": "PMO leadership",
+      "placeholder": "Who will lead the PMO? What is their background and experience level? e.g. Head of Delivery, 10 years PM experience, no previous PMO leadership."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "project-management",
+    "pmo",
+    "governance",
+    "methodology",
+    "consultant",
+    "portfolio"
+  ]
+}

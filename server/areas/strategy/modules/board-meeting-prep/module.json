@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "board-meeting-prep",
+  "label": "Board Meeting Preparation Pack",
+  "shortLabel": "Board Prep",
+  "icon": "Presentation",
+  "description": "Compiles board meeting materials from data inputs. Structures CEO report, financial highlights, strategic initiatives update, risk summary, and decisions required. Board-quality format.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Board governance best practices, corporate reporting standards, executive communication"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "meeting_type",
+      "type": "select",
+      "label": "Board meeting type",
+      "required": true,
+      "options": [
+        { "value": "quarterly", "label": "Quarterly board meeting" },
+        { "value": "annual", "label": "Annual strategy and budget review" },
+        { "value": "special", "label": "Special / extraordinary meeting" },
+        { "value": "committee", "label": "Board committee (audit, risk, remuneration)" }
+      ]
+    },
+    {
+      "id": "sections_needed",
+      "type": "multi-select",
+      "label": "Pack sections to include",
+      "options": [
+        { "value": "ceo_report", "label": "CEO / MD report" },
+        { "value": "financials", "label": "Financial performance highlights" },
+        { "value": "strategy", "label": "Strategic initiatives update" },
+        { "value": "risk", "label": "Risk summary" },
+        { "value": "regulatory", "label": "Regulatory and compliance update" },
+        { "value": "decisions", "label": "Decisions required" },
+        { "value": "minutes", "label": "Draft minutes from last meeting" }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Meeting context and key topics",
+      "placeholder": "Describe the organisation, upcoming meeting agenda, key developments since the last meeting, and any specific topics requiring board attention."
+    }
+  ],
+  "recommendedPersonas": [
+    "executive-lens",
+    "pragmatist"
+  ],
+  "tags": [
+    "board",
+    "governance",
+    "meeting-prep",
+    "executive",
+    "reporting"
+  ]
+}

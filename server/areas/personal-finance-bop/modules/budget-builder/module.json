@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.0",
+  "id": "budget-builder",
+  "label": "Budget Builder",
+  "shortLabel": "My Budget",
+  "icon": "Calculator",
+  "description": "Track what you earn and what you spend. Make sure your money lasts until the next payday.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Simple budgeting guidance works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Practical budgeting methods for low-income households with irregular income in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "income_type",
+      "type": "select",
+      "label": "How do you earn money?",
+      "required": true,
+      "options": [
+        { "value": "monthly-salary", "label": "Monthly salary" },
+        { "value": "daily-wages", "label": "Daily wages" },
+        { "value": "weekly-market", "label": "Weekly market sales" },
+        { "value": "irregular", "label": "Irregular — different every month" },
+        { "value": "mix", "label": "Mix of sources" }
+      ]
+    },
+    {
+      "id": "main_problem",
+      "type": "select",
+      "label": "What is your biggest money problem right now?",
+      "required": true,
+      "options": [
+        { "value": "runs-out", "label": "Money runs out before month end" },
+        { "value": "dont-know", "label": "I don't know where my money goes" },
+        { "value": "cant-save", "label": "I want to save but I can't" },
+        { "value": "family-expenses", "label": "Family expenses are too high" }
+      ]
+    },
+    {
+      "id": "household",
+      "type": "select",
+      "label": "Who do you support?",
+      "required": false,
+      "options": [
+        { "value": "single", "label": "Just myself" },
+        { "value": "couple", "label": "Me and my partner" },
+        { "value": "family-children", "label": "Family with children" },
+        { "value": "extended", "label": "Extended family household" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "budgeting",
+    "personal-finance",
+    "low-income",
+    "irregular-income",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

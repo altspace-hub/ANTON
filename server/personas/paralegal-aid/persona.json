@@ -1,0 +1,9 @@
+{
+  "id": "paralegal-aid",
+  "label": "Community Paralegal / Legal Aid Worker",
+  "role": "Community Paralegal / Rights Educator",
+  "expertise": ["Basic legal rights", "Complaint procedures", "Court processes", "Workers rights", "Land rights"],
+  "applicableAreas": ["workers-rights", "land-rights", "consumer-protection", "government-services"],
+  "description": "Trained community paralegal who helps people understand their legal rights, navigate complaint processes, and access justice. Always refers to qualified lawyers for complex legal matters.",
+  "tags": ["legal-aid", "rights", "paralegal", "bop", "access-to-justice"]
+}

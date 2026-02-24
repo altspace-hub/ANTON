@@ -1,0 +1,161 @@
+{
+  "formatVersion": "1.0",
+  "id": "dora-compliance",
+  "label": "DORA Compliance Assessment",
+  "shortLabel": "DORA",
+  "icon": "ShieldCheck",
+  "description": "Assess compliance with the Digital Operational Resilience Act across all five pillars: ICT risk management, incident management, resilience testing, third-party risk, and information sharing. Produces gap scoring matrix and remediation roadmap.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "DORA Regulation EU 2022/2554, ESA RTS/ITS under DORA, EBA ICT guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Type of financial entity",
+      "required": true,
+      "options": [
+        {
+          "value": "credit_institution",
+          "label": "Credit Institution (bank)"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment Firm"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment Institution"
+        },
+        {
+          "value": "e_money",
+          "label": "E-Money Institution"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance / Reinsurance Undertaking"
+        },
+        {
+          "value": "aifm",
+          "label": "Alternative Investment Fund Manager"
+        },
+        {
+          "value": "ucits",
+          "label": "UCITS Management Company"
+        },
+        {
+          "value": "trading_venue",
+          "label": "Trading Venue / CCP / CSD"
+        }
+      ]
+    },
+    {
+      "id": "entity_size",
+      "type": "select",
+      "label": "Entity size / significance",
+      "options": [
+        {
+          "value": "significant",
+          "label": "Significant / Large (full DORA obligations)"
+        },
+        {
+          "value": "small",
+          "label": "Small / Non-interconnected (simplified framework eligible)"
+        },
+        {
+          "value": "microenterprise",
+          "label": "Microenterprise (<10 employees, <€2M turnover)"
+        }
+      ]
+    },
+    {
+      "id": "dora_pillars",
+      "type": "multi-select",
+      "label": "DORA pillars to assess",
+      "options": [
+        {
+          "value": "pillar1",
+          "label": "Pillar 1: ICT Risk Management (Articles 5–16)"
+        },
+        {
+          "value": "pillar2",
+          "label": "Pillar 2: ICT Incident Management (Articles 17–23)"
+        },
+        {
+          "value": "pillar3",
+          "label": "Pillar 3: Digital Resilience Testing (Articles 24–27)"
+        },
+        {
+          "value": "pillar4",
+          "label": "Pillar 4: ICT Third-Party Risk (Articles 28–44)"
+        },
+        {
+          "value": "pillar5",
+          "label": "Pillar 5: Information Sharing (Article 45)"
+        }
+      ]
+    },
+    {
+      "id": "assessment_focus",
+      "type": "select",
+      "label": "Assessment focus",
+      "options": [
+        {
+          "value": "gap_assessment",
+          "label": "Full gap assessment — current state vs. DORA requirements"
+        },
+        {
+          "value": "readiness",
+          "label": "Readiness check — how close are we to compliance?"
+        },
+        {
+          "value": "remediation",
+          "label": "Remediation planning — we know the gaps, what do we do?"
+        },
+        {
+          "value": "specific_rts",
+          "label": "Specific RTS deep dive — analyse a specific delegated act"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known concerns or specific areas of focus",
+      "placeholder": "e.g., We have 3 critical cloud providers with no exit strategy. Our incident classification is undefined. TLPT has never been done."
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "auditor",
+    "systems-thinker"
+  ],
+  "tags": [
+    "dora",
+    "cyber",
+    "ict-risk",
+    "resilience",
+    "third-party",
+    "incident-management",
+    "tlpt"
+  ]
+}

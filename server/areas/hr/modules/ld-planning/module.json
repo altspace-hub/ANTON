@@ -1,0 +1,227 @@
+{
+  "formatVersion": "1.0",
+  "id": "ld-planning",
+  "label": "L&D Programme Planning",
+  "shortLabel": "L&D Planning",
+  "description": "Design comprehensive learning and development programmes with needs analysis, curriculum design, delivery plans, evaluation frameworks, and ROI measurement. Covers onboarding, technical training, leadership development, and compliance training.",
+  "icon": "GraduationCap",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "training-material"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "programme_type",
+      "type": "select",
+      "label": "Programme type",
+      "description": "The type of L&D programme to design.",
+      "required": true,
+      "options": [
+        {
+          "value": "onboarding",
+          "label": "Onboarding programme"
+        },
+        {
+          "value": "technical",
+          "label": "Technical skills training"
+        },
+        {
+          "value": "leadership",
+          "label": "Leadership development programme"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance / regulatory training"
+        },
+        {
+          "value": "management",
+          "label": "New manager training"
+        },
+        {
+          "value": "soft_skills",
+          "label": "Soft skills / communication"
+        },
+        {
+          "value": "digital",
+          "label": "Digital transformation / upskilling"
+        },
+        {
+          "value": "annual_plan",
+          "label": "Annual L&D plan (organisation-wide)"
+        },
+        {
+          "value": "certification",
+          "label": "Certification / accreditation prep"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "target_audience",
+      "type": "multi-select",
+      "label": "Target audience",
+      "description": "Who will participate in this programme?",
+      "options": [
+        {
+          "value": "new_hires",
+          "label": "New hires"
+        },
+        {
+          "value": "individual_contributors",
+          "label": "Individual contributors"
+        },
+        {
+          "value": "new_managers",
+          "label": "New / first-time managers"
+        },
+        {
+          "value": "mid_managers",
+          "label": "Mid-level managers"
+        },
+        {
+          "value": "senior_leaders",
+          "label": "Senior leaders / directors"
+        },
+        {
+          "value": "all_staff",
+          "label": "All staff"
+        },
+        {
+          "value": "specialists",
+          "label": "Specific specialist group"
+        }
+      ]
+    },
+    {
+      "id": "group_size",
+      "type": "select",
+      "label": "Typical group size",
+      "options": [
+        {
+          "value": "individual",
+          "label": "Individual / 1-on-1 coaching"
+        },
+        {
+          "value": "small",
+          "label": "Small group (5-15)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium group (15-30)"
+        },
+        {
+          "value": "large",
+          "label": "Large group (30-100)"
+        },
+        {
+          "value": "organisation",
+          "label": "Organisation-wide (100+)"
+        }
+      ]
+    },
+    {
+      "id": "delivery_format",
+      "type": "multi-select",
+      "label": "Delivery format preferences",
+      "options": [
+        {
+          "value": "classroom",
+          "label": "Classroom / in-person"
+        },
+        {
+          "value": "virtual",
+          "label": "Virtual live sessions"
+        },
+        {
+          "value": "elearning",
+          "label": "E-learning / self-paced"
+        },
+        {
+          "value": "blended",
+          "label": "Blended learning"
+        },
+        {
+          "value": "coaching",
+          "label": "Coaching / mentoring"
+        },
+        {
+          "value": "workshops",
+          "label": "Workshops / experiential"
+        },
+        {
+          "value": "on_the_job",
+          "label": "On-the-job / action learning"
+        }
+      ]
+    },
+    {
+      "id": "duration",
+      "type": "select",
+      "label": "Programme duration",
+      "options": [
+        {
+          "value": "half_day",
+          "label": "Half-day session"
+        },
+        {
+          "value": "full_day",
+          "label": "Full-day session"
+        },
+        {
+          "value": "multi_day",
+          "label": "Multi-day programme (2-5 days)"
+        },
+        {
+          "value": "multi_week",
+          "label": "Multi-week programme"
+        },
+        {
+          "value": "ongoing",
+          "label": "Ongoing / continuous programme"
+        },
+        {
+          "value": "annual",
+          "label": "Annual curriculum"
+        }
+      ]
+    },
+    {
+      "id": "learning_objectives",
+      "type": "textarea",
+      "label": "Key learning objectives or skills gaps",
+      "placeholder": "e.g., Managers need to improve feedback skills, team lacks understanding of new AML regulation, onboarding takes too long and new hires are unproductive for 3 months"
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints or special considerations",
+      "placeholder": "e.g., Limited budget, participants are in multiple time zones, must integrate with existing LMS, regulatory requirement to complete within Q1"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "learning",
+    "development",
+    "training",
+    "l&d",
+    "upskilling",
+    "curriculum"
+  ]
+}

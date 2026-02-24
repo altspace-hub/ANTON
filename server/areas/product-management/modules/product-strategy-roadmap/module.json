@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "product-strategy-roadmap",
+  "label": "Product Strategy & Roadmap",
+  "shortLabel": "Strategy & Roadmap",
+  "icon": "Map",
+  "description": "Define product vision, strategy, and roadmap using Jobs-to-Be-Done, opportunity mapping, and outcome-driven planning. Produces a north star vision and prioritised roadmap.",
+  "color": "adv-teal",
+  "areaId": "product-management",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "decision-memo",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Product strategy frameworks, market trends, Jobs-to-Be-Done methodology, OKR design"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "Product type",
+      "required": true,
+      "options": [
+        { "value": "b2b_saas", "label": "B2B SaaS" },
+        { "value": "b2c_mobile", "label": "B2C Mobile App" },
+        { "value": "marketplace", "label": "Marketplace" },
+        { "value": "api_platform", "label": "API Platform" },
+        { "value": "hardware_software", "label": "Hardware + Software" },
+        { "value": "internal_tool", "label": "Internal Tool" }
+      ]
+    },
+    {
+      "id": "lifecycle_stage",
+      "type": "select",
+      "label": "Product lifecycle stage",
+      "required": true,
+      "options": [
+        { "value": "discovery", "label": "Discovery" },
+        { "value": "zero_to_one", "label": "0→1 (building MVP)" },
+        { "value": "growth", "label": "Growth" },
+        { "value": "scaling", "label": "Scaling" },
+        { "value": "maturity", "label": "Maturity" },
+        { "value": "revival", "label": "Revival" }
+      ]
+    },
+    {
+      "id": "market",
+      "type": "text",
+      "label": "Target market and customers",
+      "placeholder": "e.g., Mid-market European banks seeking automated AML transaction monitoring"
+    },
+    {
+      "id": "horizon",
+      "type": "select",
+      "label": "Roadmap horizon",
+      "options": [
+        { "value": "3m", "label": "3 months" },
+        { "value": "6m", "label": "6 months" },
+        { "value": "12m", "label": "12 months" },
+        { "value": "3y", "label": "3 years" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "product-strategy",
+    "roadmap",
+    "jtbd",
+    "okr",
+    "vision",
+    "opportunity-mapping"
+  ]
+}

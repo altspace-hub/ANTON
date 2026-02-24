@@ -1,0 +1,120 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-risk-assessment",
+  "label": "Tax Risk Assessment",
+  "shortLabel": "Tax Risk",
+  "description": "Identify, score, and prioritise tax risks across the business. Map risks to likelihood and financial exposure, assign ownership, and produce a board-ready risk register with remediation roadmap.",
+  "icon": "Scale",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Tax risk frameworks, OECD guidance, HMRC CCAB tax risk management, EU tax governance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation_type",
+      "type": "select",
+      "label": "Organisation type",
+      "required": true,
+      "options": [
+        { "value": "large_multinational", "label": "Large multinational group (>EUR 750M revenue)" },
+        { "value": "mid_market_international", "label": "Mid-market international group" },
+        { "value": "domestic_large", "label": "Large domestic company" },
+        { "value": "pe_backed", "label": "Private equity-backed portfolio company" },
+        { "value": "financial_services", "label": "Financial services entity (bank, insurer, fund)" },
+        { "value": "public_sector", "label": "Public sector / government-linked entity" }
+      ]
+    },
+    {
+      "id": "risk_categories",
+      "type": "multi-select",
+      "label": "Risk categories to assess",
+      "options": [
+        { "value": "transfer_pricing", "label": "Transfer pricing / intercompany" },
+        { "value": "pe_risk", "label": "Permanent establishment (PE) exposure" },
+        { "value": "cfc", "label": "Controlled foreign corporation (CFC)" },
+        { "value": "hybrid_mismatches", "label": "Hybrid mismatches / ATAD2" },
+        { "value": "interest_limitation", "label": "Interest limitation / thin capitalisation" },
+        { "value": "exit_taxation", "label": "Exit taxation" },
+        { "value": "tax_treaties", "label": "Treaty access / beneficial ownership" },
+        { "value": "vat_gst", "label": "VAT / GST compliance" },
+        { "value": "pillar_two", "label": "Pillar Two (GloBE minimum tax)" },
+        { "value": "digital_economy", "label": "Digital economy / DST exposure" },
+        { "value": "substance", "label": "Substance requirements (holding structures, IP regimes)" },
+        { "value": "tax_governance", "label": "Tax governance / senior accounting officer" }
+      ]
+    },
+    {
+      "id": "triggering_events",
+      "type": "multi-select",
+      "label": "Recent triggering events",
+      "description": "Any recent changes that may have created or elevated tax risk?",
+      "options": [
+        { "value": "acquisition_ma", "label": "M&A / acquisition" },
+        { "value": "restructuring", "label": "Group restructuring / reorganisation" },
+        { "value": "new_markets", "label": "Expansion into new markets" },
+        { "value": "new_business_model", "label": "New business model (e.g., digital, platform)" },
+        { "value": "personnel_changes", "label": "Senior personnel changes / remote working" },
+        { "value": "debt_refinancing", "label": "Significant debt or refinancing" },
+        { "value": "ip_migration", "label": "IP migration or centralisation" },
+        { "value": "none", "label": "No specific triggering event" }
+      ]
+    },
+    {
+      "id": "risk_tolerance",
+      "type": "select",
+      "label": "Board tax risk appetite",
+      "options": [
+        { "value": "conservative", "label": "Conservative — minimal tax risk, full disclosure" },
+        { "value": "moderate", "label": "Moderate — commercially optimised, defensible positions" },
+        { "value": "aggressive", "label": "Commercial — positions taken where supportable legal basis exists" }
+      ]
+    },
+    {
+      "id": "entity_context",
+      "type": "textarea",
+      "label": "Business and structure context",
+      "description": "Describe the group structure, key jurisdictions, business activities, and any known risk areas.",
+      "placeholder": "e.g., Swedish-headquartered industrial group, operations in 12 countries, IP held in Netherlands, significant intragroup financing via Luxembourg holding, recently acquired UK target..."
+    }
+  ],
+  "recommendedPersonas": [
+    "tax-director",
+    "transfer-pricing-specialist",
+    "fcp-expert"
+  ],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "notes": "Tax risk assessment benefits from Opus for cross-jurisdictional risk synthesis."
+  },
+  "tags": [
+    "tax-risk",
+    "risk-register",
+    "BEPS",
+    "PE-risk",
+    "CFC",
+    "hybrid-mismatches",
+    "pillar-two",
+    "tax-governance",
+    "ATAD"
+  ]
+}

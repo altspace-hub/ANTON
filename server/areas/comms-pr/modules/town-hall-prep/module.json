@@ -1,0 +1,97 @@
+{
+  "formatVersion": "1.0",
+  "id": "town-hall-prep",
+  "label": "Town Hall Preparation Kit",
+  "shortLabel": "Town Hall Prep",
+  "description": "Prepares comprehensive town hall materials: key messages, Q&A anticipation (likely tough questions with suggested answers), talking points for leadership, and run-of-show agenda.",
+  "perspective": "operational",
+  "icon": "Megaphone",
+  "color": "adv-green",
+  "areaId": "comms-pr",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "stakeholder-presentation",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Internal communications best practices, town hall facilitation, leadership communication, employee engagement"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "event_details",
+      "type": "textarea",
+      "label": "Event details",
+      "required": true,
+      "placeholder": "Date, format (in-person/hybrid/virtual), expected attendance, duration, and location.\ne.g. All-hands town hall, 5 March 2025, 10:00-11:30, hybrid (Stockholm HQ + Teams), ~350 employees globally."
+    },
+    {
+      "id": "occasion",
+      "type": "select",
+      "label": "What is driving this town hall?",
+      "required": true,
+      "options": [
+        { "value": "strategy", "label": "Strategic update / annual strategy presentation" },
+        { "value": "results", "label": "Financial results / performance update" },
+        { "value": "change", "label": "Organizational change announcement" },
+        { "value": "acquisition", "label": "Acquisition / merger announcement or update" },
+        { "value": "crisis", "label": "Crisis or difficult news communication" },
+        { "value": "milestone", "label": "Milestone celebration / achievement" },
+        { "value": "regular", "label": "Regular quarterly/annual all-hands" },
+        { "value": "other", "label": "Other — describe below" }
+      ]
+    },
+    {
+      "id": "key_messages",
+      "type": "textarea",
+      "label": "Key messages to communicate",
+      "required": true,
+      "placeholder": "What are the 3-5 most important messages employees should take away from this town hall?\ne.g.\n1. Q4 results exceeded targets — the team delivered\n2. We are acquiring DataTech AB — what this means for our platform strategy\n3. No planned redundancies as a result of the acquisition\n4. Integration will take 12-18 months — here is what to expect\n5. Q questions welcome — transparency is our commitment"
+    },
+    {
+      "id": "sensitive_topics",
+      "type": "textarea",
+      "label": "Sensitive topics / anticipated difficult questions",
+      "placeholder": "What difficult questions are employees likely to ask? What topics need careful handling?\ne.g. Will there be job losses? Why did we choose DataTech over the competitor? What happens to our current technology platform? Is remote work policy changing?"
+    },
+    {
+      "id": "speakers",
+      "type": "textarea",
+      "label": "Speakers and their roles",
+      "placeholder": "Who will speak? What topics should each cover?\ne.g. CEO Johan (opening, strategy), CFO Lisa (results), CTO Erik (technology roadmap), HR Director Sofia (people/culture), Q&A panel: all four"
+    },
+    {
+      "id": "employee_mood",
+      "type": "select",
+      "label": "Current employee sentiment",
+      "description": "Honest assessment of current mood helps calibrate tone.",
+      "options": [
+        { "value": "positive", "label": "Positive — high morale and engagement" },
+        { "value": "cautious", "label": "Cautious — some uncertainty but generally stable" },
+        { "value": "anxious", "label": "Anxious — significant uncertainty or concern" },
+        { "value": "low", "label": "Low — morale challenges or difficult period" },
+        { "value": "mixed", "label": "Mixed — varies by team or geography" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "communications",
+    "town-hall",
+    "internal-comms",
+    "employee-engagement",
+    "leadership",
+    "operational"
+  ]
+}

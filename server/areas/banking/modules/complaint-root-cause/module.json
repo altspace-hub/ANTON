@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "complaint-root-cause",
+  "label": "Customer Complaint Root Cause Analyzer",
+  "shortLabel": "Complaint Analysis",
+  "description": "Analyzes patterns in customer complaint data to identify systemic issues, process failures, and product deficiencies. Prioritizes remediation actions by frequency and impact.",
+  "icon": "AlertTriangle",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "complaint_data",
+      "type": "textarea",
+      "label": "Complaint data or summary",
+      "required": true,
+      "description": "Paste anonymised complaint data, a summary table, or a description of complaint patterns.",
+      "placeholder": "e.g., Q1 2025 complaint summary — Total: 342 complaints.\n\nCategory | Count | % | Avg resolution days\nPayment delay | 98 | 29% | 8.2\nInaccurate charges | 74 | 22% | 12.1\nAccount closure complaints | 52 | 15% | 15.6\nKYC/onboarding friction | 41 | 12% | 21.3\nService quality (branch) | 77 | 22% | 5.4\n\nSample complaints (anonymised):\nC1: Customer charged twice for same transaction, 4 days to resolve, no proactive contact\nC2: Account closure without advance notice, customer had automatic payments set up..."
+    },
+    {
+      "id": "period",
+      "type": "text",
+      "label": "Analysis period",
+      "placeholder": "e.g., Q1 2025 (January – March 2025)"
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context and prior analysis (optional)",
+      "description": "Any known issues, recent system changes, or prior root cause work that is relevant.",
+      "placeholder": "e.g., New core banking system migrated in November 2024. Complaints have increased 28% vs Q1 2024. Management believes payment delay complaints are related to the migration but no root cause has been confirmed."
+    },
+    {
+      "id": "regulatory_context",
+      "type": "select",
+      "label": "Regulatory context",
+      "description": "Are there regulatory reporting thresholds or FOS/ombudsman escalation patterns to consider?",
+      "options": [
+        {
+          "value": "eu_standard",
+          "label": "EU/EEA — EBA complaint handling guidelines"
+        },
+        {
+          "value": "nordic",
+          "label": "Nordic — national consumer protection requirements"
+        },
+        {
+          "value": "uk_fca",
+          "label": "UK — FCA complaint handling rules (DISP)"
+        },
+        {
+          "value": "none_specific",
+          "label": "No specific regulatory framework — general good practice"
+        }
+      ]
+    },
+    {
+      "id": "analysis_focus",
+      "type": "multi-select",
+      "label": "Analysis focus",
+      "options": [
+        {
+          "value": "root_cause",
+          "label": "Root cause identification by complaint category"
+        },
+        {
+          "value": "systemic_issues",
+          "label": "Systemic process or product failures"
+        },
+        {
+          "value": "resolution_quality",
+          "label": "Resolution quality and timeliness"
+        },
+        {
+          "value": "regulatory_risk",
+          "label": "Regulatory risk — potential breach of conduct requirements"
+        },
+        {
+          "value": "trend_analysis",
+          "label": "Trend analysis vs. prior periods"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "banking",
+    "complaints",
+    "root-cause",
+    "conduct",
+    "customer-experience",
+    "remediation"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "competitive-analysis",
+  "label": "Competitive Intelligence & Benchmarking",
+  "shortLabel": "Competitive Analysis",
+  "icon": "Activity",
+  "description": "Analyse the competitive landscape: competitor profiling, peer benchmarking, differentiation opportunities, and strategic positioning recommendations.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Financial services competitive landscape, Nordic market intelligence, product benchmarking"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_focus",
+      "type": "select",
+      "label": "Competitive analysis focus",
+      "required": true,
+      "options": [
+        {
+          "value": "landscape",
+          "label": "Full competitive landscape mapping"
+        },
+        {
+          "value": "specific_competitor",
+          "label": "Specific competitor deep dive"
+        },
+        {
+          "value": "benchmarking",
+          "label": "Peer benchmarking (products, pricing, capability)"
+        },
+        {
+          "value": "positioning",
+          "label": "Our differentiation and positioning"
+        }
+      ]
+    },
+    {
+      "id": "dimension",
+      "type": "multi-select",
+      "label": "Dimensions to analyse",
+      "options": [
+        {
+          "value": "product",
+          "label": "Products and services"
+        },
+        {
+          "value": "pricing",
+          "label": "Pricing and fees"
+        },
+        {
+          "value": "technology",
+          "label": "Technology and digital"
+        },
+        {
+          "value": "esg",
+          "label": "ESG and sustainability positioning"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory posture"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context",
+      "placeholder": "Describe your organisation, sector, and the competitive question this analysis will inform."
+    }
+  ],
+  "recommendedPersonas": [
+    "investor-lens",
+    "journalist"
+  ],
+  "tags": [
+    "competitive",
+    "intelligence",
+    "benchmarking",
+    "strategy",
+    "positioning"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "supply-chain-risk",
+  "label": "Supply Chain Risk Assessment",
+  "shortLabel": "Supply Chain Risk",
+  "icon": "Network",
+  "description": "Assess and mitigate risks across manufacturing supply chains. Covers supplier risk profiling, single-source dependency analysis, geopolitical risk assessment, logistics vulnerability mapping, and ESG supply chain compliance. Produces detailed findings reports and action plans with risk ratings, mitigation strategies, and monitoring frameworks.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Supply chain risk management, supplier due diligence, geopolitical risk, ESG supply chain requirements, CSRD, supply chain resilience"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "industry",
+      "label": "Industry",
+      "type": "select",
+      "options": [
+        "Automotive",
+        "Electronics",
+        "Food & beverage",
+        "Pharmaceutical",
+        "Chemical",
+        "Aerospace",
+        "Consumer goods",
+        "Industrial equipment",
+        "Other"
+      ],
+      "required": true
+    },
+    {
+      "id": "risk-focus",
+      "label": "Risk Focus Areas",
+      "type": "multiselect",
+      "options": [
+        "Supplier concentration",
+        "Geopolitical/country risk",
+        "Financial stability of suppliers",
+        "Logistics/transportation",
+        "Raw material availability",
+        "ESG/sustainability",
+        "Regulatory compliance",
+        "Cybersecurity",
+        "Force majeure/pandemic preparedness",
+        "All areas"
+      ],
+      "required": true
+    },
+    {
+      "id": "supply-chain-scope",
+      "label": "Supply Chain Scope",
+      "type": "select",
+      "options": [
+        "Tier 1 suppliers only",
+        "Tier 1 and Tier 2",
+        "Full multi-tier supply chain",
+        "Specific commodity/category"
+      ],
+      "required": true
+    },
+    {
+      "id": "known-vulnerabilities",
+      "label": "Known Vulnerabilities",
+      "type": "textarea",
+      "placeholder": "Describe any known supply chain weaknesses or recent disruptions...",
+      "required": false
+    },
+    {
+      "id": "geographic-exposure",
+      "label": "Key Geographic Exposure",
+      "type": "textarea",
+      "placeholder": "Main sourcing regions and countries...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "procurement-director",
+    "supply-chain-manager",
+    "risk-manager"
+  ],
+  "tags": [
+    "manufacturing",
+    "supply-chain",
+    "risk",
+    "procurement",
+    "resilience"
+  ]
+}

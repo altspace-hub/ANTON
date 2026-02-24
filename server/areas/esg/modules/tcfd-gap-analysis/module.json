@@ -1,0 +1,94 @@
+{
+  "formatVersion": "1.0",
+  "id": "tcfd-gap-analysis",
+  "label": "TCFD Climate Risk Gap Analysis",
+  "shortLabel": "TCFD Gap Analysis",
+  "description": "Assesses alignment with TCFD (Task Force on Climate-related Financial Disclosures) recommendations across governance, strategy, risk management, and metrics/targets pillars.",
+  "icon": "ThermometerSun",
+  "color": "adv-green",
+  "areaId": "esg",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "TCFD recommendations, IPCC climate scenarios, NGFS scenarios, ESRS E1 requirements, financial supervisor guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity type",
+      "required": true,
+      "options": [
+        { "value": "bank", "label": "Bank / financial institution" },
+        { "value": "insurer", "label": "Insurance / reinsurance company" },
+        { "value": "asset_manager", "label": "Asset manager" },
+        { "value": "large_corp", "label": "Large non-financial corporation" },
+        { "value": "sme", "label": "SME or mid-market company" }
+      ]
+    },
+    {
+      "id": "regulatory_driver",
+      "type": "multi-select",
+      "label": "Regulatory or reporting drivers",
+      "options": [
+        { "value": "csrd_esrs", "label": "CSRD / ESRS E1 (mandatory for in-scope companies)" },
+        { "value": "sfdr", "label": "SFDR (for asset managers)" },
+        { "value": "ecb_guide", "label": "ECB Guide on climate and environmental risks" },
+        { "value": "eba", "label": "EBA Pillar 3 ESG risk disclosures" },
+        { "value": "investor_pressure", "label": "Investor/lender requirements" },
+        { "value": "voluntary", "label": "Voluntary TCFD adoption" }
+      ]
+    },
+    {
+      "id": "current_disclosures",
+      "type": "textarea",
+      "label": "Current TCFD / climate disclosures",
+      "required": true,
+      "placeholder": "Describe what climate-related disclosures you currently make:\n- Do you have a TCFD report or section in your annual/sustainability report?\n- What year did you start TCFD reporting?\n- Which TCFD pillars and recommended disclosures have you addressed?\n- Have you conducted climate scenario analysis?\n- Do you have Scope 1, 2, 3 emissions data?\n- Do you have climate targets (net zero, SBTi)?\n\nOr upload your existing TCFD/climate disclosure document."
+    },
+    {
+      "id": "scenario_analysis",
+      "type": "select",
+      "label": "Scenario analysis status",
+      "options": [
+        { "value": "none", "label": "Not yet conducted" },
+        { "value": "qualitative", "label": "Qualitative only — no quantification" },
+        { "value": "partial", "label": "Partial — some risks quantified" },
+        { "value": "full", "label": "Full quantitative scenario analysis" }
+      ]
+    },
+    {
+      "id": "key_challenges",
+      "type": "textarea",
+      "label": "Key TCFD challenges you are facing",
+      "placeholder": "e.g., We don't know how to conduct scenario analysis, we have physical risk data but no financial quantification, our board doesn't have sufficient climate expertise, we can't get Scope 3 data from our supply chain / lending portfolio"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "tcfd",
+    "climate-risk",
+    "scenario-analysis",
+    "physical-risk",
+    "transition-risk",
+    "esrs",
+    "financial-disclosure"
+  ]
+}

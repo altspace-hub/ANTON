@@ -1,0 +1,73 @@
+{
+  "formatVersion": "1.0",
+  "id": "homework-helper",
+  "label": "Children's Homework Helper",
+  "shortLabel": "Homework Help",
+  "icon": "Pencil",
+  "description": "Help your child with school homework. Patient explanations in simple English or local language.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Age-appropriate language. Support parent helping child. Explain method, not just answer."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Primary and junior secondary curriculum in Kenya, Nigeria, Ghana, Tanzania, India, Bangladesh, age-appropriate pedagogy" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "subject",
+      "label": "Which subject?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "english", "label": "English" },
+        { "value": "mathematics", "label": "Mathematics" },
+        { "value": "science", "label": "Science" },
+        { "value": "social-studies", "label": "Social Studies" },
+        { "value": "history", "label": "History" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "grade_level",
+      "label": "What class or grade?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "primary-1-3", "label": "Primary 1-3 (ages 6-9)" },
+        { "value": "primary-4-6", "label": "Primary 4-6 (ages 10-12)" },
+        { "value": "junior-secondary", "label": "Junior Secondary (ages 12-15)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "topic",
+      "label": "What is the question or topic?",
+      "type": "text",
+      "required": true,
+      "placeholder": "Type the question or topic here (keep it short)"
+    },
+    {
+      "id": "language_preference",
+      "label": "Which language would help most?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "simple-english", "label": "Simple English" },
+        { "value": "swahili", "label": "Swahili" },
+        { "value": "hindi", "label": "Hindi" },
+        { "value": "other", "label": "Other" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
+  "tags": ["homework", "children", "primary-school", "secondary-school", "maths", "english", "science", "parent-support"]
+}

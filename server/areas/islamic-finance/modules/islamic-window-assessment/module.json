@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "islamic-window-assessment",
+  "label": "Islamic Window Assessment",
+  "shortLabel": "Window Assessment",
+  "icon": "Building2",
+  "description": "Assess conventional banks' Islamic window operations for Sharia compliance, ring-fencing from conventional funds, governance, and regulatory requirements.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "gap-scoring-matrix"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IFSB Islamic window guidelines, national regulations on conventional bank Islamic operations, ring-fencing requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "bank_type",
+      "label": "Bank Type",
+      "type": "select",
+      "options": ["Commercial Bank", "Investment Bank", "Foreign Bank Branch", "NBFI"],
+      "required": true
+    },
+    {
+      "id": "product_range",
+      "label": "Products Offered",
+      "type": "chips",
+      "options": ["Murabaha", "Ijara", "Wakala Deposits", "Islamic Trade Finance", "Sukuk"],
+      "required": false
+    },
+    {
+      "id": "key_concerns",
+      "label": "Key Concerns or Regulatory Findings",
+      "type": "textarea",
+      "placeholder": "Current weaknesses or regulatory findings",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member", "fcp-expert"],
+  "recommendedSkills": ["skill-ifsb-standards", "skill-aaoifi-standards"],
+  "tags": ["islamic-window", "ring-fencing", "conventional-bank", "sharia-compliance", "dual-banking", "governance", "assessment"]
+}

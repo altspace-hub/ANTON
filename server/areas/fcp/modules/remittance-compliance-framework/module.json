@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.0",
+  "id": "remittance-compliance-framework",
+  "label": "Remittance Compliance Framework",
+  "shortLabel": "Remittance Compliance",
+  "icon": "SendHorizonal",
+  "description": "Design AML/CFT compliance frameworks for money service businesses and money transfer operators. Covers MSB registration requirements, tiered KYC, Travel Rule compliance, agent due diligence, and FATF R.14/R.16 obligations.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["policy-document", "gap-scoring-matrix"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF Recommendations 14 and 16, MSB licensing requirements by jurisdiction, Travel Rule implementation guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "service_type",
+      "type": "select",
+      "label": "Service Type",
+      "required": true,
+      "options": [
+        {"value": "bank-mto", "label": "Bank-owned MTO"},
+        {"value": "independent-mto", "label": "Independent MTO"},
+        {"value": "mobile-money", "label": "Mobile Money Operator"},
+        {"value": "fintech-remittance", "label": "Fintech Remittance"},
+        {"value": "informal-seeking-formalisation", "label": "Informal (seeking formalisation)"}
+      ]
+    },
+    {
+      "id": "corridors",
+      "type": "chips",
+      "label": "Operating Corridors",
+      "options": [
+        {"value": "south-asia", "label": "South Asia (India/Pakistan/Bangladesh)"},
+        {"value": "middle-east", "label": "Middle East / GCC"},
+        {"value": "east-africa", "label": "East Africa"},
+        {"value": "west-africa", "label": "West Africa"},
+        {"value": "southeast-asia", "label": "Southeast Asia"},
+        {"value": "europe-diaspora", "label": "Europe (diaspora communities)"}
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Primary Licensing Jurisdiction",
+      "required": true,
+      "options": [
+        {"value": "eu", "label": "EU"},
+        {"value": "uk", "label": "UK"},
+        {"value": "usa", "label": "USA"},
+        {"value": "uae", "label": "UAE"},
+        {"value": "kenya", "label": "Kenya"},
+        {"value": "nigeria", "label": "Nigeria"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "current_maturity",
+      "type": "select",
+      "label": "Current Compliance Maturity",
+      "options": [
+        {"value": "none", "label": "No framework"},
+        {"value": "basic", "label": "Basic"},
+        {"value": "intermediate", "label": "Intermediate"},
+        {"value": "advanced", "label": "Advanced"}
+      ]
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert"],
+  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
+  "tags": ["remittance", "mto", "msb", "travel-rule", "compliance-framework", "fcp"]
+}

@@ -1,0 +1,132 @@
+{
+  "formatVersion": "1.0",
+  "id": "architecture-review",
+  "label": "Architecture Review",
+  "shortLabel": "Architecture",
+  "description": "Evaluate system architecture for scalability, reliability, security, and maintainability. Assess technical decisions, identify risks, and recommend improvements. Covers microservices, monoliths, event-driven, and cloud-native architectures.",
+  "icon": "Network",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Architecture patterns, cloud services, scalability best practices"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "review_type",
+      "type": "select",
+      "label": "Type of architecture review",
+      "required": true,
+      "options": [
+        {
+          "value": "existing_system",
+          "label": "Review existing system architecture"
+        },
+        {
+          "value": "new_design",
+          "label": "Review proposed architecture design"
+        },
+        {
+          "value": "migration",
+          "label": "Migration / modernisation assessment"
+        },
+        {
+          "value": "scalability",
+          "label": "Scalability & performance review"
+        },
+        {
+          "value": "security",
+          "label": "Security architecture review"
+        },
+        {
+          "value": "comparison",
+          "label": "Architecture options comparison"
+        },
+        {
+          "value": "disaster_recovery",
+          "label": "DR / business continuity review"
+        }
+      ]
+    },
+    {
+      "id": "architecture_style",
+      "type": "select",
+      "label": "Architecture style",
+      "options": [
+        {
+          "value": "monolith",
+          "label": "Monolith"
+        },
+        {
+          "value": "microservices",
+          "label": "Microservices"
+        },
+        {
+          "value": "serverless",
+          "label": "Serverless / FaaS"
+        },
+        {
+          "value": "event_driven",
+          "label": "Event-driven"
+        },
+        {
+          "value": "modular_monolith",
+          "label": "Modular monolith"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid / mixed"
+        },
+        {
+          "value": "not_sure",
+          "label": "Not sure / need assessment"
+        }
+      ]
+    },
+    {
+      "id": "tech_stack",
+      "type": "textarea",
+      "label": "Technology stack",
+      "placeholder": "e.g., React frontend, Node.js/Express API, PostgreSQL, Redis, AWS (ECS, RDS, S3, SQS), Terraform, GitHub Actions"
+    },
+    {
+      "id": "scale",
+      "type": "textarea",
+      "label": "Scale and requirements",
+      "placeholder": "e.g., 50k daily active users, 500 requests/second peak, 99.9% uptime SLA, 2TB data, GDPR compliance required, team of 15 engineers"
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific concerns or questions",
+      "placeholder": "e.g., We are hitting database bottlenecks at peak load, considering migrating from monolith to microservices, need to understand if our current architecture can handle 10x growth"
+    },
+    {
+      "id": "diagrams",
+      "type": "textarea",
+      "label": "Architecture description",
+      "placeholder": "Describe the system components, their responsibilities, how they communicate, data flows, and deployment topology. Upload architecture diagrams as files if available."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "software",
+    "architecture",
+    "scalability",
+    "security",
+    "cloud",
+    "microservices",
+    "design"
+  ]
+}

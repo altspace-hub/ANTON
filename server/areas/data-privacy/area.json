@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "data-privacy",
+  "name": "Data Privacy & Protection",
+  "shortName": "Data Privacy",
+  "description": "GDPR compliance, DPIAs, privacy notices, data subject rights, cross-border transfers, and data breach response for Data Protection Officers and privacy teams.",
+  "icon": "Lock",
+  "color": "adv-teal",
+  "cluster": "finance",
+  "moduleIds": [
+    "gdpr-compliance-assessment",
+    "dpia-builder",
+    "privacy-notice-drafter",
+    "dsr-handler",
+    "cross-border-transfer-assessment",
+    "breach-response-plan"
+  ]
+}

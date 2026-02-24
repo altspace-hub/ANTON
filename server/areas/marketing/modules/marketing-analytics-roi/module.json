@@ -1,0 +1,114 @@
+{
+  "formatVersion": "1.0",
+  "id": "marketing-analytics-roi",
+  "label": "Marketing Analytics & ROI",
+  "shortLabel": "Analytics / ROI",
+  "description": "Analyse marketing performance data, build attribution frameworks, calculate ROI by channel, identify optimisation opportunities, and recommend measurement infrastructure improvements.",
+  "icon": "Target",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Marketing attribution models, analytics frameworks, performance benchmarks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analytics_task",
+      "type": "select",
+      "label": "Analytics task",
+      "required": true,
+      "options": [
+        { "value": "performance_review", "label": "Campaign / channel performance review" },
+        { "value": "attribution_design", "label": "Attribution model design / review" },
+        { "value": "roi_calculation", "label": "Marketing ROI calculation" },
+        { "value": "measurement_framework", "label": "Measurement framework build" },
+        { "value": "ga4_audit", "label": "GA4 / analytics setup audit" },
+        { "value": "dashboard_design", "label": "Reporting dashboard design" },
+        { "value": "budget_optimisation", "label": "Budget reallocation / optimisation" }
+      ]
+    },
+    {
+      "id": "data_sources",
+      "type": "multi-select",
+      "label": "Available data sources",
+      "description": "Which data sources or platforms does your analytics draw from?",
+      "options": [
+        { "value": "ga4", "label": "Google Analytics 4 (GA4)" },
+        { "value": "google_ads", "label": "Google Ads" },
+        { "value": "meta_ads", "label": "Meta Ads Manager" },
+        { "value": "linkedin_ads", "label": "LinkedIn Campaign Manager" },
+        { "value": "crm", "label": "CRM (HubSpot, Salesforce, etc.)" },
+        { "value": "email_platform", "label": "Email platform (Klaviyo, Mailchimp, etc.)" },
+        { "value": "ecommerce", "label": "E-commerce platform (Shopify, WooCommerce, etc.)" },
+        { "value": "data_warehouse", "label": "Data warehouse (BigQuery, Snowflake, etc.)" },
+        { "value": "bi_tool", "label": "BI tool (Looker, Power BI, Tableau, etc.)" },
+        { "value": "manual_exports", "label": "Manual CSV exports / spreadsheets" }
+      ]
+    },
+    {
+      "id": "business_model",
+      "type": "select",
+      "label": "Business model / revenue type",
+      "description": "Affects which metrics and attribution approaches are most relevant.",
+      "options": [
+        { "value": "ecommerce_transactional", "label": "E-commerce — transactional" },
+        { "value": "saas_subscription", "label": "SaaS / subscription" },
+        { "value": "b2b_pipeline", "label": "B2B — pipeline / deals" },
+        { "value": "lead_gen_service", "label": "Lead generation — service business" },
+        { "value": "marketplace", "label": "Marketplace / platform" },
+        { "value": "media_content", "label": "Media / content / advertising revenue" }
+      ]
+    },
+    {
+      "id": "key_metrics",
+      "type": "textarea",
+      "label": "Key metrics / KPIs currently tracked",
+      "description": "List the metrics you currently measure, and any you feel are missing or misleading.",
+      "placeholder": "e.g., We track ROAS, CPL, and MQLs. We don't currently track CAC payback period or LTV. Our ROAS looks great on last-click but our new customer revenue growth is flat..."
+    },
+    {
+      "id": "reporting_cadence",
+      "type": "select",
+      "label": "Reporting cadence",
+      "options": [
+        { "value": "weekly", "label": "Weekly" },
+        { "value": "fortnightly", "label": "Fortnightly" },
+        { "value": "monthly", "label": "Monthly" },
+        { "value": "quarterly", "label": "Quarterly" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "pragmatist"
+  ],
+  "tags": [
+    "marketing-analytics",
+    "attribution",
+    "ROI",
+    "ROAS",
+    "CAC",
+    "LTV",
+    "GA4",
+    "measurement",
+    "performance-marketing",
+    "data-driven"
+  ]
+}

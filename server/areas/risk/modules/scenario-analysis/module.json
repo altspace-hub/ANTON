@@ -1,0 +1,121 @@
+{
+  "formatVersion": "1.0",
+  "id": "scenario-analysis",
+  "label": "Scenario Analysis & Stress Testing",
+  "shortLabel": "Scenarios",
+  "description": "Design stress scenarios, assess institution-specific impact paths, and produce scenario analysis for ICAAP, risk appetite calibration, and strategic planning.",
+  "icon": "GitBranch",
+  "color": "adv-red",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "impact-assessment"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "scenario_purpose",
+      "type": "select",
+      "label": "Purpose of the scenario analysis",
+      "required": true,
+      "options": [
+        {
+          "value": "icaap",
+          "label": "ICAAP stress testing"
+        },
+        {
+          "value": "risk_appetite",
+          "label": "Risk appetite calibration"
+        },
+        {
+          "value": "strategic_planning",
+          "label": "Strategic planning stress test"
+        },
+        {
+          "value": "operational_resilience",
+          "label": "Operational resilience scenario"
+        },
+        {
+          "value": "climate",
+          "label": "Climate risk scenario"
+        },
+        {
+          "value": "reverse_stress",
+          "label": "Reverse stress test"
+        }
+      ]
+    },
+    {
+      "id": "institution_profile",
+      "type": "textarea",
+      "label": "Institution profile",
+      "description": "Brief description relevant to the scenario: business model, key portfolios, key dependencies.",
+      "placeholder": "e.g., Retail bank with €5bn mortgage portfolio, concentrated in Swedish residential property. Key IT dependency on two core banking systems."
+    },
+    {
+      "id": "scenario_type",
+      "type": "multi-select",
+      "label": "Scenario types to include",
+      "options": [
+        {
+          "value": "macro_recession",
+          "label": "Macro recession / credit stress"
+        },
+        {
+          "value": "property_downturn",
+          "label": "Real estate / property downturn"
+        },
+        {
+          "value": "interest_rate",
+          "label": "Interest rate shock"
+        },
+        {
+          "value": "liquidity_crisis",
+          "label": "Liquidity / funding stress"
+        },
+        {
+          "value": "cyber_attack",
+          "label": "Major cyber attack"
+        },
+        {
+          "value": "geopolitical",
+          "label": "Geopolitical escalation / sanctions"
+        },
+        {
+          "value": "climate_physical",
+          "label": "Climate physical risk event"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory enforcement action"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "business-expert"
+  ],
+  "tags": [
+    "scenario",
+    "stress-testing",
+    "icaap",
+    "risk-management",
+    "capital"
+  ]
+}

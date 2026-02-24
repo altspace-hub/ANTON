@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "change-comm-planner",
+  "label": "Change Communication Planner",
+  "shortLabel": "Change Comms",
+  "description": "Creates multi-channel, stakeholder-segmented communication plan for organizational changes. Sequences messages across channels (all-hands, email, manager cascade, FAQ) with timing and tone guidance.",
+  "perspective": "operational",
+  "icon": "Workflow",
+  "color": "adv-green",
+  "areaId": "comms-pr",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "monitoring-plan",
+      "stakeholder-presentation",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Change management communication (Prosci/ADKAR), organizational change communications, stakeholder engagement, change readiness"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "change_description",
+      "type": "textarea",
+      "label": "Change description",
+      "required": true,
+      "placeholder": "Describe the organizational change: what is changing, why, when, and the intended outcome.\ne.g. We are merging the compliance and risk functions into a single Second Line of Defence department. The change is driven by regulatory pressure and internal efficiency. Effective 1 May 2025. Approximately 40 people affected. Department head: Sofia Lindqvist (current CRO). No job losses."
+    },
+    {
+      "id": "announcement_date",
+      "type": "text",
+      "label": "Announcement date",
+      "required": true,
+      "placeholder": "e.g. 3 March 2025 (first communication to employees)"
+    },
+    {
+      "id": "effective_date",
+      "type": "text",
+      "label": "Change effective date",
+      "placeholder": "e.g. 1 May 2025 (when the change takes effect operationally)"
+    },
+    {
+      "id": "stakeholder_groups",
+      "type": "textarea",
+      "label": "Stakeholder groups",
+      "required": true,
+      "placeholder": "List the key groups who need to be communicated with and their relationship to the change.\ne.g.\n- Directly affected employees (40 people): highest concern — role changes, reporting lines, team dynamics\n- Wider organization (all staff): awareness and team context\n- Management team: must align on messaging and handle team questions\n- Board / Supervisory Board: governance notification\n- External: regulators (FI) — notification may be required"
+    },
+    {
+      "id": "change_sensitivity",
+      "type": "select",
+      "label": "Change sensitivity level",
+      "options": [
+        { "value": "low", "label": "Low — routine change, minimal concern expected" },
+        { "value": "medium", "label": "Medium — moderate change, some concern expected" },
+        { "value": "high", "label": "High — significant change, high concern expected" },
+        { "value": "critical", "label": "Critical — major change with job security or major role implications" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known employee concerns or resistance",
+      "placeholder": "Any known concerns, rumours circulating, or resistance points that the communication must address.\ne.g. Rumour that the merger will lead to job cuts. Concern that the CRO role outranks the current CCO (Sofia vs. Marcus). Teams have historically not collaborated well."
+    },
+    {
+      "id": "channels_available",
+      "type": "chips",
+      "label": "Communication channels available",
+      "options": [
+        { "value": "all_hands", "label": "All-hands / town hall" },
+        { "value": "email", "label": "Email (all staff)" },
+        { "value": "intranet", "label": "Intranet / internal portal" },
+        { "value": "manager_cascade", "label": "Manager cascade (briefings)" },
+        { "value": "small_group", "label": "Small group sessions" },
+        { "value": "chat", "label": "Teams / Slack" },
+        { "value": "faq", "label": "FAQ document" },
+        { "value": "video", "label": "Leadership video message" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "communications",
+    "change-management",
+    "internal-comms",
+    "stakeholder",
+    "operational"
+  ]
+}

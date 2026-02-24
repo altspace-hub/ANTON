@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "actuarial-comms",
+  "label": "Actuarial Communications",
+  "shortLabel": "Actuarial Comms",
+  "icon": "BarChart3",
+  "description": "Transform complex actuarial analyses, reserve reports, and technical findings into clear communications for non-technical stakeholders. Produces board-ready summaries, management reports, and stakeholder briefings that convey actuarial insights in accessible language while maintaining technical accuracy.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Actuarial standards of practice, IFRS 17 reporting, actuarial communication best practices, insurance financial reporting"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "report-type",
+      "label": "Source Report Type",
+      "type": "select",
+      "options": [
+        "Reserve valuation",
+        "ORSA report",
+        "Capital model results",
+        "Pricing analysis",
+        "Experience study",
+        "IFRS 17 results",
+        "Other actuarial analysis"
+      ],
+      "required": true
+    },
+    {
+      "id": "target-audience",
+      "label": "Target Audience",
+      "type": "select",
+      "options": [
+        "Board of directors",
+        "Senior management",
+        "Risk committee",
+        "Audit committee",
+        "Non-technical stakeholders",
+        "Regulators"
+      ],
+      "required": true
+    },
+    {
+      "id": "key-messages",
+      "label": "Key Messages to Convey",
+      "type": "textarea",
+      "placeholder": "What are the main points the audience needs to understand...",
+      "required": false
+    },
+    {
+      "id": "complexity-areas",
+      "label": "Complex Areas Needing Simplification",
+      "type": "textarea",
+      "placeholder": "Which technical concepts need to be made accessible...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "actuary",
+    "cfo",
+    "board-member"
+  ],
+  "tags": [
+    "insurance",
+    "actuarial",
+    "communication",
+    "reporting",
+    "IFRS17"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "microfinance-field-officer",
+  "label": "Microfinance Field Officer",
+  "role": "Branch Manager / Field Officer, Microfinance Institution",
+  "expertise": ["Loan products", "Group lending", "Credit assessment", "Financial literacy", "Over-indebtedness prevention"],
+  "applicableAreas": ["credit-navigator", "personal-finance-bop", "micro-business"],
+  "description": "Field officer with hands-on experience helping micro-borrowers understand loan products, make good credit decisions, and build financial resilience. Honest about debt risks and borrower rights.",
+  "tags": ["microfinance", "credit", "bop", "financial-inclusion", "loans"]
+}

@@ -1,0 +1,139 @@
+{
+  "formatVersion": "1.0",
+  "id": "change-management-strategy",
+  "label": "Change Management Strategy",
+  "shortLabel": "Change Strategy",
+  "icon": "RefreshCw",
+  "description": "Create change management plans for major client transformations — regulatory, digital, or structural.",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "action-plan",
+      "executive-summary",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "change_type",
+      "type": "select",
+      "label": "Type of change",
+      "required": true,
+      "options": [
+        {
+          "value": "regulatory_compliance",
+          "label": "Regulatory compliance"
+        },
+        {
+          "value": "digital_transformation",
+          "label": "Digital transformation"
+        },
+        {
+          "value": "organisational_restructuring",
+          "label": "Organisational restructuring"
+        },
+        {
+          "value": "merger_integration",
+          "label": "Merger integration"
+        },
+        {
+          "value": "process_re_engineering",
+          "label": "Process re-engineering"
+        },
+        {
+          "value": "cultural_change",
+          "label": "Cultural change"
+        }
+      ]
+    },
+    {
+      "id": "organisation_size",
+      "type": "select",
+      "label": "Organisation size",
+      "options": [
+        {
+          "value": "small",
+          "label": "<100"
+        },
+        {
+          "value": "medium",
+          "label": "100–500"
+        },
+        {
+          "value": "large",
+          "label": "500–5,000"
+        },
+        {
+          "value": "very_large",
+          "label": ">5,000"
+        }
+      ]
+    },
+    {
+      "id": "change_readiness",
+      "type": "select",
+      "label": "Change readiness",
+      "options": [
+        {
+          "value": "high_resistance",
+          "label": "High resistance"
+        },
+        {
+          "value": "moderate",
+          "label": "Moderate"
+        },
+        {
+          "value": "receptive",
+          "label": "Receptive"
+        },
+        {
+          "value": "enthusiastic",
+          "label": "Enthusiastic"
+        }
+      ]
+    },
+    {
+      "id": "timeline_pressure",
+      "type": "select",
+      "label": "Timeline pressure",
+      "options": [
+        {
+          "value": "regulatory_deadline",
+          "label": "Regulatory deadline"
+        },
+        {
+          "value": "business_driven",
+          "label": "Business-driven"
+        },
+        {
+          "value": "flexible",
+          "label": "Flexible"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "change-management",
+    "transformation",
+    "kotter",
+    "adkar",
+    "prosci",
+    "communication",
+    "stakeholder-engagement",
+    "adoption"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "id": "investigative-research",
+  "areaId": "journalism",
+  "label": "Investigative Research",
+  "shortLabel": "Investigation",
+  "icon": "Microscope",
+  "description": "Plan and execute investigative research: identify sources, build document trails, cross-reference data, identify leads, and structure the investigation methodology.",
+  "color": "adv-teal",
+  "tags": ["investigative", "research", "sources", "documents", "data-journalism", "foia"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Sonnet for research planning. Opus for complex cross-border investigations requiring deep synthesis."
+  },
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "project-plan"]
+  },
+  "recommendedPersonas": ["investigative-journalist", "data-journalist"],
+  "guidedInputs": [
+    {
+      "id": "investigation_subject",
+      "type": "textarea",
+      "label": "Investigation Subject",
+      "description": "What are you investigating? Describe the suspected story, allegation, or public interest issue.",
+      "placeholder": "e.g. Suspected misuse of public procurement funds by a regional government contractor. Initial tip: contract awarded without competitive tender.",
+      "required": true
+    },
+    {
+      "id": "evidence_so_far",
+      "type": "textarea",
+      "label": "Evidence / Leads So Far",
+      "description": "What documents, sources, data, or tips do you already have?",
+      "placeholder": "e.g. One whistleblower source (unverified). Public contract registry shows 4 contracts to same company 2019-2023. Company registered same month as first contract."
+    },
+    {
+      "id": "investigation_type",
+      "type": "select",
+      "label": "Investigation Type",
+      "description": "What type of investigation is this?",
+      "options": [
+        {"value": "financial", "label": "Financial / Corruption"},
+        {"value": "corporate", "label": "Corporate / Business"},
+        {"value": "government", "label": "Government / Public sector"},
+        {"value": "environmental", "label": "Environmental"},
+        {"value": "human_rights", "label": "Human rights / Social"},
+        {"value": "health", "label": "Health / Medical"},
+        {"value": "technology", "label": "Technology / Data"},
+        {"value": "crime", "label": "Crime / Law enforcement"}
+      ]
+    },
+    {
+      "id": "resources",
+      "type": "textarea",
+      "label": "Resources & Constraints",
+      "description": "Time available, team size, geographic scope, access constraints, legal risks.",
+      "placeholder": "e.g. 2 journalists, 3 months, EU-based, limited budget for travel. Subject has previously threatened legal action against press."
+    }
+  ]
+}

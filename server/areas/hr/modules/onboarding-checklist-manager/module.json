@@ -1,0 +1,106 @@
+{
+  "formatVersion": "1.0",
+  "id": "onboarding-checklist-manager",
+  "label": "Onboarding Programme Builder",
+  "shortLabel": "Onboarding Builder",
+  "description": "Creates comprehensive, role-specific onboarding programmes. Structures the first 30/60/90 days with milestones, key meetings, training modules, and success criteria.",
+  "icon": "UserCheck",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "training-material"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "role_description",
+      "type": "textarea",
+      "label": "Role and function",
+      "required": true,
+      "description": "Describe the role, team, key responsibilities, and what success looks like after 90 days.",
+      "placeholder": "e.g., New Compliance Manager joining the AML team. Responsible for overseeing client risk assessment process, managing 3 analysts. Will be client-facing within 60 days. Success at 90 days: independently managing assigned client portfolio, completed mandatory training, built relationships with key internal stakeholders."
+    },
+    {
+      "id": "organisation_context",
+      "type": "textarea",
+      "label": "Organisation and team context",
+      "description": "What does the new hire need to understand about the organisation, culture, and ways of working?",
+      "placeholder": "e.g., Fast-paced consulting environment. Matrix structure — project teams vary. Direct line manager is rarely in the same office. Culture is collaborative but autonomous — expected to take initiative quickly. Nordic employment norms apply — flat hierarchy, open communication."
+    },
+    {
+      "id": "onboarding_type",
+      "type": "select",
+      "label": "Onboarding programme type",
+      "options": [
+        {
+          "value": "full_30_60_90",
+          "label": "Full 30/60/90 day programme"
+        },
+        {
+          "value": "first_30_days",
+          "label": "First 30 days only"
+        },
+        {
+          "value": "checklist",
+          "label": "Pre-start and week 1 checklist"
+        },
+        {
+          "value": "senior_hire",
+          "label": "Senior hire integration plan (6 months)"
+        }
+      ]
+    },
+    {
+      "id": "work_model",
+      "type": "select",
+      "label": "Work model",
+      "options": [
+        {
+          "value": "office",
+          "label": "Primarily office-based"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid (mix of office and remote)"
+        },
+        {
+          "value": "remote",
+          "label": "Fully remote"
+        }
+      ]
+    },
+    {
+      "id": "key_stakeholders",
+      "type": "textarea",
+      "label": "Key stakeholders to meet (by role, not name)",
+      "placeholder": "e.g., Line manager, Head of Compliance, CFO (key internal client), IT/Systems team (system access), HR (onboarding admin), 2-3 peer managers in the team..."
+    },
+    {
+      "id": "mandatory_training",
+      "type": "textarea",
+      "label": "Mandatory training or certifications",
+      "placeholder": "e.g., AML e-learning (by day 10), Data protection/GDPR (by day 10), Information security (by day 5), Firm values and code of conduct (by day 3), CAMS certification preferred within 12 months..."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "onboarding",
+    "new-hire",
+    "integration",
+    "30-60-90",
+    "talent-management"
+  ]
+}

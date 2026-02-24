@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "academic",
+  "name": "Academic Research",
+  "shortName": "Academic",
+  "description": "Literature review, research methodology design, thesis writing, citation management, and research proposal development for scholars and students.",
+  "icon": "GraduationCap",
+  "color": "adv-blue",
+  "cluster": "education"
+}

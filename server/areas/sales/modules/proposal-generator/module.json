@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "proposal-generator",
+  "label": "Sales Proposal Generator",
+  "shortLabel": "Proposal",
+  "description": "Creates tailored sales proposals from opportunity data, customer context, and solution capabilities. Structures value proposition, approach, timeline, and commercial terms.",
+  "icon": "FilePen",
+  "color": "adv-green",
+  "areaId": "sales",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "client-proposal",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "prospect_name",
+      "type": "text",
+      "label": "Prospect / client name",
+      "required": true,
+      "placeholder": "e.g., Swedbank AB, Siemens Financial Services"
+    },
+    {
+      "id": "prospect_context",
+      "type": "textarea",
+      "label": "Prospect context",
+      "required": true,
+      "placeholder": "Describe the prospect:\n- Industry and size\n- Key challenges they have described\n- Strategic priorities and pressures\n- Key stakeholders involved\n- What motivated them to evaluate a solution now (compelling event)"
+    },
+    {
+      "id": "solution_scope",
+      "type": "textarea",
+      "label": "Proposed solution / engagement scope",
+      "required": true,
+      "placeholder": "Describe what you plan to propose:\n- Services, products, or deliverables included\n- Team composition (roles, seniority)\n- Engagement model (fixed price, time & materials, retainer)\n- Duration and phases\n- What is explicitly out of scope"
+    },
+    {
+      "id": "commercial",
+      "type": "textarea",
+      "label": "Commercial terms",
+      "placeholder": "e.g., EUR 150,000 fixed price over 4 months, EUR 25,000/month retainer, Day rate EUR 2,500 for senior consultant, 30-day payment terms, 10% discount if signed by month end"
+    },
+    {
+      "id": "differentiation",
+      "type": "textarea",
+      "label": "Our differentiators for this deal",
+      "placeholder": "What makes us distinctively suited to this engagement? Include: relevant case studies, specific expertise, team credentials, methodology advantages, client references in same industry"
+    },
+    {
+      "id": "proposal_tone",
+      "type": "select",
+      "label": "Proposal tone",
+      "options": [
+        { "value": "formal", "label": "Formal and structured (large enterprise, regulated industry)" },
+        { "value": "consultative", "label": "Consultative and thoughtful (advisory relationship)" },
+        { "value": "partnership", "label": "Partnership-oriented (ongoing relationship)" },
+        { "value": "competitive", "label": "Competitive and assertive (competitive bid)" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "proposal",
+    "sales",
+    "client",
+    "value-proposition",
+    "commercial",
+    "tender"
+  ]
+}

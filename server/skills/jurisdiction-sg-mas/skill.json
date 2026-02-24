@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-sg-mas",
+  "label": "Singapore — Monetary Authority of Singapore (MAS)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "investment", "insurance", "mobile-money"],
+  "description": "Singapore financial regulatory framework: CDSA, MAS AML/CFT notices, Payment Services Act 2019 (crypto + digital payments), MAS Regulatory Sandbox, Asia's premier financial hub with sophisticated risk-based supervision.",
+  "tags": ["singapore", "mas", "southeast-asia", "financial-hub", "crypto", "asean"]
+}

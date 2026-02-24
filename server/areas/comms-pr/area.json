@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "comms-pr",
+  "name": "Communication & PR",
+  "shortName": "Comms & PR",
+  "description": "Press releases, crisis communications, internal communications, stakeholder messaging frameworks, and media briefing preparation for communications professionals.",
+  "icon": "Megaphone",
+  "color": "adv-green",
+  "cluster": "communications"
+}

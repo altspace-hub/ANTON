@@ -1,0 +1,156 @@
+{
+  "formatVersion": "1.0",
+  "id": "ifrs-gaap-analysis",
+  "label": "IFRS/GAAP Analysis",
+  "shortLabel": "IFRS/GAAP",
+  "description": "Analyse accounting standards, assess compliance with IFRS and local GAAP requirements, identify disclosure gaps, and evaluate the impact of new or amended standards on financial reporting.",
+  "icon": "FileSearch",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IFRS standards, IASB updates, local GAAP requirements"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_type",
+      "type": "select",
+      "label": "Type of analysis",
+      "description": "What kind of IFRS/GAAP analysis do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "standard_application",
+          "label": "How to apply a specific standard"
+        },
+        {
+          "value": "impact_assessment",
+          "label": "Impact of new/amended standard"
+        },
+        {
+          "value": "disclosure_review",
+          "label": "Disclosure completeness review"
+        },
+        {
+          "value": "policy_choice",
+          "label": "Accounting policy choice analysis"
+        },
+        {
+          "value": "conversion",
+          "label": "GAAP conversion (local to IFRS or vice versa)"
+        },
+        {
+          "value": "transaction",
+          "label": "Accounting for a specific transaction"
+        },
+        {
+          "value": "comparison",
+          "label": "IFRS vs. local GAAP comparison"
+        }
+      ]
+    },
+    {
+      "id": "standards",
+      "type": "textarea",
+      "label": "Relevant standards",
+      "description": "Which IFRS or GAAP standards are relevant?",
+      "placeholder": "e.g., IFRS 9, IFRS 16, IFRS 17, IAS 36, K3 (Swedish GAAP)"
+    },
+    {
+      "id": "framework",
+      "type": "select",
+      "label": "Reporting framework",
+      "options": [
+        {
+          "value": "ifrs",
+          "label": "IFRS (full)"
+        },
+        {
+          "value": "ifrs_sme",
+          "label": "IFRS for SMEs"
+        },
+        {
+          "value": "swedish_k3",
+          "label": "Swedish K3"
+        },
+        {
+          "value": "swedish_k2",
+          "label": "Swedish K2"
+        },
+        {
+          "value": "finnish_fas",
+          "label": "Finnish Accounting Standards (FAS)"
+        },
+        {
+          "value": "danish_aarsregnskabsloven",
+          "label": "Danish Annual Accounts Act"
+        },
+        {
+          "value": "norwegian_ngaap",
+          "label": "Norwegian GAAP (NRS)"
+        },
+        {
+          "value": "us_gaap",
+          "label": "US GAAP"
+        },
+        {
+          "value": "multiple",
+          "label": "Multiple frameworks"
+        }
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity type",
+      "options": [
+        {
+          "value": "listed",
+          "label": "Listed company / group"
+        },
+        {
+          "value": "financial_institution",
+          "label": "Financial institution (bank, insurer)"
+        },
+        {
+          "value": "large_private",
+          "label": "Large private company"
+        },
+        {
+          "value": "sme",
+          "label": "SME"
+        },
+        {
+          "value": "public_sector",
+          "label": "Public sector entity"
+        }
+      ]
+    },
+    {
+      "id": "specific_question",
+      "type": "textarea",
+      "label": "Specific question or scenario",
+      "placeholder": "e.g., We are entering a sale-leaseback transaction and need to determine the correct IFRS 16 treatment. The property has a fair value of EUR 50M and we are leasing back for 10 of its 30-year useful life."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "ifrs",
+    "gaap",
+    "financial-reporting",
+    "standards",
+    "disclosure"
+  ]
+}

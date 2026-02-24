@@ -1,0 +1,64 @@
+{
+  "formatVersion": "1.0",
+  "id": "trade-finance-due-diligence",
+  "label": "Trade Finance Due Diligence",
+  "shortLabel": "Trade Finance DD",
+  "icon": "FileSearch",
+  "description": "Due diligence methodology for individual trade finance transactions. Covers customer and counterparty assessment, commodity and route risk, document verification, SWIFT message analysis, and red flag checklist.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Wolfsberg Trade Finance Principles, FATF TBML guidance, ICC Banking Commission guidance on trade finance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "transaction_type",
+      "type": "select",
+      "label": "Transaction Type",
+      "required": true,
+      "options": [
+        {"value": "lc", "label": "Letter of Credit"},
+        {"value": "doc-collection", "label": "Documentary Collection"},
+        {"value": "guarantee", "label": "Bank Guarantee"},
+        {"value": "open-account", "label": "Open Account"},
+        {"value": "commodity-finance", "label": "Commodity Finance"}
+      ]
+    },
+    {
+      "id": "counterparties",
+      "type": "textarea",
+      "label": "Counterparties",
+      "placeholder": "Describe the importer, exporter, banks involved, and any intermediaries or agents...",
+      "required": true
+    },
+    {
+      "id": "commodities",
+      "type": "text",
+      "label": "Goods Being Traded",
+      "placeholder": "e.g. Electronics components, cotton textiles, gold bullion, industrial machinery..."
+    },
+    {
+      "id": "red_flags",
+      "type": "textarea",
+      "label": "Red Flags or Concerns Identified",
+      "placeholder": "Any concerns raised during initial review — e.g. pricing anomalies, unusual routing, counterparty connections, document discrepancies..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert"],
+  "recommendedSkills": ["skill-tbml-methods", "skill-fatf-mutual-evaluation"],
+  "tags": ["trade-finance", "due-diligence", "tbml", "letters-of-credit", "fcp"]
+}

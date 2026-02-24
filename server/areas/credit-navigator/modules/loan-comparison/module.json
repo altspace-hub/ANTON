@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "loan-comparison",
+  "label": "Loan Comparison Tool",
+  "shortLabel": "Compare Loans",
+  "icon": "GitCompare",
+  "description": "Compare loan options side by side. Find out the true cost including all fees — not just the interest rate.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Simple comparison calculations work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Loan cost comparison, APR calculation, total cost of credit, microfinance loan types in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "loan_amount",
+      "type": "select",
+      "label": "How much do you want to borrow?",
+      "required": true,
+      "options": [
+        { "value": "under-100", "label": "Under $100" },
+        { "value": "100-500", "label": "$100 to $500" },
+        { "value": "500-2000", "label": "$500 to $2,000" },
+        { "value": "over-2000", "label": "Over $2,000" }
+      ]
+    },
+    {
+      "id": "purpose",
+      "type": "select",
+      "label": "What is the loan for?",
+      "required": true,
+      "options": [
+        { "value": "business", "label": "Business investment" },
+        { "value": "emergency", "label": "Emergency" },
+        { "value": "school-fees", "label": "School fees" },
+        { "value": "asset-purchase", "label": "Asset purchase" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "options_available",
+      "type": "chips",
+      "label": "Which options are available to you? (select all that apply)",
+      "required": false,
+      "options": [
+        { "value": "mobile-app", "label": "Mobile app loan" },
+        { "value": "mfi", "label": "Microfinance institution (MFI)" },
+        { "value": "sacco", "label": "SACCO or cooperative" },
+        { "value": "bank", "label": "Bank" },
+        { "value": "moneylender", "label": "Moneylender" },
+        { "value": "family", "label": "Family or friend" },
+        { "value": "employer", "label": "Employer advance" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "loan-comparison",
+    "apr",
+    "total-cost-of-credit",
+    "mobile-loans",
+    "mfi",
+    "sacco",
+    "moneylender",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

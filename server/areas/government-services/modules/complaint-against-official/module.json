@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "complaint-against-official",
+  "label": "Complaint Against Government Official",
+  "shortLabel": "File Complaint",
+  "icon": "AlertCircle",
+  "description": "Report corrupt or abusive government officials. Safe ways to complain and protect yourself.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic navigation works well with haiku. Complex legal matters need sonnet."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Official complaint channels by country: Kenya EACC, Nigeria ICPC/EFCC, Ghana CHRAJ, South Africa PSC/Public Protector, India CVC/Lokayukta, Philippines Ombudsman. Documentation guidance, safety considerations, whistleblower protection, NGO support options." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "complaint_type",
+      "label": "What happened?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "bribe-demanded", "label": "Bribe demanded" },
+        { "value": "service-refused", "label": "Service refused without reason" },
+        { "value": "physical-abuse", "label": "Physical abuse" },
+        { "value": "discrimination", "label": "Discrimination" },
+        { "value": "extortion", "label": "Extortion" },
+        { "value": "document-fraud", "label": "Document fraud" }
+      ]
+    },
+    {
+      "id": "official_type",
+      "label": "What type of official?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "police", "label": "Police" },
+        { "value": "council-local-govt", "label": "Council / Local government" },
+        { "value": "tax-authority", "label": "Tax authority" },
+        { "value": "land-registry", "label": "Land registry" },
+        { "value": "healthcare", "label": "Healthcare" },
+        { "value": "education", "label": "Education" },
+        { "value": "other", "label": "Other" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
+  "tags": ["complaint", "corruption", "official-misconduct", "bribery", "rights", "bop", "anti-corruption", "africa", "south-asia"]
+}

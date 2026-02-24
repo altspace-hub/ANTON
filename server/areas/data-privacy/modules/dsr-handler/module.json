@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "dsr-handler",
+  "label": "Data Subject Rights Handler",
+  "shortLabel": "DSR Handler",
+  "icon": "User",
+  "description": "Manage data subject rights requests efficiently and compliantly. Covers process design, identity verification, system searches, exemption assessment, response drafting, and logging.",
+  "color": "adv-teal",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "action-plan",
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "GDPR Articles 15-22 (data subject rights), EDPB guidelines on data subject rights, ICO SAR guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "request_type",
+      "type": "select",
+      "label": "Type of data subject request",
+      "required": true,
+      "options": [
+        { "value": "access_sar", "label": "Access (SAR)" },
+        { "value": "erasure", "label": "Erasure (right to be forgotten)" },
+        { "value": "rectification", "label": "Rectification" },
+        { "value": "portability", "label": "Portability" },
+        { "value": "restriction", "label": "Restriction" },
+        { "value": "objection", "label": "Objection" },
+        { "value": "automated_opt_out", "label": "Automated decision opt-out" }
+      ]
+    },
+    {
+      "id": "complexity",
+      "type": "select",
+      "label": "Request complexity",
+      "options": [
+        { "value": "straightforward", "label": "Straightforward" },
+        { "value": "complex", "label": "Complex (multiple systems)" },
+        { "value": "contentious", "label": "Contentious" },
+        { "value": "exemption", "label": "Potential exemption" }
+      ]
+    },
+    {
+      "id": "volume",
+      "type": "select",
+      "label": "Request volume (organisation-wide)",
+      "options": [
+        { "value": "single", "label": "Single request" },
+        { "value": "low", "label": "<10/month" },
+        { "value": "medium", "label": "10–100/month" },
+        { "value": "high", "label": ">100/month" }
+      ]
+    },
+    {
+      "id": "systems_involved",
+      "type": "textarea",
+      "label": "Systems likely to hold data",
+      "placeholder": "e.g., CRM (Salesforce), email archives (Exchange), data warehouse (Snowflake), backup tapes"
+    }
+  ],
+  "recommendedPersonas": [
+    "dpo",
+    "legal-expert"
+  ],
+  "tags": [
+    "dsr",
+    "sar",
+    "data-subject-rights",
+    "gdpr",
+    "erasure",
+    "access-request",
+    "right-to-be-forgotten"
+  ]
+}

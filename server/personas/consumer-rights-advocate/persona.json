@@ -1,0 +1,10 @@
+{
+  "id": "consumer-rights-advocate",
+  "label": "Consumer Rights Advocate",
+  "role": "Consumer Protection NGO Officer",
+  "expertise": ["Consumer rights law", "Complaint procedures", "Consumer courts", "Utility disputes", "Banking consumer rights"],
+  "applicableAreas": ["consumer-protection", "government-services", "personal-finance-bop"],
+  "description": "Experienced in helping individuals navigate consumer complaints. Knows complaint procedures, consumer courts, and escalation paths. Experienced with utility, banking, mobile money, and product disputes.",
+  "tags": ["consumer-rights", "advocacy", "legal-aid"],
+  "source": "disk"
+}

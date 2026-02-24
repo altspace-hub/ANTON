@@ -1,0 +1,135 @@
+{
+  "formatVersion": "1.0",
+  "id": "client-presentation",
+  "label": "Client Presentation Builder",
+  "shortLabel": "Presentations",
+  "description": "Structure management presentations, steering committee updates, and board papers. Slide-by-slide outlines with speaker notes and key messages.",
+  "icon": "Presentation",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "stakeholder-presentation",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "presentation_type",
+      "type": "select",
+      "label": "Type of presentation",
+      "required": true,
+      "options": [
+        {
+          "value": "board_paper",
+          "label": "Board Paper / Board Presentation"
+        },
+        {
+          "value": "steering_update",
+          "label": "Steering Committee Update"
+        },
+        {
+          "value": "findings_presentation",
+          "label": "Findings Presentation to Management"
+        },
+        {
+          "value": "proposal_pitch",
+          "label": "Proposal / Pitch Presentation"
+        },
+        {
+          "value": "training_content",
+          "label": "Training / Awareness Presentation"
+        },
+        {
+          "value": "regulatory_briefing",
+          "label": "Regulatory Briefing"
+        }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Primary audience",
+      "options": [
+        {
+          "value": "board",
+          "label": "Board / Supervisory Board"
+        },
+        {
+          "value": "c_suite",
+          "label": "C-Suite / ExCo"
+        },
+        {
+          "value": "senior_management",
+          "label": "Senior Management"
+        },
+        {
+          "value": "project_team",
+          "label": "Project / Working Team"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator / Supervisor"
+        }
+      ]
+    },
+    {
+      "id": "key_message",
+      "type": "textarea",
+      "label": "Key message or objective",
+      "required": true,
+      "description": "What should the audience think, feel, or do after this presentation?",
+      "placeholder": "e.g., Approve the €500K investment in the new TM platform. Understand the regulatory risk of not acting. Leave with confidence that management has a credible plan."
+    },
+    {
+      "id": "content_available",
+      "type": "textarea",
+      "label": "Content to work with",
+      "description": "Summary of findings, data, conclusions, or other content that should go into the presentation.",
+      "placeholder": "Paste findings, key data points, conclusions, or analysis that should be included..."
+    },
+    {
+      "id": "slides_target",
+      "type": "select",
+      "label": "Target length",
+      "options": [
+        {
+          "value": "short",
+          "label": "Short (5-8 slides)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (10-15 slides)"
+        },
+        {
+          "value": "long",
+          "label": "Full presentation (20+ slides)"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "presentation",
+    "board",
+    "steering-committee",
+    "slides",
+    "communication"
+  ]
+}

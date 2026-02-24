@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "food-business",
+  "name": "Food & Restaurant Micro-Business Expert",
+  "shortName": "Food Business",
+  "description": "Practical guidance for street food vendors, small restaurants, caterers, and home-based food businesses. Food safety, pricing, licensing, bulk buying, waste reduction, and growth.",
+  "icon": "ChefHat",
+  "color": "adv-teal",
+  "cluster": "enterprise",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Simple practical guidance works well with smaller models."
+  }
+}

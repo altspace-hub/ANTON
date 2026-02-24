@@ -1,0 +1,166 @@
+{
+  "formatVersion": "1.0",
+  "id": "security-awareness-training",
+  "label": "Security Awareness Training Content",
+  "shortLabel": "Awareness",
+  "icon": "GraduationCap",
+  "description": "Design security awareness programmes, phishing simulations, and training content aligned to NIS2 Article 20, DORA Article 13, and adult learning principles. Covers modern threats including BEC, vishing, and deepfake attacks.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "training-material",
+      "project-plan",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "NIS2 Article 20 training obligations, DORA Article 13, current threat landscape, phishing techniques, social engineering tactics"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Target audience",
+      "required": true,
+      "options": [
+        {
+          "value": "all_staff",
+          "label": "All staff — general security awareness"
+        },
+        {
+          "value": "technical",
+          "label": "Technical staff (IT, developers, security teams)"
+        },
+        {
+          "value": "leadership",
+          "label": "Leadership / management — executive-level security"
+        },
+        {
+          "value": "front_line",
+          "label": "Front-line staff (customer service, tellers, advisors)"
+        },
+        {
+          "value": "privileged_users",
+          "label": "Privileged users (admins, system owners, privileged access)"
+        }
+      ]
+    },
+    {
+      "id": "training_trigger",
+      "type": "select",
+      "label": "What is driving this training?",
+      "options": [
+        {
+          "value": "annual",
+          "label": "Annual mandatory awareness refresh"
+        },
+        {
+          "value": "post_incident",
+          "label": "Post-incident — response to a security event"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory requirement (NIS2, DORA, ISO27001)"
+        },
+        {
+          "value": "new_joiners",
+          "label": "New joiner induction"
+        },
+        {
+          "value": "threat_change",
+          "label": "New or emerging threat landscape"
+        }
+      ]
+    },
+    {
+      "id": "threat_focus",
+      "type": "multi-select",
+      "label": "Threat areas to focus on",
+      "options": [
+        {
+          "value": "phishing",
+          "label": "Phishing / spear-phishing / BEC"
+        },
+        {
+          "value": "social_engineering",
+          "label": "Social engineering (vishing, impersonation, pretexting)"
+        },
+        {
+          "value": "ransomware",
+          "label": "Ransomware — recognition and response"
+        },
+        {
+          "value": "insider_threat",
+          "label": "Insider threat / data leakage"
+        },
+        {
+          "value": "password_hygiene",
+          "label": "Password hygiene & MFA"
+        },
+        {
+          "value": "physical_security",
+          "label": "Physical security (tailgating, clean desk, media disposal)"
+        },
+        {
+          "value": "deepfakes",
+          "label": "AI-generated threats (deepfakes, voice cloning)"
+        }
+      ]
+    },
+    {
+      "id": "delivery_format",
+      "type": "select",
+      "label": "Preferred delivery format",
+      "options": [
+        {
+          "value": "e_learning",
+          "label": "E-learning module (self-paced, with knowledge checks)"
+        },
+        {
+          "value": "in_person",
+          "label": "In-person / instructor-led training"
+        },
+        {
+          "value": "video",
+          "label": "Video-based content"
+        },
+        {
+          "value": "phishing_simulation",
+          "label": "Phishing simulation campaign"
+        },
+        {
+          "value": "tabletop",
+          "label": "Tabletop exercise / scenario workshop"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "training-specialist"
+  ],
+  "tags": [
+    "security-awareness",
+    "training",
+    "phishing",
+    "social-engineering",
+    "nis2",
+    "dora",
+    "human-risk",
+    "ransomware",
+    "insider-threat",
+    "deepfakes"
+  ]
+}

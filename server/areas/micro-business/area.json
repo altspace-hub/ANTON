@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "micro-business",
+  "name": "Micro-Business Expert",
+  "shortName": "Micro-Business",
+  "description": "Practical business advice for market traders, street vendors, kiosk owners, tailors, mechanics and other micro-entrepreneurs. Simple guidance on bookkeeping, pricing, registration, tax, and growth.",
+  "icon": "ShoppingBag",
+  "color": "adv-teal",
+  "cluster": "enterprise",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Simple, short responses work well with smaller models. Designed for users with basic literacy."
+  }
+}

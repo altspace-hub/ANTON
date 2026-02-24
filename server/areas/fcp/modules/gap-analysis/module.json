@@ -1,0 +1,153 @@
+{
+  "formatVersion": "1.0",
+  "id": "gap-analysis",
+  "label": "AMLR Gap Analysis",
+  "shortLabel": "Gap Analysis",
+  "icon": "SearchCheck",
+  "description": "Analyze compliance gaps against AMLR and other regulatory frameworks. Upload client documents, point to regulations, and get structured gap assessments.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of obliged entity is this assessment for?",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Payment Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto Asset Service Provider (CASP)"
+        },
+        {
+          "value": "other",
+          "label": "Other Obliged Entity"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "Which regulatory jurisdictions apply?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU / AMLR"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "AMLR Focus Areas",
+      "description": "Which areas of the regulation should the analysis prioritise?",
+      "options": [
+        {
+          "value": "cdd",
+          "label": "Customer Due Diligence (Art. 20–46)"
+        },
+        {
+          "value": "rba",
+          "label": "Risk-Based Approach (Art. 8–19)"
+        },
+        {
+          "value": "governance",
+          "label": "Internal Governance (Art. 7–9)"
+        },
+        {
+          "value": "tm",
+          "label": "Transaction Monitoring (Art. 59)"
+        },
+        {
+          "value": "pep",
+          "label": "PEPs & UBOs (Art. 43–54)"
+        },
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing (Art. 15)"
+        },
+        {
+          "value": "reporting",
+          "label": "STR Reporting (Art. 70–76)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe any known gaps, findings from previous audits, or areas of regulatory focus.",
+      "placeholder": "e.g. Previous audit finding on CDD for high-risk customers; Supervisory letter on PEP controls received Q3 2024..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "amlr",
+    "gap-analysis",
+    "compliance",
+    "regulatory"
+  ]
+}

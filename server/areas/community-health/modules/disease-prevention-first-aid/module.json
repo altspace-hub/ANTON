@@ -1,0 +1,61 @@
+{
+  "formatVersion": "1.0",
+  "id": "disease-prevention-first-aid",
+  "label": "Disease Prevention & First Aid",
+  "shortLabel": "First Aid",
+  "icon": "Shield",
+  "description": "Prevent common diseases and respond to health emergencies. Basic first aid and prevention for malaria, cholera, TB, and injury.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short, clear first aid steps. First aid buys time — always refer to health facility."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Basic first aid, malaria prevention, wound care, burn management, snakebite, TB recognition, community disease prevention" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "topic",
+      "label": "What do you need help with?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "malaria-prevention", "label": "Malaria prevention and response" },
+        { "value": "cholera-waterborne", "label": "Cholera and waterborne disease" },
+        { "value": "tb-symptoms-action", "label": "TB — symptoms and action" },
+        { "value": "first-aid-wounds", "label": "First aid for wounds" },
+        { "value": "first-aid-burns", "label": "First aid for burns" },
+        { "value": "snakebite", "label": "Snakebite" },
+        { "value": "drowning", "label": "Drowning" },
+        { "value": "heatstroke", "label": "Heatstroke" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
+  "tags": ["first-aid", "malaria", "TB", "wound-care", "burns", "snakebite", "disease-prevention", "cholera", "community-health"]
+}

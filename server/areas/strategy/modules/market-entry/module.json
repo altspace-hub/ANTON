@@ -1,0 +1,82 @@
+{
+  "formatVersion": "1.0",
+  "id": "market-entry",
+  "label": "Market Entry & Expansion",
+  "shortLabel": "Market Entry",
+  "icon": "Globe",
+  "description": "Analyse and plan market entry or expansion: market sizing, regulatory landscape, competitive dynamics, entry mode options, and go-to-market strategy.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Market entry frameworks, Nordic/European financial services regulation, competitive intelligence"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entry_type",
+      "type": "select",
+      "label": "Type of market entry",
+      "required": true,
+      "options": [
+        {
+          "value": "new_geography",
+          "label": "New country / geography"
+        },
+        {
+          "value": "new_segment",
+          "label": "New customer segment"
+        },
+        {
+          "value": "new_product",
+          "label": "New product or service"
+        },
+        {
+          "value": "new_channel",
+          "label": "New distribution channel"
+        },
+        {
+          "value": "partnership",
+          "label": "Partnership or JV market entry"
+        }
+      ]
+    },
+    {
+      "id": "target_market",
+      "type": "text",
+      "label": "Target market",
+      "placeholder": "e.g., Swedish SME banking, Norwegian retail mortgages"
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation and strategic context",
+      "placeholder": "Describe your current position and what you know about the target market."
+    }
+  ],
+  "recommendedPersonas": [
+    "investor-lens",
+    "systems-thinker"
+  ],
+  "tags": [
+    "market-entry",
+    "expansion",
+    "strategy",
+    "go-to-market"
+  ]
+}

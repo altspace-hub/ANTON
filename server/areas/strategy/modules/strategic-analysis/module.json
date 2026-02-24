@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "strategic-analysis",
+  "label": "Strategic Analysis & Advisory",
+  "shortLabel": "Strategic Analysis",
+  "icon": "Radar",
+  "description": "Strategic analysis using proven frameworks: SWOT, PESTLE, Porter Five Forces, competitive positioning, value chain analysis, and strategic option development.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Strategic management frameworks, Nordic/European market trends, financial services analysis"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_focus",
+      "type": "select",
+      "label": "Strategic focus",
+      "required": true,
+      "options": [
+        {
+          "value": "competitive",
+          "label": "Competitive positioning and landscape"
+        },
+        {
+          "value": "capability",
+          "label": "Internal capability and strategic fit"
+        },
+        {
+          "value": "market",
+          "label": "Market dynamics and trends"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory environment and strategic implications"
+        },
+        {
+          "value": "options",
+          "label": "Strategic options and scenario analysis"
+        }
+      ]
+    },
+    {
+      "id": "frameworks",
+      "type": "multi-select",
+      "label": "Frameworks to apply",
+      "options": [
+        {
+          "value": "swot",
+          "label": "SWOT Analysis"
+        },
+        {
+          "value": "pestle",
+          "label": "PESTLE Analysis"
+        },
+        {
+          "value": "porter",
+          "label": "Porter's Five Forces"
+        },
+        {
+          "value": "value_chain",
+          "label": "Value Chain Analysis"
+        },
+        {
+          "value": "bcg",
+          "label": "BCG Portfolio Matrix"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation and strategic context",
+      "placeholder": "Describe your organisation and the strategic question you are exploring."
+    }
+  ],
+  "recommendedPersonas": [
+    "systems-thinker",
+    "devil-advocate"
+  ],
+  "tags": [
+    "strategy",
+    "swot",
+    "pestle",
+    "competitive",
+    "analysis"
+  ]
+}

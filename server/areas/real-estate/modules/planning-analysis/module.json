@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "planning-analysis",
+  "label": "Planning & Zoning Analysis",
+  "shortLabel": "Planning Analysis",
+  "icon": "Map",
+  "description": "Analyse planning and zoning regulations, assess development potential, and evaluate planning risks for property transactions and development projects. Covers permitted use analysis, development capacity, planning policy alignment, and the planning application process across Nordic and European jurisdictions.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "impact-assessment"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Planning and zoning regulations, land use planning frameworks, development control, building permits, environmental impact assessment"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "Germany",
+        "Other EU"
+      ],
+      "required": true
+    },
+    {
+      "id": "analysis-type",
+      "label": "Analysis Type",
+      "type": "select",
+      "options": [
+        "Permitted use assessment",
+        "Development potential",
+        "Planning application review",
+        "Zoning compliance check",
+        "Change of use feasibility",
+        "Environmental impact screening"
+      ],
+      "required": true
+    },
+    {
+      "id": "current-use",
+      "label": "Current Use",
+      "type": "text",
+      "placeholder": "e.g., Office, vacant land, industrial...",
+      "required": false
+    },
+    {
+      "id": "proposed-use",
+      "label": "Proposed Use / Development",
+      "type": "textarea",
+      "placeholder": "Describe the intended use or development plans...",
+      "required": false
+    },
+    {
+      "id": "planning-context",
+      "label": "Planning Context",
+      "type": "textarea",
+      "placeholder": "Any known planning constraints, designations, or local plan policies...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "developer",
+    "planning-consultant",
+    "property-investor"
+  ],
+  "tags": [
+    "real-estate",
+    "planning",
+    "zoning",
+    "development",
+    "land-use"
+  ]
+}

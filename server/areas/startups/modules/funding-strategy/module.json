@@ -1,0 +1,115 @@
+{
+  "formatVersion": "1.0",
+  "id": "funding-strategy",
+  "label": "Funding Strategy Advisor",
+  "shortLabel": "Funding Strategy",
+  "icon": "DollarSign",
+  "description": "Develop a comprehensive funding strategy: evaluate funding options, timing, valuation considerations, investor targeting, and term sheet negotiation guidance.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "funding_stage",
+      "type": "select",
+      "label": "Current Stage",
+      "description": "What funding stage are you at?",
+      "required": true,
+      "options": [
+        {
+          "value": "bootstrapped",
+          "label": "Bootstrapped / Pre-Revenue"
+        },
+        {
+          "value": "pre-seed",
+          "label": "Pre-Seed"
+        },
+        {
+          "value": "seed",
+          "label": "Seed"
+        },
+        {
+          "value": "series-a",
+          "label": "Series A"
+        },
+        {
+          "value": "series-b",
+          "label": "Series B+"
+        },
+        {
+          "value": "bridge",
+          "label": "Bridge / Extension Round"
+        }
+      ]
+    },
+    {
+      "id": "funding_types",
+      "type": "chips",
+      "label": "Funding Types of Interest",
+      "description": "Which funding sources are you considering?",
+      "options": [
+        {
+          "value": "vc",
+          "label": "Venture Capital"
+        },
+        {
+          "value": "angel",
+          "label": "Angel Investment"
+        },
+        {
+          "value": "grants",
+          "label": "Grants / Public Funding"
+        },
+        {
+          "value": "debt",
+          "label": "Venture Debt"
+        },
+        {
+          "value": "crowdfunding",
+          "label": "Crowdfunding"
+        },
+        {
+          "value": "revenue",
+          "label": "Revenue-Based Financing"
+        }
+      ]
+    },
+    {
+      "id": "financial_context",
+      "type": "textarea",
+      "label": "Financial Context",
+      "description": "Describe your current financial situation, burn rate, and runway.",
+      "placeholder": "e.g. Current monthly burn EUR 80K, 6 months runway, EUR 500K ARR growing 20% QoQ..."
+    }
+  ],
+  "recommendedPersonas": [
+    "business-expert",
+    "pragmatist"
+  ],
+  "tags": [
+    "startup",
+    "funding",
+    "investment",
+    "strategy",
+    "venture-capital"
+  ]
+}

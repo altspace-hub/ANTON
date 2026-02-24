@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "software-eng",
+  "name": "Software Engineering",
+  "shortName": "Software Eng",
+  "description": "Code review, architecture review, technical specifications, API design, and technical debt assessment for engineering teams and tech leaders.",
+  "icon": "Code",
+  "color": "adv-teal",
+  "cluster": "technology"
+}

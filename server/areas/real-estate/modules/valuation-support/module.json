@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "valuation-support",
+  "label": "Property Valuation Support",
+  "shortLabel": "Valuation Support",
+  "icon": "BarChart2",
+  "description": "Support property valuation processes with structured analysis of comparable transactions, market conditions, and valuation methodology considerations. Produces executive summaries and analytical reports covering DCF inputs, capitalisation rates, market benchmarks, and valuation assumptions.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Property valuation methods, RICS Red Book standards, market analysis frameworks, DCF methodology, capitalisation rates"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "property-type",
+      "label": "Property Type",
+      "type": "select",
+      "options": [
+        "Commercial office",
+        "Retail",
+        "Industrial",
+        "Residential",
+        "Mixed-use",
+        "Development site",
+        "Special purpose"
+      ],
+      "required": true
+    },
+    {
+      "id": "valuation-purpose",
+      "label": "Valuation Purpose",
+      "type": "select",
+      "options": [
+        "Acquisition",
+        "Disposal",
+        "Lending/mortgage",
+        "Financial reporting",
+        "Tax purposes",
+        "Insurance",
+        "Dispute resolution"
+      ],
+      "required": true
+    },
+    {
+      "id": "methodology",
+      "label": "Valuation Methodology",
+      "type": "multiselect",
+      "options": [
+        "Comparable transactions",
+        "DCF analysis",
+        "Capitalisation approach",
+        "Cost approach",
+        "Residual method",
+        "All methods"
+      ],
+      "required": false
+    },
+    {
+      "id": "market-context",
+      "label": "Market Context",
+      "type": "textarea",
+      "placeholder": "Describe the local market conditions, recent transactions, or market trends...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "valuer",
+    "property-investor",
+    "lender"
+  ],
+  "tags": [
+    "real-estate",
+    "valuation",
+    "property",
+    "investment",
+    "analysis"
+  ]
+}

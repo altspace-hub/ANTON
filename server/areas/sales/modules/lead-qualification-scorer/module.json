@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "lead-qualification-scorer",
+  "label": "Lead Qualification Scorer",
+  "shortLabel": "Lead Qualifier",
+  "description": "Applies BANT/MEDDIC or custom scoring frameworks to qualify sales leads. Evaluates budget, authority, need, timeline, and competitive position to prioritize pipeline.",
+  "icon": "UserCheck",
+  "color": "adv-green",
+  "areaId": "sales",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "framework",
+      "type": "select",
+      "label": "Qualification framework",
+      "options": [
+        { "value": "bant", "label": "BANT (Budget, Authority, Need, Timeline)" },
+        { "value": "meddic", "label": "MEDDIC (Metrics, Economic Buyer, Decision Criteria, Decision Process, Identify Pain, Champion)" },
+        { "value": "meddpicc", "label": "MEDDPICC (MEDDIC + Paper Process + Competition)" },
+        { "value": "champ", "label": "CHAMP (Challenges, Authority, Money, Prioritization)" },
+        { "value": "custom", "label": "Custom framework — describe below" }
+      ]
+    },
+    {
+      "id": "company_name",
+      "type": "text",
+      "label": "Prospect company name",
+      "placeholder": "e.g., Nordea Bank, Volvo Group, H&M"
+    },
+    {
+      "id": "lead_source",
+      "type": "select",
+      "label": "Lead source",
+      "options": [
+        { "value": "inbound", "label": "Inbound (form fill, content download, demo request)" },
+        { "value": "outbound", "label": "Outbound (cold outreach, email, LinkedIn)" },
+        { "value": "referral", "label": "Referral (existing customer or partner)" },
+        { "value": "event", "label": "Event or conference" },
+        { "value": "marketing_qualified", "label": "Marketing Qualified Lead (MQL)" },
+        { "value": "existing_customer", "label": "Existing customer — expansion" }
+      ]
+    },
+    {
+      "id": "what_we_know",
+      "type": "textarea",
+      "label": "What do we know about this lead?",
+      "required": true,
+      "placeholder": "Describe everything you know:\n- Company size, industry, geography\n- Who made contact and their role\n- What they said they need or are trying to solve\n- Any conversation notes\n- Budget signals (explicit or implicit)\n- Timeline signals\n- Who else is involved in the decision\n- Competitive context (are they talking to others?)"
+    },
+    {
+      "id": "our_solution",
+      "type": "text",
+      "label": "What are we trying to sell them?",
+      "placeholder": "e.g., AML gap analysis and remediation programme, SaaS platform annual licence, Strategy advisory retainer"
+    },
+    {
+      "id": "custom_criteria",
+      "type": "textarea",
+      "label": "Custom qualification criteria (if applicable)",
+      "placeholder": "Describe any company-specific qualification criteria not covered by the standard framework, e.g., must be in financial services, minimum company size EUR 50M revenue, must have a dedicated compliance team"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "lead-qualification",
+    "bant",
+    "meddic",
+    "pipeline",
+    "sales",
+    "scoring"
+  ]
+}

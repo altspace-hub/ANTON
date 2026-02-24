@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "capacity-planning",
+  "label": "Capacity Planning Calculator",
+  "shortLabel": "Capacity Planning",
+  "icon": "Users",
+  "description": "Forecasts resource capacity requirements based on projected workload, seasonal patterns, and efficiency targets. Models staffing scenarios and identifies gaps or over-capacity periods.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "budget-resource-estimate",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Workforce planning frameworks, capacity modelling methodologies, resource management best practices"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "planning_horizon",
+      "type": "select",
+      "label": "Planning horizon",
+      "required": true,
+      "options": [
+        { "value": "quarter", "label": "Quarterly (next 3 months)" },
+        { "value": "annual", "label": "Annual (next 12 months)" },
+        { "value": "multi_year", "label": "Multi-year (2-3 years)" }
+      ]
+    },
+    {
+      "id": "resource_type",
+      "type": "select",
+      "label": "Resource type",
+      "required": true,
+      "options": [
+        { "value": "people", "label": "People / FTE (headcount planning)" },
+        { "value": "technology", "label": "Technology / infrastructure capacity" },
+        { "value": "both", "label": "Both people and technology" }
+      ]
+    },
+    {
+      "id": "current_state",
+      "type": "textarea",
+      "label": "Current capacity and workload",
+      "required": true,
+      "placeholder": "Describe your current team/resource setup: how many FTE, what they do, current workload levels, utilisation rates, and any known constraints or bottlenecks."
+    },
+    {
+      "id": "future_demand",
+      "type": "textarea",
+      "label": "Future demand forecast",
+      "required": true,
+      "placeholder": "Describe expected workload changes: volume growth/decline, new products or services, projects, regulatory programmes, seasonal peaks, and any strategic changes that will affect demand."
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints and assumptions",
+      "placeholder": "Budget limits, hiring timelines, training lead times, office space constraints, technology procurement timelines, or other relevant constraints."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist",
+    "systems-thinker"
+  ],
+  "tags": [
+    "capacity-planning",
+    "workforce-planning",
+    "resourcing",
+    "headcount",
+    "operations"
+  ]
+}

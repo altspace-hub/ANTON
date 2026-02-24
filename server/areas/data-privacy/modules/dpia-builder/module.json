@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "dpia-builder",
+  "label": "Data Protection Impact Assessment (DPIA)",
+  "shortLabel": "DPIA",
+  "icon": "Search",
+  "description": "Conduct structured DPIA for new or changed processing activities as required by GDPR Article 35. Covers necessity/proportionality, risk assessment, and risk mitigation measures.",
+  "color": "adv-teal",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "GDPR Article 35, EDPB Guidelines 9/2022 on DPIAs, national DPA DPIA lists, WP29 Guidelines on DPIAs"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "processing_activity",
+      "type": "textarea",
+      "label": "Describe the new or changed processing activity",
+      "placeholder": "e.g., Implementing an AI-powered customer risk scoring system that profiles all retail customers monthly using transaction data and behavioural signals."
+    },
+    {
+      "id": "data_types",
+      "type": "chips",
+      "label": "Categories of personal data involved",
+      "options": [
+        { "value": "identifiers", "label": "Personal identifiers" },
+        { "value": "financial", "label": "Financial data" },
+        { "value": "health", "label": "Health data" },
+        { "value": "biometric", "label": "Biometric" },
+        { "value": "children", "label": "Children's data" },
+        { "value": "criminal", "label": "Criminal records" },
+        { "value": "marketing_profiles", "label": "Marketing profiles" }
+      ]
+    },
+    {
+      "id": "volume_scale",
+      "type": "select",
+      "label": "Volume of data subjects affected",
+      "options": [
+        { "value": "small", "label": "Small (<1,000 people)" },
+        { "value": "medium", "label": "Medium (1,000–100k)" },
+        { "value": "large", "label": "Large (100k–1M)" },
+        { "value": "xlarge", "label": "Very large (>1M)" }
+      ]
+    },
+    {
+      "id": "high_risk_indicators",
+      "type": "chips",
+      "label": "High-risk indicators present",
+      "options": [
+        { "value": "systematic_monitoring", "label": "Systematic monitoring" },
+        { "value": "profiling", "label": "Profiling" },
+        { "value": "special_categories", "label": "Special categories" },
+        { "value": "children", "label": "Children" },
+        { "value": "new_technology", "label": "New technology" },
+        { "value": "automated_decisions", "label": "Automated decisions" },
+        { "value": "large_scale", "label": "Large-scale processing" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "dpo",
+    "legal-expert"
+  ],
+  "tags": [
+    "dpia",
+    "gdpr",
+    "article-35",
+    "risk-assessment",
+    "privacy-by-design",
+    "data-protection"
+  ]
+}

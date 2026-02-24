@@ -1,0 +1,125 @@
+{
+  "formatVersion": "1.0",
+  "id": "client-workshop-facilitator",
+  "label": "Client Workshop Facilitator",
+  "shortLabel": "Workshop Design",
+  "icon": "Users",
+  "description": "Design and facilitate effective client workshops, strategy sessions, and working groups.",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "action-plan",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "workshop_type",
+      "type": "select",
+      "label": "Workshop type",
+      "required": true,
+      "options": [
+        {
+          "value": "discovery",
+          "label": "Discovery"
+        },
+        {
+          "value": "ideation",
+          "label": "Ideation"
+        },
+        {
+          "value": "problem_solving",
+          "label": "Problem-solving"
+        },
+        {
+          "value": "decision_making",
+          "label": "Decision-making"
+        },
+        {
+          "value": "roadmap_planning",
+          "label": "Roadmap planning"
+        },
+        {
+          "value": "retrospective",
+          "label": "Retrospective"
+        }
+      ]
+    },
+    {
+      "id": "participant_count",
+      "type": "select",
+      "label": "Number of participants",
+      "options": [
+        {
+          "value": "small",
+          "label": "3–6"
+        },
+        {
+          "value": "medium",
+          "label": "7–15"
+        },
+        {
+          "value": "large",
+          "label": "16–30"
+        },
+        {
+          "value": "very_large",
+          "label": ">30"
+        }
+      ]
+    },
+    {
+      "id": "workshop_duration",
+      "type": "select",
+      "label": "Workshop duration",
+      "options": [
+        {
+          "value": "half_day",
+          "label": "Half-day"
+        },
+        {
+          "value": "full_day",
+          "label": "Full-day"
+        },
+        {
+          "value": "two_day",
+          "label": "Two-day"
+        },
+        {
+          "value": "multi_session",
+          "label": "Multi-session"
+        }
+      ]
+    },
+    {
+      "id": "key_challenge",
+      "type": "textarea",
+      "label": "Key challenge or objective",
+      "required": true,
+      "placeholder": "e.g., executive alignment on transformation priorities, agreeing a regulatory implementation roadmap, solving a persistent process bottleneck"
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "workshop",
+    "facilitation",
+    "design-thinking",
+    "liberating-structures",
+    "stakeholder-engagement",
+    "decision-making",
+    "strategy"
+  ]
+}

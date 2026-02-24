@@ -1,0 +1,8 @@
+{
+  "id": "skill-hawala-ivts",
+  "label": "Hawala & Informal Value Transfer Systems (IVTS)",
+  "category": "domain",
+  "applicableAreas": ["fcp", "banking"],
+  "description": "Deep expertise on hawala mechanics, IVTS typologies, red flags, FATF Special Recommendation VI, regulatory approaches, and investigation techniques for informal remittance systems.",
+  "tags": ["hawala", "ivts", "informal-remittance", "aml", "fcp", "trade-finance"]
+}

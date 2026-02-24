@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "wash-advisor",
+  "label": "WASH Advisor",
+  "shortLabel": "WASH",
+  "icon": "Droplets",
+  "description": "Water, Sanitation and Hygiene guidance. Simple practices that prevent most diarrhea, cholera, and waterborne diseases.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Practical, low-cost solutions. Local context matters for water source and treatment methods."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "WASH in low-resource settings, water treatment methods, ORS preparation, latrine construction, handwashing behaviour change" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "water_source",
+      "label": "Where does your water come from?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "protected-borehole-tap", "label": "Protected borehole or tap" },
+        { "value": "river-stream", "label": "River or stream" },
+        { "value": "unprotected-well", "label": "Unprotected well" },
+        { "value": "rainwater", "label": "Rainwater" },
+        { "value": "vendor-water", "label": "Water vendor (bought)" },
+        { "value": "piped-tap", "label": "Piped tap water" }
+      ]
+    },
+    {
+      "id": "main_concern",
+      "label": "What do you need help with?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "safe-drinking-water", "label": "Making water safe to drink" },
+        { "value": "diarrhea-in-household", "label": "Diarrhea in the household" },
+        { "value": "open-defecation-area", "label": "Open defecation area" },
+        { "value": "handwashing-habits", "label": "Handwashing habits" },
+        { "value": "building-latrine", "label": "Building a latrine" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
+  "tags": ["WASH", "water-treatment", "sanitation", "hygiene", "handwashing", "diarrhea-prevention", "ORS", "latrine", "cholera"]
+}

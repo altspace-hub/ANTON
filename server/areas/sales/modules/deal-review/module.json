@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "deal-review",
+  "label": "Deal Review & Coaching",
+  "shortLabel": "Deal Review",
+  "description": "Analyse sales opportunities, assess deal health, identify risks and gaps, and get coaching on strategy, messaging, and next steps. Applies proven sales methodologies to improve win rates.",
+  "icon": "Handshake",
+  "color": "adv-green",
+  "areaId": "sales",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "deal_stage",
+      "type": "select",
+      "label": "Current deal stage",
+      "required": true,
+      "options": [
+        {
+          "value": "prospecting",
+          "label": "Prospecting — initial outreach"
+        },
+        {
+          "value": "discovery",
+          "label": "Discovery — understanding needs"
+        },
+        {
+          "value": "qualification",
+          "label": "Qualification — assessing fit"
+        },
+        {
+          "value": "proposal",
+          "label": "Proposal — presenting solution"
+        },
+        {
+          "value": "negotiation",
+          "label": "Negotiation — terms and pricing"
+        },
+        {
+          "value": "closing",
+          "label": "Closing — final decision pending"
+        },
+        {
+          "value": "stalled",
+          "label": "Stalled — deal has gone quiet"
+        }
+      ]
+    },
+    {
+      "id": "deal_value",
+      "type": "text",
+      "label": "Deal value (approximate)",
+      "placeholder": "e.g., EUR 150,000 annual contract, EUR 500k project"
+    },
+    {
+      "id": "buyer_info",
+      "type": "textarea",
+      "label": "Buyer information",
+      "placeholder": "e.g., Nordic bank, 2,000 employees, MLRO is the champion, CFO is economic buyer, procurement involved. They are currently using a competitor for AML advisory."
+    },
+    {
+      "id": "our_solution",
+      "type": "textarea",
+      "label": "What are we selling?",
+      "placeholder": "e.g., AML gap analysis + remediation programme, 6-month engagement, team of 3 consultants, includes policy rewrite and training"
+    },
+    {
+      "id": "competition",
+      "type": "textarea",
+      "label": "Competitive situation",
+      "placeholder": "e.g., Competing against Deloitte and a local boutique firm. Deloitte has existing relationship but client finds them expensive and slow."
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "What are you worried about?",
+      "placeholder": "e.g., Deal has been in negotiation for 6 weeks, client is not returning calls, I think they might be going with Deloitte, not sure who the real decision maker is"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "sales",
+    "deal-review",
+    "coaching",
+    "opportunity",
+    "win-rate",
+    "negotiation"
+  ]
+}

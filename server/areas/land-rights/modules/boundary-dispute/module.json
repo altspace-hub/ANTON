@@ -1,0 +1,82 @@
+{
+  "formatVersion": "1.0",
+  "id": "boundary-dispute",
+  "label": "Boundary Dispute Resolution",
+  "shortLabel": "Boundary Dispute",
+  "icon": "Ruler",
+  "description": "Neighbour dispute about land boundaries. Steps to resolve disagreements over where your land ends and theirs begins.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex boundary disputes involving court proceedings need sonnet. Resolution steps work with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Land boundary dispute resolution: surveyor role, survey beacons, land registry maps, mediation and land tribunals, boundary realignment agreements, cost of court vs survey, criminal protection of survey beacons." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country is the land in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "dispute_type",
+      "label": "What type of boundary dispute is this?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "fence-wall", "label": "Fence or wall in the wrong place" },
+        { "value": "encroachment-on-me", "label": "Neighbour encroaching on my land" },
+        { "value": "accused-of-encroaching", "label": "I was accused of encroaching" },
+        { "value": "survey-contradicts", "label": "New survey contradicts old boundaries" },
+        { "value": "water-drainage", "label": "Water or drainage boundary dispute" }
+      ]
+    },
+    {
+      "id": "documentation",
+      "label": "What documents do you have?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "title-with-map", "label": "Original title deed with map" },
+        { "value": "survey-beacons", "label": "Old survey beacons in place" },
+        { "value": "no-formal-docs", "label": "No formal documents" },
+        { "value": "memory-agreement", "label": "Only old memory or verbal agreement" }
+      ]
+    },
+    {
+      "id": "relationship",
+      "label": "What is your relationship with the neighbour?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "good", "label": "Good — want to preserve it" },
+        { "value": "bad", "label": "Bad relationship" },
+        { "value": "unknown", "label": "Don't know the neighbour well" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
+  "tags": ["land-rights", "bop", "rights", "boundary-dispute", "surveyor", "survey-beacons", "mediation", "neighbour", "africa", "south-asia"]
+}

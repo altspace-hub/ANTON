@@ -1,0 +1,94 @@
+{
+  "formatVersion": "1.0",
+  "id": "investor-update-letter",
+  "label": "Investor Update Letter",
+  "shortLabel": "Investor Update",
+  "description": "Drafts quarterly or monthly investor update letters. Covers: key metrics, progress against milestones, challenges being addressed, and forward-looking commentary. Calibrated for investor expectations.",
+  "perspective": "operational",
+  "icon": "TrendingUp",
+  "color": "adv-green",
+  "areaId": "comms-pr",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Investor relations best practices, VC/PE investor update conventions, startup and growth company investor communications"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "company_stage",
+      "type": "select",
+      "label": "Company stage",
+      "required": true,
+      "options": [
+        { "value": "startup_early", "label": "Startup — Seed / Series A" },
+        { "value": "startup_growth", "label": "Growth stage — Series B/C" },
+        { "value": "private_mature", "label": "Private company — mature / PE-backed" },
+        { "value": "listed", "label": "Listed company — shareholder letter" },
+        { "value": "family_office", "label": "Family/founder-owned" }
+      ]
+    },
+    {
+      "id": "update_period",
+      "type": "text",
+      "label": "Update period",
+      "required": true,
+      "placeholder": "e.g. Q4 2024 / January 2025"
+    },
+    {
+      "id": "key_metrics",
+      "type": "textarea",
+      "label": "Key performance metrics",
+      "required": true,
+      "placeholder": "Provide current period metrics vs. prior period and vs. plan/targets.\ne.g.\nARR: 12.4 MSEK (Q3: 9.8 MSEK) — +27% QoQ, plan was 11.0 MSEK\nMRR: 1.03 MSEK (October growth: +8%)\nCustomers: 47 (Q3: 38) — added 9 new\nChurn: 2.1% monthly (Q3: 3.4%) — improving\nCash position: 8.2 MSEK, runway 11 months\nHeadcount: 23 FTE (Q3: 19)"
+    },
+    {
+      "id": "key_developments",
+      "type": "textarea",
+      "label": "Key developments and milestones",
+      "required": true,
+      "placeholder": "What happened this period? Wins, challenges, product developments, team changes, partnerships, regulatory developments.\ne.g.\n- Signed 3-year contract with Nordea (largest customer to date, 400 KSEK ARR)\n- Launched v2.0 product with AI-powered gap analysis — 8 beta customers\n- CTO hired — Karl Bergström joins 1 February\n- Lost one client (Handelsbanken, 65 KSEK ARR) — poor product fit for their use case\n- FI regulatory approval received for data processing under Article 46 GDPR"
+    },
+    {
+      "id": "challenges",
+      "type": "textarea",
+      "label": "Challenges and how they are being addressed",
+      "placeholder": "Be honest about challenges — investors respect honesty over spin. What is not working and what are you doing about it?\ne.g. Sales cycle longer than modelled (average 4.5 months vs. 2 months planned). Addressing by: hiring enterprise sales head, improving proof-of-concept process, and segmenting to mid-market while enterprise pipeline matures."
+    },
+    {
+      "id": "forward_outlook",
+      "type": "textarea",
+      "label": "Forward outlook and priorities",
+      "placeholder": "What are the 3-5 priorities for next quarter? What milestones are you targeting?\ne.g. Q1 2025 priorities: reach 55 paying customers, close Series A term sheet, complete ISO 27001 certification, launch Scandinavian expansion (Denmark), reach 1.2 MSEK MRR by March."
+    },
+    {
+      "id": "ask",
+      "type": "textarea",
+      "label": "Ask or support needed (optional)",
+      "placeholder": "Is there anything you are asking investors for? Introductions, board advice, specific support?\ne.g. Looking for warm introductions to CFOs at Nordic insurance companies. Seeking board input on Nordic vs. DACH expansion sequencing."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "communications",
+    "investor-relations",
+    "update",
+    "startup",
+    "reporting",
+    "operational"
+  ]
+}

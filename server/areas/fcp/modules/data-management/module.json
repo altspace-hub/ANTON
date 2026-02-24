@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "data-management",
+  "label": "AMLA Data Management",
+  "shortLabel": "Data Mgmt",
+  "icon": "Database",
+  "description": "AMLA data readiness assessments, data quality scoring, gap identification, and implementation planning for data management requirements.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "data-readiness-scorecard",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "data_domain",
+      "type": "multi-select",
+      "label": "Data Domains in Scope",
+      "options": [
+        {
+          "value": "customer-data",
+          "label": "Customer / CDD Data"
+        },
+        {
+          "value": "transaction-data",
+          "label": "Transaction Data"
+        },
+        {
+          "value": "tm-data",
+          "label": "Transaction Monitoring Data"
+        },
+        {
+          "value": "sanctions-data",
+          "label": "Sanctions Screening Data"
+        },
+        {
+          "value": "ubo-data",
+          "label": "UBO / Beneficial Ownership Data"
+        },
+        {
+          "value": "reporting-data",
+          "label": "STR / Regulatory Reporting Data"
+        }
+      ]
+    },
+    {
+      "id": "amla_context",
+      "type": "textarea",
+      "label": "AMLA Requirements Context",
+      "placeholder": "Describe specific AMLA data reporting requirements, timelines, or data templates you are working toward..."
+    },
+    {
+      "id": "current_state",
+      "type": "textarea",
+      "label": "Current Data Landscape",
+      "placeholder": "Brief description of current systems, data quality issues, and known gaps..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "business-expert"
+  ],
+  "tags": [
+    "amla",
+    "data",
+    "data-quality",
+    "reporting"
+  ]
+}

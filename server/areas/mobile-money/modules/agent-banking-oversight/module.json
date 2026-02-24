@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "agent-banking-oversight",
+  "label": "Agent Banking Oversight",
+  "shortLabel": "Agent Oversight",
+  "description": "Design and assess agent banking oversight programs including due diligence, training, monitoring, liquidity management, and fraud prevention.",
+  "perspective": "operational",
+  "icon": "Users",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "GSMA agent banking guidelines, CGAP agent banking research, CBK agent banking regulations, World Bank agent banking toolkit"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "network_size",
+      "type": "select",
+      "label": "Agent Network Size",
+      "description": "How many active agents does the network currently have?",
+      "required": true,
+      "options": [
+        { "value": "small", "label": "<100 agents" },
+        { "value": "medium", "label": "100–1,000" },
+        { "value": "large", "label": "1,000–10,000" },
+        { "value": "very-large", "label": ">10,000" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Primary Jurisdiction",
+      "description": "Which country's regulatory framework applies?",
+      "required": true,
+      "options": [
+        { "value": "ke", "label": "Kenya" },
+        { "value": "ng", "label": "Nigeria" },
+        { "value": "gh", "label": "Ghana" },
+        { "value": "tz", "label": "Tanzania" },
+        { "value": "ug", "label": "Uganda" },
+        { "value": "bd", "label": "Bangladesh" },
+        { "value": "pk", "label": "Pakistan" },
+        { "value": "ph", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "current_issues",
+      "type": "chips",
+      "label": "Current Issues or Risk Areas",
+      "description": "Which agent-related risks or problems are currently present? Select all that apply.",
+      "options": [
+        { "value": "agent-fraud", "label": "Agent fraud" },
+        { "value": "kyc-quality", "label": "KYC quality" },
+        { "value": "liquidity-management", "label": "Liquidity management" },
+        { "value": "training-gaps", "label": "Training gaps" },
+        { "value": "geographic-coverage", "label": "Geographic coverage" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "mobile-money-compliance",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-gsma-mobile-money-aml",
+    "jurisdiction-ke-cbk"
+  ],
+  "tags": [
+    "agent-banking",
+    "agent-oversight",
+    "mobile-money",
+    "agent-fraud",
+    "kyc-quality",
+    "liquidity-management",
+    "gsma",
+    "cgap"
+  ]
+}

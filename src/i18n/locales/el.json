@@ -1,0 +1,890 @@
+{
+  "nav": {
+    "home": "Αρχική",
+    "briefMe": "Σύντομη ενημέρωση",
+    "guideMe": "Οδηγός",
+    "openChat": "Ανοιχτή συζήτηση",
+    "workflows": "Ροές εργασίας",
+    "projects": "Έργα",
+    "buildModule": "Δημιουργία μονάδας",
+    "skillsLibrary": "Βιβλιοθήκη δεξιοτήτων",
+    "batchCreate": "Μαζική δημιουργία",
+    "auditLog": "Αρχείο ελέγχου",
+    "exchange": "Ανταλλαγή",
+    "fillForm": "Συμπλήρωση φόρμας",
+    "challengeThis": "Αμφισβήτηση",
+    "dualInterpret": "Διπλή ερμηνεία",
+    "reviewEngine": "Μηχανή αξιολόγησης",
+    "soundingBoard": "Συμβουλευτικό πάνελ",
+    "analytics": "Αναλυτικά στοιχεία",
+    "dataInsights": "Πληροφορίες δεδομένων",
+    "recentSessions": "Πρόσφατες συνεδρίες",
+    "noRecentSessions": "Δεν υπάρχουν πρόσφατες συνεδρίες",
+    "expandSidebar": "Επέκταση πλαϊνής μπάρας",
+    "collapseSidebar": "Σύμπτυξη πλαϊνής μπάρας",
+    "closeSidebar": "Κλείσιμο πλαϊνής μπάρας",
+    "openSidebar": "Άνοιγμα πλαϊνής μπάρας",
+    "setupProfile": "Ρύθμιση προφίλ"
+  },
+  "header": {
+    "appName": "Anton",
+    "apiConnected": "Σύνδεση API ενεργή",
+    "apiNotConfigured": "Το API δεν έχει διαμορφωθεί",
+    "switchToLight": "Εναλλαγή σε φωτεινό θέμα",
+    "switchToCorporate": "Εναλλαγή σε εταιρικό θέμα",
+    "switchToDark": "Εναλλαγή σε σκούρο θέμα",
+    "settings": "Ρυθμίσεις",
+    "buildModule": "Δημιουργία μονάδας",
+    "skillsLibrary": "Βιβλιοθήκη δεξιοτήτων",
+    "projects": "Έργα",
+    "workflows": "Ροές εργασίας",
+    "openChat": "Ανοιχτή συζήτηση"
+  },
+  "dashboard": {
+    "title": "Anton",
+    "byLine": "από το openEXPERT",
+    "subtitle": "Ανάλυση με τεχνητή νοημοσύνη. Επιλέξτε μια μονάδα για να ξεκινήσετε ή συνεχίστε μια πρόσφατη συνεδρία.",
+    "sessions": "Συνεδρίες",
+    "aiResponses": "Απαντήσεις AI",
+    "outputTokens": "Tokens εξόδου",
+    "thisWeek": "Αυτή την εβδομάδα",
+    "thisMonth": "Αυτόν τον μήνα",
+    "favourites": "Αγαπημένα",
+    "searchPlaceholder": "Αναζήτηση μονάδων — π.χ. GDPR, έλεγχος πίεσης, επισκόπηση συμβάσεων...",
+    "noModulesMatch": "Δεν βρέθηκαν μονάδες",
+    "clearSearch": "Καθαρισμός αναζήτησης",
+    "communityModules": "Μονάδες κοινότητας",
+    "community": "Κοινότητα",
+    "openModule": "Άνοιγμα μονάδας",
+    "recentSessions": "Πρόσφατες συνεδρίες",
+    "noSessionsYet": "Δεν υπάρχουν ακόμα συνεδρίες. Ξεκινήστε επιλέγοντας μια μονάδα παραπάνω.",
+    "renameSession": "Μετονομασία συνεδρίας",
+    "deleteSession": "Διαγραφή συνεδρίας",
+    "removeFromFavourites": "Αφαίρεση από αγαπημένα",
+    "addToFavourites": "Προσθήκη στα αγαπημένα",
+    "modules": "μονάδες",
+    "starterPacks": "Πακέτα εκκίνησης",
+    "personalised": "Εξατομικευμένο",
+    "completeProfileToPersonalise": "Συμπληρώστε το",
+    "profileLink": "προφίλ σας",
+    "toPersonalise": "για εξατομίκευση",
+    "show": "Εμφάνιση",
+    "hide": "Απόκρυψη",
+    "forYou": "Για εσάς",
+    "getStarted": "Ξεκινήστε",
+    "roiThisMonth": "Απόδοση επένδυσης αυτόν τον μήνα",
+    "roiDescription": "Το openEXPERT σας εξοικονόμησε εκτιμώμενες",
+    "roiHours": "ώρες",
+    "roiThisMonthLabel": "αυτόν τον μήνα (εκτιμώμενη αξία:",
+    "roiAtRate": "με",
+    "roiPerHour": "/ώρα).",
+    "roiApiCost": "Κόστος API:",
+    "roiRatioSuffix": "ώρες που εξοικονομήθηκαν ανά 1€ που δαπανήθηκε"
+  },
+  "module": {
+    "runAnalysis": "Εκτέλεση ανάλυσης",
+    "send": "Αποστολή",
+    "stop": "Διακοπή",
+    "thinking": "Επίπεδο σκέψης",
+    "creativity": "Δημιουργικότητα",
+    "model": "Μοντέλο",
+    "knowledgeSources": "Πηγές γνώσης",
+    "outputFormats": "Μορφές εξόδου",
+    "systemPrompt": "Προτροπή συστήματος",
+    "transparencyLevel": "Διαφάνεια συλλογισμού",
+    "transparencyOff": "Ανενεργό",
+    "transparencySummary": "Περίληψη",
+    "transparencyDetailed": "Λεπτομερής",
+    "advancedSettings": "Προηγμένες ρυθμίσεις",
+    "files": "Αρχεία & φάκελοι",
+    "moduleSettings": "Ρυθμίσεις μονάδας",
+    "customModule": "Προσαρμοσμένη μονάδα",
+    "moduleNotFound": "Η μονάδα δεν βρέθηκε.",
+    "describeTask": "Περιγράψτε το έργο ανάλυσης",
+    "followUp": "Μήνυμα παρακολούθησης",
+    "describeTaskPlaceholder": "π.χ., Ανάλυση της πολιτικής AML μας έναντι των απαιτήσεων AMLR για τράπεζα της Σκανδιναβίας με τραπεζική λιανικής και εταιρική...",
+    "followUpPlaceholder": "Υποβάλετε μια ερώτηση παρακολούθησης ή ζητήστε αλλαγές...",
+    "outputWillAppear": "Το αποτέλεσμα θα εμφανιστεί εδώ.",
+    "configureAndRun": "Διαμορφώστε τις ρυθμίσεις, περιγράψτε το έργο σας και κάντε κλικ στην Εκτέλεση.",
+    "reviewStatus": "Κατάσταση αξιολόγησης",
+    "draft": "Πρόχειρο",
+    "reviewed": "Αξιολογήθηκε",
+    "approved": "Εγκρίθηκε",
+    "markReviewed": "Σημείωση ως αξιολογημένο",
+    "approve": "Έγκριση",
+    "saveAsModule": "Αποθήκευση ως προσαρμοσμένη μονάδα",
+    "saved": "Αποθηκεύτηκε!",
+    "moduleName": "Όνομα μονάδας...",
+    "saving": "Αποθήκευση...",
+    "save": "Αποθήκευση",
+    "saveAsModuleDesc": "Αποθηκεύστε την προτροπή συστήματος, τα πρόσωπα, τις δεξιότητες και τις μορφές εξόδου αυτής της συνεδρίας ως επαναχρησιμοποιήσιμη προσαρμοσμένη μονάδα.",
+    "tokens": "tokens",
+    "approachingLimit": "Πλησιάζει το όριο",
+    "reframeFor": "Αναδιατύπωση για:",
+    "voiceInput": "Φωνητική εισαγωγή",
+    "stopRecording": "Διακοπή εγγραφής",
+    "reframeBoard": "Διοικητικό Συμβούλιο",
+    "reframeCustomer": "Πελάτη",
+    "reframeEmployee": "Εργαζόμενο",
+    "reframeTechnical": "Τεχνικό",
+    "thinkingControls": {
+      "label": "Πόσο βαθιά πρέπει να αναλύσει το Claude;",
+      "quick": {
+        "label": "Γρήγορο",
+        "description": "Γρήγορη απάντηση, ελάχιστη ανάλυση"
+      },
+      "think": {
+        "label": "Σκέψη",
+        "description": "Τυπικό βάθος ανάλυσης"
+      },
+      "thinkHard": {
+        "label": "Βαθιά Σκέψη",
+        "description": "Βαθιά ανάλυση με προσεκτικό συλλογισμό"
+      },
+      "investigate": {
+        "label": "Διερεύνηση",
+        "description": "Εξονυχιστική διερεύνηση, μέγιστο βάθος"
+      },
+      "planFirst": {
+        "label": "Πρώτα Σχέδιο",
+        "description": "Δημιουργία σαφούς σχεδίου πριν την εκτέλεση"
+      }
+    },
+    "modelSelector": {
+      "label": "Μοντέλο",
+      "recommended": "Προτεινόμενο",
+      "inputCost": "εισόδου",
+      "outputCost": "εξόδου",
+      "perMillion": "/Μ",
+      "localOllama": "Τοπικό (Ollama)",
+      "ollamaNotRunning": "Ξεκινήστε το Ollama για χρήση τοπικών μοντέλων.",
+      "getOllama": "Λήψη Ollama",
+      "ollamaThen": "στη συνέχεια εκτελέστε",
+      "ollamaPullCommand": "ollama pull llama3.2",
+      "freeLabelLocal": "Δωρεάν · Τοπικό",
+      "noApiKey": "Δεν απαιτείται κλειδί API. Εκτελείται στον υπολογιστή σας."
+    },
+    "knowledgeSource": {
+      "title": "Πηγές Γνώσης",
+      "subtitle": "Πού πρέπει το Claude να βρει κανονιστικά κείμενα και υλικό αναφοράς;",
+      "claudeKnowledge": {
+        "title": "Ιδιαίτερη Γνώση του Claude",
+        "description": "Το Claude χρησιμοποιεί την ενσωματωμένη γνώση του για κανονισμούς, οδηγίες και νομικά πλαίσια.",
+        "webSearch": "Ενεργοποίηση αναζήτησης στο διαδίκτυο (Το Claude αναζητά στο διαδίκτυο τις τελευταίες δημοσιεύσεις)",
+        "focusArea": "Περιοχή εστίασης (προαιρετικό):",
+        "focusPlaceholder": "π.χ., Κανονισμός AMLR 2024/1624, διαβουλεύσεις AMLA RTS"
+      },
+      "onlineReference": {
+        "title": "Διαδικτυακοί Κανονισμοί / Σύνδεσμοι Εγγράφων",
+        "description": "Επικολλήστε URLs σε συγκεκριμένα κανονιστικά κείμενα, οδηγίες ή διαδικτυακά έγγραφα.",
+        "urlPlaceholder": "https://eur-lex.europa.eu/...",
+        "add": "Προσθήκη",
+        "fullText": "Πλήρες κείμενο",
+        "summaryOnly": "Μόνο περίληψη",
+        "eurLexQuickLoad": "Γρήγορη φόρτωση από EUR-Lex:",
+        "regulations": {
+          "amlr": "AMLR",
+          "dora": "DORA",
+          "mica": "MiCA",
+          "gdpr": "GDPR",
+          "amld6": "6AMLD",
+          "nis2": "NIS2"
+        }
+      },
+      "localFolder": {
+        "title": "Τοπικοί Φάκελοι",
+        "description": "Δείξτε φακέλους στον υπολογιστή σας που περιέχουν κανονιστικά κείμενα, έγγραφα πελατών ή υλικό αναφοράς.",
+        "pathPlaceholder": "C:\\Users\\...\\Documents\\Regulations",
+        "add": "Προσθήκη",
+        "includeSubfolders": "Συμπερίληψη υποφακέλων"
+      },
+      "combinedMode": {
+        "title": "Συνδυασμένο: Αναζήτηση + Τοπικά Έγγραφα",
+        "description": "Το Claude χρησιμοποιεί τη γνώση του ΚΑΙ τα τοπικά σας έγγραφα. Καλύτερο για σύγκριση εγγράφων πελατών με κανονισμούς.",
+        "localFirst": "Πρώτα τοπικά έγγραφα",
+        "merged": "Συγχωνευμένο",
+        "claudeFirst": "Πρώτα Claude",
+        "specialInstructions": "Ειδικές οδηγίες (προαιρετικό):",
+        "instructionsPlaceholder": "π.χ., Συγκρίνετε την πολιτική του πελάτη με τον κανονισμό. Όπου το έγγραφο του πελάτη σιωπά, χρησιμοποιήστε το κείμενο του κανονισμού για να εντοπίσετε το κενό."
+      },
+      "indexedKnowledge": {
+        "title": "Ευρετηριασμένη Βάση Γνώσης (Φάκελοι)",
+        "description": "Σημασιολογική αναζήτηση σε ευρετηριασμένη βιβλιοθήκη εγγράφων. Ανακτά τα πιο σχετικά αποσπάσματα — όχι ολόκληρα έγγραφα.",
+        "badge": "Λειτουργία 5a",
+        "retrieve": "Ανάκτηση",
+        "passages": "αποσπασμάτων",
+        "focused": "εστιασμένο",
+        "broad": "ευρύ",
+        "loadingFolders": "Φόρτωση ευρετηριασμένων φακέλων...",
+        "notYetIndexed": "Δεν έχει ευρετηριαστεί ακόμα",
+        "indexNow": "Ευρετηρίαση Τώρα",
+        "indexing": "Ευρετηρίαση...",
+        "reindex": "Επανευρετηρίαση",
+        "docs": "έγγραφα",
+        "chunks": "τμήματα",
+        "indexed": "ευρετηριασμένο",
+        "folderSelected": "φάκελος επιλεγμένος για αναζήτηση",
+        "foldersSelected": "φάκελοι επιλεγμένοι για αναζήτηση",
+        "noIndexedFolders": "Δεν υπάρχουν ευρετηριασμένοι φάκελοι ακόμα. Προσθέστε φακέλους στη Λειτουργία 3 (Τοπικοί Φάκελοι) πρώτα, στη συνέχεια ευρετηριάστε τους εδώ για σημασιολογική αναζήτηση.",
+        "justNow": "μόλις τώρα",
+        "minutesAgo": "λ πριν",
+        "hoursAgo": "ώ πριν",
+        "daysAgo": "η πριν"
+      },
+      "knowledgeCollections": {
+        "title": "Συλλογές Γνώσης (RAG)",
+        "description": "Σημασιολογική αναζήτηση σε οργανωμένες συλλογές γνώσης με αυτόματη ανάκτηση κατά την εκτέλεση μονάδας.",
+        "badge": "Λειτουργία 5b"
+      }
+    },
+    "creativitySlider": {
+      "label": "Στυλ γραφής",
+      "strict": {
+        "label": "Αυστηρό",
+        "description": "Ακριβής, πραγματικός, επίσημη κανονιστική γλώσσα"
+      },
+      "balanced": {
+        "label": "Ισορροπημένο",
+        "description": "Ακριβής και προσιτός, επαγγελματικός αλλά ευανάγνωστος"
+      },
+      "creative": {
+        "label": "Δημιουργικό",
+        "description": "Ελκυστικό με παραδείγματα από τον πραγματικό κόσμο, διατηρεί την ακρίβεια"
+      }
+    }
+  },
+  "settings": {
+    "title": "Ρυθμίσεις",
+    "saved": "Αποθηκεύτηκε",
+    "apiConnection": "Σύνδεση API",
+    "refresh": "Ανανέωση",
+    "anthropicApiKey": "Κλειδί API της Anthropic",
+    "configured": "Διαμορφωμένο",
+    "notConfigured": "Μη διαμορφωμένο",
+    "database": "Βάση δεδομένων",
+    "connected": "Συνδεδεμένη",
+    "notConnected": "Μη συνδεδεμένη",
+    "version": "Έκδοση",
+    "addApiKeyHint": "Προσθέστε το κλειδί API της Anthropic στο αρχείο",
+    "envFile": ".env",
+    "file": ":",
+    "additionalProviders": "Πρόσθετοι πάροχοι AI",
+    "additionalProvidersDesc": "Διαμορφώστε κλειδιά API για χρήση μοντέλων OpenAI, Google Gemini ή Mistral. Τα κλειδιά αποθηκεύονται μόνο στη μνήμη του διακομιστή (runtime).",
+    "openai": "OpenAI",
+    "googleAi": "Google AI",
+    "mistral": "Mistral",
+    "save": "Αποθήκευση",
+    "defaultSettings": "Προεπιλεγμένες ρυθμίσεις",
+    "defaultSettingsDesc": "Αυτές οι προεπιλογές εφαρμόζονται κατά το άνοιγμα νέας συνεδρίας μονάδας.",
+    "defaultModel": "Προεπιλεγμένο μοντέλο",
+    "defaultThinking": "Προεπιλεγμένη σκέψη",
+    "defaultCreativity": "Προεπιλεγμένη δημιουργικότητα",
+    "language": "Γλώσσα",
+    "languageDesc": "Επιλέξτε τη γλώσσα διεπαφής. Το περιεχόμενο των μονάδων παραμένει στα αγγλικά.",
+    "english": "English",
+    "svenska": "Svenska",
+    "francais": "Français",
+    "deutsch": "Deutsch",
+    "italiano": "Italiano",
+    "espanol": "Español",
+    "hindi": "हिन्दी",
+    "portugues": "Português",
+    "polski": "Polski",
+    "urdu": "اردو",
+    "deployment": "Ανάπτυξη",
+    "deploymentDesc": "Η τρέχουσα λειτουργία ανάπτυξης καθορίζει τις διαθέσιμες λειτουργίες.",
+    "mode": "Λειτουργία",
+    "team": "Ομάδα",
+    "solo": "Ατομική",
+    "soloModeDesc": "Ατομική λειτουργία: Ρύθμιση μονού χρήστη. Όλες οι λειτουργίες διαθέσιμες χωρίς σύνδεση. Το αρχείο ελέγχου παρακολουθεί την προσωπική χρήση και το κόστος.",
+    "teamModeDesc": "Λειτουργία ομάδας: Ρύθμιση πολλαπλών χρηστών με πλήρες αρχείο ελέγχου, απόδοση χρήστη σε αξιολογήσεις και διαχείριση κοινών συνεδριών.",
+    "theme": "Θέμα",
+    "themeDesc": "Επιλέξτε το χρωματικό σχήμα της εφαρμογής.",
+    "myProfile": "Το προφίλ μου",
+    "general": "Γενικά",
+    "navigation": "Πλοήγηση",
+    "teamTab": "Ομάδα",
+    "teamMembers": "Μέλη ομάδας",
+    "addUser": "Προσθήκη χρήστη",
+    "newUser": "Νέος χρήστης",
+    "username": "Όνομα χρήστη",
+    "password": "Κωδικός πρόσβασης",
+    "displayName": "Όνομα εμφάνισης",
+    "role": "Ρόλος",
+    "monthlyTokenBudget": "Μηνιαίος προϋπολογισμός tokens (0 = απεριόριστο)",
+    "createUser": "Δημιουργία χρήστη",
+    "cancel": "Ακύρωση",
+    "loading": "Φόρτωση...",
+    "usernameCol": "Όνομα χρήστη",
+    "displayNameCol": "Όνομα εμφάνισης",
+    "roleCol": "Ρόλος",
+    "budgetCol": "Προϋπολογισμός (tokens)",
+    "usedThisMonthCol": "Χρησιμοποιήθηκε αυτόν τον μήνα",
+    "lastLoginCol": "Τελευταία σύνδεση",
+    "actionsCol": "Ενέργειες",
+    "unlimited": "Απεριόριστο",
+    "never": "Ποτέ",
+    "resetPassword": "Επαναφορά κωδικού",
+    "deleteUser": "Διαγραφή χρήστη",
+    "usageThisMonth": "Χρήση αυτόν τον μήνα",
+    "noUsageRecorded": "Δεν έχει καταγραφεί χρήση ακόμα.",
+    "save2": "Αποθήκευση",
+    "budget": "Προϋπολογισμός",
+    "budgetDesc": "Ορίστε μηνιαίο όριο δαπανών AI σε EUR. Όταν φτάσετε το όριο, οι νέες αιτήσεις αποκλείονται. Ορίστε 0 για απεριόριστο.",
+    "spendingThisMonth": "Δαπάνες αυτόν τον μήνα",
+    "budgetCapReached": "Το μηνιαίο όριο προϋπολογισμού επιτεύχθηκε. Οι νέες αιτήσεις AI αποκλείονται μέχρι τον επόμενο μήνα.",
+    "over80Pct": "Χρησιμοποιήθηκε πάνω από 80% του μηνιαίου προϋπολογισμού.",
+    "noSpendingLimit": "Δεν έχει οριστεί όριο δαπανών.",
+    "monthlyBudgetCap": "Μηνιαίο όριο προϋπολογισμού AI (€)",
+    "noLimit": "Χωρίς όριο",
+    "zeroNoLimit": "0 = χωρίς όριο (απεριόριστες δαπάνες)",
+    "saving": "Αποθήκευση...",
+    "notifications": "Ειδοποιήσεις",
+    "notificationsDesc": "Διαμόρφωση ειδοποιήσεων email για μακροχρόνιες αναλύσεις.",
+    "emailNotification": "Αποστολή email όταν ολοκληρωθεί μια μακροχρόνια ανάλυση",
+    "emailNotificationDesc": "Λάβετε ειδοποίηση email όταν το Claude ολοκληρώσει μια εκτεταμένη εργασία. Απαιτεί διαμόρφωση SMTP στο αρχείο .env.",
+    "brandTemplates": "Πρότυπα επωνυμίας",
+    "brandTemplatesDesc": "Ανεβάστε τα πρότυπα .docx ή .pptx της εταιρείας σας. Χρησιμοποιήστε το \"Εξαγωγή με πρότυπο\" στη γραμμή εξαγωγής για να εισάγετε το αποτέλεσμα του Claude στα αρχεία με επωνυμία.",
+    "uploadTemplate": "Ανέβασμα προτύπου",
+    "uploading": "Ανέβασμα...",
+    "noTemplatesYet": "Δεν έχουν ανέβει πρότυπα ακόμα.",
+    "deleteTemplate": "Διαγραφή προτύπου",
+    "navConfig": {
+      "title": "Στοιχεία Πλοήγησης",
+      "description": "Αποκρύψτε στοιχεία που δεν χρησιμοποιείτε για να απλοποιήσετε την πλαϊνή σας μπάρα.",
+      "visibleCount": "{visible} από {total} ορατά",
+      "refreshToApply": "Ανανεώστε για Εφαρμογή",
+      "showAll": "Εμφάνιση Όλων",
+      "show": "Εμφάνιση",
+      "hide": "Απόκρυψη",
+      "categories": {
+        "interaction": "Λειτουργίες Αλληλεπίδρασης",
+        "tools": "Εργαλεία & Ροές Εργασίας",
+        "features": "Χαρακτηριστικά",
+        "intelligence": "Ευφυΐα & Πληροφορίες",
+        "admin": "Διαχείριση & Αναλυτικά"
+      }
+    }
+  },
+  "brief": {
+    "title": "Σύντομη ενημέρωση",
+    "subtitle": "Ρωτήστε οτιδήποτε — λάβετε δομημένη εξειδικευμένη απάντηση αμέσως",
+    "placeholder": "Ρωτήστε οτιδήποτε — π.χ. 'Ποιες είναι οι κύριες υποχρεώσεις AMLR για ιδρύματα πληρωμών;'",
+    "askAnton": "Ρωτήστε τον Anton",
+    "goDeeper": "Εμβάθυνση με πλήρη μονάδα",
+    "ctrlEnter": "Ctrl+Enter για αποστολή",
+    "whatDoYouNeed": "Με τι χρειάζεστε βοήθεια;",
+    "emptyStateDesc": "Υποβάλετε οποιαδήποτε επαγγελματική ερώτηση με απλή γλώσσα. Ο Anton θα απαντήσει με δομημένη, εξειδικευμένη καθοδήγηση — χωρίς να απαιτείται διαμόρφωση.",
+    "thinking": "σκέφτεται...",
+    "copy": "Αντιγραφή",
+    "copied": "Αντιγράφηκε",
+    "downloadMd": ".md",
+    "stop": "Διακοπή"
+  },
+  "guide": {
+    "title": "Οδηγός",
+    "subtitle": "Ας βρούμε τη σωστή μονάδα για το έργο σας",
+    "step1": "Με τι χρειάζεστε βοήθεια;",
+    "step2": "Τι τύπο αποτελέσματος;",
+    "step3": "Τι σας περιγράφει καλύτερα;",
+    "findModules": "Εύρεση ταιριαστών μονάδων",
+    "useThis": "Άνοιγμα αυτής της μονάδας",
+    "back": "Πίσω"
+  },
+  "batch": {
+    "title": "Μαζική δημιουργία",
+    "subtitle": "Εκτελέστε την ίδια μονάδα N φορές με διαφορετικά δεδομένα εισόδου από CSV",
+    "uploadCsv": "Ανέβασμα CSV",
+    "selectModule": "Επιλογή μονάδας",
+    "configure": "Διαμόρφωση προτύπου",
+    "runBatch": "Εκτέλεση παρτίδας",
+    "downloadAll": "Λήψη όλων των αποτελεσμάτων"
+  },
+  "share": {
+    "sharedAnalysis": "Κοινόχρηστη ανάλυση",
+    "createdWith": "Δημιουργήθηκε με το openEXPERT",
+    "expired": "Αυτός ο κοινόχρηστος σύνδεσμος έχει λήξει ή δεν υπάρχει",
+    "loading": "Φόρτωση κοινόχρηστης ανάλυσης..."
+  },
+  "export": {
+    "exportAs": "Εξαγωγή ως",
+    "export": "Εξαγωγή:",
+    "copy": "Αντιγραφή",
+    "copied": "Αντιγράφηκε!",
+    "download": "Λήψη",
+    "withTemplate": "Με πρότυπο",
+    "exporting": "Εξαγωγή...",
+    "chooseBrandTemplate": "Επιλέξτε πρότυπο επωνυμίας",
+    "share": "Κοινοποίηση",
+    "sharing": "Κοινοποίηση...",
+    "linkCopied": "Ο σύνδεσμος αντιγράφηκε!",
+    "copyShareableLink": "Αντιγραφή κοινόχρηστου συνδέσμου στο πρόχειρο",
+    "explainDifferently": "Εξήγηση με διαφορετικό τρόπο",
+    "exportUsingBrandTemplate": "Εξαγωγή με χρήση προτύπου επωνυμίας",
+    "explainFor": "Εξήγηση για...",
+    "explainForChooseAudience": "Επιλογή κοινού",
+    "explainForSubtitle": "Το Claude θα επαναδιατυπώσει το αποτέλεσμα για αυτούς",
+    "explainForGenerating": "Δημιουργία...",
+    "explainForReady": "Έτοιμο",
+    "explainForOriginal": "Αρχικό",
+    "explainForTryAnother": "Δοκιμάστε άλλο κοινό",
+    "explainForStop": "Διακοπή",
+    "explainForCopy": "Αντιγραφή",
+    "explainForCopied": "Αντιγράφηκε",
+    "explainForDownload": ".md"
+  },
+  "review": {
+    "title": "Μηχανή αξιολόγησης",
+    "subtitle": "Επικολλήστε οποιοδήποτε έγγραφο ή ανάλυση και αφήστε τον Anton να το αξιολογήσει από εξειδικευμένες οπτικές γωνίες.",
+    "reviewMode": "Λειτουργία αξιολόγησης",
+    "documentToReview": "Έγγραφο προς αξιολόγηση",
+    "pasteText": "Επικόλληση κειμένου",
+    "uploadFiles": "Ανέβασμα αρχείου/ων",
+    "pasteTextPlaceholder": "Επικολλήστε το έγγραφο, την πολιτική, την ανάλυση, το υπόμνημα ή το σχέδιο εδώ...",
+    "ctrlEnterToRun": "Ctrl+Enter για εκτέλεση",
+    "readingFiles": "Ανάγνωση αρχείων…",
+    "uploadPrompt": "Κάντε κλικ για ανέβασμα ή σύρετε αρχεία εδώ",
+    "uploadFormats": "PDF, DOCX, TXT, MD, XLSX, CSV",
+    "pasteTextToReview": "Επικολλήστε κείμενο παραπάνω για αξιολόγηση",
+    "uploadFileToReview": "Ανεβάστε τουλάχιστον ένα αρχείο για αξιολόγηση",
+    "stopReview": "Διακοπή αξιολόγησης",
+    "startReview": "Έναρξη αξιολόγησης",
+    "readyToReview": "Έτοιμο για αξιολόγηση",
+    "readyToReviewDesc": "Επιλέξτε λειτουργία αξιολόγησης, επικολλήστε το έγγραφό σας και κάντε κλικ στην Έναρξη αξιολόγησης. Ο Anton θα το αξιολογήσει από την επιλεγμένη εξειδικευμένη οπτική γωνία.",
+    "reviewing": "αξιολογεί...",
+    "copy": "Αντιγραφή",
+    "copied": "Αντιγράφηκε",
+    "downloadMd": ".md",
+    "tokensTotal": "σύνολο tokens",
+    "file": "αρχείο",
+    "files": "αρχεία"
+  },
+  "common": {
+    "loading": "Φόρτωση...",
+    "error": "Κάτι πήγε στραβά",
+    "save": "Αποθήκευση",
+    "cancel": "Ακύρωση",
+    "close": "Κλείσιμο",
+    "submit": "Υποβολή",
+    "delete": "Διαγραφή",
+    "edit": "Επεξεργασία",
+    "view": "Προβολή",
+    "search": "Αναζήτηση",
+    "filter": "Φιλτράρισμα",
+    "back": "Πίσω",
+    "next": "Επόμενο",
+    "previous": "Προηγούμενο",
+    "noResults": "Δεν βρέθηκαν αποτελέσματα"
+  },
+  "connections": {
+    "title": "Συνδέσεις",
+    "subtitle": "Διαχείριση εξωτερικών πηγών δεδομένων και ενσωματώσεων",
+    "addConnection": "Προσθήκη Σύνδεσης",
+    "noConnections": "Δεν έχουν διαμορφωθεί συνδέσεις ακόμα.",
+    "noConnectionsHint": "Κάντε κλικ στο \"Προσθήκη Σύνδεσης\" για να καταχωρήσετε την πρώτη σας ενσωμάτωση.",
+    "loadingConnections": "Φόρτωση συνδέσεων...",
+    "totalConnections": "συνολικά",
+    "types": {
+      "database": "Βάση Δεδομένων",
+      "api": "API",
+      "filesystem": "Σύστημα Αρχείων",
+      "email": "Email",
+      "scriptLibrary": "Βιβλιοθήκη Σεναρίων"
+    },
+    "status": {
+      "pending": "Εκκρεμεί",
+      "active": "Ενεργό",
+      "disabled": "Απενεργοποιημένο",
+      "error": "Σφάλμα"
+    },
+    "actions": {
+      "test": "Δοκιμή",
+      "testConnection": "Δοκιμή σύνδεσης",
+      "approve": "Έγκριση",
+      "approveConnection": "Έγκριση σύνδεσης",
+      "disableConnection": "Απενεργοποίηση σύνδεσης",
+      "deleteConnection": "Απενεργοποίηση αυτής της σύνδεσης; Μπορεί να επανενεργοποιηθεί με επεξεργασία."
+    },
+    "details": {
+      "created": "Δημιουργήθηκε",
+      "tested": "Δοκιμάστηκε",
+      "configSanitized": "Διαμόρφωση (απολυμασμένη)",
+      "auditLog": "Αρχείο Ελέγχου",
+      "loadingAuditLog": "Φόρτωση αρχείου ελέγχου...",
+      "noAuditEntries": "Δεν υπάρχουν καταχωρήσεις ελέγχου ακόμα.",
+      "time": "Χρόνος",
+      "action": "Ενέργεια",
+      "result": "Αποτέλεσμα",
+      "by": "Από"
+    },
+    "testResults": {
+      "networkError": "Σφάλμα δικτύου"
+    },
+    "sections": {
+      "pendingApproval": "Εκκρεμεί Έγκριση",
+      "active": "Ενεργό",
+      "disabledError": "Απενεργοποιημένο / Σφάλμα"
+    },
+    "wizard": {
+      "title": "Νέα Σύνδεση",
+      "steps": {
+        "type": "Τύπος",
+        "configure": "Διαμόρφωση",
+        "test": "Δοκιμή",
+        "save": "Αποθήκευση"
+      },
+      "typeSelection": {
+        "prompt": "Επιλέξτε τον τύπο ενσωμάτωσης που θέλετε να δημιουργήσετε:",
+        "errorNoType": "Παρακαλώ επιλέξτε τύπο σύνδεσης.",
+        "database": {
+          "label": "Βάση Δεδομένων",
+          "description": "Σύνδεση σε βάσεις δεδομένων SQLite, PostgreSQL ή MySQL"
+        },
+        "api": {
+          "label": "API",
+          "description": "Σύνδεση σε REST APIs με bearer, basic ή API key auth"
+        },
+        "filesystem": {
+          "label": "Σύστημα Αρχείων",
+          "description": "Πρόσβαση σε τοπικούς φακέλους με διαμορφώσιμα δικαιώματα"
+        },
+        "email": {
+          "label": "Email",
+          "description": "Ενσωμάτωση email SMTP ή IMAP"
+        },
+        "scriptLibrary": {
+          "label": "Βιβλιοθήκη Σεναρίων",
+          "description": "Καταχώρηση φακέλου εγκεκριμένων εκτελέσιμων σεναρίων"
+        }
+      },
+      "config": {
+        "displayName": "Όνομα Εμφάνισης",
+        "displayNamePlaceholder": "π.χ. Βάση Παραγωγής, API Αναφορών",
+        "errorNoName": "Απαιτείται όνομα εμφάνισης.",
+        "database": {
+          "driver": "Οδηγός",
+          "drivers": {
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL / MariaDB",
+            "mssql": "Microsoft SQL Server",
+            "mongodb": "MongoDB (NoSQL)"
+          },
+          "filePath": "Διαδρομή Αρχείου Βάσης Δεδομένων",
+          "filePathPlaceholder": "/path/to/database.sqlite",
+          "host": "Host / Διεύθυνση IP",
+          "hostPlaceholder": "localhost ή 192.168.1.100",
+          "hostHint": "Χρησιμοποιήστε IP ή hostname για απομακρυσμένους διακομιστές",
+          "port": "Θύρα",
+          "databaseName": "Όνομα Βάσης Δεδομένων",
+          "databaseNamePlaceholder": "mydb",
+          "username": "Όνομα Χρήστη",
+          "password": "Κωδικός Πρόσβασης",
+          "ssl": "Ενεργοποίηση κρυπτογράφησης SSL/TLS",
+          "sslVerifyCert": "Επαλήθευση πιστοποιητικού SSL (αποεπιλέξτε για αυτο-υπογεγραμμένα πιστοποιητικά)",
+          "maxRowsPerQuery": "Μέγιστες Γραμμές Ανά Ερώτημα",
+          "maxRowsPlaceholder": "10000",
+          "allowedTables": "Επιτρεπόμενοι Πίνακες (χωρισμένοι με κόμμα, κενό για όλους)",
+          "allowedTablesPlaceholder": "users, orders, products"
+        },
+        "api": {
+          "baseUrl": "Βασικό URL",
+          "baseUrlPlaceholder": "https://api.example.com",
+          "authType": "Τύπος Ταυτοποίησης",
+          "authTypes": {
+            "bearer": "Bearer Token",
+            "basic": "Basic Auth (base64)",
+            "apikey": "API Key Header",
+            "none": "Χωρίς Auth"
+          },
+          "authValue": "Τιμή Ταυτοποίησης",
+          "authValuePlaceholder": "Token / διαπιστευτήρια",
+          "rateLimit": "Όριο Ρυθμού (req/min, 0 = απεριόριστο)",
+          "rateLimitPlaceholder": "60",
+          "timeout": "Timeout (δευτερόλεπτα)",
+          "timeoutPlaceholder": "30",
+          "allowedEndpoints": "Επιτρεπόμενα Endpoints",
+          "endpointPathPlaceholder": "/api/endpoint ή /api/*",
+          "addEndpoint": "Προσθήκη",
+          "methods": {
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE",
+            "all": "*"
+          }
+        },
+        "filesystem": {
+          "basePath": "Βασική Διαδρομή",
+          "basePathPlaceholder": "/path/to/folder ή C:\\Users\\...",
+          "basePathHint": "Όλη η πρόσβαση σε αρχεία περιορίζεται σε αυτόν τον κατάλογο και τους υποκαταλόγους του.",
+          "allowedExtensions": "Επιτρεπόμενες Επεκτάσεις (κενό = όλες επιτρεπόμενες)",
+          "permissions": "Δικαιώματα",
+          "permissionRead": "Ανάγνωση",
+          "permissionWrite": "Εγγραφή",
+          "maxFileSize": "Μέγιστο Μέγεθος Αρχείου (MB)",
+          "maxFileSizePlaceholder": "50"
+        },
+        "generic": {
+          "configJson": "Διαμόρφωση (JSON)",
+          "invalidJson": "Μη έγκυρο JSON"
+        }
+      },
+      "test": {
+        "prompt": "Επικύρωση διαμόρφωσης πριν την αποθήκευση:",
+        "summary": "Σύνοψη Σύνδεσης",
+        "validate": "Επικύρωση Διαμόρφωσης",
+        "validating": "Επικύρωση...",
+        "validated": "Η διαμόρφωση επικυρώθηκε. Πλήρης δοκιμή συνδεσιμότητας διαθέσιμη μετά την αποθήκευση.",
+        "failed": "Η επικύρωση απέτυχε"
+      },
+      "confirm": {
+        "prompt": "Επανεξετάστε και αποθηκεύστε τη σύνδεσή σας:",
+        "name": "Όνομα",
+        "type": "Τύπος",
+        "statusAfterSave": "Κατάσταση μετά την αποθήκευση",
+        "pendingNotice": "Η σύνδεση θα είναι σε κατάσταση \"εκκρεμεί\" μέχρι να την εγκρίνει ένας διαχειριστής. Οι ενεργές συνδέσεις είναι διαθέσιμες σε όλους τους χρήστες.",
+        "saveConnection": "Αποθήκευση Σύνδεσης",
+        "saving": "Αποθήκευση..."
+      },
+      "navigation": {
+        "back": "Πίσω",
+        "next": "Επόμενο"
+      },
+      "errors": {
+        "networkError": "Σφάλμα δικτύου — δεν ήταν δυνατή η αποθήκευση της σύνδεσης",
+        "saveFailed": "Αποτυχία δημιουργίας σύνδεσης"
+      }
+    }
+  },
+  "scripts": {
+    "title": "Βιβλιοθήκη Σεναρίων",
+    "subtitle": "Διαχείριση εγκεκριμένων εκτελέσιμων σεναρίων",
+    "totalScripts": "σενάρια",
+    "registerScript": "Καταχώρηση Σεναρίου",
+    "noScripts": "Δεν υπάρχουν σενάρια στη βιβλιοθήκη.",
+    "noScriptsHint": "Καταχωρήστε εγκεκριμένα σενάρια για να τα κάνετε διαθέσιμα σε ροές εργασίας.",
+    "loadingScripts": "Φόρτωση σεναρίων...",
+    "deleteScript": "Διαγραφή σεναρίου",
+    "deleteConfirm": "Αφαίρεση αυτού του σεναρίου από τη βιβλιοθήκη;",
+    "status": {
+      "approved": "Εγκεκριμένο",
+      "pending": "Εκκρεμεί"
+    },
+    "details": {
+      "scriptPath": "Διαδρομή Σεναρίου",
+      "maxRuntime": "Μέγιστος Χρόνος Εκτέλεσης",
+      "runtimeSeconds": "s",
+      "memoryLimit": "Όριο Μνήμης",
+      "memoryMb": "MB",
+      "sandbox": "Sandbox",
+      "sandboxEnabled": "Ενεργό",
+      "sandboxDisabled": "Ανενεργό",
+      "networkAccess": "Πρόσβαση Δικτύου",
+      "networkAllowed": "Επιτρέπεται",
+      "networkBlocked": "Αποκλεισμένη",
+      "fileHash": "Hash Αρχείου (SHA-256)",
+      "parameters": "Παράμετροι",
+      "version": "v"
+    },
+    "languages": {
+      "python": "Python",
+      "bash": "Bash",
+      "r": "R",
+      "powershell": "PowerShell",
+      "node": "Node.js"
+    },
+    "form": {
+      "title": "Καταχώρηση Νέου Σεναρίου",
+      "displayName": "Όνομα Εμφάνισης",
+      "displayNamePlaceholder": "Σενάριο Εξαγωγής Δεδομένων",
+      "language": "Γλώσσα",
+      "description": "Περιγραφή",
+      "descriptionPlaceholder": "Τι κάνει αυτό το σενάριο;",
+      "scriptPath": "Διαδρομή Αρχείου Σεναρίου",
+      "scriptPathPlaceholder": "/path/to/script.py",
+      "maxRuntime": "Μέγιστος Χρόνος Εκτέλεσης (δευτερόλεπτα)",
+      "memoryLimit": "Όριο Μνήμης (MB)",
+      "networkAccess": "Επιτρέπεται η πρόσβαση στο δίκτυο",
+      "parametersSchema": "Σχήμα Παραμέτρων (JSON)",
+      "parametersPlaceholder": "{\"param1\": {\"type\": \"string\", \"description\": \"...\"}}",
+      "invalidJson": "Μη έγκυρο JSON στις παραμέτρους",
+      "errorRequired": "Απαιτείται όνομα εμφάνισης και διαδρομή σεναρίου",
+      "errorSave": "Σφάλμα δικτύου",
+      "registerScript": "Καταχώρηση Σεναρίου",
+      "registering": "Καταχώρηση...",
+      "cancel": "Ακύρωση"
+    }
+  },
+  "analytics": {
+    "title": "Αναλυτικά Χρήσης",
+    "subtitle": "Παρακολουθήστε τη χρήση, το κόστος και την απόδοση επένδυσης του openEXPERT",
+    "stats": {
+      "totalSessions": "Σύνολο Συνεδριών",
+      "totalCost": "Συνολικό Κόστος",
+      "tokensUsed": "Tokens που Χρησιμοποιήθηκαν",
+      "uniqueModules": "Μοναδικές Μονάδες",
+      "messages": "μηνύματα",
+      "avgPerSession": "μ.ό. {amount} / συνεδρία",
+      "acrossAllSessions": "σε όλες τις συνεδρίες",
+      "modulesUsed": "μονάδες που χρησιμοποιήθηκαν"
+    },
+    "charts": {
+      "sessionActivity": "Δραστηριότητα Συνεδριών — Τελευταίες 30 Ημέρες",
+      "dailyCost": "Ημερήσιο Κόστος — Τελευταίες 30 Ημέρες",
+      "mostUsedModules": "Περισσότερο Χρησιμοποιούμενες Μονάδες",
+      "noModuleData": "Δεν υπάρχουν ακόμα δεδομένα χρήσης μονάδων",
+      "sessions": "συνεδρία",
+      "sessionPlural": "συνεδρίες"
+    },
+    "roi": {
+      "title": "Εκτίμηση Απόδοσης Επένδυσης",
+      "sessionMultiplier": "{count} συνεδρίες × {hours}ώ μ.ό. × €{rate}/ώ =",
+      "estimatedValue": "€{value} εκτιμώμενη αξία",
+      "equivalentTo": "Ισοδύναμο με περίπου",
+      "workingDays": "{days} εργάσιμη ημέρα",
+      "workingDaysPlural": "{days} εργάσιμες ημέρες",
+      "consultingTimeSaved": "εξοικονομημένου χρόνου συμβούλου.",
+      "basedOn": "Βασισμένο σε τυπικά ποσοστά συμβούλου συμμόρφωσης €{rate}/ώρα και εκτιμώμενες {hours} ώρες ισοδύναμης χειρονακτικής εργασίας ανά συνεδρία AI."
+    }
+  },
+  "insights": {
+    "title": "Πληροφορίες Δεδομένων",
+    "subtitle": "Μετατρέψτε τα δεδομένα σας σε οπτική νοημοσύνη",
+    "input": {
+      "pasteDataTab": "Επικόλληση Δεδομένων",
+      "uploadFileTab": "Ανέβασμα Αρχείου",
+      "pasteDataPlaceholder": "Επικολλήστε CSV, πίνακα ή δομημένα δεδομένα εδώ...\n\nΠαράδειγμα:\nΜήνας,Πλήθος SAR,Αξία (EUR)\nΙαν 2024,12,450000\nΦεβ 2024,18,820000",
+      "chooseFile": "Επιλογή αρχείου",
+      "acceptedFormats": "Δέχεται .csv, .xlsx, .txt",
+      "loadedFile": "Φορτώθηκε: {fileName}",
+      "questionLabel": "Τι θα θέλατε να δείτε;",
+      "questionPlaceholder": "π.χ. Εμφάνιση τάσεων στο χρόνο, σύγκριση ανά κατηγορία...",
+      "exampleShowTrends": "Εμφάνιση τάσεων στο χρόνο",
+      "exampleCompareCategory": "Σύγκριση ανά κατηγορία",
+      "exampleHighlightOutliers": "Επισήμανση ακραίων τιμών",
+      "exampleShowDistribution": "Εμφάνιση κατανομής",
+      "exampleTimelineView": "Προβολή χρονολογίου",
+      "modelNote": "Ο Anton θα αναλύσει τα δεδομένα σας και θα δημιουργήσει διαδραστικά γραφήματα χρησιμοποιώντας το Claude Opus 4.6.",
+      "errorMessage": "Παρακαλώ επικολλήστε ή ανεβάστε πρώτα δεδομένα.",
+      "errorQuestion": "Παρακαλώ περιγράψτε τι θα θέλατε να δείτε."
+    },
+    "actions": {
+      "generateInsights": "Δημιουργία Πληροφοριών",
+      "stop": "Διακοπή",
+      "analyzing": "Ο Anton αναλύει τα δεδομένα σας...",
+      "copyRawData": "Αντιγραφή ακατέργαστων δεδομένων",
+      "downloadChartData": "Λήψη δεδομένων γραφήματος (.csv)"
+    },
+    "output": {
+      "summaryTitle": "Περίληψη",
+      "narrativeTitle": "Αφηγηματική Ανάλυση"
+    }
+  },
+  "soundingBoard": {
+    "title": "Συμβουλευτικό Πάνελ",
+    "subtitle": "Ο προσωπικός σας σύμβουλος είναι έτοιμος",
+    "talkingWith": "Συζήτηση με:",
+    "advisorSettings": "Ρυθμίσεις συμβούλου",
+    "newConversation": "Νέα συζήτηση",
+    "changePersonaWarning": "Η αλλαγή του προσώπου του συμβούλου θα επαναφέρει τη συζήτηση. Συνέχεια;",
+    "personas": {
+      "strategic": {
+        "label": "Γενικός Στρατηγικός Σύμβουλος",
+        "description": "Σκέψη μεγάλης κλίμακας, στρατηγικές επιλογές, δυναμική των ενδιαφερόμενων"
+      },
+      "legal": {
+        "label": "Νομικός Σύμβουλος",
+        "description": "Νομικός κίνδυνος, συμβάσεις, κανονιστικές υποχρεώσεις, ευθύνη"
+      },
+      "risk": {
+        "label": "Ειδικός Κινδύνου",
+        "description": "Εντοπισμός κινδύνου, αξιολόγηση, μετριασμός, έλεγχοι"
+      },
+      "regulatory": {
+        "label": "Ειδικός Κανονισμών",
+        "description": "Προσδοκίες εποπτικών αρχών, ερμηνεία κανονισμών, πλαίσια συμμόρφωσης"
+      },
+      "financialCrime": {
+        "label": "Ειδικός Χρηματοοικονομικού Εγκλήματος",
+        "description": "AML/CFT, κυρώσεις, απάτη, τυπολογίες, κίνδυνος χρηματοοικονομικού εγκλήματος"
+      }
+    },
+    "context": {
+      "personaLabel": "Πρόσωπο Συμβούλου",
+      "aboutYouLabel": "Σχετικά με εσάς",
+      "aboutYouPlaceholder": "Είμαι Επικεφαλής Συμμόρφωσης σε μια τράπεζα της Σκανδιναβίας. Η εστίασή μου είναι στο AML/CFT. Η τρέχουσα πρόκλησή μου είναι η προετοιμασία για εποπτεία AMLA.",
+      "contextNote": "Αυτό το πλαίσιο αποθηκεύεται τοπικά και περιλαμβάνεται σε κάθε μήνυμα προς τον σύμβουλό σας."
+    },
+    "emptyState": {
+      "title": "Ο προσωπικός σας σύμβουλος είναι έτοιμος",
+      "description": "Ρωτήστε οτιδήποτε — στρατηγικά διλήμματα, δύσκολες καταστάσεις, κανονιστικές ερωτήσεις ή απλώς σκεφτείτε δυνατά. Ο {persona} σας θα απαντήσει με εστιασμένη, εξειδικευμένη καθοδήγηση.",
+      "tipNoContext": "Συμβουλή: Προσθέστε το πλαίσιό σας παραπάνω ώστε ο σύμβουλός σας να δώσει πιο σχετικές συμβουλές.",
+      "example1": "Πώς πρέπει να προσεγγίσω μια επερχόμενη εποπτική επιθεώρηση;",
+      "example2": "Ποιοι είναι οι μεγαλύτεροι κίνδυνοι στο σχέδιο εφαρμογής AMLR μας;",
+      "example3": "Βοηθήστε με να σκεφτώ μια δύσκολη συζήτηση με ενδιαφερόμενο",
+      "example4": "Σε τι θα εστίαζε ένας ρυθμιστής σε μια αξιολόγηση μείωσης κινδύνου;"
+    },
+    "chat": {
+      "inputPlaceholder": "Ρωτήστε τον {persona} σας...",
+      "askAdvisor": "Ρωτήστε Σύμβουλο",
+      "stop": "Διακοπή",
+      "ctrlEnterToSend": "Ctrl+Enter για αποστολή",
+      "copy": "Αντιγραφή",
+      "copied": "Αντιγράφηκε",
+      "thinking": "Σκέφτεται"
+    }
+  },
+  "formTools": {
+    "fillForm": {
+      "title": "Συμπλήρωση Φόρμας",
+      "subtitle": "Επικολλήστε οποιαδήποτε φόρμα, ερωτηματολόγιο ή πρότυπο — ο ANTON το συμπληρώνει πεδίο προς πεδίο με εξειδικευμένη καθοδήγηση και αναφορές.",
+      "formLabel": "Φόρμα ή ερωτηματολόγιο",
+      "formPlaceholder": "Επικολλήστε τη φόρμα ή το ερωτηματολόγιό σας εδώ...",
+      "contextLabel": "Πρόσθετο πλαίσιο",
+      "contextOptional": "(προαιρετικό)",
+      "contextPlaceholder": "π.χ. Αυτό αφορά μια τράπεζα της Σκανδιναβίας υπό τον AMLR",
+      "fillForm": "Συμπλήρωση Φόρμας",
+      "stop": "Διακοπή",
+      "fillingForm": "συμπλήρωση φόρμας...",
+      "copy": "Αντιγραφή",
+      "copied": "Αντιγράφηκε",
+      "download": ".md"
+    },
+    "challengeThis": {
+      "title": "Αμφισβήτηση",
+      "subtitle": "Επικολλήστε οποιοδήποτε έγγραφο, σχέδιο ή επιχείρημα — ο ANTON το ελέγχει με την ισχυρότερη δυνατή κριτική.",
+      "documentLabel": "Έγγραφο, σχέδιο ή επιχείρημα προς αμφισβήτηση",
+      "documentPlaceholder": "Επικολλήστε το έγγραφο, το σχέδιο ή το επιχείρημα για αμφισβήτηση...",
+      "contextLabel": "Πλαίσιο",
+      "contextOptional": "(προαιρετικό)",
+      "contextPlaceholder": "π.χ. Αυτή είναι μια πολιτική AML για ένα δανικό ίδρυμα πληρωμών",
+      "challengeIt": "Αμφισβήτησέ το",
+      "stop": "Διακοπή",
+      "challengeMode": "Anton — Λειτουργία Αμφισβήτησης",
+      "analyzing": "αναλύει...",
+      "copy": "Αντιγραφή",
+      "copied": "Αντιγράφηκε",
+      "download": ".md"
+    },
+    "dualInterpret": {
+      "title": "Διπλή Ερμηνεία",
+      "subtitle": "Ανεβάστε ή επικολλήστε νομικό/κανονιστικό κείμενο — ο ANTON το ερμηνεύει ως ρυθμιστής ΚΑΙ ρυθμιζόμενη οντότητα ταυτόχρονα.",
+      "pasteTextTab": "Επικόλληση Κειμένου",
+      "enterUrlTab": "Εισαγωγή URL",
+      "textLabel": "Νομικό ή κανονιστικό κείμενο",
+      "textPlaceholder": "Επικολλήστε το νομικό ή κανονιστικό κείμενο για ερμηνεία...",
+      "urlLabel": "URL κανονιστικού κειμένου",
+      "urlPlaceholder": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj",
+      "urlNote": "Η ανάκτηση URL χρησιμοποιεί την πηγή γνώσης Διαδικτυακής Αναφοράς. Για πλήρη εξαγωγή εγγράφου, χρησιμοποιήστε τον πίνακα Πηγών Γνώσης σε μια μονάδα. Εδώ, ο Anton θα χρησιμοποιήσει τη γνώση εκπαίδευσής του για το περιεχόμενο του URL συν αναζήτηση στο διαδίκτυο.",
+      "interpret": "Ερμηνεία",
+      "stop": "Διακοπή",
+      "dualMode": "Anton — Διπλή Ερμηνεία",
+      "interpreting": "ερμηνεύει...",
+      "copy": "Αντιγραφή",
+      "copied": "Αντιγράφηκε",
+      "download": ".md"
+    }
+  }
+}

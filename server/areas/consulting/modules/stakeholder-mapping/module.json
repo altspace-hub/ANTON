@@ -1,0 +1,79 @@
+{
+  "formatVersion": "1.0",
+  "id": "stakeholder-mapping",
+  "label": "Stakeholder Mapping",
+  "shortLabel": "Stakeholders",
+  "description": "Map stakeholder power and interest, design engagement strategies, identify blockers, and build communication plans for complex change programmes.",
+  "icon": "Network",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "raci-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "project_description",
+      "type": "textarea",
+      "label": "Project or change description",
+      "required": true,
+      "placeholder": "e.g., Implementing a new AML transaction monitoring platform across the bank. Affects compliance, IT, operations, front office, and finance. 12-month programme."
+    },
+    {
+      "id": "stakeholder_list",
+      "type": "textarea",
+      "label": "Key stakeholders (list who you know)",
+      "description": "List the key people and roles involved. ANTON will help identify ones you may have missed.",
+      "placeholder": "e.g., CRO (project sponsor), Head of Compliance, CIO, Head of Operations, CFO, Head of Retail Banking, External regulator (FI)..."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known concerns or resistance",
+      "placeholder": "e.g., IT is understaffed and concerned about timeline. Head of Retail Banking worried about customer impact during migration. CFO questioning the ROI."
+    },
+    {
+      "id": "stage",
+      "type": "select",
+      "label": "Project stage",
+      "options": [
+        {
+          "value": "planning",
+          "label": "Planning / Pre-start"
+        },
+        {
+          "value": "early_delivery",
+          "label": "Early delivery"
+        },
+        {
+          "value": "mid_delivery",
+          "label": "Mid-delivery"
+        },
+        {
+          "value": "change_resistance",
+          "label": "Facing resistance or blockage"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "stakeholder",
+    "change-management",
+    "communication",
+    "engagement"
+  ]
+}

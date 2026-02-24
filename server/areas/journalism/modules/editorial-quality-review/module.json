@@ -1,0 +1,68 @@
+{
+  "id": "editorial-quality-review",
+  "areaId": "journalism",
+  "label": "Editorial Quality Review",
+  "shortLabel": "Editorial Review",
+  "icon": "CheckCircle",
+  "description": "Review drafts for accuracy, fairness, structure, clarity, legal risk, and publication readiness. Provides editorial feedback with specific, actionable improvements.",
+  "color": "adv-teal",
+  "tags": ["editing", "accuracy", "fairness", "legal-review", "defamation", "editorial-standards"],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Opus strongly recommended — editorial review requires deep reasoning about accuracy, legal risk, and fairness."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "action-plan"]
+  },
+  "recommendedPersonas": ["investigative-journalist", "features-editor"],
+  "guidedInputs": [
+    {
+      "id": "draft_article",
+      "type": "textarea",
+      "label": "Draft Article",
+      "description": "Paste the draft article or article section to be reviewed.",
+      "placeholder": "Paste full article draft here...",
+      "required": true
+    },
+    {
+      "id": "article_type",
+      "type": "select",
+      "label": "Article Type",
+      "description": "What type of article is this?",
+      "options": [
+        {"value": "news", "label": "Hard news"},
+        {"value": "investigation", "label": "Investigation / accountability"},
+        {"value": "feature", "label": "Feature / long-form"},
+        {"value": "opinion", "label": "Opinion / commentary"},
+        {"value": "explainer", "label": "Explainer / background"}
+      ],
+      "required": true
+    },
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "Review Focus Areas",
+      "description": "What aspects should the review prioritise?",
+      "options": [
+        {"value": "accuracy", "label": "Factual accuracy & attribution"},
+        {"value": "fairness", "label": "Fairness & balance"},
+        {"value": "legal", "label": "Legal risk (defamation, privacy, contempt)"},
+        {"value": "structure", "label": "Structure & narrative flow"},
+        {"value": "clarity", "label": "Clarity & readability"},
+        {"value": "house_style", "label": "House style & consistency"}
+      ],
+      "defaultValue": ["accuracy", "fairness", "legal", "structure"]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context for Reviewer",
+      "description": "Anything the reviewer should know: publication, audience, what's been verified, known issues.",
+      "placeholder": "e.g. For Reuters. Subjects have been given right of reply (responses in para 8). All financial figures verified against company accounts. Unsure about legal risk in paragraph 4."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "skill-gsma-mobile-money-aml",
+  "label": "Mobile Money AML/CFT (GSMA Guidelines)",
+  "category": "domain",
+  "applicableAreas": ["fcp", "mobile-money", "microfinance"],
+  "description": "GSMA Mobile Money Compliance Guidelines, tiered KYC for mobile money, agent due diligence, transaction monitoring, SIM registration, and mobile-money specific ML/TF typologies.",
+  "tags": ["mobile-money", "gsma", "tiered-kyc", "agent-banking", "aml", "fintech", "financial-inclusion"]
+}

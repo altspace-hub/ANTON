@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "digital-lending-compliance",
+  "label": "Digital Lending Compliance",
+  "shortLabel": "Digital Lending",
+  "description": "Regulatory compliance for digital lending products covering consumer protection, interest rate caps, credit bureau reporting, data usage, and fair lending requirements.",
+  "perspective": "analytical",
+  "icon": "CreditCard",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Digital credit consumer protection frameworks, CBK digital credit providers regulations, Nigeria FCCPC digital lending guidelines, BSP digital lending circulars, interest rate cap regulations by jurisdiction"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "Digital Lending Product Type",
+      "description": "What type of digital lending product is being assessed?",
+      "required": true,
+      "options": [
+        { "value": "bnpl", "label": "BNPL (Buy Now Pay Later)" },
+        { "value": "mobile-credit", "label": "Mobile credit" },
+        { "value": "embedded-finance", "label": "Embedded finance" },
+        { "value": "nano-loans", "label": "Nano-loans" },
+        { "value": "sme-digital", "label": "SME digital loans" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Primary Jurisdiction",
+      "description": "Which country's regulatory framework applies?",
+      "required": true,
+      "options": [
+        { "value": "ke", "label": "Kenya" },
+        { "value": "ng", "label": "Nigeria" },
+        { "value": "gh", "label": "Ghana" },
+        { "value": "tz", "label": "Tanzania" },
+        { "value": "ug", "label": "Uganda" },
+        { "value": "bd", "label": "Bangladesh" },
+        { "value": "pk", "label": "Pakistan" },
+        { "value": "ph", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "interest_structure",
+      "type": "select",
+      "label": "Interest Rate Structure",
+      "description": "How is interest or cost of credit calculated and disclosed?",
+      "required": true,
+      "options": [
+        { "value": "simple", "label": "Simple interest" },
+        { "value": "reducing-balance", "label": "Reducing balance" },
+        { "value": "flat-rate", "label": "Flat rate" },
+        { "value": "revenue-share", "label": "Revenue share" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "mobile-money-compliance",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "jurisdiction-ke-cbk",
+    "jurisdiction-ng-cbn"
+  ],
+  "tags": [
+    "digital-lending",
+    "consumer-protection",
+    "interest-rate-cap",
+    "credit-bureau",
+    "bnpl",
+    "mobile-credit",
+    "fair-lending",
+    "data-privacy"
+  ]
+}

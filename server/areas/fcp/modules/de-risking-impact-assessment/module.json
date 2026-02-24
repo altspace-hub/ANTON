@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "de-risking-impact-assessment",
+  "label": "De-Risking Impact Assessment",
+  "shortLabel": "De-Risking Impact",
+  "icon": "TrendingDown",
+  "description": "Assessment framework for correspondent banking de-risking impacts on financial inclusion and economic development. Covers FSB/World Bank data, humanitarian impacts, alternative channel analysis, FATF guidance on proportionate risk management, and regulatory responses.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["impact-assessment", "executive-summary", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FSB de-risking reports, World Bank Remittance Prices Worldwide, FATF guidance on de-risking, IMF financial access data"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "affected_country",
+      "type": "select",
+      "label": "Affected Country / Region",
+      "required": true,
+      "options": [
+        {"value": "somalia", "label": "Somalia"},
+        {"value": "afghanistan", "label": "Afghanistan"},
+        {"value": "myanmar", "label": "Myanmar"},
+        {"value": "yemen", "label": "Yemen"},
+        {"value": "haiti", "label": "Haiti"},
+        {"value": "pacific-island", "label": "Pacific Island nation"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "corridor_type",
+      "type": "select",
+      "label": "Corridor / Sector Type",
+      "required": true,
+      "options": [
+        {"value": "remittance", "label": "Remittance corridor"},
+        {"value": "trade-finance", "label": "Trade finance"},
+        {"value": "humanitarian", "label": "Humanitarian"},
+        {"value": "ngo", "label": "NGO / Civil Society"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "financial_inclusion_impact",
+      "type": "textarea",
+      "label": "Population or Sectors Affected",
+      "placeholder": "Describe the population groups, businesses, or sectors that have lost or risk losing access to financial services due to de-risking..."
+    },
+    {
+      "id": "alternative_channels",
+      "type": "textarea",
+      "label": "Alternative Channels",
+      "placeholder": "What alternatives currently exist or have been proposed? e.g. mobile money, regional banks, new payment corridors, central bank solutions..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert", "legal-expert"],
+  "recommendedSkills": ["skill-fatf-mutual-evaluation"],
+  "tags": ["de-risking", "financial-inclusion", "correspondent-banking", "humanitarian", "fcp"]
+}

@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.0",
+  "id": "document-creation",
+  "label": "Document Creation",
+  "shortLabel": "Documents",
+  "icon": "FileText",
+  "description": "Create AML policies, BWRAs, KYC procedures, training programmes, and other compliance documents from templates or from scratch.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "document_type",
+      "type": "select",
+      "label": "Document Type",
+      "required": true,
+      "options": [
+        {
+          "value": "aml-policy",
+          "label": "AML/CFT Policy"
+        },
+        {
+          "value": "bwra",
+          "label": "Business-Wide Risk Assessment (BWRA)"
+        },
+        {
+          "value": "kyc-procedures",
+          "label": "KYC / CDD Procedures"
+        },
+        {
+          "value": "tm-policy",
+          "label": "Transaction Monitoring Policy"
+        },
+        {
+          "value": "str-procedures",
+          "label": "STR / SAR Reporting Procedures"
+        },
+        {
+          "value": "sanctions-policy",
+          "label": "Sanctions Compliance Policy"
+        },
+        {
+          "value": "training-programme",
+          "label": "Training Programme Framework"
+        },
+        {
+          "value": "board-report",
+          "label": "Board / Management Report"
+        },
+        {
+          "value": "risk-appetite",
+          "label": "Risk Appetite Statement"
+        },
+        {
+          "value": "other",
+          "label": "Other Document"
+        }
+      ]
+    },
+    {
+      "id": "entity_description",
+      "type": "textarea",
+      "label": "Institution Description",
+      "description": "Brief description of the institution — type, size, customer base, jurisdictions.",
+      "placeholder": "e.g. Mid-sized Swedish savings bank, 8 branches, 45,000 retail customers, mortgage and SME lending focus..."
+    },
+    {
+      "id": "special_instructions",
+      "type": "textarea",
+      "label": "Specific Requirements",
+      "description": "Any specific requirements, sections, or content the document must include.",
+      "placeholder": "e.g. Must include section on crypto exposure; Board approval date to be left blank; Follow existing structure from uploaded template..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "documents",
+    "policy",
+    "procedures",
+    "bwra"
+  ]
+}

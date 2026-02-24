@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "startups",
+  "name": "Startups & Entrepreneurship",
+  "shortName": "Startups",
+  "description": "Business planning, pitch development, funding strategy, MVP scoping, and co-founder agreements for entrepreneurs and early-stage ventures.",
+  "icon": "Rocket",
+  "color": "adv-gold",
+  "cluster": "business"
+}

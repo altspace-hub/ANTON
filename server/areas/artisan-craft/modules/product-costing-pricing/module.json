@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "product-costing-pricing",
+  "label": "Product Costing & Pricing",
+  "shortLabel": "Pricing Help",
+  "icon": "Calculator",
+  "description": "What should I charge? Calculate your true cost including materials AND your time, then set a fair price.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Artisan product costing, craft pricing strategies, tourist and export pricing for handmade goods in developing countries"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "craft_type",
+      "type": "select",
+      "label": "What type of craft do you make?",
+      "required": true,
+      "options": [
+        { "value": "weaving-fabric", "label": "Weaving or fabric" },
+        { "value": "pottery", "label": "Pottery" },
+        { "value": "jewellery", "label": "Jewellery" },
+        { "value": "woodwork", "label": "Woodwork" },
+        { "value": "leather", "label": "Leather goods" },
+        { "value": "beadwork", "label": "Beadwork" },
+        { "value": "basketry", "label": "Basketry" },
+        { "value": "embroidery", "label": "Embroidery" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "indonesia", "label": "Indonesia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "market",
+      "type": "select",
+      "label": "Who do you currently sell to?",
+      "required": true,
+      "options": [
+        { "value": "local-market", "label": "Local market or community" },
+        { "value": "tourists", "label": "Tourists" },
+        { "value": "export", "label": "Export buyers" },
+        { "value": "online", "label": "Online" },
+        { "value": "multiple", "label": "Multiple markets" }
+      ]
+    },
+    {
+      "id": "challenge",
+      "type": "select",
+      "label": "What is your main pricing challenge?",
+      "required": true,
+      "options": [
+        { "value": "dont-know-cost", "label": "I don't know my real cost" },
+        { "value": "being-undercut", "label": "Other sellers charge less than me" },
+        { "value": "time-not-paid", "label": "My time is not included in the price" },
+        { "value": "tourist-discounts", "label": "Tourists want big discounts" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "tags": [
+    "bop",
+    "artisan",
+    "craft",
+    "pricing",
+    "product-costing",
+    "handmade",
+    "fair-price",
+    "kenya",
+    "india",
+    "indonesia",
+    "ghana",
+    "womens-economic-empowerment"
+  ]
+}

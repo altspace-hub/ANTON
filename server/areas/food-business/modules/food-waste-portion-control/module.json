@@ -1,0 +1,83 @@
+{
+  "formatVersion": "1.0",
+  "id": "food-waste-portion-control",
+  "label": "Waste Reduction & Portion Control",
+  "shortLabel": "Reduce Waste",
+  "icon": "Recycle",
+  "description": "Stop throwing away profits. Control portions and reduce food waste to increase your margins.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Food waste reduction, portion control, and batch cooking strategies for micro-food-businesses in developing countries"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of food business do you have?",
+      "required": true,
+      "options": [
+        { "value": "street-stall", "label": "Street food stall" },
+        { "value": "small-restaurant", "label": "Small restaurant" },
+        { "value": "catering", "label": "Catering" },
+        { "value": "home-based", "label": "Home-based food business" },
+        { "value": "market-vendor", "label": "Market food vendor" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "waste_type",
+      "type": "select",
+      "label": "What kind of waste is your biggest problem?",
+      "required": true,
+      "options": [
+        { "value": "cooked-leftover", "label": "Cooked food left over at end of day" },
+        { "value": "ingredients-spoiling", "label": "Ingredients going bad before I use them" },
+        { "value": "inconsistent-portions", "label": "Inconsistent portions — some plates too big" },
+        { "value": "all", "label": "All of these" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "tags": [
+    "bop",
+    "food-business",
+    "food-waste",
+    "portion-control",
+    "batch-cooking",
+    "profitability",
+    "food-vendor",
+    "fifo"
+  ]
+}

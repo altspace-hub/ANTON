@@ -1,0 +1,93 @@
+{
+  "formatVersion": "1.0",
+  "id": "exit-interview-analyzer",
+  "label": "Exit Interview Pattern Analyzer",
+  "shortLabel": "Exit Analysis",
+  "description": "Analyzes patterns across multiple exit interview responses to identify systemic issues, retention risks, and organizational health signals.",
+  "icon": "LogOut",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "exit_interview_data",
+      "type": "textarea",
+      "label": "Exit interview responses",
+      "required": true,
+      "description": "Paste anonymised exit interview responses. Label each by role level and department, not name.",
+      "placeholder": "Leaver 1 (Manager, Compliance): Primary reason for leaving: better compensation at competitor. Secondary comments: 'management style has become very top-down, less collaborative than when I joined. Work-life balance has deteriorated in the last 12 months.'\nLeaver 2 (Analyst, Risk): Primary reason: career growth opportunity. Comments: 'no clear promotion path, same role for 3 years. Training budget was cut and I felt stagnant.'\nLeaver 3 (Director, Legal): Primary reason: personal (relocation). Comments: 'no major issues, would recommend as employer.'"
+    },
+    {
+      "id": "period",
+      "type": "text",
+      "label": "Analysis period",
+      "placeholder": "e.g., January – December 2024 (18 exits)"
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisational context (optional)",
+      "description": "Any relevant context: restructuring, leadership changes, market conditions, headcount targets.",
+      "placeholder": "e.g., Organisation underwent a restructuring in Q2 2024. New CEO appointed in January 2024. Voluntary attrition rate was 14% (up from 9% prior year). Industry benchmark attrition is approximately 11%."
+    },
+    {
+      "id": "analysis_focus",
+      "type": "multi-select",
+      "label": "Analysis focus areas",
+      "options": [
+        {
+          "value": "primary_reasons",
+          "label": "Primary stated reasons for leaving"
+        },
+        {
+          "value": "themes",
+          "label": "Thematic patterns across responses"
+        },
+        {
+          "value": "by_level",
+          "label": "Patterns by seniority level"
+        },
+        {
+          "value": "by_department",
+          "label": "Patterns by department or function"
+        },
+        {
+          "value": "management",
+          "label": "Management and leadership signals"
+        },
+        {
+          "value": "culture",
+          "label": "Culture, values, and environment signals"
+        },
+        {
+          "value": "retention_actions",
+          "label": "Retention risk and recommended actions"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "exit-interview",
+    "attrition",
+    "retention",
+    "organisational-health",
+    "people-analytics"
+  ]
+}

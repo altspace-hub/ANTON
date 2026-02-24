@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-in-rbi",
+  "label": "India — Reserve Bank of India (RBI)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "mobile-money", "microfinance", "tax-transfer-pricing", "insurance"],
+  "description": "Indian financial regulatory framework: RBI regulations, PMLA, FEMA, SEBI, UPI/digital payments, AML/CFT reporting obligations, and key India-specific terminology.",
+  "tags": ["india", "rbi", "south-asia", "developing-economy", "upi", "pmla"]
+}

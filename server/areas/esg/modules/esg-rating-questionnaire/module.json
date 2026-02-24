@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "esg-rating-questionnaire",
+  "label": "ESG Rating Questionnaire Pre-Filler",
+  "shortLabel": "Rating Questionnaire",
+  "description": "Pre-populates common ESG rating agency questionnaires (MSCI, Sustainalytics, CDP, EcoVadis) from available company data and publicly disclosed information.",
+  "icon": "ClipboardList",
+  "color": "adv-green",
+  "areaId": "esg",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "rating_agency",
+      "type": "select",
+      "label": "Rating agency / framework",
+      "required": true,
+      "options": [
+        { "value": "msci", "label": "MSCI ESG Ratings" },
+        { "value": "sustainalytics", "label": "Sustainalytics ESG Risk Rating" },
+        { "value": "cdp", "label": "CDP (Carbon Disclosure Project)" },
+        { "value": "ecovadis", "label": "EcoVadis Sustainability Rating" },
+        { "value": "sp_global", "label": "S&P Global (formerly Dow Jones Sustainability Index)" },
+        { "value": "iss", "label": "ISS ESG" },
+        { "value": "multiple", "label": "Multiple agencies — I need guidance on priorities" }
+      ]
+    },
+    {
+      "id": "company_context",
+      "type": "textarea",
+      "label": "Company context",
+      "required": true,
+      "placeholder": "Company name, industry sector, geography, size (employees, revenue), any current ESG ratings or scores you have received."
+    },
+    {
+      "id": "existing_disclosures",
+      "type": "textarea",
+      "label": "Existing sustainability disclosures",
+      "placeholder": "What sustainability information have you already published or collected?\n- Sustainability report (year)\n- GHG emissions data\n- Employee data\n- Governance information\n- Policies in place\n\nOr upload your existing sustainability report via the file upload."
+    },
+    {
+      "id": "questionnaire_sections",
+      "type": "textarea",
+      "label": "Questionnaire sections you need help with",
+      "placeholder": "If you have the questionnaire, paste the specific questions or sections you are struggling with. If you don't have it yet, describe the areas where you expect to have gaps."
+    },
+    {
+      "id": "current_score",
+      "type": "text",
+      "label": "Current ESG score (if known)",
+      "placeholder": "e.g., MSCI: BBB, Sustainalytics: 23 (Medium Risk), CDP: C"
+    },
+    {
+      "id": "improvement_target",
+      "type": "text",
+      "label": "Target score or rating improvement",
+      "placeholder": "e.g., Target MSCI A rating, CDP B response, EcoVadis Silver"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "esg-rating",
+    "msci",
+    "sustainalytics",
+    "cdp",
+    "ecovadis",
+    "questionnaire",
+    "investor-relations"
+  ]
+}

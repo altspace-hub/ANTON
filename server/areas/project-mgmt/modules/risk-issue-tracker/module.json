@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "risk-issue-tracker",
+  "label": "Risk & Issue Management",
+  "shortLabel": "Risk & Issues",
+  "icon": "AlertTriangle",
+  "description": "Identify, assess, and manage project risks and issues: risk register design, probability/impact scoring, mitigation planning, and issue resolution tracking.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Risk management frameworks, PMI risk management, programme risk categories"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "risk_id",
+          "label": "Identify risks for a project or programme"
+        },
+        {
+          "value": "risk_register",
+          "label": "Build or review a risk register"
+        },
+        {
+          "value": "mitigation",
+          "label": "Develop mitigation plans for risks"
+        },
+        {
+          "value": "issue_resolve",
+          "label": "Analyse and resolve an active issue"
+        },
+        {
+          "value": "escalation",
+          "label": "What to escalate and how"
+        }
+      ]
+    },
+    {
+      "id": "project_context",
+      "type": "textarea",
+      "label": "Project context",
+      "placeholder": "Describe the project type, stage, and team. List any known risks or issues."
+    }
+  ],
+  "recommendedPersonas": [
+    "devil-advocate",
+    "risk-specialist"
+  ],
+  "tags": [
+    "risk",
+    "issues",
+    "mitigation",
+    "register",
+    "project-management"
+  ]
+}

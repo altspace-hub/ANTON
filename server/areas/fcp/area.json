@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "fcp",
+  "name": "Financial Crime Prevention",
+  "shortName": "FCP",
+  "description": "AML/CFT, sanctions, regulatory compliance, and financial crime risk management for banks, fintechs, and financial institutions.",
+  "icon": "Shield",
+  "color": "adv-teal",
+  "cluster": "finance"
+}

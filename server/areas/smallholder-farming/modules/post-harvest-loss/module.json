@@ -1,0 +1,80 @@
+{
+  "formatVersion": "1.0",
+  "id": "post-harvest-loss",
+  "label": "Post-Harvest Loss Prevention",
+  "shortLabel": "Post-Harvest",
+  "icon": "Package",
+  "description": "How do I store my harvest properly? Prevent losses from pests, mould, and bad storage — and keep produce fresh longer.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Post-harvest storage solutions, grain storage, PICS bags, hermetic storage, solar drying, food safety for smallholder farmers" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "crop_type",
+      "label": "What are you storing?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "maize-grain", "label": "Maize or grain" },
+        { "value": "beans", "label": "Beans" },
+        { "value": "root-crops", "label": "Root crops (cassava, yam, sweet potato)" },
+        { "value": "vegetables", "label": "Vegetables" },
+        { "value": "fruits", "label": "Fruits" },
+        { "value": "rice", "label": "Rice" }
+      ]
+    },
+    {
+      "id": "storage_available",
+      "label": "What storage do you have?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "mud-granary", "label": "Traditional mud granary" },
+        { "value": "metal-silo", "label": "Metal silo" },
+        { "value": "hermetic-bags", "label": "Hermetic bags (PICS or similar)" },
+        { "value": "open-shed", "label": "Open shed or room" },
+        { "value": "no-storage", "label": "No proper storage" }
+      ]
+    },
+    {
+      "id": "climate",
+      "label": "What is the weather like where you store?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "hot-humid", "label": "Hot and humid" },
+        { "value": "hot-dry", "label": "Hot and dry" },
+        { "value": "moderate", "label": "Moderate (not too hot or cold)" },
+        { "value": "cold-nights", "label": "Cold nights, warm days" }
+      ]
+    },
+    {
+      "id": "main_problem",
+      "label": "What is your main storage problem?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "weevils-insects", "label": "Weevils or insects" },
+        { "value": "mould-fungus", "label": "Mould or fungus" },
+        { "value": "rodents", "label": "Rats or mice" },
+        { "value": "moisture", "label": "Too much moisture" },
+        { "value": "all-problems", "label": "All of these problems" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["post-harvest", "storage", "grain-storage", "pics-bags", "hermetic-storage", "solar-drying", "weevils", "mould-prevention", "food-safety", "smallholder"]
+}

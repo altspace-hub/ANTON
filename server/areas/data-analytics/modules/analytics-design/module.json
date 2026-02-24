@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "analytics-design",
+  "label": "Analytics Use Case Design",
+  "shortLabel": "Analytics Design",
+  "icon": "BarChart",
+  "description": "Design analytics and AI use cases for compliance, risk, and operations: problem definition, data requirements, model approach, success metrics, and implementation roadmap.",
+  "color": "adv-teal",
+  "areaId": "data-analytics",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Analytics best practices, EBA ML guidelines, financial services AI guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "use_case_type",
+      "type": "select",
+      "label": "Type of analytics use case",
+      "required": true,
+      "options": [
+        {
+          "value": "aml_screening",
+          "label": "AML transaction monitoring / name screening"
+        },
+        {
+          "value": "credit_risk",
+          "label": "Credit risk scoring / PD modelling"
+        },
+        {
+          "value": "fraud_detection",
+          "label": "Fraud detection"
+        },
+        {
+          "value": "regulatory_reporting",
+          "label": "Regulatory reporting automation"
+        },
+        {
+          "value": "customer_analytics",
+          "label": "Customer behaviour analytics"
+        },
+        {
+          "value": "other",
+          "label": "Other (describe below)"
+        }
+      ]
+    },
+    {
+      "id": "stage",
+      "type": "select",
+      "label": "Project stage",
+      "options": [
+        {
+          "value": "ideation",
+          "label": "Ideation - is this a good idea?"
+        },
+        {
+          "value": "design",
+          "label": "Design - how should we build it?"
+        },
+        {
+          "value": "review",
+          "label": "Review - critique an existing design"
+        },
+        {
+          "value": "validation",
+          "label": "Validation - does the model work?"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Use case context",
+      "placeholder": "Describe the problem, available data sources, and constraints."
+    }
+  ],
+  "recommendedPersonas": [
+    "data-scientist",
+    "systems-thinker"
+  ],
+  "tags": [
+    "analytics",
+    "ml",
+    "ai",
+    "data",
+    "use-case",
+    "modelling"
+  ]
+}

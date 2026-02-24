@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "pitch-deck",
+  "label": "Pitch Deck Creator",
+  "shortLabel": "Pitch Deck",
+  "icon": "Presentation",
+  "description": "Create compelling investor pitch decks with structured narratives, market sizing, competitive positioning, financial projections, and team slides.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "stakeholder-presentation"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "pitch_audience",
+      "type": "select",
+      "label": "Pitch Audience",
+      "description": "Who is the pitch deck for?",
+      "required": true,
+      "options": [
+        {
+          "value": "vc",
+          "label": "Venture Capital / Institutional Investors"
+        },
+        {
+          "value": "angel",
+          "label": "Angel Investors / Syndicates"
+        },
+        {
+          "value": "accelerator",
+          "label": "Accelerator / Incubator Application"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate Partners / Strategic Investors"
+        },
+        {
+          "value": "grant",
+          "label": "Grant / Government Funding"
+        },
+        {
+          "value": "internal",
+          "label": "Internal Stakeholders / Board"
+        }
+      ]
+    },
+    {
+      "id": "funding_amount",
+      "type": "textarea",
+      "label": "Funding Target",
+      "description": "How much are you raising and what stage?",
+      "placeholder": "e.g. Raising EUR 2M seed round to fund product development and first 10 enterprise customers..."
+    },
+    {
+      "id": "key_metrics",
+      "type": "textarea",
+      "label": "Key Traction / Metrics",
+      "description": "Share any traction, metrics, or milestones achieved.",
+      "placeholder": "e.g. 15 paying customers, EUR 120K ARR, 30% MoM growth, 3 enterprise pilots..."
+    },
+    {
+      "id": "company_description",
+      "type": "textarea",
+      "label": "Company Overview",
+      "description": "Brief description of what your company does.",
+      "placeholder": "e.g. RegTech SaaS platform automating AML compliance for mid-market banks..."
+    }
+  ],
+  "recommendedPersonas": [
+    "business-expert",
+    "pragmatist"
+  ],
+  "tags": [
+    "startup",
+    "pitch-deck",
+    "fundraising",
+    "investor"
+  ]
+}

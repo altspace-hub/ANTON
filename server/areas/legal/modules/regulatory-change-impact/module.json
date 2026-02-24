@@ -1,0 +1,122 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-change-impact",
+  "label": "Regulatory Change Impact Assessment",
+  "shortLabel": "Change Impact",
+  "description": "Assess the operational, technical, and organisational impact of new or amended regulation on your institution. Produce impact heat maps and implementation roadmaps.",
+  "icon": "GitCompare",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "impact-assessment",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulation",
+      "type": "text",
+      "label": "Which regulation or change?",
+      "required": true,
+      "placeholder": "e.g., DORA (effective Jan 2025), AMLR 2024/1624, PSD3..."
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution type",
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "payment",
+          "label": "Payment Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "business_areas",
+      "type": "multi-select",
+      "label": "Business areas to assess",
+      "options": [
+        {
+          "value": "compliance",
+          "label": "Compliance / Legal"
+        },
+        {
+          "value": "it",
+          "label": "IT / Technology"
+        },
+        {
+          "value": "operations",
+          "label": "Operations"
+        },
+        {
+          "value": "front_office",
+          "label": "Front Office / Sales"
+        },
+        {
+          "value": "risk",
+          "label": "Risk Management"
+        },
+        {
+          "value": "finance",
+          "label": "Finance / CFO"
+        },
+        {
+          "value": "hr",
+          "label": "HR / People"
+        },
+        {
+          "value": "procurement",
+          "label": "Procurement / Vendor Management"
+        }
+      ]
+    },
+    {
+      "id": "known_gaps",
+      "type": "textarea",
+      "label": "Known gaps or concerns",
+      "placeholder": "Any areas you already know will require significant work, or areas of particular concern."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "regulatory-change",
+    "impact",
+    "dora",
+    "amlr",
+    "implementation"
+  ]
+}

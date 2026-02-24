@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "adr-writer",
+  "label": "Architecture Decision Record Writer",
+  "shortLabel": "ADR Writer",
+  "description": "Creates well-structured Architecture Decision Records (ADRs) from technical discussions. Documents context, decision, consequences, and alternatives considered in standard format.",
+  "icon": "BookMarked",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "decision_title",
+      "type": "text",
+      "label": "Decision title",
+      "required": true,
+      "placeholder": "e.g., Use PostgreSQL instead of MongoDB, Adopt event-driven architecture for order processing, Introduce API gateway for microservices"
+    },
+    {
+      "id": "decision_date",
+      "type": "text",
+      "label": "Decision date",
+      "placeholder": "e.g., 2025-03-15"
+    },
+    {
+      "id": "status",
+      "type": "select",
+      "label": "Decision status",
+      "options": [
+        { "value": "proposed", "label": "Proposed — under discussion" },
+        { "value": "accepted", "label": "Accepted — decision made" },
+        { "value": "deprecated", "label": "Deprecated — superseded by newer decision" },
+        { "value": "superseded", "label": "Superseded — replaced by another ADR" }
+      ]
+    },
+    {
+      "id": "problem_context",
+      "type": "textarea",
+      "label": "Problem and context",
+      "required": true,
+      "placeholder": "Describe the technical challenge, constraint, or opportunity that required a decision. What was the situation? What forces were at play? What were the non-functional requirements (performance, scalability, maintainability, cost)?"
+    },
+    {
+      "id": "decision_made",
+      "type": "textarea",
+      "label": "Decision made (or proposed)",
+      "required": true,
+      "placeholder": "What was decided? Be specific. Include the key technical choice and any important constraints or conditions on the decision."
+    },
+    {
+      "id": "alternatives",
+      "type": "textarea",
+      "label": "Alternatives considered",
+      "placeholder": "List the other options that were evaluated. For each, note key advantages and why it was not chosen."
+    },
+    {
+      "id": "consequences",
+      "type": "textarea",
+      "label": "Known consequences",
+      "placeholder": "What are the positive and negative consequences of this decision? What tradeoffs are we accepting? What new problems does this create? What does this simplify?"
+    },
+    {
+      "id": "deciders",
+      "type": "text",
+      "label": "Decision makers",
+      "placeholder": "e.g., Engineering team, CTO, Architecture review board"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "adr",
+    "architecture",
+    "decision-record",
+    "documentation",
+    "technical-governance"
+  ]
+}

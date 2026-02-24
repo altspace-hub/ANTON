@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "grant-writing",
+  "label": "Grant Writing Support",
+  "shortLabel": "Grant Writing",
+  "description": "Structure and draft grant applications, funding proposals, and project bids for public funding, EU programmes, and research grants.",
+  "icon": "FileText",
+  "color": "adv-blue",
+  "areaId": "public-sector",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "client-proposal"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "funding_type",
+      "type": "select",
+      "label": "Funding programme type",
+      "required": true,
+      "options": [
+        {
+          "value": "eu_horizon",
+          "label": "EU Horizon Europe"
+        },
+        {
+          "value": "eu_structural",
+          "label": "EU Structural Funds"
+        },
+        {
+          "value": "national_research",
+          "label": "National Research Council"
+        },
+        {
+          "value": "government_grant",
+          "label": "Government Grant"
+        },
+        {
+          "value": "foundation",
+          "label": "Foundation / Charitable Grant"
+        },
+        {
+          "value": "other",
+          "label": "Other Funding Programme"
+        }
+      ]
+    },
+    {
+      "id": "project_stage",
+      "type": "select",
+      "label": "Application stage",
+      "options": [
+        {
+          "value": "concept",
+          "label": "Concept Note / Expression of Interest"
+        },
+        {
+          "value": "full_application",
+          "label": "Full Application"
+        },
+        {
+          "value": "revision",
+          "label": "Revision / Resubmission"
+        },
+        {
+          "value": "reporting",
+          "label": "Progress / Final Report"
+        }
+      ]
+    },
+    {
+      "id": "project_description",
+      "type": "textarea",
+      "label": "Project description",
+      "required": true,
+      "placeholder": "Describe the project, its objectives, target outcomes, budget range, and consortium partners if applicable."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "grant",
+    "funding",
+    "proposal",
+    "public-sector",
+    "eu-programmes"
+  ]
+}

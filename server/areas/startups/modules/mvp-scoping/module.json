@@ -1,0 +1,98 @@
+{
+  "formatVersion": "1.0",
+  "id": "mvp-scoping",
+  "label": "MVP Scoping Workshop",
+  "shortLabel": "MVP Scoping",
+  "icon": "Target",
+  "description": "Define your Minimum Viable Product: prioritise features, map user journeys, establish success metrics, and create a realistic development roadmap.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "project-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "Product Type",
+      "description": "What type of product are you building?",
+      "required": true,
+      "options": [
+        {
+          "value": "web-app",
+          "label": "Web Application"
+        },
+        {
+          "value": "mobile-app",
+          "label": "Mobile Application"
+        },
+        {
+          "value": "api",
+          "label": "API / Platform"
+        },
+        {
+          "value": "hardware",
+          "label": "Hardware / IoT"
+        },
+        {
+          "value": "marketplace",
+          "label": "Marketplace"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "problem_statement",
+      "type": "textarea",
+      "label": "Problem Statement",
+      "description": "What problem does your product solve?",
+      "required": true,
+      "placeholder": "e.g. Compliance officers spend 20+ hours per week manually collecting data for regulatory reports..."
+    },
+    {
+      "id": "target_users",
+      "type": "textarea",
+      "label": "Target Users",
+      "description": "Who are the primary users and what are their needs?",
+      "placeholder": "e.g. Compliance officers at mid-size banks who need to file quarterly reports to the FSA..."
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints & Resources",
+      "description": "What are your development constraints?",
+      "placeholder": "e.g. 2 developers, EUR 50K budget, need first version in 3 months, must integrate with existing banking APIs..."
+    }
+  ],
+  "recommendedPersonas": [
+    "business-expert",
+    "pragmatist"
+  ],
+  "tags": [
+    "startup",
+    "mvp",
+    "product",
+    "scoping",
+    "development"
+  ]
+}

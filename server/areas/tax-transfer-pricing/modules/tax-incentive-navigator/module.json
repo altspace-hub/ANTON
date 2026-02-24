@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-incentive-navigator",
+  "label": "Tax Incentive & Relief Navigator",
+  "shortLabel": "Tax Incentives",
+  "description": "Identify available tax incentives, credits, and reliefs including R&D tax credits, patent boxes, free zone benefits, investment allowances, and grant schemes. Assess eligibility conditions, Pillar Two interaction, and implementation steps.",
+  "icon": "Calculator",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "action-plan",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "R&D tax credits, patent boxes, free zone regimes, Pillar Two SBIE/QRDP interaction, EU state aid rules"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "incentive_types",
+      "type": "multi-select",
+      "label": "Incentive categories to explore",
+      "required": true,
+      "options": [
+        { "value": "rd_credits", "label": "R&D tax credits / super-deductions" },
+        { "value": "patent_box", "label": "Patent box / IP income regime" },
+        { "value": "investment_allowances", "label": "Investment allowances / accelerated depreciation" },
+        { "value": "free_zone", "label": "Free trade zone / special economic zone" },
+        { "value": "holding_regime", "label": "Participation exemption / holding regime" },
+        { "value": "green_incentives", "label": "Green / ESG tax incentives" },
+        { "value": "employment_credits", "label": "Employment / job creation credits" },
+        { "value": "film_creative", "label": "Creative industries / film tax credits" },
+        { "value": "startup_sme", "label": "SME / startup reliefs (SEIS, EIS, QSBS)" }
+      ]
+    },
+    {
+      "id": "jurisdiction_incentive",
+      "type": "multi-select",
+      "label": "Jurisdictions to analyse",
+      "options": [
+        { "value": "se", "label": "Sweden" },
+        { "value": "uk", "label": "United Kingdom" },
+        { "value": "nl", "label": "Netherlands" },
+        { "value": "ie", "label": "Ireland" },
+        { "value": "lu", "label": "Luxembourg" },
+        { "value": "be", "label": "Belgium" },
+        { "value": "fr", "label": "France" },
+        { "value": "sg", "label": "Singapore" },
+        { "value": "ae", "label": "UAE (Free Zones)" },
+        { "value": "us", "label": "United States" }
+      ]
+    },
+    {
+      "id": "business_activities",
+      "type": "textarea",
+      "label": "Qualifying activities",
+      "description": "Describe the activities, expenditure, or investments for which incentives are sought.",
+      "placeholder": "e.g., Software development team of 40 engineers in UK working on AI-driven analytics product, annual R&D spend ~GBP 3M; considering patent box registration for newly granted UK patent..."
+    },
+    {
+      "id": "pillar_two_in_scope",
+      "type": "select",
+      "label": "Is the group in scope for Pillar Two?",
+      "description": "Groups with consolidated revenue >= EUR 750M are subject to Pillar Two GloBE minimum tax from 2024.",
+      "options": [
+        { "value": "yes_in_scope", "label": "Yes — in scope for Pillar Two" },
+        { "value": "no_below_threshold", "label": "No — below EUR 750M threshold" },
+        { "value": "uncertain", "label": "Uncertain — near threshold" }
+      ]
+    },
+    {
+      "id": "prior_claims",
+      "type": "select",
+      "label": "Prior incentive claims",
+      "options": [
+        { "value": "none", "label": "No prior claims — starting fresh" },
+        { "value": "some_claims", "label": "Some prior claims — looking to expand" },
+        { "value": "review_existing", "label": "Review and optimise existing claims" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "tax-director",
+    "fcp-expert"
+  ],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Standard incentive mapping works well on Sonnet; Pillar Two interaction analysis and patent box design warrant Opus."
+  },
+  "tags": [
+    "tax-incentives",
+    "R&D-credits",
+    "patent-box",
+    "free-zone",
+    "pillar-two-interaction",
+    "investment-allowances",
+    "QRDP",
+    "SBIE",
+    "EU-state-aid"
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "formatVersion": "1.0",
+  "id": "financial-analysis",
+  "label": "Financial Analysis",
+  "shortLabel": "Financial Analysis",
+  "description": "Perform financial statement analysis, ratio analysis, trend analysis, benchmarking, and financial modelling support. Interpret financial data and generate insights for decision-makers.",
+  "icon": "LineChart",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_type",
+      "type": "select",
+      "label": "Type of financial analysis",
+      "required": true,
+      "options": [
+        {
+          "value": "statement_analysis",
+          "label": "Financial statement analysis"
+        },
+        {
+          "value": "ratio_analysis",
+          "label": "Ratio analysis & interpretation"
+        },
+        {
+          "value": "trend_analysis",
+          "label": "Trend & time-series analysis"
+        },
+        {
+          "value": "benchmarking",
+          "label": "Peer/industry benchmarking"
+        },
+        {
+          "value": "valuation",
+          "label": "Valuation support"
+        },
+        {
+          "value": "feasibility",
+          "label": "Feasibility / investment analysis"
+        },
+        {
+          "value": "cash_flow",
+          "label": "Cash flow analysis & forecasting"
+        },
+        {
+          "value": "working_capital",
+          "label": "Working capital analysis"
+        },
+        {
+          "value": "cost_analysis",
+          "label": "Cost structure analysis"
+        }
+      ]
+    },
+    {
+      "id": "industry",
+      "type": "select",
+      "label": "Industry",
+      "description": "Industry context is essential for meaningful ratio analysis and benchmarking.",
+      "options": [
+        {
+          "value": "banking",
+          "label": "Banking & Financial Services"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance"
+        },
+        {
+          "value": "manufacturing",
+          "label": "Manufacturing"
+        },
+        {
+          "value": "retail",
+          "label": "Retail & E-commerce"
+        },
+        {
+          "value": "technology",
+          "label": "Technology / SaaS"
+        },
+        {
+          "value": "professional_services",
+          "label": "Professional Services"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real Estate"
+        },
+        {
+          "value": "healthcare",
+          "label": "Healthcare"
+        },
+        {
+          "value": "general",
+          "label": "General / Other"
+        }
+      ]
+    },
+    {
+      "id": "purpose",
+      "type": "select",
+      "label": "Purpose of analysis",
+      "options": [
+        {
+          "value": "investment_decision",
+          "label": "Investment / acquisition decision"
+        },
+        {
+          "value": "credit_assessment",
+          "label": "Credit assessment"
+        },
+        {
+          "value": "management_review",
+          "label": "Management performance review"
+        },
+        {
+          "value": "due_diligence",
+          "label": "Due diligence"
+        },
+        {
+          "value": "strategic_planning",
+          "label": "Strategic planning"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory requirement"
+        },
+        {
+          "value": "general",
+          "label": "General analysis"
+        }
+      ]
+    },
+    {
+      "id": "financial_data",
+      "type": "textarea",
+      "label": "Financial data or context",
+      "placeholder": "Paste key financial figures, describe what data you have available, or upload financial statements as files."
+    },
+    {
+      "id": "specific_questions",
+      "type": "textarea",
+      "label": "Specific questions or focus areas",
+      "placeholder": "e.g., Is the company's leverage sustainable? What is driving the margin decline? How does working capital efficiency compare to peers?"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "finance",
+    "analysis",
+    "ratios",
+    "valuation",
+    "cash-flow",
+    "benchmarking"
+  ]
+}

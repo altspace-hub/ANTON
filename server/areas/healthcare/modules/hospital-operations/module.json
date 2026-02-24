@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "hospital-operations",
+  "label": "Hospital Operations Optimisation",
+  "shortLabel": "Hospital Operations",
+  "icon": "Building2",
+  "description": "Operational efficiency assessment for hospitals and healthcare facilities. Covers patient flow, bed management, OR utilisation, ED throughput, workforce planning, and cost reduction.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "impact-assessment",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Lean in healthcare, Theory of Constraints, bed management metrics, OR utilisation optimisation, ED throughput, workforce planning, value stream mapping, NHS improvement frameworks"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "facility_type",
+      "label": "Facility Type",
+      "type": "select",
+      "options": [
+        "General hospital",
+        "Teaching hospital",
+        "Specialist centre",
+        "Day surgery",
+        "ED/Emergency"
+      ],
+      "required": true
+    },
+    {
+      "id": "focus",
+      "label": "Optimisation Focus Areas",
+      "type": "multiselect",
+      "options": [
+        "Patient flow",
+        "Bed management",
+        "OR/theatre utilisation",
+        "ED throughput",
+        "Outpatient scheduling",
+        "Workforce",
+        "Cost reduction"
+      ],
+      "required": true
+    },
+    {
+      "id": "size",
+      "label": "Facility Size",
+      "type": "select",
+      "options": [
+        "<100 beds",
+        "100-300 beds",
+        "300-1000 beds",
+        ">1000 beds"
+      ],
+      "required": true
+    },
+    {
+      "id": "concerns",
+      "label": "Specific Operational Concerns",
+      "type": "textarea",
+      "placeholder": "Describe the main operational problems, recent performance data, or improvement targets...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "hospital-coo",
+    "operations-manager",
+    "quality-improvement-lead"
+  ],
+  "tags": [
+    "healthcare",
+    "hospital-operations",
+    "lean",
+    "patient-flow",
+    "bed-management",
+    "or-utilisation",
+    "workforce-planning"
+  ]
+}

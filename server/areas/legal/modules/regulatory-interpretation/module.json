@@ -1,0 +1,169 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-interpretation",
+  "label": "Regulatory Interpretation",
+  "shortLabel": "Reg Interpretation",
+  "description": "Interpret financial services regulations, identify obligations, cross-reference delegated acts, and translate legal text into practical compliance requirements.",
+  "icon": "FileSearch",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "regulatory-comparison"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulation",
+      "type": "text",
+      "label": "Which regulation or legal text?",
+      "description": "Specify the regulation, directive, or legal text you need interpreted.",
+      "required": true,
+      "placeholder": "e.g., AMLR 2024/1624, GDPR Article 35, DORA Article 28, PSD3..."
+    },
+    {
+      "id": "specific_articles",
+      "type": "text",
+      "label": "Specific articles or sections (optional)",
+      "description": "Leave blank to interpret the whole instrument or scope.",
+      "placeholder": "e.g., Articles 28-30, Chapter IV, Title II"
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Relevant jurisdictions",
+      "description": "Select all jurisdictions that need to be considered.",
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "What type of entity?",
+      "description": "The entity type affects which provisions and proportionality thresholds apply.",
+      "options": [
+        {
+          "value": "credit_institution",
+          "label": "Credit Institution (Bank)"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment Institution"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment Firm"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "fund_manager",
+          "label": "Fund Manager / AIFM"
+        },
+        {
+          "value": "casp",
+          "label": "Crypto-Asset Service Provider"
+        },
+        {
+          "value": "other_financial",
+          "label": "Other Financial Entity"
+        },
+        {
+          "value": "not_applicable",
+          "label": "Not applicable / General"
+        }
+      ]
+    },
+    {
+      "id": "purpose",
+      "type": "select",
+      "label": "Why do you need this interpretation?",
+      "description": "This shapes how the analysis is structured and what to emphasise.",
+      "options": [
+        {
+          "value": "understand",
+          "label": "Understand our obligations"
+        },
+        {
+          "value": "compare",
+          "label": "Compare with previous version"
+        },
+        {
+          "value": "impact",
+          "label": "Assess impact on our operations"
+        },
+        {
+          "value": "implementation",
+          "label": "Prepare implementation plan"
+        },
+        {
+          "value": "supervisory",
+          "label": "Respond to supervisory finding"
+        },
+        {
+          "value": "research",
+          "label": "General research / briefing"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Additional context (optional)",
+      "description": "Any specific questions, concerns, or angles you want explored.",
+      "placeholder": "e.g., We are a small payment institution — which proportionality provisions apply? What are the transitional provisions?"
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "regulation",
+    "interpretation",
+    "legal",
+    "compliance",
+    "eu"
+  ]
+}

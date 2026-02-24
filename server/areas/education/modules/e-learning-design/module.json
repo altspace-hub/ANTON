@@ -1,0 +1,134 @@
+{
+  "formatVersion": "1.0",
+  "id": "e-learning-design",
+  "label": "E-Learning Course Design",
+  "shortLabel": "E-Learning",
+  "description": "Design complete e-learning courses with module structures, interactive content, multimedia storyboards, knowledge checks, and learner engagement strategies.",
+  "icon": "Cpu",
+  "color": "adv-gold",
+  "areaId": "education",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "creative",
+    "outputFormats": [
+      "training-material",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "course_type",
+      "type": "select",
+      "label": "Course type",
+      "required": true,
+      "options": [
+        {
+          "value": "self_paced",
+          "label": "Self-Paced Module"
+        },
+        {
+          "value": "blended",
+          "label": "Blended Learning"
+        },
+        {
+          "value": "microlearning",
+          "label": "Microlearning Series"
+        },
+        {
+          "value": "certification",
+          "label": "Certification Course"
+        },
+        {
+          "value": "onboarding",
+          "label": "Onboarding Programme"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance Training"
+        }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Target audience",
+      "required": true,
+      "options": [
+        {
+          "value": "students",
+          "label": "Students (Academic)"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate Employees"
+        },
+        {
+          "value": "professional",
+          "label": "Professional Development"
+        },
+        {
+          "value": "public",
+          "label": "General Public / Open Learning"
+        }
+      ]
+    },
+    {
+      "id": "platform",
+      "type": "select",
+      "label": "Target platform",
+      "options": [
+        {
+          "value": "lms",
+          "label": "LMS (Moodle, Canvas, etc.)"
+        },
+        {
+          "value": "scorm",
+          "label": "SCORM Package"
+        },
+        {
+          "value": "video",
+          "label": "Video-Based Platform"
+        },
+        {
+          "value": "mobile",
+          "label": "Mobile-First"
+        },
+        {
+          "value": "custom",
+          "label": "Custom Platform"
+        },
+        {
+          "value": "agnostic",
+          "label": "Platform Agnostic"
+        }
+      ]
+    },
+    {
+      "id": "course_description",
+      "type": "textarea",
+      "label": "Course topic and requirements",
+      "required": true,
+      "placeholder": "Describe the course topic, learning objectives, estimated duration, any existing content to incorporate, and technical constraints."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "e-learning",
+    "course-design",
+    "education",
+    "online-learning",
+    "training"
+  ]
+}

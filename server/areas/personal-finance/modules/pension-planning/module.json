@@ -1,0 +1,97 @@
+{
+  "formatVersion": "1.0",
+  "id": "pension-planning",
+  "label": "Pension & Retirement Planning",
+  "shortLabel": "Pension Planning",
+  "icon": "Calendar",
+  "description": "Analyse pension arrangements and develop retirement planning strategies. Covers occupational pensions, private pension savings, state pension entitlements, and withdrawal strategies. Produces decision memos and action plans with projected retirement income, gap analysis, and optimisation recommendations across Nordic pension systems.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Nordic pension systems, occupational pension schemes, private pension savings, state pension entitlements, retirement income planning, IORP II Directive"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "jurisdiction",
+      "label": "Country",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "Germany",
+        "Cross-border"
+      ],
+      "required": true
+    },
+    {
+      "id": "life-stage",
+      "label": "Life Stage",
+      "type": "select",
+      "options": [
+        "Early career (25-35)",
+        "Mid-career (35-50)",
+        "Pre-retirement (50-60)",
+        "Near retirement (60-65)",
+        "In retirement",
+        "Career change/break"
+      ],
+      "required": true
+    },
+    {
+      "id": "pension-types",
+      "label": "Existing Pension Arrangements",
+      "type": "multiselect",
+      "options": [
+        "State pension",
+        "Occupational pension (employer)",
+        "Private pension savings",
+        "ISK/investment account",
+        "Property as retirement asset",
+        "No current pension savings",
+        "Unknown/need review"
+      ],
+      "required": true
+    },
+    {
+      "id": "retirement-goals",
+      "label": "Retirement Goals",
+      "type": "textarea",
+      "placeholder": "Target retirement age, desired lifestyle, specific financial goals...",
+      "required": false
+    },
+    {
+      "id": "concerns",
+      "label": "Specific Concerns",
+      "type": "textarea",
+      "placeholder": "Any particular worries about retirement readiness...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "pension-advisor",
+    "financial-planner",
+    "individual"
+  ],
+  "tags": [
+    "personal-finance",
+    "pension",
+    "retirement",
+    "planning",
+    "savings"
+  ]
+}

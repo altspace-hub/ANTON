@@ -1,0 +1,94 @@
+{
+  "formatVersion": "1.0",
+  "id": "gdpr-compliance-assessment",
+  "label": "GDPR Compliance Assessment",
+  "shortLabel": "GDPR Assessment",
+  "icon": "ShieldCheck",
+  "description": "Systematic GDPR compliance maturity assessment covering lawful basis, consent management, data subject rights, DPO requirement, ROPA, technical/organisational measures, and processor contracts.",
+  "color": "adv-teal",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "GDPR Regulation 2016/679, EDPB guidelines, national DPA guidance, Article 29 Working Party opinions"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "org_type",
+      "type": "select",
+      "label": "Organisation type",
+      "required": true,
+      "options": [
+        { "value": "eu_controller", "label": "EU Controller" },
+        { "value": "non_eu_controller", "label": "Non-EU Controller (EU market)" },
+        { "value": "processor", "label": "Processor" },
+        { "value": "joint_controller", "label": "Joint Controller" },
+        { "value": "public_authority", "label": "Public Authority" }
+      ]
+    },
+    {
+      "id": "sector",
+      "type": "select",
+      "label": "Sector",
+      "required": true,
+      "options": [
+        { "value": "financial_services", "label": "Financial Services" },
+        { "value": "healthcare", "label": "Healthcare" },
+        { "value": "retail", "label": "Retail" },
+        { "value": "technology", "label": "Technology" },
+        { "value": "hr_recruiting", "label": "HR / Recruiting" },
+        { "value": "marketing", "label": "Marketing" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "data_types",
+      "type": "chips",
+      "label": "Categories of personal data processed",
+      "options": [
+        { "value": "identifiers", "label": "Personal identifiers" },
+        { "value": "financial", "label": "Financial data" },
+        { "value": "health", "label": "Health data" },
+        { "value": "biometric", "label": "Biometric" },
+        { "value": "children", "label": "Children's data" },
+        { "value": "criminal", "label": "Criminal records" },
+        { "value": "marketing_profiles", "label": "Marketing profiles" }
+      ]
+    },
+    {
+      "id": "known_gaps",
+      "type": "textarea",
+      "label": "Known compliance concerns or gaps",
+      "placeholder": "e.g., No ROPA in place. Consent banners not meeting current standards. DPA contract templates are outdated."
+    }
+  ],
+  "recommendedPersonas": [
+    "dpo",
+    "legal-expert"
+  ],
+  "tags": [
+    "gdpr",
+    "data-protection",
+    "dpo",
+    "ropa",
+    "compliance-assessment",
+    "lawful-basis",
+    "privacy"
+  ]
+}

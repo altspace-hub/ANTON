@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.0",
+  "id": "market-access-ecommerce",
+  "label": "Market Access & E-Commerce Setup",
+  "shortLabel": "Sell Online",
+  "icon": "ShoppingBag",
+  "description": "Sell your crafts online and to new markets. How to set up on WhatsApp, Instagram, and online marketplaces.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Digital market access for artisans — WhatsApp Business, Instagram, Etsy, regional e-commerce platforms for handmade crafts in developing countries"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "craft_type",
+      "type": "select",
+      "label": "What type of craft do you make?",
+      "required": true,
+      "options": [
+        { "value": "weaving-fabric", "label": "Weaving or fabric" },
+        { "value": "pottery", "label": "Pottery" },
+        { "value": "jewellery", "label": "Jewellery" },
+        { "value": "woodwork", "label": "Woodwork" },
+        { "value": "leather", "label": "Leather goods" },
+        { "value": "beadwork", "label": "Beadwork" },
+        { "value": "basketry", "label": "Basketry" },
+        { "value": "embroidery", "label": "Embroidery" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "indonesia", "label": "Indonesia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "digital_skill",
+      "type": "select",
+      "label": "What is your current digital experience?",
+      "required": true,
+      "options": [
+        { "value": "smartphone-basic", "label": "I have a smartphone but no online selling experience" },
+        { "value": "whatsapp", "label": "I use WhatsApp regularly" },
+        { "value": "instagram", "label": "I already use Instagram" },
+        { "value": "want-marketplace", "label": "I want to try Etsy or an online marketplace" }
+      ]
+    },
+    {
+      "id": "target_market",
+      "type": "select",
+      "label": "Who do you want to sell to?",
+      "required": true,
+      "options": [
+        { "value": "local", "label": "Local buyers in my city or country" },
+        { "value": "diaspora", "label": "Diaspora community abroad" },
+        { "value": "international", "label": "International buyers" },
+        { "value": "all", "label": "All of the above" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "tags": [
+    "bop",
+    "artisan",
+    "craft",
+    "ecommerce",
+    "whatsapp-business",
+    "instagram",
+    "etsy",
+    "online-selling",
+    "market-access",
+    "digital",
+    "womens-economic-empowerment"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "zakat-compliance",
+  "label": "Zakat Compliance & Calculation",
+  "shortLabel": "Zakat",
+  "icon": "Calculator",
+  "description": "Calculate and manage zakat obligations for Islamic financial institutions and corporates, including nisab assessment, calculation methodology, distribution, and regulatory reporting.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AAOIFI Sharia Standard No. 35 (Zakah), national zakat authority regulations, corporate zakat calculation methodologies"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "label": "Entity Type",
+      "type": "select",
+      "options": ["Islamic Bank", "Corporate", "Investment Fund", "Family Waqf"],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": ["Saudi Arabia", "Pakistan", "Malaysia", "UAE", "Other"],
+      "required": true
+    },
+    {
+      "id": "assets_in_scope",
+      "label": "Assets in Scope",
+      "type": "chips",
+      "options": ["Cash", "Investments", "Receivables", "Inventory", "Fixed Assets"],
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer"],
+  "recommendedSkills": ["skill-aaoifi-standards"],
+  "tags": ["zakat", "nisab", "calculation", "distribution", "regulatory-reporting", "aaoifi", "corporate-zakat"]
+}

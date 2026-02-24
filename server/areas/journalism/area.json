@@ -1,0 +1,17 @@
+{
+  "formatVersion": "1.0",
+  "id": "journalism",
+  "name": "Journalism & Content Writing",
+  "shortName": "Journalism",
+  "description": "Investigative research, article structure, interview preparation, editorial quality, and content strategy for journalists, editors, and content writers.",
+  "icon": "FileText",
+  "color": "adv-teal",
+  "cluster": "general",
+  "moduleIds": [
+    "investigative-research",
+    "article-structure-drafting",
+    "interview-preparation",
+    "editorial-quality-review",
+    "content-strategy-planning"
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "formatVersion": "1.0",
+  "id": "tenancy-disputes",
+  "label": "Tenancy & Housing Disputes",
+  "shortLabel": "Tenancy",
+  "description": "Analyse tenancy agreements, identify rights and obligations, structure arguments for housing disputes, and draft communications to landlords or tenancy tribunals.",
+  "icon": "Building",
+  "color": "adv-red",
+  "areaId": "consumer-legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "dispute_type",
+      "type": "select",
+      "label": "Dispute type",
+      "required": true,
+      "options": [
+        {
+          "value": "eviction",
+          "label": "Eviction / Notice to Quit"
+        },
+        {
+          "value": "deposit",
+          "label": "Deposit Dispute"
+        },
+        {
+          "value": "repairs",
+          "label": "Repairs & Maintenance"
+        },
+        {
+          "value": "rent_increase",
+          "label": "Rent Increase"
+        },
+        {
+          "value": "lease_terms",
+          "label": "Lease Terms & Conditions"
+        },
+        {
+          "value": "subletting",
+          "label": "Subletting / Assignment"
+        },
+        {
+          "value": "discrimination",
+          "label": "Housing Discrimination"
+        },
+        {
+          "value": "other",
+          "label": "Other Housing Issue"
+        }
+      ]
+    },
+    {
+      "id": "tenancy_type",
+      "type": "select",
+      "label": "Tenancy type",
+      "options": [
+        {
+          "value": "private",
+          "label": "Private Tenancy"
+        },
+        {
+          "value": "social",
+          "label": "Social Housing"
+        },
+        {
+          "value": "commercial",
+          "label": "Commercial Lease"
+        },
+        {
+          "value": "lodger",
+          "label": "Lodger Agreement"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction",
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "eu",
+          "label": "EU"
+        }
+      ]
+    },
+    {
+      "id": "situation",
+      "type": "textarea",
+      "label": "Describe the situation",
+      "required": true,
+      "placeholder": "Describe the tenancy dispute, relevant dates, any communications with the landlord/tenant, and what outcome you are seeking."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "tenancy",
+    "housing",
+    "dispute",
+    "consumer",
+    "rental"
+  ]
+}

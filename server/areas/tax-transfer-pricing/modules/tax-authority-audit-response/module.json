@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-authority-audit-response",
+  "label": "Tax Authority Audit Response",
+  "shortLabel": "Audit Response",
+  "description": "Prepare responses to tax authority examinations, information document requests (IDRs), formal assessments, and transfer pricing challenges. Structure factual narratives, legal arguments, and negotiation positions.",
+  "icon": "Scale",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Tax audit procedures, OECD dispute resolution, MAP procedures, BEPS Action 14"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "authority_action_type",
+      "type": "select",
+      "label": "Type of tax authority action",
+      "required": true,
+      "options": [
+        { "value": "idr", "label": "Information Document Request (IDR)" },
+        { "value": "formal_audit", "label": "Formal tax audit / examination" },
+        { "value": "tp_challenge", "label": "Transfer pricing challenge / proposed adjustment" },
+        { "value": "formal_assessment", "label": "Formal assessment / notice of deficiency" },
+        { "value": "settlement_negotiation", "label": "Settlement / closing agreement negotiation" },
+        { "value": "map", "label": "Mutual Agreement Procedure (MAP)" },
+        { "value": "apa", "label": "Advance Pricing Agreement (APA) application" },
+        { "value": "penalty_mitigation", "label": "Penalty mitigation / abatement request" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "text",
+      "label": "Tax authority jurisdiction",
+      "required": true,
+      "placeholder": "e.g., Skatteverket (Sweden), HMRC (United Kingdom), Bundeszentralamt für Steuern (Germany)"
+    },
+    {
+      "id": "tax_years_at_issue",
+      "type": "text",
+      "label": "Tax years / periods under examination",
+      "placeholder": "e.g., 2020, 2021, 2022 fiscal years"
+    },
+    {
+      "id": "issues_raised",
+      "type": "multi-select",
+      "label": "Issues raised by the tax authority",
+      "options": [
+        { "value": "tp_pricing", "label": "Transfer pricing — arm's length pricing" },
+        { "value": "tp_documentation", "label": "Transfer pricing — documentation adequacy" },
+        { "value": "pe_existence", "label": "Permanent establishment existence" },
+        { "value": "beneficial_ownership", "label": "Beneficial ownership / treaty access" },
+        { "value": "deductibility", "label": "Deductibility of payments (interest, royalties, fees)" },
+        { "value": "substance", "label": "Economic substance / anti-avoidance" },
+        { "value": "classification", "label": "Income classification / characterisation" },
+        { "value": "valuation", "label": "Asset / IP valuation" }
+      ]
+    },
+    {
+      "id": "factual_background",
+      "type": "textarea",
+      "label": "Factual background and position taken",
+      "description": "Summarise the facts, the company's original tax position, the authority's challenge, and any prior correspondence.",
+      "placeholder": "e.g., Swedish Tax Agency (Skatteverket) is challenging the arm's length nature of our royalty payments to Irish IP holding company for years 2020-2022. Agency argues royalty rate of 7% is too high and income should be attributed to Sweden under the DEMPE analysis. Our position is that the Irish entity bears DEMPE risk..."
+    },
+    {
+      "id": "desired_outcome",
+      "type": "select",
+      "label": "Desired outcome",
+      "options": [
+        { "value": "full_defence", "label": "Full defence — challenge all adjustments" },
+        { "value": "partial_settlement", "label": "Partial settlement — accept some, contest others" },
+        { "value": "commercial_settlement", "label": "Commercial settlement — minimise penalties and interest" },
+        { "value": "map_referral", "label": "Refer to MAP / bilateral resolution" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "tax-director",
+    "transfer-pricing-specialist"
+  ],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "opus",
+    "notes": "Audit response drafting requires highest reasoning quality; positions taken here have direct financial and legal consequences."
+  },
+  "tags": [
+    "tax-audit",
+    "IDR",
+    "tax-authority",
+    "MAP",
+    "APA",
+    "transfer-pricing-dispute",
+    "BEPS-action-14",
+    "penalty-mitigation",
+    "Skatteverket",
+    "HMRC"
+  ]
+}

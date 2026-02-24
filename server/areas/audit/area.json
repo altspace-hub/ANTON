@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "audit",
+  "name": "Audit & Assurance",
+  "shortName": "Audit",
+  "description": "Internal audit planning, control testing, finding documentation, regulatory examination preparation, and assurance reporting for financial institutions.",
+  "icon": "ClipboardCheck",
+  "color": "adv-gold",
+  "cluster": "professional"
+}

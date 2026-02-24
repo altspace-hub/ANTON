@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "skills-training-navigator",
+  "label": "Skills Training Navigator",
+  "shortLabel": "Skills Training",
+  "icon": "Wrench",
+  "description": "Find vocational and skills training programs. Certificates and trade skills that lead to jobs or self-employment.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Country-specific TVET providers. Practical job outcomes. Free and subsidised programs first."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "TVET systems in Kenya, Nigeria, Ghana, South Africa, India, Bangladesh, Philippines, vocational training providers, apprenticeship programmes, government-funded skills training" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "desired_skill",
+      "label": "What skill do you want to learn?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "construction-trades", "label": "Construction trades (masonry, carpentry)" },
+        { "value": "electrical", "label": "Electrical installation" },
+        { "value": "plumbing", "label": "Plumbing and pipefitting" },
+        { "value": "sewing-tailoring", "label": "Sewing and tailoring" },
+        { "value": "cooking-catering", "label": "Cooking and catering" },
+        { "value": "it-computers", "label": "IT and computers" },
+        { "value": "driving", "label": "Driving" },
+        { "value": "healthcare", "label": "Healthcare (nursing aid, community health)" },
+        { "value": "business", "label": "Business and entrepreneurship" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "label": "When do you want to start?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "immediately", "label": "As soon as possible" },
+        { "value": "3-6-months", "label": "In 3-6 months" },
+        { "value": "next-year", "label": "Planning for next year" }
+      ]
+    },
+    {
+      "id": "budget",
+      "label": "What is your budget?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "no-budget", "label": "No budget — need free programme" },
+        { "value": "small-budget", "label": "Small budget available" },
+        { "value": "moderate-fees", "label": "Can pay moderate fees" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
+  "tags": ["vocational-training", "TVET", "skills", "apprenticeship", "NITA", "ITI", "TESDA", "job-training", "self-employment"]
+}

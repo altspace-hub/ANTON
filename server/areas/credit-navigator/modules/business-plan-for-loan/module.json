@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "business-plan-for-loan",
+  "label": "Business Plan for Loan Application",
+  "shortLabel": "Business Plan",
+  "icon": "FileEdit",
+  "description": "Write a simple business plan to support your loan application. Show the lender your business makes sense.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Sonnet recommended for more detailed or complex business plans."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Simple business plans for microenterprise loan applications, cash flow for informal businesses, loan justification in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What type of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "trading-market", "label": "Trading or market stall" },
+        { "value": "food", "label": "Food preparation or selling" },
+        { "value": "craft", "label": "Craft or tailoring" },
+        { "value": "service", "label": "Service business" },
+        { "value": "agriculture", "label": "Agriculture or farming" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "loan_amount",
+      "type": "select",
+      "label": "How much are you applying to borrow?",
+      "required": true,
+      "options": [
+        { "value": "under-100", "label": "Under $100" },
+        { "value": "100-500", "label": "$100 to $500" },
+        { "value": "500-2000", "label": "$500 to $2,000" },
+        { "value": "over-2000", "label": "Over $2,000" }
+      ]
+    },
+    {
+      "id": "business_stage",
+      "type": "select",
+      "label": "What stage is your business at?",
+      "required": true,
+      "options": [
+        { "value": "new", "label": "New business — just starting" },
+        { "value": "existing-expanding", "label": "Existing business — I want to expand" },
+        { "value": "seasonal", "label": "Seasonal business" },
+        { "value": "working-capital", "label": "Established — I need working capital" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "business-plan",
+    "loan-application",
+    "microenterprise",
+    "cash-flow",
+    "mfi",
+    "informal-business",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

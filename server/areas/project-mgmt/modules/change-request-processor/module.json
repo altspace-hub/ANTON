@@ -1,0 +1,79 @@
+{
+  "formatVersion": "1.0",
+  "id": "change-request-processor",
+  "label": "Change Request Impact Assessor",
+  "shortLabel": "Change Request",
+  "description": "Evaluates project change requests for scope, schedule, budget, resource, and risk impact. Produces structured change request documentation with approval recommendation.",
+  "perspective": "operational",
+  "icon": "GitPullRequest",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "impact-assessment",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Change control management, project impact assessment, PRINCE2 change management, scope creep analysis"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "change_description",
+      "type": "textarea",
+      "label": "Change request description",
+      "required": true,
+      "placeholder": "Describe the proposed change clearly and specifically. What is being added, removed, or modified?\ne.g. Client has requested addition of a real-time transaction monitoring dashboard to the deliverables of the AMLR implementation. Original scope included batch reporting only. The dashboard would require real-time data feeds from 4 core banking systems."
+    },
+    {
+      "id": "change_requestor",
+      "type": "text",
+      "label": "Change requestor",
+      "placeholder": "e.g. Client: CFO, Nordea AB — 14 February 2025"
+    },
+    {
+      "id": "change_justification",
+      "type": "textarea",
+      "label": "Business justification",
+      "placeholder": "Why is this change being requested? What business need or problem does it address?"
+    },
+    {
+      "id": "project_baseline",
+      "type": "textarea",
+      "label": "Current project baseline (affected areas)",
+      "required": true,
+      "placeholder": "Describe the relevant aspects of the current approved project baseline:\n- Scope: what is currently in scope\n- Schedule: current timeline and key milestones\n- Budget: total budget and current spend/forecast\n- Resources: current team size and allocation"
+    },
+    {
+      "id": "preliminary_assessment",
+      "type": "textarea",
+      "label": "Preliminary team assessment (optional)",
+      "placeholder": "Any initial estimates or assessments from the delivery team regarding the change impact."
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Key constraints",
+      "placeholder": "Any fixed constraints that the change must respect (e.g. fixed go-live date, budget cap, contractual obligations, regulatory deadline)."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "project-management",
+    "change-control",
+    "scope",
+    "impact-assessment",
+    "operational"
+  ]
+}

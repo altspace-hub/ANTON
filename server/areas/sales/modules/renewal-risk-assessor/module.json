@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "renewal-risk-assessor",
+  "label": "Contract Renewal Risk Assessment",
+  "shortLabel": "Renewal Risk",
+  "description": "Assesses renewal risk for key accounts by analyzing usage trends, satisfaction signals, competitive threats, and relationship health. Produces risk-ranked renewal plan.",
+  "icon": "RefreshCcw",
+  "color": "adv-green",
+  "areaId": "sales",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "account_name",
+      "type": "text",
+      "label": "Account name",
+      "required": true,
+      "placeholder": "e.g., SEB AB, Trygg-Hansa, DNB"
+    },
+    {
+      "id": "contract_value",
+      "type": "text",
+      "label": "Annual contract value",
+      "placeholder": "e.g., EUR 250,000 per year"
+    },
+    {
+      "id": "renewal_date",
+      "type": "text",
+      "label": "Renewal date",
+      "placeholder": "e.g., 30 June 2025, Q3 2025"
+    },
+    {
+      "id": "contract_duration",
+      "type": "select",
+      "label": "Current contract term",
+      "options": [
+        { "value": "monthly", "label": "Monthly" },
+        { "value": "annual", "label": "Annual" },
+        { "value": "multi_year", "label": "Multi-year" }
+      ]
+    },
+    {
+      "id": "risk_signals",
+      "type": "textarea",
+      "label": "Risk signals and account context",
+      "required": true,
+      "placeholder": "Describe what you know about this renewal:\n- Usage trends (increasing, flat, declining?)\n- Satisfaction level and any recent feedback\n- Relationship status with key contacts\n- Any competitive threats you are aware of\n- Budget or procurement signals\n- Recent incidents or service quality issues\n- Strategic changes in their organisation\n- Any comments about the contract or pricing in recent interactions"
+    },
+    {
+      "id": "previous_renewal",
+      "type": "textarea",
+      "label": "Previous renewal history",
+      "placeholder": "Was the last renewal straightforward or contentious? Were there price negotiations? What concessions were made?"
+    },
+    {
+      "id": "expansion_opportunity",
+      "type": "textarea",
+      "label": "Expansion opportunity",
+      "placeholder": "Is there an opportunity to expand scope, add services, or increase contract value at this renewal?"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "renewal",
+    "retention",
+    "account-management",
+    "churn",
+    "contract",
+    "commercial"
+  ]
+}

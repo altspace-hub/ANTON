@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "idd-compliance",
+  "label": "IDD Compliance",
+  "shortLabel": "IDD Compliance",
+  "icon": "FileCheck",
+  "description": "Assess compliance with the Insurance Distribution Directive (IDD) requirements. Covers conduct of business rules, demands and needs analysis, suitability and appropriateness testing, inducements and conflicts of interest, cross-selling, and information disclosure requirements for insurance distributors.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Insurance Distribution Directive 2016/97/EU, IDD Delegated Regulations, EIOPA technical advice, national transposition measures"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "distributor-type",
+      "label": "Distributor Type",
+      "type": "select",
+      "options": [
+        "Insurance undertaking (direct)",
+        "Insurance broker",
+        "Insurance agent",
+        "Ancillary insurance intermediary",
+        "Comparison website",
+        "Bancassurance"
+      ],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "Germany",
+        "Netherlands",
+        "EU (general)"
+      ],
+      "required": true
+    },
+    {
+      "id": "product-scope",
+      "label": "Product Scope",
+      "type": "multiselect",
+      "options": [
+        "Non-life products",
+        "Life products",
+        "IBIPs",
+        "Pension products",
+        "All products"
+      ],
+      "required": true
+    },
+    {
+      "id": "focus-areas",
+      "label": "Focus Areas",
+      "type": "multiselect",
+      "options": [
+        "Demands and needs",
+        "Suitability/appropriateness",
+        "Disclosure requirements",
+        "Conflicts of interest",
+        "Cross-selling",
+        "Professional requirements",
+        "All areas"
+      ],
+      "required": true
+    },
+    {
+      "id": "known-issues",
+      "label": "Known Issues",
+      "type": "textarea",
+      "placeholder": "Any known compliance gaps or supervisory feedback...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "compliance-officer",
+    "distribution-manager",
+    "legal-counsel"
+  ],
+  "tags": [
+    "insurance",
+    "IDD",
+    "distribution",
+    "conduct",
+    "compliance"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "healthcare-gdpr",
+  "label": "Healthcare Data & GDPR",
+  "shortLabel": "Healthcare GDPR",
+  "icon": "Lock",
+  "description": "Assess and strengthen healthcare data protection practices against GDPR requirements with specific focus on health data processing. Covers lawful basis for processing special category data, Data Protection Impact Assessments (DPIAs), patient rights, data sharing agreements, research data governance, and cross-border health data transfers. Produces gap assessments and policy documents tailored to healthcare contexts.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "GDPR Article 9 special categories, health data processing, DPIA requirements, patient data rights, EHDS, clinical data governance, research exemptions"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation-type",
+      "label": "Organisation Type",
+      "type": "select",
+      "options": [
+        "Hospital/healthcare provider",
+        "Primary care practice",
+        "Pharmaceutical company",
+        "Medical device company",
+        "Clinical research organisation",
+        "Health technology company",
+        "Health insurance provider",
+        "Public health authority"
+      ],
+      "required": true
+    },
+    {
+      "id": "data-activities",
+      "label": "Data Processing Activities",
+      "type": "multiselect",
+      "options": [
+        "Patient records/EHR",
+        "Clinical trials data",
+        "Biobank/genomic data",
+        "Health apps/wearables",
+        "Insurance claims data",
+        "Employee health data",
+        "Research databases",
+        "Cross-border data sharing"
+      ],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "Germany",
+        "EU (multi-country)"
+      ],
+      "required": true
+    },
+    {
+      "id": "assessment-scope",
+      "label": "Assessment Scope",
+      "type": "multiselect",
+      "options": [
+        "Lawful basis review",
+        "DPIA",
+        "Patient rights compliance",
+        "Data sharing agreements",
+        "Security measures",
+        "Breach notification readiness",
+        "Cross-border transfers",
+        "Full GDPR compliance review"
+      ],
+      "required": true
+    },
+    {
+      "id": "known-issues",
+      "label": "Known Issues",
+      "type": "textarea",
+      "placeholder": "Any known data protection concerns, past incidents, or supervisory feedback...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "dpo",
+    "compliance-officer",
+    "clinical-informatics-lead"
+  ],
+  "tags": [
+    "healthcare",
+    "GDPR",
+    "data-protection",
+    "health-data",
+    "privacy"
+  ]
+}

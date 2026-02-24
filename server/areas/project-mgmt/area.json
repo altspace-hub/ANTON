@@ -1,0 +1,21 @@
+{
+  "formatVersion": "1.0",
+  "id": "project-mgmt",
+  "name": "Project Management & Delivery",
+  "shortName": "Projects",
+  "description": "Project planning, status reporting, risk and issue management, and resource planning for regulatory change and transformation programmes.",
+  "icon": "FolderKanban",
+  "color": "adv-green",
+  "cluster": "management",
+  "moduleIds": [
+    "project-planning",
+    "status-reporting",
+    "risk-issue-tracker",
+    "resource-planning",
+    "sop-writer",
+    "kpi-dashboard-updater",
+    "incident-report-processor",
+    "sla-monitor",
+    "capacity-planning"
+  ]
+}

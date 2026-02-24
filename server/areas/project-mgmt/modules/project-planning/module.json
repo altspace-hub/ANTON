@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.0",
+  "id": "project-planning",
+  "label": "Project Planning & Setup",
+  "shortLabel": "Project Planning",
+  "icon": "Calendar",
+  "description": "Structure and plan compliance or consulting projects: scope definition, workstream design, dependency mapping, resource planning, risk log, and governance.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "raci-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "PMI PMBOK, Prince2, agile frameworks, financial services project management"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "project_type",
+      "type": "select",
+      "label": "Type of project",
+      "required": true,
+      "options": [
+        {
+          "value": "regulatory",
+          "label": "Regulatory compliance programme (AMLR, DORA, CSRD)"
+        },
+        {
+          "value": "transformation",
+          "label": "Business transformation"
+        },
+        {
+          "value": "technology",
+          "label": "Technology implementation"
+        },
+        {
+          "value": "remediation",
+          "label": "Regulatory remediation programme"
+        },
+        {
+          "value": "consulting",
+          "label": "Consulting engagement delivery"
+        }
+      ]
+    },
+    {
+      "id": "planning_task",
+      "type": "select",
+      "label": "What do you need?",
+      "options": [
+        {
+          "value": "full_plan",
+          "label": "Full project plan from scratch"
+        },
+        {
+          "value": "review",
+          "label": "Review and improve existing plan"
+        },
+        {
+          "value": "phase_detail",
+          "label": "Detailed planning for a specific phase"
+        },
+        {
+          "value": "governance",
+          "label": "Project governance structure"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Project context",
+      "placeholder": "Describe the project, scope, deadline, team size, and known constraints."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist",
+    "systems-thinker"
+  ],
+  "tags": [
+    "project-planning",
+    "programme",
+    "governance",
+    "project-management"
+  ]
+}

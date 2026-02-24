@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "personal-brand",
+  "label": "Personal Brand Builder",
+  "shortLabel": "Personal Brand",
+  "icon": "Star",
+  "description": "Define and build your professional personal brand: positioning, thought leadership strategy, content planning, speaking opportunities, and digital presence.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "creative",
+    "outputFormats": [
+      "stakeholder-presentation"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "brand_goal",
+      "type": "select",
+      "label": "Branding Goal",
+      "description": "What is the primary goal of your personal brand?",
+      "required": true,
+      "options": [
+        {
+          "value": "thought-leader",
+          "label": "Thought Leadership / Industry Expert"
+        },
+        {
+          "value": "career-advance",
+          "label": "Career Advancement"
+        },
+        {
+          "value": "consulting",
+          "label": "Build Consulting / Advisory Practice"
+        },
+        {
+          "value": "speaking",
+          "label": "Speaking & Conference Circuit"
+        },
+        {
+          "value": "visibility",
+          "label": "General Professional Visibility"
+        }
+      ]
+    },
+    {
+      "id": "expertise_areas",
+      "type": "textarea",
+      "label": "Areas of Expertise",
+      "description": "What topics or domains are you an expert in?",
+      "required": true,
+      "placeholder": "e.g. AML regulatory technology, Nordic financial crime, sanctions compliance, RegTech innovation..."
+    },
+    {
+      "id": "current_presence",
+      "type": "textarea",
+      "label": "Current Digital Presence",
+      "description": "Describe your current online and professional presence.",
+      "placeholder": "e.g. 2,000 LinkedIn connections, occasional blog posts, spoke at 2 conferences last year, no Twitter/X presence..."
+    },
+    {
+      "id": "target_audience",
+      "type": "textarea",
+      "label": "Target Audience",
+      "description": "Who do you want to reach and influence?",
+      "placeholder": "e.g. Chief Compliance Officers at Nordic banks, RegTech founders, regulatory bodies..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "career",
+    "personal-brand",
+    "thought-leadership",
+    "marketing"
+  ]
+}

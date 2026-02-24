@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-ae-cbuae",
+  "label": "UAE — Central Bank of UAE (CBUAE)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "islamic-finance", "mobile-money", "insurance"],
+  "description": "UAE financial regulatory framework: CBUAE regulations, AML/CFT (post-FATF grey list exit), DIFC/ADGM free zone jurisdictions, Islamic finance, hawala licensing, and beneficial ownership requirements.",
+  "tags": ["uae", "cbuae", "gcc", "middle-east", "difc", "adgm", "free-zones", "islamic-finance"]
+}

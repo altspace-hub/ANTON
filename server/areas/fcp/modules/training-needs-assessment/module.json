@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "training-needs-assessment",
+  "label": "AML Training Needs Assessment",
+  "shortLabel": "Training Needs",
+  "description": "Identifies training gaps across FCP teams based on regulatory changes, audit findings, investigation outcomes, and competency frameworks. Produces a targeted training plan.",
+  "perspective": "operational",
+  "icon": "GraduationCap",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "training-material"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "AML/CFT training requirements, FATF guidance, AMLA staff training obligations"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "assessment_scope",
+      "type": "chips",
+      "label": "Target Audience(s)",
+      "description": "Which staff groups does this training needs assessment cover?",
+      "required": true,
+      "options": [
+        { "value": "board", "label": "Board" },
+        { "value": "senior_management", "label": "Senior Management" },
+        { "value": "compliance_fcp", "label": "Compliance / FCP Team" },
+        { "value": "relationship_managers", "label": "Relationship Managers" },
+        { "value": "front_line", "label": "Front-Line Staff" },
+        { "value": "operations", "label": "Operations / Back Office" },
+        { "value": "it", "label": "IT / Technology" },
+        { "value": "new_joiners", "label": "New Joiners" }
+      ]
+    },
+    {
+      "id": "training_drivers",
+      "type": "multi-select",
+      "label": "Training Need Drivers",
+      "description": "What is driving the training needs assessment?",
+      "options": [
+        { "value": "regulatory_change", "label": "New Regulation or Guidance" },
+        { "value": "audit_findings", "label": "Audit / Review Findings" },
+        { "value": "investigation_outcomes", "label": "Investigation or SAR Patterns" },
+        { "value": "supervision_feedback", "label": "Regulatory Examination Feedback" },
+        { "value": "annual_programme", "label": "Annual Training Programme Review" },
+        { "value": "new_products", "label": "New Products / Services Launch" },
+        { "value": "staff_performance", "label": "Staff Performance Concerns" }
+      ]
+    },
+    {
+      "id": "known_gaps",
+      "type": "textarea",
+      "label": "Known Training Gaps or Concerns",
+      "description": "Describe any specific training weaknesses identified from audits, investigations, or regulatory feedback.",
+      "placeholder": "e.g. Internal audit found that RM team unable to articulate EDD triggers for PEP customers. Two recent SARs had narrative quality issues suggesting front-line staff unclear on grounds threshold. Regulator commented on inconsistent adverse media handling..."
+    },
+    {
+      "id": "current_programme",
+      "type": "textarea",
+      "label": "Current Training Programme",
+      "description": "Describe or upload current AML training programme, completion rates, and content.",
+      "placeholder": "e.g. Annual online AML module (45 min) — 91% completion. Quarterly compliance updates (email newsletter). New joiner induction includes 2hr compliance session. No role-specific deep-dive training in place..."
+    },
+    {
+      "id": "regulatory_changes",
+      "type": "textarea",
+      "label": "Recent Regulatory Changes to Address",
+      "description": "Any specific regulatory changes requiring training awareness.",
+      "placeholder": "e.g. AMLR enters application from July 2027. New beneficial ownership threshold of 15% requires staff re-training. Updated FATF guidance on virtual assets published October 2024..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "training",
+    "competency",
+    "aml",
+    "staff-development",
+    "operational"
+  ]
+}

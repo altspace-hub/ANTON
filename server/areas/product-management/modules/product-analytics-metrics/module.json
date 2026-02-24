@@ -1,0 +1,98 @@
+{
+  "formatVersion": "1.0",
+  "id": "product-analytics-metrics",
+  "label": "Product Analytics & Metrics",
+  "shortLabel": "Analytics & Metrics",
+  "icon": "BarChart2",
+  "description": "Define product metrics frameworks, OKR metrics, north star metrics, and analytics instrumentation plans. Covers activation, retention, monetisation, and product health metrics.",
+  "color": "adv-teal",
+  "areaId": "product-management",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Product analytics frameworks, north star metrics, HEART framework, AARRR funnel, retention cohort analysis"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "Product type",
+      "required": true,
+      "options": [
+        { "value": "b2b_saas", "label": "B2B SaaS" },
+        { "value": "b2c_mobile", "label": "B2C Mobile App" },
+        { "value": "marketplace", "label": "Marketplace" },
+        { "value": "api_platform", "label": "API Platform" },
+        { "value": "hardware_software", "label": "Hardware + Software" },
+        { "value": "internal_tool", "label": "Internal Tool" }
+      ]
+    },
+    {
+      "id": "lifecycle_stage",
+      "type": "select",
+      "label": "Product lifecycle stage",
+      "options": [
+        { "value": "discovery", "label": "Discovery" },
+        { "value": "zero_to_one", "label": "0→1 (building MVP)" },
+        { "value": "growth", "label": "Growth" },
+        { "value": "scaling", "label": "Scaling" },
+        { "value": "maturity", "label": "Maturity" },
+        { "value": "revival", "label": "Revival" }
+      ]
+    },
+    {
+      "id": "current_metrics",
+      "type": "chips",
+      "label": "Metrics currently tracked",
+      "options": [
+        { "value": "dau_mau", "label": "DAU/MAU" },
+        { "value": "retention", "label": "Retention" },
+        { "value": "churn", "label": "Churn" },
+        { "value": "conversion", "label": "Conversion" },
+        { "value": "nps", "label": "NPS" },
+        { "value": "revenue", "label": "Revenue" },
+        { "value": "feature_adoption", "label": "Feature adoption" },
+        { "value": "none", "label": "None yet" }
+      ]
+    },
+    {
+      "id": "business_goal",
+      "type": "select",
+      "label": "Primary business goal",
+      "options": [
+        { "value": "acquisition", "label": "Grow acquisition" },
+        { "value": "retention", "label": "Improve retention" },
+        { "value": "revenue", "label": "Increase revenue" },
+        { "value": "churn", "label": "Reduce churn" },
+        { "value": "activation", "label": "Improve activation" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "analytics",
+    "metrics",
+    "north-star",
+    "retention",
+    "aarrr",
+    "okr",
+    "instrumentation"
+  ]
+}

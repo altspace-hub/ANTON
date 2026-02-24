@@ -1,0 +1,70 @@
+{
+  "formatVersion": "1.0",
+  "id": "code-review-explain",
+  "label": "Code Review & Explain",
+  "shortLabel": "Code Review",
+  "icon": "GitBranch",
+  "description": "Review code through multiple expert lenses: security, compliance, architecture, product alignment. Supports diff-aware re-review and dependency auditing.",
+  "color": "adv-teal",
+  "areaId": "coding",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "source_type",
+      "type": "select",
+      "label": "Code source",
+      "required": true,
+      "options": [
+        { "value": "paste", "label": "Paste code" },
+        { "value": "directory", "label": "Local folder" },
+        { "value": "repository", "label": "Repository URL" }
+      ]
+    },
+    {
+      "id": "review_lenses",
+      "type": "multi-select",
+      "label": "Review lenses",
+      "description": "Select which expert perspectives to apply",
+      "required": true,
+      "options": [
+        { "value": "developer", "label": "Developer Quality" },
+        { "value": "security", "label": "Security" },
+        { "value": "compliance", "label": "Compliance" },
+        { "value": "product", "label": "Product Alignment" },
+        { "value": "architecture", "label": "Architecture" },
+        { "value": "dependency_audit", "label": "Dependency Audit" }
+      ]
+    },
+    {
+      "id": "explanation_level",
+      "type": "select",
+      "label": "Explanation depth",
+      "options": [
+        { "value": "high", "label": "High-level overview" },
+        { "value": "medium", "label": "Medium detail" },
+        { "value": "deep", "label": "Deep dive" }
+      ]
+    },
+    {
+      "id": "security_mode",
+      "type": "select",
+      "label": "Security review mode",
+      "description": "Specialized security framework (optional)",
+      "options": [
+        { "value": "", "label": "General security" },
+        { "value": "vulnerability", "label": "Vulnerability scan" },
+        { "value": "nist_csf", "label": "NIST CSF" },
+        { "value": "iso_27001", "label": "ISO 27001" },
+        { "value": "dora", "label": "DORA" }
+      ]
+    }
+  ],
+  "tags": ["coding", "code-review", "security", "architecture", "compliance"]
+}

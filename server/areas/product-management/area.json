@@ -1,0 +1,18 @@
+{
+  "formatVersion": "1.0",
+  "id": "product-management",
+  "name": "Product Management",
+  "shortName": "Product",
+  "description": "Product strategy, roadmapping, user research, requirements writing, and go-to-market planning for product managers and product owners.",
+  "icon": "Layers",
+  "color": "adv-teal",
+  "cluster": "business",
+  "moduleIds": [
+    "product-strategy-roadmap",
+    "feature-prioritisation",
+    "user-research-personas",
+    "prd-requirements",
+    "product-analytics-metrics",
+    "go-to-market-planning"
+  ]
+}

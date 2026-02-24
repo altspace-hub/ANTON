@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "branding",
+  "name": "Branding & Creative",
+  "shortName": "Branding",
+  "description": "Brand strategy, content strategy, copywriting, visual identity guidelines, and campaign design for marketing and creative teams.",
+  "icon": "Palette",
+  "color": "adv-red",
+  "cluster": "marketing"
+}

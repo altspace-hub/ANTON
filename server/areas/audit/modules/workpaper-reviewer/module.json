@@ -1,0 +1,144 @@
+{
+  "formatVersion": "1.0",
+  "id": "workpaper-reviewer",
+  "label": "Audit Workpaper Reviewer",
+  "shortLabel": "Workpaper Review",
+  "description": "Reviews completed audit workpapers for completeness, appropriate evidence, logical conclusions, and quality standards. Provides structured feedback aligned with IIA standards.",
+  "icon": "FileSearch",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "IIA Standards, ISAE 3000, internal audit quality frameworks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "workpaper_content",
+      "type": "textarea",
+      "label": "Paste workpaper content or describe what is included",
+      "required": true,
+      "description": "Paste the workpaper text, or describe the audit objective, testing performed, evidence obtained, and conclusion reached.",
+      "placeholder": "e.g., Audit objective: verify that trade confirmations are matched within 24 hours of execution. Testing: reviewed 30 samples from Q3 2024. Evidence: system screenshots, exception log. Conclusion: control operates effectively, 2 exceptions noted and confirmed as system errors not control failures."
+    },
+    {
+      "id": "audit_standard",
+      "type": "select",
+      "label": "Quality standard to apply",
+      "required": true,
+      "options": [
+        {
+          "value": "iia_global",
+          "label": "IIA Global Internal Audit Standards (2024)"
+        },
+        {
+          "value": "isae_3000",
+          "label": "ISAE 3000 / Assurance engagements"
+        },
+        {
+          "value": "internal",
+          "label": "Internal audit methodology (describe below)"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory examination standards (ECB/FCA/FSA)"
+        }
+      ]
+    },
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "Focus areas for review",
+      "description": "Which quality dimensions are most important for this review?",
+      "options": [
+        {
+          "value": "objective_clarity",
+          "label": "Objective clarity and linkage to risk"
+        },
+        {
+          "value": "sampling_adequacy",
+          "label": "Sampling methodology and adequacy"
+        },
+        {
+          "value": "evidence_sufficiency",
+          "label": "Evidence sufficiency and appropriateness"
+        },
+        {
+          "value": "exception_documentation",
+          "label": "Exception documentation and escalation"
+        },
+        {
+          "value": "conclusion_support",
+          "label": "Conclusion support and logical linkage"
+        },
+        {
+          "value": "cross_referencing",
+          "label": "Cross-referencing and indexing"
+        },
+        {
+          "value": "completeness",
+          "label": "Overall completeness and reviewability"
+        }
+      ]
+    },
+    {
+      "id": "reviewer_level",
+      "type": "select",
+      "label": "Intended review level",
+      "description": "Whose quality standards should this be reviewed against?",
+      "options": [
+        {
+          "value": "supervisor",
+          "label": "Supervisor / Senior Auditor review"
+        },
+        {
+          "value": "manager",
+          "label": "Audit Manager review"
+        },
+        {
+          "value": "director",
+          "label": "Audit Director / Chief Audit Executive"
+        },
+        {
+          "value": "qar",
+          "label": "Quality Assurance Review (QAR)"
+        },
+        {
+          "value": "external",
+          "label": "External reviewer / peer firm review"
+        }
+      ]
+    },
+    {
+      "id": "additional_context",
+      "type": "textarea",
+      "label": "Additional context (optional)",
+      "placeholder": "Internal methodology requirements, specific auditor level being reviewed, first-time vs. experienced auditor, area of engagement focus..."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "audit",
+    "workpapers",
+    "quality",
+    "IIA",
+    "evidence",
+    "review"
+  ]
+}

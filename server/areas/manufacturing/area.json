@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "manufacturing",
+  "name": "Manufacturing & Operations",
+  "shortName": "Manufacturing",
+  "description": "AI-assisted tools for manufacturing leaders, operations managers, and quality professionals. Covers process improvement, supply chain risk assessment, quality management systems, Lean Six Sigma analysis, and operational auditing. Helps organisations optimise operations, manage risk across complex supply chains, and maintain compliance with industry standards and regulations.",
+  "icon": "Factory",
+  "color": "adv-teal",
+  "cluster": "operations"
+}

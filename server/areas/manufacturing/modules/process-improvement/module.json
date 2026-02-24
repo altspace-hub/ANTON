@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.0",
+  "id": "process-improvement",
+  "label": "Process Improvement",
+  "shortLabel": "Process Improvement",
+  "icon": "RefreshCw",
+  "description": "Analyse manufacturing and operational processes to identify improvement opportunities. Covers process mapping, bottleneck identification, waste elimination, cycle time reduction, and capacity optimisation. Produces structured action plans and project plans with prioritised improvements, expected impact, and implementation roadmaps.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "project-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Process improvement methodologies, Lean manufacturing, continuous improvement, value stream mapping, process optimisation"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "industry",
+      "label": "Industry",
+      "type": "select",
+      "options": [
+        "Automotive",
+        "Electronics",
+        "Food & beverage",
+        "Pharmaceutical",
+        "Chemical",
+        "Metals & mining",
+        "Packaging",
+        "Textiles",
+        "General manufacturing",
+        "Service operations"
+      ],
+      "required": true
+    },
+    {
+      "id": "process-area",
+      "label": "Process Area",
+      "type": "select",
+      "options": [
+        "Production/assembly",
+        "Warehousing/logistics",
+        "Quality control",
+        "Procurement",
+        "Maintenance",
+        "Order fulfilment",
+        "Customer service",
+        "End-to-end value stream"
+      ],
+      "required": true
+    },
+    {
+      "id": "improvement-goals",
+      "label": "Improvement Goals",
+      "type": "multiselect",
+      "options": [
+        "Reduce cycle time",
+        "Reduce waste/scrap",
+        "Increase throughput",
+        "Reduce costs",
+        "Improve quality",
+        "Reduce inventory",
+        "Improve OEE",
+        "Standardise processes"
+      ],
+      "required": true
+    },
+    {
+      "id": "current-state",
+      "label": "Current State Description",
+      "type": "textarea",
+      "placeholder": "Describe the current process, known bottlenecks, and pain points...",
+      "required": false
+    },
+    {
+      "id": "constraints",
+      "label": "Constraints",
+      "type": "textarea",
+      "placeholder": "Budget, timeline, equipment, or regulatory constraints...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "operations-manager",
+    "continuous-improvement-lead",
+    "plant-manager"
+  ],
+  "tags": [
+    "manufacturing",
+    "process",
+    "improvement",
+    "lean",
+    "optimisation"
+  ]
+}

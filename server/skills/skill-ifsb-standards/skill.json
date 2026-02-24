@@ -1,0 +1,8 @@
+{
+  "id": "skill-ifsb-standards",
+  "label": "IFSB Prudential Standards for Islamic Finance",
+  "category": "technical",
+  "applicableAreas": ["islamic-finance", "banking", "risk-management", "insurance"],
+  "description": "Islamic Financial Services Board (IFSB) prudential standards: capital adequacy, liquidity management, risk management, Takaful, and corporate governance for Islamic financial institutions.",
+  "tags": ["ifsb", "islamic-finance", "prudential", "capital-adequacy", "risk-management"]
+}

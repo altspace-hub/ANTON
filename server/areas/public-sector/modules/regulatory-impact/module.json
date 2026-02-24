@@ -1,0 +1,111 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-impact",
+  "label": "Regulatory Impact Assessment",
+  "shortLabel": "RIA",
+  "description": "Conduct regulatory impact assessments for proposed legislation and regulation. Analyse costs, benefits, proportionality, and alternatives to support evidence-based policymaking.",
+  "icon": "BarChart3",
+  "color": "adv-blue",
+  "areaId": "public-sector",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "impact-assessment",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulation_stage",
+      "type": "select",
+      "label": "Regulatory stage",
+      "required": true,
+      "options": [
+        {
+          "value": "proposal",
+          "label": "Initial Proposal / Concept"
+        },
+        {
+          "value": "draft",
+          "label": "Draft Regulation / Bill"
+        },
+        {
+          "value": "consultation",
+          "label": "Post-Consultation Revision"
+        },
+        {
+          "value": "implementation",
+          "label": "Pre-Implementation Review"
+        },
+        {
+          "value": "post_implementation",
+          "label": "Post-Implementation Evaluation"
+        }
+      ]
+    },
+    {
+      "id": "impact_dimensions",
+      "type": "multi-select",
+      "label": "Impact dimensions to assess",
+      "options": [
+        {
+          "value": "economic",
+          "label": "Economic / Financial Impact"
+        },
+        {
+          "value": "social",
+          "label": "Social Impact"
+        },
+        {
+          "value": "environmental",
+          "label": "Environmental Impact"
+        },
+        {
+          "value": "administrative",
+          "label": "Administrative Burden"
+        },
+        {
+          "value": "sme",
+          "label": "SME Impact"
+        },
+        {
+          "value": "competition",
+          "label": "Competition Impact"
+        },
+        {
+          "value": "fundamental_rights",
+          "label": "Fundamental Rights"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Regulatory context",
+      "placeholder": "Describe the proposed regulation, its objectives, affected sectors, and any available data on expected costs and benefits."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "ria",
+    "government",
+    "regulation",
+    "impact-assessment",
+    "public-sector"
+  ]
+}

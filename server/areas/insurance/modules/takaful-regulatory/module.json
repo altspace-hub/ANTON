@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "takaful-regulatory",
+  "label": "Takaful Regulatory Compliance",
+  "shortLabel": "Takaful Compliance",
+  "icon": "Shield",
+  "description": "Assess regulatory compliance for Takaful operators against applicable prudential and Sharia governance standards. Covers IFSB-8 solvency requirements, AAOIFI governance standards, fund segregation, Sharia Supervisory Board requirements, and key jurisdictional frameworks including SAMA, BNM, and CBUAE.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "IFSB-8 Takaful governance standards, AAOIFI FAS 12 and governance standards, SAMA Cooperative Insurance Law, BNM Takaful Operational Framework"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Jurisdiction / Regulator",
+      "required": true,
+      "options": [
+        "Saudi Arabia (SAMA)",
+        "UAE (IA / CBUAE)",
+        "Malaysia (BNM)",
+        "Pakistan (SECP)",
+        "Bahrain (CBB)",
+        "Other"
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity Type",
+      "required": true,
+      "options": [
+        "Standalone Takaful operator",
+        "Retakaful operator",
+        "Islamic window within conventional insurer",
+        "Family and General composite Takaful"
+      ]
+    },
+    {
+      "id": "compliance_focus",
+      "type": "multiselect",
+      "label": "Compliance Focus Areas",
+      "options": [
+        "Solvency margins and capital requirements",
+        "Sharia governance and SSB requirements",
+        "Participant fund management and segregation",
+        "Disclosure and reporting obligations",
+        "Investment restrictions and compliance",
+        "Surplus distribution policy"
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Known Concerns or Supervisory Findings",
+      "placeholder": "Describe any known gaps, supervisory feedback, or areas of concern...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "compliance-officer",
+    "risk-manager",
+    "sharia-advisor"
+  ],
+  "tags": [
+    "takaful",
+    "regulatory",
+    "islamic-finance",
+    "sharia-governance",
+    "ifsb",
+    "aaoifi"
+  ]
+}

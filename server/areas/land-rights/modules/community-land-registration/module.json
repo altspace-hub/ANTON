@@ -1,0 +1,71 @@
+{
+  "formatVersion": "1.0",
+  "id": "community-land-registration",
+  "label": "Community Land Registration",
+  "shortLabel": "Community Land",
+  "icon": "Map",
+  "description": "How to register communal or ancestral land. Protect community land rights through formal registration.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Active registration processes and legal challenges need sonnet. General steps work with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Community land registration by country: Kenya Community Land Act 2016, Tanzania Village Land Act, Ghana customary area secretariats, India Forest Rights Act 2006, South Africa communal land rights. Participatory mapping, VGGT guidelines, land governance structures." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country is the community land in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "land_type",
+      "label": "What type of community land is it?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "ancestral-clan", "label": "Ancestral / clan land" },
+        { "value": "village-communal", "label": "Village communal land" },
+        { "value": "pastoral-grazing", "label": "Pastoral or grazing land" },
+        { "value": "forest-community", "label": "Forest community land" },
+        { "value": "urban-informal", "label": "Urban informal settlement" }
+      ]
+    },
+    {
+      "id": "current_situation",
+      "label": "What is the current situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "no-protection", "label": "No formal protection yet" },
+        { "value": "facing-threats", "label": "Facing outside threats or land grabs" },
+        { "value": "development-project", "label": "Preparing for a development project" },
+        { "value": "want-to-formalise", "label": "Want to formalise community rights" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
+  "tags": ["land-rights", "bop", "rights", "community-land", "indigenous-rights", "fpic", "participatory-mapping", "vggt", "africa", "south-asia"]
+}

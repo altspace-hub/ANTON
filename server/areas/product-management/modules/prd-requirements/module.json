@@ -1,0 +1,83 @@
+{
+  "formatVersion": "1.0",
+  "id": "prd-requirements",
+  "label": "PRD & Requirements Writer",
+  "shortLabel": "PRD Writer",
+  "icon": "FileText",
+  "description": "Write clear product requirements documents, user stories, acceptance criteria, and technical specifications. Structured for engineering teams to implement with confidence.",
+  "color": "adv-teal",
+  "areaId": "product-management",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "PRD writing, user story frameworks, acceptance criteria, product specification standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "feature_type",
+      "type": "select",
+      "label": "Feature type",
+      "required": true,
+      "options": [
+        { "value": "new_feature", "label": "New feature" },
+        { "value": "enhancement", "label": "Feature enhancement" },
+        { "value": "refactor", "label": "Technical refactor" },
+        { "value": "api", "label": "API" },
+        { "value": "platform", "label": "Platform capability" }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Primary audience for this document",
+      "options": [
+        { "value": "engineering", "label": "Engineering team" },
+        { "value": "cross_functional", "label": "Cross-functional" },
+        { "value": "external_partners", "label": "External partners" },
+        { "value": "regulatory", "label": "Regulatory submission" }
+      ]
+    },
+    {
+      "id": "detail_level",
+      "type": "select",
+      "label": "Detail level",
+      "options": [
+        { "value": "lean", "label": "Lean one-pager" },
+        { "value": "standard", "label": "Standard PRD" },
+        { "value": "full", "label": "Full spec with edge cases" }
+      ]
+    },
+    {
+      "id": "description",
+      "type": "textarea",
+      "label": "Describe what you want to build and why",
+      "placeholder": "e.g., We want to build a bulk document upload feature so compliance officers can submit multiple files at once instead of one by one."
+    }
+  ],
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "prd",
+    "requirements",
+    "user-stories",
+    "acceptance-criteria",
+    "specification",
+    "engineering"
+  ]
+}

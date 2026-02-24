@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "mifid-advisory",
+  "label": "MiFID II Advisory & Suitability",
+  "shortLabel": "MiFID Advisory",
+  "icon": "Handshake",
+  "description": "MiFID II advisory compliance: suitability and appropriateness, client categorisation, best execution, product governance, and inducements review.",
+  "color": "adv-gold",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "MiFID II Directive 2014/65/EU, ESMA suitability guidelines, ESMA Q&A"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "advisory_topic",
+      "type": "select",
+      "label": "MiFID II topic",
+      "required": true,
+      "options": [
+        {
+          "value": "suitability",
+          "label": "Suitability assessment (investment advice)"
+        },
+        {
+          "value": "appropriateness",
+          "label": "Appropriateness assessment (execution-only)"
+        },
+        {
+          "value": "client_categorisation",
+          "label": "Client categorisation"
+        },
+        {
+          "value": "best_execution",
+          "label": "Best execution policy and monitoring"
+        },
+        {
+          "value": "product_governance",
+          "label": "Product governance obligations"
+        },
+        {
+          "value": "inducements",
+          "label": "Inducements and conflicts of interest"
+        }
+      ]
+    },
+    {
+      "id": "business_model",
+      "type": "select",
+      "label": "Business model",
+      "options": [
+        {
+          "value": "discretionary",
+          "label": "Discretionary portfolio management"
+        },
+        {
+          "value": "advisory",
+          "label": "Investment advice"
+        },
+        {
+          "value": "execution",
+          "label": "Execution-only"
+        },
+        {
+          "value": "distribution",
+          "label": "Product distribution"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Specific context and questions",
+      "placeholder": "Describe your business, client base, and specific MiFID II question."
+    }
+  ],
+  "recommendedPersonas": [
+    "amanda-legal",
+    "regulator"
+  ],
+  "tags": [
+    "mifid",
+    "suitability",
+    "advisory",
+    "product-governance",
+    "investment"
+  ]
+}

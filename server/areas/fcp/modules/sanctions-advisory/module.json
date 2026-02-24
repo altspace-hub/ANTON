@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.0",
+  "id": "sanctions-advisory",
+  "label": "Sanctions Advisory",
+  "shortLabel": "Sanctions",
+  "icon": "Shield",
+  "description": "Sanctions regime briefings, screening assessments, policy reviews, de-risking analysis, and incident response guidance.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Latest sanctions designations and EU/OFAC guidance"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task_type",
+      "type": "select",
+      "label": "Task Type",
+      "required": true,
+      "options": [
+        {
+          "value": "regime-briefing",
+          "label": "Regime Briefing"
+        },
+        {
+          "value": "screening-assessment",
+          "label": "Screening Assessment"
+        },
+        {
+          "value": "policy-review",
+          "label": "Policy / Procedure Review"
+        },
+        {
+          "value": "derisk-analysis",
+          "label": "De-risking Analysis"
+        },
+        {
+          "value": "incident-response",
+          "label": "Incident Response"
+        },
+        {
+          "value": "eba-guidelines",
+          "label": "EBA Guidelines Implementation"
+        }
+      ]
+    },
+    {
+      "id": "regimes",
+      "type": "chips",
+      "label": "Sanctions Regimes",
+      "description": "Which sanctions regimes are in scope?",
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "ofac",
+          "label": "US / OFAC"
+        },
+        {
+          "value": "un",
+          "label": "UN"
+        },
+        {
+          "value": "uk",
+          "label": "UK / OFSI"
+        },
+        {
+          "value": "russia",
+          "label": "Russia (2022+)"
+        },
+        {
+          "value": "iran",
+          "label": "Iran"
+        },
+        {
+          "value": "north-korea",
+          "label": "DPRK"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Situation / Context",
+      "placeholder": "Describe the specific situation, customer, transaction, or concern you need guidance on..."
+    }
+  ],
+  "recommendedPersonas": [
+    "sanctions-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "sanctions",
+    "ofac",
+    "eu-sanctions",
+    "screening"
+  ]
+}

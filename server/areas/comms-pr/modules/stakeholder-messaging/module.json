@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "stakeholder-messaging",
+  "label": "Stakeholder Messaging Framework",
+  "shortLabel": "Stakeholder Messaging",
+  "icon": "Network",
+  "description": "Build comprehensive stakeholder messaging frameworks: audience segmentation, key messages per stakeholder group, channel strategy, and communication timelines.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "stakeholder-presentation"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "context",
+      "type": "select",
+      "label": "Messaging Context",
+      "description": "What is the messaging framework for?",
+      "required": true,
+      "options": [
+        {
+          "value": "change-programme",
+          "label": "Change Programme / Transformation"
+        },
+        {
+          "value": "product-launch",
+          "label": "Product / Service Launch"
+        },
+        {
+          "value": "regulatory-change",
+          "label": "Regulatory Change Implementation"
+        },
+        {
+          "value": "corporate-event",
+          "label": "Corporate Event / Milestone"
+        },
+        {
+          "value": "rebrand",
+          "label": "Rebrand / Repositioning"
+        },
+        {
+          "value": "general",
+          "label": "General Communications Framework"
+        }
+      ]
+    },
+    {
+      "id": "stakeholder_groups",
+      "type": "textarea",
+      "label": "Stakeholder Groups",
+      "description": "List the key stakeholder groups you need to communicate with.",
+      "required": true,
+      "placeholder": "e.g. Board of Directors, Senior Management, Compliance team, Front-line staff, Customers, Regulators, Shareholders, Media, Partners..."
+    },
+    {
+      "id": "core_narrative",
+      "type": "textarea",
+      "label": "Core Narrative",
+      "description": "What is the overarching story or message?",
+      "required": true,
+      "placeholder": "e.g. We are transforming our compliance function through technology to better protect customers and meet new AMLR requirements..."
+    },
+    {
+      "id": "sensitive_points",
+      "type": "textarea",
+      "label": "Sensitive Issues",
+      "description": "Any sensitive topics or potential objections to address?",
+      "placeholder": "e.g. Job losses in operations team, cost overruns on previous project, competitor has already launched similar capability..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "communications",
+    "stakeholder",
+    "messaging",
+    "framework"
+  ]
+}

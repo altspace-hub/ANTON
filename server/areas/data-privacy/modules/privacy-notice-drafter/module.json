@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "privacy-notice-drafter",
+  "label": "Privacy Policy & Notice Drafter",
+  "shortLabel": "Privacy Notices",
+  "icon": "FileText",
+  "description": "Draft GDPR-compliant privacy notices and policies in plain language. Covers all required information elements (Articles 13/14), layered notice approach, and jurisdiction-specific requirements.",
+  "color": "adv-teal",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "GDPR Articles 13 and 14, EDPB transparency guidelines, ePrivacy Directive, ICO guidance on privacy notices"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "notice_type",
+      "type": "select",
+      "label": "Notice type",
+      "required": true,
+      "options": [
+        { "value": "website_privacy", "label": "Website privacy policy" },
+        { "value": "app_privacy", "label": "App privacy notice" },
+        { "value": "employee_privacy", "label": "Employee privacy notice" },
+        { "value": "cctv", "label": "CCTV notice" },
+        { "value": "cookie_notice", "label": "Cookie notice" },
+        { "value": "children_privacy", "label": "Children's privacy notice" }
+      ]
+    },
+    {
+      "id": "org_type",
+      "type": "select",
+      "label": "Organisation type",
+      "options": [
+        { "value": "eu_controller", "label": "EU Controller" },
+        { "value": "non_eu_controller", "label": "Non-EU Controller (EU market)" },
+        { "value": "processor", "label": "Processor" },
+        { "value": "joint_controller", "label": "Joint Controller" },
+        { "value": "public_authority", "label": "Public Authority" }
+      ]
+    },
+    {
+      "id": "data_activities",
+      "type": "chips",
+      "label": "Processing activities to cover",
+      "options": [
+        { "value": "marketing", "label": "Marketing" },
+        { "value": "analytics", "label": "Analytics" },
+        { "value": "service_delivery", "label": "Service delivery" },
+        { "value": "hr", "label": "HR" },
+        { "value": "research", "label": "Research" },
+        { "value": "third_party_sharing", "label": "Third-party sharing" }
+      ]
+    },
+    {
+      "id": "special_requirements",
+      "type": "chips",
+      "label": "Special requirements",
+      "options": [
+        { "value": "children", "label": "Children's data" },
+        { "value": "health_data", "label": "Health data" },
+        { "value": "us_state", "label": "US state requirements" },
+        { "value": "uk_gdpr", "label": "UK GDPR" },
+        { "value": "lgpd", "label": "Brazil LGPD" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "dpo",
+    "legal-expert"
+  ],
+  "tags": [
+    "privacy-notice",
+    "gdpr",
+    "article-13",
+    "article-14",
+    "transparency",
+    "cookie-notice",
+    "plain-language"
+  ]
+}

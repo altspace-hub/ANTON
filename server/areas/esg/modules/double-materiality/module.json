@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "double-materiality",
+  "label": "Double Materiality Assessment",
+  "shortLabel": "Double Materiality",
+  "icon": "Target",
+  "description": "Conduct or validate double materiality: impact materiality and financial materiality. Produces materiality matrix and prioritised topic list.",
+  "color": "adv-green",
+  "areaId": "esg",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "EFRAG double materiality guidance, ESRS 1, GRI Standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "assessment_phase",
+      "type": "select",
+      "label": "Where are you in the process?",
+      "required": true,
+      "options": [
+        {
+          "value": "design",
+          "label": "Designing the assessment methodology"
+        },
+        {
+          "value": "conducting",
+          "label": "Conducting stakeholder surveys"
+        },
+        {
+          "value": "validation",
+          "label": "Validating completed assessment"
+        },
+        {
+          "value": "reporting",
+          "label": "Documenting for CSRD disclosure"
+        }
+      ]
+    },
+    {
+      "id": "sector",
+      "type": "select",
+      "label": "Company sector",
+      "options": [
+        {
+          "value": "banking",
+          "label": "Banking and Financial Services"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance"
+        },
+        {
+          "value": "manufacturing",
+          "label": "Manufacturing"
+        },
+        {
+          "value": "consulting",
+          "label": "Professional Services"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Business description",
+      "placeholder": "Describe your business model and known sustainability impacts."
+    }
+  ],
+  "recommendedPersonas": [
+    "systems-thinker",
+    "devil-advocate"
+  ],
+  "tags": [
+    "double-materiality",
+    "esrs",
+    "csrd",
+    "esg"
+  ]
+}

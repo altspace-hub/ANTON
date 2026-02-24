@@ -1,0 +1,97 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-deadline-tracker",
+  "label": "Regulatory Deadline Tracker",
+  "shortLabel": "Deadline Tracker",
+  "description": "Creates and maintains a regulatory compliance calendar based on applicable regulations, effective dates, submission deadlines, and periodic requirements.",
+  "perspective": "operational",
+  "icon": "Calendar",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "compliance-calendar",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Regulatory deadlines, compliance calendar requirements, periodic reporting obligations"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of regulated entity is this calendar for?",
+      "required": true,
+      "options": [
+        { "value": "bank", "label": "Bank / Credit Institution" },
+        { "value": "fintech", "label": "Fintech / Payment Institution" },
+        { "value": "investment", "label": "Investment Firm / Asset Manager" },
+        { "value": "insurance", "label": "Insurance Company" },
+        { "value": "crypto", "label": "Crypto Asset Service Provider" },
+        { "value": "corporate", "label": "Non-Financial Corporate" }
+      ]
+    },
+    {
+      "id": "jurisdictions",
+      "type": "chips",
+      "label": "Applicable Jurisdictions",
+      "description": "Which jurisdictions apply to this institution?",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway" },
+        { "value": "uk", "label": "UK" }
+      ]
+    },
+    {
+      "id": "regulatory_areas",
+      "type": "chips",
+      "label": "Regulatory Areas to Include",
+      "description": "Which compliance areas should the calendar cover?",
+      "options": [
+        { "value": "aml_cft", "label": "AML/CFT" },
+        { "value": "gdpr", "label": "GDPR / Data Privacy" },
+        { "value": "dora", "label": "DORA" },
+        { "value": "prudential", "label": "Prudential (CRD/CRR)" },
+        { "value": "conduct", "label": "Conduct / MiFID" },
+        { "value": "sanctions", "label": "Sanctions Compliance" },
+        { "value": "reporting", "label": "Regulatory Reporting" }
+      ]
+    },
+    {
+      "id": "calendar_period",
+      "type": "text",
+      "label": "Calendar Period",
+      "description": "What period should the compliance calendar cover?",
+      "placeholder": "e.g. 2025 full year, or Q1–Q2 2025"
+    },
+    {
+      "id": "known_deadlines",
+      "type": "textarea",
+      "label": "Known Deadlines or Events",
+      "description": "Any specific deadlines, examination dates, or events already known that should be included.",
+      "placeholder": "e.g. FI examination scheduled Q2 2025. AMLR transition deadline 2027. Annual MLRO report due 31 January. DORA ICT risk assessment due Q1..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "compliance-calendar",
+    "deadlines",
+    "regulatory-reporting",
+    "operational"
+  ]
+}

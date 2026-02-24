@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "cv-writer",
+  "label": "CV & LinkedIn Writer",
+  "shortLabel": "CV Writer",
+  "icon": "FileText",
+  "description": "Create professional CVs and LinkedIn profiles tailored to your target role. Optimise for ATS systems, highlight achievements, and craft compelling personal statements.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "document_type",
+      "type": "select",
+      "label": "Document Type",
+      "description": "What do you need created or updated?",
+      "required": true,
+      "options": [
+        {
+          "value": "cv-full",
+          "label": "Full CV / Resume"
+        },
+        {
+          "value": "cv-update",
+          "label": "CV Update / Refresh"
+        },
+        {
+          "value": "linkedin",
+          "label": "LinkedIn Profile"
+        },
+        {
+          "value": "cover-letter",
+          "label": "Cover Letter"
+        },
+        {
+          "value": "executive-bio",
+          "label": "Executive Biography"
+        }
+      ]
+    },
+    {
+      "id": "target_role",
+      "type": "textarea",
+      "label": "Target Role",
+      "description": "What role or industry are you targeting?",
+      "required": true,
+      "placeholder": "e.g. Senior Compliance Manager at a Nordic bank, Head of AML at a fintech..."
+    },
+    {
+      "id": "experience_summary",
+      "type": "textarea",
+      "label": "Experience Summary",
+      "description": "Summarise your key experience, skills, and achievements.",
+      "placeholder": "e.g. 8 years in financial compliance, managed team of 12, led AMLR implementation for 3 banks, CAMS certified..."
+    },
+    {
+      "id": "style_preference",
+      "type": "select",
+      "label": "Tone & Style",
+      "description": "What style do you prefer?",
+      "options": [
+        {
+          "value": "corporate",
+          "label": "Corporate / Traditional"
+        },
+        {
+          "value": "modern",
+          "label": "Modern / Dynamic"
+        },
+        {
+          "value": "academic",
+          "label": "Academic / Research-Focused"
+        },
+        {
+          "value": "executive",
+          "label": "Executive / Board-Level"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "career",
+    "cv",
+    "resume",
+    "linkedin",
+    "personal-development"
+  ]
+}

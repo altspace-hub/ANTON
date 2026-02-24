@@ -1,0 +1,94 @@
+{
+  "formatVersion": "1.0",
+  "id": "ifrs-implementation-advisor",
+  "label": "IFRS/GAAP Implementation Advisor",
+  "shortLabel": "IFRS Advisor",
+  "description": "Provides guidance on implementing new IFRS or GAAP standards. Analyzes standard requirements, assesses accounting policy choices, and structures implementation project plan.",
+  "perspective": "consultant",
+  "icon": "BookOpen",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "policy-document",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IFRS standards (IASB), US GAAP (FASB), Swedish K3, EFRAG endorsement status, Big Four implementation guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "standard",
+      "type": "select",
+      "label": "Standard to implement",
+      "required": true,
+      "options": [
+        { "value": "ifrs_9", "label": "IFRS 9 — Financial Instruments" },
+        { "value": "ifrs_15", "label": "IFRS 15 — Revenue from Contracts" },
+        { "value": "ifrs_16", "label": "IFRS 16 — Leases" },
+        { "value": "ifrs_17", "label": "IFRS 17 — Insurance Contracts" },
+        { "value": "ifrs_18", "label": "IFRS 18 — Presentation & Disclosure (replaces IAS 1)" },
+        { "value": "ifrs_s1_s2", "label": "IFRS S1/S2 — Sustainability Disclosure" },
+        { "value": "ias_36", "label": "IAS 36 — Impairment of Assets" },
+        { "value": "ias_37", "label": "IAS 37 — Provisions and Contingencies" },
+        { "value": "asc_842", "label": "ASC 842 — Leases (US GAAP)" },
+        { "value": "asc_606", "label": "ASC 606 — Revenue Recognition (US GAAP)" },
+        { "value": "other", "label": "Other / describe below" }
+      ]
+    },
+    {
+      "id": "standard_description",
+      "type": "textarea",
+      "label": "Standard details or custom standard",
+      "placeholder": "If 'Other' above, describe the standard. Or provide additional context about scope, amendments, or transition options being considered."
+    },
+    {
+      "id": "entity_profile",
+      "type": "textarea",
+      "label": "Entity profile",
+      "required": true,
+      "placeholder": "Describe the entity: industry, size, key business activities, current accounting policies relevant to this standard, and existing systems.\ne.g. Swedish insurance group, 3 500 MSEK premium revenue, currently applying old IAS 39 for financial instruments, Oracle ERP."
+    },
+    {
+      "id": "effective_date",
+      "type": "text",
+      "label": "Effective date / first reporting period",
+      "placeholder": "e.g. Financial year ending 31 December 2025 (mandatory for listed entities)"
+    },
+    {
+      "id": "current_policies",
+      "type": "textarea",
+      "label": "Current accounting policies (affected areas)",
+      "placeholder": "Describe existing accounting policies in the areas affected by the standard. These will be compared against the new requirements to identify gaps."
+    },
+    {
+      "id": "known_complexities",
+      "type": "textarea",
+      "label": "Known complexities or areas of concern",
+      "placeholder": "e.g. Complex lease portfolio with variable lease terms, historical data availability for ECL model (IFRS 9), disclosure requirements exceed current data capture."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "ifrs",
+    "gaap",
+    "implementation",
+    "consultant",
+    "standards",
+    "policy"
+  ]
+}

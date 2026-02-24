@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "poultry-business-starter",
+  "label": "Poultry Business Starter Kit",
+  "shortLabel": "Poultry Business",
+  "icon": "ShoppingBag",
+  "description": "Start a poultry business. How to begin with chickens, ducks, or turkeys as a profitable small business.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Poultry business setup: housing, chick sourcing, vaccination schedules, financial viability calculation, mortality budgeting, market options for small-scale poultry in Africa and South Asia" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "poultry_type",
+      "label": "What type of poultry?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "layers", "label": "Layers (eggs)" },
+        { "value": "broilers", "label": "Broilers (meat)" },
+        { "value": "indigenous", "label": "Indigenous / Local chickens" },
+        { "value": "ducks", "label": "Ducks" },
+        { "value": "turkeys", "label": "Turkeys" }
+      ]
+    },
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "budget",
+      "label": "What is your starting budget?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "very-small", "label": "Very small (under $100)" },
+        { "value": "small", "label": "Small ($100–$500)" },
+        { "value": "medium", "label": "Medium ($500–$2,000)" }
+      ]
+    },
+    {
+      "id": "experience",
+      "label": "What is your experience level?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "beginner", "label": "Complete beginner" },
+        { "value": "some", "label": "Have some poultry" },
+        { "value": "existing", "label": "Small existing flock" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["poultry", "business", "chickens", "layers", "broilers", "eggs", "meat", "startup", "bop", "africa", "south-asia"]
+}

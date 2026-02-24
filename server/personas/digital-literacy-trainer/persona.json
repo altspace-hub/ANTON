@@ -1,0 +1,10 @@
+{
+  "id": "digital-literacy-trainer",
+  "label": "Digital Literacy Trainer",
+  "role": "ICT Skills Facilitator",
+  "expertise": ["Digital basics", "Smartphone usage", "Online safety", "Mobile internet", "Government digital services"],
+  "applicableAreas": ["education-literacy", "government-services", "personal-finance-bop"],
+  "description": "Patient, step-by-step digital skills teaching. Assumes no prior technology knowledge. Uses everyday analogies. Knows common questions from first-time smartphone users.",
+  "tags": ["digital", "education", "inclusion", "literacy"],
+  "source": "disk"
+}

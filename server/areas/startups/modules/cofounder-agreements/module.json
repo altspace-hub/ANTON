@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.0",
+  "id": "cofounder-agreements",
+  "label": "Co-founder Agreements",
+  "shortLabel": "Co-founder",
+  "icon": "Handshake",
+  "description": "Structure co-founder relationships: equity splits, vesting schedules, roles and responsibilities, decision-making frameworks, IP assignment, and exit provisions.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "num_cofounders",
+      "type": "select",
+      "label": "Number of Co-founders",
+      "description": "How many co-founders are involved?",
+      "required": true,
+      "options": [
+        {
+          "value": "2",
+          "label": "2 Co-founders"
+        },
+        {
+          "value": "3",
+          "label": "3 Co-founders"
+        },
+        {
+          "value": "4",
+          "label": "4 Co-founders"
+        },
+        {
+          "value": "5+",
+          "label": "5 or more"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Jurisdiction",
+      "description": "Where will the company be incorporated?",
+      "required": true,
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden (Aktiebolag)"
+        },
+        {
+          "value": "finland",
+          "label": "Finland (Oy)"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark (ApS/A/S)"
+        },
+        {
+          "value": "norway",
+          "label": "Norway (AS)"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom (Ltd)"
+        },
+        {
+          "value": "us-delaware",
+          "label": "US (Delaware C-Corp)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "contribution_context",
+      "type": "textarea",
+      "label": "Contributions & Roles",
+      "description": "Describe each co-founder's contributions, roles, and commitment level.",
+      "placeholder": "e.g. Founder A: full-time CEO, brought the idea and initial customers. Founder B: part-time CTO, building the product while employed elsewhere. Founder C: invested EUR 50K seed capital..."
+    },
+    {
+      "id": "key_concerns",
+      "type": "textarea",
+      "label": "Key Concerns",
+      "description": "Any specific issues you want addressed?",
+      "placeholder": "e.g. What happens if one founder leaves after 6 months? How do we handle IP from a founder's previous employer? Vesting schedule recommendations..."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "pragmatist"
+  ],
+  "tags": [
+    "startup",
+    "co-founder",
+    "agreement",
+    "equity",
+    "legal"
+  ]
+}

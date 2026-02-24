@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "resource-allocation-optimizer",
+  "label": "Resource Allocation Optimizer",
+  "shortLabel": "Resource Optimizer",
+  "description": "Analyzes resource allocation across multiple projects. Identifies over-allocation, under-utilization, and skill mismatches. Recommends reallocation to maximize delivery throughput.",
+  "perspective": "operational",
+  "icon": "Users",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "budget-resource-estimate"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Resource management, capacity planning, portfolio resource optimization, skills matrix management"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "resource_pool",
+      "type": "textarea",
+      "label": "Resource pool",
+      "required": true,
+      "placeholder": "List your available resources with skills and availability.\ne.g.\nName | Role | Skills | Total capacity (days/month)\nAnna K. | Senior BA | Business analysis, requirements, AMLR | 22 days\nErik L. | Tech Lead | Java, microservices, AWS, DevOps | 22 days\nSofia M. | QA Engineer | Test automation, Selenium, API testing | 20 days (80%)\nMarcus N. | Data Engineer | Python, SQL, dbt, Snowflake | 22 days\nLisa P. | PM | Project management, PRINCE2, stakeholder | 15 days (part-time)"
+    },
+    {
+      "id": "project_demands",
+      "type": "textarea",
+      "label": "Project resource demands",
+      "required": true,
+      "placeholder": "List projects and their resource requirements for the planning period.\ne.g.\nProject Alpha (AMLR Implementation):\n- BA: 18 days, Tech Lead: 15 days, QA: 10 days, PM: 8 days\n\nProject Beta (Data Platform):\n- Data Engineer: 20 days, Tech Lead: 12 days, QA: 8 days\n\nProject Gamma (Client Portal):\n- BA: 10 days, Tech Lead: 10 days, QA: 6 days, PM: 5 days\n\nBAU/operational:\n- Tech Lead: 4 days, QA: 3 days"
+    },
+    {
+      "id": "planning_period",
+      "type": "text",
+      "label": "Planning period",
+      "required": true,
+      "placeholder": "e.g. March 2025 (monthly planning)"
+    },
+    {
+      "id": "project_priorities",
+      "type": "textarea",
+      "label": "Project priorities",
+      "placeholder": "List projects in priority order and any fixed constraints.\ne.g. 1. Alpha (mandatory regulatory deadline Sep 2025), 2. Beta (strategic priority), 3. Gamma (client commitment, can flex timeline by 2 weeks)"
+    },
+    {
+      "id": "known_constraints",
+      "type": "textarea",
+      "label": "Known constraints and commitments",
+      "placeholder": "Any leave, training, conference attendance, or other pre-committed time that reduces availability.\ne.g. Erik on annual leave 10-14 March. Lisa attending PMI conference 5-6 March. Sofia: 20% time allocated to Centre of Excellence work."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "project-management",
+    "resource-management",
+    "capacity-planning",
+    "portfolio",
+    "operational"
+  ]
+}

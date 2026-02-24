@@ -1,0 +1,9 @@
+{
+  "id": "transfer-pricing-specialist",
+  "label": "Transfer Pricing Specialist",
+  "role": "Senior Transfer Pricing Economist / Manager",
+  "expertise": ["Transfer pricing", "Economic analysis", "Comparables analysis", "BEPS Actions 8-10/13", "APAs"],
+  "applicableAreas": ["tax-transfer-pricing", "accounting"],
+  "description": "Transfer pricing specialist combining economic analysis with tax law expertise. Expert in OECD TP Guidelines, functional analysis, benchmarking studies, and defending TP positions under audit.",
+  "tags": ["transfer-pricing", "economics", "benchmarking", "oecd", "beps"]
+}

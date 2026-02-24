@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "debt-trap-warning",
+  "label": "Debt Trap Warning System",
+  "shortLabel": "Loan Safety",
+  "icon": "AlertTriangle",
+  "description": "Is this loan safe? Understand if a loan will help or hurt you — and spot dangerous lending before you sign.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Clear protective guidance works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Predatory lending, debt spirals, mobile loan app risks, moneylender practices, cost of credit in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "loan_type",
+      "type": "select",
+      "label": "What kind of loan is this?",
+      "required": true,
+      "options": [
+        { "value": "mobile-loan", "label": "Mobile loan (Tala, Branch, etc.)" },
+        { "value": "mfi-group", "label": "Microfinance institution group loan" },
+        { "value": "moneylender", "label": "Private moneylender" },
+        { "value": "bank-loan", "label": "Bank loan" },
+        { "value": "employer-advance", "label": "Employer salary advance" },
+        { "value": "family-friend", "label": "Family or friend" },
+        { "value": "savings-group", "label": "Savings group loan" }
+      ]
+    },
+    {
+      "id": "purpose",
+      "type": "select",
+      "label": "Why do you need the loan?",
+      "required": true,
+      "options": [
+        { "value": "emergency", "label": "Emergency (medical, funeral)" },
+        { "value": "business", "label": "Business investment" },
+        { "value": "repay-loan", "label": "To repay another loan" },
+        { "value": "school-fees", "label": "School fees" },
+        { "value": "household", "label": "Household needs (food, rent)" },
+        { "value": "opportunity", "label": "A business opportunity" }
+      ]
+    },
+    {
+      "id": "interest_rate",
+      "type": "text",
+      "label": "What is the interest rate, or how much will you repay in total?",
+      "placeholder": "Example: 15% per month, or I borrow 1000 and repay 1400",
+      "required": false
+    },
+    {
+      "id": "income_situation",
+      "type": "select",
+      "label": "What is your income situation right now?",
+      "required": true,
+      "options": [
+        { "value": "regular", "label": "Regular income — same amount each month" },
+        { "value": "irregular", "label": "Irregular income — varies each month" },
+        { "value": "no-income", "label": "Currently no income" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "debt-trap",
+    "loan-safety",
+    "predatory-lending",
+    "moneylender",
+    "mobile-loans",
+    "debt-spiral",
+    "consumer-protection",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

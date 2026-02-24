@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "data-governance",
+  "label": "Data Governance Framework",
+  "shortLabel": "Data Governance",
+  "icon": "Database",
+  "description": "Design or review data governance: data ownership, stewardship model, data catalogue, policies, lineage, and regulatory compliance.",
+  "color": "adv-teal",
+  "areaId": "data-analytics",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "raci-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "DAMA DMBOK2, BCBS 239, GDPR Article 30, EBA data management guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "governance_task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "design",
+          "label": "Design a data governance framework"
+        },
+        {
+          "value": "review",
+          "label": "Review existing governance"
+        },
+        {
+          "value": "ownership",
+          "label": "Define data ownership and stewardship model"
+        },
+        {
+          "value": "policies",
+          "label": "Draft data management policies"
+        },
+        {
+          "value": "catalogue",
+          "label": "Design data catalogue approach"
+        }
+      ]
+    },
+    {
+      "id": "regulatory_context",
+      "type": "multi-select",
+      "label": "Regulatory drivers",
+      "options": [
+        {
+          "value": "bcbs239",
+          "label": "BCBS 239 (risk data aggregation)"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR data management"
+        },
+        {
+          "value": "dora",
+          "label": "DORA ICT data requirements"
+        },
+        {
+          "value": "esg_data",
+          "label": "ESG data (CSRD, SFDR)"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation context",
+      "placeholder": "e.g., 500-person bank, data scattered across 12 legacy systems, no data owner model."
+    }
+  ],
+  "recommendedPersonas": [
+    "systems-thinker",
+    "data-scientist"
+  ],
+  "tags": [
+    "data-governance",
+    "dama",
+    "bcbs239",
+    "data-management",
+    "stewardship"
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "org-restructuring-advisor",
+  "label": "Organizational Restructuring Advisor",
+  "shortLabel": "Org Restructuring",
+  "description": "Analyzes proposed organizational restructuring options. Evaluates span of control, decision rights, role clarity, culture fit, and implementation risk.",
+  "icon": "Network",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "impact-assessment",
+      "risk-appetite-statement"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "current_structure",
+      "type": "textarea",
+      "label": "Current organisational structure",
+      "required": true,
+      "description": "Describe the current structure: reporting lines, team sizes, key roles, and known pain points.",
+      "placeholder": "e.g., Current: Chief Compliance Officer manages 3 direct reports (Head of AML, Head of Conduct Compliance, Head of Regulatory Affairs). Total team: 28 FTE. Pain points: AML and Conduct teams work in silos; Regulatory Affairs is overloaded; no dedicated second-line risk oversight for new product launches."
+    },
+    {
+      "id": "proposed_options",
+      "type": "textarea",
+      "label": "Proposed restructuring options",
+      "required": true,
+      "description": "Describe the options being considered. If multiple options, number them clearly.",
+      "placeholder": "Option 1: Merge AML and Conduct Compliance under a single Head of Financial Crime & Conduct, create new Head of Policy & Regulatory Affairs role.\nOption 2: Create a new Product Compliance function reporting to CCO, with dotted line from each business unit compliance partner.\nOption 3: Centralise all second-line functions under a new CRO position (currently no standalone CRO exists)."
+    },
+    {
+      "id": "business_context",
+      "type": "textarea",
+      "label": "Business context and strategic drivers",
+      "description": "What is driving the restructuring? Growth, cost reduction, regulatory requirement, leadership change?",
+      "placeholder": "e.g., Institution is preparing for AMLA implementation and anticipates significantly increased regulatory burden. Current structure was designed for a smaller organisation and has not kept pace with growth from 500 to 1,200 employees over 5 years."
+    },
+    {
+      "id": "assessment_dimensions",
+      "type": "multi-select",
+      "label": "Assessment dimensions",
+      "options": [
+        {
+          "value": "span_control",
+          "label": "Span of control and management layers"
+        },
+        {
+          "value": "decision_rights",
+          "label": "Decision rights and accountability clarity"
+        },
+        {
+          "value": "role_clarity",
+          "label": "Role clarity and avoiding role confusion"
+        },
+        {
+          "value": "independence",
+          "label": "Regulatory independence requirements"
+        },
+        {
+          "value": "culture_fit",
+          "label": "Culture alignment and change risk"
+        },
+        {
+          "value": "implementation_risk",
+          "label": "Implementation risk and disruption"
+        },
+        {
+          "value": "cost",
+          "label": "Cost and resource implications"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "organisational-design",
+    "restructuring",
+    "governance",
+    "change-management",
+    "consulting"
+  ]
+}

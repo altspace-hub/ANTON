@@ -1,0 +1,21 @@
+{
+  "formatVersion": "1.0",
+  "id": "strategy",
+  "name": "Strategy & Business Development",
+  "shortName": "Strategy",
+  "description": "Business case development, strategic analysis, market entry assessment, and competitive analysis for business development and executive decision-making.",
+  "icon": "TrendingUp",
+  "color": "adv-gold",
+  "cluster": "management",
+  "moduleIds": [
+    "business-case",
+    "strategic-analysis",
+    "market-entry",
+    "competitive-analysis",
+    "competitive-intelligence",
+    "board-meeting-prep",
+    "okr-progress-tracker",
+    "partnership-evaluation",
+    "market-entry-briefing"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "accounting",
+  "name": "Accounting & Finance",
+  "shortName": "Accounting",
+  "description": "IFRS/GAAP analysis, management reporting, tax planning, financial analysis, and transfer pricing support for finance professionals and controllers.",
+  "icon": "Calculator",
+  "color": "adv-gold",
+  "cluster": "finance"
+}

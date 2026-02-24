@@ -1,0 +1,79 @@
+{
+  "formatVersion": "1.0",
+  "id": "employment-rights-checker",
+  "label": "Employment Rights Checker",
+  "shortLabel": "My Rights",
+  "icon": "Shield",
+  "description": "What are my basic rights at work? Find out your rights on pay, hours, leave, and contracts — by country and employment type.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex legal disputes need sonnet. Basic rights information works well with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Basic employment rights by country: minimum wage, working hours, leave entitlement, contract rights, right to organise" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country do you work in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
+        { "value": "uae", "label": "UAE (migrant worker)" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "employment_type",
+      "label": "What kind of worker are you?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "formal-employee", "label": "Formal employee (have a contract)" },
+        { "value": "casual-day-labour", "label": "Casual / day labour" },
+        { "value": "domestic-worker", "label": "Domestic worker (cleaner, cook, nanny)" },
+        { "value": "factory-garment", "label": "Factory / garment worker" },
+        { "value": "construction", "label": "Construction worker" },
+        { "value": "agriculture", "label": "Agriculture / farm worker" },
+        { "value": "platform-gig", "label": "Platform / gig worker (app-based)" },
+        { "value": "self-employed", "label": "Self-employed" }
+      ]
+    },
+    {
+      "id": "issue",
+      "label": "What do you want to know about?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "pay", "label": "Not being paid properly" },
+        { "value": "hours", "label": "Working too many hours" },
+        { "value": "leave", "label": "Leave (annual, sick, maternity)" },
+        { "value": "contract", "label": "No contract or written agreement" },
+        { "value": "treatment", "label": "Bad treatment or harassment" },
+        { "value": "all", "label": "All of these" },
+        { "value": "general", "label": "General information about my rights" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
+  "tags": ["workers-rights", "bop", "informal-economy", "employment", "basic-rights", "labour-law", "minimum-wage", "leave", "contracts"]
+}

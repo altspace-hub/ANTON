@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-ke-cbk",
+  "label": "Kenya — Central Bank of Kenya (CBK)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "mobile-money", "microfinance"],
+  "description": "Kenyan financial regulatory framework: CBK regulations, POCAMLA, M-Pesa and mobile money leadership, agent banking, digital credit regulation, and East Africa context.",
+  "tags": ["kenya", "cbk", "east-africa", "mobile-money", "mpesa", "developing-economy"]
+}

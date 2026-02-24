@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "banking",
+  "name": "Banking & Financial Services",
+  "shortName": "Banking",
+  "description": "Credit risk analysis, payment services regulation, financial statement analysis, regulatory capital, and product compliance for banks and financial institutions.",
+  "icon": "Building2",
+  "color": "adv-blue",
+  "cluster": "finance"
+}

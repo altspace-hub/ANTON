@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "supplier-negotiation",
+  "label": "Supplier Negotiation Helper",
+  "shortLabel": "Supplier Deals",
+  "icon": "Handshake",
+  "description": "How do I get better deals from my suppliers? Practical negotiation tips for small traders dealing with wholesalers.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Supplier negotiation tactics for informal market traders and micro-businesses in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "market-stall", "label": "Market stall" },
+        { "value": "shop-kiosk", "label": "Shop / kiosk" },
+        { "value": "food-vendor", "label": "Food vendor" },
+        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
+        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "supplier_relationship",
+      "type": "select",
+      "label": "What is your relationship with your supplier?",
+      "required": true,
+      "options": [
+        { "value": "new-supplier", "label": "New supplier" },
+        { "value": "regular-supplier", "label": "Regular supplier (1+ years)" },
+        { "value": "only-one", "label": "Only one supplier available" },
+        { "value": "market-wholesale", "label": "Market / wholesale market" }
+      ]
+    },
+    {
+      "id": "what_buy",
+      "type": "text",
+      "label": "What do you buy from suppliers?",
+      "placeholder": "e.g. fabric, vegetables, phone accessories, cooking oil",
+      "required": false
+    },
+    {
+      "id": "negotiation_goal",
+      "type": "select",
+      "label": "What do you want from your supplier?",
+      "required": false,
+      "options": [
+        { "value": "lower-prices", "label": "Lower prices" },
+        { "value": "credit-terms", "label": "Better credit terms (pay later)" },
+        { "value": "reliable-supply", "label": "More reliable supply" },
+        { "value": "all", "label": "All of these" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "tags": [
+    "micro-business",
+    "bop",
+    "informal-economy",
+    "supplier-negotiation",
+    "procurement",
+    "wholesale",
+    "traders-association",
+    "kenya",
+    "nigeria",
+    "india"
+  ]
+}

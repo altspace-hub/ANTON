@@ -1,0 +1,90 @@
+{
+  "formatVersion": "1.0",
+  "id": "group-lending-guide",
+  "label": "Group Lending Guide",
+  "shortLabel": "Group Loans",
+  "icon": "Users",
+  "description": "How do group loans work? Understand your responsibilities in a group loan, and how to protect yourself from other members' problems.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Clear explanatory guidance on group liability works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Group lending models — Grameen, village banking, SHG, VSLA — joint liability, group dynamics, member default management"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "model",
+      "type": "select",
+      "label": "What type of group lending are you involved in?",
+      "required": true,
+      "options": [
+        { "value": "grameen", "label": "Grameen solidarity group" },
+        { "value": "village-banking", "label": "Village banking" },
+        { "value": "shg", "label": "Self-Help Group (SHG)" },
+        { "value": "vsla", "label": "Village Savings and Loan Association (VSLA)" },
+        { "value": "dont-know", "label": "I am not sure of the model" }
+      ]
+    },
+    {
+      "id": "situation",
+      "type": "select",
+      "label": "What is your situation?",
+      "required": true,
+      "options": [
+        { "value": "considering", "label": "Considering joining a group loan" },
+        { "value": "in-group-problem", "label": "Already in a group and have a problem" },
+        { "value": "want-to-form", "label": "Want to form a group" },
+        { "value": "member-not-paying", "label": "A group member is not paying" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "group-lending",
+    "grameen",
+    "joint-liability",
+    "vsla",
+    "self-help-group",
+    "village-banking",
+    "microfinance",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

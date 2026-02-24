@@ -1,0 +1,209 @@
+import express from 'express';
+import type { Database } from 'better-sqlite3';
+import * as collectionManager from '../services/collection-manager.js';
+import * as chromaClient from '../services/chroma-client.js';
+
+export function createCollectionsRoutes(db: Database) {
+  const router = express.Router();
+
+  /**
+   * List all collections
+   */
+  router.get('/collections', async (req, res) => {
+    try {
+      const collections = collectionManager.listCollections(db);
+      const enriched = collections.map(c => ({
+        ...c,
+        documentCount: collectionManager.getCollectionDocumentCount(db, c.id),
+        chunkCount: collectionManager.getCollectionChunkCount(db, c.id),
+        watchDirectories: JSON.parse(c.watch_directories),
+        metadataSchema: JSON.parse(c.metadata_schema),
+      }));
+      res.json({ collections: enriched });
+    } catch (error) {
+      console.error('Error listing collections:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  /**
+   * Get collection details
+   */
+  router.get('/collections/:id', async (req, res) => {
+    try {
+      const collection = collectionManager.getCollection(db, req.params.id);
+      if (!collection) {
+        return res.status(404).json({ error: 'Collection not found' });
+      }
+
+      const stats = await chromaClient.getCollectionStats(req.params.id);
+      res.json({
+        collection: {
+          ...collection,
+          documentCount: collectionManager.getCollectionDocumentCount(db, req.params.id),
+          chunkCount: collectionManager.getCollectionChunkCount(db, req.params.id),
+          vectorCount: stats.count,
+          watchDirectories: JSON.parse(collection.watch_directories),
+          metadataSchema: JSON.parse(collection.metadata_schema),
+        }
+      });
+    } catch (error) {
+      console.error('Error getting collection:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  /**
+   * Create new collection (any authenticated user can create)
+   */
+  router.post('/collections', (req, res) => {
+    try {
+      const { name, displayName, description, icon, color, watchDirectories, autoIndex, metadataSchema } = req.body;
+      const userId = (req as any).user?.id || 'system';
+
+      if (!name || !displayName) {
+        return res.status(400).json({ error: 'Name and displayName are required' });
+      }
+
+      const id = collectionManager.createCollection(db, {
+        name,
+        display_name: displayName,
+        description: description || '',
+        icon: icon || 'FolderOpen',
+        color: color || '#2DD4A8',
+        watch_directories: JSON.stringify(watchDirectories || []),
+        auto_index: autoIndex ? 1 : 0,
+        metadata_schema: JSON.stringify(metadataSchema || {}),
+        created_by: userId,
+      });
+
+      res.json({ success: true, collectionId: id });
+    } catch (error) {
+      console.error('Error creating collection:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  /**
+   * Update collection
+   */
+  router.put('/collections/:id', (req, res) => {
+    try {
+      const updates: any = {};
+      const { displayName, description, icon, color, watchDirectories, autoIndex, metadataSchema } = req.body;
+
+      if (displayName !== undefined) updates.display_name = displayName;
+      if (description !== undefined) updates.description = description;
+      if (icon !== undefined) updates.icon = icon;
+      if (color !== undefined) updates.color = color;
+      if (watchDirectories !== undefined) updates.watch_directories = JSON.stringify(watchDirectories);
+      if (autoIndex !== undefined) updates.auto_index = autoIndex ? 1 : 0;
+      if (metadataSchema !== undefined) updates.metadata_schema = JSON.stringify(metadataSchema);
+
+      const success = collectionManager.updateCollection(db, req.params.id, updates);
+      res.json({ success });
+    } catch (error) {
+      console.error('Error updating collection:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  /**
+   * Delete collection
+   */
+  router.delete('/collections/:id', async (req, res) => {
+    try {
+      // Check if user is admin (or solo mode)
+      const userRole = (req as any).user?.role;
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: 'Only admins can delete collections' });
+      }
+
+      // Delete from ChromaDB
+      await chromaClient.deleteCollection(req.params.id);
+
+      // Delete metadata from SQLite (CASCADE will delete documents and chunks)
+      collectionManager.deleteCollectionMetadata(db, req.params.id);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting collection:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  /**
+   * Get documents in a collection
+   */
+  router.get('/collections/:id/documents', (req, res) => {
+    try {
+      const documents = collectionManager.getCollectionDocuments(db, req.params.id);
+      const enriched = documents.map(doc => ({
+        ...doc,
+        metadata: JSON.parse(doc.metadata || '{}'),
+      }));
+      res.json({ documents: enriched });
+    } catch (error) {
+      console.error('Error getting collection documents:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  /**
+   * Query collection (semantic search)
+   */
+  router.post('/collections/:id/query', async (req, res) => {
+    try {
+      const { query, limit = 10, filter } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ error: 'Query text is required' });
+      }
+
+      const results = await chromaClient.queryCollection(
+        req.params.id,
+        query,
+        limit,
+        filter
+      );
+
+      res.json({
+        results: results.documents[0].map((doc, i) => ({
+          content: doc,
+          metadata: results.metadatas[0][i],
+          distance: results.distances[0][i],
+          id: results.ids[0][i],
+        }))
+      });
+    } catch (error) {
+      console.error('Error querying collection:', error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
+  /**
+   * Check ChromaDB health
+   */
+  router.get('/collections/health/check', async (req, res) => {
+    try {
+      const isAvailable = await chromaClient.isChromaAvailable();
+      res.json({
+        available: isAvailable,
+        openaiConfigured: !!process.env.OPENAI_API_KEY,
+        message: isAvailable
+          ? 'ChromaDB is ready'
+          : 'ChromaDB unavailable. Check OPENAI_API_KEY in .env'
+      });
+    } catch (error) {
+      res.status(500).json({
+        available: false,
+        openaiConfigured: !!process.env.OPENAI_API_KEY,
+        error: String(error)
+      });
+    }
+  });
+
+  return router;
+}
+
+export default createCollectionsRoutes;

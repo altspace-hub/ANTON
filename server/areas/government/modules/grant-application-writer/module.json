@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "grant-application-writer",
+  "label": "Grant Application Writer",
+  "shortLabel": "Grant Writing",
+  "icon": "Award",
+  "description": "Write compelling government and NGO grant applications. Covers logic models, theory of change, monitoring and evaluation frameworks, and funder-specific requirements.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["policy-document", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Grant writing for EU Horizon, UKRI, World Bank, Gates Foundation, government programmes. Theory of change, logic models, SMART objectives, M&E frameworks, budget justification, consortium arrangements, review panel criteria, common rejection reasons."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "funding_body",
+      "label": "Who is the funding body?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "eu-horizon", "label": "EU Horizon Europe" },
+        { "value": "ukri", "label": "UK UKRI" },
+        { "value": "world-bank", "label": "World Bank" },
+        { "value": "gates-foundation", "label": "Gates Foundation" },
+        { "value": "government-programme", "label": "Government programme" },
+        { "value": "other", "label": "Other / Multiple" }
+      ]
+    },
+    {
+      "id": "organisation_type",
+      "label": "What type of organisation are you?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "government", "label": "Government" },
+        { "value": "ngo", "label": "NGO" },
+        { "value": "academic", "label": "Academic / Research" },
+        { "value": "social-enterprise", "label": "Social enterprise" },
+        { "value": "consortium", "label": "Consortium / Partnership" }
+      ]
+    },
+    {
+      "id": "grant_size",
+      "label": "What is the grant size?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "small", "label": "Small (under £50k)" },
+        { "value": "medium", "label": "Medium (£50k–£500k)" },
+        { "value": "large", "label": "Large (£500k–£5M)" },
+        { "value": "major", "label": "Major (over £5M)" }
+      ]
+    },
+    {
+      "id": "stage",
+      "label": "What stage are you at?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "pre-application", "label": "Pre-application / scoping" },
+        { "value": "writing", "label": "Writing the application" },
+        { "value": "review", "label": "Reviewing a draft" },
+        { "value": "resubmission", "label": "Resubmission after rejection" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["policy-analyst", "legal-expert"],
+  "tags": ["grant-writing", "funding", "theory-of-change", "logic-model", "monitoring-evaluation", "EU-Horizon", "UKRI", "World-Bank", "government", "NGO", "public-administration"]
+}

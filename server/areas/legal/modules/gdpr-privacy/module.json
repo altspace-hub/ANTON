@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.0",
+  "id": "gdpr-privacy",
+  "label": "GDPR & Data Privacy",
+  "shortLabel": "GDPR / Privacy",
+  "description": "DPIA methodology, lawful basis analysis, data mapping, privacy by design, and GDPR compliance assessment for financial services and corporate contexts.",
+  "icon": "Lock",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task_type",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "dpia",
+          "label": "Data Protection Impact Assessment (DPIA)"
+        },
+        {
+          "value": "lawful_basis",
+          "label": "Lawful basis analysis"
+        },
+        {
+          "value": "data_mapping",
+          "label": "Data mapping / Records of Processing"
+        },
+        {
+          "value": "gap_assessment",
+          "label": "GDPR compliance gap assessment"
+        },
+        {
+          "value": "privacy_policy",
+          "label": "Privacy policy / notice drafting"
+        },
+        {
+          "value": "breach_response",
+          "label": "Data breach response guidance"
+        },
+        {
+          "value": "dpa",
+          "label": "Data processing agreement review"
+        }
+      ]
+    },
+    {
+      "id": "processing_description",
+      "type": "textarea",
+      "label": "Describe the processing activity",
+      "description": "What personal data is processed, for what purpose, by whom, and how?",
+      "placeholder": "e.g., We are implementing an AI-powered transaction monitoring system that processes customer transaction data, account history, and behavioural patterns to detect suspicious activity..."
+    },
+    {
+      "id": "data_subjects",
+      "type": "chips",
+      "label": "Categories of data subjects",
+      "options": [
+        {
+          "value": "customers",
+          "label": "Customers / Clients"
+        },
+        {
+          "value": "employees",
+          "label": "Employees"
+        },
+        {
+          "value": "prospects",
+          "label": "Prospects"
+        },
+        {
+          "value": "third_parties",
+          "label": "Third parties / Counterparties"
+        },
+        {
+          "value": "vulnerable",
+          "label": "Vulnerable individuals"
+        }
+      ]
+    },
+    {
+      "id": "special_categories",
+      "type": "toggle",
+      "label": "Does the processing involve special category data?",
+      "description": "Health, biometric, racial/ethnic origin, political opinions, etc."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "gdpr",
+    "privacy",
+    "dpia",
+    "data-protection",
+    "lawful-basis"
+  ]
+}

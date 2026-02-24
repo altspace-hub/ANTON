@@ -1,0 +1,97 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-pathway",
+  "label": "Regulatory Pathway Planning",
+  "shortLabel": "Regulatory Pathway",
+  "icon": "GitBranch",
+  "description": "Plan and analyse regulatory pathways for pharmaceuticals, medical devices, and healthcare products. Covers EMA and national agency procedures, clinical trial authorisation, marketing authorisation applications, and post-market surveillance requirements. Produces structured project plans with timelines, milestones, regulatory interactions, and submission strategies.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EMA regulatory procedures, FDA pathways, medical device regulations, MDR/IVDR, pharmaceutical development, clinical trial regulations"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product-type",
+      "label": "Product Type",
+      "type": "select",
+      "options": [
+        "Pharmaceutical — small molecule",
+        "Pharmaceutical — biologic",
+        "Medical device — Class I",
+        "Medical device — Class II",
+        "Medical device — Class III",
+        "In vitro diagnostic",
+        "Combination product",
+        "Advanced therapy (ATMP)",
+        "Digital health/software as medical device"
+      ],
+      "required": true
+    },
+    {
+      "id": "target-markets",
+      "label": "Target Markets",
+      "type": "multiselect",
+      "options": [
+        "EU (centralised)",
+        "EU (decentralised)",
+        "EU (mutual recognition)",
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "US (FDA)",
+        "Global"
+      ],
+      "required": true
+    },
+    {
+      "id": "development-stage",
+      "label": "Development Stage",
+      "type": "select",
+      "options": [
+        "Pre-clinical",
+        "Phase I",
+        "Phase II",
+        "Phase III",
+        "Pre-submission",
+        "Under review",
+        "Post-approval variation",
+        "Life-cycle management"
+      ],
+      "required": true
+    },
+    {
+      "id": "regulatory-questions",
+      "label": "Specific Regulatory Questions",
+      "type": "textarea",
+      "placeholder": "What specific regulatory questions or challenges do you face...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "regulatory-affairs-manager",
+    "clinical-development-lead",
+    "quality-assurance"
+  ],
+  "tags": [
+    "healthcare",
+    "regulatory",
+    "pathway",
+    "EMA",
+    "FDA",
+    "medical-devices"
+  ]
+}

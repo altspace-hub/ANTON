@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "sar-quality-check",
+  "label": "SAR/STR Quality Checker",
+  "shortLabel": "SAR Quality",
+  "description": "Reviews draft Suspicious Activity Reports (SARs) or Suspicious Transaction Reports (STRs) before filing. Checks for completeness, regulatory requirements, adequate grounds, and clear narrative.",
+  "perspective": "operational",
+  "icon": "FileSearch",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "SAR/STR quality standards, FATF recommendations, AMLA/national FIU reporting requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "draft_sar",
+      "type": "textarea",
+      "label": "Draft SAR / STR Text",
+      "description": "Paste the complete draft SAR or STR narrative and any structured data fields you have completed.",
+      "placeholder": "Paste the full draft SAR/STR here, including: subject information, grounds for suspicion, transaction details, and any structured form fields...",
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Filing Jurisdiction / FIU",
+      "description": "Which FIU will this report be filed with?",
+      "required": true,
+      "options": [
+        { "value": "sweden_fipo", "label": "Sweden — Finanspolisen (FIPO)" },
+        { "value": "finland_kpo", "label": "Finland — Keskusrikospoliisi (KRP/FIU)" },
+        { "value": "denmark_hvidvask", "label": "Denmark — Hvidvasksekretariatet" },
+        { "value": "norway_okokrim", "label": "Norway — Enheten for finansiell etterretning (EFE)" },
+        { "value": "uk_nca", "label": "UK — National Crime Agency (NCA)" },
+        { "value": "eu_generic", "label": "EU — Generic (AMLA framework)" },
+        { "value": "other", "label": "Other jurisdiction" }
+      ]
+    },
+    {
+      "id": "predicate_offence",
+      "type": "select",
+      "label": "Suspected Predicate Offence",
+      "description": "What type of financial crime is suspected?",
+      "options": [
+        { "value": "ml_generic", "label": "Money Laundering (general)" },
+        { "value": "drug_trafficking", "label": "Drug Trafficking Proceeds" },
+        { "value": "fraud", "label": "Fraud / Embezzlement" },
+        { "value": "tax_crime", "label": "Tax Crime / VAT Fraud" },
+        { "value": "corruption", "label": "Corruption / Bribery" },
+        { "value": "sanctions_evasion", "label": "Sanctions Evasion" },
+        { "value": "pf", "label": "Proliferation Financing" },
+        { "value": "human_trafficking", "label": "Human Trafficking Proceeds" },
+        { "value": "unknown", "label": "Unknown / Unable to Determine" }
+      ]
+    },
+    {
+      "id": "filing_deadline",
+      "type": "text",
+      "label": "Filing Deadline",
+      "description": "When does this SAR/STR need to be filed? Note any tipping-off restrictions.",
+      "placeholder": "e.g. Must file within 5 business days per national rules. Tipping-off restriction in place."
+    },
+    {
+      "id": "supporting_docs",
+      "type": "textarea",
+      "label": "Supporting Evidence Available",
+      "description": "List any supporting documents or evidence available but not yet included in the draft.",
+      "placeholder": "e.g. Transaction records (attached), Customer KYC file, prior alert notes from 2023, adverse media article..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "sar",
+    "str",
+    "suspicious-activity",
+    "reporting",
+    "aml",
+    "operational"
+  ]
+}

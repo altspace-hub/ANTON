@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "digital-privacy-rights",
+  "label": "Digital Privacy & Data Rights",
+  "shortLabel": "Privacy Rights",
+  "icon": "Lock",
+  "description": "Protect your personal information online and on your phone. Know your rights when apps, companies, and governments collect your data.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Data breach responses and regulatory complaints need sonnet. General privacy education works with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Digital privacy rights for BoP users: what personal data is, app permissions on Android, right to delete data, data protection laws (Kenya DPA 2019, Nigeria NDPA 2023, South Africa POPIA, India DPDPA 2023), reporting data violations, SIM registration data, phishing protection, mobile banking safety." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "platform",
+      "label": "Which type of app or platform?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "social-media", "label": "Social media (Facebook, WhatsApp, TikTok)" },
+        { "value": "mobile-money-app", "label": "Mobile money or banking app" },
+        { "value": "shopping-app", "label": "Shopping or delivery app" },
+        { "value": "government-app", "label": "Government app or digital service" },
+        { "value": "employer-platform", "label": "Employer or work platform" },
+        { "value": "other", "label": "Other app or website" }
+      ]
+    },
+    {
+      "id": "concern",
+      "label": "What is your concern?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "app-too-much-access", "label": "App is asking for too many permissions" },
+        { "value": "data-shared-without-permission", "label": "Personal data shared without my permission" },
+        { "value": "account-hacked", "label": "Account was hacked" },
+        { "value": "targeted-scams", "label": "Getting targeted scam calls or messages" },
+        { "value": "employer-monitoring", "label": "Employer monitoring concern" },
+        { "value": "general-rights", "label": "General rights and protection tips" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
+  "tags": ["consumer-protection", "bop", "rights", "digital-privacy", "data-protection", "android", "app-permissions", "popia", "ndpa", "kenya-dpa", "africa", "south-asia"]
+}

@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "crop-planning-advisor",
+  "label": "Crop Planning & Rotation Advisor",
+  "shortLabel": "Crop Planning",
+  "icon": "Calendar",
+  "description": "What should I plant this season? Get advice on which crops suit your soil, climate and season — and how to rotate for soil health.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Seasonal crop calendars, rotation principles, intercropping, soil-crop matching for smallholder farming" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "region",
+      "label": "Where is your farm?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "east-africa", "label": "East Africa" },
+        { "value": "west-africa", "label": "West Africa" },
+        { "value": "southern-africa", "label": "Southern Africa" },
+        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
+        { "value": "southeast-asia", "label": "Southeast Asia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "soil_type",
+      "label": "What does your soil feel like?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "sandy", "label": "Sandy (light, drains fast)" },
+        { "value": "clay", "label": "Clay (heavy, holds water)" },
+        { "value": "loam", "label": "Loam (mixed, good)" },
+        { "value": "rocky", "label": "Rocky" },
+        { "value": "unknown", "label": "I don't know" }
+      ]
+    },
+    {
+      "id": "water_source",
+      "label": "What water do you have?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "rain-only", "label": "Rain only" },
+        { "value": "river-stream", "label": "River or stream nearby" },
+        { "value": "borehole-well", "label": "Borehole or well" },
+        { "value": "irrigation-system", "label": "Irrigation system" },
+        { "value": "no-reliable-water", "label": "No reliable water" }
+      ]
+    },
+    {
+      "id": "previous_crop",
+      "label": "What did you grow last season?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "maize", "label": "Maize or corn" },
+        { "value": "beans-legumes", "label": "Beans or legumes" },
+        { "value": "cassava", "label": "Cassava" },
+        { "value": "rice", "label": "Rice" },
+        { "value": "vegetables", "label": "Vegetables" },
+        { "value": "nothing", "label": "Nothing (first season)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "what_help",
+      "label": "What help do you need?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "what-to-plant", "label": "What to plant this season" },
+        { "value": "rotation-plan", "label": "Crop rotation plan" },
+        { "value": "intercropping", "label": "Intercropping advice" },
+        { "value": "all", "label": "All of the above" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["crop-planning", "rotation", "intercropping", "planting-calendar", "soil-health", "smallholder", "subsistence-farming", "seasonal"]
+}

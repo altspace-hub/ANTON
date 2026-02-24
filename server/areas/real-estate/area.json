@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "real-estate",
+  "name": "Real Estate & Property",
+  "shortName": "Real Estate",
+  "description": "AI-assisted tools for real estate professionals, property investors, and legal advisors. Supports property due diligence, lease agreement review, valuation analysis, planning and zoning assessments, and investment analysis. Helps professionals make informed decisions across commercial and residential property transactions with structured analytical frameworks.",
+  "icon": "Building",
+  "color": "adv-gold",
+  "cluster": "property"
+}

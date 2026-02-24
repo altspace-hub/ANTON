@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "product-governance",
+  "label": "Insurance Product Governance",
+  "shortLabel": "Product Governance",
+  "icon": "PackageCheck",
+  "description": "Develop and review insurance product governance frameworks in line with IDD requirements and EIOPA guidelines. Covers product oversight and governance (POG) arrangements, target market definitions, product testing, distribution strategy alignment, and ongoing product monitoring.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IDD product governance requirements, EIOPA POG guidelines, Delegated Regulation 2017/2358, product oversight and governance frameworks"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product-type",
+      "label": "Product Type",
+      "type": "select",
+      "options": [
+        "Life insurance",
+        "Non-life insurance",
+        "Unit-linked",
+        "Insurance-based investment product (IBIP)",
+        "Pension product",
+        "Group insurance",
+        "Multiple products"
+      ],
+      "required": true
+    },
+    {
+      "id": "role",
+      "label": "Role in Product Lifecycle",
+      "type": "select",
+      "options": [
+        "Manufacturer",
+        "Distributor",
+        "Both manufacturer and distributor"
+      ],
+      "required": true
+    },
+    {
+      "id": "task-focus",
+      "label": "Task Focus",
+      "type": "select",
+      "options": [
+        "POG framework development",
+        "Target market definition",
+        "Product testing methodology",
+        "Distribution strategy review",
+        "Product monitoring programme",
+        "Full governance review"
+      ],
+      "required": true
+    },
+    {
+      "id": "existing-framework",
+      "label": "Existing Framework Description",
+      "type": "textarea",
+      "placeholder": "Describe any existing product governance arrangements...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "product-manager",
+    "compliance-officer",
+    "distribution-head"
+  ],
+  "tags": [
+    "insurance",
+    "product-governance",
+    "IDD",
+    "POG",
+    "EIOPA"
+  ]
+}

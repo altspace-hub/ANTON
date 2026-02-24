@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "sharia-board-governance",
+  "label": "Sharia Board Governance Framework",
+  "shortLabel": "Sharia Governance",
+  "icon": "Users",
+  "description": "Design or review Sharia governance frameworks including board composition, terms of reference, fatwas, audit processes, and regulatory compliance with IFSB-10 and local requirements.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["policy-document", "detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IFSB-10 Sharia Governance Systems, AAOIFI Governance Standards, national Sharia governance regulations"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_type",
+      "label": "Institution Type",
+      "type": "select",
+      "options": ["Full Islamic Bank", "Islamic Window", "Takaful", "Investment Fund"],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": ["Saudi Arabia (SAMA)", "UAE (CBUAE/DFSA)", "Malaysia (BNM)", "Pakistan (SBP)", "Other"],
+      "required": true
+    },
+    {
+      "id": "current_status",
+      "label": "Current Status",
+      "type": "select",
+      "options": ["Establishing new board", "Reviewing existing", "Regulatory requirement", "Best practice upgrade"],
+      "required": true
+    }
+  ],
+  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer"],
+  "recommendedSkills": ["skill-ifsb-standards", "skill-aaoifi-standards"],
+  "tags": ["sharia-governance", "ssb", "ifsb-10", "board-governance", "fatwas", "sharia-audit", "terms-of-reference"]
+}

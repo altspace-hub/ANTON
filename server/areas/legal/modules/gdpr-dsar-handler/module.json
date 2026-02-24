@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.0",
+  "id": "gdpr-dsar-handler",
+  "label": "GDPR Data Subject Request Handler",
+  "shortLabel": "DSAR Handler",
+  "description": "Processes GDPR Data Subject Access Requests (DSARs) efficiently. Analyzes the request, identifies relevant data sources, drafts response framework, and flags compliance requirements.",
+  "perspective": "operational",
+  "icon": "Lock",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "GDPR data subject rights, DSAR handling requirements, exemptions and restrictions, supervisory guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "request_type",
+      "type": "select",
+      "label": "Request Type",
+      "description": "What type of GDPR data subject request is this?",
+      "required": true,
+      "options": [
+        { "value": "access", "label": "Subject Access Request (Art. 15 — Right of Access)" },
+        { "value": "rectification", "label": "Rectification Request (Art. 16 — Right to Correct)" },
+        { "value": "erasure", "label": "Erasure / Right to be Forgotten (Art. 17)" },
+        { "value": "portability", "label": "Data Portability (Art. 20)" },
+        { "value": "restriction", "label": "Restriction of Processing (Art. 18)" },
+        { "value": "objection", "label": "Objection to Processing (Art. 21)" },
+        { "value": "automated", "label": "Automated Decision-Making (Art. 22)" }
+      ]
+    },
+    {
+      "id": "request_details",
+      "type": "textarea",
+      "label": "Request Details",
+      "description": "Describe or paste the request received from the data subject.",
+      "placeholder": "e.g. Email received 15 January 2025 from customer Johan Eriksson (DOB 1975-03-22) requesting a copy of all personal data held about him, including transaction history, credit scoring data, and any communications. Customer is a retail banking client since 2018...",
+      "required": true
+    },
+    {
+      "id": "data_subject_type",
+      "type": "select",
+      "label": "Data Subject Type",
+      "description": "What is the relationship with the data subject?",
+      "options": [
+        { "value": "current_customer", "label": "Current Customer" },
+        { "value": "former_customer", "label": "Former Customer" },
+        { "value": "employee", "label": "Employee / Former Employee" },
+        { "value": "prospect", "label": "Prospect / Application Declined" },
+        { "value": "third_party", "label": "Third Party (e.g. guarantor, UBO)" },
+        { "value": "unknown", "label": "Unknown / Unverified" }
+      ]
+    },
+    {
+      "id": "received_date",
+      "type": "text",
+      "label": "Date Request Received",
+      "description": "When was the request received? This starts the 30-day response clock.",
+      "placeholder": "e.g. 15 January 2025",
+      "required": true
+    },
+    {
+      "id": "known_data_sources",
+      "type": "textarea",
+      "label": "Known Data Sources",
+      "description": "List the systems, databases, or files likely to hold data about this individual.",
+      "placeholder": "e.g. Core banking system, CRM, transaction monitoring system, credit bureau data, call recordings, email archive, KYC document repository..."
+    },
+    {
+      "id": "potential_exemptions",
+      "type": "multi-select",
+      "label": "Potential Exemptions or Restrictions",
+      "description": "Are there any grounds that might restrict or exempt the response?",
+      "options": [
+        { "value": "aml_tipping_off", "label": "AML / Tipping-Off Restriction (AMLD Art. 41)" },
+        { "value": "legal_privilege", "label": "Legal Professional Privilege" },
+        { "value": "third_party_rights", "label": "Third-Party Personal Data" },
+        { "value": "crime_prevention", "label": "Crime Prevention / Detection" },
+        { "value": "regulatory_investigation", "label": "Ongoing Regulatory Investigation" },
+        { "value": "manifestly_unfounded", "label": "Manifestly Unfounded / Excessive" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "gdpr",
+    "dsar",
+    "data-subject-rights",
+    "data-privacy",
+    "operational"
+  ]
+}

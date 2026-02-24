@@ -1,0 +1,114 @@
+{
+  "formatVersion": "1.0",
+  "id": "cross-border-transaction-advisor",
+  "label": "Cross-Border Transaction Advisor",
+  "shortLabel": "Cross-Border",
+  "description": "Analyse the tax implications of international transactions: withholding taxes, double tax treaties, permanent establishment risk, exit taxation, hybrid instruments, and supply chain structuring.",
+  "icon": "Globe",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "OECD Model Convention, bilateral tax treaties, ATAD, BEPS, WHT rates, PE rules"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "transaction_type",
+      "type": "select",
+      "label": "Transaction or arrangement type",
+      "required": true,
+      "options": [
+        { "value": "dividend_repatriation", "label": "Dividend repatriation / profit distribution" },
+        { "value": "interest_payment", "label": "Intercompany interest / loan" },
+        { "value": "royalty_payment", "label": "Royalty / IP licence payment" },
+        { "value": "service_fee", "label": "Cross-border service fee" },
+        { "value": "asset_transfer", "label": "Asset / business transfer (exit taxation)" },
+        { "value": "pe_analysis", "label": "Permanent establishment risk analysis" },
+        { "value": "supply_chain", "label": "Supply chain / principal structure" },
+        { "value": "holding_structure", "label": "Holding structure / intermediate holding" },
+        { "value": "ma_transaction", "label": "M&A / acquisition structure" }
+      ]
+    },
+    {
+      "id": "source_jurisdiction",
+      "type": "text",
+      "label": "Source / payer jurisdiction",
+      "description": "The country where the payment originates or where the income arises.",
+      "placeholder": "e.g., Sweden, Germany, United States"
+    },
+    {
+      "id": "recipient_jurisdiction",
+      "type": "text",
+      "label": "Recipient / payee jurisdiction",
+      "description": "The country of the receiving entity.",
+      "placeholder": "e.g., Netherlands, Luxembourg, Ireland"
+    },
+    {
+      "id": "treaty_position",
+      "type": "select",
+      "label": "Tax treaty status",
+      "options": [
+        { "value": "treaty_exists", "label": "Tax treaty in force between jurisdictions" },
+        { "value": "no_treaty", "label": "No tax treaty (domestic WHT applies)" },
+        { "value": "unknown", "label": "Unknown — please analyse" },
+        { "value": "eu_directives", "label": "EU: Parent-Subsidiary / Interest & Royalties Directive may apply" }
+      ]
+    },
+    {
+      "id": "transaction_description",
+      "type": "textarea",
+      "label": "Transaction description",
+      "description": "Describe the proposed transaction, the entities involved, amounts, and the commercial rationale.",
+      "placeholder": "e.g., Swedish parent plans to extract EUR 10M profit from German subsidiary via dividend. German subsidiary has no carry-forward losses. Swedish participation exemption applies if conditions met. Need analysis of German capital gains tax, Swedish participation exemption conditions, and any DAC6 disclosure implications..."
+    },
+    {
+      "id": "substance_available",
+      "type": "select",
+      "label": "Substance / beneficial ownership position",
+      "description": "Does the recipient entity have genuine economic substance?",
+      "options": [
+        { "value": "full_substance", "label": "Full substance — staff, management, decision-making in jurisdiction" },
+        { "value": "partial_substance", "label": "Partial substance — some local management, some outsourced" },
+        { "value": "limited_substance", "label": "Limited substance — primarily holding function" },
+        { "value": "shell", "label": "Shell / conduit — no local substance" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "tax-director",
+    "transfer-pricing-specialist"
+  ],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "opus",
+    "notes": "Cross-border tax analysis requires multi-treaty and multi-jurisdiction knowledge synthesis. Always use Opus."
+  },
+  "tags": [
+    "cross-border",
+    "withholding-tax",
+    "tax-treaty",
+    "permanent-establishment",
+    "OECD-model",
+    "exit-tax",
+    "hybrid-instruments",
+    "parent-subsidiary-directive",
+    "BEPS-action-7"
+  ]
+}

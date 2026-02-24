@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "portfolio-review",
+  "label": "Portfolio Review & Reporting",
+  "shortLabel": "Portfolio Review",
+  "icon": "PieChart",
+  "description": "Review portfolio performance, risk attribution, concentration, liquidity, regulatory limits, and ESG alignment.",
+  "color": "adv-gold",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Portfolio management, risk attribution, MiFID reporting, UCITS limits"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "Review focus areas",
+      "required": true,
+      "options": [
+        {
+          "value": "performance",
+          "label": "Performance attribution vs benchmark"
+        },
+        {
+          "value": "risk",
+          "label": "Risk profile and limits"
+        },
+        {
+          "value": "concentration",
+          "label": "Concentration and diversification"
+        },
+        {
+          "value": "liquidity",
+          "label": "Liquidity management"
+        },
+        {
+          "value": "esg",
+          "label": "ESG alignment"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory compliance (UCITS, AIFMD limits)"
+        }
+      ]
+    },
+    {
+      "id": "portfolio_type",
+      "type": "select",
+      "label": "Portfolio type",
+      "options": [
+        {
+          "value": "ucits",
+          "label": "UCITS fund"
+        },
+        {
+          "value": "aif",
+          "label": "AIF (PE, hedge, real asset)"
+        },
+        {
+          "value": "mandate",
+          "label": "Segregated mandate"
+        },
+        {
+          "value": "pension",
+          "label": "Pension fund"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Portfolio context",
+      "placeholder": "Describe the portfolio, mandate, benchmark, and recent events."
+    }
+  ],
+  "recommendedPersonas": [
+    "investor-lens",
+    "auditor"
+  ],
+  "tags": [
+    "portfolio",
+    "review",
+    "performance",
+    "risk",
+    "mifid"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "scam-fraud-warning",
+  "label": "Scam & Fraud Warning System",
+  "shortLabel": "Scam Warning",
+  "icon": "AlertOctagon",
+  "description": "Is this a scam? Identify common fraud types and know what to do if you've been scammed.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Active scam situations with large financial loss need sonnet. Scam identification works well with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Common scam types by region: advance-fee fraud, mobile money scams, prize scams, investment pyramid schemes, romance scams, job offer scams, SIM swap fraud. Universal red flags, reporting channels by country, realistic recovery expectations." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "scam_type",
+      "label": "What type of offer or situation is this?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "prize-win", "label": "\"You've won a prize\" message" },
+        { "value": "investment-opportunity", "label": "Investment opportunity (high returns)" },
+        { "value": "romance-scam", "label": "Online romantic relationship asking for money" },
+        { "value": "job-offer", "label": "Job offer requiring upfront payment" },
+        { "value": "advance-fee-loan", "label": "Loan offer with advance fee required" },
+        { "value": "mobile-money-fraud", "label": "Mobile money fraud (wrong send, fake payment)" },
+        { "value": "government-impersonation", "label": "Someone claiming to be a government official" },
+        { "value": "pyramid-scheme", "label": "Pyramid or multi-level investment scheme" }
+      ]
+    },
+    {
+      "id": "situation",
+      "label": "What is your current situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "just-received", "label": "Just received a suspicious offer" },
+        { "value": "already-sent-money", "label": "Already sent money" },
+        { "value": "still-ongoing", "label": "Still in contact with the person" },
+        { "value": "want-to-know-types", "label": "Want to know common scam types" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
+  "tags": ["consumer-protection", "bop", "rights", "scam", "fraud", "advance-fee", "mobile-money-fraud", "pyramid-scheme", "romance-scam", "africa", "south-asia"]
+}

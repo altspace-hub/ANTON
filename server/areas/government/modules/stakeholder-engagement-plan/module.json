@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "stakeholder-engagement-plan",
+  "label": "Stakeholder Engagement Plan",
+  "shortLabel": "Stakeholder Engagement",
+  "icon": "Network",
+  "description": "Design stakeholder engagement strategies for policy development, regulatory reform, and public service transformation. Covers mapping, methods, communication, and evaluation.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["project-plan", "action-plan"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Stakeholder engagement strategy: power-interest mapping, engagement ladder (Arnstein), IAP2 spectrum, method selection for different stakeholder types, hard-to-reach groups, digital engagement limitations, deliberative democracy (citizens assemblies, consensus conferences), hostile stakeholder management, political considerations"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "policy_initiative",
+      "label": "What are you consulting on or engaging about?",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Describe the policy or service change, the decision to be made, and why stakeholder engagement is needed."
+    },
+    {
+      "id": "stakeholder_types",
+      "label": "Which stakeholder groups are involved?",
+      "type": "chips",
+      "required": true,
+      "options": [
+        { "value": "public", "label": "General public" },
+        { "value": "business", "label": "Business / industry" },
+        { "value": "civil-society", "label": "Civil society / NGOs" },
+        { "value": "experts", "label": "Technical experts" },
+        { "value": "media", "label": "Media" },
+        { "value": "international", "label": "International bodies" },
+        { "value": "vulnerable-groups", "label": "Vulnerable groups" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "label": "What is the engagement timeline?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "short", "label": "Short (weeks)" },
+        { "value": "medium", "label": "Medium (months)" },
+        { "value": "long", "label": "Long (years)" }
+      ]
+    },
+    {
+      "id": "method",
+      "label": "Which engagement methods are available?",
+      "type": "chips",
+      "required": false,
+      "options": [
+        { "value": "online", "label": "Online / digital" },
+        { "value": "face-to-face", "label": "Face-to-face" },
+        { "value": "written-consultation", "label": "Written consultation" },
+        { "value": "deliberative-panels", "label": "Deliberative panels" },
+        { "value": "representative-forums", "label": "Representative forums" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["policy-analyst", "legal-expert"],
+  "tags": ["stakeholder-engagement", "consultation", "participation", "deliberative-democracy", "power-interest", "citizens-assembly", "government", "public-administration"]
+}

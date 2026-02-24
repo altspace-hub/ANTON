@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "customer-health-score",
+  "label": "Customer Health Score Calculator",
+  "shortLabel": "Health Score",
+  "description": "Aggregates customer engagement signals (product usage, support interactions, NPS, commercial activity) to produce a health score with at-risk identification and recommended actions.",
+  "icon": "HeartPulse",
+  "color": "adv-green",
+  "areaId": "sales",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "maturity-assessment",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "customer_name",
+      "type": "text",
+      "label": "Customer name",
+      "required": true,
+      "placeholder": "e.g., Handelsbanken, Volvo Financial Services"
+    },
+    {
+      "id": "relationship_age",
+      "type": "select",
+      "label": "Length of relationship",
+      "options": [
+        { "value": "new", "label": "Under 6 months (new customer)" },
+        { "value": "growing", "label": "6-18 months (developing)" },
+        { "value": "established", "label": "18 months - 3 years (established)" },
+        { "value": "long_term", "label": "3+ years (long-term)" }
+      ]
+    },
+    {
+      "id": "engagement_signals",
+      "type": "textarea",
+      "label": "Engagement signals (describe what you know)",
+      "required": true,
+      "placeholder": "Describe the customer's engagement across any of these dimensions:\n- Product / service usage (increasing, stable, declining, low adoption?)\n- Support interactions (ticket volume, severity, resolution satisfaction?)\n- NPS or satisfaction scores (recent score, trend?)\n- Communication frequency (regular check-ins, or going quiet?)\n- Executive engagement (are senior contacts engaged or disengaged?)\n- Commercial signals (expansion requests, budget discussions, or contract queries?)\n- Reference activity (willing to be a reference or case study?)\n- Training / onboarding completion?"
+    },
+    {
+      "id": "key_contacts",
+      "type": "textarea",
+      "label": "Key contacts and relationship health",
+      "placeholder": "Who are the key people on the customer side and how strong are our relationships? Include any changes (new stakeholders, departures, reorgs) that could affect the relationship."
+    },
+    {
+      "id": "recent_events",
+      "type": "textarea",
+      "label": "Recent notable events",
+      "placeholder": "e.g., Had a major support incident last month, New CTO joined 3 months ago and is reviewing all vendors, Just completed a successful project delivery, Missed their last QBR, Mentioned competitor during last call"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "customer-success",
+    "retention",
+    "churn-prevention",
+    "account-management",
+    "health-score",
+    "nps"
+  ]
+}

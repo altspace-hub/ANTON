@@ -1,0 +1,140 @@
+{
+  "formatVersion": "1.0",
+  "id": "payment-services",
+  "label": "Payment Services Regulation",
+  "shortLabel": "Payments",
+  "description": "PSD2/PSD3 compliance, payment institution licensing, SCA requirements, open banking obligations, and fraud liability analysis.",
+  "icon": "CreditCard",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "regulatory-comparison"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity type",
+      "required": true,
+      "options": [
+        {
+          "value": "credit_institution",
+          "label": "Credit Institution (bank)"
+        },
+        {
+          "value": "pi",
+          "label": "Payment Institution (PI)"
+        },
+        {
+          "value": "emi",
+          "label": "Electronic Money Institution (EMI)"
+        },
+        {
+          "value": "aisp",
+          "label": "Account Information Service Provider (AISP)"
+        },
+        {
+          "value": "pisp",
+          "label": "Payment Initiation Service Provider (PISP)"
+        },
+        {
+          "value": "aspsp",
+          "label": "Account Servicing Payment Service Provider (ASPSP)"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "type": "select",
+      "label": "Topic",
+      "required": true,
+      "options": [
+        {
+          "value": "psd3_impact",
+          "label": "PSD3/PSR impact assessment"
+        },
+        {
+          "value": "sca",
+          "label": "Strong Customer Authentication (SCA)"
+        },
+        {
+          "value": "open_banking",
+          "label": "Open banking / API obligations"
+        },
+        {
+          "value": "fraud_liability",
+          "label": "Fraud liability and refund obligations"
+        },
+        {
+          "value": "licensing",
+          "label": "Payment institution licensing / authorisation"
+        },
+        {
+          "value": "safeguarding",
+          "label": "Client funds safeguarding"
+        },
+        {
+          "value": "operational_resilience",
+          "label": "Operational resilience (DORA + payments)"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdictions",
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Specific questions or context",
+      "placeholder": "Any specific regulatory questions, current state description, or areas of particular concern."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "payments",
+    "psd2",
+    "psd3",
+    "sca",
+    "open-banking",
+    "fintech"
+  ]
+}

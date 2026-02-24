@@ -1,0 +1,21 @@
+{
+  "id": "skill-livestock-diseases",
+  "label": "Livestock Health -- Common Diseases",
+  "description": "Major livestock and poultry diseases affecting smallholders across sub-Saharan Africa, South Asia, and Southeast Asia -- symptoms, first response, when to call a veterinarian, vaccination schedules, and quarantine procedures.",
+  "applicableAreas": [
+    "livestock-poultry"
+  ],
+  "tags": [
+    "livestock",
+    "poultry",
+    "animal-health",
+    "diseases",
+    "vaccines",
+    "veterinary",
+    "cattle",
+    "goats",
+    "chickens"
+  ],
+  "source": "disk",
+  "category": "thematic"
+}

@@ -1,0 +1,62 @@
+{
+  "id": "interview-preparation",
+  "areaId": "journalism",
+  "label": "Interview Preparation",
+  "shortLabel": "Interview Prep",
+  "icon": "Mic",
+  "description": "Prepare rigorous interview frameworks: background research, question sets for news, profile, and investigative interviews, and tactics for difficult or evasive subjects.",
+  "color": "adv-teal",
+  "tags": ["interview", "questions", "preparation", "sources", "accountability", "investigative"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Haiku for basic interview prep. Opus for complex accountability interviews with legal sensitivity."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["action-plan", "detailed-findings"]
+  },
+  "recommendedPersonas": ["investigative-journalist", "features-editor"],
+  "guidedInputs": [
+    {
+      "id": "interview_subject",
+      "type": "textarea",
+      "label": "Interview Subject",
+      "description": "Who are you interviewing? Their role, background, and connection to your story.",
+      "placeholder": "e.g. Dr. Maria Santos, Chief Medical Officer at National Health Service. Former pharmaceutical executive 2015-2020. Subject of investigation into hospital procurement.",
+      "required": true
+    },
+    {
+      "id": "story_context",
+      "type": "textarea",
+      "label": "Story Context",
+      "description": "What is the story? What do you need from this interview?",
+      "placeholder": "e.g. Investigating whether NHS procurement decisions favoured her former employer. Need: explanation of decision-making process, response to documents showing she approved contracts, right of reply to allegations.",
+      "required": true
+    },
+    {
+      "id": "interview_type",
+      "type": "select",
+      "label": "Interview Type",
+      "description": "What type of interview is this?",
+      "options": [
+        {"value": "accountability", "label": "Accountability / Right of reply"},
+        {"value": "profile", "label": "Profile / Character study"},
+        {"value": "expertise", "label": "Expert / Background"},
+        {"value": "news_reaction", "label": "News reaction / Response"},
+        {"value": "witness", "label": "Witness / Eyewitness"},
+        {"value": "whistleblower", "label": "Whistleblower / Source"}
+      ],
+      "required": true
+    },
+    {
+      "id": "known_facts",
+      "type": "textarea",
+      "label": "Documents / Facts to Put to Them",
+      "description": "What specific evidence, allegations, or facts do you need to get their response to?",
+      "placeholder": "e.g. Document A: email approving contract signed 3 days after joining NHS. Document B: contract value 40% above market rate. Public record: company paid her speaking fees 2021."
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "simple-bookkeeping",
+  "label": "Simple Bookkeeping & Record Keeping",
+  "shortLabel": "Bookkeeping",
+  "icon": "BookOpen",
+  "description": "Learn to track your income and expenses simply — using a notebook or phone. Know your daily profit without an accountant.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Simple bookkeeping methods for informal micro-businesses in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "market-stall", "label": "Market stall" },
+        { "value": "shop-kiosk", "label": "Shop / kiosk" },
+        { "value": "food-vendor", "label": "Food vendor" },
+        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
+        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "current_records",
+      "type": "select",
+      "label": "How do you keep records now?",
+      "required": true,
+      "options": [
+        { "value": "none", "label": "I keep no records" },
+        { "value": "messy-notebook", "label": "I use a notebook but it's messy" },
+        { "value": "phone", "label": "I use my phone" },
+        { "value": "helper", "label": "I have a helper" },
+        { "value": "start-fresh", "label": "I want to start from scratch" }
+      ]
+    },
+    {
+      "id": "main_problem",
+      "type": "select",
+      "label": "What is your biggest problem right now?",
+      "required": false,
+      "options": [
+        { "value": "dont-know-profit", "label": "I don't know if I'm making profit" },
+        { "value": "money-disappears", "label": "Money disappears" },
+        { "value": "family-takes-money", "label": "Family takes money from the business" },
+        { "value": "want-loan", "label": "I want to get a loan" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "tags": [
+    "micro-business",
+    "bop",
+    "informal-economy",
+    "bookkeeping",
+    "record-keeping",
+    "profit-tracking",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

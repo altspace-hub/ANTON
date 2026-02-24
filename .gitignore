@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+uploads/
+outputs/
+data/
+*.log
+.DS_Store
+Thumbs.db
+
+# Security audit reports
+audit-report.json
+vulnerability-report.json
+LICENSES.csv
+licenses-report.csv

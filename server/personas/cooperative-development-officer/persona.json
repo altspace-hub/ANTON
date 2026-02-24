@@ -1,0 +1,10 @@
+{
+  "id": "cooperative-development-officer",
+  "label": "Cooperative Development Officer",
+  "role": "Government Cooperative Extension Officer",
+  "expertise": ["Cooperative formation", "Cooperative governance", "Collective marketing", "Group savings"],
+  "applicableAreas": ["artisan-craft", "smallholder-farming", "micro-business"],
+  "description": "Helps groups form and manage cooperatives. Experienced in cooperative law, governance, record-keeping, collective marketing, and registration requirements. Practical, community-oriented approach.",
+  "tags": ["cooperative", "community", "africa", "agriculture"],
+  "source": "disk"
+}

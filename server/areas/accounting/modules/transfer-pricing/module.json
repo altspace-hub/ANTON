@@ -1,0 +1,129 @@
+{
+  "formatVersion": "1.0",
+  "id": "transfer-pricing",
+  "label": "Transfer Pricing Analysis",
+  "shortLabel": "Transfer Pricing",
+  "description": "Analyse intercompany transactions, assess arm's length compliance, design transfer pricing policies, prepare documentation, and evaluate OECD BEPS and Pillar Two implications for group structures.",
+  "icon": "GitBranch",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "OECD Transfer Pricing Guidelines, BEPS Actions 8-10, Nordic transfer pricing rules"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_type",
+      "type": "select",
+      "label": "Type of transfer pricing work",
+      "required": true,
+      "options": [
+        {
+          "value": "policy_design",
+          "label": "Design transfer pricing policy"
+        },
+        {
+          "value": "documentation",
+          "label": "Prepare TP documentation (master/local file)"
+        },
+        {
+          "value": "benchmarking",
+          "label": "Benchmarking study"
+        },
+        {
+          "value": "transaction_analysis",
+          "label": "Analyse specific intercompany transaction"
+        },
+        {
+          "value": "restructuring",
+          "label": "Business restructuring analysis"
+        },
+        {
+          "value": "dispute",
+          "label": "Dispute / audit defence preparation"
+        },
+        {
+          "value": "apa",
+          "label": "Advance pricing agreement preparation"
+        },
+        {
+          "value": "pillar_two",
+          "label": "Pillar Two interaction analysis"
+        }
+      ]
+    },
+    {
+      "id": "transaction_types",
+      "type": "multi-select",
+      "label": "Intercompany transaction types",
+      "options": [
+        {
+          "value": "services",
+          "label": "Management / intercompany services"
+        },
+        {
+          "value": "goods",
+          "label": "Tangible goods"
+        },
+        {
+          "value": "ip_licensing",
+          "label": "IP licensing / royalties"
+        },
+        {
+          "value": "financing",
+          "label": "Intercompany loans / financing"
+        },
+        {
+          "value": "cost_sharing",
+          "label": "Cost sharing / contribution arrangements"
+        },
+        {
+          "value": "guarantees",
+          "label": "Financial guarantees"
+        },
+        {
+          "value": "commissionaire",
+          "label": "Commissionaire / agency arrangements"
+        }
+      ]
+    },
+    {
+      "id": "jurisdictions",
+      "type": "textarea",
+      "label": "Jurisdictions involved",
+      "placeholder": "e.g., Swedish parent, Finnish operating subsidiary, Danish sales entity, Latvian shared service centre"
+    },
+    {
+      "id": "group_structure",
+      "type": "textarea",
+      "label": "Group structure and functions",
+      "placeholder": "Describe the group structure, where key functions are performed, significant assets are held, and important risks are managed."
+    },
+    {
+      "id": "specific_issue",
+      "type": "textarea",
+      "label": "Specific issue or question",
+      "placeholder": "e.g., Tax authority is challenging our management fee allocation method. We need to demonstrate arm's length pricing for EUR 5M annual IT services charge from parent to subsidiaries."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "transfer-pricing",
+    "beps",
+    "intercompany",
+    "oecd",
+    "tax",
+    "pillar-two"
+  ]
+}

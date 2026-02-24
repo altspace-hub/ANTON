@@ -1,0 +1,106 @@
+{
+  "formatVersion": "1.0",
+  "id": "mfi-regulatory-compliance",
+  "label": "MFI Regulatory Compliance Assessment",
+  "shortLabel": "MFI Compliance",
+  "description": "Regulatory compliance assessment for microfinance institutions covering licensing, capital adequacy, consumer protection, AML/CFT obligations, and reporting requirements.",
+  "perspective": "analytical",
+  "icon": "ClipboardCheck",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CBK Microfinance Act 2006 Kenya, CBN Microfinance Policy Nigeria, RBI NBFC-MFI directions India, Bangladesh MRA Act, CGAP regulatory frameworks for MFIs"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of microfinance institution is being assessed?",
+      "required": true,
+      "options": [
+        { "value": "ngo-mfi", "label": "NGO-MFI" },
+        { "value": "licensed-mfi", "label": "Licensed MFI" },
+        { "value": "credit-cooperative", "label": "Credit Cooperative" },
+        { "value": "commercial-microbank", "label": "Commercial Microbank" },
+        { "value": "development-bank", "label": "Development Bank" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Primary Jurisdiction",
+      "description": "Which country's regulatory framework is the primary reference?",
+      "required": true,
+      "options": [
+        { "value": "ke", "label": "Kenya" },
+        { "value": "ug", "label": "Uganda" },
+        { "value": "tz", "label": "Tanzania" },
+        { "value": "ng", "label": "Nigeria" },
+        { "value": "gh", "label": "Ghana" },
+        { "value": "bd", "label": "Bangladesh" },
+        { "value": "in", "label": "India" },
+        { "value": "pk", "label": "Pakistan" },
+        { "value": "mm", "label": "Myanmar" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "licence_type",
+      "type": "select",
+      "label": "Current Licence / Registration Status",
+      "description": "What is the institution's current regulatory status?",
+      "required": true,
+      "options": [
+        { "value": "deposit-taking", "label": "Deposit-taking" },
+        { "value": "non-deposit", "label": "Non-deposit" },
+        { "value": "cooperative", "label": "Cooperative" },
+        { "value": "informal", "label": "Informal / Unregistered" },
+        { "value": "seeking", "label": "Seeking licence" }
+      ]
+    },
+    {
+      "id": "compliance_concerns",
+      "type": "textarea",
+      "label": "Known Compliance Concerns",
+      "description": "Describe any known compliance weaknesses, regulatory findings, or areas of concern.",
+      "placeholder": "e.g. Our last CBK inspection identified weak interest rate disclosure practices; we also have no formal AML/CFT programme; our capital adequacy ratio is close to the regulatory minimum..."
+    }
+  ],
+  "recommendedPersonas": [
+    "microfinance-director",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "jurisdiction-ke-cbk",
+    "jurisdiction-ng-cbn",
+    "jurisdiction-in-rbi"
+  ],
+  "tags": [
+    "microfinance",
+    "mfi-compliance",
+    "licensing",
+    "capital-adequacy",
+    "consumer-protection",
+    "aml-cft",
+    "cgap",
+    "financial-inclusion"
+  ]
+}

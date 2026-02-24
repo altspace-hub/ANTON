@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "land-rights",
+  "name": "Land & Property Rights Expert",
+  "shortName": "Land Rights",
+  "description": "Know your land rights. Plain-language guidance on land title, inheritance, boundary disputes, eviction response, women's land rights, and renting — for people across Africa, South Asia, and beyond.",
+  "icon": "MapPin",
+  "color": "adv-teal",
+  "cluster": "rights",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex land disputes need sonnet. Basic rights information works with haiku."
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "competitive-win-loss-analyzer",
+  "label": "Competitive Win/Loss Deep Dive",
+  "shortLabel": "Competitive Analysis",
+  "description": "Conducts systematic analysis of competitive deal outcomes. Identifies competitive patterns, differentiators, and positioning gaps through structured win/loss review methodology.",
+  "icon": "Swords",
+  "color": "adv-green",
+  "areaId": "sales",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Competitor public information, industry positioning, analyst reports"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "our_company",
+      "type": "text",
+      "label": "Our company / firm name",
+      "required": true,
+      "placeholder": "e.g., Advisense, Acme Consulting"
+    },
+    {
+      "id": "competitors",
+      "type": "textarea",
+      "label": "Key competitors to analyse",
+      "required": true,
+      "placeholder": "List the main competitors you encounter in deals. Include any known positioning or claims they make."
+    },
+    {
+      "id": "deal_data",
+      "type": "textarea",
+      "label": "Deal outcome data",
+      "required": true,
+      "placeholder": "Describe competitive deals (wins and losses) in as much detail as you have:\n- Who won, who lost\n- Deal size and type\n- What factors were decisive\n- What the customer said about the competitor\n- What the competitor said about us\n- Win rate trends by competitor"
+    },
+    {
+      "id": "market_segment",
+      "type": "textarea",
+      "label": "Market segment and typical buyer",
+      "placeholder": "Who are your typical buyers? Industry, size, geography, buyer role? What problems are they solving?"
+    },
+    {
+      "id": "our_positioning",
+      "type": "textarea",
+      "label": "Our current positioning and value proposition",
+      "placeholder": "How do you currently position yourself? What value proposition do you lead with? What are your stated differentiators?"
+    },
+    {
+      "id": "strategic_question",
+      "type": "textarea",
+      "label": "Specific strategic question",
+      "placeholder": "e.g., Why do we keep losing to Deloitte on large bank engagements? How should we position against boutique competitors? Where is our competitive moat strongest?"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "competitive-intelligence",
+    "win-loss",
+    "strategy",
+    "positioning",
+    "differentiation",
+    "market"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "permit-license-guide",
+  "label": "Permit & License Application Guide",
+  "shortLabel": "Permits",
+  "icon": "FileText",
+  "description": "Apply for permits and licenses correctly. From business permits to construction to event licenses.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic navigation works well with haiku. Complex legal matters need sonnet."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Permit and license application processes by country: business operating permits, construction permits, driving licences, event permits. Official fees, required documents, processing times, anti-bribery guidance. Kenya, Nigeria, Ghana, South Africa, India, Bangladesh, Pakistan, Philippines." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "permit_type",
+      "label": "What permit or license do you need?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "business-permit", "label": "Business operating permit" },
+        { "value": "construction", "label": "Construction / renovation" },
+        { "value": "event-market", "label": "Event / market permit" },
+        { "value": "driving-licence", "label": "Driving licence" },
+        { "value": "environmental", "label": "Environmental permit" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "status",
+      "label": "What is your application status?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "first-application", "label": "First application" },
+        { "value": "renewal", "label": "Renewal" },
+        { "value": "lost-damaged", "label": "Lost or damaged" },
+        { "value": "rejected-previously", "label": "Rejected previously" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
+  "tags": ["permits", "licenses", "business", "construction", "driving", "bop", "rights", "africa", "south-asia", "anti-corruption"]
+}

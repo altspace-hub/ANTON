@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.0",
+  "id": "remittance-cost-comparison",
+  "label": "Remittance Cost Comparison",
+  "shortLabel": "Send Money Cheaper",
+  "icon": "ArrowRightLeft",
+  "description": "Find the cheapest way to send money home. Compare transfer services to save money on every transfer.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Practical comparison guidance works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Remittance corridors, transfer fee comparisons, exchange rate markups, mobile money transfers internationally"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "sending_country",
+      "type": "select",
+      "label": "Where are you sending money FROM?",
+      "required": true,
+      "options": [
+        { "value": "uk", "label": "United Kingdom" },
+        { "value": "usa", "label": "USA" },
+        { "value": "saudi-arabia", "label": "Saudi Arabia" },
+        { "value": "uae", "label": "UAE" },
+        { "value": "qatar", "label": "Qatar" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "receiving_country",
+      "type": "select",
+      "label": "Where is the money going TO?",
+      "required": true,
+      "options": [
+        { "value": "india", "label": "India" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "amount",
+      "type": "select",
+      "label": "How much are you sending?",
+      "required": true,
+      "options": [
+        { "value": "under-100", "label": "Under $100" },
+        { "value": "100-500", "label": "$100 to $500" },
+        { "value": "500-2000", "label": "$500 to $2,000" },
+        { "value": "over-2000", "label": "Over $2,000" }
+      ]
+    },
+    {
+      "id": "urgency",
+      "type": "select",
+      "label": "How quickly does the money need to arrive?",
+      "required": false,
+      "options": [
+        { "value": "today", "label": "Today — urgent" },
+        { "value": "3-days", "label": "Within 3 days" },
+        { "value": "1-week", "label": "Within a week" },
+        { "value": "monthly", "label": "Regular monthly transfer — no rush" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "remittance",
+    "money-transfer",
+    "migrant-workers",
+    "exchange-rate",
+    "diaspora",
+    "india",
+    "pakistan",
+    "bangladesh",
+    "philippines",
+    "nigeria",
+    "kenya",
+    "ghana"
+  ]
+}

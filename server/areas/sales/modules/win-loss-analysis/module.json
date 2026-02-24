@@ -1,0 +1,120 @@
+{
+  "formatVersion": "1.0",
+  "id": "win-loss-analysis",
+  "label": "Win/Loss Analysis",
+  "shortLabel": "Win/Loss",
+  "description": "Analyse won and lost deals to identify patterns, improve sales effectiveness, and refine go-to-market strategy. Covers individual deal analysis, trend identification, and systematic improvement recommendations.",
+  "icon": "TrendingUp",
+  "color": "adv-green",
+  "areaId": "sales",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_type",
+      "type": "select",
+      "label": "Analysis type",
+      "required": true,
+      "options": [
+        {
+          "value": "single_deal",
+          "label": "Analyse a specific win or loss"
+        },
+        {
+          "value": "trend_analysis",
+          "label": "Analyse patterns across multiple deals"
+        },
+        {
+          "value": "competitive",
+          "label": "Competitive win/loss analysis"
+        },
+        {
+          "value": "segment",
+          "label": "Segment-specific analysis"
+        },
+        {
+          "value": "process",
+          "label": "Sales process effectiveness analysis"
+        },
+        {
+          "value": "programme_design",
+          "label": "Design a win/loss review programme"
+        }
+      ]
+    },
+    {
+      "id": "deal_info",
+      "type": "textarea",
+      "label": "Deal information",
+      "description": "For single deal analysis, describe the deal. For trend analysis, describe the dataset or upload a spreadsheet.",
+      "placeholder": "e.g., Lost EUR 400k AML advisory deal to Deloitte at Nordic bank. We were the incumbent, client said our proposal lacked innovation. 3-month sales cycle, met 4 stakeholders, submitted detailed proposal.",
+      "required": true
+    },
+    {
+      "id": "outcome",
+      "type": "select",
+      "label": "Outcome (for single deal)",
+      "options": [
+        {
+          "value": "won",
+          "label": "We won"
+        },
+        {
+          "value": "lost_competitor",
+          "label": "We lost to a competitor"
+        },
+        {
+          "value": "lost_no_decision",
+          "label": "Client made no decision"
+        },
+        {
+          "value": "lost_internal",
+          "label": "Client did it internally"
+        },
+        {
+          "value": "multiple",
+          "label": "Analysing multiple deals"
+        }
+      ]
+    },
+    {
+      "id": "client_feedback",
+      "type": "textarea",
+      "label": "Client feedback (if available)",
+      "placeholder": "e.g., Client said they valued our expertise but felt Deloitte offered a more structured methodology and better technology tools. Price was similar."
+    },
+    {
+      "id": "sales_process",
+      "type": "textarea",
+      "label": "Sales process followed",
+      "placeholder": "e.g., Initial meeting from conference networking, 2 discovery calls, site visit, proposal submission, presentation to steering committee, lost after final round"
+    },
+    {
+      "id": "learning_goals",
+      "type": "textarea",
+      "label": "What do you want to learn?",
+      "placeholder": "e.g., Why do we keep losing to Big 4 in competitive situations? Are we qualifying deals properly? Is our proposal format effective? What are our top 3 improvement areas?"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "sales",
+    "win-loss",
+    "analysis",
+    "improvement",
+    "competitive",
+    "effectiveness"
+  ]
+}

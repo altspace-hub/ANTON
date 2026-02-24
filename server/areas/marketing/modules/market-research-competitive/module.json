@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "market-research-competitive",
+  "label": "Market Research & Competitive Analysis",
+  "shortLabel": "Market Research",
+  "description": "Conduct structured competitive landscape analysis, market sizing, customer segment research, and opportunity assessments to inform strategic decisions.",
+  "icon": "Megaphone",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Competitive intelligence, market sizing, industry trends, company research"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "research_type",
+      "type": "select",
+      "label": "Research type",
+      "required": true,
+      "options": [
+        { "value": "competitive_landscape", "label": "Competitive landscape analysis" },
+        { "value": "market_sizing", "label": "Market sizing / TAM-SAM-SOM" },
+        { "value": "competitor_deep_dive", "label": "Specific competitor deep-dive" },
+        { "value": "market_entry", "label": "New market entry assessment" },
+        { "value": "customer_segment", "label": "Customer segment research" },
+        { "value": "pricing_intelligence", "label": "Pricing intelligence / benchmarking" },
+        { "value": "trend_analysis", "label": "Industry trend analysis" }
+      ]
+    },
+    {
+      "id": "company_context",
+      "type": "textarea",
+      "label": "Your company / product context",
+      "description": "Describe your company, product, or service and what strategic decision this research will inform.",
+      "placeholder": "e.g., We are a Nordic fintech offering open banking APIs to banks and fintechs. We are considering expanding into the UK market and want to understand the competitive landscape and main players..."
+    },
+    {
+      "id": "competitors_known",
+      "type": "textarea",
+      "label": "Known competitors",
+      "description": "List any known direct or indirect competitors you want included in the analysis.",
+      "placeholder": "e.g., Direct: Tink, Yapily, TrueLayer. Indirect: Traditional data aggregators, in-house bank solutions..."
+    },
+    {
+      "id": "geography",
+      "type": "text",
+      "label": "Geographic focus",
+      "description": "Which markets or regions should this research focus on?",
+      "placeholder": "e.g., Nordics + UK, Western Europe, Global, specific countries..."
+    },
+    {
+      "id": "research_depth",
+      "type": "select",
+      "label": "Depth of analysis required",
+      "options": [
+        { "value": "overview", "label": "High-level overview — quick orientation" },
+        { "value": "detailed", "label": "Detailed analysis — strategic planning input" },
+        { "value": "deep_dive", "label": "Deep dive — M&A, investment, or major strategic decision" }
+      ]
+    },
+    {
+      "id": "decision_context",
+      "type": "textarea",
+      "label": "Decision this research must inform",
+      "description": "What business decision or question will this research answer? This sharpens the analysis.",
+      "placeholder": "e.g., Should we enter the UK market in 2025 or focus on deepening Nordic presence? Which competitor's positioning is most vulnerable to our differentiation?"
+    }
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "pragmatist"
+  ],
+  "tags": [
+    "market-research",
+    "competitive-analysis",
+    "competitive-intelligence",
+    "market-sizing",
+    "TAM-SAM-SOM",
+    "competitive-landscape",
+    "SWOT",
+    "market-entry",
+    "pricing-intelligence"
+  ]
+}

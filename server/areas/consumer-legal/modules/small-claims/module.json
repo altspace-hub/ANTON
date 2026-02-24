@@ -1,0 +1,139 @@
+{
+  "formatVersion": "1.0",
+  "id": "small-claims",
+  "label": "Small Claims Support",
+  "shortLabel": "Small Claims",
+  "description": "Structure and prepare small claims cases, draft claim forms and statements, assess claim strength, and provide guidance on small claims procedures and evidence requirements.",
+  "icon": "Scale",
+  "color": "adv-red",
+  "areaId": "consumer-legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "claim_type",
+      "type": "select",
+      "label": "Claim type",
+      "required": true,
+      "options": [
+        {
+          "value": "money_owed",
+          "label": "Money Owed / Debt Recovery"
+        },
+        {
+          "value": "defective_goods",
+          "label": "Defective Goods / Services"
+        },
+        {
+          "value": "damage",
+          "label": "Property Damage"
+        },
+        {
+          "value": "deposit",
+          "label": "Deposit Return"
+        },
+        {
+          "value": "breach_contract",
+          "label": "Breach of Contract"
+        },
+        {
+          "value": "personal_injury",
+          "label": "Minor Personal Injury"
+        },
+        {
+          "value": "other",
+          "label": "Other Claim"
+        }
+      ]
+    },
+    {
+      "id": "claim_stage",
+      "type": "select",
+      "label": "Stage of claim",
+      "required": true,
+      "options": [
+        {
+          "value": "pre_action",
+          "label": "Pre-Action / Letter Before Claim"
+        },
+        {
+          "value": "filing",
+          "label": "Filing the Claim"
+        },
+        {
+          "value": "response",
+          "label": "Responding to a Claim"
+        },
+        {
+          "value": "hearing_prep",
+          "label": "Hearing Preparation"
+        },
+        {
+          "value": "enforcement",
+          "label": "Enforcement of Judgment"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction",
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
+      ]
+    },
+    {
+      "id": "situation",
+      "type": "textarea",
+      "label": "Describe the claim",
+      "required": true,
+      "placeholder": "Describe what happened, the amount claimed, relevant dates, any evidence available, and communications with the other party."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "small-claims",
+    "dispute",
+    "consumer",
+    "court",
+    "claim"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "consulting",
+  "name": "Client Engagement & Consulting",
+  "shortName": "Consulting",
+  "description": "Proposal writing, stakeholder management, engagement delivery, change management, and client communication for professional services firms.",
+  "icon": "Briefcase",
+  "color": "adv-green",
+  "cluster": "professional"
+}

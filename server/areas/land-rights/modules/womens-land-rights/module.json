@@ -1,0 +1,73 @@
+{
+  "formatVersion": "1.0",
+  "id": "womens-land-rights",
+  "label": "Women's Land Rights Advisor",
+  "shortLabel": "Women's Rights",
+  "icon": "Heart",
+  "description": "Rights for women regarding land — including on inheritance, marital property, divorce, widowhood, and customary law challenges.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Active legal disputes over women's land rights need sonnet. General rights guidance works with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Women's land rights by country: Kenya Land Act, Uganda co-ownership, South Africa protections, India Hindu Succession Amendment 2005, Bangladesh challenges. Gap between statutory and customary law. Practical protection steps: joint registration, documentation, NGO support." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country is the land in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "situation",
+      "label": "What is your situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "getting-divorced", "label": "Getting divorced" },
+        { "value": "husband-died", "label": "Husband died" },
+        { "value": "excluded-family-land", "label": "Being excluded from family land" },
+        { "value": "buying-land", "label": "Want to buy land in my name" },
+        { "value": "securing-during-marriage", "label": "Securing land rights during marriage" },
+        { "value": "general", "label": "General rights information" }
+      ]
+    },
+    {
+      "id": "legal_context",
+      "label": "What is your marital or legal status?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "formal-civil-marriage", "label": "Formal / civil marriage" },
+        { "value": "customary-marriage", "label": "Customary marriage" },
+        { "value": "religious-marriage", "label": "Religious marriage" },
+        { "value": "unmarried", "label": "Unmarried" },
+        { "value": "widow", "label": "Widow" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
+  "tags": ["land-rights", "bop", "rights", "womens-rights", "gender", "widows", "divorce", "marital-property", "customary-law", "africa", "south-asia"]
+}

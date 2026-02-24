@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "status-reporting",
+  "label": "Status Reporting & Governance",
+  "shortLabel": "Status Reporting",
+  "icon": "BarChartHorizontal",
+  "description": "Create clear project status reports: RAG status, milestone tracking, risk/issue escalation, and board-ready governance packs.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Project reporting best practices, governance frameworks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "report_type",
+      "type": "select",
+      "label": "Report type",
+      "required": true,
+      "options": [
+        {
+          "value": "weekly",
+          "label": "Weekly team / workstream status"
+        },
+        {
+          "value": "monthly",
+          "label": "Monthly steering committee report"
+        },
+        {
+          "value": "board",
+          "label": "Board / executive programme update"
+        },
+        {
+          "value": "milestone",
+          "label": "Milestone completion report"
+        },
+        {
+          "value": "exception",
+          "label": "Exception / escalation report"
+        }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Primary audience",
+      "options": [
+        {
+          "value": "team",
+          "label": "Project team"
+        },
+        {
+          "value": "steering",
+          "label": "Steering committee"
+        },
+        {
+          "value": "board",
+          "label": "Board / executive"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator / external audience"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Project status and key messages",
+      "placeholder": "Describe the project, current status, key developments, and decisions needed."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist",
+    "erik-board"
+  ],
+  "tags": [
+    "status-reporting",
+    "rag",
+    "governance",
+    "steering",
+    "board-reporting"
+  ]
+}

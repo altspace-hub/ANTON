@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "evidence-request-generator",
+  "label": "Audit Evidence Request Generator",
+  "shortLabel": "Evidence Requests",
+  "description": "Generates targeted, specific evidence requests for an audit engagement. Translates audit objectives into clear requests for documents, data, and demonstrations.",
+  "icon": "ListChecks",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "audit_scope",
+      "type": "textarea",
+      "label": "Audit scope and objectives",
+      "required": true,
+      "description": "Describe what the audit or review is assessing. What controls or processes are in scope?",
+      "placeholder": "e.g., Internal audit of the Know Your Customer (KYC) onboarding process for corporate clients. Objectives: assess completeness of CDD documentation, verify EDD is applied for high-risk customers, confirm system controls enforce mandatory steps, and test sample of recent onboardings."
+    },
+    {
+      "id": "entity_and_process",
+      "type": "textarea",
+      "label": "Entity / team / process being audited",
+      "placeholder": "e.g., Retail banking KYC team, Corporate credit origination, Treasury risk management, IT general controls for Core Banking System"
+    },
+    {
+      "id": "evidence_types",
+      "type": "multi-select",
+      "label": "Types of evidence to request",
+      "description": "Select the categories of evidence relevant to this audit.",
+      "options": [
+        {
+          "value": "policies",
+          "label": "Policies and procedures"
+        },
+        {
+          "value": "system_data",
+          "label": "System data / extracts / reports"
+        },
+        {
+          "value": "transaction_samples",
+          "label": "Transaction or case samples"
+        },
+        {
+          "value": "meeting_records",
+          "label": "Meeting minutes / governance records"
+        },
+        {
+          "value": "training_records",
+          "label": "Training and awareness records"
+        },
+        {
+          "value": "exception_logs",
+          "label": "Exception logs / escalation records"
+        },
+        {
+          "value": "org_structure",
+          "label": "Organisational structure / role descriptions"
+        },
+        {
+          "value": "system_access",
+          "label": "System access and entitlement data"
+        },
+        {
+          "value": "third_party",
+          "label": "Third-party / vendor documentation"
+        }
+      ]
+    },
+    {
+      "id": "time_period",
+      "type": "text",
+      "label": "Audit period",
+      "placeholder": "e.g., 1 January 2024 – 31 December 2024"
+    },
+    {
+      "id": "format_preference",
+      "type": "select",
+      "label": "Request format",
+      "options": [
+        {
+          "value": "numbered_list",
+          "label": "Numbered request list with deadlines"
+        },
+        {
+          "value": "categorised",
+          "label": "Categorised by control area / process step"
+        },
+        {
+          "value": "email",
+          "label": "Formal evidence request letter / email"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "audit",
+    "evidence",
+    "requests",
+    "fieldwork",
+    "documentation",
+    "testing"
+  ]
+}

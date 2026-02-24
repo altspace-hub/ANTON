@@ -1,0 +1,145 @@
+{
+  "formatVersion": "1.0",
+  "id": "continuous-audit-design",
+  "label": "Continuous Audit Framework Design",
+  "shortLabel": "Continuous Audit",
+  "description": "Designs automated, continuous audit checks for high-risk processes. Defines control monitoring, alert thresholds, reporting cadence, and escalation paths.",
+  "icon": "Activity",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "monitoring-plan",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Continuous auditing frameworks, ISACA, IIA guidance on data analytics in audit"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "processes_in_scope",
+      "type": "textarea",
+      "label": "Processes or control areas for continuous monitoring",
+      "required": true,
+      "description": "Which high-risk processes or controls should be monitored continuously?",
+      "placeholder": "e.g., Transaction monitoring alert management (SLA compliance), access management (privileged access provisioning/deprovisioning), trade reconciliation (T+1 matching rates), customer onboarding (mandatory field completion rates), expenses (policy compliance, dual approval)"
+    },
+    {
+      "id": "data_availability",
+      "type": "textarea",
+      "label": "Available data sources and systems",
+      "description": "What systems, databases, or extracts are available to source the monitoring data?",
+      "placeholder": "e.g., Core banking system (SQL), TM platform (API/daily export), HR system (Active Directory integration), ERP (SAP data extracts), Excel-based processes (manual reports)"
+    },
+    {
+      "id": "current_state",
+      "type": "select",
+      "label": "Current continuous audit maturity",
+      "options": [
+        {
+          "value": "none",
+          "label": "No continuous monitoring — pure periodic audits"
+        },
+        {
+          "value": "basic",
+          "label": "Basic: some ad hoc data analysis during audits"
+        },
+        {
+          "value": "developing",
+          "label": "Developing: some automated reports, not fully integrated"
+        },
+        {
+          "value": "established",
+          "label": "Established: continuous monitoring exists, needs enhancement"
+        }
+      ]
+    },
+    {
+      "id": "technology_platform",
+      "type": "select",
+      "label": "Technology platform available",
+      "options": [
+        {
+          "value": "excel_power_bi",
+          "label": "Excel / Power BI"
+        },
+        {
+          "value": "acl_galvanize",
+          "label": "ACL / Galvanize (Diligent)"
+        },
+        {
+          "value": "teammate",
+          "label": "TeamMate / Audit management system"
+        },
+        {
+          "value": "python_sql",
+          "label": "Python / SQL analytics"
+        },
+        {
+          "value": "grc_platform",
+          "label": "GRC platform (ServiceNow, Archer, etc.)"
+        },
+        {
+          "value": "undecided",
+          "label": "Not yet decided — technology-agnostic design"
+        }
+      ]
+    },
+    {
+      "id": "reporting_frequency",
+      "type": "select",
+      "label": "Desired reporting cadence",
+      "options": [
+        {
+          "value": "real_time",
+          "label": "Real-time / near real-time dashboards"
+        },
+        {
+          "value": "daily",
+          "label": "Daily automated reports"
+        },
+        {
+          "value": "weekly",
+          "label": "Weekly summary reports"
+        },
+        {
+          "value": "monthly",
+          "label": "Monthly committee reporting"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed: daily for critical, monthly for others"
+        }
+      ]
+    },
+    {
+      "id": "additional_context",
+      "type": "textarea",
+      "label": "Additional constraints or context (optional)",
+      "placeholder": "IT limitations, data access restrictions, regulatory expectations (ECB/FSA requirements for continuous monitoring), budget constraints, timeline..."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "audit",
+    "continuous",
+    "monitoring",
+    "automation",
+    "data-analytics",
+    "framework"
+  ]
+}

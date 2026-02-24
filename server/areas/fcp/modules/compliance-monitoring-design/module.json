@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.0",
+  "id": "compliance-monitoring-design",
+  "label": "Compliance Monitoring Design",
+  "shortLabel": "Monitoring Design",
+  "description": "Design comprehensive compliance monitoring programmes, testing frameworks, and 2nd line oversight structures. Define monitoring activities, frequencies, sampling methods, and escalation procedures.",
+  "icon": "Activity",
+  "color": "adv-teal",
+  "areaId": "fcp",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "monitoring-plan",
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "monitoring_scope",
+      "type": "select",
+      "label": "Monitoring programme scope",
+      "required": true,
+      "options": [
+        {
+          "value": "full_programme",
+          "label": "Full Annual Monitoring Programme"
+        },
+        {
+          "value": "specific_area",
+          "label": "Specific Area / Process"
+        },
+        {
+          "value": "thematic_review",
+          "label": "Thematic Review Design"
+        },
+        {
+          "value": "testing_framework",
+          "label": "Testing Framework"
+        },
+        {
+          "value": "oversight_structure",
+          "label": "2nd Line Oversight Structure"
+        }
+      ]
+    },
+    {
+      "id": "compliance_areas",
+      "type": "multi-select",
+      "label": "Compliance areas to cover",
+      "options": [
+        {
+          "value": "aml_cdd",
+          "label": "AML / CDD"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions Screening"
+        },
+        {
+          "value": "tm",
+          "label": "Transaction Monitoring"
+        },
+        {
+          "value": "str",
+          "label": "STR Reporting"
+        },
+        {
+          "value": "governance",
+          "label": "Governance & Policies"
+        },
+        {
+          "value": "training",
+          "label": "Training Compliance"
+        },
+        {
+          "value": "record_keeping",
+          "label": "Record-Keeping"
+        },
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing Oversight"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation context",
+      "placeholder": "Describe the institution type, size, risk profile, existing monitoring arrangements, and any supervisory expectations or findings to address."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "monitoring",
+    "compliance",
+    "testing",
+    "oversight",
+    "fcp",
+    "2nd-line"
+  ]
+}

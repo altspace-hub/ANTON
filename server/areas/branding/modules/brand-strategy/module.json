@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "brand-strategy",
+  "label": "Brand Strategy Workshop",
+  "shortLabel": "Brand Strategy",
+  "description": "Develop comprehensive brand strategies including positioning, brand architecture, value propositions, brand personality, and competitive differentiation. Facilitates strategic brand thinking for new brands or repositioning.",
+  "icon": "Target",
+  "color": "adv-red",
+  "areaId": "branding",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "creative",
+    "outputFormats": [
+      "decision-memo",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Brand strategy frameworks, market trends, competitive positioning"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "project_type",
+      "type": "select",
+      "label": "Brand strategy project type",
+      "required": true,
+      "options": [
+        {
+          "value": "new_brand",
+          "label": "New brand creation"
+        },
+        {
+          "value": "repositioning",
+          "label": "Brand repositioning"
+        },
+        {
+          "value": "refresh",
+          "label": "Brand refresh / modernisation"
+        },
+        {
+          "value": "architecture",
+          "label": "Brand architecture design"
+        },
+        {
+          "value": "merger",
+          "label": "Post-merger brand integration"
+        },
+        {
+          "value": "sub_brand",
+          "label": "Sub-brand or product brand launch"
+        },
+        {
+          "value": "employer_brand",
+          "label": "Employer brand strategy"
+        }
+      ]
+    },
+    {
+      "id": "industry",
+      "type": "text",
+      "label": "Industry and market",
+      "placeholder": "e.g., B2B financial technology, Nordic consulting, consumer banking"
+    },
+    {
+      "id": "target_audience",
+      "type": "textarea",
+      "label": "Target audience(s)",
+      "placeholder": "e.g., CFOs and finance directors at mid-size Nordic companies, compliance professionals, retail banking customers aged 25-45"
+    },
+    {
+      "id": "current_brand",
+      "type": "textarea",
+      "label": "Current brand situation",
+      "placeholder": "Describe how the brand is currently perceived, any research or feedback available, and what is working or not working."
+    },
+    {
+      "id": "competitors",
+      "type": "textarea",
+      "label": "Key competitors",
+      "placeholder": "e.g., Deloitte, PwC, McKinsey (global); Ramboll, Implement (Nordic); Accenture (tech-oriented)"
+    },
+    {
+      "id": "ambition",
+      "type": "textarea",
+      "label": "Brand ambition or vision",
+      "placeholder": "Where do you want the brand to be in 3-5 years? What should it stand for?"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "branding",
+    "strategy",
+    "positioning",
+    "brand-architecture",
+    "differentiation"
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "sla-monitor",
+  "label": "SLA Performance Analyzer",
+  "shortLabel": "SLA Monitor",
+  "icon": "Gauge",
+  "description": "Analyzes service level agreement performance data. Identifies breaches, near-misses, trends, and root causes. Produces SLA health report with improvement recommendations.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "monitoring-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Service level management, SLA frameworks, operational performance best practices"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "sla_context",
+      "type": "select",
+      "label": "SLA context",
+      "required": true,
+      "options": [
+        { "value": "internal", "label": "Internal SLA (between business units)" },
+        { "value": "vendor", "label": "Vendor / supplier SLA (we are the customer)" },
+        { "value": "client", "label": "Client SLA (we are the service provider)" },
+        { "value": "regulatory", "label": "Regulatory service standard (e.g., complaint handling timeframes)" }
+      ]
+    },
+    {
+      "id": "review_period",
+      "type": "text",
+      "label": "Review period",
+      "required": true,
+      "placeholder": "e.g., Q1 2026, January 2026, Last 12 months"
+    },
+    {
+      "id": "sla_data",
+      "type": "textarea",
+      "label": "SLA performance data",
+      "required": true,
+      "placeholder": "Paste your SLA performance data. For each SLA metric include: metric name, target, actual performance, number of breaches, and any context.\n\nExample:\nTicket resolution time: Target <4 hours, Actual avg 5.2 hours, 23 breaches in period\nSystem availability: Target 99.9%, Actual 99.4%, 3 outage events\nComplaint response: Target <5 days, Actual avg 6.8 days, 12 breaches"
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Additional context",
+      "placeholder": "Any operational events, staffing changes, system issues, or other factors relevant to SLA performance."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist",
+    "systems-thinker"
+  ],
+  "tags": [
+    "sla",
+    "service-levels",
+    "performance",
+    "vendor-management",
+    "operations"
+  ]
+}

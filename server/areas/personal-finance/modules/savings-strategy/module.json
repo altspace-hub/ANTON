@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.0",
+  "id": "savings-strategy",
+  "label": "Savings & Investment Strategy",
+  "shortLabel": "Savings Strategy",
+  "icon": "TrendingUp",
+  "description": "Develop personalised savings and investment strategies aligned with financial goals, risk tolerance, and time horizons. Covers emergency funds, medium-term savings, and long-term investment planning. Produces decision memos with asset allocation recommendations, account type optimisation, and structured savings plans.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Investment strategy, asset allocation, savings accounts, ISK accounts, fund selection, risk-adjusted returns, personal investment planning"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "investment-experience",
+      "label": "Investment Experience",
+      "type": "select",
+      "options": [
+        "Beginner — never invested",
+        "Some experience — basic funds/savings",
+        "Intermediate — diversified portfolio",
+        "Experienced — active investor"
+      ],
+      "required": true
+    },
+    {
+      "id": "risk-tolerance",
+      "label": "Risk Tolerance",
+      "type": "select",
+      "options": [
+        "Conservative — capital preservation priority",
+        "Moderate — balanced growth and safety",
+        "Growth — accept volatility for higher returns",
+        "Aggressive — maximum growth potential"
+      ],
+      "required": true
+    },
+    {
+      "id": "time-horizon",
+      "label": "Time Horizon",
+      "type": "select",
+      "options": [
+        "Short-term (1-3 years)",
+        "Medium-term (3-7 years)",
+        "Long-term (7-15 years)",
+        "Very long-term (15+ years)",
+        "Multiple horizons"
+      ],
+      "required": true
+    },
+    {
+      "id": "savings-goals",
+      "label": "Savings Goals",
+      "type": "multiselect",
+      "options": [
+        "Emergency fund",
+        "House deposit",
+        "Education fund",
+        "Financial independence",
+        "Retirement supplement",
+        "Major purchase",
+        "General wealth building"
+      ],
+      "required": true
+    },
+    {
+      "id": "monthly-amount",
+      "label": "Monthly Amount Available",
+      "type": "select",
+      "options": [
+        "Under 2,000 SEK",
+        "2,000–5,000 SEK",
+        "5,000–15,000 SEK",
+        "15,000–30,000 SEK",
+        "Over 30,000 SEK"
+      ],
+      "required": false
+    },
+    {
+      "id": "preferences",
+      "label": "Preferences & Constraints",
+      "type": "textarea",
+      "placeholder": "Any preferences (e.g., ESG/sustainable, specific sectors to avoid, existing holdings)...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "financial-advisor",
+    "wealth-manager",
+    "individual"
+  ],
+  "tags": [
+    "personal-finance",
+    "savings",
+    "investment",
+    "strategy",
+    "portfolio"
+  ]
+}

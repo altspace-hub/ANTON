@@ -1,0 +1,17 @@
+{
+  "formatVersion": "1.0",
+  "id": "design",
+  "name": "Design (UX/UI/Service)",
+  "shortName": "Design",
+  "description": "UX research, usability auditing, information architecture, service design blueprinting, and design system foundations for UX designers, product designers, and service designers.",
+  "icon": "Palette",
+  "color": "adv-teal",
+  "cluster": "business",
+  "moduleIds": [
+    "ux-research-plan",
+    "usability-audit",
+    "information-architecture",
+    "service-design-blueprint",
+    "design-system-foundation"
+  ]
+}

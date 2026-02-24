@@ -1,0 +1,113 @@
+{
+  "formatVersion": "1.0",
+  "id": "job-posting-optimizer",
+  "label": "Job Posting Optimizer",
+  "shortLabel": "Job Posting",
+  "description": "Reviews and improves job postings for clarity, inclusion, competitiveness, and alignment with role requirements. Reduces bias and improves candidate quality.",
+  "icon": "Megaphone",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "creative",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "current_posting",
+      "type": "textarea",
+      "label": "Current job posting (or draft)",
+      "required": true,
+      "description": "Paste your current job posting. The module will review and improve it.",
+      "placeholder": "Paste your job posting here."
+    },
+    {
+      "id": "role_context",
+      "type": "textarea",
+      "label": "Role context and key success factors",
+      "description": "What are the most important things this person must be able to do? What kind of candidate profile typically succeeds in this role?",
+      "placeholder": "e.g., The person needs to work independently across multiple client projects simultaneously. Must be comfortable with ambiguity. Team is informal and collaborative but delivery standards are high. Previous hires from Big 4 have worked well."
+    },
+    {
+      "id": "target_audience",
+      "type": "textarea",
+      "label": "Target candidate profile",
+      "description": "Who is the ideal candidate? Where are they likely to be working now?",
+      "placeholder": "e.g., Currently working at a bank, regulator, or consulting firm in a compliance or risk role. 5–8 years of experience. Likely 30–40 years old. We want to attract people who want a more varied and client-facing role than in-house compliance offers."
+    },
+    {
+      "id": "optimization_focus",
+      "type": "multi-select",
+      "label": "What should the review focus on?",
+      "options": [
+        {
+          "value": "clarity",
+          "label": "Clarity and readability"
+        },
+        {
+          "value": "inclusion",
+          "label": "Inclusive language and bias reduction"
+        },
+        {
+          "value": "requirements",
+          "label": "Appropriate requirements (not over-specified)"
+        },
+        {
+          "value": "value_proposition",
+          "label": "Employer value proposition and appeal"
+        },
+        {
+          "value": "structure",
+          "label": "Structure and format"
+        },
+        {
+          "value": "length",
+          "label": "Length and conciseness"
+        }
+      ]
+    },
+    {
+      "id": "platform",
+      "type": "select",
+      "label": "Posting platform",
+      "description": "Different platforms have different conventions and character limits.",
+      "options": [
+        {
+          "value": "linkedin",
+          "label": "LinkedIn"
+        },
+        {
+          "value": "company_website",
+          "label": "Company careers website"
+        },
+        {
+          "value": "recruitment_agency",
+          "label": "Recruitment agency briefing document"
+        },
+        {
+          "value": "generic",
+          "label": "Generic / multiple platforms"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "recruitment",
+    "job-posting",
+    "inclusion",
+    "talent-acquisition",
+    "employer-brand"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "sop-writer",
+  "label": "Standard Operating Procedure Writer",
+  "shortLabel": "SOP Writer",
+  "icon": "ScrollText",
+  "description": "Transforms process descriptions into formal Standard Operating Procedures (SOPs). Includes purpose, scope, responsibilities, step-by-step procedure, exceptions handling, and version control.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "SOP writing standards, ISO documentation frameworks, operational procedure best practices"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "process_name",
+      "type": "text",
+      "label": "Process name",
+      "required": true,
+      "placeholder": "e.g., Customer Onboarding, Invoice Approval, System Access Request"
+    },
+    {
+      "id": "process_type",
+      "type": "select",
+      "label": "Process type",
+      "required": true,
+      "options": [
+        { "value": "operational", "label": "Operational process (day-to-day operations)" },
+        { "value": "compliance", "label": "Compliance or regulatory process" },
+        { "value": "it_systems", "label": "IT / systems process" },
+        { "value": "hr", "label": "HR / people process" },
+        { "value": "financial", "label": "Financial control process" },
+        { "value": "customer", "label": "Customer-facing process" }
+      ]
+    },
+    {
+      "id": "process_description",
+      "type": "textarea",
+      "label": "Process description",
+      "required": true,
+      "placeholder": "Describe the process in plain language: what triggers it, who is involved, what the main steps are, what the expected output is, and any known exceptions or edge cases."
+    },
+    {
+      "id": "audience",
+      "type": "text",
+      "label": "Primary audience",
+      "placeholder": "e.g., Operations team, new joiners, compliance officers, IT staff"
+    },
+    {
+      "id": "formality",
+      "type": "select",
+      "label": "Formality level",
+      "options": [
+        { "value": "standard", "label": "Standard — professional and clear" },
+        { "value": "regulatory", "label": "Regulatory grade — formal, auditable, ISO-aligned" },
+        { "value": "simple", "label": "Simple — concise, step-by-step, easy to follow" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "sop",
+    "procedure",
+    "process",
+    "documentation",
+    "operations"
+  ]
+}

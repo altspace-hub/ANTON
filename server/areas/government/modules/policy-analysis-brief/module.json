@@ -1,0 +1,75 @@
+{
+  "formatVersion": "1.0",
+  "id": "policy-analysis-brief",
+  "label": "Policy Analysis & Brief Writer",
+  "shortLabel": "Policy Brief",
+  "icon": "FileText",
+  "description": "Analyse policy options systematically and write clear policy briefs. Covers option appraisal, evidence synthesis, stakeholder analysis, and recommendation frameworks.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": ["executive-summary", "decision-memo", "detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Policy analysis frameworks: HM Treasury Green Book, OECD Better Regulation principles, EU Better Regulation, public value theory, option appraisal, cost-benefit analysis, stakeholder analysis, evidence assessment"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "policy_area",
+      "label": "What policy issue needs analysis?",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Describe the policy issue, the context, and the specific questions you need answered."
+    },
+    {
+      "id": "stakeholders",
+      "label": "Which stakeholders are affected?",
+      "type": "chips",
+      "required": false,
+      "options": [
+        { "value": "government", "label": "Government" },
+        { "value": "business", "label": "Business" },
+        { "value": "civil-society", "label": "Civil society" },
+        { "value": "international", "label": "International bodies" },
+        { "value": "multiple", "label": "Multiple / Cross-cutting" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "label": "What is the decision timeline?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "urgent", "label": "Urgent (this week)" },
+        { "value": "short", "label": "Short (1 month)" },
+        { "value": "medium", "label": "Medium (3–6 months)" },
+        { "value": "long-term", "label": "Long-term" }
+      ]
+    },
+    {
+      "id": "framework",
+      "label": "Which analytical framework?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "green-book", "label": "UK Green Book" },
+        { "value": "eu-impact-assessment", "label": "EU Impact Assessment" },
+        { "value": "oecd-ria", "label": "OECD RIA" },
+        { "value": "cost-benefit", "label": "Cost-Benefit Analysis" },
+        { "value": "general", "label": "Other / General" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["policy-analyst", "legal-expert"],
+  "tags": ["policy", "government", "policy-brief", "option-appraisal", "cost-benefit", "stakeholder-analysis", "evidence-based", "public-administration"]
+}

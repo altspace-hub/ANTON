@@ -1,0 +1,8 @@
+{
+  "id": "skill-aaoifi-standards",
+  "label": "AAOIFI Accounting & Sharia Standards",
+  "category": "technical",
+  "applicableAreas": ["islamic-finance", "accounting", "audit", "banking"],
+  "description": "Accounting and Auditing Organisation for Islamic Financial Institutions (AAOIFI) standards: Financial Accounting Standards (FAS), Sharia Standards (SS), Governance Standards, and Auditing Standards. Key to Islamic finance compliance globally.",
+  "tags": ["aaoifi", "islamic-finance", "accounting", "sharia", "bahrain"]
+}

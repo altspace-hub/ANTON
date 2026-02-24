@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "education",
+  "name": "Education & Teaching",
+  "shortName": "Education",
+  "description": "Lesson planning, curriculum design, assessment creation, student feedback, and e-learning course development for educators and training professionals.",
+  "icon": "BookOpen",
+  "color": "adv-gold",
+  "cluster": "education"
+}

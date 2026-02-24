@@ -1,0 +1,97 @@
+{
+  "formatVersion": "1.0",
+  "id": "amla-data-readiness",
+  "label": "AMLA Data Point Readiness Assessment",
+  "shortLabel": "AMLA Data Readiness",
+  "description": "Assesses an institution's ability to report all 250+ AMLA data points. Maps current data availability, quality, and system capabilities against AMLA reporting requirements.",
+  "perspective": "consultant",
+  "icon": "Database",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "data-readiness-scorecard",
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AMLA reporting requirements, data point specifications, EBA technical standards on data reporting"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of obliged entity is subject to AMLA reporting?",
+      "required": true,
+      "options": [
+        { "value": "bank", "label": "Bank / Credit Institution" },
+        { "value": "payment", "label": "Payment Institution / E-Money Institution" },
+        { "value": "investment", "label": "Investment Firm / Asset Manager" },
+        { "value": "crypto", "label": "Crypto Asset Service Provider (CASP)" },
+        { "value": "insurance", "label": "Insurance Company" },
+        { "value": "other", "label": "Other Obliged Entity" }
+      ]
+    },
+    {
+      "id": "reporting_scope",
+      "type": "chips",
+      "label": "AMLA Reporting Scope",
+      "description": "Which AMLA data domains does this assessment cover?",
+      "options": [
+        { "value": "customer_data", "label": "Customer Data" },
+        { "value": "beneficial_ownership", "label": "Beneficial Ownership" },
+        { "value": "transaction_data", "label": "Transaction Data" },
+        { "value": "alert_sar_data", "label": "Alert & SAR Data" },
+        { "value": "screening_data", "label": "Screening Results" },
+        { "value": "kyc_cdd_data", "label": "KYC / CDD Evidence" },
+        { "value": "risk_scores", "label": "Customer Risk Scores" }
+      ]
+    },
+    {
+      "id": "current_systems",
+      "type": "textarea",
+      "label": "Current Systems Landscape",
+      "description": "Describe the institution's key AML/KYC/data systems. Upload system architecture documents or data dictionaries via the file uploader.",
+      "placeholder": "e.g. Core banking: Temenos T24. KYC platform: Fenergo. Transaction monitoring: NICE Actimize. Customer data warehouse: Snowflake. Screening: Dow Jones / Accuity. Data dictionary: available (uploading)...",
+      "required": true
+    },
+    {
+      "id": "known_gaps",
+      "type": "textarea",
+      "label": "Known Data Gaps or Issues",
+      "description": "Any data quality issues, system limitations, or known gaps already identified.",
+      "placeholder": "e.g. UBO data incomplete for legacy corporate customers pre-2018. Transaction purpose codes not consistently populated in payment messages. Beneficial ownership not linked to customer risk score in current data model..."
+    },
+    {
+      "id": "timeline",
+      "type": "text",
+      "label": "Target Implementation Timeline",
+      "description": "By when does the institution need to be AMLA-reporting ready?",
+      "placeholder": "e.g. AMLA supervision from July 2027 for in-scope entities"
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "amla",
+    "data-management",
+    "data-readiness",
+    "reporting",
+    "consultant"
+  ]
+}

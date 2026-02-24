@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "healthcare-regulatory-submission",
+  "label": "Healthcare Regulatory Submission Guide",
+  "shortLabel": "Regulatory Submission",
+  "icon": "FileCheck",
+  "description": "Prepare and manage regulatory submissions to health authorities (EMA, FDA, MHRA, local agencies). Covers CTD format, scientific advice, marketing authorisation, and variation applications.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CTD format, EMA CHMP procedures, FDA review pathways, marketing authorisation requirements, variation applications, regulatory timelines"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "submission_type",
+      "label": "Submission Type",
+      "type": "select",
+      "options": [
+        "Marketing Authorisation Application (MAA)",
+        "New Drug Application (NDA)",
+        "510(k)",
+        "PMA",
+        "Variation",
+        "PSUR/PBRER",
+        "Clinical trial application"
+      ],
+      "required": true
+    },
+    {
+      "id": "authority",
+      "label": "Regulatory Authority",
+      "type": "multiselect",
+      "options": [
+        "EMA (EU)",
+        "FDA (US)",
+        "MHRA (UK)",
+        "TGA (Australia)",
+        "HC (Canada)",
+        "National authority (other)"
+      ],
+      "required": true
+    },
+    {
+      "id": "product_type",
+      "label": "Product Type",
+      "type": "select",
+      "options": [
+        "Chemical pharmaceutical",
+        "Biological",
+        "Biosimilar",
+        "Medical device",
+        "IVD",
+        "Advanced therapy"
+      ],
+      "required": true
+    },
+    {
+      "id": "stage",
+      "label": "Current Stage",
+      "type": "select",
+      "options": [
+        "Pre-submission",
+        "Submission preparation",
+        "Under review",
+        "Responding to questions",
+        "Post-approval"
+      ],
+      "required": true
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "healthcare",
+    "regulatory-affairs",
+    "submission",
+    "ema",
+    "fda",
+    "marketing-authorisation",
+    "ctd"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "green-sustainable-sukuk",
+  "label": "Green & Sustainable Sukuk Framework",
+  "shortLabel": "Green Sukuk",
+  "icon": "Leaf",
+  "description": "Structure ESG-compliant Islamic bonds (sukuk) combining Sharia requirements with green/sustainability frameworks. Covers use-of-proceeds, reporting, third-party review, and investor requirements.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["policy-document", "detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "ICMA Green Bond Principles, Climate Bonds Standard, ASEAN Green Bond Standards, AAOIFI sukuk standards, SC Malaysia SRI Sukuk Framework"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "esg_focus",
+      "label": "ESG Focus",
+      "type": "chips",
+      "options": ["Green", "Social", "Sustainability", "SDG-linked", "Transition"],
+      "required": false
+    },
+    {
+      "id": "asset_type",
+      "label": "Eligible Asset Categories",
+      "type": "chips",
+      "options": ["Renewable Energy", "Green Buildings", "Water", "Transport", "Social Infrastructure"],
+      "required": false
+    },
+    {
+      "id": "target_certification",
+      "label": "Target Certification / Standard",
+      "type": "select",
+      "options": ["ICMA Green Bond Principles", "Climate Bonds Standard", "ASEAN Green Bond", "Other"],
+      "required": true
+    }
+  ],
+  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
+  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
+  "tags": ["green-sukuk", "esg", "sustainable-finance", "icma", "climate-bonds", "use-of-proceeds", "sdg", "sharia", "sukuk"]
+}

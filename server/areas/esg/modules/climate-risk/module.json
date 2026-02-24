@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "climate-risk",
+  "label": "Climate Risk & TCFD Analysis",
+  "shortLabel": "Climate Risk",
+  "icon": "CloudLightning",
+  "description": "Analyse physical and transition climate risks: scenario analysis, portfolio exposure, Scope 1/2/3 emissions, and TCFD disclosures.",
+  "color": "adv-green",
+  "areaId": "esg",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "TCFD recommendations, ECB climate stress testing, NGFS scenarios"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "risk_type",
+      "type": "multi-select",
+      "label": "Climate risk types to analyse",
+      "required": true,
+      "options": [
+        {
+          "value": "physical_acute",
+          "label": "Physical - Acute (floods, storms)"
+        },
+        {
+          "value": "physical_chronic",
+          "label": "Physical - Chronic (sea level rise, drought)"
+        },
+        {
+          "value": "transition_policy",
+          "label": "Transition - Policy and regulatory"
+        },
+        {
+          "value": "transition_market",
+          "label": "Transition - Market demand shifts"
+        }
+      ]
+    },
+    {
+      "id": "org_type",
+      "type": "select",
+      "label": "Organisation type",
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank (loan portfolio)"
+        },
+        {
+          "value": "asset_manager",
+          "label": "Asset manager"
+        },
+        {
+          "value": "insurer",
+          "label": "Insurance"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context",
+      "placeholder": "e.g., Nordic bank with heavy real estate lending."
+    }
+  ],
+  "recommendedPersonas": [
+    "data-scientist",
+    "risk-specialist"
+  ],
+  "tags": [
+    "climate-risk",
+    "tcfd",
+    "physical-risk",
+    "transition-risk",
+    "esg"
+  ]
+}

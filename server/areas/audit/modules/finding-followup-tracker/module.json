@@ -1,0 +1,111 @@
+{
+  "formatVersion": "1.0",
+  "id": "finding-followup-tracker",
+  "label": "Audit Finding Follow-Up",
+  "shortLabel": "Finding Follow-Up",
+  "description": "Tracks and assesses the remediation status of outstanding audit findings. Evaluates management's actions against agreed remediation plans and identifies overdue or inadequate responses.",
+  "icon": "ClipboardCheck",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "monitoring-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "findings_data",
+      "type": "textarea",
+      "label": "Outstanding findings and management responses",
+      "required": true,
+      "description": "Paste or describe the findings, agreed management actions, target dates, and current status reported by management.",
+      "placeholder": "e.g., Finding 1: EDD process gap (Critical, due 31 Jan 2025) — Management reported: new system workflow implemented. Finding 2: TM alert investigation SLA (High, due 28 Feb 2025) — Management reported: SLA extended due to staffing. Finding 3: Training completion (Medium, due 30 Apr 2025) — No update received..."
+    },
+    {
+      "id": "review_date",
+      "type": "text",
+      "label": "Current review date",
+      "description": "The date as of which remediation status is being assessed.",
+      "placeholder": "e.g., 15 March 2025"
+    },
+    {
+      "id": "evidence_provided",
+      "type": "textarea",
+      "label": "Evidence provided by management (if any)",
+      "description": "Summarise what documentary evidence or demonstrations management has provided to support completion claims.",
+      "placeholder": "e.g., System screenshots for Finding 1, training attendance records provided for Finding 3, no evidence for Findings 2, 4, and 5."
+    },
+    {
+      "id": "escalation_threshold",
+      "type": "select",
+      "label": "Overdue escalation threshold",
+      "description": "When should an overdue finding trigger escalation?",
+      "options": [
+        {
+          "value": "any_overdue",
+          "label": "Any overdue finding — escalate immediately"
+        },
+        {
+          "value": "critical_high",
+          "label": "Critical and High rated findings only"
+        },
+        {
+          "value": "30_days",
+          "label": "30+ days overdue"
+        },
+        {
+          "value": "second_miss",
+          "label": "Second missed deadline (any rating)"
+        }
+      ]
+    },
+    {
+      "id": "reporting_audience",
+      "type": "select",
+      "label": "Who receives this follow-up report?",
+      "options": [
+        {
+          "value": "management",
+          "label": "Business/functional management"
+        },
+        {
+          "value": "audit_committee",
+          "label": "Audit Committee / Board"
+        },
+        {
+          "value": "chief_audit_exec",
+          "label": "Chief Audit Executive"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator / Supervisor"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "audit",
+    "findings",
+    "remediation",
+    "follow-up",
+    "tracking",
+    "governance"
+  ]
+}

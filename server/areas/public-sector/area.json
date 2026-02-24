@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "public-sector",
+  "name": "Public Sector & Government",
+  "shortName": "Public Sector",
+  "description": "Policy analysis, public consultation responses, procurement review, regulatory impact assessment, and grant writing support for government and public sector organisations.",
+  "icon": "Building2",
+  "color": "adv-blue",
+  "cluster": "government"
+}

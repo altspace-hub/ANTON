@@ -1,0 +1,75 @@
+{
+  "formatVersion": "1.0",
+  "id": "corruption-reporting-guide",
+  "label": "Corruption Reporting Guide",
+  "shortLabel": "Report Corruption",
+  "icon": "Flag",
+  "description": "Where and how to report corruption safely. Report bribery, fraud, and abuse of power.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic navigation works well with haiku. Complex legal matters need sonnet."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Corruption reporting channels by country: anti-corruption hotlines, anonymous online reporting, NGO intermediaries (Transparency International chapters), whistle-blower protection laws, evidence documentation guidance, media as last resort, international reporting for aid fraud (Global Fund, World Bank Integrity hotline)." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "corruption_type",
+      "label": "What type of corruption?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "bribe-demanded", "label": "Bribe demanded" },
+        { "value": "public-funds-stolen", "label": "Public funds stolen" },
+        { "value": "tender-fraud", "label": "Tender / procurement fraud" },
+        { "value": "police-extortion", "label": "Police extortion" },
+        { "value": "land-fraud", "label": "Land fraud" },
+        { "value": "election-fraud", "label": "Election fraud" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "safety_concern",
+      "label": "What is your safety concern?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "fear-retaliation", "label": "I fear retaliation" },
+        { "value": "powerful-person", "label": "The person is powerful / senior" },
+        { "value": "multiple-officials", "label": "Multiple officials involved" },
+        { "value": "want-anonymous", "label": "I want to remain anonymous" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
+  "tags": ["corruption", "bribery", "reporting", "whistleblower", "anti-corruption", "rights", "bop", "africa", "south-asia"]
+}

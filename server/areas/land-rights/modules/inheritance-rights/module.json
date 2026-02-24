@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "inheritance-rights",
+  "label": "Inheritance Rights Advisor",
+  "shortLabel": "Inheritance",
+  "icon": "Users",
+  "description": "Who inherits land and property? Understand inheritance laws including Islamic, customary, and statutory rules — especially for women and surviving spouses.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Multi-system inheritance disputes need sonnet. General rights information works with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Inheritance law by country: statutory civil law, Islamic inheritance (Quranic shares), customary law (patrilineal/matrilineal), writing a will, widow protection, daughters' rights, conflict between legal systems in Africa and South Asia." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country is the property in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "religious_legal_system",
+      "label": "Which legal system applies to your family?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "statutory", "label": "Statutory / civil law" },
+        { "value": "islamic", "label": "Islamic (Sharia inheritance)" },
+        { "value": "customary", "label": "Customary (tribal / traditional)" },
+        { "value": "mixed", "label": "Mixed — not sure which applies" },
+        { "value": "unsure", "label": "Not sure" }
+      ]
+    },
+    {
+      "id": "situation",
+      "label": "What is your situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "spouse-died", "label": "Spouse died" },
+        { "value": "parent-died", "label": "Parent died" },
+        { "value": "writing-will", "label": "Writing a will" },
+        { "value": "excluded", "label": "Being excluded from inheritance" },
+        { "value": "womens-rights", "label": "Women's rights concern" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
+  "tags": ["land-rights", "bop", "rights", "inheritance", "islamic-law", "customary-law", "widows", "womens-rights", "will", "africa", "south-asia"]
+}

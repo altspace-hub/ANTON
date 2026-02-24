@@ -1,0 +1,120 @@
+{
+  "formatVersion": "1.0",
+  "id": "operational-risk",
+  "label": "Operational Risk Management",
+  "shortLabel": "Operational Risk",
+  "description": "Operational risk assessment, RCSA design, loss data analysis, scenario analysis, and operational risk framework design for financial institutions.",
+  "icon": "Settings",
+  "color": "adv-red",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "rcsa",
+          "label": "RCSA (Risk and Control Self-Assessment)"
+        },
+        {
+          "value": "framework_review",
+          "label": "Operational risk framework review"
+        },
+        {
+          "value": "incident_analysis",
+          "label": "Operational incident / loss event analysis"
+        },
+        {
+          "value": "scenario_analysis",
+          "label": "Operational risk scenario analysis"
+        },
+        {
+          "value": "kri_design",
+          "label": "Operational risk KRI design"
+        },
+        {
+          "value": "capital",
+          "label": "Operational risk capital (Basel SA)"
+        }
+      ]
+    },
+    {
+      "id": "process_area",
+      "type": "multi-select",
+      "label": "Process areas in scope",
+      "options": [
+        {
+          "value": "people",
+          "label": "People / HR processes"
+        },
+        {
+          "value": "technology",
+          "label": "Technology / IT processes"
+        },
+        {
+          "value": "external",
+          "label": "External events / third parties"
+        },
+        {
+          "value": "process_failure",
+          "label": "Process execution failures"
+        },
+        {
+          "value": "fraud_internal",
+          "label": "Internal fraud"
+        },
+        {
+          "value": "fraud_external",
+          "label": "External fraud"
+        },
+        {
+          "value": "legal",
+          "label": "Legal / regulatory compliance"
+        },
+        {
+          "value": "business_disruption",
+          "label": "Business disruption"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context and specific concerns",
+      "placeholder": "Description of the process area, recent incidents, known control weaknesses, or regulatory concerns."
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "business-expert"
+  ],
+  "tags": [
+    "operational-risk",
+    "rcsa",
+    "incident",
+    "scenario-analysis",
+    "or-framework"
+  ]
+}

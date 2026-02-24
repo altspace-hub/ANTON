@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "workplace-safety-rights",
+  "label": "Workplace Safety Know-Your-Rights",
+  "shortLabel": "Safety Rights",
+  "icon": "ShieldAlert",
+  "description": "Is my workplace safe? Know your rights to a safe working environment and what to do if it is dangerous.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex legal disputes need sonnet. Safety rights information works well with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Workplace safety rights by country and industry, right to refuse dangerous work, PPE requirements, accident reporting, workers compensation" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country do you work in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
+        { "value": "uae", "label": "UAE (migrant worker)" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "industry",
+      "label": "What kind of workplace is it?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "construction", "label": "Construction / building site" },
+        { "value": "factory-manufacturing", "label": "Factory / manufacturing" },
+        { "value": "agriculture", "label": "Agriculture / farming" },
+        { "value": "mining", "label": "Mining" },
+        { "value": "domestic", "label": "Domestic / household work" },
+        { "value": "transport", "label": "Transport / driving" },
+        { "value": "hospitality", "label": "Hospitality / kitchen" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "hazard_type",
+      "label": "What is the safety problem? (choose all that apply)",
+      "type": "chips",
+      "required": false,
+      "options": [
+        { "value": "chemical", "label": "Chemical exposure" },
+        { "value": "falls-heights", "label": "Falls or working at heights" },
+        { "value": "machinery", "label": "Dangerous machinery" },
+        { "value": "heat-sun", "label": "Extreme heat or sun" },
+        { "value": "violence", "label": "Violence or threats" },
+        { "value": "sexual-harassment", "label": "Sexual harassment" },
+        { "value": "no-ppe", "label": "No protective equipment" },
+        { "value": "other", "label": "Other hazard" }
+      ]
+    },
+    {
+      "id": "urgency",
+      "label": "How urgent is this?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "immediate-danger", "label": "Dangerous situation right now" },
+        { "value": "recent-accident", "label": "There was an accident recently" },
+        { "value": "ongoing-concern", "label": "Ongoing concern I want to report" },
+        { "value": "general-info", "label": "I want to understand my rights generally" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
+  "tags": ["workers-rights", "bop", "informal-economy", "workplace-safety", "ppe", "accident", "right-to-refuse", "workers-compensation", "hazard"]
+}

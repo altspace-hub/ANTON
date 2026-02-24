@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-transfer-pricing",
+  "name": "Tax & Transfer Pricing",
+  "shortName": "Tax",
+  "description": "Corporate tax compliance, transfer pricing documentation, cross-border tax structuring, VAT/GST, and tax authority engagements for international businesses.",
+  "icon": "Calculator",
+  "color": "adv-gold",
+  "cluster": "finance"
+}

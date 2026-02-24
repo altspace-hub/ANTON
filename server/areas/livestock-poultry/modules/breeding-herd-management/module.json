@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "breeding-herd-management",
+  "label": "Breeding & Herd Management",
+  "shortLabel": "Breeding",
+  "icon": "Dna",
+  "description": "Improve your herd through better breeding selection. Keep records to know which animals are most productive.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Livestock breeding selection, culling principles, record keeping, artificial insemination, crossbreeding local and exotic breeds, breeding age and seasonality by species" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "animal_type",
+      "label": "What type of animal?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "cattle", "label": "Cattle / Cows" },
+        { "value": "goats", "label": "Goats" },
+        { "value": "sheep", "label": "Sheep" },
+        { "value": "pigs", "label": "Pigs" },
+        { "value": "poultry-breeding", "label": "Poultry (breeding flock)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "goal",
+      "label": "What do you want to improve?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "milk-yield", "label": "Increase milk yield" },
+        { "value": "meat-production", "label": "Better meat production" },
+        { "value": "disease-resistance", "label": "Disease resistance" },
+        { "value": "reduce-costs", "label": "Reduce costs" },
+        { "value": "more-offspring", "label": "More offspring" }
+      ]
+    },
+    {
+      "id": "current_practice",
+      "label": "How do you breed currently?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "random", "label": "Random breeding" },
+        { "value": "controlled", "label": "Controlled breeding" },
+        { "value": "ai", "label": "AI (artificial insemination)" },
+        { "value": "not-sure", "label": "Not sure" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["breeding", "herd-management", "genetics", "record-keeping", "artificial-insemination", "culling", "crossbreeding", "bop", "livestock", "africa", "south-asia"]
+}

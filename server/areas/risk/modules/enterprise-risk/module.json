@@ -1,0 +1,149 @@
+{
+  "formatVersion": "1.0",
+  "id": "enterprise-risk",
+  "label": "Enterprise Risk Assessment",
+  "shortLabel": "ERM Assessment",
+  "description": "Structured enterprise risk assessment: risk identification, likelihood/impact scoring, control assessment, residual risk, and action prioritisation across all risk categories.",
+  "icon": "AlertTriangle",
+  "color": "adv-red",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "maturity-assessment",
+      "gap-scoring-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation_type",
+      "type": "select",
+      "label": "Organisation type",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment Institution"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "large_corporate",
+          "label": "Large Corporate"
+        },
+        {
+          "value": "sme",
+          "label": "SME"
+        }
+      ]
+    },
+    {
+      "id": "assessment_scope",
+      "type": "multi-select",
+      "label": "Risk categories to assess",
+      "options": [
+        {
+          "value": "strategic",
+          "label": "Strategic Risk"
+        },
+        {
+          "value": "financial",
+          "label": "Financial Risk"
+        },
+        {
+          "value": "operational",
+          "label": "Operational Risk"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance / Regulatory Risk"
+        },
+        {
+          "value": "reputational",
+          "label": "Reputational Risk"
+        },
+        {
+          "value": "cyber",
+          "label": "Cyber / Information Security Risk"
+        },
+        {
+          "value": "third_party",
+          "label": "Third-Party / Outsourcing Risk"
+        },
+        {
+          "value": "emerging",
+          "label": "Emerging Risks (Climate, AI, Geopolitical)"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation context and known risk areas",
+      "description": "Brief description of the organisation, its key activities, and any known significant risks.",
+      "placeholder": "e.g., Mid-sized Nordic bank, retail and SME focus, heavily dependent on two key IT systems, recent senior management change, operating in high-risk jurisdictions for trade finance."
+    },
+    {
+      "id": "assessment_purpose",
+      "type": "select",
+      "label": "Purpose of the assessment",
+      "options": [
+        {
+          "value": "annual_review",
+          "label": "Annual risk review"
+        },
+        {
+          "value": "strategic_planning",
+          "label": "Strategic planning input"
+        },
+        {
+          "value": "board_reporting",
+          "label": "Board risk reporting"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory / supervisory requirement"
+        },
+        {
+          "value": "m_and_a",
+          "label": "M&A / due diligence"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "fcp-expert",
+    "business-expert"
+  ],
+  "tags": [
+    "risk",
+    "erm",
+    "enterprise-risk",
+    "risk-register",
+    "risk-assessment"
+  ]
+}

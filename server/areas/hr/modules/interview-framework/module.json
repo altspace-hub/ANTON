@@ -1,0 +1,130 @@
+{
+  "formatVersion": "1.0",
+  "id": "interview-framework",
+  "label": "Interview Framework Builder",
+  "shortLabel": "Interview Framework",
+  "description": "Design structured interview frameworks with competency-based questions, scoring rubrics, and evaluation criteria. Reduces bias and improves hiring quality through consistent assessment.",
+  "icon": "MessageSquare",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "role_title",
+      "type": "text",
+      "label": "Role being interviewed for",
+      "description": "The position title candidates are being assessed for.",
+      "placeholder": "e.g., Senior AML Analyst, Compliance Manager",
+      "required": true
+    },
+    {
+      "id": "interview_stage",
+      "type": "select",
+      "label": "Interview stage",
+      "description": "Different stages require different question types and depth.",
+      "options": [
+        {
+          "value": "screening",
+          "label": "Initial screening / Phone interview"
+        },
+        {
+          "value": "first_round",
+          "label": "First round — competency assessment"
+        },
+        {
+          "value": "technical",
+          "label": "Technical / case-based interview"
+        },
+        {
+          "value": "final",
+          "label": "Final round — leadership & culture fit"
+        },
+        {
+          "value": "panel",
+          "label": "Panel interview"
+        },
+        {
+          "value": "full_process",
+          "label": "Full interview process design"
+        }
+      ]
+    },
+    {
+      "id": "key_competencies",
+      "type": "textarea",
+      "label": "Key competencies to assess",
+      "description": "The skills and behaviours you most need to evaluate.",
+      "placeholder": "e.g., Regulatory knowledge, stakeholder management, attention to detail, leadership under pressure"
+    },
+    {
+      "id": "interview_duration",
+      "type": "select",
+      "label": "Interview duration",
+      "options": [
+        {
+          "value": "30min",
+          "label": "30 minutes"
+        },
+        {
+          "value": "45min",
+          "label": "45 minutes"
+        },
+        {
+          "value": "60min",
+          "label": "60 minutes"
+        },
+        {
+          "value": "90min",
+          "label": "90 minutes"
+        }
+      ]
+    },
+    {
+      "id": "include_case",
+      "type": "select",
+      "label": "Include a case study or exercise?",
+      "options": [
+        {
+          "value": "no",
+          "label": "No — questions only"
+        },
+        {
+          "value": "mini_case",
+          "label": "Yes — short scenario (5-10 min)"
+        },
+        {
+          "value": "full_case",
+          "label": "Yes — full case exercise (20-30 min)"
+        }
+      ]
+    },
+    {
+      "id": "special_notes",
+      "type": "textarea",
+      "label": "Special considerations",
+      "placeholder": "e.g., Candidates may have non-traditional backgrounds, assess for growth potential, include questions about remote team leadership"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "recruitment",
+    "interview",
+    "competency",
+    "hiring",
+    "assessment"
+  ]
+}

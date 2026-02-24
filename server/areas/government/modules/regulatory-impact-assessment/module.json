@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-impact-assessment",
+  "label": "Regulatory Impact Assessment",
+  "shortLabel": "RIA",
+  "icon": "Scale",
+  "description": "Conduct regulatory impact assessments to evaluate proposed regulations. Covers compliance costs, economic impacts, SME effects, and OECD better regulation principles.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "impact-assessment", "decision-memo"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Regulatory impact assessment methodology: OECD RIA best practice, EU Better Regulation REFIT, UK Regulatory Policy Committee standards, SME impact test, compliance cost calculation, Standard Cost Model, sunset clauses, monitoring and evaluation design"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulation_type",
+      "label": "What type of regulatory change?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "new-regulation", "label": "New regulation" },
+        { "value": "amendment", "label": "Amendment to existing regulation" },
+        { "value": "deregulation", "label": "Deregulation / removal" },
+        { "value": "consolidation", "label": "Consolidation / simplification" }
+      ]
+    },
+    {
+      "id": "sector",
+      "label": "Which economic sector(s) are affected?",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Describe the sector(s) affected and the approximate number of businesses or individuals impacted."
+    },
+    {
+      "id": "methodology",
+      "label": "Which RIA methodology?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "full-ria", "label": "Full RIA" },
+        { "value": "sme-impact-test", "label": "SME Impact Test" },
+        { "value": "sbia", "label": "SBIA (Small Business Impact Assessment)" },
+        { "value": "summary-ria", "label": "Summary RIA / rapid assessment" },
+        { "value": "help-me-choose", "label": "Help me choose the right methodology" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Which jurisdiction?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU" },
+        { "value": "uk", "label": "UK" },
+        { "value": "usa", "label": "USA" },
+        { "value": "oecd-country", "label": "OECD country (other)" },
+        { "value": "developing-country", "label": "Developing country" },
+        { "value": "other", "label": "Other" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["policy-analyst", "legal-expert"],
+  "tags": ["regulatory-impact", "RIA", "compliance-costs", "SME", "better-regulation", "OECD", "EU", "UK", "government", "public-administration"]
+}

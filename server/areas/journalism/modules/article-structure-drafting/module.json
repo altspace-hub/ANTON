@@ -1,0 +1,76 @@
+{
+  "id": "article-structure-drafting",
+  "areaId": "journalism",
+  "label": "Article Structure & Drafting",
+  "shortLabel": "Article Draft",
+  "icon": "PenTool",
+  "description": "Structure and draft news articles, features, long-form investigations, and opinion pieces. Develop compelling leads, logical structures, and strong endings.",
+  "color": "adv-teal",
+  "tags": ["writing", "article", "structure", "lede", "feature", "narrative", "draft"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Haiku for short news items. Sonnet for features and investigations. Opus for complex long-form narratives."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["policy-document", "detailed-findings"]
+  },
+  "recommendedPersonas": ["investigative-journalist", "features-editor"],
+  "guidedInputs": [
+    {
+      "id": "story_summary",
+      "type": "textarea",
+      "label": "Story Summary",
+      "description": "What is the story? Summarise it in 2-3 sentences as you'd tell it to a colleague.",
+      "placeholder": "e.g. A major bank has been fined €150m for AML failures spanning 5 years. The regulator found that risk alerts were systematically dismissed by middle management. Three executives have resigned.",
+      "required": true
+    },
+    {
+      "id": "article_type",
+      "type": "select",
+      "label": "Article Type",
+      "description": "What type of article is this?",
+      "options": [
+        {"value": "breaking_news", "label": "Breaking news (inverted pyramid)"},
+        {"value": "news_feature", "label": "News feature (context + analysis)"},
+        {"value": "long_form", "label": "Long-form / magazine feature"},
+        {"value": "investigation", "label": "Investigative piece"},
+        {"value": "opinion", "label": "Opinion / commentary"},
+        {"value": "explainer", "label": "Explainer / background"},
+        {"value": "profile", "label": "Profile / interview piece"}
+      ],
+      "required": true
+    },
+    {
+      "id": "audience",
+      "type": "text",
+      "label": "Target Audience & Publication",
+      "description": "Who reads this? What publication/platform is this for?",
+      "placeholder": "e.g. Financial Times readers — senior finance professionals. Reuters wire — global, technically informed."
+    },
+    {
+      "id": "key_facts",
+      "type": "textarea",
+      "label": "Key Facts, Quotes & Data",
+      "description": "Paste the key facts, statistics, quotes, and evidence to be included.",
+      "placeholder": "e.g. €150m fine (largest in jurisdiction history). 5-year period 2018-2023. 3,400 suspicious activity reports dismissed without investigation. Quote: CEO says 'systemic failure'. Regulator: 'culture of non-compliance'."
+    },
+    {
+      "id": "word_count",
+      "type": "select",
+      "label": "Target Length",
+      "description": "Approximate target word count.",
+      "options": [
+        {"value": "200-300", "label": "200–300 words (news brief)"},
+        {"value": "400-600", "label": "400–600 words (standard news)"},
+        {"value": "800-1200", "label": "800–1,200 words (feature)"},
+        {"value": "2000-4000", "label": "2,000–4,000 words (long-form)"},
+        {"value": "4000+", "label": "4,000+ words (investigation)"}
+      ],
+      "defaultValue": "400-600"
+    }
+  ]
+}

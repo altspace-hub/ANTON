@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "savings-goal-planner",
+  "label": "Savings Goal Planner",
+  "shortLabel": "Save for Goals",
+  "icon": "Target",
+  "description": "Save up for something important — school fees, a business, a home. Set a realistic goal and plan how to reach it.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Simple savings calculations and encouragement work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Savings strategies for low-income households including ROSCAs, SACCOs, and mobile money savings in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "savings_goal",
+      "type": "select",
+      "label": "What are you saving for?",
+      "required": true,
+      "options": [
+        { "value": "school-fees", "label": "School fees" },
+        { "value": "business", "label": "Business investment" },
+        { "value": "emergency-fund", "label": "Emergency fund" },
+        { "value": "home", "label": "Home purchase or rent" },
+        { "value": "medical", "label": "Medical costs" },
+        { "value": "wedding-ceremony", "label": "Wedding or ceremony" },
+        { "value": "other", "label": "Other goal" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "When do you need the money?",
+      "required": true,
+      "options": [
+        { "value": "1-3-months", "label": "In 1 to 3 months" },
+        { "value": "3-6-months", "label": "In 3 to 6 months" },
+        { "value": "6-12-months", "label": "In 6 to 12 months" },
+        { "value": "over-1-year", "label": "Over 1 year from now" }
+      ]
+    },
+    {
+      "id": "current_savings",
+      "type": "select",
+      "label": "How much have you saved already?",
+      "required": false,
+      "options": [
+        { "value": "nothing", "label": "Nothing saved yet" },
+        { "value": "less-1-month", "label": "Less than 1 month of income" },
+        { "value": "1-3-months", "label": "1 to 3 months of income" },
+        { "value": "more-3-months", "label": "More than 3 months of income" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "savings",
+    "goal-setting",
+    "rosca",
+    "sacco",
+    "chama",
+    "susu",
+    "tontine",
+    "low-income",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "sprint-planning-assistant",
+  "label": "Sprint Planning Assistant",
+  "shortLabel": "Sprint Planning",
+  "description": "Facilitates sprint planning by estimating stories, checking team capacity, identifying dependencies, and generating a sprint plan with clear goals and success criteria.",
+  "perspective": "operational",
+  "icon": "Layers",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Scrum framework, agile estimation techniques, sprint planning best practices, velocity tracking"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "sprint_number",
+      "type": "text",
+      "label": "Sprint number and dates",
+      "required": true,
+      "placeholder": "e.g. Sprint 14 — 24 February to 7 March 2025 (2 weeks)"
+    },
+    {
+      "id": "team_capacity",
+      "type": "textarea",
+      "label": "Team capacity",
+      "required": true,
+      "placeholder": "List team members and their available capacity for this sprint.\ne.g.\n- Anna (Backend): 8 days (2 days leave)\n- Erik (Frontend): 10 days\n- Sofia (QA): 10 days\n- Marcus (DevOps): 5 days (part-time)\n- Total: 33 team-days | Historical velocity: ~45 story points"
+    },
+    {
+      "id": "backlog_items",
+      "type": "textarea",
+      "label": "Candidate backlog items",
+      "required": true,
+      "placeholder": "List the stories/tasks being considered for this sprint. Include any existing estimates if available.\ne.g.\n- US-142: User authentication via SSO (8 SP, Backend+Frontend)\n- US-156: Export to PDF functionality (5 SP, Frontend+Backend)\n- BUG-089: Fix dashboard loading error on Safari (3 SP, Frontend)\n- US-161: Admin user management screen (8 SP, Frontend)\n- TECH-034: Upgrade database driver to v5 (5 SP, Backend+DevOps)\n- US-165: Email notification system (13 SP, Backend)"
+    },
+    {
+      "id": "sprint_goal",
+      "type": "textarea",
+      "label": "Proposed sprint goal (optional)",
+      "placeholder": "What is the primary business objective for this sprint? e.g. Complete user authentication flow so beta users can log in with company SSO."
+    },
+    {
+      "id": "known_dependencies",
+      "type": "textarea",
+      "label": "Dependencies and blockers",
+      "placeholder": "Any known dependencies between stories, external dependencies, or current blockers.\ne.g. US-142 must complete before US-161 (auth required for user management). PDF export (US-156) blocked on design sign-off — expected 25 Feb."
+    },
+    {
+      "id": "carryover",
+      "type": "textarea",
+      "label": "Carryover from previous sprint",
+      "placeholder": "List any incomplete stories being carried over from the previous sprint with remaining estimate."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "project-management",
+    "agile",
+    "scrum",
+    "sprint",
+    "planning",
+    "operational"
+  ]
+}

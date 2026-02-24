@@ -1,0 +1,107 @@
+{
+  "formatVersion": "1.0",
+  "id": "public-consultation",
+  "label": "Public Consultation Response",
+  "shortLabel": "Consultation",
+  "description": "Draft structured, evidence-based responses to government and regulatory public consultations, green papers, and calls for evidence.",
+  "icon": "MessageSquare",
+  "color": "adv-blue",
+  "areaId": "public-sector",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "consultation_type",
+      "type": "select",
+      "label": "Consultation type",
+      "required": true,
+      "options": [
+        {
+          "value": "regulatory",
+          "label": "Regulatory Consultation"
+        },
+        {
+          "value": "legislative",
+          "label": "Legislative Consultation / Green Paper"
+        },
+        {
+          "value": "call_for_evidence",
+          "label": "Call for Evidence"
+        },
+        {
+          "value": "policy_review",
+          "label": "Policy Review Consultation"
+        },
+        {
+          "value": "technical_standards",
+          "label": "Technical Standards Consultation"
+        }
+      ]
+    },
+    {
+      "id": "responding_as",
+      "type": "select",
+      "label": "Responding as",
+      "required": true,
+      "options": [
+        {
+          "value": "industry_body",
+          "label": "Industry Body / Association"
+        },
+        {
+          "value": "regulated_entity",
+          "label": "Regulated Entity"
+        },
+        {
+          "value": "advisory_firm",
+          "label": "Advisory / Consulting Firm"
+        },
+        {
+          "value": "public_body",
+          "label": "Public Body / Authority"
+        },
+        {
+          "value": "academic",
+          "label": "Academic / Research Institution"
+        },
+        {
+          "value": "individual",
+          "label": "Individual Expert"
+        }
+      ]
+    },
+    {
+      "id": "key_positions",
+      "type": "textarea",
+      "label": "Key positions and arguments",
+      "placeholder": "Outline the main positions you want to advocate, evidence to cite, and any concerns about the proposals."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "consultation",
+    "government",
+    "regulatory",
+    "public-sector",
+    "response"
+  ]
+}

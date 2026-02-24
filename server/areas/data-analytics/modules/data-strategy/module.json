@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "data-strategy",
+  "label": "Data Strategy & Roadmap",
+  "shortLabel": "Data Strategy",
+  "icon": "TrendingUp",
+  "description": "Develop a data strategy aligned to business objectives: current state, target architecture, capability building, and a phased implementation roadmap.",
+  "color": "adv-teal",
+  "areaId": "data-analytics",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Data strategy frameworks, cloud data platform architectures, regulatory data obligations"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "strategy_task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "develop",
+          "label": "Develop a data strategy"
+        },
+        {
+          "value": "review",
+          "label": "Review and challenge existing strategy"
+        },
+        {
+          "value": "roadmap",
+          "label": "Build an implementation roadmap"
+        },
+        {
+          "value": "architecture",
+          "label": "Target data architecture design"
+        }
+      ]
+    },
+    {
+      "id": "time_horizon",
+      "type": "select",
+      "label": "Strategy time horizon",
+      "options": [
+        {
+          "value": "1yr",
+          "label": "1 year (tactical)"
+        },
+        {
+          "value": "3yr",
+          "label": "3 years (medium-term)"
+        },
+        {
+          "value": "5yr",
+          "label": "5 years (strategic)"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation context",
+      "placeholder": "e.g., Legacy on-premise bank, migrating to cloud, regulatory data obligations growing."
+    }
+  ],
+  "recommendedPersonas": [
+    "systems-thinker",
+    "board-member"
+  ],
+  "tags": [
+    "data-strategy",
+    "roadmap",
+    "architecture",
+    "analytics",
+    "data"
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "formatVersion": "1.0",
+  "id": "incident-response-plan",
+  "label": "Incident Response Plan Builder",
+  "shortLabel": "IR Plan",
+  "icon": "AlertTriangle",
+  "description": "Create or update a comprehensive cyber incident response plan aligned to NIST SP 800-61, ISO/IEC 27035, DORA incident classification requirements, and GDPR Article 33/34 obligations for personal data breaches.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document",
+      "action-plan",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "NIST SP 800-61, ISO/IEC 27035, DORA RTS on ICT incident classification, GDPR Articles 33-34, ENISA incident reporting guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation_type",
+      "type": "select",
+      "label": "Organisation type",
+      "required": true,
+      "options": [
+        {
+          "value": "financial",
+          "label": "Financial Institution (bank, insurer, payment provider)"
+        },
+        {
+          "value": "healthcare",
+          "label": "Healthcare"
+        },
+        {
+          "value": "critical_infrastructure",
+          "label": "Critical Infrastructure (energy, transport, water)"
+        },
+        {
+          "value": "tech",
+          "label": "Technology / ICT Service Provider"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "current_plan_status",
+      "type": "select",
+      "label": "Current incident response plan status",
+      "options": [
+        {
+          "value": "none",
+          "label": "None — starting from scratch"
+        },
+        {
+          "value": "outdated",
+          "label": "Outdated — exists but not current"
+        },
+        {
+          "value": "partial",
+          "label": "Partial — covers some scenarios only"
+        },
+        {
+          "value": "exists_untested",
+          "label": "Exists but untested"
+        },
+        {
+          "value": "tested",
+          "label": "Tested — looking to improve or align to new regulation"
+        }
+      ]
+    },
+    {
+      "id": "regulatory_framework",
+      "type": "multi-select",
+      "label": "Applicable regulatory frameworks",
+      "options": [
+        {
+          "value": "dora",
+          "label": "DORA (EU 2022/2554)"
+        },
+        {
+          "value": "nis2",
+          "label": "NIS2 (EU 2022/2555)"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR (personal data breach obligations)"
+        },
+        {
+          "value": "iso27001",
+          "label": "ISO/IEC 27001"
+        },
+        {
+          "value": "nist",
+          "label": "NIST Cybersecurity Framework / SP 800-61"
+        },
+        {
+          "value": "other",
+          "label": "Other / national regulation"
+        }
+      ]
+    },
+    {
+      "id": "incident_types_priority",
+      "type": "multi-select",
+      "label": "Priority incident types to cover",
+      "options": [
+        {
+          "value": "ransomware",
+          "label": "Ransomware / destructive malware"
+        },
+        {
+          "value": "data_breach",
+          "label": "Data breach / exfiltration"
+        },
+        {
+          "value": "ddos",
+          "label": "DDoS / availability attack"
+        },
+        {
+          "value": "insider_threat",
+          "label": "Insider threat / privilege abuse"
+        },
+        {
+          "value": "supply_chain",
+          "label": "Supply chain compromise"
+        },
+        {
+          "value": "fraud",
+          "label": "Cyber-enabled fraud"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator",
+    "systems-thinker"
+  ],
+  "tags": [
+    "incident-response",
+    "ir-plan",
+    "nist",
+    "dora",
+    "nis2",
+    "gdpr",
+    "ransomware",
+    "breach-response",
+    "cyber-resilience",
+    "business-continuity"
+  ]
+}

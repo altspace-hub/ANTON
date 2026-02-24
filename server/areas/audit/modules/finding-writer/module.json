@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "finding-writer",
+  "label": "Finding & Observation Writer",
+  "shortLabel": "Finding Writer",
+  "description": "Write clear, impactful audit findings using the 5C framework. Turn test results into well-structured findings that drive remediation.",
+  "icon": "FileWarning",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "finding_description",
+      "type": "textarea",
+      "label": "Describe what you found",
+      "required": true,
+      "description": "What did the testing reveal? Include specific numbers, percentages, examples.",
+      "placeholder": "e.g., In 8 of 20 sampled files (40%), the required EDD documentation was absent. 3 of these were PEP customers. The files were opened between March and October 2024."
+    },
+    {
+      "id": "standard_requirement",
+      "type": "textarea",
+      "label": "What should it be? (criteria)",
+      "description": "The regulation, policy, or standard that was not met.",
+      "placeholder": "e.g., AMLR Article 36 requires EDD for PEP customers including source of wealth documentation. Internal CDD Policy v2.1 Section 4.3 requires EDD completion within 10 days of PEP identification."
+    },
+    {
+      "id": "root_cause",
+      "type": "textarea",
+      "label": "Why did it happen? (your view of root cause)",
+      "description": "Structural cause, not just 'human error'. Why were staff in a position to make this error?",
+      "placeholder": "e.g., The CDD system does not prompt for EDD when a PEP flag is set; the step is manual and reliant on staff awareness."
+    },
+    {
+      "id": "severity",
+      "type": "select",
+      "label": "Proposed severity rating",
+      "required": true,
+      "options": [
+        {
+          "value": "critical",
+          "label": "🔴 Critical — Immediate risk, regulatory breach"
+        },
+        {
+          "value": "high",
+          "label": "🟠 High — Significant control weakness, 90-day remediation"
+        },
+        {
+          "value": "medium",
+          "label": "🟡 Medium — Control improvement needed, 180-day remediation"
+        },
+        {
+          "value": "low",
+          "label": "🟢 Low / Observation — Best practice recommendation"
+        }
+      ]
+    },
+    {
+      "id": "additional_context",
+      "type": "textarea",
+      "label": "Additional context (optional)",
+      "placeholder": "Relevant background, aggravating or mitigating factors, prior findings on the same issue..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "audit",
+    "findings",
+    "5c",
+    "reporting",
+    "remediation"
+  ]
+}

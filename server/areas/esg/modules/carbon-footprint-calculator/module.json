@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "carbon-footprint-calculator",
+  "label": "Carbon Footprint Data Collector",
+  "shortLabel": "Carbon Footprint",
+  "description": "Guides systematic collection of Scope 1, 2, and 3 emissions data. Identifies data sources, calculates preliminary footprint estimates, and highlights data gaps requiring further collection.",
+  "icon": "Leaf",
+  "color": "adv-green",
+  "areaId": "esg",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "data-readiness-scorecard",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "GHG Protocol, IPCC emission factors, IEA electricity factors, EU emission factors"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "company_type",
+      "type": "select",
+      "label": "Organisation type",
+      "required": true,
+      "options": [
+        { "value": "bank", "label": "Bank / financial institution" },
+        { "value": "insurer", "label": "Insurance company" },
+        { "value": "asset_manager", "label": "Asset manager / fund manager" },
+        { "value": "manufacturing", "label": "Manufacturing" },
+        { "value": "services", "label": "Professional services" },
+        { "value": "retail", "label": "Retail / consumer" },
+        { "value": "real_estate", "label": "Real estate" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "geography",
+      "type": "text",
+      "label": "Primary operating geography",
+      "placeholder": "e.g., Sweden, Nordics, Germany, EU-wide"
+    },
+    {
+      "id": "scope_focus",
+      "type": "multi-select",
+      "label": "Emissions scopes to address",
+      "options": [
+        { "value": "scope1", "label": "Scope 1 — Direct emissions (own operations)" },
+        { "value": "scope2", "label": "Scope 2 — Indirect emissions (purchased energy)" },
+        { "value": "scope3", "label": "Scope 3 — Value chain emissions (all other indirect)" },
+        { "value": "financed", "label": "Financed emissions (for financial institutions)" }
+      ]
+    },
+    {
+      "id": "data_available",
+      "type": "textarea",
+      "label": "What data do you already have?",
+      "placeholder": "Describe data already collected or available:\n- Energy bills (electricity, gas, heat, fuel)\n- Fleet vehicle data (fuel consumption or kilometres)\n- Business travel data (flights, train, hotel nights)\n- Procurement data (major spend categories, key suppliers)\n- Production volumes or output metrics\n- Employee headcount and office locations\n\nNote what you DON'T have too."
+    },
+    {
+      "id": "reporting_standard",
+      "type": "select",
+      "label": "Reporting framework to align with",
+      "options": [
+        { "value": "ghg_protocol", "label": "GHG Protocol (primary)" },
+        { "value": "csrd", "label": "CSRD / ESRS E1" },
+        { "value": "tcfd", "label": "TCFD (climate risk & metrics)" },
+        { "value": "cdp", "label": "CDP (Carbon Disclosure Project)" },
+        { "value": "sbti", "label": "Science Based Targets initiative (SBTi)" },
+        { "value": "pcaf", "label": "PCAF (for financial institutions' financed emissions)" }
+      ]
+    },
+    {
+      "id": "reporting_year",
+      "type": "text",
+      "label": "Reporting year / baseline year",
+      "placeholder": "e.g., 2024, or 2023 for historical baseline"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "carbon",
+    "ghg",
+    "scope1",
+    "scope2",
+    "scope3",
+    "emissions",
+    "climate",
+    "csrd"
+  ]
+}

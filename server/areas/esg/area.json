@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "esg",
+  "name": "Environment, Sustainability & ESG",
+  "shortName": "ESG",
+  "description": "CSRD/ESRS sustainability reporting, double materiality assessment, ESG strategy, and climate risk analysis for corporate and financial institutions.",
+  "icon": "Leaf",
+  "color": "adv-green",
+  "cluster": "sustainability",
+  "moduleIds": [
+    "csrd-reporting",
+    "double-materiality",
+    "esg-strategy",
+    "climate-risk"
+  ]
+}

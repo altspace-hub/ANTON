@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "microfinance",
+  "name": "Microfinance & Financial Inclusion",
+  "shortName": "Microfinance",
+  "description": "Regulatory compliance, risk management, and social performance for microfinance institutions, development finance, and financial inclusion programs globally. 140M+ borrowers.",
+  "icon": "Heart",
+  "color": "adv-teal",
+  "cluster": "inclusion"
+}

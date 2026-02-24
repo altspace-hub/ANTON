@@ -1,0 +1,73 @@
+{
+  "formatVersion": "1.0",
+  "id": "tenant-rights",
+  "label": "Tenant Rights & Fair Rent",
+  "shortLabel": "Tenant Rights",
+  "icon": "Home",
+  "description": "My rights as a renter. Know your rights on fair rent, eviction notice, repairs, deposits, and what landlords can and cannot do.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Active eviction proceedings or complex lease disputes need sonnet. General rights work with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Tenant rights by country: eviction notice periods, deposit rules, landlord obligations, illegal self-help eviction, rent control laws, verbal tenancy agreements. Kenya, Nigeria, South Africa PIE Act, India Rent Control Acts, Ghana." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you renting in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "rental_type",
+      "label": "What type of rental arrangement do you have?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "written-lease", "label": "Formal written lease" },
+        { "value": "verbal-agreement", "label": "Verbal agreement only" },
+        { "value": "monthly-informal", "label": "Monthly informal arrangement" },
+        { "value": "informal-settlement", "label": "Slum or informal settlement" },
+        { "value": "employer-provided", "label": "Employer-provided housing" }
+      ]
+    },
+    {
+      "id": "issue",
+      "label": "What is the problem?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "eviction-notice", "label": "Received an eviction notice" },
+        { "value": "rent-increase", "label": "Unreasonable rent increase" },
+        { "value": "no-repairs", "label": "Landlord refusing to do repairs" },
+        { "value": "deposit-not-returned", "label": "Deposit not returned" },
+        { "value": "landlord-harassment", "label": "Harassment by landlord" },
+        { "value": "general-rights", "label": "General rights information" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
+  "tags": ["land-rights", "bop", "rights", "tenant-rights", "renting", "eviction", "deposit", "rent-control", "landlord", "africa", "south-asia"]
+}

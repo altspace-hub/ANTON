@@ -1,0 +1,156 @@
+{
+  "formatVersion": "1.0",
+  "id": "third-party-security",
+  "label": "Third-Party / Supply Chain Security Assessment",
+  "shortLabel": "3rd Party",
+  "icon": "Link",
+  "description": "Vendor security risk assessment framework aligned to DORA ICT third-party requirements, EBA ICT guidelines, and supply chain security best practices. Produces RAG-rated vendor assessment with contractual gap analysis.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "DORA Articles 28-44, EBA Guidelines on ICT and Security Risk Management, ISO 27001/27036, SOC 2, TISAX, supply chain security frameworks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "vendor_category",
+      "type": "select",
+      "label": "Vendor / supplier category",
+      "required": true,
+      "options": [
+        {
+          "value": "critical_ict",
+          "label": "Critical ICT provider (could impact critical functions)"
+        },
+        {
+          "value": "cloud",
+          "label": "Cloud service provider (IaaS, PaaS, SaaS)"
+        },
+        {
+          "value": "saas",
+          "label": "SaaS application provider"
+        },
+        {
+          "value": "on_premise",
+          "label": "On-premise software vendor"
+        },
+        {
+          "value": "professional_services",
+          "label": "Professional services (consulting, outsourcing)"
+        },
+        {
+          "value": "data_processor",
+          "label": "Data processor (processes personal or sensitive data)"
+        }
+      ]
+    },
+    {
+      "id": "assessment_type",
+      "type": "select",
+      "label": "Assessment type",
+      "required": true,
+      "options": [
+        {
+          "value": "new_vendor",
+          "label": "New vendor — pre-contract due diligence"
+        },
+        {
+          "value": "renewal",
+          "label": "Contract renewal — periodic review"
+        },
+        {
+          "value": "incident_triggered",
+          "label": "Incident-triggered — following a security event"
+        },
+        {
+          "value": "periodic_review",
+          "label": "Periodic review — ongoing monitoring"
+        }
+      ]
+    },
+    {
+      "id": "data_classification",
+      "type": "select",
+      "label": "Data classification handled by vendor",
+      "options": [
+        {
+          "value": "public",
+          "label": "Public"
+        },
+        {
+          "value": "internal",
+          "label": "Internal / confidential business data"
+        },
+        {
+          "value": "confidential",
+          "label": "Confidential (client data, financial data)"
+        },
+        {
+          "value": "restricted",
+          "label": "Restricted (personal data, payment data, regulated data)"
+        }
+      ]
+    },
+    {
+      "id": "regulatory_context",
+      "type": "multi-select",
+      "label": "Applicable regulatory context",
+      "options": [
+        {
+          "value": "dora",
+          "label": "DORA (financial sector ICT third-party rules)"
+        },
+        {
+          "value": "nis2",
+          "label": "NIS2 (supply chain security obligations)"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR (data processor requirements)"
+        },
+        {
+          "value": "financial_regulation",
+          "label": "Financial services regulation (EBA, FSA)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator",
+    "auditor"
+  ],
+  "tags": [
+    "third-party-risk",
+    "supply-chain",
+    "vendor-assessment",
+    "dora",
+    "eba",
+    "ict-outsourcing",
+    "concentration-risk",
+    "ctpp",
+    "data-processor",
+    "gdpr"
+  ]
+}

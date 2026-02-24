@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.0",
+  "id": "engagement-proposal",
+  "label": "Engagement Proposal Writer",
+  "shortLabel": "Proposal",
+  "icon": "Handshake",
+  "description": "Create tailored client proposals and RFP responses. Upload RFP documents, select engagement type, and generate professional, structured proposals.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "client-proposal",
+      "project-plan"
+    ],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "engagement_type",
+      "type": "select",
+      "label": "Engagement Type",
+      "required": true,
+      "options": [
+        {
+          "value": "gap-assessment",
+          "label": "Gap Assessment / Health Check"
+        },
+        {
+          "value": "programme-design",
+          "label": "Programme Design & Implementation"
+        },
+        {
+          "value": "gap-remediation",
+          "label": "Gap Remediation"
+        },
+        {
+          "value": "training",
+          "label": "Training & Awareness"
+        },
+        {
+          "value": "model-validation",
+          "label": "Model Validation"
+        },
+        {
+          "value": "ongoing-support",
+          "label": "Ongoing Advisory / Support"
+        },
+        {
+          "value": "rfp-response",
+          "label": "RFP Response"
+        }
+      ]
+    },
+    {
+      "id": "client_context",
+      "type": "textarea",
+      "label": "Client Context",
+      "placeholder": "Describe the client — institution type, size, jurisdiction, known regulatory challenges, what they are asking for..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "business-expert"
+  ],
+  "tags": [
+    "proposals",
+    "rfp",
+    "client",
+    "consulting"
+  ]
+}

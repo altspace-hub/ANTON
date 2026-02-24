@@ -1,0 +1,73 @@
+{
+  "formatVersion": "1.0",
+  "id": "engagement-execution",
+  "label": "Engagement Execution Engine",
+  "shortLabel": "Execution",
+  "icon": "Rocket",
+  "description": "Parse engagement letters into scope items and systematically analyze each against client documents and regulatory frameworks. Track progress across deliverables.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan",
+      "gap-scoring-matrix"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "execution_mode",
+      "type": "select",
+      "label": "Execution Mode",
+      "required": true,
+      "options": [
+        {
+          "value": "scope-parse",
+          "label": "Parse engagement letter into scope items"
+        },
+        {
+          "value": "deliverable-analysis",
+          "label": "Analyze specific deliverable"
+        },
+        {
+          "value": "progress-review",
+          "label": "Review progress against scope"
+        },
+        {
+          "value": "findings-synthesis",
+          "label": "Synthesize findings across workstreams"
+        }
+      ]
+    },
+    {
+      "id": "scope_context",
+      "type": "textarea",
+      "label": "Scope / Deliverable Context",
+      "placeholder": "Paste the scope from the engagement letter, or describe the specific deliverable you are working on..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "cco"
+  ],
+  "tags": [
+    "engagement",
+    "execution",
+    "delivery",
+    "consulting"
+  ]
+}

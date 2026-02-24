@@ -1,0 +1,167 @@
+{
+  "formatVersion": "1.0",
+  "id": "management-reporting",
+  "label": "Management Reporting",
+  "shortLabel": "Mgmt Reporting",
+  "description": "Design and improve management reports, KPI frameworks, dashboards, and financial commentary. Create reports that drive decisions rather than just present data.",
+  "icon": "BarChart2",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "report_type",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "design_report",
+          "label": "Design a new management report"
+        },
+        {
+          "value": "improve_report",
+          "label": "Improve an existing report"
+        },
+        {
+          "value": "kpi_framework",
+          "label": "Develop a KPI framework"
+        },
+        {
+          "value": "commentary",
+          "label": "Write financial commentary"
+        },
+        {
+          "value": "board_pack",
+          "label": "Design a board reporting pack"
+        },
+        {
+          "value": "dashboard",
+          "label": "Design a dashboard layout"
+        },
+        {
+          "value": "variance_analysis",
+          "label": "Variance analysis template"
+        }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Primary audience",
+      "options": [
+        {
+          "value": "board",
+          "label": "Board of Directors"
+        },
+        {
+          "value": "c_suite",
+          "label": "C-Suite / Executive Team"
+        },
+        {
+          "value": "department_heads",
+          "label": "Department heads / VPs"
+        },
+        {
+          "value": "operational_managers",
+          "label": "Operational managers"
+        },
+        {
+          "value": "external",
+          "label": "External stakeholders (investors, regulators)"
+        }
+      ]
+    },
+    {
+      "id": "industry",
+      "type": "select",
+      "label": "Industry",
+      "options": [
+        {
+          "value": "banking",
+          "label": "Banking"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech"
+        },
+        {
+          "value": "professional_services",
+          "label": "Professional services / consulting"
+        },
+        {
+          "value": "manufacturing",
+          "label": "Manufacturing"
+        },
+        {
+          "value": "retail",
+          "label": "Retail / E-commerce"
+        },
+        {
+          "value": "saas",
+          "label": "SaaS / Technology"
+        },
+        {
+          "value": "general",
+          "label": "General"
+        }
+      ]
+    },
+    {
+      "id": "frequency",
+      "type": "select",
+      "label": "Reporting frequency",
+      "options": [
+        {
+          "value": "weekly",
+          "label": "Weekly"
+        },
+        {
+          "value": "monthly",
+          "label": "Monthly"
+        },
+        {
+          "value": "quarterly",
+          "label": "Quarterly"
+        },
+        {
+          "value": "annual",
+          "label": "Annual"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context and requirements",
+      "placeholder": "e.g., Current reports are too detailed for the board, need to focus on 5-7 key metrics. Revenue is EUR 200M, we operate in 4 Nordic countries, main challenge is margin erosion in Swedish market."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "reporting",
+    "kpi",
+    "dashboard",
+    "management",
+    "finance",
+    "cfo"
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "third-party-cyber-risk",
+  "label": "Third-Party & Cloud Cyber Risk",
+  "shortLabel": "Third-Party Cyber",
+  "icon": "Network",
+  "description": "Assess and manage ICT third-party risk under DORA Pillar 4: vendor risk tiering, contractual requirements, CTPP oversight, cloud provider risk, and exit strategy planning.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "DORA Articles 28-44, EBA outsourcing guidelines, ESMA cloud guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "vendor_register",
+          "label": "Build/review ICT third-party register (DORA Article 28)"
+        },
+        {
+          "value": "tiering",
+          "label": "Tier vendors by criticality — identify CTPPs"
+        },
+        {
+          "value": "contract_review",
+          "label": "Review/strengthen third-party contracts (DORA Article 30)"
+        },
+        {
+          "value": "exit_strategy",
+          "label": "Develop exit strategy and contingency plans"
+        },
+        {
+          "value": "cloud_risk",
+          "label": "Cloud provider specific risk assessment"
+        },
+        {
+          "value": "ctpp_oversight",
+          "label": "Critical Third-Party Provider oversight framework"
+        }
+      ]
+    },
+    {
+      "id": "vendor_count",
+      "type": "select",
+      "label": "Approximate number of ICT third-party providers",
+      "options": [
+        {
+          "value": "small",
+          "label": "Fewer than 20"
+        },
+        {
+          "value": "medium",
+          "label": "20-100"
+        },
+        {
+          "value": "large",
+          "label": "100-500"
+        },
+        {
+          "value": "enterprise",
+          "label": "500+"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context and known concerns",
+      "placeholder": "e.g., We use AWS for core banking, have 3 potential CTPPs, no exit plan exists, contracts predated DORA."
+    }
+  ],
+  "recommendedPersonas": [
+    "auditor",
+    "systems-thinker"
+  ],
+  "tags": [
+    "third-party",
+    "dora",
+    "vendor-risk",
+    "cloud",
+    "outsourcing",
+    "ctpp"
+  ]
+}

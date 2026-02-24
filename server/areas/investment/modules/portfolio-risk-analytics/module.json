@@ -1,0 +1,153 @@
+{
+  "formatVersion": "1.0",
+  "id": "portfolio-risk-analytics",
+  "label": "Portfolio Risk Analytics",
+  "shortLabel": "Risk Analytics",
+  "icon": "BarChart2",
+  "description": "Analyse portfolio risk metrics including VaR, stress testing, factor analysis, and regulatory capital.",
+  "color": "adv-teal",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary",
+      "maturity-assessment"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "BCBS 239 risk data aggregation, ESMA stress testing guidelines, IOSCO principles, Basel risk frameworks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "portfolio_type",
+      "type": "select",
+      "label": "Portfolio type",
+      "required": true,
+      "options": [
+        {
+          "value": "equity",
+          "label": "Equity"
+        },
+        {
+          "value": "fixed_income",
+          "label": "Fixed income"
+        },
+        {
+          "value": "multi_asset",
+          "label": "Multi-asset"
+        },
+        {
+          "value": "alternatives",
+          "label": "Alternatives"
+        },
+        {
+          "value": "derivatives",
+          "label": "Derivatives"
+        }
+      ]
+    },
+    {
+      "id": "risk_focus",
+      "type": "multi-select",
+      "label": "Risk focus areas",
+      "options": [
+        {
+          "value": "market_risk",
+          "label": "Market risk"
+        },
+        {
+          "value": "credit_risk",
+          "label": "Credit risk"
+        },
+        {
+          "value": "liquidity_risk",
+          "label": "Liquidity risk"
+        },
+        {
+          "value": "concentration_risk",
+          "label": "Concentration risk"
+        },
+        {
+          "value": "model_risk",
+          "label": "Model risk"
+        }
+      ]
+    },
+    {
+      "id": "reporting_framework",
+      "type": "select",
+      "label": "Reporting framework",
+      "options": [
+        {
+          "value": "ucits",
+          "label": "UCITS"
+        },
+        {
+          "value": "aifmd",
+          "label": "AIFMD"
+        },
+        {
+          "value": "basel_iii",
+          "label": "Basel III"
+        },
+        {
+          "value": "internal",
+          "label": "Internal"
+        },
+        {
+          "value": "solvency_ii",
+          "label": "Solvency II"
+        }
+      ]
+    },
+    {
+      "id": "time_horizon",
+      "type": "select",
+      "label": "Risk time horizon",
+      "options": [
+        {
+          "value": "daily",
+          "label": "Daily"
+        },
+        {
+          "value": "weekly",
+          "label": "Weekly"
+        },
+        {
+          "value": "monthly",
+          "label": "Monthly"
+        },
+        {
+          "value": "quarterly",
+          "label": "Quarterly"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "risk-specialist",
+    "devil-advocate"
+  ],
+  "tags": [
+    "risk",
+    "var",
+    "stress-testing",
+    "factor-analysis",
+    "market-risk",
+    "liquidity-risk",
+    "basel",
+    "bcbs-239",
+    "portfolio-analytics"
+  ]
+}

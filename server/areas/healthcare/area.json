@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "healthcare",
+  "name": "Healthcare & Life Sciences",
+  "shortName": "Healthcare",
+  "description": "AI-powered tools for healthcare professionals, life sciences companies, and regulatory affairs specialists. Supports clinical protocol development, regulatory pathway planning, patient communication materials, healthcare data protection and GDPR compliance, and research ethics frameworks. Designed to navigate the complex intersection of medical practice, regulatory requirements, and patient safety.",
+  "icon": "Heart",
+  "color": "adv-red",
+  "cluster": "healthcare"
+}

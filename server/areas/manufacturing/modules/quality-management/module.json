@@ -1,0 +1,90 @@
+{
+  "formatVersion": "1.0",
+  "id": "quality-management",
+  "label": "Quality Management System",
+  "shortLabel": "Quality Management",
+  "icon": "CheckSquare",
+  "description": "Develop, review, and improve Quality Management Systems (QMS) aligned with ISO 9001, industry-specific standards, and regulatory requirements. Covers quality policy development, process documentation, non-conformance management, corrective action procedures, and audit readiness. Produces structured policy documents and governance frameworks.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "ISO 9001:2015, IATF 16949, ISO 13485, quality management principles, process approach, risk-based thinking, continuous improvement"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "standard",
+      "label": "Applicable Standard",
+      "type": "select",
+      "options": [
+        "ISO 9001:2015",
+        "IATF 16949 (automotive)",
+        "ISO 13485 (medical devices)",
+        "AS9100 (aerospace)",
+        "ISO 22000 (food safety)",
+        "GMP (pharmaceutical)",
+        "Multiple standards",
+        "No specific standard — best practice"
+      ],
+      "required": true
+    },
+    {
+      "id": "qms-maturity",
+      "label": "QMS Maturity",
+      "type": "select",
+      "options": [
+        "No formal QMS",
+        "Basic QMS — needs significant improvement",
+        "Established QMS — periodic review",
+        "Mature QMS — optimisation focus",
+        "Transitioning between standards"
+      ],
+      "required": true
+    },
+    {
+      "id": "task-focus",
+      "label": "Task Focus",
+      "type": "select",
+      "options": [
+        "Full QMS development",
+        "Quality policy and objectives",
+        "Process documentation",
+        "Non-conformance/CAPA procedures",
+        "Management review framework",
+        "Internal audit programme",
+        "Supplier quality management",
+        "Pre-certification gap assessment"
+      ],
+      "required": true
+    },
+    {
+      "id": "industry-context",
+      "label": "Industry and Context",
+      "type": "textarea",
+      "placeholder": "Describe your industry, products, and any specific quality challenges...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "quality-manager",
+    "operations-director",
+    "compliance-officer"
+  ],
+  "tags": [
+    "manufacturing",
+    "quality",
+    "ISO9001",
+    "QMS",
+    "compliance"
+  ]
+}

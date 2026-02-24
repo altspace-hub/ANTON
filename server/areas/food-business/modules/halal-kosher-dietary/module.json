@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "halal-kosher-dietary",
+  "label": "Halal / Kosher / Dietary Compliance",
+  "shortLabel": "Dietary Standards",
+  "icon": "Star",
+  "description": "Meet religious and dietary requirements for customers. Halal certification, vegetarian/vegan, and allergen management.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Halal certification, kosher requirements, vegetarian and vegan food standards, allergen management for micro-food-businesses globally"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "dietary_standard",
+      "type": "select",
+      "label": "Which dietary standard do you need guidance on?",
+      "required": true,
+      "options": [
+        { "value": "halal", "label": "Halal" },
+        { "value": "kosher", "label": "Kosher" },
+        { "value": "vegetarian-vegan", "label": "Vegetarian or vegan" },
+        { "value": "allergens", "label": "Allergen management" },
+        { "value": "multiple", "label": "Multiple standards" }
+      ]
+    },
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of food business do you have?",
+      "required": true,
+      "options": [
+        { "value": "street-stall", "label": "Street food stall" },
+        { "value": "small-restaurant", "label": "Small restaurant" },
+        { "value": "catering", "label": "Catering" },
+        { "value": "home-based", "label": "Home-based food business" },
+        { "value": "market-vendor", "label": "Market food vendor" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "goal",
+      "type": "select",
+      "label": "What is your goal?",
+      "required": true,
+      "options": [
+        { "value": "get-certified", "label": "Get certified" },
+        { "value": "understand-requirements", "label": "Understand the requirements" },
+        { "value": "adjust-menu", "label": "Adjust my menu" },
+        { "value": "serve-community", "label": "Serve a specific religious or dietary community" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "tags": [
+    "bop",
+    "food-business",
+    "halal",
+    "kosher",
+    "vegetarian",
+    "vegan",
+    "allergens",
+    "dietary-compliance",
+    "food-certification",
+    "kenya",
+    "nigeria",
+    "india",
+    "bangladesh",
+    "pakistan"
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "formatVersion": "1.0",
+  "id": "alternative-investment-dd",
+  "label": "Alternative Investment Due Diligence",
+  "shortLabel": "Alternatives DD",
+  "icon": "Layers",
+  "description": "Due diligence framework for private equity, venture capital, real assets, and private credit investments.",
+  "color": "adv-teal",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "ILPA Principles 3.0, INREV guidelines, IPEV valuation guidelines, AIFMD, private equity due diligence best practice"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "alt_type",
+      "type": "select",
+      "label": "Alternative investment type",
+      "required": true,
+      "options": [
+        {
+          "value": "private_equity",
+          "label": "Private equity"
+        },
+        {
+          "value": "venture_capital",
+          "label": "Venture capital"
+        },
+        {
+          "value": "private_credit",
+          "label": "Private credit"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real estate"
+        },
+        {
+          "value": "infrastructure",
+          "label": "Infrastructure"
+        },
+        {
+          "value": "hedge_fund",
+          "label": "Hedge fund"
+        },
+        {
+          "value": "secondaries",
+          "label": "Secondaries"
+        }
+      ]
+    },
+    {
+      "id": "stage",
+      "type": "select",
+      "label": "Investment stage",
+      "required": true,
+      "options": [
+        {
+          "value": "lp_commitment",
+          "label": "LP commitment"
+        },
+        {
+          "value": "co_investment",
+          "label": "Co-investment"
+        },
+        {
+          "value": "direct_investment",
+          "label": "Direct investment"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary"
+        }
+      ]
+    },
+    {
+      "id": "target_geography",
+      "type": "select",
+      "label": "Target geography",
+      "options": [
+        {
+          "value": "europe",
+          "label": "Europe"
+        },
+        {
+          "value": "north_america",
+          "label": "North America"
+        },
+        {
+          "value": "asia_pacific",
+          "label": "Asia Pacific"
+        },
+        {
+          "value": "emerging_markets",
+          "label": "Emerging markets"
+        },
+        {
+          "value": "global",
+          "label": "Global"
+        }
+      ]
+    },
+    {
+      "id": "investment_thesis",
+      "type": "textarea",
+      "label": "Investment thesis or context",
+      "placeholder": "e.g., buyout of mid-market industrials, European focus. GP is raising Fund IV after strong Fund III performance. Considering €25M commitment."
+    }
+  ],
+  "recommendedPersonas": [
+    "risk-specialist",
+    "devil-advocate"
+  ],
+  "tags": [
+    "private-equity",
+    "venture-capital",
+    "real-estate",
+    "infrastructure",
+    "private-credit",
+    "alternatives",
+    "due-diligence",
+    "ilpa",
+    "inrev",
+    "aifmd",
+    "ipev"
+  ]
+}

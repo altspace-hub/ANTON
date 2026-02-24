@@ -1,0 +1,137 @@
+{
+  "formatVersion": "1.0",
+  "id": "technical-spec",
+  "label": "Technical Specification Writer",
+  "shortLabel": "Tech Specs",
+  "description": "Write comprehensive technical specifications for features, systems, and integrations. Covers requirements, design decisions, API contracts, data models, error handling, testing strategies, and rollout plans.",
+  "icon": "FileText",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "spec_type",
+      "type": "select",
+      "label": "Specification type",
+      "required": true,
+      "options": [
+        {
+          "value": "feature",
+          "label": "Feature specification"
+        },
+        {
+          "value": "system_design",
+          "label": "System design document"
+        },
+        {
+          "value": "integration",
+          "label": "Integration specification"
+        },
+        {
+          "value": "migration",
+          "label": "Data migration specification"
+        },
+        {
+          "value": "api",
+          "label": "API specification"
+        },
+        {
+          "value": "rfc",
+          "label": "RFC / design proposal"
+        },
+        {
+          "value": "runbook",
+          "label": "Operational runbook"
+        }
+      ]
+    },
+    {
+      "id": "project_description",
+      "type": "textarea",
+      "label": "What are you building?",
+      "description": "Describe the feature, system, or change you need to specify.",
+      "placeholder": "e.g., We need to build a real-time notification system that delivers in-app, email, and push notifications. Users should be able to configure their notification preferences per notification type.",
+      "required": true
+    },
+    {
+      "id": "tech_stack",
+      "type": "textarea",
+      "label": "Technology stack and constraints",
+      "placeholder": "e.g., Node.js backend, PostgreSQL, React frontend, deployed on AWS. Must integrate with existing user service and email provider (SendGrid)."
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Spec audience",
+      "options": [
+        {
+          "value": "engineering",
+          "label": "Engineering team"
+        },
+        {
+          "value": "cross_functional",
+          "label": "Cross-functional (eng + product + design)"
+        },
+        {
+          "value": "external",
+          "label": "External developers / API consumers"
+        },
+        {
+          "value": "leadership",
+          "label": "Engineering leadership / architecture review"
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "type": "select",
+      "label": "Scope",
+      "options": [
+        {
+          "value": "small",
+          "label": "Small — 1-2 sprint effort"
+        },
+        {
+          "value": "medium",
+          "label": "Medium — 1-2 month effort"
+        },
+        {
+          "value": "large",
+          "label": "Large — quarter+ effort"
+        },
+        {
+          "value": "unknown",
+          "label": "To be determined"
+        }
+      ]
+    },
+    {
+      "id": "existing_context",
+      "type": "textarea",
+      "label": "Existing context or constraints",
+      "placeholder": "e.g., Product requirements document is available (upload it), we have an existing notification table that needs to be preserved, must support 100k daily active users"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "software",
+    "specification",
+    "design",
+    "documentation",
+    "rfc",
+    "api"
+  ]
+}

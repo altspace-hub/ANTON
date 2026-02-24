@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "transfer-pricing-documentation",
+  "label": "Transfer Pricing Documentation",
+  "shortLabel": "TP Documentation",
+  "description": "Structures transfer pricing documentation for intra-group transactions. Covers functional analysis, comparability analysis, method selection, and documentation to OECD/BEPS standards.",
+  "perspective": "consultant",
+  "icon": "FileSearch",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "OECD Transfer Pricing Guidelines 2022, BEPS Actions 8-10 and 13, EU JTPF guidelines, Nordic transfer pricing rules and case law"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "documentation_scope",
+      "type": "select",
+      "label": "Documentation scope",
+      "required": true,
+      "options": [
+        { "value": "master_file", "label": "Master File (OECD BEPS Action 13)" },
+        { "value": "local_file", "label": "Local File (specific jurisdiction)" },
+        { "value": "both", "label": "Both Master File and Local File" },
+        { "value": "cbcr", "label": "Country-by-Country Report (CbCR)" },
+        { "value": "functional_analysis", "label": "Functional analysis only" },
+        { "value": "benchmarking", "label": "Benchmarking study / comparability analysis" }
+      ]
+    },
+    {
+      "id": "group_overview",
+      "type": "textarea",
+      "label": "Group structure and overview",
+      "required": true,
+      "placeholder": "Describe the multinational group: parent entity, subsidiaries, jurisdictions, ownership structure, consolidated revenue, and primary business activities."
+    },
+    {
+      "id": "transactions",
+      "type": "textarea",
+      "label": "Intercompany transactions to document",
+      "required": true,
+      "placeholder": "List the intra-group transactions requiring documentation:\ne.g.\n1. Management services: Swedish parent charges Nordic subsidiaries management fee (EUR 2.5M p.a.)\n2. IP licence: Swedish parent licenses brand to all group entities (royalty 2% of revenue)\n3. Intercompany loan: Swedish parent lends EUR 10M to Finnish subsidiary at 4.5% p.a.\n4. IT services: Polish shared service centre charges all entities for IT support"
+    },
+    {
+      "id": "value_chain",
+      "type": "textarea",
+      "label": "Value chain description",
+      "placeholder": "Where are key functions performed? Where are significant assets held (tangible and intangible)? Which entities bear the key risks? Describe the overall value creation story of the group."
+    },
+    {
+      "id": "existing_policies",
+      "type": "textarea",
+      "label": "Existing transfer pricing policies",
+      "placeholder": "Describe any existing TP policies, pricing methodologies, or previous documentation. Upload documents via files panel."
+    },
+    {
+      "id": "jurisdictions",
+      "type": "textarea",
+      "label": "Key jurisdictions and their requirements",
+      "placeholder": "List jurisdictions involved and any specific local requirements, recent audits, or advance pricing agreements.\ne.g. Sweden (primary), Finland, Denmark, Poland, Netherlands (IP holding), Germany (major sales entity)"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "transfer-pricing",
+    "beps",
+    "oecd",
+    "documentation",
+    "consultant",
+    "tax"
+  ]
+}

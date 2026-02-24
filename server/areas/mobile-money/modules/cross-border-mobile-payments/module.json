@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "cross-border-mobile-payments",
+  "label": "Cross-Border Mobile Payment Compliance",
+  "shortLabel": "Cross-Border Payments",
+  "description": "Compliance framework for cross-border mobile payment corridors. Covers FATF Travel Rule implementation, correspondent relationships, regulatory approvals in multiple jurisdictions, and AML monitoring for cross-border flows.",
+  "perspective": "analytical",
+  "icon": "Globe",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF Recommendation 16 (Travel Rule / Wire Transfer Rule), GSMA international transfer guidelines, EAC payments integration, CEMAC payment regulations, AfricaNenda fast payment systems, ECOWAS payment framework"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "corridors",
+      "type": "chips",
+      "label": "Payment Corridors",
+      "description": "Which cross-border corridors are active or planned? Select all that apply.",
+      "options": [
+        { "value": "east-africa", "label": "E Africa" },
+        { "value": "west-africa", "label": "W Africa" },
+        { "value": "south-asia", "label": "South Asia" },
+        { "value": "se-asia", "label": "SE Asia" },
+        { "value": "africa-europe", "label": "Africa–Europe" },
+        { "value": "africa-us", "label": "Africa–US" },
+        { "value": "me-south-asia", "label": "Middle East–South Asia" }
+      ]
+    },
+    {
+      "id": "role",
+      "type": "select",
+      "label": "Operator Role in Corridor",
+      "description": "What is the operator's role in the cross-border payment flow?",
+      "required": true,
+      "options": [
+        { "value": "sending", "label": "Sending operator" },
+        { "value": "receiving", "label": "Receiving operator" },
+        { "value": "intermediary", "label": "Intermediary" },
+        { "value": "hub-switch", "label": "Hub/Switch" }
+      ]
+    },
+    {
+      "id": "regulatory_frameworks",
+      "type": "chips",
+      "label": "Applicable Regulatory Frameworks",
+      "description": "Which frameworks govern the corridors in question? Select all that apply.",
+      "options": [
+        { "value": "fatf-r16", "label": "FATF R.16 (Travel Rule)" },
+        { "value": "eu-wire-transfer", "label": "EU Wire Transfer Regulation" },
+        { "value": "cemac", "label": "CEMAC rules" },
+        { "value": "eac", "label": "EAC protocols" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "mobile-money-compliance",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-gsma-mobile-money-aml",
+    "jurisdiction-ke-cbk",
+    "jurisdiction-ng-cbn"
+  ],
+  "tags": [
+    "cross-border-payments",
+    "travel-rule",
+    "fatf-r16",
+    "mvts",
+    "remittance",
+    "eac",
+    "africaNenda",
+    "corridor-compliance"
+  ]
+}

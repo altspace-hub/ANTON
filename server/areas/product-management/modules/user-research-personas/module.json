@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "user-research-personas",
+  "label": "User Research & Persona Builder",
+  "shortLabel": "User Research",
+  "icon": "Users",
+  "description": "Design user research plans, interview guides, and synthesise findings into actionable personas and insights. Covers qualitative and quantitative research methods.",
+  "color": "adv-teal",
+  "areaId": "product-management",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "User research methodologies, JTBD interview techniques, persona development, continuous discovery"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "research_type",
+      "type": "select",
+      "label": "Research type",
+      "required": true,
+      "options": [
+        { "value": "generative", "label": "Generative (discovery)" },
+        { "value": "evaluative", "label": "Evaluative (testing)" },
+        { "value": "continuous", "label": "Continuous (ongoing)" },
+        { "value": "jtbd_interviews", "label": "Jobs-to-Be-Done interviews" }
+      ]
+    },
+    {
+      "id": "product_stage",
+      "type": "select",
+      "label": "Product stage",
+      "options": [
+        { "value": "pre_product", "label": "Pre-product" },
+        { "value": "early_product", "label": "Early product" },
+        { "value": "established", "label": "Established product" }
+      ]
+    },
+    {
+      "id": "user_access",
+      "type": "select",
+      "label": "User access",
+      "options": [
+        { "value": "easy", "label": "Easy (existing users)" },
+        { "value": "hard", "label": "Hard (haven't built yet)" },
+        { "value": "mixed", "label": "Mixed" }
+      ]
+    },
+    {
+      "id": "research_questions",
+      "type": "textarea",
+      "label": "What do you most need to learn about your users?",
+      "placeholder": "e.g., Why do compliance officers abandon our onboarding after step 3? What workarounds do they use today?"
+    }
+  ],
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "user-research",
+    "personas",
+    "jtbd",
+    "discovery",
+    "interviews",
+    "usability"
+  ]
+}

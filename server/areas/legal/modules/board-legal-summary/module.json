@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "board-legal-summary",
+  "label": "Board Legal & Regulatory Update",
+  "shortLabel": "Board Update",
+  "description": "Compiles a concise monthly or quarterly legal/regulatory update for board and senior management. Synthesizes developments across relevant regulatory areas into actionable board-level briefing.",
+  "perspective": "operational",
+  "icon": "Presentation",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "quick-briefing"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Current regulatory developments, enforcement actions, supervisory priorities"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "reporting_period",
+      "type": "text",
+      "label": "Reporting Period",
+      "description": "The period covered by this legal/regulatory update.",
+      "placeholder": "e.g. January 2025 or Q4 2024",
+      "required": true
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Audience",
+      "description": "Who is the primary audience for this update?",
+      "required": true,
+      "options": [
+        { "value": "board", "label": "Board of Directors" },
+        { "value": "audit_committee", "label": "Audit / Risk Committee" },
+        { "value": "senior_management", "label": "Senior Management / EXCO" },
+        { "value": "compliance_team", "label": "Compliance / Legal Team Internal" }
+      ]
+    },
+    {
+      "id": "jurisdictions",
+      "type": "chips",
+      "label": "Jurisdictions to Cover",
+      "description": "Which jurisdictions are relevant?",
+      "options": [
+        { "value": "eu", "label": "EU" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway" },
+        { "value": "uk", "label": "UK" }
+      ]
+    },
+    {
+      "id": "regulatory_areas",
+      "type": "chips",
+      "label": "Topics to Include",
+      "description": "Which regulatory areas should be covered?",
+      "options": [
+        { "value": "aml_cft", "label": "AML/CFT" },
+        { "value": "sanctions", "label": "Sanctions" },
+        { "value": "gdpr", "label": "GDPR / Privacy" },
+        { "value": "dora", "label": "DORA / Cyber" },
+        { "value": "prudential", "label": "Prudential" },
+        { "value": "conduct", "label": "Conduct / Consumer" },
+        { "value": "esg", "label": "ESG / Sustainability" },
+        { "value": "enforcement", "label": "Enforcement Actions" }
+      ]
+    },
+    {
+      "id": "key_developments",
+      "type": "textarea",
+      "label": "Key Developments to Highlight",
+      "description": "Paste or describe the key regulatory developments from the period. Upload documents via the file uploader.",
+      "placeholder": "e.g. EBA published final guidelines on AML/CFT governance (January 2025). EC launched consultation on PSD3 Level 2 measures. AMLA published draft RTS on UBO verification. Swedish FI imposed €12M fine on bank for AML failures..."
+    },
+    {
+      "id": "internal_matters",
+      "type": "textarea",
+      "label": "Internal Compliance Matters",
+      "description": "Any internal developments, supervisory interactions, or compliance incidents to include.",
+      "placeholder": "e.g. Annual MLRO report submitted to board this month. Regulatory examination scheduled for Q2. Training completion at 91% — below 95% target. One SAR filed during the period..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "board-reporting",
+    "regulatory-update",
+    "management-briefing",
+    "governance",
+    "operational"
+  ]
+}

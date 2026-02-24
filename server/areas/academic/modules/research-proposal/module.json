@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "research-proposal",
+  "label": "Research Proposal Writer",
+  "shortLabel": "Research Proposal",
+  "icon": "ScrollText",
+  "description": "Draft compelling research proposals: problem formulation, theoretical framework, methodology, timeline, budget justification, and impact statement for grants and programmes.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "client-proposal"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "proposal_type",
+      "type": "select",
+      "label": "Proposal Type",
+      "description": "What kind of research proposal?",
+      "required": true,
+      "options": [
+        {
+          "value": "phd",
+          "label": "PhD Application / Proposal"
+        },
+        {
+          "value": "grant",
+          "label": "Research Grant Application"
+        },
+        {
+          "value": "institutional",
+          "label": "Institutional Research Project"
+        },
+        {
+          "value": "conference",
+          "label": "Conference Paper Proposal"
+        },
+        {
+          "value": "journal",
+          "label": "Journal Special Issue Proposal"
+        }
+      ]
+    },
+    {
+      "id": "research_topic",
+      "type": "textarea",
+      "label": "Research Topic",
+      "description": "Describe your proposed research topic and its significance.",
+      "required": true,
+      "placeholder": "e.g. Exploring the intersection of AI and regulatory compliance in European banking: a mixed-methods study of adoption barriers and enabling factors..."
+    },
+    {
+      "id": "funder_requirements",
+      "type": "textarea",
+      "label": "Funder / Programme Requirements",
+      "description": "Any specific requirements from the funding body or programme?",
+      "placeholder": "e.g. EU Horizon Europe call, max 10 pages, must address societal impact, require interdisciplinary team, budget cap EUR 500K..."
+    },
+    {
+      "id": "preliminary_work",
+      "type": "textarea",
+      "label": "Preliminary Work / Track Record",
+      "description": "Describe any preliminary findings or your track record in this area.",
+      "placeholder": "e.g. Published 3 papers on RegTech adoption, conducted pilot study with 2 banks, existing dataset of 500 compliance professionals..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "academic",
+    "research-proposal",
+    "grant",
+    "funding"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "sharia-board-member",
+  "label": "Sharia Board Member",
+  "role": "Senior Sharia Scholar / Sharia Supervisory Board Member",
+  "expertise": ["Islamic jurisprudence", "Fiqh al-muamalat", "AAOIFI standards", "Sharia governance", "Islamic contracts"],
+  "applicableAreas": ["islamic-finance", "banking", "insurance"],
+  "description": "Senior Sharia scholar with expertise in Islamic finance jurisprudence (fiqh al-muamalat). Reviews financial products for Sharia compliance, references AAOIFI/IFSB standards, and considers multiple schools of jurisprudence.",
+  "tags": ["sharia", "islamic-finance", "aaoifi", "fiqh", "halal-finance"]
+}

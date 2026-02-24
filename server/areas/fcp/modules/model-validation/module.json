@@ -1,0 +1,111 @@
+{
+  "formatVersion": "1.0",
+  "id": "model-validation",
+  "label": "FCP Model Validation",
+  "shortLabel": "Model Valid.",
+  "icon": "FlaskConical",
+  "description": "Validate FCP models including transaction monitoring, sanctions screening, risk scoring, and customer risk rating. Assess model design, calibration, and regulatory compliance.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
+    "transparencyLevel": 2,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "model_type",
+      "type": "select",
+      "label": "Model Type",
+      "required": true,
+      "options": [
+        {
+          "value": "tm",
+          "label": "Transaction Monitoring"
+        },
+        {
+          "value": "sanctions-screening",
+          "label": "Sanctions Screening"
+        },
+        {
+          "value": "customer-risk",
+          "label": "Customer Risk Rating"
+        },
+        {
+          "value": "name-matching",
+          "label": "Name Matching / Fuzzy Logic"
+        },
+        {
+          "value": "fraud-detection",
+          "label": "Fraud Detection Model"
+        },
+        {
+          "value": "ml-model",
+          "label": "ML / AI-based Model"
+        }
+      ]
+    },
+    {
+      "id": "validation_scope",
+      "type": "multi-select",
+      "label": "Validation Scope",
+      "options": [
+        {
+          "value": "conceptual",
+          "label": "Conceptual Soundness"
+        },
+        {
+          "value": "calibration",
+          "label": "Calibration & Thresholds"
+        },
+        {
+          "value": "governance",
+          "label": "Model Governance"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory Compliance"
+        },
+        {
+          "value": "data-quality",
+          "label": "Data Quality"
+        },
+        {
+          "value": "performance",
+          "label": "Model Performance"
+        }
+      ]
+    },
+    {
+      "id": "model_description",
+      "type": "textarea",
+      "label": "Model Description",
+      "placeholder": "Describe the model — vendor, version, rules/algorithms, thresholds, last validation date, known issues..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "cyber-expert"
+  ],
+  "tags": [
+    "model-validation",
+    "transaction-monitoring",
+    "sanctions-screening",
+    "model-risk"
+  ]
+}

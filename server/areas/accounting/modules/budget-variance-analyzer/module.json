@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "budget-variance-analyzer",
+  "label": "Budget vs. Actual Variance Analyzer",
+  "shortLabel": "Variance Analyzer",
+  "description": "Analyzes budget vs. actual variances across cost centers and accounts. Identifies material variances, classifies as price/volume/mix effects, and produces management commentary.",
+  "perspective": "operational",
+  "icon": "BarChart3",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Management accounting variance analysis, price-volume-mix decomposition, management commentary standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "reporting_period",
+      "type": "text",
+      "label": "Reporting period",
+      "required": true,
+      "placeholder": "e.g. January 2025 (YTD: January 2025)"
+    },
+    {
+      "id": "variance_data",
+      "type": "textarea",
+      "label": "Budget vs. actual data",
+      "required": true,
+      "placeholder": "Paste your budget vs. actual table. Include account/cost center, budget, actual, and variance columns.\n\ne.g.\nRevenue — Budget: 12 500 000, Actual: 11 800 000, Variance: -700 000 (-5.6%)\nStaff costs — Budget: 4 200 000, Actual: 4 450 000, Variance: -250 000 (-6.0%)\nIT costs — Budget: 380 000, Actual: 290 000, Variance: +90 000 (+23.7%)\n..."
+    },
+    {
+      "id": "materiality_threshold",
+      "type": "text",
+      "label": "Materiality threshold",
+      "placeholder": "e.g. Variances above 100 000 SEK or 5% of budget line — whichever is lower"
+    },
+    {
+      "id": "business_context",
+      "type": "textarea",
+      "label": "Business context and known drivers",
+      "placeholder": "Describe known reasons for significant variances and relevant business events in the period.\ne.g. Revenue below budget due to Nordea project delayed by 3 weeks. Staff costs above budget due to unplanned recruitment. IT savings from postponed infrastructure upgrade."
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Audience for commentary",
+      "options": [
+        { "value": "board", "label": "Board / Supervisory Board" },
+        { "value": "executive", "label": "Executive management (CEO/CFO)" },
+        { "value": "management", "label": "Operational management" },
+        { "value": "investors", "label": "Investors / shareholders" },
+        { "value": "auditors", "label": "Auditors" }
+      ]
+    },
+    {
+      "id": "prior_period",
+      "type": "textarea",
+      "label": "Prior period actuals (optional)",
+      "placeholder": "Prior period actuals for year-over-year comparison."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "budget",
+    "variance",
+    "management-accounts",
+    "reporting",
+    "operational"
+  ]
+}

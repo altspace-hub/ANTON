@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "credit-navigator",
+  "name": "Credit & Loan Navigator",
+  "shortName": "Loans & Credit",
+  "description": "Navigate loans and credit safely. Compare loan options, understand what you're signing, know your rights with lenders, and avoid dangerous debt traps.",
+  "icon": "CreditCard",
+  "color": "adv-teal",
+  "cluster": "inclusion",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical guidance works well. Complex disputes may need sonnet."
+  }
+}

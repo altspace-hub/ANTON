@@ -1,0 +1,123 @@
+{
+  "formatVersion": "1.0",
+  "id": "pricing-strategy",
+  "label": "Pricing Strategy",
+  "shortLabel": "Pricing Strategy",
+  "description": "Develop and evaluate pricing strategies, models, and structures. Covers value-based pricing, competitive pricing analysis, price sensitivity, discounting frameworks, and pricing communication.",
+  "icon": "DollarSign",
+  "color": "adv-green",
+  "areaId": "sales",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Pricing strategies, market benchmarks"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "pricing_challenge",
+      "type": "select",
+      "label": "What pricing challenge are you solving?",
+      "required": true,
+      "options": [
+        {
+          "value": "new_pricing",
+          "label": "Set pricing for new product/service"
+        },
+        {
+          "value": "reprice",
+          "label": "Revise existing pricing"
+        },
+        {
+          "value": "model_change",
+          "label": "Change pricing model"
+        },
+        {
+          "value": "discounting",
+          "label": "Develop discounting framework"
+        },
+        {
+          "value": "competitive",
+          "label": "Competitive pricing analysis"
+        },
+        {
+          "value": "value_based",
+          "label": "Move to value-based pricing"
+        },
+        {
+          "value": "packaging",
+          "label": "Pricing tiers and packaging"
+        },
+        {
+          "value": "negotiation",
+          "label": "Pricing negotiation preparation"
+        }
+      ]
+    },
+    {
+      "id": "product_service",
+      "type": "textarea",
+      "label": "Product or service being priced",
+      "placeholder": "e.g., AML compliance advisory services, sold as project-based engagements or retainer. Current pricing is daily rate EUR 1,500-2,500 per consultant.",
+      "required": true
+    },
+    {
+      "id": "market_position",
+      "type": "select",
+      "label": "Desired market position",
+      "options": [
+        {
+          "value": "premium",
+          "label": "Premium — highest quality, highest price"
+        },
+        {
+          "value": "competitive",
+          "label": "Competitive — strong quality, market pricing"
+        },
+        {
+          "value": "value",
+          "label": "Value — good quality, below-market pricing"
+        },
+        {
+          "value": "disruptive",
+          "label": "Disruptive — significantly different model/price"
+        }
+      ]
+    },
+    {
+      "id": "current_pricing",
+      "type": "textarea",
+      "label": "Current pricing (if applicable)",
+      "placeholder": "e.g., Day rates: EUR 1,800 junior, EUR 2,200 senior, EUR 2,800 partner. Typical project: EUR 200-500k. Blended margin: 35%."
+    },
+    {
+      "id": "competitors",
+      "type": "textarea",
+      "label": "Competitor pricing (known or estimated)",
+      "placeholder": "e.g., Big 4 charge EUR 2,500-4,000/day, boutiques charge EUR 1,200-1,800/day, offshore/nearshore firms charge EUR 600-900/day"
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints or considerations",
+      "placeholder": "e.g., Must maintain 40% gross margin, key client expects 10% volume discount, procurement prefers fixed-fee over T&M, public sector clients have maximum rate caps"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "sales",
+    "pricing",
+    "strategy",
+    "value",
+    "competitive",
+    "negotiation"
+  ]
+}

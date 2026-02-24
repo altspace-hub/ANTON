@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "artisan-craft",
+  "name": "Artisan & Craft Business Expert",
+  "shortName": "Artisan & Craft",
+  "description": "Business guidance for artisans, craftspeople, and traditional makers. Pricing, online selling, quality standards, cooperative formation, fair trade certification, and protecting traditional designs.",
+  "icon": "Palette",
+  "color": "adv-teal",
+  "cluster": "enterprise",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Practical business guidance works well with smaller models."
+  }
+}

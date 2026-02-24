@@ -1,0 +1,113 @@
+{
+  "formatVersion": "1.0",
+  "id": "ict-risk-management",
+  "label": "ICT Risk Management Framework",
+  "shortLabel": "ICT Risk",
+  "icon": "NetworkIcon",
+  "description": "Design or review ICT risk management frameworks meeting DORA Pillar 1 and EBA ICT guidelines: governance structure, asset management, risk assessment methodology, protection controls, and recovery capabilities.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "DORA Articles 5-16, EBA ICT Risk Management Guidelines, ISO 27001"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "design",
+          "label": "Design a new ICT risk management framework"
+        },
+        {
+          "value": "review",
+          "label": "Review an existing framework against DORA requirements"
+        },
+        {
+          "value": "specific_component",
+          "label": "Deep dive on a specific framework component"
+        },
+        {
+          "value": "gap_remediation",
+          "label": "Remediate a specific gap identified in assessment"
+        }
+      ]
+    },
+    {
+      "id": "framework_component",
+      "type": "multi-select",
+      "label": "Framework components to focus on",
+      "options": [
+        {
+          "value": "governance",
+          "label": "Governance & accountability structure"
+        },
+        {
+          "value": "risk_assessment",
+          "label": "ICT risk identification and assessment"
+        },
+        {
+          "value": "asset_inventory",
+          "label": "ICT asset inventory and classification"
+        },
+        {
+          "value": "protection_controls",
+          "label": "Protection and prevention controls"
+        },
+        {
+          "value": "detection",
+          "label": "Detection and monitoring capabilities"
+        },
+        {
+          "value": "response_recovery",
+          "label": "Response and recovery procedures"
+        },
+        {
+          "value": "communication",
+          "label": "Communication and reporting"
+        },
+        {
+          "value": "learning",
+          "label": "Learning and continuous improvement"
+        }
+      ]
+    },
+    {
+      "id": "organisation_context",
+      "type": "textarea",
+      "label": "Organisation context",
+      "placeholder": "e.g., Type of institution, approximate size, key IT systems, current risk management maturity, any known gaps."
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "systems-thinker"
+  ],
+  "tags": [
+    "ict-risk",
+    "dora",
+    "framework",
+    "governance",
+    "cyber",
+    "risk-management"
+  ]
+}

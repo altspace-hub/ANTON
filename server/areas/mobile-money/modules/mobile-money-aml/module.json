@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "mobile-money-aml",
+  "label": "Mobile Money AML/CFT Program",
+  "shortLabel": "Mobile Money AML",
+  "description": "AML/CFT programme design and assessment for mobile money operators. Covers tiered transaction limits, suspicious activity indicators, monitoring rules, STR/SAR processes, and FATF guidance compliance.",
+  "perspective": "analytical",
+  "icon": "AlertTriangle",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF guidance on MVTS and mobile money, GSMA MMU AML/CFT toolkit, FATF typologies on mobile payment ML, national FIU guidance on STR for mobile money"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "operator_type",
+      "type": "select",
+      "label": "Operator Type",
+      "description": "What type of mobile money operator is being assessed?",
+      "required": true,
+      "options": [
+        { "value": "mno", "label": "Mobile Network Operator (MNO)" },
+        { "value": "bank-led", "label": "Bank-led MMO" },
+        { "value": "fintech-mmo", "label": "Fintech MMO" },
+        { "value": "agent-network-manager", "label": "Agent Network Manager" }
+      ]
+    },
+    {
+      "id": "transaction_volume",
+      "type": "select",
+      "label": "Monthly Transaction Volume",
+      "description": "Approximate number of transactions processed per month.",
+      "required": true,
+      "options": [
+        { "value": "under-1m", "label": "<1M monthly" },
+        { "value": "1m-10m", "label": "1M–10M" },
+        { "value": "10m-100m", "label": "10M–100M" },
+        { "value": "over-100m", "label": ">100M" }
+      ]
+    },
+    {
+      "id": "key_risks",
+      "type": "chips",
+      "label": "Key AML/CFT Risk Areas",
+      "description": "Which AML/CFT risks are most relevant or concerning? Select all that apply.",
+      "options": [
+        { "value": "account-layering", "label": "Account layering" },
+        { "value": "cash-in-structuring", "label": "Cash-in structuring" },
+        { "value": "p2p-patterns", "label": "P2P patterns" },
+        { "value": "international-transfers", "label": "International transfers" },
+        { "value": "agent-collusion", "label": "Agent collusion" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "mobile-money-compliance",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-gsma-mobile-money-aml",
+    "jurisdiction-ke-cbk",
+    "jurisdiction-ng-cbn"
+  ],
+  "tags": [
+    "mobile-money",
+    "aml-cft",
+    "transaction-monitoring",
+    "str-sar",
+    "fatf-r14",
+    "mvts",
+    "typologies",
+    "gsma-mmu"
+  ]
+}

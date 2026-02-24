@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "expense-policy-checker",
+  "label": "Expense Report Policy Checker",
+  "shortLabel": "Expense Checker",
+  "description": "Validates expense reports against company expense policy. Flags policy violations, missing receipts, unusual amounts, and suggests appropriate approvals or rejections.",
+  "perspective": "operational",
+  "icon": "ShieldCheck",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Expense management best practices, Swedish tax rules on deductibility, Skatteverket representation limits"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "expense_policy",
+      "type": "textarea",
+      "label": "Company expense policy",
+      "required": true,
+      "placeholder": "Paste the relevant sections of your expense policy. Include: meal limits, accommodation limits, travel class rules, alcohol policy, receipt requirements, approval thresholds, and any category-specific rules."
+    },
+    {
+      "id": "expense_report",
+      "type": "textarea",
+      "label": "Expense report to review",
+      "required": true,
+      "placeholder": "Paste the expense report. Include: employee name, date, description, amount, receipt status (Y/N), and any notes.\n\ne.g.\nEmployee: Karl Lindqvist, Sales Director\nExpense period: 10-14 February 2025\n\n1. Client dinner (6 persons, Operakällaren) — 9 600 SEK — Receipt: Yes\n2. Taxi to airport — 340 SEK — Receipt: No\n3. Business class flight Stockholm-London — 18 500 SEK — Receipt: Yes\n4. Hotel London (2 nights) — 6 200 GBP — Receipt: Yes\n5. Team lunch (4 persons) — 1 450 SEK — Receipt: Yes"
+    },
+    {
+      "id": "employee_grade",
+      "type": "select",
+      "label": "Employee grade / level",
+      "description": "Some policies have grade-specific limits (e.g. business class only for VP+).",
+      "options": [
+        { "value": "junior", "label": "Junior / Associate" },
+        { "value": "senior", "label": "Senior / Manager" },
+        { "value": "director", "label": "Director / VP" },
+        { "value": "executive", "label": "Executive / C-suite" }
+      ]
+    },
+    {
+      "id": "trip_purpose",
+      "type": "textarea",
+      "label": "Trip/expense purpose",
+      "placeholder": "Business purpose of the expense claim: e.g. client meetings in London with Barclays and HSBC, 2 days including presentation and contract negotiation."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "expenses",
+    "policy",
+    "compliance",
+    "operational",
+    "audit"
+  ]
+}

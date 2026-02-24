@@ -1,0 +1,97 @@
+{
+  "formatVersion": "1.0",
+  "id": "cross-border-transfer-assessment",
+  "label": "Cross-Border Data Transfer Assessment",
+  "shortLabel": "Transfer Assessment",
+  "icon": "Globe",
+  "description": "Assess lawfulness of international data transfers under GDPR Chapter V. Covers adequacy decisions, Standard Contractual Clauses (SCCs 2021), supplementary measures, and Schrems II implications.",
+  "color": "adv-teal",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "GDPR Chapter V, Schrems II judgment (C-311/18), EU-US Data Privacy Framework, 2021 SCCs, EDPB Transfer Impact Assessment guidance, UK IDTA"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "transfer_type",
+      "type": "select",
+      "label": "Transfer route",
+      "required": true,
+      "options": [
+        { "value": "eu_us", "label": "EU → US" },
+        { "value": "eu_india", "label": "EU → India" },
+        { "value": "eu_china", "label": "EU → China" },
+        { "value": "eu_uk", "label": "EU → UK" },
+        { "value": "eu_other", "label": "EU → Other third country" },
+        { "value": "uk_other", "label": "UK → Other third country" }
+      ]
+    },
+    {
+      "id": "data_categories",
+      "type": "chips",
+      "label": "Categories of personal data transferred",
+      "options": [
+        { "value": "identifiers", "label": "Personal identifiers" },
+        { "value": "financial", "label": "Financial data" },
+        { "value": "health", "label": "Health data" },
+        { "value": "biometric", "label": "Biometric" },
+        { "value": "children", "label": "Children's data" },
+        { "value": "criminal", "label": "Criminal records" },
+        { "value": "marketing_profiles", "label": "Marketing profiles" }
+      ]
+    },
+    {
+      "id": "current_mechanism",
+      "type": "select",
+      "label": "Current transfer mechanism",
+      "options": [
+        { "value": "sccs", "label": "Standard Contractual Clauses (SCCs)" },
+        { "value": "adequacy", "label": "Adequacy decision" },
+        { "value": "bcr", "label": "Binding Corporate Rules" },
+        { "value": "none", "label": "None / Unknown" },
+        { "value": "assessment", "label": "Assessment needed" }
+      ]
+    },
+    {
+      "id": "volume_sensitivity",
+      "type": "select",
+      "label": "Volume and sensitivity profile",
+      "options": [
+        { "value": "low_risk", "label": "Low risk data" },
+        { "value": "identifiers", "label": "Personal identifiers" },
+        { "value": "special_categories", "label": "Special categories" },
+        { "value": "high_volume", "label": "High volume" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "dpo",
+    "legal-expert"
+  ],
+  "tags": [
+    "cross-border-transfers",
+    "sccs",
+    "adequacy",
+    "schrems-ii",
+    "gdpr-chapter-v",
+    "tia",
+    "eu-us-dpf"
+  ]
+}

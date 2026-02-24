@@ -1,0 +1,33 @@
+{
+  "formatVersion": "1.0",
+  "id": "goal-alignment-check",
+  "label": "Goal Alignment Check",
+  "shortLabel": "Alignment",
+  "icon": "Target",
+  "description": "Verify that current implementation progress aligns with the original discovery commitments, surface technical debt, and flag scope drift.",
+  "color": "adv-gold",
+  "areaId": "coding",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Focus areas",
+      "options": [
+        { "value": "scope", "label": "Scope alignment" },
+        { "value": "quality", "label": "Quality standards" },
+        { "value": "timeline", "label": "Timeline tracking" },
+        { "value": "tech_debt", "label": "Technical debt" },
+        { "value": "risk", "label": "Risk assessment" }
+      ]
+    }
+  ],
+  "tags": ["coding", "governance", "alignment", "quality", "professional"]
+}

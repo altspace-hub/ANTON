@@ -1,0 +1,169 @@
+{
+  "formatVersion": "1.0",
+  "id": "cloud-security-review",
+  "label": "Cloud Security Architecture Review",
+  "shortLabel": "Cloud Sec",
+  "icon": "Cloud",
+  "description": "Assess cloud security posture across AWS, Azure, or GCP against CIS Benchmarks, CSA STAR, and financial regulatory requirements including EBA cloud guidance, DORA, and GDPR. Produces prioritised findings with CIS control references.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CIS Benchmarks for AWS/Azure/GCP, CSA Cloud Controls Matrix, EBA cloud outsourcing guidelines, DORA cloud provisions, GDPR cloud compliance, NIST CSF"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "cloud_provider",
+      "type": "select",
+      "label": "Cloud provider(s)",
+      "required": true,
+      "options": [
+        {
+          "value": "aws",
+          "label": "AWS (Amazon Web Services)"
+        },
+        {
+          "value": "azure",
+          "label": "Microsoft Azure"
+        },
+        {
+          "value": "gcp",
+          "label": "GCP (Google Cloud Platform)"
+        },
+        {
+          "value": "multi_cloud",
+          "label": "Multi-cloud (two or more providers)"
+        },
+        {
+          "value": "private_cloud",
+          "label": "Private cloud / on-premise virtualisation"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid (cloud + on-premise)"
+        }
+      ]
+    },
+    {
+      "id": "environment_type",
+      "type": "select",
+      "label": "Environment scope",
+      "options": [
+        {
+          "value": "production",
+          "label": "Production — live workloads"
+        },
+        {
+          "value": "development",
+          "label": "Development / test environments"
+        },
+        {
+          "value": "disaster_recovery",
+          "label": "Disaster recovery / backup"
+        },
+        {
+          "value": "all",
+          "label": "All environments"
+        }
+      ]
+    },
+    {
+      "id": "current_framework",
+      "type": "select",
+      "label": "Current security framework in use",
+      "options": [
+        {
+          "value": "cis",
+          "label": "CIS Benchmarks"
+        },
+        {
+          "value": "csa_star",
+          "label": "CSA STAR / Cloud Controls Matrix"
+        },
+        {
+          "value": "iso27017",
+          "label": "ISO 27017 (cloud-specific security controls)"
+        },
+        {
+          "value": "nist_csf",
+          "label": "NIST Cybersecurity Framework"
+        },
+        {
+          "value": "none",
+          "label": "None / ad-hoc"
+        }
+      ]
+    },
+    {
+      "id": "key_concerns",
+      "type": "multi-select",
+      "label": "Key concern areas",
+      "options": [
+        {
+          "value": "identity_access",
+          "label": "Identity & access management (IAM, MFA, least privilege)"
+        },
+        {
+          "value": "network_security",
+          "label": "Network security (VPCs, security groups, WAF, DDoS)"
+        },
+        {
+          "value": "data_encryption",
+          "label": "Data security & encryption (at rest, in transit, key management)"
+        },
+        {
+          "value": "logging_monitoring",
+          "label": "Logging & monitoring (audit trails, SIEM, alerting)"
+        },
+        {
+          "value": "incident_response",
+          "label": "Cloud incident response readiness"
+        },
+        {
+          "value": "cost",
+          "label": "Cost & resource governance"
+        },
+        {
+          "value": "compliance",
+          "label": "Regulatory compliance mapping (GDPR, DORA, PCI-DSS)"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "systems-thinker",
+    "auditor"
+  ],
+  "tags": [
+    "cloud-security",
+    "aws",
+    "azure",
+    "gcp",
+    "cis-benchmarks",
+    "cloud-posture",
+    "iam",
+    "encryption",
+    "dora",
+    "eba",
+    "gdpr",
+    "infrastructure-security"
+  ]
+}

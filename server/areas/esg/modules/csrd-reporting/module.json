@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "csrd-reporting",
+  "label": "CSRD Reporting & ESRS Alignment",
+  "shortLabel": "CSRD Reporting",
+  "icon": "TreePine",
+  "description": "Structure CSRD sustainability reporting across all 12 ESRS standards.",
+  "color": "adv-green",
+  "areaId": "esg",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CSRD Directive 2022/2464, ESRS standards, EFRAG guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "company_type",
+      "type": "select",
+      "label": "Company type",
+      "required": true,
+      "options": [
+        {
+          "value": "large_listed",
+          "label": "Large listed company (>500 employees)"
+        },
+        {
+          "value": "large_unlisted",
+          "label": "Large non-listed company"
+        },
+        {
+          "value": "sme_listed",
+          "label": "Listed SME"
+        },
+        {
+          "value": "non_eu",
+          "label": "Non-EU parent (>EUR 150M EU turnover)"
+        }
+      ]
+    },
+    {
+      "id": "reporting_task",
+      "type": "select",
+      "label": "What do you need?",
+      "options": [
+        {
+          "value": "materiality",
+          "label": "Double materiality assessment"
+        },
+        {
+          "value": "gap_analysis",
+          "label": "Gap analysis vs ESRS requirements"
+        },
+        {
+          "value": "data_mapping",
+          "label": "Data point mapping and collection planning"
+        },
+        {
+          "value": "disclosure_review",
+          "label": "Review and improve existing disclosures"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Company context",
+      "placeholder": "e.g., Listed Swedish bank, Scope 3 is our main challenge."
+    }
+  ],
+  "recommendedPersonas": [
+    "data-scientist",
+    "auditor"
+  ],
+  "tags": [
+    "csrd",
+    "esrs",
+    "sustainability",
+    "esg",
+    "reporting"
+  ]
+}

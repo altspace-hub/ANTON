@@ -1,0 +1,131 @@
+{
+  "formatVersion": "1.0",
+  "id": "proposal-generator",
+  "label": "Proposal Generator",
+  "shortLabel": "Proposals",
+  "description": "Create winning client proposals and RFP responses. Demonstrate deep understanding of the client's problem and present a compelling, tailored approach.",
+  "icon": "Send",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "client-proposal",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "client_name",
+      "type": "text",
+      "label": "Client name",
+      "description": "Name of the client organisation.",
+      "placeholder": "e.g., Nordea Bank, Klarna, SEB..."
+    },
+    {
+      "id": "engagement_type",
+      "type": "select",
+      "label": "Type of engagement",
+      "required": true,
+      "options": [
+        {
+          "value": "aml_gap",
+          "label": "AML/CFT Gap Analysis"
+        },
+        {
+          "value": "regulatory_implementation",
+          "label": "Regulatory Implementation"
+        },
+        {
+          "value": "audit_support",
+          "label": "Audit / Review Support"
+        },
+        {
+          "value": "policy_review",
+          "label": "Policy & Procedure Review"
+        },
+        {
+          "value": "risk_assessment",
+          "label": "Risk Assessment"
+        },
+        {
+          "value": "transformation",
+          "label": "Compliance Transformation"
+        },
+        {
+          "value": "training",
+          "label": "Training Programme"
+        },
+        {
+          "value": "model_review",
+          "label": "Model Validation / Review"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "client_problem",
+      "type": "textarea",
+      "label": "Client's problem or requirement",
+      "required": true,
+      "description": "What is the client trying to solve? What triggered this request?",
+      "placeholder": "e.g., Client received an FI supervisory letter identifying weaknesses in CDD for high-risk customers. They need to demonstrate a credible remediation programme to FI within 60 days."
+    },
+    {
+      "id": "scope_size",
+      "type": "select",
+      "label": "Approximate scope / duration",
+      "options": [
+        {
+          "value": "small",
+          "label": "Small (2-4 weeks, 1-2 people)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (1-3 months, 2-4 people)"
+        },
+        {
+          "value": "large",
+          "label": "Large (3-6 months, 4+ people)"
+        },
+        {
+          "value": "programme",
+          "label": "Programme (6+ months, multi-workstream)"
+        }
+      ]
+    },
+    {
+      "id": "differentiators",
+      "type": "textarea",
+      "label": "Our differentiators for this engagement",
+      "description": "What makes our approach or team uniquely suited to this? Specific experience, tools, methodology.",
+      "placeholder": "e.g., We have led 12 similar gap analyses for Nordic banks in the past 2 years. Our AMLR mapping tool reduces time by 40%."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "proposal",
+    "rfp",
+    "business-development",
+    "consulting",
+    "client"
+  ]
+}

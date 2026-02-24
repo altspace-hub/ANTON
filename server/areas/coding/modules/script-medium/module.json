@@ -1,0 +1,46 @@
+{
+  "formatVersion": "1.0",
+  "id": "script-medium",
+  "label": "Script Medium",
+  "shortLabel": "App Builder",
+  "icon": "AppWindow",
+  "description": "Generate complete applications (React, HTML/CSS/JS, Python CLI, Node.js API) with live preview and iterative refinement.",
+  "color": "adv-blue",
+  "areaId": "coding",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "app_type",
+      "type": "select",
+      "label": "Application type",
+      "required": true,
+      "options": [
+        { "value": "react", "label": "React SPA" },
+        { "value": "html", "label": "HTML/CSS/JS" },
+        { "value": "python-cli", "label": "Python CLI" },
+        { "value": "node-api", "label": "Node.js API" }
+      ]
+    },
+    {
+      "id": "app_description",
+      "type": "textarea",
+      "label": "What should the application do?",
+      "placeholder": "Describe the application you want to build...",
+      "required": true
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Technical constraints (optional)",
+      "placeholder": "e.g., must use specific libraries, styling preferences, API endpoints..."
+    }
+  ],
+  "tags": ["coding", "application", "react", "html", "python", "nodejs", "full-stack"]
+}

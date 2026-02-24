@@ -1,0 +1,79 @@
+{
+  "formatVersion": "1.0",
+  "id": "receipt-processor",
+  "label": "Receipt & Expense Processor",
+  "shortLabel": "Expense Processor",
+  "description": "Extracts and categorizes expense receipts from descriptions or OCR output. Classifies by expense type, VAT deductibility (per Swedish/EU tax rules), and cost center. Produces structured expense report.",
+  "perspective": "operational",
+  "icon": "Receipt",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "data-readiness-scorecard",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Swedish VAT rules (Mervärdesskattelagen), EU VAT Directive, Skatteverket expense deductibility guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "expense_data",
+      "type": "textarea",
+      "label": "Expense receipts or OCR output",
+      "required": true,
+      "placeholder": "Paste OCR output, receipt descriptions, or a list of expenses. Include: vendor, date, amount, currency, and any description from the receipt.\n\ne.g.\n- Taxi 2025-02-10, 245 SEK, Bolt, Stockholm city centre\n- Lunch 2025-02-11, 1 320 SEK, Operakällaren, client meeting with Nordea\n- Hotel 2025-02-12-13, 3 600 SEK, Radisson Blu, overnight Göteborg conference"
+    },
+    {
+      "id": "company_name",
+      "type": "text",
+      "label": "Company name",
+      "placeholder": "e.g. Advisense AB"
+    },
+    {
+      "id": "employee_name",
+      "type": "text",
+      "label": "Employee name",
+      "placeholder": "e.g. Daniel Bardun"
+    },
+    {
+      "id": "expense_period",
+      "type": "text",
+      "label": "Expense period",
+      "placeholder": "e.g. February 2025"
+    },
+    {
+      "id": "cost_centers",
+      "type": "textarea",
+      "label": "Available cost centers (optional)",
+      "placeholder": "List your cost centers for allocation.\ne.g.\n- 1100: Client delivery\n- 1200: Business development\n- 2000: Internal / overhead\n- 3000: Training & conference"
+    },
+    {
+      "id": "expense_policy",
+      "type": "textarea",
+      "label": "Expense policy rules (optional)",
+      "placeholder": "Any specific company expense policy rules to check against.\ne.g. Meals capped at 500 SEK/person, hotel max 2 000 SEK/night, receipts required above 200 SEK."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "expenses",
+    "vat",
+    "receipts",
+    "operational",
+    "tax"
+  ]
+}

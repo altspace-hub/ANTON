@@ -1,0 +1,94 @@
+{
+  "formatVersion": "1.0",
+  "id": "patient-comms",
+  "label": "Patient Communication Materials",
+  "shortLabel": "Patient Comms",
+  "icon": "MessageSquare",
+  "description": "Create clear, empathetic, and accessible patient communication materials. Covers patient information leaflets, consent forms, treatment explanations, discharge instructions, and health education content. Ensures materials meet health literacy standards, regulatory requirements, and accessibility guidelines while maintaining medical accuracy.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "training-material"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Health literacy standards, patient communication best practices, plain language guidelines, informed consent requirements, patient education frameworks"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "material-type",
+      "label": "Material Type",
+      "type": "select",
+      "options": [
+        "Patient information leaflet",
+        "Consent form",
+        "Treatment explanation",
+        "Discharge instructions",
+        "Health education material",
+        "Appointment letter/reminder",
+        "Clinical trial information",
+        "FAQ document"
+      ],
+      "required": true
+    },
+    {
+      "id": "clinical-topic",
+      "label": "Clinical Topic",
+      "type": "text",
+      "placeholder": "e.g., Type 2 diabetes management, hip replacement surgery...",
+      "required": true
+    },
+    {
+      "id": "target-audience",
+      "label": "Target Audience",
+      "type": "select",
+      "options": [
+        "General adult patients",
+        "Elderly patients",
+        "Parents/caregivers",
+        "Adolescents",
+        "Patients with low health literacy",
+        "Non-native language speakers",
+        "Patients with specific conditions"
+      ],
+      "required": true
+    },
+    {
+      "id": "reading-level",
+      "label": "Target Reading Level",
+      "type": "select",
+      "options": [
+        "Simple (age 11-12 reading level)",
+        "Standard (age 14-16 reading level)",
+        "Detailed (educated adult)"
+      ],
+      "required": false
+    },
+    {
+      "id": "key-information",
+      "label": "Key Information to Include",
+      "type": "textarea",
+      "placeholder": "Main medical information, procedures, or instructions to cover...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "clinical-lead",
+    "patient-experience-manager",
+    "health-educator"
+  ],
+  "tags": [
+    "healthcare",
+    "patient",
+    "communication",
+    "education",
+    "health-literacy"
+  ]
+}

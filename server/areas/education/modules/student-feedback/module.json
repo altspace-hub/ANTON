@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "student-feedback",
+  "label": "Student Feedback & Reports",
+  "shortLabel": "Feedback",
+  "description": "Generate constructive student feedback, progress reports, and parent communications. Produce balanced, developmental feedback that motivates and guides improvement.",
+  "icon": "MessageSquare",
+  "color": "adv-gold",
+  "areaId": "education",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "feedback_type",
+      "type": "select",
+      "label": "Feedback type",
+      "required": true,
+      "options": [
+        {
+          "value": "progress_report",
+          "label": "Progress Report"
+        },
+        {
+          "value": "assignment_feedback",
+          "label": "Assignment Feedback"
+        },
+        {
+          "value": "parent_communication",
+          "label": "Parent / Guardian Communication"
+        },
+        {
+          "value": "recommendation",
+          "label": "Reference / Recommendation Letter"
+        },
+        {
+          "value": "iep_review",
+          "label": "Individual Education Plan Review"
+        },
+        {
+          "value": "behaviour",
+          "label": "Behaviour Report"
+        }
+      ]
+    },
+    {
+      "id": "tone",
+      "type": "select",
+      "label": "Tone and approach",
+      "options": [
+        {
+          "value": "encouraging",
+          "label": "Encouraging & Motivational"
+        },
+        {
+          "value": "developmental",
+          "label": "Developmental / Growth-focused"
+        },
+        {
+          "value": "formal",
+          "label": "Formal / Official"
+        },
+        {
+          "value": "balanced",
+          "label": "Balanced (strengths and areas for improvement)"
+        }
+      ]
+    },
+    {
+      "id": "student_info",
+      "type": "textarea",
+      "label": "Student information and performance",
+      "required": true,
+      "placeholder": "Describe the student's performance, strengths, areas for improvement, any specific achievements or concerns, and the subject/context."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "feedback",
+    "reports",
+    "education",
+    "student",
+    "progress"
+  ]
+}

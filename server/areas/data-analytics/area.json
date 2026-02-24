@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "data-analytics",
+  "name": "Data & Analytics",
+  "shortName": "Data",
+  "description": "Data quality assessment, data governance frameworks, analytics design, and data strategy for financial services and corporate organisations.",
+  "icon": "BarChart",
+  "color": "adv-blue",
+  "cluster": "technology",
+  "moduleIds": [
+    "data-quality",
+    "data-governance",
+    "analytics-design",
+    "data-strategy"
+  ]
+}

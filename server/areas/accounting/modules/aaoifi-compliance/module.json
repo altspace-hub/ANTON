@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "aaoifi-compliance",
+  "label": "AAOIFI Standards Compliance",
+  "shortLabel": "AAOIFI",
+  "description": "Assess compliance with AAOIFI Financial Accounting Standards (FAS), Sharia Standards (SS), and Governance Standards (GSIFI) for Islamic financial institutions. Covers Murabaha, Ijara, Sukuk accounting, Sharia board disclosure, governance maturity, and differences from IFRS.",
+  "icon": "BookOpen",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "AAOIFI FAS series (FAS 28 Murabaha, FAS 32 Ijara, FAS 33 Sukuk), AAOIFI Sharia Standards, GSIFI governance standards, differences from IFRS"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity Type",
+      "required": true,
+      "options": [
+        { "value": "islamic_bank", "label": "Islamic Bank" },
+        { "value": "takaful", "label": "Takaful Operator" },
+        { "value": "investment_fund", "label": "Islamic Investment Fund" },
+        { "value": "waqf", "label": "Waqf Institution" },
+        { "value": "islamic_window", "label": "Conventional institution with Islamic window" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Jurisdiction",
+      "required": true,
+      "options": [
+        { "value": "bahrain", "label": "Bahrain (AAOIFI mandatory)" },
+        { "value": "saudi", "label": "Saudi Arabia" },
+        { "value": "uae", "label": "UAE" },
+        { "value": "malaysia", "label": "Malaysia (IFRS-based, partial AAOIFI Sharia)" },
+        { "value": "jordan", "label": "Jordan" },
+        { "value": "sudan", "label": "Sudan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "focus_standards",
+      "type": "multi-select",
+      "label": "Focus Areas",
+      "options": [
+        { "value": "fas", "label": "FAS — Financial Accounting Standards" },
+        { "value": "ss", "label": "SS — Sharia Standards and financial statement implications" },
+        { "value": "gsifi", "label": "GSIFI — Governance Standards for Islamic Financial Institutions" },
+        { "value": "agsifi", "label": "AGSIFI — Auditing Standards" }
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific Concerns or Assessment Scope",
+      "placeholder": "e.g. Transition from legacy Murabaha accounting to FAS 28, Sukuk issuance accounting under FAS 33, Sharia board disclosure requirements..."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "aaoifi",
+    "islamic-finance",
+    "accounting",
+    "sharia",
+    "financial-reporting",
+    "murabaha",
+    "sukuk",
+    "ijara"
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "internal-controls-sox",
+  "label": "Internal Controls Assessment (SOX / J-SOX)",
+  "shortLabel": "Internal Controls",
+  "description": "Assess internal controls over financial reporting (ICFR) against SOX Section 302/404, J-SOX, or COSO framework requirements. Covers entity-level controls, IT general controls, key financial statement controls, deficiency classification (control deficiency, significant deficiency, material weakness), and remediation planning.",
+  "icon": "CheckSquare",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "COSO 2013 integrated framework, SOX Section 302 and 404, PCAOB AS 2201, J-SOX requirements, IT general controls best practices"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "framework",
+      "type": "select",
+      "label": "Applicable Framework",
+      "required": true,
+      "options": [
+        { "value": "sox", "label": "SOX Section 302 / 404 (US-listed)" },
+        { "value": "jsox", "label": "J-SOX — Financial Instruments and Exchange Act (Japan)" },
+        { "value": "king_iv", "label": "King IV — Internal controls (South Africa)" },
+        { "value": "coso_only", "label": "COSO framework only (non-listed best practice)" },
+        { "value": "eu", "label": "EU equivalent (Transparency Directive / CSRD)" }
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity Type",
+      "required": true,
+      "options": [
+        { "value": "us_listed", "label": "US-listed company (SEC registrant)" },
+        { "value": "japanese_listed", "label": "Japanese-listed company" },
+        { "value": "eu_listed", "label": "EU-listed company" },
+        { "value": "subsidiary", "label": "Subsidiary of listed company (SOX scope)" },
+        { "value": "private", "label": "Private company (best practice / lender requirement)" }
+      ]
+    },
+    {
+      "id": "focus",
+      "type": "multi-select",
+      "label": "Focus Areas",
+      "options": [
+        { "value": "elc", "label": "Entity-level controls (tone at the top, risk assessment, monitoring)" },
+        { "value": "itgc", "label": "IT general controls (access management, change management, operations)" },
+        { "value": "kfsc", "label": "Key financial statement controls (process-level)" },
+        { "value": "fraud", "label": "Fraud risk controls" },
+        { "value": "disclosure", "label": "Disclosure controls and procedures (DC&P)" }
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Known Issues or Audit Findings",
+      "placeholder": "e.g. External auditor identified a significant deficiency in revenue recognition controls, IT access provisioning not reviewed timely, management override risk in journal entry approval..."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "internal-controls",
+    "sox",
+    "icfr",
+    "coso",
+    "audit",
+    "financial-reporting",
+    "compliance"
+  ]
+}

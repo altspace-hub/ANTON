@@ -1,0 +1,93 @@
+{
+  "formatVersion": "1.0",
+  "id": "kyc-refresh-tracker",
+  "label": "KYC Refresh Prioritization",
+  "shortLabel": "KYC Refresh",
+  "description": "Analyzes upcoming KYC periodic review queue and prioritizes based on risk rating, days overdue, and regulatory requirements. Produces a prioritized work plan.",
+  "perspective": "operational",
+  "icon": "UserCheck",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "project-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "KYC periodic review requirements under AMLR, EBA guidelines, and national regulations"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "review_period",
+      "type": "text",
+      "label": "Review Period",
+      "description": "The timeframe covered by this KYC refresh queue.",
+      "placeholder": "e.g. Q1 2025 (Jan–Mar) or Rolling 90-day window",
+      "required": true
+    },
+    {
+      "id": "queue_data",
+      "type": "textarea",
+      "label": "KYC Queue Data",
+      "description": "Paste or describe the KYC review queue. Include customer identifiers, risk rating, last KYC date, and due date where available.",
+      "placeholder": "e.g.\nCustomer A — High Risk — Last KYC: Jan 2023 — Due: Jan 2024 — OVERDUE 13 months\nCustomer B — Medium Risk — Last KYC: Oct 2022 — Due: Oct 2025\nCustomer C — High Risk (PEP) — Last KYC: Jul 2024 — Due: Jul 2025\n...",
+      "required": true
+    },
+    {
+      "id": "total_queue",
+      "type": "text",
+      "label": "Total Queue Size",
+      "description": "How many customers are in the review queue?",
+      "placeholder": "e.g. 340 customers"
+    },
+    {
+      "id": "team_capacity",
+      "type": "text",
+      "label": "Team Capacity",
+      "description": "Available analyst capacity for the review period.",
+      "placeholder": "e.g. 3 analysts, approx. 15 reviews per analyst per week"
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Primary Jurisdiction",
+      "description": "Which regulatory framework sets the periodic review requirements?",
+      "options": [
+        { "value": "eu_amlr", "label": "EU / AMLR (2024/1624)" },
+        { "value": "sweden", "label": "Sweden (Penningtvättslagen)" },
+        { "value": "finland", "label": "Finland (Laki rahanpesun estämisestä)" },
+        { "value": "uk", "label": "UK (MLR 2017)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "special_concerns",
+      "type": "textarea",
+      "label": "Special Concerns or Escalation Triggers",
+      "description": "Any customers with specific triggers: new adverse media, sanctions proximity, change in business activity, or regulatory enquiry.",
+      "placeholder": "e.g. Customer X received adverse media coverage last week. Customer Y has a new UBO following corporate restructuring..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "kyc",
+    "periodic-review",
+    "cdd",
+    "aml",
+    "operational"
+  ]
+}

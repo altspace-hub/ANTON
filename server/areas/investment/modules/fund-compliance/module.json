@@ -1,0 +1,106 @@
+{
+  "formatVersion": "1.0",
+  "id": "fund-compliance",
+  "label": "Fund Compliance & Regulatory Review",
+  "shortLabel": "Fund Compliance",
+  "icon": "Shield",
+  "description": "Review fund regulatory compliance: UCITS/AIFMD requirements, product governance, distribution restrictions, PRIIPs/KID, and regulatory change impact.",
+  "color": "adv-gold",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "UCITS Directive, AIFMD, MiFID II product governance, PRIIPs, SFDR"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "fund_type",
+      "type": "select",
+      "label": "Fund type",
+      "required": true,
+      "options": [
+        {
+          "value": "ucits",
+          "label": "UCITS"
+        },
+        {
+          "value": "aif_retail",
+          "label": "Retail AIF / EuVECA / EuSEF"
+        },
+        {
+          "value": "aif_prof",
+          "label": "Professional AIF (hedge / PE / RE)"
+        },
+        {
+          "value": "eltif",
+          "label": "ELTIF 2.0"
+        },
+        {
+          "value": "mmf",
+          "label": "Money Market Fund"
+        }
+      ]
+    },
+    {
+      "id": "compliance_topic",
+      "type": "multi-select",
+      "label": "Compliance topics",
+      "options": [
+        {
+          "value": "product_governance",
+          "label": "Product governance (MiFID II)"
+        },
+        {
+          "value": "priips",
+          "label": "PRIIPs / KID requirements"
+        },
+        {
+          "value": "sfdr",
+          "label": "SFDR sustainability disclosures"
+        },
+        {
+          "value": "distribution",
+          "label": "Distribution restrictions"
+        },
+        {
+          "value": "limits",
+          "label": "Investment restrictions and limits"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Fund and compliance context",
+      "placeholder": "Describe the fund, current compliance status, and specific questions."
+    }
+  ],
+  "recommendedPersonas": [
+    "amanda-legal",
+    "auditor"
+  ],
+  "tags": [
+    "fund",
+    "ucits",
+    "aifmd",
+    "compliance",
+    "priips",
+    "sfdr",
+    "mifid"
+  ]
+}

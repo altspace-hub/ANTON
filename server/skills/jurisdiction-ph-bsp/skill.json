@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-ph-bsp",
+  "label": "Philippines — Bangko Sentral ng Pilipinas (BSP)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "mobile-money", "microfinance"],
+  "description": "Philippines financial regulatory framework: AMLA (as amended RA 11521), AMLC reporting, digital banking, GCash/Maya dominance, OFW remittance corridors ($37B+ annually), and BSP financial inclusion strategy.",
+  "tags": ["philippines", "bsp", "southeast-asia", "remittance", "mobile-money", "ofw"]
+}

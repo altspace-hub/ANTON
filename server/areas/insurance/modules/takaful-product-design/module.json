@@ -1,0 +1,90 @@
+{
+  "formatVersion": "1.0",
+  "id": "takaful-product-design",
+  "label": "Takaful Product Design",
+  "shortLabel": "Takaful Products",
+  "icon": "Heart",
+  "description": "Design and evaluate Takaful insurance products in compliance with Sharia principles and applicable regulatory frameworks. Covers Takaful models (Wakala, Mudarabah, Hybrid, Waqf), participant fund mechanics, surplus distribution, and product structuring across Family, General, Medical, and Micro-Takaful segments.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "AAOIFI FAS 12, IFSB-8 Takaful standards, SAMA Cooperative Insurance regulations, BNM Takaful Operational Framework"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "takaful_type",
+      "type": "select",
+      "label": "Takaful Type",
+      "required": true,
+      "options": [
+        "Family Takaful (life equivalent)",
+        "General Takaful (P&C equivalent)",
+        "Medical Takaful",
+        "Micro-Takaful",
+        "Retakaful"
+      ]
+    },
+    {
+      "id": "model",
+      "type": "select",
+      "label": "Takaful Model",
+      "required": true,
+      "options": [
+        "Wakala (agency fee model)",
+        "Mudarabah (profit sharing model)",
+        "Hybrid Wakala-Mudarabah",
+        "Waqf-based model"
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Jurisdiction / Regulator",
+      "options": [
+        "Saudi Arabia (SAMA)",
+        "UAE (IA / CBUAE)",
+        "Malaysia (BNM)",
+        "Pakistan (SECP)",
+        "Bahrain (CBB)",
+        "Indonesia (OJK)",
+        "Other"
+      ]
+    },
+    {
+      "id": "focus",
+      "type": "textarea",
+      "label": "Product or Challenge Description",
+      "placeholder": "Describe the product you are designing or the specific challenge you are addressing, e.g. structuring a Family Takaful savings product with investment-linked component under Wakala model for BNM compliance.",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "product-manager",
+    "sharia-advisor",
+    "actuary"
+  ],
+  "tags": [
+    "takaful",
+    "islamic-finance",
+    "insurance",
+    "sharia",
+    "product-design"
+  ]
+}

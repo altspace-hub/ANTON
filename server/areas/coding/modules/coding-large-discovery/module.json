@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "coding-large-discovery",
+  "label": "Project Discovery",
+  "shortLabel": "Discovery",
+  "icon": "Compass",
+  "description": "Phase 1 of professional AI-led development: multi-turn requirements gathering, stakeholder analysis, constraint identification, and discovery document generation.",
+  "color": "adv-gold",
+  "areaId": "coding",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": true, "description": "" },
+      "localFolder": { "enabled": true, "folderPaths": [], "recursive": true }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "project_name",
+      "type": "text",
+      "label": "Project name",
+      "required": true
+    },
+    {
+      "id": "project_description",
+      "type": "textarea",
+      "label": "What do you want to build?",
+      "placeholder": "Describe the software project at a high level...",
+      "required": true
+    },
+    {
+      "id": "existing_codebase",
+      "type": "boolean",
+      "label": "Is there an existing codebase?",
+      "defaultValue": false
+    },
+    {
+      "id": "stakeholders",
+      "type": "textarea",
+      "label": "Key stakeholders and their roles (optional)",
+      "placeholder": "e.g., Product Owner: Maria, Tech Lead: Jonas..."
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Known constraints (optional)",
+      "placeholder": "e.g., must integrate with SAP, deadline Q3 2026, budget limit..."
+    }
+  ],
+  "tags": ["coding", "project-management", "discovery", "requirements", "professional"]
+}

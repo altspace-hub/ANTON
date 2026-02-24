@@ -1,0 +1,160 @@
+{
+  "formatVersion": "1.0",
+  "id": "value-assessment-benefits",
+  "label": "Value Assessment & Benefits Tracker",
+  "shortLabel": "Value Assessment",
+  "icon": "TrendingUp",
+  "description": "Measure, quantify, and report the value delivered by consulting engagements and transformation programmes.",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "detailed-findings",
+      "maturity-assessment"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "engagement_type",
+      "type": "select",
+      "label": "Engagement type",
+      "required": true,
+      "options": [
+        {
+          "value": "compliance_programme",
+          "label": "Compliance programme"
+        },
+        {
+          "value": "digital_transformation",
+          "label": "Digital transformation"
+        },
+        {
+          "value": "cost_reduction",
+          "label": "Cost reduction"
+        },
+        {
+          "value": "revenue_enhancement",
+          "label": "Revenue enhancement"
+        },
+        {
+          "value": "risk_reduction",
+          "label": "Risk reduction"
+        },
+        {
+          "value": "operational_efficiency",
+          "label": "Operational efficiency"
+        }
+      ]
+    },
+    {
+      "id": "measurement_stage",
+      "type": "select",
+      "label": "Measurement stage",
+      "required": true,
+      "options": [
+        {
+          "value": "pre_baseline",
+          "label": "Pre-engagement baseline"
+        },
+        {
+          "value": "mid_engagement",
+          "label": "Mid-engagement"
+        },
+        {
+          "value": "post_engagement",
+          "label": "Post-engagement"
+        },
+        {
+          "value": "ongoing",
+          "label": "Ongoing"
+        }
+      ]
+    },
+    {
+      "id": "value_types",
+      "type": "multi-select",
+      "label": "Value types to assess",
+      "options": [
+        {
+          "value": "cost_savings",
+          "label": "Cost savings"
+        },
+        {
+          "value": "revenue_uplift",
+          "label": "Revenue uplift"
+        },
+        {
+          "value": "risk_reduction",
+          "label": "Risk reduction"
+        },
+        {
+          "value": "efficiency_gain",
+          "label": "Efficiency gain"
+        },
+        {
+          "value": "regulatory_fine_avoided",
+          "label": "Regulatory fine avoided"
+        },
+        {
+          "value": "time_saving",
+          "label": "Time saving"
+        }
+      ]
+    },
+    {
+      "id": "reporting_audience",
+      "type": "select",
+      "label": "Reporting audience",
+      "options": [
+        {
+          "value": "client_ceo",
+          "label": "Client CEO"
+        },
+        {
+          "value": "client_board",
+          "label": "Client board"
+        },
+        {
+          "value": "programme_sponsor",
+          "label": "Programme sponsor"
+        },
+        {
+          "value": "pmo",
+          "label": "PMO"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "devil-advocate"
+  ],
+  "tags": [
+    "benefits-realisation",
+    "value-measurement",
+    "roi",
+    "npv",
+    "programme-management",
+    "consulting-value",
+    "regulatory-risk-value"
+  ]
+}

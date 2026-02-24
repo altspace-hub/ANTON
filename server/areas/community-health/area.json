@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "community-health",
+  "name": "Community Health Expert",
+  "shortName": "Health",
+  "description": "Community health guidance covering symptom assessment, maternal and child health, vaccination, nutrition, WASH, disease prevention, and mental health referral. Always refer to professional healthcare for diagnosis and treatment.",
+  "icon": "Heart",
+  "color": "adv-teal",
+  "cluster": "community",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Health information (not medical advice). Always refer to healthcare professionals for diagnosis."
+  }
+}

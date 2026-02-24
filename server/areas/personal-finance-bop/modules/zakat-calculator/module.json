@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "zakat-calculator",
+  "label": "Zakat & Religious Giving Guide",
+  "shortLabel": "Zakat & Giving",
+  "icon": "Star",
+  "description": "Calculate your zakat obligation. Guidance on religious giving requirements including zakat, tithe, and other faith-based financial obligations.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Clear factual guidance on religious obligations works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Zakat calculation rules, nisab thresholds, hawl year, zakat al-fitr, Christian tithing, Islamic finance obligations"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "faith_tradition",
+      "type": "select",
+      "label": "Which tradition would you like guidance on?",
+      "required": true,
+      "options": [
+        { "value": "islam-zakat", "label": "Islam — Zakat" },
+        { "value": "christianity-tithe", "label": "Christianity — Tithe" },
+        { "value": "other", "label": "Other tradition" },
+        { "value": "prefer-not-say", "label": "Prefer not to say" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "asset_types",
+      "type": "chips",
+      "label": "Which types of assets or income do you have? (select all that apply)",
+      "required": false,
+      "options": [
+        { "value": "cash-savings", "label": "Cash savings" },
+        { "value": "business-goods", "label": "Business goods or inventory" },
+        { "value": "gold-silver", "label": "Gold or silver" },
+        { "value": "livestock", "label": "Livestock" },
+        { "value": "agricultural", "label": "Agricultural produce" },
+        { "value": "investments", "label": "Investments or shares" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "zakat",
+    "tithe",
+    "islamic-finance",
+    "religious-giving",
+    "nisab",
+    "zakat-al-fitr",
+    "faith-based-finance",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "pakistan"
+  ]
+}

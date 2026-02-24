@@ -1,0 +1,82 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-monitor",
+  "label": "Regulatory Monitor",
+  "shortLabel": "Reg Monitor",
+  "icon": "Radar",
+  "description": "Analyze new regulatory developments, consultation papers, and guideline updates. Get impact assessments and implementation briefings.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "quick-briefing",
+      "impact-assessment"
+    ],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "onlineReference": {
+        "enabled": true,
+        "urls": [],
+        "fetchDepth": "full"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "development_type",
+      "type": "select",
+      "label": "Development Type",
+      "required": true,
+      "options": [
+        {
+          "value": "regulation",
+          "label": "New Regulation / Directive"
+        },
+        {
+          "value": "guideline",
+          "label": "Supervisory Guideline / Guidance"
+        },
+        {
+          "value": "consultation",
+          "label": "Consultation Paper / RTS/ITS"
+        },
+        {
+          "value": "enforcement",
+          "label": "Enforcement Action / Precedent"
+        },
+        {
+          "value": "supervisory-letter",
+          "label": "Supervisory Letter / Dear CEO"
+        },
+        {
+          "value": "fatf",
+          "label": "FATF Update / Mutual Evaluation"
+        }
+      ]
+    },
+    {
+      "id": "description",
+      "type": "textarea",
+      "label": "Regulatory Development",
+      "description": "Paste URL, text excerpt, or describe the regulatory development you want analyzed.",
+      "placeholder": "e.g. EBA published consultation paper EBA/CP/2025/01 on guidelines for internal governance..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "regulatory",
+    "monitoring",
+    "eba",
+    "amlr",
+    "amla"
+  ]
+}

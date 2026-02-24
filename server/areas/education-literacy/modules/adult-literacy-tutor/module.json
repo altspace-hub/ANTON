@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "adult-literacy-tutor",
+  "label": "Adult Literacy Tutor",
+  "shortLabel": "Literacy Tutor",
+  "icon": "BookOpen",
+  "description": "Practice reading and writing with patient guidance. Learn at your own pace in your own language.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Extremely patient and encouraging. Adapt to stated literacy level. Zero judgment."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Adult literacy teaching methods, phonics, whole-language approach, functional literacy, aspirational literacy for adults in developing countries" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "language",
+      "label": "Which language are you learning in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "english", "label": "English" },
+        { "value": "swahili", "label": "Swahili" },
+        { "value": "hausa", "label": "Hausa" },
+        { "value": "yoruba", "label": "Yoruba" },
+        { "value": "igbo", "label": "Igbo" },
+        { "value": "amharic", "label": "Amharic" },
+        { "value": "hindi", "label": "Hindi" },
+        { "value": "bengali", "label": "Bengali" },
+        { "value": "urdu", "label": "Urdu" },
+        { "value": "filipino", "label": "Filipino" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "current_level",
+      "label": "Where are you starting from?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "cannot-read-at-all", "label": "Cannot read at all" },
+        { "value": "can-read-simple-words", "label": "Can read simple words" },
+        { "value": "can-read-sentences-slowly", "label": "Can read sentences but slowly" },
+        { "value": "can-read-not-write", "label": "Can read but cannot write" },
+        { "value": "want-to-improve", "label": "Can do both but want to improve" }
+      ]
+    },
+    {
+      "id": "focus",
+      "label": "What do you want to practise?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "reading", "label": "Reading practice" },
+        { "value": "writing", "label": "Writing practice" },
+        { "value": "both", "label": "Both reading and writing" },
+        { "value": "numbers-too", "label": "Numbers and basic maths too" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
+  "tags": ["literacy", "adult-learning", "reading", "writing", "phonics", "functional-literacy", "non-formal-education"]
+}

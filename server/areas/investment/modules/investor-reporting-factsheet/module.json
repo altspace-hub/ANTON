@@ -1,0 +1,139 @@
+{
+  "formatVersion": "1.0",
+  "id": "investor-reporting-factsheet",
+  "label": "Investor Reporting & Factsheet",
+  "shortLabel": "Investor Reporting",
+  "icon": "FileText",
+  "description": "Create investor reports, fund factsheets, and regulatory disclosures for investment funds.",
+  "color": "adv-teal",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "UCITS KIID, PRIIPs KID, AIFMD investor disclosure, MiFID II product governance, GIPS, SFDR PAI statements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "report_type",
+      "type": "select",
+      "label": "Report type",
+      "required": true,
+      "options": [
+        {
+          "value": "monthly_factsheet",
+          "label": "Monthly factsheet"
+        },
+        {
+          "value": "quarterly_report",
+          "label": "Quarterly report"
+        },
+        {
+          "value": "annual_report",
+          "label": "Annual report"
+        },
+        {
+          "value": "kiid",
+          "label": "KIID"
+        },
+        {
+          "value": "kid_priips",
+          "label": "KID PRIIPs"
+        },
+        {
+          "value": "regulatory_disclosure",
+          "label": "Regulatory disclosure"
+        },
+        {
+          "value": "lp_report",
+          "label": "LP report"
+        }
+      ]
+    },
+    {
+      "id": "fund_type",
+      "type": "select",
+      "label": "Fund type",
+      "options": [
+        {
+          "value": "ucits",
+          "label": "UCITS"
+        },
+        {
+          "value": "aif",
+          "label": "AIF"
+        },
+        {
+          "value": "pe",
+          "label": "PE"
+        },
+        {
+          "value": "vc",
+          "label": "VC"
+        },
+        {
+          "value": "real_assets",
+          "label": "Real Assets"
+        }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Target audience",
+      "options": [
+        {
+          "value": "retail",
+          "label": "Retail investors"
+        },
+        {
+          "value": "professional",
+          "label": "Professional investors"
+        },
+        {
+          "value": "institutional",
+          "label": "Institutional"
+        },
+        {
+          "value": "regulators",
+          "label": "Regulators"
+        }
+      ]
+    },
+    {
+      "id": "key_period_events",
+      "type": "textarea",
+      "label": "Key period events or context",
+      "placeholder": "e.g., major portfolio changes, market commentary, significant performance drivers, regulatory updates"
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "amanda-legal"
+  ],
+  "tags": [
+    "investor-reporting",
+    "factsheet",
+    "kiid",
+    "priips",
+    "ucits",
+    "aifmd",
+    "gips",
+    "sfdr",
+    "disclosure"
+  ]
+}

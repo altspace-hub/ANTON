@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "debt-management",
+  "label": "Debt Management Strategy",
+  "shortLabel": "Debt Management",
+  "icon": "TrendingDown",
+  "description": "Analyse debt situations and develop structured repayment strategies. Covers mortgage optimisation, consumer debt consolidation, student loans, and credit management. Produces prioritised action plans using avalanche and snowball methods, consolidation analysis, and practical steps for becoming debt-free while maintaining financial stability.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Debt management strategies, repayment methods, debt consolidation, consumer credit regulations, mortgage optimisation"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "debt-types",
+      "label": "Types of Debt",
+      "type": "multiselect",
+      "options": [
+        "Mortgage",
+        "Consumer loans",
+        "Credit cards",
+        "Student loans",
+        "Car loan",
+        "Personal loans",
+        "Tax debt",
+        "Business debt"
+      ],
+      "required": true
+    },
+    {
+      "id": "debt-severity",
+      "label": "Debt Situation Severity",
+      "type": "select",
+      "options": [
+        "Manageable — seeking optimisation",
+        "Stretched — need a plan",
+        "Struggling — missing payments",
+        "Critical — considering formal debt relief"
+      ],
+      "required": true
+    },
+    {
+      "id": "monthly-surplus",
+      "label": "Monthly Surplus for Debt Repayment",
+      "type": "select",
+      "options": [
+        "Under 2,000 SEK",
+        "2,000–5,000 SEK",
+        "5,000–10,000 SEK",
+        "Over 10,000 SEK",
+        "Uncertain/need help calculating"
+      ],
+      "required": false
+    },
+    {
+      "id": "goals",
+      "label": "Debt Management Goals",
+      "type": "multiselect",
+      "options": [
+        "Reduce total interest paid",
+        "Lower monthly payments",
+        "Become debt-free by target date",
+        "Consolidate debts",
+        "Improve credit score",
+        "Avoid formal debt proceedings"
+      ],
+      "required": true
+    },
+    {
+      "id": "additional-context",
+      "label": "Additional Context",
+      "type": "textarea",
+      "placeholder": "Any additional details about your debt situation...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "debt-advisor",
+    "financial-planner",
+    "individual"
+  ],
+  "tags": [
+    "personal-finance",
+    "debt",
+    "management",
+    "repayment",
+    "consolidation"
+  ]
+}

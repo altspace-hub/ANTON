@@ -1,0 +1,167 @@
+{
+  "formatVersion": "1.0",
+  "id": "performance-review",
+  "label": "Performance Review Template",
+  "shortLabel": "Performance Reviews",
+  "description": "Generate structured performance review templates with goal-setting frameworks, competency assessments, development plans, and calibration guidance. Supports annual reviews, mid-year check-ins, and 360 feedback.",
+  "icon": "BarChart3",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "review_type",
+      "type": "select",
+      "label": "Type of review",
+      "description": "The review format determines structure and depth.",
+      "required": true,
+      "options": [
+        {
+          "value": "annual",
+          "label": "Annual performance review"
+        },
+        {
+          "value": "mid_year",
+          "label": "Mid-year check-in"
+        },
+        {
+          "value": "probation",
+          "label": "Probation period review"
+        },
+        {
+          "value": "360",
+          "label": "360-degree feedback template"
+        },
+        {
+          "value": "project",
+          "label": "Project/engagement-end review"
+        },
+        {
+          "value": "pip",
+          "label": "Performance improvement plan (PIP)"
+        }
+      ]
+    },
+    {
+      "id": "role_level",
+      "type": "select",
+      "label": "Employee level",
+      "description": "Different levels require different competency frameworks.",
+      "options": [
+        {
+          "value": "individual_contributor",
+          "label": "Individual contributor"
+        },
+        {
+          "value": "senior_ic",
+          "label": "Senior individual contributor"
+        },
+        {
+          "value": "team_lead",
+          "label": "Team lead / First-line manager"
+        },
+        {
+          "value": "manager",
+          "label": "Manager / Department head"
+        },
+        {
+          "value": "director",
+          "label": "Director / Senior leader"
+        }
+      ]
+    },
+    {
+      "id": "function",
+      "type": "text",
+      "label": "Function or department",
+      "placeholder": "e.g., Compliance, Consulting, Technology, Operations"
+    },
+    {
+      "id": "competency_focus",
+      "type": "multi-select",
+      "label": "Competency areas to include",
+      "description": "Select which competency dimensions to assess.",
+      "options": [
+        {
+          "value": "technical",
+          "label": "Technical / domain expertise"
+        },
+        {
+          "value": "delivery",
+          "label": "Delivery & execution"
+        },
+        {
+          "value": "communication",
+          "label": "Communication & influence"
+        },
+        {
+          "value": "leadership",
+          "label": "Leadership & people management"
+        },
+        {
+          "value": "client",
+          "label": "Client management & relationships"
+        },
+        {
+          "value": "innovation",
+          "label": "Innovation & continuous improvement"
+        },
+        {
+          "value": "collaboration",
+          "label": "Collaboration & teamwork"
+        },
+        {
+          "value": "commercial",
+          "label": "Commercial acumen"
+        }
+      ]
+    },
+    {
+      "id": "rating_scale",
+      "type": "select",
+      "label": "Rating scale preference",
+      "options": [
+        {
+          "value": "3_point",
+          "label": "3-point (Below / Meets / Exceeds)"
+        },
+        {
+          "value": "5_point",
+          "label": "5-point scale"
+        },
+        {
+          "value": "no_rating",
+          "label": "No numerical rating — narrative only"
+        }
+      ]
+    },
+    {
+      "id": "additional_notes",
+      "type": "textarea",
+      "label": "Additional context",
+      "placeholder": "e.g., Organisation is moving to continuous feedback model, first time implementing structured reviews, need to include development planning section"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "performance",
+    "review",
+    "development",
+    "feedback",
+    "talent-management"
+  ]
+}

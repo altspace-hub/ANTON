@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "tech-selection-support",
+  "label": "AML Technology Selection Support",
+  "shortLabel": "Tech Selection",
+  "description": "Evaluates and compares AML/CFT technology solutions (transaction monitoring, screening, case management, KYC). Produces structured vendor comparison and selection recommendation.",
+  "perspective": "consultant",
+  "icon": "Server",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "regulatory-comparison",
+      "decision-memo",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AML technology vendors, transaction monitoring platforms, screening solutions, KYC technology landscape"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "technology_type",
+      "type": "select",
+      "label": "Technology Category",
+      "description": "What type of AML technology is being evaluated?",
+      "required": true,
+      "options": [
+        { "value": "tm", "label": "Transaction Monitoring" },
+        { "value": "screening", "label": "Sanctions & PEP Screening" },
+        { "value": "kyc_platform", "label": "KYC / Customer Lifecycle Management" },
+        { "value": "case_management", "label": "Case Management / Investigation Platform" },
+        { "value": "customer_risk_rating", "label": "Customer Risk Rating" },
+        { "value": "sar_filing", "label": "SAR / Regulatory Filing Platform" },
+        { "value": "ai_ml_analytics", "label": "AI/ML Analytics (e.g. network analysis, anomaly detection)" },
+        { "value": "integrated_platform", "label": "Integrated AML Platform (multiple modules)" }
+      ]
+    },
+    {
+      "id": "institution_profile",
+      "type": "textarea",
+      "label": "Institution Profile",
+      "description": "Describe the institution: size, customer base, transaction volumes, current technology, and key pain points with current solution.",
+      "placeholder": "e.g. Mid-size Scandinavian bank. 180,000 customers. 2.5M transactions/month. Currently using legacy on-prem TM system (10+ years old). Key pain points: high false positive rate (97%), no network analysis, limited cloud integration, manual SAR process...",
+      "required": true
+    },
+    {
+      "id": "vendors_in_scope",
+      "type": "textarea",
+      "label": "Vendors / Solutions Under Consideration",
+      "description": "List the specific vendors or solutions being evaluated. Upload RFP responses or vendor materials via the file uploader.",
+      "placeholder": "e.g. NICE Actimize (NICE AML Essentials), Nasdaq BWise, Oracle Financial Services, ComplyAdvantage, Hawk AI, Quantexa...",
+      "required": true
+    },
+    {
+      "id": "selection_criteria",
+      "type": "multi-select",
+      "label": "Key Selection Criteria",
+      "description": "What are the most important criteria for this selection?",
+      "options": [
+        { "value": "detection_quality", "label": "Detection Quality (false positive rate, typology coverage)" },
+        { "value": "regulatory_compliance", "label": "Regulatory Compliance (AMLR, AMLA reporting ready)" },
+        { "value": "ai_ml_capability", "label": "AI/ML and Analytics Capability" },
+        { "value": "integration", "label": "Integration with Existing Systems" },
+        { "value": "cloud_saas", "label": "Cloud / SaaS Architecture" },
+        { "value": "total_cost", "label": "Total Cost of Ownership" },
+        { "value": "implementation_speed", "label": "Implementation Timeline" },
+        { "value": "vendor_stability", "label": "Vendor Financial Stability and Support" },
+        { "value": "scalability", "label": "Scalability and Performance" }
+      ]
+    },
+    {
+      "id": "budget_timeline",
+      "type": "textarea",
+      "label": "Budget and Timeline Constraints",
+      "description": "Available budget and implementation timeline requirements.",
+      "placeholder": "e.g. Budget: €800k–1.2M total (license + implementation). Go-live required by Q3 2026 to meet regulatory readiness deadline..."
+    },
+    {
+      "id": "technical_requirements",
+      "type": "textarea",
+      "label": "Technical and Operational Requirements",
+      "description": "Key technical requirements: data volumes, integration points, regulatory jurisdiction, cloud policy.",
+      "placeholder": "e.g. Must integrate with Temenos T24 core banking and Snowflake data warehouse. Cloud preferred but data residency must stay within EU. Volume: 2.5M transactions/month peak 8M/month. Must support Swedish, Finnish, and Danish language interfaces..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "technology",
+    "vendor-selection",
+    "transaction-monitoring",
+    "aml-tech",
+    "consultant"
+  ]
+}

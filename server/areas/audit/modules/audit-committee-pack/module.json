@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "audit-committee-pack",
+  "label": "Audit Committee Pack Generator",
+  "shortLabel": "Committee Pack",
+  "description": "Assembles quarterly audit committee materials from audit findings, follow-up status, plan progress, and KRIs. Produces board-quality pack with executive summary and key metrics.",
+  "icon": "Presentation",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "period",
+      "type": "text",
+      "label": "Reporting period",
+      "required": true,
+      "placeholder": "e.g., Q1 2025 (January – March 2025)"
+    },
+    {
+      "id": "audits_completed",
+      "type": "textarea",
+      "label": "Audits completed during the period",
+      "required": true,
+      "description": "List audits completed, their ratings, and headline findings.",
+      "placeholder": "e.g., 1. KYC/CDD Review (Amber) — 4 findings (1 High, 2 Medium, 1 Low). 2. Payment Processing Controls (Green) — 1 finding (Low). 3. IT Change Management (Red) — 3 findings (1 Critical, 2 High)..."
+    },
+    {
+      "id": "findings_status",
+      "type": "textarea",
+      "label": "Outstanding findings and remediation status",
+      "description": "Current status of all open findings across all audits. Include overdue items.",
+      "placeholder": "e.g., Total open: 18 (3 Critical, 6 High, 7 Medium, 2 Low). Overdue: 4 (2 Critical from IT audit Nov 2024, 2 High from CDD audit Sep 2024). On track: 14..."
+    },
+    {
+      "id": "audit_plan_status",
+      "type": "textarea",
+      "label": "Annual audit plan progress",
+      "description": "Progress against the approved annual audit plan.",
+      "placeholder": "e.g., 8 of 24 planned audits completed (33%). On track for year-end. 2 audits deferred to Q3 due to regulatory examination priority. No unplanned audits added."
+    },
+    {
+      "id": "kris",
+      "type": "textarea",
+      "label": "Key Risk Indicators (if tracked)",
+      "description": "Paste KRI data or trends for the period.",
+      "placeholder": "e.g., Alert investigation SLA breach rate: 12% (amber threshold 10%). Customer complaint volumes: down 8% vs. prior quarter. EDD completion rate: 94% (green threshold 90%)..."
+    },
+    {
+      "id": "cae_message",
+      "type": "textarea",
+      "label": "Chief Audit Executive key messages (optional)",
+      "description": "Any specific themes, concerns, or forward-looking commentary the CAE wants included.",
+      "placeholder": "e.g., Emerging concern about IT change management following Critical finding. Regulatory examination expected Q3 — two audits being reprioritised to support readiness..."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "audit",
+    "committee",
+    "board",
+    "reporting",
+    "governance",
+    "quarterly"
+  ]
+}

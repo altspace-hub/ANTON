@@ -1,0 +1,40 @@
+{
+  "formatVersion": "1.0",
+  "id": "script-lite",
+  "label": "Script Lite",
+  "shortLabel": "Script Lite",
+  "icon": "FileCode",
+  "description": "Generate single Python scripts from natural language descriptions with guided questioning and sandbox preview.",
+  "color": "adv-green",
+  "areaId": "coding",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task_description",
+      "type": "textarea",
+      "label": "What should the script do?",
+      "placeholder": "Describe the analysis or task you need automated...",
+      "required": true
+    },
+    {
+      "id": "data_sample",
+      "type": "textarea",
+      "label": "Sample data (optional)",
+      "placeholder": "Paste a few rows of your data so the script can be tailored to your format..."
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints or requirements (optional)",
+      "placeholder": "e.g., must use pandas, output as CSV, handle missing values..."
+    }
+  ],
+  "tags": ["coding", "python", "script", "automation", "data-analysis"]
+}

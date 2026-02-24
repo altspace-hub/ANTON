@@ -1,0 +1,150 @@
+{
+  "formatVersion": "1.0",
+  "id": "esg-investment-screening",
+  "label": "ESG Investment Screening",
+  "shortLabel": "ESG Screening",
+  "icon": "Leaf",
+  "description": "Screen and assess investments against ESG criteria, SFDR classifications, and sustainability regulations.",
+  "color": "adv-teal",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "SFDR, EU Taxonomy, TCFD, TNFD, ESMA guidelines on fund names, EU Green Bond Standard, ICMA principles"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "sfdr_classification",
+      "type": "select",
+      "label": "SFDR classification",
+      "required": true,
+      "options": [
+        {
+          "value": "article_6",
+          "label": "Article 6"
+        },
+        {
+          "value": "article_8",
+          "label": "Article 8"
+        },
+        {
+          "value": "article_9",
+          "label": "Article 9"
+        },
+        {
+          "value": "assessing",
+          "label": "Assessing"
+        }
+      ]
+    },
+    {
+      "id": "screening_approach",
+      "type": "select",
+      "label": "ESG screening approach",
+      "options": [
+        {
+          "value": "exclusion",
+          "label": "Exclusion"
+        },
+        {
+          "value": "best_in_class",
+          "label": "Best-in-class"
+        },
+        {
+          "value": "esg_integration",
+          "label": "ESG integration"
+        },
+        {
+          "value": "impact",
+          "label": "Impact"
+        },
+        {
+          "value": "thematic",
+          "label": "Thematic"
+        }
+      ]
+    },
+    {
+      "id": "asset_class",
+      "type": "select",
+      "label": "Asset class",
+      "options": [
+        {
+          "value": "equities",
+          "label": "Equities"
+        },
+        {
+          "value": "bonds",
+          "label": "Bonds"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real estate"
+        },
+        {
+          "value": "private_equity",
+          "label": "Private equity"
+        },
+        {
+          "value": "infrastructure",
+          "label": "Infrastructure"
+        }
+      ]
+    },
+    {
+      "id": "regulatory_jurisdiction",
+      "type": "select",
+      "label": "Regulatory jurisdiction",
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "us",
+          "label": "US"
+        },
+        {
+          "value": "global",
+          "label": "Global"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "risk-specialist",
+    "amanda-legal"
+  ],
+  "tags": [
+    "esg",
+    "sfdr",
+    "eu-taxonomy",
+    "tcfd",
+    "tnfd",
+    "sustainability",
+    "greenwashing",
+    "pai",
+    "article-8",
+    "article-9"
+  ]
+}

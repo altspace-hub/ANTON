@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "government-subsidy-finder",
+  "label": "Government Subsidy Finder",
+  "shortLabel": "Find Subsidies",
+  "icon": "Gift",
+  "description": "Find government support programs you qualify for. Cash transfers, food programs, housing support, and more.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic navigation works well with haiku. Complex legal matters need sonnet."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Government social protection programs by country: Kenya HSNP, Inua Jamii, NGAAF; Nigeria CCT, TraderMoni, FarmerMoni; Ghana LEAP; South Africa SASSA grants; India PM Kisan, Ujjwala, Jan Dhan, MGNREGA; Bangladesh social safety net; Philippines 4Ps, TUPAD. Eligibility, registration, anti-fraud warnings." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "need_type",
+      "label": "What kind of support do you need?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "cash-transfer", "label": "Cash transfer" },
+        { "value": "food-support", "label": "Food support" },
+        { "value": "agricultural-input", "label": "Agricultural input (seeds, fertiliser)" },
+        { "value": "housing", "label": "Housing" },
+        { "value": "healthcare", "label": "Healthcare" },
+        { "value": "education", "label": "Education support" },
+        { "value": "all", "label": "All / Not sure" }
+      ]
+    },
+    {
+      "id": "household",
+      "label": "What is your household situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "single", "label": "Single person" },
+        { "value": "family-children", "label": "Family with children" },
+        { "value": "elderly", "label": "Elderly household" },
+        { "value": "disabled-member", "label": "Disabled household member" },
+        { "value": "female-headed", "label": "Female-headed household" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
+  "tags": ["subsidies", "cash-transfer", "social-protection", "grants", "food-program", "bop", "rights", "africa", "south-asia", "philippines"]
+}

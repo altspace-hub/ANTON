@@ -1,0 +1,151 @@
+{
+  "formatVersion": "1.0",
+  "id": "visual-identity",
+  "label": "Visual Identity Guidelines",
+  "shortLabel": "Visual Identity",
+  "description": "Create comprehensive visual identity guidelines covering logo usage, colour palette, typography, imagery, iconography, and application rules. Ensures brand consistency across all touchpoints.",
+  "icon": "Layout",
+  "color": "adv-red",
+  "areaId": "branding",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "project_type",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "full_guidelines",
+          "label": "Full visual identity guidelines"
+        },
+        {
+          "value": "logo_usage",
+          "label": "Logo usage rules"
+        },
+        {
+          "value": "colour_system",
+          "label": "Colour palette & system"
+        },
+        {
+          "value": "typography",
+          "label": "Typography system"
+        },
+        {
+          "value": "template_specs",
+          "label": "Template specifications"
+        },
+        {
+          "value": "digital_guidelines",
+          "label": "Digital / UI guidelines"
+        },
+        {
+          "value": "brand_audit",
+          "label": "Visual brand consistency audit"
+        }
+      ]
+    },
+    {
+      "id": "brand_maturity",
+      "type": "select",
+      "label": "Brand maturity",
+      "options": [
+        {
+          "value": "new",
+          "label": "New brand — building from scratch"
+        },
+        {
+          "value": "existing_no_guidelines",
+          "label": "Existing brand but no formal guidelines"
+        },
+        {
+          "value": "updating",
+          "label": "Updating existing guidelines"
+        },
+        {
+          "value": "multi_brand",
+          "label": "Multi-brand system guidelines"
+        }
+      ]
+    },
+    {
+      "id": "applications",
+      "type": "multi-select",
+      "label": "Where will the identity be applied?",
+      "options": [
+        {
+          "value": "digital",
+          "label": "Website & digital"
+        },
+        {
+          "value": "print",
+          "label": "Print materials"
+        },
+        {
+          "value": "presentations",
+          "label": "Presentations"
+        },
+        {
+          "value": "social",
+          "label": "Social media"
+        },
+        {
+          "value": "signage",
+          "label": "Signage & environments"
+        },
+        {
+          "value": "merchandise",
+          "label": "Merchandise"
+        },
+        {
+          "value": "documents",
+          "label": "Business documents"
+        },
+        {
+          "value": "email",
+          "label": "Email signatures & templates"
+        }
+      ]
+    },
+    {
+      "id": "brand_personality",
+      "type": "textarea",
+      "label": "Brand personality and values",
+      "placeholder": "e.g., Professional but approachable, Nordic minimalism, trustworthy, modern, expert. Values: integrity, clarity, partnership."
+    },
+    {
+      "id": "existing_assets",
+      "type": "textarea",
+      "label": "Existing brand assets",
+      "placeholder": "e.g., Logo exists but needs usage rules defined, primary colours are dark blue (#0B1426) and teal (#2DD4A8), currently using Inter font, no formal imagery guidelines"
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints or requirements",
+      "placeholder": "e.g., Must work in both digital and print, need accessibility compliance (WCAG AA), budget does not allow custom photography"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "branding",
+    "visual-identity",
+    "design-system",
+    "guidelines",
+    "logo",
+    "typography"
+  ]
+}

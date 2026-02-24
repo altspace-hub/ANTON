@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "islamic-finance",
+  "name": "Islamic Finance & Banking",
+  "shortName": "Islamic Finance",
+  "description": "Sharia-compliant banking, sukuk structuring, Islamic product review, waqf management, and zakat compliance for Islamic financial institutions globally.",
+  "icon": "Landmark",
+  "color": "adv-teal",
+  "cluster": "inclusion"
+}

@@ -1,0 +1,82 @@
+{
+  "formatVersion": "1.0",
+  "id": "cash-intensive-business-risk",
+  "label": "Cash-Intensive Business Risk Assessment",
+  "shortLabel": "Cash Business Risk",
+  "icon": "Banknote",
+  "description": "AML risk assessment for cash-intensive businesses (restaurants, retail, car washes, ATM operators, casinos). Covers revenue plausibility testing, structuring indicators, EDD requirements, and demarketing considerations.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "gap-scoring-matrix"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF guidance on cash-intensive businesses, national FIU typologies on cash-based ML, industry revenue benchmarks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "Business Type",
+      "required": true,
+      "options": [
+        {"value": "restaurant", "label": "Restaurant"},
+        {"value": "retail", "label": "Retail"},
+        {"value": "car-wash", "label": "Car Wash"},
+        {"value": "laundromat", "label": "Laundromat"},
+        {"value": "atm-operator", "label": "ATM Operator"},
+        {"value": "vending", "label": "Vending"},
+        {"value": "taxi-transport", "label": "Taxi/Transport"},
+        {"value": "construction", "label": "Construction"},
+        {"value": "gambling-casino", "label": "Gambling/Casino"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Jurisdiction",
+      "required": true,
+      "options": [
+        {"value": "eu", "label": "EU"},
+        {"value": "uk", "label": "UK"},
+        {"value": "usa", "label": "USA"},
+        {"value": "middle-east", "label": "Middle East"},
+        {"value": "africa", "label": "Africa"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "cash_ratio",
+      "type": "select",
+      "label": "Estimated Cash Revenue Ratio",
+      "options": [
+        {"value": "under-20", "label": "Under 20% cash revenue"},
+        {"value": "20-50", "label": "20–50%"},
+        {"value": "50-80", "label": "50–80%"},
+        {"value": "over-80", "label": "Over 80%"},
+        {"value": "unknown", "label": "Unknown"}
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific Concerns or Indicators",
+      "placeholder": "e.g. Cash deposits significantly exceed industry norms, multiple beneficial owners with no clear business rationale, sudden revenue spikes, customer declines to provide financial statements..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert"],
+  "recommendedSkills": ["skill-fatf-mutual-evaluation"],
+  "tags": ["cash-intensive", "smurfing", "structuring", "aml", "edd", "fcp"]
+}

@@ -1,0 +1,44 @@
+{
+  "formatVersion": "1.0",
+  "id": "coding-large-architecture",
+  "label": "Architecture Design",
+  "shortLabel": "Architecture",
+  "icon": "Layers",
+  "description": "Phase 2 of professional AI-led development: architecture proposal with expert panel review from security, compliance, and product perspectives.",
+  "color": "adv-gold",
+  "areaId": "coding",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings"],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": true, "description": "" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "tech_stack_preferences",
+      "type": "textarea",
+      "label": "Technology stack preferences (optional)",
+      "placeholder": "e.g., React + Node.js, Python + Django, prefer PostgreSQL..."
+    },
+    {
+      "id": "deployment_target",
+      "type": "select",
+      "label": "Deployment target",
+      "options": [
+        { "value": "cloud", "label": "Cloud (AWS/GCP/Azure)" },
+        { "value": "on-premise", "label": "On-premise" },
+        { "value": "hybrid", "label": "Hybrid" },
+        { "value": "local", "label": "Local only" }
+      ]
+    },
+    {
+      "id": "scale_requirements",
+      "type": "textarea",
+      "label": "Scale requirements (optional)",
+      "placeholder": "e.g., 1000 concurrent users, 1M records, real-time updates..."
+    }
+  ],
+  "tags": ["coding", "architecture", "design", "professional", "expert-review"]
+}

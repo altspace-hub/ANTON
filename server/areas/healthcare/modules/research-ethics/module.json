@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.0",
+  "id": "research-ethics",
+  "label": "Research Ethics Framework",
+  "shortLabel": "Research Ethics",
+  "icon": "Scale",
+  "description": "Develop and review research ethics frameworks, policies, and procedures for healthcare and life sciences research. Covers ethical review processes, informed consent frameworks, vulnerable populations protections, data ethics, and compliance with the Declaration of Helsinki, ICH-GCP, and national research ethics legislation. Produces structured policy documents and governance frameworks.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Declaration of Helsinki, ICH-GCP, EU Clinical Trials Regulation, research ethics frameworks, informed consent, institutional review boards, ethical review processes"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "research-type",
+      "label": "Research Type",
+      "type": "select",
+      "options": [
+        "Clinical trial (interventional)",
+        "Observational study",
+        "Registry-based research",
+        "Biobank research",
+        "Genomic/precision medicine",
+        "Health services research",
+        "Digital health research",
+        "AI/ML in healthcare research",
+        "Social/behavioural health research"
+      ],
+      "required": true
+    },
+    {
+      "id": "task-type",
+      "label": "Task Type",
+      "type": "select",
+      "options": [
+        "Ethics framework development",
+        "Ethics application support",
+        "Informed consent design",
+        "Vulnerable populations assessment",
+        "Data ethics framework",
+        "Ethics review process design",
+        "Ethics policy review"
+      ],
+      "required": true
+    },
+    {
+      "id": "vulnerable-populations",
+      "label": "Vulnerable Populations Involved",
+      "type": "multiselect",
+      "options": [
+        "None",
+        "Children/minors",
+        "Elderly",
+        "Pregnant women",
+        "Cognitively impaired",
+        "Prisoners/detained",
+        "Economically disadvantaged",
+        "Emergency situations"
+      ],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "Germany",
+        "EU (multi-country)",
+        "US",
+        "Global/multi-jurisdictional"
+      ],
+      "required": true
+    },
+    {
+      "id": "specific-concerns",
+      "label": "Specific Ethical Concerns",
+      "type": "textarea",
+      "placeholder": "Any particular ethical challenges or questions to address...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "ethics-committee-chair",
+    "principal-investigator",
+    "research-governance-lead"
+  ],
+  "tags": [
+    "healthcare",
+    "research",
+    "ethics",
+    "clinical-trials",
+    "governance"
+  ]
+}

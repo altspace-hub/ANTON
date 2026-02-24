@@ -1,0 +1,122 @@
+{
+  "formatVersion": "1.0",
+  "id": "thesis-writing",
+  "label": "Thesis & Dissertation Writer",
+  "shortLabel": "Thesis Writer",
+  "icon": "FileText",
+  "description": "Structure and draft thesis chapters: introduction, literature review, methodology, findings, analysis, and conclusion with academic rigour and proper argumentation.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "thesis_level",
+      "type": "select",
+      "label": "Thesis Level",
+      "description": "What level of academic work is this?",
+      "required": true,
+      "options": [
+        {
+          "value": "bachelors",
+          "label": "Bachelor's Thesis"
+        },
+        {
+          "value": "masters",
+          "label": "Master's Thesis"
+        },
+        {
+          "value": "phd",
+          "label": "PhD Dissertation"
+        },
+        {
+          "value": "licentiate",
+          "label": "Licentiate Thesis"
+        }
+      ]
+    },
+    {
+      "id": "chapter",
+      "type": "select",
+      "label": "Chapter / Section",
+      "description": "Which part of the thesis do you need help with?",
+      "required": true,
+      "options": [
+        {
+          "value": "full-outline",
+          "label": "Full Thesis Outline"
+        },
+        {
+          "value": "introduction",
+          "label": "Introduction & Problem Statement"
+        },
+        {
+          "value": "literature",
+          "label": "Literature Review"
+        },
+        {
+          "value": "methodology",
+          "label": "Methodology"
+        },
+        {
+          "value": "findings",
+          "label": "Findings / Results"
+        },
+        {
+          "value": "analysis",
+          "label": "Analysis & Discussion"
+        },
+        {
+          "value": "conclusion",
+          "label": "Conclusion & Implications"
+        },
+        {
+          "value": "abstract",
+          "label": "Abstract"
+        }
+      ]
+    },
+    {
+      "id": "thesis_topic",
+      "type": "textarea",
+      "label": "Thesis Topic",
+      "description": "Describe your thesis topic and research question.",
+      "required": true,
+      "placeholder": "e.g. The impact of EU AMLR on Nordic fintech companies' compliance operating models..."
+    },
+    {
+      "id": "guidelines",
+      "type": "textarea",
+      "label": "Institutional Guidelines",
+      "description": "Any specific formatting or structural requirements from your institution?",
+      "placeholder": "e.g. APA 7th edition, max 80 pages, must include empirical component, examiner expects critical realism approach..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "academic",
+    "thesis",
+    "dissertation",
+    "writing",
+    "research"
+  ]
+}

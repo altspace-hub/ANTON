@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "literature-review",
+  "label": "Literature Review Assistant",
+  "shortLabel": "Lit Review",
+  "icon": "BookOpen",
+  "description": "Conduct systematic or narrative literature reviews: identify key sources, synthesise findings, map research gaps, and structure thematic analysis across scholarly works.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "review_type",
+      "type": "select",
+      "label": "Review Type",
+      "description": "What type of literature review are you conducting?",
+      "required": true,
+      "options": [
+        {
+          "value": "systematic",
+          "label": "Systematic Review"
+        },
+        {
+          "value": "narrative",
+          "label": "Narrative Review"
+        },
+        {
+          "value": "scoping",
+          "label": "Scoping Review"
+        },
+        {
+          "value": "meta-analysis",
+          "label": "Meta-Analysis"
+        },
+        {
+          "value": "rapid",
+          "label": "Rapid Evidence Assessment"
+        }
+      ]
+    },
+    {
+      "id": "research_question",
+      "type": "textarea",
+      "label": "Research Question(s)",
+      "description": "State your primary research question(s).",
+      "required": true,
+      "placeholder": "e.g. What is the effectiveness of AI-based transaction monitoring systems in detecting money laundering compared to rule-based approaches?"
+    },
+    {
+      "id": "discipline",
+      "type": "textarea",
+      "label": "Academic Discipline / Field",
+      "description": "Which academic field or interdisciplinary area?",
+      "placeholder": "e.g. Financial criminology, regulatory technology, computational compliance, law & technology..."
+    },
+    {
+      "id": "scope_criteria",
+      "type": "textarea",
+      "label": "Inclusion / Exclusion Criteria",
+      "description": "Define the scope of sources to include.",
+      "placeholder": "e.g. Peer-reviewed articles 2018-2024, English language, focusing on EU/EEA jurisdictions, excluding opinion pieces..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "academic",
+    "literature-review",
+    "research",
+    "systematic-review"
+  ]
+}

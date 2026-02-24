@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "weather-farming-decisions",
+  "label": "Weather-Based Farming Decisions",
+  "shortLabel": "Weather Decisions",
+  "icon": "Cloud",
+  "description": "How do I use weather forecasts to make better farming decisions? Understand weather information and adjust planting, irrigation, and harvesting accordingly.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Weather interpretation for farmers, seasonal forecasts, El Nino La Nina effects, critical crop growth stages, emergency weather responses for smallholder farming" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "region",
+      "label": "Where is your farm?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "east-africa", "label": "East Africa" },
+        { "value": "west-africa", "label": "West Africa" },
+        { "value": "southern-africa", "label": "Southern Africa" },
+        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
+        { "value": "southeast-asia", "label": "Southeast Asia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "crop_stage",
+      "label": "What stage is your crop at?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "about-to-plant", "label": "About to plant" },
+        { "value": "just-planted", "label": "Just planted" },
+        { "value": "growing", "label": "Growing (leaves and stems growing)" },
+        { "value": "flowering", "label": "Flowering" },
+        { "value": "near-harvest", "label": "Near harvest" }
+      ]
+    },
+    {
+      "id": "weather_concern",
+      "label": "What is the weather doing?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "too-much-rain", "label": "Too much rain or flooding" },
+        { "value": "drought-dry", "label": "Drought or long dry spell" },
+        { "value": "unexpected-cold", "label": "Unexpected cold" },
+        { "value": "strong-winds", "label": "Strong winds" },
+        { "value": "unsure", "label": "Normal weather but unsure what to do" }
+      ]
+    },
+    {
+      "id": "forecast_source",
+      "label": "How do you get weather information?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "radio", "label": "Radio weather report" },
+        { "value": "sms-service", "label": "SMS weather service" },
+        { "value": "phone-app", "label": "Phone app" },
+        { "value": "word-of-mouth", "label": "Word of mouth from neighbours" },
+        { "value": "no-forecast", "label": "No forecast available" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["weather", "seasonal-forecast", "drought-response", "flood-response", "planting-decisions", "el-nino", "la-nina", "climate-adaptation", "smallholder", "crop-stages"]
+}

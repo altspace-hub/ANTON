@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "sales",
+  "name": "Sales & Business Development",
+  "shortName": "Sales",
+  "description": "Deal review, pipeline analysis, pricing strategy, proposal writing, and win/loss analysis for sales leaders and business development teams.",
+  "icon": "Target",
+  "color": "adv-green",
+  "cluster": "business"
+}

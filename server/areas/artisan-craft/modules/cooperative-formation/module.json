@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "cooperative-formation",
+  "label": "Cooperative Formation Guide",
+  "shortLabel": "Form a Cooperative",
+  "icon": "Users",
+  "description": "Form an artisan cooperative. How groups of artisans can work together to access better markets and prices.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Artisan cooperative formation, cooperative governance, registration processes by country, collective marketing and purchasing for artisan groups"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "indonesia", "label": "Indonesia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "craft_type",
+      "type": "select",
+      "label": "What type of craft does your group make?",
+      "required": true,
+      "options": [
+        { "value": "weaving-fabric", "label": "Weaving or fabric" },
+        { "value": "pottery", "label": "Pottery" },
+        { "value": "jewellery", "label": "Jewellery" },
+        { "value": "woodwork", "label": "Woodwork" },
+        { "value": "leather", "label": "Leather goods" },
+        { "value": "beadwork", "label": "Beadwork" },
+        { "value": "basketry", "label": "Basketry" },
+        { "value": "embroidery", "label": "Embroidery" },
+        { "value": "mixed", "label": "Mixed crafts" }
+      ]
+    },
+    {
+      "id": "group_size",
+      "type": "select",
+      "label": "How many people are in your group?",
+      "required": true,
+      "options": [
+        { "value": "2-3", "label": "Just 2–3 people" },
+        { "value": "4-10", "label": "4–10 people" },
+        { "value": "10-30", "label": "10–30 people" },
+        { "value": "larger", "label": "Planning a larger group" }
+      ]
+    },
+    {
+      "id": "motivation",
+      "type": "select",
+      "label": "Why do you want to form a cooperative?",
+      "required": true,
+      "options": [
+        { "value": "bigger-orders", "label": "Access larger orders we cannot fill alone" },
+        { "value": "shared-marketing", "label": "Share marketing costs and effort" },
+        { "value": "bulk-materials", "label": "Buy materials together at lower prices" },
+        { "value": "fair-trade", "label": "Apply for fair trade certification" },
+        { "value": "all", "label": "All of these" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "tags": [
+    "bop",
+    "artisan",
+    "craft",
+    "cooperative",
+    "collective-action",
+    "group-formation",
+    "governance",
+    "womens-economic-empowerment",
+    "kenya",
+    "india",
+    "rwanda"
+  ]
+}

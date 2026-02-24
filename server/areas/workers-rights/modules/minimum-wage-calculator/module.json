@@ -1,0 +1,90 @@
+{
+  "formatVersion": "1.0",
+  "id": "minimum-wage-calculator",
+  "label": "Minimum Wage Calculator",
+  "shortLabel": "Minimum Wage",
+  "icon": "DollarSign",
+  "description": "What is the minimum wage in my country? Check if you are being paid correctly and what to do if you are underpaid.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex legal disputes need sonnet. Wage checks work well with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Minimum wage rates by country and sector, lawful vs. unlawful wage deductions, in-kind payment rules" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country do you work in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
+        { "value": "uae", "label": "UAE (migrant worker)" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "sector",
+      "label": "What type of work do you do?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "general", "label": "General (no specific sector)" },
+        { "value": "domestic", "label": "Domestic worker (cleaner, cook, nanny)" },
+        { "value": "agriculture", "label": "Agriculture / farming" },
+        { "value": "construction", "label": "Construction" },
+        { "value": "garment-textile", "label": "Garment / textile / factory" },
+        { "value": "security", "label": "Security guard" },
+        { "value": "hospitality", "label": "Hospitality / hotel / restaurant" },
+        { "value": "platform-gig", "label": "Platform / gig (app-based delivery, rides)" }
+      ]
+    },
+    {
+      "id": "payment_type",
+      "label": "How are you paid?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "monthly-salary", "label": "Monthly salary" },
+        { "value": "daily-wage", "label": "Daily wage" },
+        { "value": "hourly", "label": "Hourly" },
+        { "value": "piece-rate", "label": "Piece-rate (paid per item made)" },
+        { "value": "in-kind", "label": "In-kind (food and housing instead of or plus cash)" },
+        { "value": "commission-only", "label": "Commission only" }
+      ]
+    },
+    {
+      "id": "concern",
+      "label": "What is your concern?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "check-if-legal", "label": "Check if my wage is legal" },
+        { "value": "underpaid", "label": "I think I am being underpaid" },
+        { "value": "in-kind-counts", "label": "Employer says food / housing counts as part of my wage" },
+        { "value": "deductions", "label": "Money is being taken out of my pay" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
+  "tags": ["workers-rights", "bop", "informal-economy", "minimum-wage", "underpayment", "wage-theft", "deductions", "domestic-workers", "piece-rate"]
+}

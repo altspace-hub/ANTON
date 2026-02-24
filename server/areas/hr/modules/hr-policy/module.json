@@ -1,0 +1,221 @@
+{
+  "formatVersion": "1.0",
+  "id": "hr-policy",
+  "label": "HR Policy Drafting",
+  "shortLabel": "HR Policies",
+  "description": "Draft comprehensive HR policies covering employment terms, workplace conduct, leave, remote work, diversity, disciplinary procedures, and more. Aligned with Nordic employment law and best practices.",
+  "icon": "ScrollText",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "policy_type",
+      "type": "select",
+      "label": "Policy type",
+      "description": "The type of HR policy to draft.",
+      "required": true,
+      "options": [
+        {
+          "value": "employee_handbook",
+          "label": "Employee Handbook (comprehensive)"
+        },
+        {
+          "value": "remote_work",
+          "label": "Remote / Hybrid Work Policy"
+        },
+        {
+          "value": "code_of_conduct",
+          "label": "Code of Conduct"
+        },
+        {
+          "value": "dei",
+          "label": "Diversity, Equity & Inclusion Policy"
+        },
+        {
+          "value": "leave",
+          "label": "Leave & Absence Policy"
+        },
+        {
+          "value": "disciplinary",
+          "label": "Disciplinary & Grievance Procedure"
+        },
+        {
+          "value": "recruitment",
+          "label": "Recruitment & Selection Policy"
+        },
+        {
+          "value": "compensation",
+          "label": "Compensation & Benefits Policy"
+        },
+        {
+          "value": "whistleblowing",
+          "label": "Whistleblowing Policy"
+        },
+        {
+          "value": "health_safety",
+          "label": "Health & Safety / Wellbeing Policy"
+        },
+        {
+          "value": "data_privacy",
+          "label": "Employee Data Privacy Policy"
+        },
+        {
+          "value": "social_media",
+          "label": "Social Media & Communications Policy"
+        },
+        {
+          "value": "travel_expenses",
+          "label": "Travel & Expenses Policy"
+        },
+        {
+          "value": "onboarding",
+          "label": "Onboarding Policy & Checklist"
+        },
+        {
+          "value": "offboarding",
+          "label": "Offboarding & Exit Procedure"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Primary jurisdiction",
+      "description": "Employment law varies significantly between countries.",
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "multi_nordic",
+          "label": "Multi-Nordic"
+        },
+        {
+          "value": "eu_general",
+          "label": "EU general"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "org_size",
+      "type": "select",
+      "label": "Organisation size",
+      "description": "Some requirements apply only above certain employee thresholds.",
+      "options": [
+        {
+          "value": "small",
+          "label": "Small (under 50 employees)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (50-250 employees)"
+        },
+        {
+          "value": "large",
+          "label": "Large (250+ employees)"
+        },
+        {
+          "value": "enterprise",
+          "label": "Enterprise (1000+ employees)"
+        }
+      ]
+    },
+    {
+      "id": "unionised",
+      "type": "select",
+      "label": "Collective bargaining agreements?",
+      "description": "Nordic countries have strong union presence affecting employment policies.",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes — covered by collective agreement"
+        },
+        {
+          "value": "no",
+          "label": "No collective agreement"
+        },
+        {
+          "value": "partial",
+          "label": "Some employees covered"
+        },
+        {
+          "value": "unknown",
+          "label": "Not sure"
+        }
+      ]
+    },
+    {
+      "id": "existing_policy",
+      "type": "select",
+      "label": "Is this a new policy or an update?",
+      "options": [
+        {
+          "value": "new",
+          "label": "New policy — drafting from scratch"
+        },
+        {
+          "value": "update",
+          "label": "Updating existing policy"
+        },
+        {
+          "value": "harmonise",
+          "label": "Harmonising policies across entities"
+        }
+      ]
+    },
+    {
+      "id": "special_requirements",
+      "type": "textarea",
+      "label": "Special requirements or context",
+      "placeholder": "e.g., Policy must address specific issues raised by employees, company is going through a merger, need to align with parent company global policy framework"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "policy",
+    "employment-law",
+    "compliance",
+    "governance",
+    "workplace"
+  ]
+}

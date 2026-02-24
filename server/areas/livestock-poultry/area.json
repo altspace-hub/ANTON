@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "livestock-poultry",
+  "name": "Livestock & Poultry Expert",
+  "shortName": "Livestock",
+  "description": "Practical guidance for small-scale livestock keepers and poultry farmers on animal health, feeding, breeding, business planning, and market timing.",
+  "icon": "Bird",
+  "color": "adv-teal",
+  "cluster": "agriculture",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  }
+}

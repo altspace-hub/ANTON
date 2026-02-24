@@ -1,0 +1,121 @@
+{
+  "formatVersion": "1.0",
+  "id": "email-marketing-automation",
+  "label": "Email Marketing & Automation",
+  "shortLabel": "Email / Automation",
+  "description": "Design email marketing strategies, segmentation frameworks, automation flows, lifecycle campaigns, and deliverability improvement plans for B2B and B2C programmes.",
+  "icon": "Mail",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "project-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Email marketing best practices, automation frameworks, deliverability standards, GDPR/CAN-SPAM compliance"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "email_task",
+      "type": "select",
+      "label": "Primary task",
+      "required": true,
+      "options": [
+        { "value": "programme_strategy", "label": "Full email programme strategy" },
+        { "value": "automation_flows", "label": "Automation flows / lifecycle campaigns" },
+        { "value": "segmentation", "label": "Segmentation strategy" },
+        { "value": "deliverability_audit", "label": "Deliverability audit and improvement" },
+        { "value": "broadcast_campaign", "label": "Broadcast campaign planning" },
+        { "value": "re_engagement", "label": "Re-engagement / win-back campaign" },
+        { "value": "platform_migration", "label": "Platform migration planning" }
+      ]
+    },
+    {
+      "id": "email_platform",
+      "type": "select",
+      "label": "Email platform (or planned platform)",
+      "options": [
+        { "value": "klaviyo", "label": "Klaviyo" },
+        { "value": "hubspot", "label": "HubSpot" },
+        { "value": "mailchimp", "label": "Mailchimp" },
+        { "value": "activecampaign", "label": "ActiveCampaign" },
+        { "value": "salesforce_mc", "label": "Salesforce Marketing Cloud" },
+        { "value": "braze", "label": "Braze" },
+        { "value": "customer_io", "label": "Customer.io" },
+        { "value": "sendgrid", "label": "SendGrid" },
+        { "value": "other_unknown", "label": "Other / not yet decided" }
+      ]
+    },
+    {
+      "id": "audience_type",
+      "type": "select",
+      "label": "Primary audience type",
+      "options": [
+        { "value": "b2c_consumers", "label": "B2C — consumers / end users" },
+        { "value": "b2b_leads", "label": "B2B — leads and prospects" },
+        { "value": "b2b_customers", "label": "B2B — existing customers" },
+        { "value": "mixed", "label": "Mixed B2B and B2C" }
+      ]
+    },
+    {
+      "id": "list_size",
+      "type": "select",
+      "label": "Email list size (approximate)",
+      "options": [
+        { "value": "under_5k", "label": "Under 5,000 contacts" },
+        { "value": "5k_50k", "label": "5,000 – 50,000 contacts" },
+        { "value": "50k_500k", "label": "50,000 – 500,000 contacts" },
+        { "value": "over_500k", "label": "Over 500,000 contacts" }
+      ]
+    },
+    {
+      "id": "current_performance",
+      "type": "textarea",
+      "label": "Current performance metrics (if known)",
+      "description": "Share current open rates, click rates, unsubscribe rates, deliverability issues, or revenue per email if available.",
+      "placeholder": "e.g., Average open rate 22%, click rate 2.1%. Welcome series gets 45% open rate but broadcast emails get 15%. Inbox placement issues with Gmail recently. Monthly revenue from email: €40k..."
+    },
+    {
+      "id": "compliance_requirements",
+      "type": "chips",
+      "label": "Compliance requirements",
+      "options": [
+        { "value": "gdpr", "label": "GDPR (EU/EEA)" },
+        { "value": "casl", "label": "CASL (Canada)" },
+        { "value": "can_spam", "label": "CAN-SPAM (USA)" },
+        { "value": "pecr", "label": "PECR (UK)" },
+        { "value": "double_optin_required", "label": "Double opt-in required" },
+        { "value": "b2b_soft_optin", "label": "B2B soft opt-in rules apply" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "pragmatist"
+  ],
+  "tags": [
+    "email-marketing",
+    "marketing-automation",
+    "lifecycle-marketing",
+    "segmentation",
+    "deliverability",
+    "nurture",
+    "CRM",
+    "GDPR",
+    "welcome-series"
+  ]
+}

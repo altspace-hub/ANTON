@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "nutrition-feeding-guide",
+  "label": "Nutrition & Feeding Guide",
+  "shortLabel": "Nutrition",
+  "icon": "Utensils",
+  "description": "What should my child eat at different ages? Affordable, nutritious feeding advice using local foods.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Practical local food examples. Refer severe malnutrition to health facility immediately."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "IYCF guidelines, WHO child nutrition, malnutrition recognition, local food nutrition for Sub-Saharan Africa and South Asia" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "age_group",
+      "label": "Who needs feeding advice?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "0-6-months", "label": "0-6 months (infant)" },
+        { "value": "6-12-months", "label": "6-12 months" },
+        { "value": "1-2-years", "label": "1-2 years" },
+        { "value": "2-5-years", "label": "2-5 years" },
+        { "value": "school-age", "label": "School age" },
+        { "value": "pregnant-breastfeeding", "label": "Pregnant or breastfeeding woman" }
+      ]
+    },
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "concern",
+      "label": "What is your main concern?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "what-to-feed", "label": "What to feed" },
+        { "value": "child-not-growing", "label": "Child not growing well" },
+        { "value": "picky-eater", "label": "Picky eater" },
+        { "value": "limited-food-budget", "label": "Limited food budget" },
+        { "value": "looks-malnourished", "label": "Child looks malnourished" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
+  "tags": ["nutrition", "IYCF", "breastfeeding", "complementary-feeding", "malnutrition", "child-growth", "local-foods", "1000-days"]
+}

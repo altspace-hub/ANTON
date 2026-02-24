@@ -1,0 +1,61 @@
+{
+  "id": "usability-audit",
+  "areaId": "design",
+  "label": "Usability Audit",
+  "shortLabel": "Usability Audit",
+  "icon": "ClipboardCheck",
+  "description": "Evaluate an existing interface against usability heuristics, accessibility standards, and UX best practices. Produces prioritised findings with severity ratings.",
+  "color": "adv-teal",
+  "tags": ["usability", "heuristics", "accessibility", "ux-audit", "wcag"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Sonnet for standard audits. Opus for complex enterprise systems with multiple user types."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "action-plan"]
+  },
+  "recommendedPersonas": ["ux-researcher", "ux-director"],
+  "guidedInputs": [
+    {
+      "id": "product_description",
+      "type": "textarea",
+      "label": "Product / Interface Description",
+      "description": "Describe the product or interface to be audited. Include URL if accessible, or upload screenshots.",
+      "placeholder": "e.g. Mobile banking app (iOS) — account overview, transfer, and payment flows. URL: app.bank.com",
+      "required": true
+    },
+    {
+      "id": "user_tasks",
+      "type": "textarea",
+      "label": "Key User Tasks to Evaluate",
+      "description": "Which user journeys or tasks should the audit focus on?",
+      "placeholder": "e.g. 1. Log in and check balance. 2. Send money to a new recipient. 3. Set up a standing order.",
+      "required": true
+    },
+    {
+      "id": "user_profile",
+      "type": "textarea",
+      "label": "Target User Profile",
+      "description": "Who are the users? Their tech literacy, age range, accessibility needs, context of use.",
+      "placeholder": "e.g. Adults 45-75, moderate tech literacy, may use screen magnification, mobile-first"
+    },
+    {
+      "id": "audit_scope",
+      "type": "multi-select",
+      "label": "Audit Scope",
+      "description": "Which frameworks should the audit apply?",
+      "options": [
+        {"value": "nielsen_heuristics", "label": "Nielsen's 10 Heuristics"},
+        {"value": "wcag_aa", "label": "WCAG 2.1 AA Accessibility"},
+        {"value": "cognitive_load", "label": "Cognitive Load & Clarity"},
+        {"value": "mobile_best_practice", "label": "Mobile UX Best Practices"},
+        {"value": "conversion_optimisation", "label": "Conversion & Friction Analysis"}
+      ],
+      "defaultValue": ["nielsen_heuristics", "wcag_aa"]
+    }
+  ]
+}

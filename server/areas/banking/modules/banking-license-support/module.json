@@ -1,0 +1,126 @@
+{
+  "formatVersion": "1.0",
+  "id": "banking-license-support",
+  "label": "Banking License Application Support",
+  "shortLabel": "License Application",
+  "description": "Structures and reviews banking license applications. Covers governance requirements, capital adequacy, business plan assessment, and regulatory engagement strategy.",
+  "icon": "BadgeCheck",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CRD VI banking license requirements, EBA internal governance guidelines, ECB licensing methodology, national licensing requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "applicant_description",
+      "type": "textarea",
+      "label": "Applicant description",
+      "required": true,
+      "description": "Describe the applicant: business model, ownership, proposed activities, and why a banking license is being sought.",
+      "placeholder": "e.g., Fintech company founded in 2021, currently operating as an EMI in Sweden. Seeking full banking license to offer deposits and lending to SME customers. 45 employees, €25M equity, profitable for 18 months. Seeking license for Sweden with potential EU passport."
+    },
+    {
+      "id": "license_type",
+      "type": "select",
+      "label": "License type sought",
+      "required": true,
+      "options": [
+        {
+          "value": "full_banking",
+          "label": "Full banking license (CRD VI / national transposition)"
+        },
+        {
+          "value": "limited_banking",
+          "label": "Limited banking license / restricted authorisation"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment institution (PSD2/PSD3)"
+        },
+        {
+          "value": "emi",
+          "label": "Electronic money institution (EMD)"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment firm (MiFID / IFR)"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "text",
+      "label": "Target jurisdiction",
+      "required": true,
+      "placeholder": "e.g., Sweden (Finansinspektionen), Finland (FSA), Luxembourg (CSSF)"
+    },
+    {
+      "id": "application_stage",
+      "type": "select",
+      "label": "Application stage",
+      "options": [
+        {
+          "value": "feasibility",
+          "label": "Feasibility assessment — is a license achievable?"
+        },
+        {
+          "value": "preparation",
+          "label": "Preparation — identifying and closing gaps"
+        },
+        {
+          "value": "drafting",
+          "label": "Drafting — preparing application documents"
+        },
+        {
+          "value": "review",
+          "label": "Review — assessing a draft application"
+        },
+        {
+          "value": "regulatory_dialogue",
+          "label": "Regulatory dialogue — preparing for supervisor meetings"
+        }
+      ]
+    },
+    {
+      "id": "known_challenges",
+      "type": "textarea",
+      "label": "Known challenges or concerns",
+      "placeholder": "e.g., Ownership structure includes a non-EU holding company — unsure how this affects fit and proper assessment. Business plan shows capital adequacy tight in years 2-3. No current CRO — need to hire before application. Previous application withdrawn by related entity."
+    },
+    {
+      "id": "documents_available",
+      "type": "textarea",
+      "label": "Documents available for review (if any)",
+      "description": "List any draft documents available (business plan, governance framework, risk framework, etc.)",
+      "placeholder": "e.g., Draft business plan v3, governance framework draft, proposed board composition..."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "banking",
+    "licensing",
+    "authorisation",
+    "CRD",
+    "governance",
+    "regulatory"
+  ]
+}

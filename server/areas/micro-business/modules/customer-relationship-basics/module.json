@@ -1,0 +1,98 @@
+{
+  "formatVersion": "1.0",
+  "id": "customer-relationship-basics",
+  "label": "Customer Relationship Basics",
+  "shortLabel": "Customers",
+  "icon": "Users",
+  "description": "How do I keep customers coming back? Simple, proven ways to build loyal customers for your small business.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Customer retention and loyalty strategies for micro-businesses and informal traders in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "market-stall", "label": "Market stall" },
+        { "value": "shop-kiosk", "label": "Shop / kiosk" },
+        { "value": "food-vendor", "label": "Food vendor" },
+        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
+        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "current_challenge",
+      "type": "select",
+      "label": "What is your biggest customer challenge?",
+      "required": true,
+      "options": [
+        { "value": "dont-return", "label": "Customers buy once and don't return" },
+        { "value": "losing-to-competitors", "label": "Losing customers to competitors" },
+        { "value": "find-new", "label": "Don't know how to find new customers" },
+        { "value": "referrals", "label": "Want to grow through referrals" }
+      ]
+    },
+    {
+      "id": "customer_type",
+      "type": "select",
+      "label": "Who are your customers?",
+      "required": false,
+      "options": [
+        { "value": "individuals", "label": "Mostly individual buyers" },
+        { "value": "mixed", "label": "Mix of individuals and small businesses" },
+        { "value": "businesses", "label": "Mostly businesses" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "tags": [
+    "micro-business",
+    "bop",
+    "informal-economy",
+    "customer-retention",
+    "loyalty",
+    "referrals",
+    "word-of-mouth",
+    "kenya",
+    "nigeria",
+    "india"
+  ]
+}

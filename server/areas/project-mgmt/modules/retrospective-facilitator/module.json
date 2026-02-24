@@ -1,0 +1,75 @@
+{
+  "formatVersion": "1.0",
+  "id": "retrospective-facilitator",
+  "label": "Sprint Retrospective Facilitator",
+  "shortLabel": "Retrospective",
+  "description": "Prepares and structures sprint retrospectives. Analyzes what went well/poorly, facilitates root cause analysis on blockers, and generates prioritized improvement actions.",
+  "perspective": "operational",
+  "icon": "RefreshCcw",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Agile retrospective techniques, root cause analysis, team improvement frameworks, Scrum retrospective formats"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "sprint_details",
+      "type": "text",
+      "label": "Sprint details",
+      "required": true,
+      "placeholder": "e.g. Sprint 14 — 24 Feb to 7 Mar 2025"
+    },
+    {
+      "id": "sprint_outcome",
+      "type": "textarea",
+      "label": "Sprint outcome",
+      "required": true,
+      "placeholder": "How did the sprint go? What was committed vs. completed?\ne.g. Committed: 45 SP | Completed: 38 SP | Carryover: US-165 (email notifications, 13 SP) partially complete. Sprint goal achieved (SSO login working in staging). One bug found in production during sprint."
+    },
+    {
+      "id": "went_well",
+      "type": "textarea",
+      "label": "What went well",
+      "placeholder": "List observations, themes, or specific events that were positive this sprint.\ne.g.\n- Pair programming on US-142 resolved auth bug faster than expected\n- Daily standups more focused since we limited to 15 min\n- Clear acceptance criteria on BUG-089 made QA fast\n- Good collaboration with design team on US-161"
+    },
+    {
+      "id": "went_poorly",
+      "type": "textarea",
+      "label": "What did not go well / blockers",
+      "placeholder": "List problems, friction, blockers, or patterns that slowed the team.\ne.g.\n- Email notification story (US-165) underestimated — 13 SP was too small\n- Backend environment down for half a day on Wednesday — no incident process\n- Code review taking 2-3 days — blocking frontend from merging\n- Unclear requirements on admin screen caused 2 rework cycles"
+    },
+    {
+      "id": "previous_actions",
+      "type": "textarea",
+      "label": "Previous retrospective actions",
+      "placeholder": "List improvement actions from the previous retrospective and their status — to assess whether improvements took effect.\ne.g.\n- Action: Create PR template (Done ✓)\n- Action: Add environment health check to Definition of Done (Not started)\n- Action: Weekly refinement session added (Partially done — 1 of 2 sessions held)"
+    },
+    {
+      "id": "team_size",
+      "type": "text",
+      "label": "Team size",
+      "placeholder": "e.g. 5 people (1 PO, 1 SM, 3 devs)"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "project-management",
+    "agile",
+    "scrum",
+    "retrospective",
+    "improvement",
+    "operational"
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "lean-six-sigma",
+  "label": "Lean Six Sigma Analysis",
+  "shortLabel": "Lean Six Sigma",
+  "icon": "BarChart3",
+  "description": "Apply Lean Six Sigma methodology to analyse manufacturing and operational problems. Covers DMAIC project framework, waste identification (8 wastes), statistical process control, root cause analysis, and solution design. Produces detailed findings reports and action plans structured around the DMAIC phases with data-driven recommendations.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Lean Six Sigma methodology, DMAIC, statistical process control, root cause analysis, value stream mapping, waste elimination, Kaizen"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "dmaic-phase",
+      "label": "Current DMAIC Phase",
+      "type": "select",
+      "options": [
+        "Define — scoping the problem",
+        "Measure — understanding current state",
+        "Analyse — identifying root causes",
+        "Improve — designing solutions",
+        "Control — sustaining gains",
+        "Full DMAIC project support"
+      ],
+      "required": true
+    },
+    {
+      "id": "problem-type",
+      "label": "Problem Type",
+      "type": "select",
+      "options": [
+        "Quality defects",
+        "Process variation",
+        "Cycle time/lead time",
+        "Waste/scrap reduction",
+        "Capacity constraints",
+        "Cost reduction",
+        "Customer complaints",
+        "OEE improvement"
+      ],
+      "required": true
+    },
+    {
+      "id": "belt-level",
+      "label": "Team Belt Level",
+      "type": "select",
+      "options": [
+        "White Belt (awareness)",
+        "Yellow Belt (participant)",
+        "Green Belt (project leader)",
+        "Black Belt (expert)",
+        "No formal Lean Six Sigma training"
+      ],
+      "required": false
+    },
+    {
+      "id": "problem-description",
+      "label": "Problem Description",
+      "type": "textarea",
+      "placeholder": "Describe the problem, its impact, and any data already collected...",
+      "required": true
+    },
+    {
+      "id": "project-scope",
+      "label": "Project Scope & Constraints",
+      "type": "textarea",
+      "placeholder": "Boundaries, available resources, timeline constraints...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "lean-six-sigma-lead",
+    "operations-manager",
+    "quality-engineer"
+  ],
+  "tags": [
+    "manufacturing",
+    "lean",
+    "six-sigma",
+    "DMAIC",
+    "continuous-improvement"
+  ]
+}

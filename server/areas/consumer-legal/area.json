@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "consumer-legal",
+  "name": "Consumer Legal",
+  "shortName": "Consumer Legal",
+  "description": "Tenancy disputes, employment rights, consumer protection, personal contract review, and small claims support for individuals and consumer-facing legal advisors.",
+  "icon": "Scale",
+  "color": "adv-red",
+  "cluster": "legal"
+}

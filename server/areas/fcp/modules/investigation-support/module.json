@@ -1,0 +1,71 @@
+{
+  "formatVersion": "1.0",
+  "id": "investigation-support",
+  "label": "Investigation Support",
+  "shortLabel": "Investigation",
+  "icon": "Search",
+  "description": "Structure investigation analysis, case documentation, and suspicious activity reporting. Does NOT make compliance decisions — structures analysis only.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "problem-solution"
+    ],
+    "transparencyLevel": 2,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "case_type",
+      "type": "select",
+      "label": "Case Type",
+      "required": true,
+      "options": [
+        {
+          "value": "str-preparation",
+          "label": "STR / SAR Preparation"
+        },
+        {
+          "value": "case-analysis",
+          "label": "Case Analysis & Documentation"
+        },
+        {
+          "value": "typology-research",
+          "label": "Typology Research"
+        },
+        {
+          "value": "peer-review",
+          "label": "Analyst Peer Review"
+        },
+        {
+          "value": "escalation-memo",
+          "label": "Escalation Memo"
+        }
+      ]
+    },
+    {
+      "id": "case_summary",
+      "type": "textarea",
+      "label": "Case Summary",
+      "required": true,
+      "placeholder": "Summarise the customer profile, key transactions, red flags observed, and any prior alerts or investigations..."
+    }
+  ],
+  "recommendedPersonas": [
+    "financial-police",
+    "fcp-expert"
+  ],
+  "tags": [
+    "investigation",
+    "str",
+    "sar",
+    "typologies"
+  ]
+}

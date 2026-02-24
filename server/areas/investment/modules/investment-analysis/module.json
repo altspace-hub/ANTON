@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "investment-analysis",
+  "label": "Investment Analysis & Due Diligence",
+  "shortLabel": "Investment Analysis",
+  "icon": "LineChart",
+  "description": "Structured investment analysis: financial modelling, risk assessment, ESG screening, regulatory assessment, and investment recommendation.",
+  "color": "adv-gold",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Investment analysis frameworks, MiFID II research rules, AIFMD requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_type",
+      "type": "select",
+      "label": "Type of analysis",
+      "required": true,
+      "options": [
+        {
+          "value": "equity",
+          "label": "Equity / stock analysis"
+        },
+        {
+          "value": "credit",
+          "label": "Credit / bond analysis"
+        },
+        {
+          "value": "fund",
+          "label": "Fund due diligence"
+        },
+        {
+          "value": "alternative",
+          "label": "Alternative investment (PE, RE, infrastructure)"
+        },
+        {
+          "value": "esg_screen",
+          "label": "ESG screening and integration"
+        }
+      ]
+    },
+    {
+      "id": "investment_stage",
+      "type": "select",
+      "label": "Analysis stage",
+      "options": [
+        {
+          "value": "initial_screen",
+          "label": "Initial screening"
+        },
+        {
+          "value": "full_dd",
+          "label": "Full due diligence"
+        },
+        {
+          "value": "ongoing_monitor",
+          "label": "Ongoing monitoring review"
+        },
+        {
+          "value": "exit",
+          "label": "Exit analysis"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Investment context",
+      "placeholder": "Describe the investment, mandate, known concerns, and decision this analysis supports."
+    }
+  ],
+  "recommendedPersonas": [
+    "risk-specialist",
+    "devil-advocate"
+  ],
+  "tags": [
+    "investment",
+    "analysis",
+    "due-diligence",
+    "mifid",
+    "esg"
+  ]
+}

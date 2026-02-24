@@ -1,0 +1,107 @@
+{
+  "formatVersion": "1.0",
+  "id": "issue-rating-calibrator",
+  "label": "Audit Issue Rating Calibrator",
+  "shortLabel": "Issue Calibrator",
+  "description": "Ensures consistent severity rating of audit findings across the engagement and function. Applies a structured rating framework (Critical/High/Medium/Low/Informational) with evidence-based justification.",
+  "icon": "Gauge",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "findings_to_rate",
+      "type": "textarea",
+      "label": "Findings to calibrate",
+      "required": true,
+      "description": "Paste the finding descriptions (or summaries) along with the proposed ratings. If multiple findings, number them.",
+      "placeholder": "e.g., Finding 1 (proposed High): 3 of 50 sampled customer files had no EDD despite PEP status. Finding 2 (proposed Critical): TM alert queue exceeded 90 days for 220 of 850 open alerts. Finding 3 (proposed Medium): training completion rate for KYC staff was 74% vs. 90% target..."
+    },
+    {
+      "id": "rating_framework",
+      "type": "select",
+      "label": "Rating framework to apply",
+      "required": true,
+      "options": [
+        {
+          "value": "5_tier",
+          "label": "5-tier: Critical / High / Medium / Low / Informational"
+        },
+        {
+          "value": "4_tier",
+          "label": "4-tier: Critical / Significant / Moderate / Minor"
+        },
+        {
+          "value": "rag",
+          "label": "RAG: Red / Amber / Green"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulatory: Matters Requiring Immediate Attention / Matters Requiring Attention / Observations"
+        }
+      ]
+    },
+    {
+      "id": "industry_context",
+      "type": "select",
+      "label": "Institution type / regulatory context",
+      "description": "Affects the regulatory risk weighting applied to findings.",
+      "options": [
+        {
+          "value": "bank_significant",
+          "label": "Significant institution (ECB/SSM supervised)"
+        },
+        {
+          "value": "bank_less_significant",
+          "label": "Less significant institution (national supervisor)"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment institution / e-money institution"
+        },
+        {
+          "value": "asset_manager",
+          "label": "Asset manager / fund"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance company"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate (non-financial services)"
+        }
+      ]
+    },
+    {
+      "id": "calibration_notes",
+      "type": "textarea",
+      "label": "Calibration concerns or context (optional)",
+      "placeholder": "e.g., Two team members have rated similar findings differently. Management is pushing back on the Critical rating for Finding 2. We are uncertain whether the training finding rises to High given the small gap."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "audit",
+    "rating",
+    "calibration",
+    "severity",
+    "findings",
+    "quality"
+  ]
+}

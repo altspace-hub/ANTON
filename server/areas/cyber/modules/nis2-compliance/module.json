@@ -1,0 +1,147 @@
+{
+  "formatVersion": "1.0",
+  "id": "nis2-compliance",
+  "label": "NIS2 Compliance Assessment",
+  "shortLabel": "NIS2",
+  "icon": "Network",
+  "description": "EU Network and Information Security Directive 2 compliance assessment. Evaluate security measures, incident reporting obligations, supply chain security, and supervisory exposure for essential and important entities.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "NIS2 Directive EU 2022/2555, ENISA guidelines, national transposition laws, NIS2 implementing acts"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_category",
+      "type": "select",
+      "label": "Entity category under NIS2",
+      "required": true,
+      "options": [
+        {
+          "value": "essential",
+          "label": "Essential Entity (large organisations in critical sectors)"
+        },
+        {
+          "value": "important",
+          "label": "Important Entity (medium organisations or specific sectors)"
+        },
+        {
+          "value": "assessing",
+          "label": "Assessing — not yet determined"
+        }
+      ]
+    },
+    {
+      "id": "sector",
+      "type": "select",
+      "label": "Sector",
+      "required": true,
+      "options": [
+        {
+          "value": "energy",
+          "label": "Energy (electricity, oil, gas, hydrogen)"
+        },
+        {
+          "value": "transport",
+          "label": "Transport (air, rail, water, road)"
+        },
+        {
+          "value": "banking",
+          "label": "Banking & Financial Market Infrastructure"
+        },
+        {
+          "value": "financial",
+          "label": "Financial Services (other)"
+        },
+        {
+          "value": "health",
+          "label": "Health (hospitals, pharma, medical devices)"
+        },
+        {
+          "value": "digital",
+          "label": "Digital Infrastructure (DNS, TLD, IXPs, cloud, CDN, data centres)"
+        },
+        {
+          "value": "ict",
+          "label": "ICT Service Management (managed service providers, managed security)"
+        },
+        {
+          "value": "public_admin",
+          "label": "Public Administration"
+        },
+        {
+          "value": "space",
+          "label": "Space"
+        },
+        {
+          "value": "other",
+          "label": "Other (water, food, waste, manufacturing, postal, chemicals)"
+        }
+      ]
+    },
+    {
+      "id": "current_security_maturity",
+      "type": "select",
+      "label": "Current security maturity",
+      "options": [
+        {
+          "value": "basic",
+          "label": "Basic — ad-hoc security, minimal documentation"
+        },
+        {
+          "value": "developing",
+          "label": "Developing — some controls in place, partial documentation"
+        },
+        {
+          "value": "advanced",
+          "label": "Advanced — structured security programme, certifications (ISO27001, SOC2)"
+        }
+      ]
+    },
+    {
+      "id": "eu_member_state",
+      "type": "text",
+      "label": "EU Member State(s) of operation",
+      "placeholder": "e.g. Germany, Sweden, Netherlands"
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known concerns or specific focus areas",
+      "placeholder": "e.g. Incident reporting process is undefined. Supply chain security not assessed. Management liability exposure unclear."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "nis2",
+    "cyber",
+    "network-security",
+    "information-security",
+    "incident-reporting",
+    "supply-chain",
+    "essential-entity",
+    "important-entity",
+    "eu-regulation"
+  ]
+}

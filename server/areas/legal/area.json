@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "legal",
+  "name": "Legal & Regulatory",
+  "shortName": "Legal",
+  "description": "Regulatory interpretation, contract review, compliance framework design, GDPR, and legal analysis for financial services and corporate contexts.",
+  "icon": "Scale",
+  "color": "adv-blue",
+  "cluster": "professional"
+}

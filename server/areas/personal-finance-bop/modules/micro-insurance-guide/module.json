@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "micro-insurance-guide",
+  "label": "Micro-Insurance Guide",
+  "shortLabel": "Basic Insurance",
+  "icon": "Umbrella",
+  "description": "What insurance do I need? Simple guide to affordable insurance options — for health, crop, life, and mobile phone.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Simple explanatory guidance works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Micro-insurance products in developing economies — NHIF Kenya, NHIS Ghana, PMJAY India, burial societies, crop insurance"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "priority",
+      "type": "select",
+      "label": "Which type of insurance do you want to understand?",
+      "required": true,
+      "options": [
+        { "value": "health", "label": "Health insurance" },
+        { "value": "life", "label": "Life insurance or funeral cover" },
+        { "value": "crop-livestock", "label": "Crop or livestock insurance" },
+        { "value": "mobile-phone", "label": "Mobile phone insurance" },
+        { "value": "all-basics", "label": "All the basics — where to start" }
+      ]
+    },
+    {
+      "id": "income_level",
+      "type": "select",
+      "label": "What best describes your income?",
+      "required": true,
+      "options": [
+        { "value": "very-low", "label": "Very low — day-to-day survival" },
+        { "value": "low-stable", "label": "Low but stable income" },
+        { "value": "small-business", "label": "Small business owner" }
+      ]
+    },
+    {
+      "id": "concern",
+      "type": "select",
+      "label": "What do you most need help with?",
+      "required": false,
+      "options": [
+        { "value": "understand", "label": "Understand what insurance is" },
+        { "value": "find-affordable", "label": "Find affordable options" },
+        { "value": "bad-experience", "label": "I had a bad experience with insurance" },
+        { "value": "claim", "label": "Help filing a claim" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "micro-insurance",
+    "health-insurance",
+    "nhif",
+    "nhis",
+    "burial-society",
+    "crop-insurance",
+    "low-income",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

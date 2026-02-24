@@ -1,0 +1,813 @@
+import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import {
+  // FCP icons
+  SearchCheck, FileText, Shield, Radar, GraduationCap, Database, BarChart3,
+  Search, Handshake, Rocket, Presentation, FlaskConical,
+  // Legal icons
+  FileSearch, FileCheck, GitCompare, Lock, ScrollText,
+  // Audit icons
+  ClipboardList, TestTube, FileWarning, ClipboardCheck,
+  // Consulting icons
+  Send, Network, RefreshCw, Briefcase,
+  // Banking icons
+  TrendingDown, CreditCard, BarChart2, Building, PackageCheck, Building2,
+  // Risk icons
+  AlertTriangle, Gauge, Settings, GitBranch, Share2, Scale,
+  // Wave 2 icons — Cyber
+  ShieldCheck, ScanSearch, Siren,
+  // Wave 2 icons — Data & Analytics
+  DatabaseZap, Layers, AlertCircle, FileBarChart,
+  // Wave 2 icons — ESG
+  CircleDot, Thermometer, Leaf,
+  // Wave 2 icons — Strategy
+  TrendingUp, Compass, MapPin, Crosshair,
+  // Wave 2 icons — Investment & Project Mgmt
+  LineChart, PieChart, FolderKanban, Users,
+  // UI icons
+  ArrowRight, Clock, LayoutGrid, MessageSquare, Zap, Trash2, Pencil, Check, X, X as XIcon,
+  Star, Puzzle,
+} from 'lucide-react';
+import { MODULES, MODELS, AREAS } from '@/lib/constants';
+import MorningBrief from '@/features/time-intelligence/MorningBrief';
+import TeamWorkloadView from '@/features/workflows/TeamWorkloadView';
+import RadarWidget from '@/features/radar/RadarWidget';
+import { STARTER_PACKS } from '@/lib/starter-packs';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { fetchSessions, fetchSessionStats, deleteSession, updateSessionTitle, fetchCommunityModules, fetchProfile, type CustomModuleData } from '@/lib/api';
+import type { Session } from '@/lib/types';
+
+const FAVORITES_KEY = 'openexpert-favorite-modules';
+const STARTER_PACKS_HIDDEN_KEY = 'openexpert-starter-packs-hidden';
+
+function loadFavorites(): Set<string> {
+  try {
+    const raw = localStorage.getItem(FAVORITES_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveFavorites(favs: Set<string>) {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favs]));
+}
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  // Wave 1
+  SearchCheck, FileText, Shield, Radar, GraduationCap, Database, BarChart3,
+  Search, Handshake, Rocket, Presentation, FlaskConical,
+  FileSearch, FileCheck, GitCompare, Lock, ScrollText, Scale,
+  ClipboardList, TestTube, FileWarning, ClipboardCheck,
+  Send, Network, RefreshCw, Briefcase,
+  TrendingDown, CreditCard, BarChart2, Building, PackageCheck, Building2,
+  AlertTriangle, Gauge, Settings, GitBranch, Share2,
+  // Wave 2
+  ShieldCheck, ScanSearch, Siren,
+  DatabaseZap, Layers, AlertCircle, FileBarChart,
+  CircleDot, Thermometer, Leaf,
+  TrendingUp, Compass, MapPin, Crosshair,
+  LineChart, PieChart, FolderKanban, Users,
+};
+
+const colorMap: Record<string, string> = {
+  'adv-teal':  'bg-adv-teal/10 text-adv-teal border-adv-teal/20',
+  'adv-blue':  'bg-adv-blue/10 text-adv-blue border-adv-blue/20',
+  'adv-gold':  'bg-adv-gold/10 text-adv-gold border-adv-gold/20',
+  'adv-green': 'bg-adv-green/10 text-adv-green border-adv-green/20',
+  'adv-red':   'bg-adv-red/10 text-adv-red border-adv-red/20',
+};
+
+const areaHeaderColor: Record<string, string> = {
+  fcp:            'text-adv-teal',
+  legal:          'text-adv-blue',
+  audit:          'text-adv-gold',
+  consulting:     'text-adv-green',
+  banking:        'text-adv-blue',
+  risk:           'text-adv-red',
+  cyber:          'text-adv-teal',
+  esg:            'text-adv-green',
+  'data-analytics': 'text-adv-blue',
+  investment:     'text-adv-teal',
+  'project-mgmt': 'text-adv-green',
+  strategy:       'text-adv-gold',
+};
+
+function formatSessionCost(session: Session): string | null {
+  const tokens = session.total_tokens;
+  if (!tokens || tokens === 0) return null;
+  let modelId: string | undefined;
+  try {
+    const cfg = typeof session.config === 'string' ? JSON.parse(session.config) : session.config;
+    modelId = cfg?.model;
+  } catch { /* ignore */ }
+  const modelInfo = MODELS.find((m) => m.id === modelId);
+  const costPer1M = modelInfo ? modelInfo.outputCostPer1M : 75;
+  const cost = (tokens / 1_000_000) * costPer1M;
+  const tokenStr = tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}k` : `${tokens}`;
+  const costStr = cost < 0.01 ? '<$0.01' : `~$${cost.toFixed(2)}`;
+  return `${tokenStr} tok · ${costStr}`;
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+type SessionStats = {
+  totalSessions: number;
+  totalMessages: number;
+  totalOutputTokens: number;
+  topModules: Array<{ moduleId: string; count: number }>;
+  thisWeekSessions?: number;
+  thisMonthSessions?: number;
+  recentSessions?: Array<{ id: string; title: string; module_id: string; created_at: string; tokens: number }>;
+};
+
+export default function Dashboard() {
+  const { t } = useTranslation();
+  const { checkHealth, health } = useSettingsStore();
+  const [recentSessions, setRecentSessions] = useState<Session[]>([]);
+  const [continueWorkSessions, setContinueWorkSessions] = useState<Session[]>([]);
+  const [stats, setStats] = useState<SessionStats | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [moduleSearch, setModuleSearch] = useState('');
+  const [communityModules, setCommunityModules] = useState<CustomModuleData[]>([]);
+  const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
+  const [hourlyRate, setHourlyRate] = useState<number>(250);
+  const [userProfile, setUserProfile] = useState<Record<string, string | null>>({});
+  const [starterPacksHidden, setStarterPacksHidden] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STARTER_PACKS_HIDDEN_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    checkHealth();
+    fetchSessions()
+      .then((sessions) => setRecentSessions(sessions.slice(0, 6)))
+      .catch(() => setRecentSessions([]));
+    fetchSessions(undefined, { hasOutput: true, limit: 4 })
+      .then((sessions) => setContinueWorkSessions(sessions))
+      .catch(() => setContinueWorkSessions([]));
+    fetchSessionStats()
+      .then(setStats)
+      .catch(() => setStats(null));
+    fetchCommunityModules()
+      .then(setCommunityModules)
+      .catch(() => setCommunityModules([]));
+    fetchProfile()
+      .then((data) => {
+        const rate = typeof data.hourly_rate_eur === 'number' ? data.hourly_rate_eur : Number(data.hourly_rate_eur) || 250;
+        setHourlyRate(rate);
+        setUserProfile(data);
+      })
+      .catch(() => {});
+  }, [checkHealth]);
+
+  // Score a starter pack against the user's profile. Higher = better match.
+  function scorePackForProfile(pack: typeof STARTER_PACKS[0]): number {
+    if (!userProfile || Object.keys(userProfile).length === 0) return 0;
+    let score = 0;
+    const role = (userProfile.role || userProfile.role_title || '').toLowerCase();
+    const industry = (userProfile.industry || '').toLowerCase();
+    const jurisdiction = (userProfile.jurisdiction || '').toLowerCase();
+    const level = (userProfile.experience_level || '').toLowerCase();
+    const focusAreas = (userProfile.focus_areas || userProfile.current_focus || '').toLowerCase();
+
+    const haystack = [pack.targetUser, ...pack.tags, pack.name, pack.description]
+      .join(' ').toLowerCase();
+
+    // Role match
+    const roleKeywords = role.split(/[\s,/]+/).filter(Boolean);
+    for (const kw of roleKeywords) {
+      if (kw.length > 3 && haystack.includes(kw)) score += 3;
+    }
+    // Industry match
+    const industryKeywords = industry.split(/[\s,/]+/).filter(Boolean);
+    for (const kw of industryKeywords) {
+      if (kw.length > 3 && haystack.includes(kw)) score += 2;
+    }
+    // Jurisdiction/region match
+    if (jurisdiction && haystack.includes(jurisdiction)) score += 2;
+    if (jurisdiction.includes('nordic') || jurisdiction.includes('sweden') || jurisdiction.includes('finland') || jurisdiction.includes('denmark') || jurisdiction.includes('norway')) {
+      if (haystack.includes('nordic')) score += 2;
+    }
+    // Focus area match
+    const focusKeywords = focusAreas.split(/[\s,/]+/).filter(Boolean);
+    for (const kw of focusKeywords) {
+      if (kw.length > 3 && haystack.includes(kw)) score += 1;
+    }
+    // Junior/senior level alignment
+    if (level.includes('junior') || level.includes('entry')) {
+      if (pack.tags.some(t => ['starter', 'intro', 'basic', 'foundation'].includes(t.toLowerCase()))) score += 1;
+    }
+    return score;
+  }
+
+  const rankedPacks = [...STARTER_PACKS].sort((a, b) => scorePackForProfile(b) - scorePackForProfile(a));
+  const hasProfile = Object.values(userProfile).some(v => v && String(v).trim().length > 0);
+
+  function toggleStarterPacks() {
+    setStarterPacksHidden((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(STARTER_PACKS_HIDDEN_KEY, String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  const toggleFavorite = useCallback((moduleId: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      saveFavorites(next);
+      return next;
+    });
+  }, []);
+
+  async function handleDeleteSession(e: React.MouseEvent, sessionId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    await deleteSession(sessionId);
+    setRecentSessions((prev) => prev.filter((s) => s.id !== sessionId));
+  }
+
+  function startRename(e: React.MouseEvent, session: Session) {
+    e.preventDefault();
+    e.stopPropagation();
+    setRenamingId(session.id);
+    setRenameValue(session.title);
+  }
+
+  async function commitRename(sessionId: string) {
+    const title = renameValue.trim();
+    if (title) {
+      await updateSessionTitle(sessionId, title);
+      setRecentSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, title } : s))
+      );
+    }
+    setRenamingId(null);
+  }
+
+  function handleRenameKeyDown(e: React.KeyboardEvent, sessionId: string) {
+    if (e.key === 'Enter') { e.preventDefault(); commitRename(sessionId); }
+    if (e.key === 'Escape') setRenamingId(null);
+  }
+
+  // Favourites row — resolve modules in the order they were starred
+  const favoriteModules = [...favorites]
+    .map((id) => MODULES.find((m) => m.id === id))
+    .filter(Boolean) as typeof MODULES;
+
+  // Search filtering
+  const query = moduleSearch.trim().toLowerCase();
+  const filteredModules = query
+    ? MODULES.filter(
+        (m) =>
+          m.label.toLowerCase().includes(query) ||
+          m.shortLabel.toLowerCase().includes(query) ||
+          m.description.toLowerCase().includes(query)
+      )
+    : null; // null = show all grouped by area
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      {/* API key warning — shown on first run before key is configured */}
+      {health !== null && health.apiKeyConfigured === false && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-adv-red/40 bg-adv-red/10 px-5 py-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-adv-red" />
+          <div>
+            <p className="text-sm font-semibold text-adv-red">Anthropic API key not configured</p>
+            <p className="mt-1 text-xs text-adv-off-white">
+              Add your key to the{' '}
+              <code className="rounded bg-adv-dark px-1 py-0.5 font-mono text-adv-teal">.env</code>{' '}
+              file as{' '}
+              <code className="rounded bg-adv-dark px-1 py-0.5 font-mono text-adv-teal">ANTHROPIC_API_KEY=sk-ant-...</code>{' '}
+              and restart the server. No AI features will work until this is set.{' '}
+              <Link to="/settings" className="text-adv-teal hover:underline">Open Settings</Link>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Hero */}
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-adv-white">{t('dashboard.title')} <span className="text-sm font-normal text-adv-gray-med">{t('dashboard.byLine')}</span></h1>
+          <p className="mt-1 text-sm text-adv-gray">
+            {t('dashboard.subtitle')}
+          </p>
+        </div>
+      </div>
+
+      {/* Stat Cards */}
+      {stats !== null && (
+        <>
+          <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
+                <LayoutGrid className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-adv-white">{stats.totalSessions}</p>
+                <p className="text-xs text-adv-gray">{t('dashboard.sessions')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-adv-white">{stats.totalMessages}</p>
+                <p className="text-xs text-adv-gray">{t('dashboard.aiResponses')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-adv-white">{(stats.totalOutputTokens ?? 0).toLocaleString()}</p>
+                <p className="text-xs text-adv-gray">{t('dashboard.outputTokens')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-adv-white">{stats.thisWeekSessions ?? 0}</p>
+                <p className="text-xs text-adv-gray">{t('dashboard.thisWeek')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-adv-white">{stats.thisMonthSessions ?? 0}</p>
+                <p className="text-xs text-adv-gray">{t('dashboard.thisMonth')}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ROI Summary */}
+          {(() => {
+            const avgTimeSavedPerSession = 2.5; // hours
+            const timeSaved = (stats.thisMonthSessions ?? 0) * avgTimeSavedPerSession;
+            const estValue = timeSaved * hourlyRate;
+            const apiCostEst = (stats.totalOutputTokens ?? 0) * 0.000075;
+            const roiRatio = apiCostEst > 0 ? (timeSaved / apiCostEst).toFixed(1) : null;
+            if ((stats.thisMonthSessions ?? 0) === 0) return null;
+            return (
+              <div className="mb-6 rounded-xl border border-adv-teal/20 bg-adv-teal-soft px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-adv-teal">{t('dashboard.roiThisMonth')}</p>
+                    <p className="mt-1 text-sm text-adv-off-white">
+                      openEXPERT has saved you an estimated{' '}
+                      <span className="font-semibold text-adv-teal">{timeSaved.toFixed(1)} hours</span>{' '}
+                      this month (est. value:{' '}
+                      <span className="font-semibold text-adv-teal">
+                        €{estValue.toLocaleString('en-EU', { maximumFractionDigits: 0 })}
+                      </span>{' '}
+                      at €{hourlyRate}/hr).{' '}
+                      API cost: <span className="font-medium">~€{apiCostEst.toFixed(2)}</span>.
+                      {roiRatio && (
+                        <>{' '}ROI: <span className="font-semibold text-adv-teal">{roiRatio}h saved per €1 spent</span>.</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </>
+      )}
+
+      {/* Continue Your Work — recent sessions with output */}
+      {continueWorkSessions.length > 0 && (
+        <div className="mb-6 rounded-xl border border-border bg-adv-card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-adv-teal" />
+              <h2 className="text-sm font-semibold text-adv-white">{t('dashboard.continueWork', 'Continue Your Work')}</h2>
+            </div>
+            <Link
+              to="/my-work"
+              className="flex items-center gap-1 text-xs text-adv-teal hover:underline"
+            >
+              {t('dashboard.viewAll', 'View All')} <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {continueWorkSessions.map((session) => {
+              const mod = MODULES.find((m) => m.id === session.module_id);
+              const Icon = mod ? (iconMap[mod.icon] || Clock) : Clock;
+              return (
+                <Link
+                  key={session.id}
+                  to={`/module/${session.module_id}?session=${session.id}`}
+                  className="group flex flex-col rounded-lg border border-border bg-adv-dark-2 p-3 transition-all hover:border-adv-teal/30 hover:shadow-md"
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-adv-teal-dim text-adv-teal">
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="truncate text-xs font-medium text-adv-off-white group-hover:text-adv-teal transition-colors">
+                      {mod?.shortLabel || session.module_id}
+                    </span>
+                  </div>
+                  <p className="mb-1.5 truncate text-xs text-adv-off-white">{session.title}</p>
+                  {session.note && (
+                    <p className="mb-1 truncate text-[11px] text-adv-gold/60 italic">&ldquo;{session.note}&rdquo;</p>
+                  )}
+                  <div className="mt-auto text-[11px] text-adv-gray-med">
+                    {formatRelativeTime(session.updated_at || session.created_at)}
+                    {formatSessionCost(session) && (
+                      <span className="ml-1">{' · '}{formatSessionCost(session)?.split(' · ')[0]}</span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Morning Brief — Time Intelligence */}
+      <MorningBrief />
+
+      {/* Regulatory Radar Widget */}
+      <div className="mb-8">
+        <RadarWidget />
+      </div>
+
+      {/* My Workflow Tasks */}
+      <details className="mb-8 rounded-xl border border-border bg-adv-card">
+        <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-adv-white hover:text-adv-teal transition-colors">
+          <span className="inline-flex items-center gap-2">
+            <Users className="h-4 w-4 text-adv-teal" />
+            My Workflow Tasks
+          </span>
+        </summary>
+        <div className="border-t border-border px-5 pb-5 pt-4">
+          <TeamWorkloadView />
+        </div>
+      </details>
+
+      {/* Starter Packs */}
+      <div className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-adv-teal" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">{t('dashboard.starterPacks')}</span>
+            <span className="text-xs text-adv-gray-med">{STARTER_PACKS.length}</span>
+            {hasProfile && (
+              <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] font-medium text-adv-teal">
+                {t('dashboard.personalised')}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {!hasProfile && (
+              <span className="text-[11px] text-adv-gray-med italic">
+                {t('dashboard.completeProfileToPersonalise')} <Link to="/settings" className="text-adv-teal hover:underline">{t('dashboard.profileLink')}</Link> {t('dashboard.toPersonalise')}
+              </span>
+            )}
+            <button
+              onClick={toggleStarterPacks}
+              className="text-xs text-adv-gray hover:text-adv-teal transition-colors"
+            >
+              {starterPacksHidden ? t('dashboard.show') : t('dashboard.hide')}
+            </button>
+          </div>
+        </div>
+        {!starterPacksHidden && (
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-adv-card">
+            {rankedPacks.map((pack) => {
+              const packScore = scorePackForProfile(pack);
+              const isRecommended = hasProfile && packScore > 0;
+              const PackIcon = iconMap[pack.icon];
+              const borderColorClass = {
+                'adv-teal':  'border-t-adv-teal',
+                'adv-blue':  'border-t-adv-blue',
+                'adv-gold':  'border-t-adv-gold',
+                'adv-green': 'border-t-adv-green',
+                'adv-red':   'border-t-adv-red',
+              }[pack.color] ?? 'border-t-adv-teal';
+              const iconColorClass = {
+                'adv-teal':  'bg-adv-teal/10 text-adv-teal',
+                'adv-blue':  'bg-adv-blue/10 text-adv-blue',
+                'adv-gold':  'bg-adv-gold/10 text-adv-gold',
+                'adv-green': 'bg-adv-green/10 text-adv-green',
+                'adv-red':   'bg-adv-red/10 text-adv-red',
+              }[pack.color] ?? 'bg-adv-teal/10 text-adv-teal';
+              const textColorClass = {
+                'adv-teal':  'text-adv-teal',
+                'adv-blue':  'text-adv-blue',
+                'adv-gold':  'text-adv-gold',
+                'adv-green': 'text-adv-green',
+                'adv-red':   'text-adv-red',
+              }[pack.color] ?? 'text-adv-teal';
+              return (
+                <div
+                  key={pack.id}
+                  className={`group flex shrink-0 flex-col rounded-xl border bg-adv-card border-t-2 ${borderColorClass} p-4 transition-all hover:shadow-lg ${isRecommended ? 'border-adv-teal/40' : 'border-border'}`}
+                  style={{ width: '280px', minHeight: '160px' }}
+                >
+                  {isRecommended && (
+                    <div className="mb-2 flex items-center gap-1">
+                      <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] font-semibold text-adv-teal">
+                        ★ {t('dashboard.forYou')}
+                      </span>
+                    </div>
+                  )}
+                  <div className="mb-3 flex items-start gap-3">
+                    {PackIcon && (
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconColorClass}`}>
+                        <PackIcon className="h-4 w-4" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-adv-off-white">{pack.name}</p>
+                      <span className="mt-0.5 inline-block rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">
+                        {pack.targetUser}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mb-3 line-clamp-2 flex-1 text-xs leading-relaxed text-adv-gray">
+                    {pack.description}
+                  </p>
+                  <div className="mb-3 flex flex-wrap gap-1">
+                    {pack.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] font-medium text-adv-teal"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <Link
+                    to={`/module/${pack.highlightModuleId}`}
+                    className={`inline-flex items-center gap-1 text-xs font-medium ${textColorClass} hover:underline`}
+                  >
+                    {t('dashboard.getStarted')} <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Favourites row — only shown when at least one module is starred */}
+      {favoriteModules.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-2">
+            <Star className="h-4 w-4 fill-adv-gold text-adv-gold" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-adv-gold">{t('dashboard.favourites')}</span>
+            <span className="text-xs text-adv-gray-med">{favoriteModules.length}</span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {favoriteModules.map((mod) => {
+              const Icon = iconMap[mod.icon] || Search;
+              const colorClass = colorMap[mod.color] || colorMap['adv-teal'];
+              const area = AREAS.find((a) => a.moduleIds.includes(mod.id as never));
+              return (
+                <ModuleCard
+                  key={mod.id}
+                  mod={mod}
+                  Icon={Icon}
+                  colorClass={colorClass}
+                  areaBadge={area?.shortLabel}
+                  areaBadgeColor={area ? areaHeaderColor[area.id] : undefined}
+                  isFavorite
+                  onToggleFavorite={toggleFavorite}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Module Search */}
+      <div className="mb-6 relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med pointer-events-none" />
+        <input
+          type="text"
+          value={moduleSearch}
+          onChange={(e) => setModuleSearch(e.target.value)}
+          placeholder={t('dashboard.searchPlaceholder')}
+          className="w-full rounded-xl border border-border bg-adv-card py-2.5 pl-9 pr-9 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+        />
+        {moduleSearch && (
+          <button
+            onClick={() => setModuleSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray-med hover:text-adv-off-white transition-colors"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Module Grid — grouped by area (no search) or flat filtered list (searching) */}
+      {filteredModules !== null ? (
+        /* Search results — flat grid with area badge */
+        filteredModules.length === 0 ? (
+          <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
+            <p className="text-sm text-adv-gray-med">{t('dashboard.noModulesMatch')} &ldquo;{moduleSearch}&rdquo;</p>
+            <button onClick={() => setModuleSearch('')} className="mt-2 text-xs text-adv-teal hover:underline">{t('dashboard.clearSearch')}</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredModules.map((mod) => {
+              const Icon = iconMap[mod.icon] || Search;
+              const colorClass = colorMap[mod.color] || colorMap['adv-teal'];
+              const area = AREAS.find((a) => a.moduleIds.includes(mod.id as never));
+              return (
+                <ModuleCard
+                  key={mod.id}
+                  mod={mod}
+                  Icon={Icon}
+                  colorClass={colorClass}
+                  areaBadge={area?.shortLabel}
+                  areaBadgeColor={area ? areaHeaderColor[area.id] : undefined}
+                  isFavorite={favorites.has(mod.id)}
+                  onToggleFavorite={toggleFavorite}
+                />
+              );
+            })}
+          </div>
+        )
+      ) : (
+        /* Grouped by area */
+        <div className="space-y-8">
+          {AREAS.map((area) => {
+            const areaModules = area.moduleIds
+              .map((id) => MODULES.find((m) => m.id === id))
+              .filter(Boolean) as typeof MODULES;
+            if (areaModules.length === 0) return null;
+            return (
+              <div key={area.id}>
+                <div className={`mb-3 flex items-center gap-2 ${areaHeaderColor[area.id] ?? 'text-adv-gray'}`}>
+                  <span className="text-xs font-semibold uppercase tracking-wider">{area.label}</span>
+                  <span className="text-xs opacity-60">{areaModules.length} {t('dashboard.modules')}</span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {areaModules.map((mod) => {
+                    const Icon = iconMap[mod.icon] || Search;
+                    const colorClass = colorMap[mod.color] || colorMap['adv-teal'];
+                    return (
+                      <ModuleCard
+                        key={mod.id}
+                        mod={mod}
+                        Icon={Icon}
+                        colorClass={colorClass}
+                        isFavorite={favorites.has(mod.id)}
+                        onToggleFavorite={toggleFavorite}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Community Modules */}
+      {communityModules.length > 0 && (
+        <div className="mt-10">
+          <div className="mb-3 flex items-center gap-2">
+            <Users className="h-4 w-4 text-adv-gold" />
+            <h2 className="text-sm font-semibold text-adv-gold uppercase tracking-wider">{t('dashboard.communityModules')}</h2>
+            <span className="text-xs text-adv-gray-med">{communityModules.length}</span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {communityModules.map((mod) => (
+              <Link
+                key={mod.id}
+                to={`/module/${mod.id}`}
+                className="group rounded-xl border border-border bg-adv-card p-5 transition-all hover:border-adv-gold/30 hover:shadow-lg hover:shadow-adv-gold/5"
+              >
+                <div className="mb-4 flex items-start justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-adv-gold/10 text-adv-gold border-adv-gold/20">
+                    <Puzzle className="h-5 w-5" />
+                  </div>
+                  <span className="rounded-full bg-adv-gold/10 border border-adv-gold/30 px-2 py-0.5 text-[10px] font-medium text-adv-gold">
+                    {t('dashboard.community')}
+                  </span>
+                </div>
+                <h3 className="mb-2 text-sm font-semibold text-adv-white group-hover:text-adv-gold transition-colors">
+                  {mod.name}
+                </h3>
+                <p className="mb-4 text-xs leading-relaxed text-adv-gray">{mod.description || 'No description'}</p>
+                <div className="flex items-center gap-1 text-xs text-adv-gold opacity-0 transition-opacity group-hover:opacity-100">
+                  {t('dashboard.openModule')} <ArrowRight className="h-3 w-3" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* My Work link — fallback if no "Continue Your Work" card */}
+      {continueWorkSessions.length === 0 && recentSessions.length > 0 && (
+        <div className="mt-10 text-center">
+          <Link to="/my-work" className="inline-flex items-center gap-2 text-sm text-adv-teal hover:underline">
+            {t('dashboard.viewAllSessions', 'View all sessions')} <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Module Card ───────────────────────────────────────────────
+
+function ModuleCard({
+  mod,
+  Icon,
+  colorClass,
+  areaBadge,
+  areaBadgeColor,
+  isFavorite,
+  onToggleFavorite,
+}: {
+  mod: (typeof MODULES)[number];
+  Icon: React.ComponentType<{ className?: string }>;
+  colorClass: string;
+  areaBadge?: string;
+  areaBadgeColor?: string;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+
+  function handleStar(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleFavorite?.(mod.id);
+  }
+
+  return (
+    <Link
+      to={`/module/${mod.id}`}
+      className="group relative rounded-xl border border-border bg-adv-card p-5 transition-all hover:border-adv-teal/30 hover:shadow-lg hover:shadow-adv-teal/5"
+    >
+      {/* Star button — visible on hover, always visible if favourited */}
+      {onToggleFavorite && (
+        <button
+          onClick={handleStar}
+          title={isFavorite ? t('dashboard.removeFromFavourites') : t('dashboard.addToFavourites')}
+          className={`absolute right-3 top-3 rounded p-1 transition-all ${
+            isFavorite
+              ? 'text-adv-gold opacity-100'
+              : 'text-adv-gray opacity-0 group-hover:opacity-100 hover:text-adv-gold'
+          }`}
+        >
+          <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-adv-gold' : ''}`} />
+        </button>
+      )}
+
+      <div className="mb-4 flex items-start justify-between">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-lg border ${colorClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        {areaBadge && (
+          <span className={`pr-6 text-[10px] font-medium uppercase tracking-wider ${areaBadgeColor}`}>
+            {areaBadge}
+          </span>
+        )}
+      </div>
+      <h3 className="mb-2 text-sm font-semibold text-adv-white group-hover:text-adv-teal transition-colors">
+        {mod.label}
+      </h3>
+      <p className="mb-4 text-xs leading-relaxed text-adv-gray">{mod.description}</p>
+      <div className="flex items-center gap-1 text-xs text-adv-teal opacity-0 transition-opacity group-hover:opacity-100">
+        {t('dashboard.openModule')} <ArrowRight className="h-3 w-3" />
+      </div>
+    </Link>
+  );
+}

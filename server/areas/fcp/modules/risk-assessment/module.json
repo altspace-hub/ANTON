@@ -1,0 +1,75 @@
+{
+  "formatVersion": "1.0",
+  "id": "risk-assessment",
+  "label": "Risk Assessment",
+  "shortLabel": "Risk",
+  "icon": "BarChart3",
+  "description": "ML/TF risk assessment support: maturity scoring, risk factor analysis, inherent/residual risk evaluation, and control effectiveness.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "maturity-assessment",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "assessment_type",
+      "type": "select",
+      "label": "Assessment Type",
+      "required": true,
+      "options": [
+        {
+          "value": "bwra",
+          "label": "Business-Wide Risk Assessment"
+        },
+        {
+          "value": "product-risk",
+          "label": "Product / Service Risk Assessment"
+        },
+        {
+          "value": "customer-risk",
+          "label": "Customer Risk Rating"
+        },
+        {
+          "value": "country-risk",
+          "label": "Country / Jurisdiction Risk"
+        },
+        {
+          "value": "control-effectiveness",
+          "label": "Control Effectiveness Review"
+        },
+        {
+          "value": "maturity",
+          "label": "Programme Maturity Assessment"
+        }
+      ]
+    },
+    {
+      "id": "scope_description",
+      "type": "textarea",
+      "label": "Scope & Context",
+      "placeholder": "Describe the institution, products/services, customer segments, and geographic exposure relevant to this assessment..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "risk",
+    "bwra",
+    "maturity",
+    "controls"
+  ]
+}

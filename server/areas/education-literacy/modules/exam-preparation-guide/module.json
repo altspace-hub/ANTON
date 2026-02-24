@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "exam-preparation-guide",
+  "label": "Exam Preparation Guide",
+  "shortLabel": "Exam Prep",
+  "icon": "ClipboardList",
+  "description": "Prepare for important exams. Study strategies, past paper practice, and subject-specific tips for national exams.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Strategic and motivating. Evidence-based study methods. Exam-day practical tips."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "KCSE, WAEC, NECO exam formats, spaced repetition, active recall, exam strategy, study planning, stress management for students" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "exam_type",
+      "label": "Which exam are you preparing for?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "primary-leaving", "label": "Primary leaving exam" },
+        { "value": "kcse-waec-neco", "label": "KCSE / WAEC / NECO (national secondary exam)" },
+        { "value": "university-entrance", "label": "University entrance exam" },
+        { "value": "professional-certification", "label": "Professional certification" },
+        { "value": "english-language-test", "label": "English language test (IELTS / TOEFL)" },
+        { "value": "vocational-trade-exam", "label": "Vocational or trade exam" }
+      ]
+    },
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "subject",
+      "label": "Which subject or subjects?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "english", "label": "English" },
+        { "value": "mathematics", "label": "Mathematics" },
+        { "value": "science", "label": "Science" },
+        { "value": "social-studies", "label": "Social Studies" },
+        { "value": "all-subjects", "label": "All subjects" }
+      ]
+    },
+    {
+      "id": "time_to_exam",
+      "label": "How long until the exam?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "over-6-months", "label": "More than 6 months" },
+        { "value": "3-6-months", "label": "3-6 months" },
+        { "value": "1-3-months", "label": "1-3 months" },
+        { "value": "under-1-month", "label": "Less than 1 month" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
+  "tags": ["exam-preparation", "KCSE", "WAEC", "NECO", "study-skills", "spaced-repetition", "past-papers", "IELTS", "revision"]
+}

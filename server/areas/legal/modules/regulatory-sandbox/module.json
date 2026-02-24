@@ -1,0 +1,108 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-sandbox",
+  "label": "Regulatory Sandbox Advisor",
+  "shortLabel": "Sandbox",
+  "description": "Guide through regulatory sandbox applications, innovation hub engagement, and no-action letter processes. Assess eligibility, structure applications, and navigate regulatory innovation frameworks.",
+  "icon": "FlaskConical",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "client-proposal",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "engagement_type",
+      "type": "select",
+      "label": "Regulatory engagement type",
+      "required": true,
+      "options": [
+        {
+          "value": "sandbox",
+          "label": "Regulatory Sandbox Application"
+        },
+        {
+          "value": "innovation_hub",
+          "label": "Innovation Hub Engagement"
+        },
+        {
+          "value": "no_action",
+          "label": "No-Action Letter Request"
+        },
+        {
+          "value": "licence_variation",
+          "label": "Licence Variation / Waiver"
+        },
+        {
+          "value": "pre_application",
+          "label": "Pre-Application Dialogue"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Target jurisdiction(s)",
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
+      ]
+    },
+    {
+      "id": "innovation_description",
+      "type": "textarea",
+      "label": "Innovation / product description",
+      "required": true,
+      "placeholder": "Describe the innovation, technology, or product, how it differs from existing solutions, which regulations it interacts with, and what sandbox relief would enable."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "sandbox",
+    "innovation",
+    "fintech",
+    "legal",
+    "regulatory"
+  ]
+}

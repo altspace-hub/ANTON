@@ -1,0 +1,78 @@
+{
+  "formatVersion": "1.0",
+  "id": "veterinary-emergency-first-response",
+  "label": "Veterinary Emergency First Response",
+  "shortLabel": "Vet Emergency",
+  "icon": "AlertTriangle",
+  "description": "Emergency animal health response. What to do while waiting for the vet in critical situations.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Veterinary first response: bloat, dystocia, wounds, newborn resuscitation, heat stroke, fractures, first aid while waiting for vet — cattle, goats, sheep, pigs, poultry" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "animal_type",
+      "label": "What type of animal?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "cattle", "label": "Cattle / Cows" },
+        { "value": "goats", "label": "Goats" },
+        { "value": "sheep", "label": "Sheep" },
+        { "value": "pigs", "label": "Pigs" },
+        { "value": "chickens", "label": "Chickens / Poultry" },
+        { "value": "ducks", "label": "Ducks" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "emergency",
+      "label": "What is the emergency?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "bloat", "label": "Bloat (swollen belly)" },
+        { "value": "difficult-birth", "label": "Difficult birth" },
+        { "value": "snake-bite", "label": "Snake / animal bite" },
+        { "value": "wound", "label": "Wound / injury" },
+        { "value": "heat-stroke", "label": "Heat stroke" },
+        { "value": "choke", "label": "Choking" },
+        { "value": "fracture", "label": "Fracture / broken bone" },
+        { "value": "sudden-collapse", "label": "Sudden collapse" },
+        { "value": "newborn-not-breathing", "label": "Newborn not breathing" }
+      ]
+    },
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["emergency", "veterinary", "first-response", "bloat", "dystocia", "wound", "newborn", "bop", "livestock", "africa", "south-asia"]
+}

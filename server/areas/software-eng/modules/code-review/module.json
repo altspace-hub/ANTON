@@ -1,0 +1,182 @@
+{
+  "formatVersion": "1.0",
+  "id": "code-review",
+  "label": "Code Review Assistant",
+  "shortLabel": "Code Review",
+  "description": "Review code for quality, security vulnerabilities, performance issues, maintainability, and adherence to best practices. Provides actionable feedback with severity ratings and fix suggestions.",
+  "icon": "GitBranch",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "language",
+      "type": "select",
+      "label": "Primary language / framework",
+      "required": true,
+      "options": [
+        {
+          "value": "typescript",
+          "label": "TypeScript / JavaScript"
+        },
+        {
+          "value": "python",
+          "label": "Python"
+        },
+        {
+          "value": "java",
+          "label": "Java / Kotlin"
+        },
+        {
+          "value": "csharp",
+          "label": "C# / .NET"
+        },
+        {
+          "value": "go",
+          "label": "Go"
+        },
+        {
+          "value": "rust",
+          "label": "Rust"
+        },
+        {
+          "value": "cpp",
+          "label": "C / C++"
+        },
+        {
+          "value": "swift",
+          "label": "Swift"
+        },
+        {
+          "value": "ruby",
+          "label": "Ruby"
+        },
+        {
+          "value": "php",
+          "label": "PHP"
+        },
+        {
+          "value": "sql",
+          "label": "SQL"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "Review focus areas",
+      "description": "What aspects should the review prioritise?",
+      "options": [
+        {
+          "value": "security",
+          "label": "Security vulnerabilities"
+        },
+        {
+          "value": "performance",
+          "label": "Performance & scalability"
+        },
+        {
+          "value": "correctness",
+          "label": "Logic & correctness"
+        },
+        {
+          "value": "maintainability",
+          "label": "Readability & maintainability"
+        },
+        {
+          "value": "testing",
+          "label": "Test coverage & quality"
+        },
+        {
+          "value": "error_handling",
+          "label": "Error handling"
+        },
+        {
+          "value": "architecture",
+          "label": "Design patterns & architecture"
+        },
+        {
+          "value": "accessibility",
+          "label": "Accessibility (frontend)"
+        },
+        {
+          "value": "api_design",
+          "label": "API design"
+        },
+        {
+          "value": "general",
+          "label": "General quality review"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "select",
+      "label": "Code context",
+      "options": [
+        {
+          "value": "new_feature",
+          "label": "New feature implementation"
+        },
+        {
+          "value": "bug_fix",
+          "label": "Bug fix"
+        },
+        {
+          "value": "refactoring",
+          "label": "Refactoring"
+        },
+        {
+          "value": "pr_review",
+          "label": "Pull request review"
+        },
+        {
+          "value": "legacy",
+          "label": "Legacy code assessment"
+        },
+        {
+          "value": "security_audit",
+          "label": "Security audit"
+        }
+      ]
+    },
+    {
+      "id": "standards",
+      "type": "textarea",
+      "label": "Coding standards or guidelines",
+      "placeholder": "e.g., We follow Google TypeScript style guide, use ESLint with strict rules, require 80% test coverage, no any types allowed"
+    },
+    {
+      "id": "specific_concerns",
+      "type": "textarea",
+      "label": "Specific concerns or questions",
+      "placeholder": "e.g., Worried about SQL injection in the query builder, not sure if the caching strategy is correct, need to ensure GDPR-compliant data handling"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "software",
+    "code-review",
+    "security",
+    "quality",
+    "best-practices",
+    "testing"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "land-rights-paralegal",
+  "label": "Land Rights Paralegal",
+  "role": "Community Land Rights Paralegal",
+  "expertise": ["Land tenure systems", "Customary land rights", "Land registration", "Eviction response", "Women's land rights"],
+  "applicableAreas": ["land-rights", "government-services", "workers-rights"],
+  "description": "Specialist in customary and statutory land rights across African and South Asian contexts. Experienced in land grab responses, inheritance disputes, community land registration, and women's land rights under customary law.",
+  "tags": ["land-rights", "customary-law", "paralegal", "africa", "south-asia"],
+  "source": "disk"
+}

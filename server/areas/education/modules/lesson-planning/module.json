@@ -1,0 +1,149 @@
+{
+  "formatVersion": "1.0",
+  "id": "lesson-planning",
+  "label": "Lesson Planning Assistant",
+  "shortLabel": "Lesson Plans",
+  "description": "Create structured lesson plans with learning objectives, activities, differentiation strategies, assessment methods, and timing for any subject and age group.",
+  "icon": "Calendar",
+  "color": "adv-gold",
+  "areaId": "education",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "subject",
+      "type": "select",
+      "label": "Subject area",
+      "required": true,
+      "options": [
+        {
+          "value": "mathematics",
+          "label": "Mathematics"
+        },
+        {
+          "value": "science",
+          "label": "Science"
+        },
+        {
+          "value": "languages",
+          "label": "Languages / Literacy"
+        },
+        {
+          "value": "social_studies",
+          "label": "Social Studies / History"
+        },
+        {
+          "value": "arts",
+          "label": "Arts / Music / Drama"
+        },
+        {
+          "value": "technology",
+          "label": "Technology / Computing"
+        },
+        {
+          "value": "pe",
+          "label": "Physical Education"
+        },
+        {
+          "value": "professional",
+          "label": "Professional / Vocational"
+        },
+        {
+          "value": "other",
+          "label": "Other Subject"
+        }
+      ]
+    },
+    {
+      "id": "age_group",
+      "type": "select",
+      "label": "Student age group",
+      "required": true,
+      "options": [
+        {
+          "value": "primary_lower",
+          "label": "Primary (Ages 5-8)"
+        },
+        {
+          "value": "primary_upper",
+          "label": "Primary (Ages 9-11)"
+        },
+        {
+          "value": "secondary_lower",
+          "label": "Secondary (Ages 12-14)"
+        },
+        {
+          "value": "secondary_upper",
+          "label": "Secondary (Ages 15-18)"
+        },
+        {
+          "value": "adult",
+          "label": "Adult / Higher Education"
+        },
+        {
+          "value": "professional",
+          "label": "Professional Training"
+        }
+      ]
+    },
+    {
+      "id": "lesson_duration",
+      "type": "select",
+      "label": "Lesson duration",
+      "options": [
+        {
+          "value": "30",
+          "label": "30 minutes"
+        },
+        {
+          "value": "45",
+          "label": "45 minutes"
+        },
+        {
+          "value": "60",
+          "label": "60 minutes"
+        },
+        {
+          "value": "90",
+          "label": "90 minutes"
+        },
+        {
+          "value": "series",
+          "label": "Lesson series (multiple sessions)"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "type": "textarea",
+      "label": "Lesson topic and objectives",
+      "required": true,
+      "placeholder": "Describe the topic, key learning objectives, any curriculum requirements to align with, and any special considerations (SEN students, mixed ability, etc.)."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "lesson",
+    "planning",
+    "education",
+    "teaching",
+    "curriculum"
+  ]
+}

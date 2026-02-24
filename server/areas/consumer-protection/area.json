@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "consumer-protection",
+  "name": "Consumer Protection Expert",
+  "shortName": "Consumer Rights",
+  "description": "Know your consumer rights. Guidance on product complaints, scam protection, mobile money disputes, government service complaints, banking rights, and utility bill disputes — in plain language.",
+  "icon": "ShieldCheck",
+  "color": "adv-teal",
+  "cluster": "rights",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic consumer rights information works well with haiku."
+  }
+}

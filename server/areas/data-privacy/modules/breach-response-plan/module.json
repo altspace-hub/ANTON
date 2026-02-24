@@ -1,0 +1,97 @@
+{
+  "formatVersion": "1.0",
+  "id": "breach-response-plan",
+  "label": "Data Breach Response Plan",
+  "shortLabel": "Breach Response",
+  "icon": "AlertOctagon",
+  "description": "Create and test data breach response plans. Covers detection, containment, assessment (72-hour notification decision), DPA notification, individual notification, and post-incident review.",
+  "color": "adv-teal",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "GDPR Articles 33-34, EDPB Guidelines 9/2022 on data breach notification, ENISA breach taxonomy, national DPA breach notification portals"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "org_type",
+      "type": "select",
+      "label": "Organisation type",
+      "required": true,
+      "options": [
+        { "value": "eu_controller", "label": "EU Controller" },
+        { "value": "non_eu_controller", "label": "Non-EU Controller (EU market)" },
+        { "value": "processor", "label": "Processor" },
+        { "value": "joint_controller", "label": "Joint Controller" },
+        { "value": "public_authority", "label": "Public Authority" }
+      ]
+    },
+    {
+      "id": "breach_scenario",
+      "type": "select",
+      "label": "Breach scenario (if responding to a specific incident)",
+      "options": [
+        { "value": "ransomware", "label": "Ransomware" },
+        { "value": "accidental_disclosure", "label": "Accidental disclosure" },
+        { "value": "insider_threat", "label": "Insider threat" },
+        { "value": "third_party_breach", "label": "Third-party breach" },
+        { "value": "lost_device", "label": "Lost device" },
+        { "value": "phishing", "label": "Phishing" },
+        { "value": "unknown", "label": "Unknown / General plan" }
+      ]
+    },
+    {
+      "id": "data_affected",
+      "type": "chips",
+      "label": "Categories of personal data potentially affected",
+      "options": [
+        { "value": "identifiers", "label": "Personal identifiers" },
+        { "value": "financial", "label": "Financial data" },
+        { "value": "health", "label": "Health data" },
+        { "value": "biometric", "label": "Biometric" },
+        { "value": "children", "label": "Children's data" },
+        { "value": "criminal", "label": "Criminal records" },
+        { "value": "marketing_profiles", "label": "Marketing profiles" }
+      ]
+    },
+    {
+      "id": "notification_obligation",
+      "type": "select",
+      "label": "Notification obligation status",
+      "options": [
+        { "value": "required", "label": "72-hour DPA notification required" },
+        { "value": "potentially_required", "label": "Potentially required" },
+        { "value": "assessing", "label": "Assessing" },
+        { "value": "not_required", "label": "Not required" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "dpo",
+    "legal-expert"
+  ],
+  "tags": [
+    "data-breach",
+    "incident-response",
+    "gdpr-article-33",
+    "gdpr-article-34",
+    "72-hour-notification",
+    "dpa-notification",
+    "breach-response"
+  ]
+}

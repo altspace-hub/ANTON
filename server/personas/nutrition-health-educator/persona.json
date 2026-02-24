@@ -1,0 +1,10 @@
+{
+  "id": "nutrition-health-educator",
+  "label": "Community Nutrition & Health Educator",
+  "role": "Public Health Nutrition Educator",
+  "expertise": ["Community nutrition", "Maternal nutrition", "Child nutrition", "Food security", "WASH"],
+  "applicableAreas": ["community-health", "smallholder-farming"],
+  "description": "Practical nutrition and public health education for community health settings. Focuses on affordable, locally available foods. Emphasises prevention and referral to healthcare professionals for diagnosis and treatment.",
+  "tags": ["nutrition", "health", "community", "maternal-child"],
+  "source": "disk"
+}

@@ -1,0 +1,106 @@
+{
+  "formatVersion": "1.0",
+  "id": "seo-content-strategy",
+  "label": "SEO & Content Strategy",
+  "shortLabel": "SEO / Content",
+  "description": "Develop SEO audit findings, keyword strategy, content pillars, and an editorial plan to drive organic search growth and establish topical authority.",
+  "icon": "Search",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "SEO best practices, Google Search quality guidelines, Core Web Vitals, E-E-A-T, content marketing frameworks"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "seo_task",
+      "type": "select",
+      "label": "Primary task",
+      "required": true,
+      "options": [
+        { "value": "full_audit", "label": "Full SEO audit — technical + content + links" },
+        { "value": "content_strategy", "label": "Content strategy and editorial plan" },
+        { "value": "keyword_research", "label": "Keyword research and opportunity analysis" },
+        { "value": "technical_seo", "label": "Technical SEO review" },
+        { "value": "competitor_seo", "label": "Competitor SEO gap analysis" },
+        { "value": "local_seo", "label": "Local SEO strategy" },
+        { "value": "international_seo", "label": "International / multilingual SEO" }
+      ]
+    },
+    {
+      "id": "website_url",
+      "type": "text",
+      "label": "Website URL",
+      "description": "The primary domain to analyse.",
+      "placeholder": "https://www.example.com"
+    },
+    {
+      "id": "industry_vertical",
+      "type": "text",
+      "label": "Industry / vertical",
+      "description": "What industry or niche does this website serve? Used to identify relevant keywords and content topics.",
+      "placeholder": "e.g., B2B HR Software, Nordic financial services, sustainable fashion e-commerce..."
+    },
+    {
+      "id": "competitor_urls",
+      "type": "textarea",
+      "label": "Key competitor URLs (optional)",
+      "description": "List competitor domains to benchmark against, one per line.",
+      "placeholder": "https://competitor-one.com\nhttps://competitor-two.com"
+    },
+    {
+      "id": "content_priorities",
+      "type": "chips",
+      "label": "Content priorities",
+      "description": "Which content types or outcomes should the strategy prioritise?",
+      "options": [
+        { "value": "blog_articles", "label": "Blog / articles" },
+        { "value": "landing_pages", "label": "Product / service landing pages" },
+        { "value": "thought_leadership", "label": "Thought leadership / whitepapers" },
+        { "value": "how_to_guides", "label": "How-to guides / tutorials" },
+        { "value": "case_studies", "label": "Case studies" },
+        { "value": "comparison_pages", "label": "Comparison / alternative pages" },
+        { "value": "local_content", "label": "Local / regional content" },
+        { "value": "video_content", "label": "Video SEO" }
+      ]
+    },
+    {
+      "id": "known_seo_issues",
+      "type": "textarea",
+      "label": "Known SEO issues or context",
+      "description": "Any known technical issues, recent ranking drops, Google updates impact, or previous SEO work to be aware of?",
+      "placeholder": "e.g., Traffic dropped ~30% after March 2024 core update. We have 400 thin product pages. Site migration planned for Q3..."
+    }
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "pragmatist"
+  ],
+  "tags": [
+    "SEO",
+    "content-strategy",
+    "organic-search",
+    "keyword-research",
+    "E-E-A-T",
+    "Core-Web-Vitals",
+    "topical-authority",
+    "editorial-planning"
+  ]
+}

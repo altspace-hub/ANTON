@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "loan-default-rights",
+  "label": "Loan Default — Know Your Rights",
+  "shortLabel": "Can't Repay",
+  "icon": "LifeBuoy",
+  "description": "I can't repay my loan — what are my rights? Steps to take when you're struggling to repay, and protection from illegal collection.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex disputes may benefit from sonnet for more detailed legal guidance."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Borrower rights on loan default, debt collection laws in developing economies, loan restructuring, credit bureau rehabilitation, illegal collection practices"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "lender_type",
+      "type": "select",
+      "label": "Who is the lender?",
+      "required": true,
+      "options": [
+        { "value": "formal-mfi", "label": "Formal microfinance institution (MFI)" },
+        { "value": "bank", "label": "Bank" },
+        { "value": "mobile-app", "label": "Mobile loan application" },
+        { "value": "sacco", "label": "SACCO or savings cooperative" },
+        { "value": "moneylender", "label": "Private moneylender" },
+        { "value": "family-friend", "label": "Family or friend" }
+      ]
+    },
+    {
+      "id": "situation",
+      "type": "select",
+      "label": "What is your situation right now?",
+      "required": true,
+      "options": [
+        { "value": "behind-payments", "label": "I am behind on payments" },
+        { "value": "cannot-pay", "label": "I cannot pay at all" },
+        { "value": "lender-threatening", "label": "The lender is threatening me" },
+        { "value": "assets-being-taken", "label": "My assets are being taken" },
+        { "value": "want-to-understand", "label": "I want to understand my rights before a problem happens" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "loan-default",
+    "borrower-rights",
+    "debt-collection",
+    "loan-restructuring",
+    "consumer-protection",
+    "credit-bureau",
+    "illegal-collection",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

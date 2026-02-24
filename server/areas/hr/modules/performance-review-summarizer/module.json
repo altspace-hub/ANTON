@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "performance-review-summarizer",
+  "label": "Performance Review Summarizer",
+  "shortLabel": "Review Summarizer",
+  "description": "Aggregates 360-degree feedback from multiple reviewers into a coherent summary. Identifies themes, balances perspectives, and structures development recommendations.",
+  "icon": "BarChart3",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "feedback_content",
+      "type": "textarea",
+      "label": "360-degree feedback responses",
+      "required": true,
+      "description": "Paste the feedback from multiple reviewers. Label each reviewer by role (Manager, Peer 1, Peer 2, Direct Report 1, etc.) — not by name.",
+      "placeholder": "Manager: 'Strong technical skills but struggles to delegate — tends to do everything herself rather than develop the team. Excellent client management, clients specifically request to work with her.'\nPeer 1: 'Very responsive and collaborative. Sometimes overpromises to clients and then the team has to deliver an unrealistic scope.'\nDirect Report 1: 'Great mentor and very clear on priorities. Can be impatient when work is not done to her standard.'"
+    },
+    {
+      "id": "role_context",
+      "type": "textarea",
+      "label": "Employee role and level",
+      "description": "Brief description of the role and level — helps calibrate expectations and development recommendations.",
+      "placeholder": "e.g., Senior Compliance Manager, 3 years in role, manages a team of 4 analysts, client-facing, aspiring to Director level."
+    },
+    {
+      "id": "self_assessment",
+      "type": "textarea",
+      "label": "Employee self-assessment (if available)",
+      "description": "Paste the employee's own performance self-assessment. This will be compared with reviewer feedback.",
+      "placeholder": "Paste self-assessment text here (optional)."
+    },
+    {
+      "id": "review_period",
+      "type": "text",
+      "label": "Review period",
+      "placeholder": "e.g., 2024 Annual Review (January – December 2024)"
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "What should the summary focus on?",
+      "options": [
+        {
+          "value": "strengths",
+          "label": "Key strengths and differentiators"
+        },
+        {
+          "value": "development",
+          "label": "Development areas and growth opportunities"
+        },
+        {
+          "value": "patterns",
+          "label": "Consistent themes across reviewers"
+        },
+        {
+          "value": "conflicts",
+          "label": "Conflicting feedback and what it may indicate"
+        },
+        {
+          "value": "next_level",
+          "label": "Readiness for promotion / next level"
+        },
+        {
+          "value": "development_plan",
+          "label": "Specific development action recommendations"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "performance",
+    "360-feedback",
+    "development",
+    "talent-management",
+    "review"
+  ]
+}

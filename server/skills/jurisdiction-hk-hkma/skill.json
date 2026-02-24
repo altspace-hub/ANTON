@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-hk-hkma",
+  "label": "Hong Kong — Hong Kong Monetary Authority (HKMA)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "investment"],
+  "description": "Hong Kong financial regulatory framework: AMLO, HKMA AML/CFT guidance, virtual asset regulation (SFC + HKMA), banking ordinance, Common Reporting Standard, and status as Asia's premier banking hub.",
+  "tags": ["hong-kong", "hkma", "east-asia", "financial-hub", "crypto"]
+}

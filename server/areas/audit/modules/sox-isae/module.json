@@ -1,0 +1,111 @@
+{
+  "formatVersion": "1.0",
+  "id": "sox-isae",
+  "label": "SOX / ISAE Compliance",
+  "shortLabel": "SOX / ISAE",
+  "description": "Control documentation, ITGC testing design, process-level control matrices, and management assertion testing for ISAE 3402 and SOX compliance.",
+  "icon": "Shield",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "framework",
+      "type": "select",
+      "label": "Framework",
+      "required": true,
+      "options": [
+        {
+          "value": "isae_3402",
+          "label": "ISAE 3402 / SOC 1"
+        },
+        {
+          "value": "sox_404",
+          "label": "SOX Section 404"
+        },
+        {
+          "value": "soc_2",
+          "label": "SOC 2 (Trust Services Criteria)"
+        },
+        {
+          "value": "isae_3000",
+          "label": "ISAE 3000 (General Assurance)"
+        }
+      ]
+    },
+    {
+      "id": "report_type",
+      "type": "select",
+      "label": "Report type",
+      "options": [
+        {
+          "value": "type_i",
+          "label": "Type I — Design adequacy at a point in time"
+        },
+        {
+          "value": "type_ii",
+          "label": "Type II — Design and operating effectiveness over a period"
+        }
+      ]
+    },
+    {
+      "id": "scope_processes",
+      "type": "textarea",
+      "label": "In-scope processes",
+      "required": true,
+      "placeholder": "e.g., Order-to-cash, financial close and reporting, payroll, IT general controls (access management, change management, operations)"
+    },
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "options": [
+        {
+          "value": "control_matrix",
+          "label": "Control matrix design"
+        },
+        {
+          "value": "test_procedures",
+          "label": "Test procedures for existing controls"
+        },
+        {
+          "value": "gap_assessment",
+          "label": "Gap assessment against framework requirements"
+        },
+        {
+          "value": "documentation",
+          "label": "Control description documentation"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "sox",
+    "isae",
+    "soc",
+    "controls",
+    "financial-reporting"
+  ]
+}

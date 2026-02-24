@@ -1,0 +1,122 @@
+{
+  "formatVersion": "1.0",
+  "id": "business-plan",
+  "label": "Business Plan Builder",
+  "shortLabel": "Business Plan",
+  "icon": "FileText",
+  "description": "Build comprehensive business plans with market analysis, financial projections, operational strategy, and go-to-market planning for startups and new ventures.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "Business Type",
+      "description": "What kind of business are you building?",
+      "required": true,
+      "options": [
+        {
+          "value": "saas",
+          "label": "SaaS / Software"
+        },
+        {
+          "value": "marketplace",
+          "label": "Marketplace / Platform"
+        },
+        {
+          "value": "ecommerce",
+          "label": "E-Commerce / D2C"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Financial Services"
+        },
+        {
+          "value": "services",
+          "label": "Professional Services / Consulting"
+        },
+        {
+          "value": "hardware",
+          "label": "Hardware / Deep Tech"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "stage",
+      "type": "select",
+      "label": "Venture Stage",
+      "description": "What stage is the venture at?",
+      "required": true,
+      "options": [
+        {
+          "value": "idea",
+          "label": "Idea / Concept"
+        },
+        {
+          "value": "pre-seed",
+          "label": "Pre-Seed / Building MVP"
+        },
+        {
+          "value": "seed",
+          "label": "Seed / Early Traction"
+        },
+        {
+          "value": "series-a",
+          "label": "Series A / Growth"
+        },
+        {
+          "value": "established",
+          "label": "Established / Pivoting"
+        }
+      ]
+    },
+    {
+      "id": "target_market",
+      "type": "textarea",
+      "label": "Target Market",
+      "description": "Describe your target customers and market.",
+      "placeholder": "e.g. Mid-market SaaS companies in Northern Europe with 50-500 employees looking for compliance automation..."
+    },
+    {
+      "id": "business_description",
+      "type": "textarea",
+      "label": "Business Description",
+      "description": "Describe what your business does and the problem it solves.",
+      "placeholder": "e.g. We provide an AI-powered platform that automates regulatory compliance reporting for fintech companies..."
+    }
+  ],
+  "recommendedPersonas": [
+    "business-expert",
+    "pragmatist"
+  ],
+  "tags": [
+    "startup",
+    "business-plan",
+    "strategy",
+    "entrepreneurship"
+  ]
+}

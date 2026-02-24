@@ -1,0 +1,204 @@
+{
+  "formatVersion": "1.0",
+  "id": "contract-review",
+  "label": "Contract Review & Analysis",
+  "shortLabel": "Contract Review",
+  "description": "Review contracts for risk, regulatory compliance, missing clauses, and commercial balance. Get clause-by-clause findings with negotiation guidance.",
+  "icon": "FileCheck",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "contract_type",
+      "type": "select",
+      "label": "Type of contract",
+      "description": "The contract type determines which regulatory requirements and standard terms apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "service_agreement",
+          "label": "Service Agreement"
+        },
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing / Managed Services Agreement"
+        },
+        {
+          "value": "ict_contract",
+          "label": "ICT / Technology Contract (DORA)"
+        },
+        {
+          "value": "nda",
+          "label": "NDA / Confidentiality Agreement"
+        },
+        {
+          "value": "employment",
+          "label": "Employment Contract"
+        },
+        {
+          "value": "license",
+          "label": "License / SaaS Agreement"
+        },
+        {
+          "value": "partnership",
+          "label": "Partnership / JV Agreement"
+        },
+        {
+          "value": "procurement",
+          "label": "Procurement Contract"
+        },
+        {
+          "value": "loan",
+          "label": "Loan / Credit Agreement"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Policy"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "your_role",
+      "type": "select",
+      "label": "Your position in the contract",
+      "description": "This determines which party's interests to prioritise in the review.",
+      "options": [
+        {
+          "value": "service_provider",
+          "label": "We are the service provider / vendor"
+        },
+        {
+          "value": "client",
+          "label": "We are the client / buyer"
+        },
+        {
+          "value": "advisor",
+          "label": "We are reviewing as third-party advisor"
+        },
+        {
+          "value": "regulator",
+          "label": "We are reviewing as regulator / auditor"
+        }
+      ]
+    },
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "What to focus on",
+      "description": "Select all relevant focus areas for the review.",
+      "options": [
+        {
+          "value": "risk",
+          "label": "Risk identification"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory compliance"
+        },
+        {
+          "value": "commercial",
+          "label": "Commercial terms"
+        },
+        {
+          "value": "liability",
+          "label": "Liability & indemnity"
+        },
+        {
+          "value": "termination",
+          "label": "Termination provisions"
+        },
+        {
+          "value": "data_protection",
+          "label": "Data protection (GDPR/DPA)"
+        },
+        {
+          "value": "sla",
+          "label": "SLA & performance"
+        },
+        {
+          "value": "completeness",
+          "label": "General completeness"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Governing law",
+      "description": "The governing law determines which legal standards apply.",
+      "options": [
+        {
+          "value": "swedish",
+          "label": "Swedish law"
+        },
+        {
+          "value": "finnish",
+          "label": "Finnish law"
+        },
+        {
+          "value": "danish",
+          "label": "Danish law"
+        },
+        {
+          "value": "norwegian",
+          "label": "Norwegian law"
+        },
+        {
+          "value": "english",
+          "label": "English law"
+        },
+        {
+          "value": "eu",
+          "label": "EU regulation / multiple"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific concerns or questions",
+      "description": "Anything you are worried about or want looked at closely.",
+      "placeholder": "e.g., We are concerned about the liability cap and exit provisions. Are the SCA requirements correctly addressed?"
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "contract",
+    "legal",
+    "outsourcing",
+    "dora",
+    "gdpr",
+    "risk"
+  ]
+}

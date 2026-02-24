@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "market-price-guide",
+  "label": "Market Price & Negotiation Guide",
+  "shortLabel": "Market Prices",
+  "icon": "TrendingUp",
+  "description": "Am I getting a fair price? Learn how to check market prices, negotiate with traders, and decide when and where to sell for the best return.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Agricultural market pricing, seasonal price patterns, cooperative selling, negotiation strategies for smallholder farmers in developing regions" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "crop",
+      "label": "What are you selling?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "maize", "label": "Maize" },
+        { "value": "beans", "label": "Beans" },
+        { "value": "cassava", "label": "Cassava" },
+        { "value": "rice", "label": "Rice" },
+        { "value": "tomatoes", "label": "Tomatoes" },
+        { "value": "groundnuts", "label": "Groundnuts" },
+        { "value": "vegetables", "label": "Vegetables" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "region",
+      "label": "Where is your farm?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "east-africa", "label": "East Africa" },
+        { "value": "west-africa", "label": "West Africa" },
+        { "value": "southern-africa", "label": "Southern Africa" },
+        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
+        { "value": "southeast-asia", "label": "Southeast Asia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "quantity",
+      "label": "How much do you have to sell?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "small-surplus", "label": "Small amount (family use + small surplus)" },
+        { "value": "medium", "label": "Medium (100–500 kg)" },
+        { "value": "large", "label": "Large (500 kg or more)" }
+      ]
+    },
+    {
+      "id": "current_challenge",
+      "label": "What is your main challenge?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "traders-pay-little", "label": "Traders pay too little" },
+        { "value": "dont-know-prices", "label": "I don't know the current prices" },
+        { "value": "forced-to-sell-now", "label": "Forced to sell immediately after harvest" },
+        { "value": "want-better-market", "label": "I want to find a better market" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["market-prices", "negotiation", "cooperative-selling", "seasonal-prices", "harvest-timing", "market-information", "traders", "smallholder", "rural-markets"]
+}

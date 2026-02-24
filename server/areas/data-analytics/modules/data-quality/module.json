@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "data-quality",
+  "label": "Data Quality Assessment",
+  "shortLabel": "Data Quality",
+  "icon": "CheckSquare",
+  "description": "Assess and improve data quality across completeness, accuracy, consistency, timeliness, and validity. Identify root causes and build a data quality programme.",
+  "color": "adv-teal",
+  "areaId": "data-analytics",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "data-readiness-scorecard",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "DAMA DMBOK, BCBS 239, ISO 8000 data quality standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "data_domain",
+      "type": "multi-select",
+      "label": "Data domains to assess",
+      "required": true,
+      "options": [
+        {
+          "value": "customer",
+          "label": "Customer / KYC data"
+        },
+        {
+          "value": "transaction",
+          "label": "Transaction data"
+        },
+        {
+          "value": "risk",
+          "label": "Risk and regulatory data"
+        },
+        {
+          "value": "financial",
+          "label": "Financial data"
+        }
+      ]
+    },
+    {
+      "id": "dq_dimensions",
+      "type": "multi-select",
+      "label": "Quality dimensions to focus on",
+      "options": [
+        {
+          "value": "completeness",
+          "label": "Completeness (missing fields)"
+        },
+        {
+          "value": "accuracy",
+          "label": "Accuracy (incorrect values)"
+        },
+        {
+          "value": "consistency",
+          "label": "Consistency (conflicting data)"
+        },
+        {
+          "value": "timeliness",
+          "label": "Timeliness (stale data)"
+        },
+        {
+          "value": "uniqueness",
+          "label": "Uniqueness (duplicates)"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context and known issues",
+      "placeholder": "e.g., Customer data has 30% missing LEI codes."
+    }
+  ],
+  "recommendedPersonas": [
+    "data-scientist",
+    "auditor"
+  ],
+  "tags": [
+    "data-quality",
+    "dama",
+    "bcbs239",
+    "governance",
+    "analytics"
+  ]
+}

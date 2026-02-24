@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "interview-prep",
+  "label": "Interview Preparation Coach",
+  "shortLabel": "Interview Prep",
+  "icon": "MessageSquare",
+  "description": "Prepare for job interviews with tailored questions, model answers using the STAR framework, competency mapping, and strategy for different interview formats.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "quick-briefing"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "interview_type",
+      "type": "select",
+      "label": "Interview Type",
+      "description": "What type of interview are you preparing for?",
+      "required": true,
+      "options": [
+        {
+          "value": "competency",
+          "label": "Competency-Based Interview"
+        },
+        {
+          "value": "case",
+          "label": "Case Study / Problem-Solving"
+        },
+        {
+          "value": "technical",
+          "label": "Technical / Knowledge Test"
+        },
+        {
+          "value": "panel",
+          "label": "Panel Interview"
+        },
+        {
+          "value": "executive",
+          "label": "Executive / Board-Level"
+        },
+        {
+          "value": "behavioral",
+          "label": "Behavioral Interview"
+        }
+      ]
+    },
+    {
+      "id": "target_position",
+      "type": "textarea",
+      "label": "Target Position",
+      "description": "Describe the role you are interviewing for.",
+      "required": true,
+      "placeholder": "e.g. Head of Financial Crime Compliance at a large Nordic bank, reporting to the CCO..."
+    },
+    {
+      "id": "background",
+      "type": "textarea",
+      "label": "Your Background",
+      "description": "Summarise your relevant experience and strengths.",
+      "placeholder": "e.g. 10 years in compliance, currently Senior Manager at Big 4, experience with AMLR and sanctions..."
+    },
+    {
+      "id": "known_topics",
+      "type": "textarea",
+      "label": "Known Topics / Concerns",
+      "description": "Any specific areas you expect to be asked about or are worried about?",
+      "placeholder": "e.g. Likely questions about leadership experience, gap in CV from 2022, limited fintech experience..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "career",
+    "interview",
+    "preparation",
+    "coaching"
+  ]
+}

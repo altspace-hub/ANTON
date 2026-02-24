@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.0",
+  "id": "press-release",
+  "label": "Press Release Writer",
+  "shortLabel": "Press Release",
+  "icon": "Newspaper",
+  "description": "Draft professional press releases with inverted pyramid structure, compelling headlines, quotable quotes, boilerplates, and distribution-ready formatting.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "quick-briefing"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "release_type",
+      "type": "select",
+      "label": "Release Type",
+      "description": "What type of press release?",
+      "required": true,
+      "options": [
+        {
+          "value": "product",
+          "label": "Product / Service Launch"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate Announcement"
+        },
+        {
+          "value": "partnership",
+          "label": "Partnership / Collaboration"
+        },
+        {
+          "value": "financial",
+          "label": "Financial Results"
+        },
+        {
+          "value": "appointment",
+          "label": "Executive Appointment"
+        },
+        {
+          "value": "event",
+          "label": "Event / Conference"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory / Compliance Update"
+        }
+      ]
+    },
+    {
+      "id": "key_message",
+      "type": "textarea",
+      "label": "Key Message / News",
+      "description": "What is the main news? What do you want the headline to say?",
+      "required": true,
+      "placeholder": "e.g. Advisense launches AI-powered compliance workbench for Nordic financial institutions, reducing gap analysis time by 80%..."
+    },
+    {
+      "id": "target_media",
+      "type": "textarea",
+      "label": "Target Media / Audience",
+      "description": "Who are the target publications and audience?",
+      "placeholder": "e.g. Financial technology trade press (Finextra, The Banker), Nordic business media (DI, Kauppalehti), compliance professional audience..."
+    },
+    {
+      "id": "quotes_speakers",
+      "type": "textarea",
+      "label": "Spokespeople & Quotes",
+      "description": "Who should be quoted and any draft quote themes?",
+      "placeholder": "e.g. CEO Johan Andersson on innovation vision, CTO Lisa Berg on technology, client testimonial from compliance head at Nordea..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "communications",
+    "press-release",
+    "media",
+    "pr"
+  ]
+}

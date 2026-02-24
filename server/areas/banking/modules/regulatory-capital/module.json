@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-capital",
+  "label": "Regulatory Capital & Basel",
+  "shortLabel": "Capital / Basel",
+  "description": "CRR3/Basel IV capital requirements, ICAAP support, capital planning, stress testing, and Pillar 2 assessment for credit institutions.",
+  "icon": "Building",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "impact-assessment"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "topic",
+      "type": "select",
+      "label": "Topic",
+      "required": true,
+      "options": [
+        {
+          "value": "crr3_impact",
+          "label": "CRR3 / Basel IV impact assessment"
+        },
+        {
+          "value": "icaap",
+          "label": "ICAAP support and review"
+        },
+        {
+          "value": "capital_planning",
+          "label": "Capital planning and buffer management"
+        },
+        {
+          "value": "stress_testing",
+          "label": "Stress testing design"
+        },
+        {
+          "value": "pillar2",
+          "label": "Pillar 2 requirements (P2R / P2G)"
+        },
+        {
+          "value": "output_floor",
+          "label": "Basel IV output floor analysis"
+        },
+        {
+          "value": "rwa",
+          "label": "RWA analysis and optimisation"
+        }
+      ]
+    },
+    {
+      "id": "institution_description",
+      "type": "textarea",
+      "label": "Institution description",
+      "placeholder": "Brief description: size, asset class mix, current capital ratios, IRB or standardised approach, key risks."
+    },
+    {
+      "id": "specific_questions",
+      "type": "textarea",
+      "label": "Specific questions or concerns",
+      "placeholder": "e.g., What is the impact of CRR3 output floor on our IRB mortgage portfolio? How should we structure our ICAAP stress tests?"
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "business-expert"
+  ],
+  "tags": [
+    "capital",
+    "basel",
+    "crr3",
+    "icaap",
+    "stress-testing",
+    "prudential"
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "mis-report-generator",
+  "label": "FCP MIS Report Generator",
+  "shortLabel": "MIS Reports",
+  "description": "Generates monthly management information (MIS) reports for FCP functions. Structures KPIs, alert volumes, investigation outcomes, SAR statistics, and training completion into board-ready reporting.",
+  "perspective": "operational",
+  "icon": "BarChart3",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "maturity-assessment"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "FCP MIS reporting best practices, regulatory expectations for AML management information"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "reporting_period",
+      "type": "text",
+      "label": "Reporting Period",
+      "description": "The period covered by this MIS report.",
+      "placeholder": "e.g. January 2025 or Q4 2024",
+      "required": true
+    },
+    {
+      "id": "report_audience",
+      "type": "select",
+      "label": "Report Audience",
+      "description": "Who is the primary audience for this report?",
+      "required": true,
+      "options": [
+        { "value": "board", "label": "Board of Directors" },
+        { "value": "risk_committee", "label": "Risk / Compliance Committee" },
+        { "value": "senior_management", "label": "Senior Management / MLRO" },
+        { "value": "fcp_team", "label": "FCP Team Internal" },
+        { "value": "regulator", "label": "Regulatory Submission" }
+      ]
+    },
+    {
+      "id": "raw_data",
+      "type": "textarea",
+      "label": "Raw Data / Statistics",
+      "description": "Paste or describe the FCP metrics and data for this period. Include any available figures — the AI will structure and contextualize them.",
+      "placeholder": "e.g.\nAlerts generated: 1,247 (prev. month: 1,189)\nAlerts cleared: 1,198 (96.1%)\nAlerts escalated to investigation: 49\nAverage clearance time: 2.3 days\nSARs filed: 7 (prev. month: 4)\nNew onboardings: 342; EDD triggered: 28\nKYC reviews completed: 89 / 134 due\nTraining completion: 91%\nScreening hits reviewed: 234; true matches: 3...",
+      "required": true
+    },
+    {
+      "id": "prior_period_data",
+      "type": "textarea",
+      "label": "Prior Period Comparisons",
+      "description": "Prior period figures for trend analysis, if not included above.",
+      "placeholder": "e.g. Last month, Q3 average, or year-to-date figures..."
+    },
+    {
+      "id": "notable_events",
+      "type": "textarea",
+      "label": "Notable Events or Issues",
+      "description": "Any significant events, incidents, regulatory interactions, or operational issues to highlight in the report.",
+      "placeholder": "e.g. System outage on 14 Jan caused 48hr delay in screening batch. Regulatory letter received on 8 Jan requesting SAR statistics. New MLRO joined on 1 Feb..."
+    },
+    {
+      "id": "open_items",
+      "type": "textarea",
+      "label": "Open Items and Remediation Actions",
+      "description": "Outstanding action items, remediation activities, or items carried forward from last period.",
+      "placeholder": "e.g. KYC backlog remediation: 45 overdue reviews remain (target: clear by end of Q1). Alert model recalibration scheduled for March..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "mis",
+    "reporting",
+    "management-information",
+    "kpi",
+    "aml",
+    "operational"
+  ]
+}

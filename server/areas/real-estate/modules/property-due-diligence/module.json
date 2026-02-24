@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "property-due-diligence",
+  "label": "Property Due Diligence",
+  "shortLabel": "Due Diligence",
+  "icon": "SearchCheck",
+  "description": "Conduct comprehensive property due diligence analysis covering legal, environmental, structural, and financial dimensions. Produces structured findings reports identifying risks, red flags, and areas requiring further investigation for commercial and residential property transactions.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Property due diligence frameworks, real estate transaction law, environmental regulations, land registry requirements"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "property-type",
+      "label": "Property Type",
+      "type": "select",
+      "options": [
+        "Commercial office",
+        "Retail",
+        "Industrial/warehouse",
+        "Residential (single)",
+        "Residential (multi-unit)",
+        "Mixed-use",
+        "Land/development site",
+        "Hotel/hospitality"
+      ],
+      "required": true
+    },
+    {
+      "id": "transaction-type",
+      "label": "Transaction Type",
+      "type": "select",
+      "options": [
+        "Acquisition",
+        "Disposal",
+        "Refinancing",
+        "Joint venture",
+        "Portfolio transaction"
+      ],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "Germany",
+        "Other EU"
+      ],
+      "required": true
+    },
+    {
+      "id": "due-diligence-scope",
+      "label": "Due Diligence Scope",
+      "type": "multiselect",
+      "options": [
+        "Legal/title",
+        "Environmental",
+        "Technical/structural",
+        "Financial",
+        "Tax",
+        "Planning/zoning",
+        "Tenant analysis",
+        "All areas"
+      ],
+      "required": true
+    },
+    {
+      "id": "known-issues",
+      "label": "Known Issues or Concerns",
+      "type": "textarea",
+      "placeholder": "Any issues already identified or areas of particular concern...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "property-investor",
+    "real-estate-lawyer",
+    "transaction-advisor"
+  ],
+  "tags": [
+    "real-estate",
+    "due-diligence",
+    "property",
+    "transaction",
+    "risk"
+  ]
+}

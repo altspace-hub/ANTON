@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "go-to-market-planning",
+  "label": "Go-to-Market Planning",
+  "shortLabel": "GTM Planning",
+  "icon": "Rocket",
+  "description": "Plan product launches and market entry strategies. Covers positioning, messaging, channel selection, launch sequencing, pricing, and success metrics.",
+  "color": "adv-teal",
+  "areaId": "product-management",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "action-plan",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Go-to-market strategy, positioning frameworks, PLG vs SLG models, launch planning, pricing strategy"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_stage",
+      "type": "select",
+      "label": "Launch type",
+      "required": true,
+      "options": [
+        { "value": "new_product", "label": "New product launch" },
+        { "value": "new_market", "label": "New market entry" },
+        { "value": "feature_launch", "label": "Feature launch" },
+        { "value": "repositioning", "label": "Repositioning" }
+      ]
+    },
+    {
+      "id": "target_segment",
+      "type": "text",
+      "label": "Primary customer segment",
+      "placeholder": "e.g., Compliance officers at Nordic banks with 10-50 employees"
+    },
+    {
+      "id": "channels",
+      "type": "chips",
+      "label": "Go-to-market motion",
+      "options": [
+        { "value": "plg", "label": "Product-led" },
+        { "value": "slg", "label": "Sales-led" },
+        { "value": "mlg", "label": "Marketing-led" },
+        { "value": "partner", "label": "Partner-led" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "Launch timeline",
+      "options": [
+        { "value": "under_1m", "label": "<1 month" },
+        { "value": "1_3m", "label": "1–3 months" },
+        { "value": "3_6m", "label": "3–6 months" },
+        { "value": "6_12m", "label": "6–12 months" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "go-to-market",
+    "gtm",
+    "launch",
+    "positioning",
+    "messaging",
+    "pricing",
+    "plg",
+    "sales"
+  ]
+}

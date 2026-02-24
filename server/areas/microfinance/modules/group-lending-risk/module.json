@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.0",
+  "id": "group-lending-risk",
+  "label": "Group Lending Risk Assessment",
+  "shortLabel": "Group Lending Risk",
+  "description": "Risk assessment of group/solidarity lending portfolios covering credit risk, over-indebtedness, group cohesion, portfolio quality indicators, and stress testing.",
+  "perspective": "analytical",
+  "icon": "Users",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "MFI portfolio risk management, PAR calculation methodology, group lending credit risk, over-indebtedness indicators, CGAP portfolio analysis, MIX Market benchmarks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "portfolio_size",
+      "type": "select",
+      "label": "Portfolio Size (Number of Groups)",
+      "description": "How many active borrower groups are currently in the portfolio?",
+      "required": true,
+      "options": [
+        { "value": "small", "label": "<1,000 groups" },
+        { "value": "medium", "label": "1,000–10,000" },
+        { "value": "large", "label": ">10,000" }
+      ]
+    },
+    {
+      "id": "model",
+      "type": "select",
+      "label": "Group Lending Model",
+      "description": "Which group lending methodology does the institution use?",
+      "required": true,
+      "options": [
+        { "value": "grameen", "label": "Grameen" },
+        { "value": "village-banking", "label": "Village Banking" },
+        { "value": "shg", "label": "Self-Help Groups (SHG)" },
+        { "value": "vsla", "label": "VSLA" },
+        { "value": "solidarity-group", "label": "Solidarity Group" }
+      ]
+    },
+    {
+      "id": "geography",
+      "type": "select",
+      "label": "Geographic Coverage",
+      "description": "Where are the borrower groups located?",
+      "required": true,
+      "options": [
+        { "value": "urban", "label": "Urban" },
+        { "value": "rural", "label": "Rural" },
+        { "value": "both", "label": "Both" }
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "chips",
+      "label": "Current Risk Concerns",
+      "description": "Which risk indicators are currently elevated or concerning? Select all that apply.",
+      "options": [
+        { "value": "high-par", "label": "High PAR" },
+        { "value": "group-defaults", "label": "Group defaults" },
+        { "value": "over-indebtedness", "label": "Over-indebtedness" },
+        { "value": "dropout-rates", "label": "Dropout rates" },
+        { "value": "geographic-concentration", "label": "Geographic concentration" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "microfinance-director",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "jurisdiction-ke-cbk",
+    "jurisdiction-in-rbi"
+  ],
+  "tags": [
+    "group-lending",
+    "credit-risk",
+    "par",
+    "over-indebtedness",
+    "portfolio-quality",
+    "grameen",
+    "shg",
+    "vsla",
+    "stress-testing"
+  ]
+}

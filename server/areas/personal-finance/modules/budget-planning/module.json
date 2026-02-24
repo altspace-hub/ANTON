@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "budget-planning",
+  "label": "Budget Planning Assistant",
+  "shortLabel": "Budget Planning",
+  "icon": "Calculator",
+  "description": "Create comprehensive personal or household budgets with structured income and expense analysis, savings targets, and spending optimisation recommendations. Produces actionable budget plans with categorised spending, priority-based allocation, and practical tips for financial improvement.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Personal budgeting frameworks, household financial planning, expense categorisation, savings strategies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "budget-type",
+      "label": "Budget Type",
+      "type": "select",
+      "options": [
+        "Individual",
+        "Couple/household",
+        "Family with children",
+        "Student",
+        "Retiree"
+      ],
+      "required": true
+    },
+    {
+      "id": "income-range",
+      "label": "Monthly Net Income Range",
+      "type": "select",
+      "options": [
+        "Under 20,000 SEK",
+        "20,000–40,000 SEK",
+        "40,000–60,000 SEK",
+        "60,000–100,000 SEK",
+        "Over 100,000 SEK",
+        "Prefer not to specify"
+      ],
+      "required": false
+    },
+    {
+      "id": "financial-goals",
+      "label": "Financial Goals",
+      "type": "multiselect",
+      "options": [
+        "Emergency fund",
+        "Debt reduction",
+        "Home purchase savings",
+        "Holiday/travel fund",
+        "Education fund",
+        "General savings increase",
+        "Spending reduction"
+      ],
+      "required": true
+    },
+    {
+      "id": "current-challenges",
+      "label": "Current Financial Challenges",
+      "type": "textarea",
+      "placeholder": "Describe any specific financial challenges or areas where you overspend...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "financial-advisor",
+    "individual"
+  ],
+  "tags": [
+    "personal-finance",
+    "budget",
+    "planning",
+    "savings",
+    "spending"
+  ]
+}

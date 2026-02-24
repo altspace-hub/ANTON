@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "operational-audit",
+  "label": "Operational Audit",
+  "shortLabel": "Operational Audit",
+  "icon": "ClipboardCheck",
+  "description": "Plan and execute operational audits across manufacturing and business operations. Covers audit programme design, audit scope definition, control assessment, finding classification, and reporting. Produces detailed findings reports and gap scoring matrices with risk-rated findings, root causes, and corrective action recommendations aligned with ISO 19011 audit principles.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "ISO 19011 audit guidelines, operational audit methodology, internal audit standards, control frameworks, risk-based auditing"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "audit-type",
+      "label": "Audit Type",
+      "type": "select",
+      "options": [
+        "Internal process audit",
+        "Supplier audit",
+        "System audit (QMS/EMS)",
+        "Product audit",
+        "Health & safety audit",
+        "Environmental audit",
+        "Financial controls audit",
+        "Compliance audit"
+      ],
+      "required": true
+    },
+    {
+      "id": "audit-scope",
+      "label": "Audit Scope",
+      "type": "select",
+      "options": [
+        "Single process/department",
+        "Multiple processes",
+        "Full site/facility",
+        "Multi-site",
+        "Supply chain"
+      ],
+      "required": true
+    },
+    {
+      "id": "applicable-standards",
+      "label": "Applicable Standards",
+      "type": "multiselect",
+      "options": [
+        "ISO 9001",
+        "ISO 14001",
+        "ISO 45001",
+        "IATF 16949",
+        "ISO 13485",
+        "Company-specific standards",
+        "Regulatory requirements",
+        "Customer requirements"
+      ],
+      "required": true
+    },
+    {
+      "id": "audit-phase",
+      "label": "Audit Phase Support Needed",
+      "type": "select",
+      "options": [
+        "Audit programme planning",
+        "Audit plan/checklist development",
+        "Finding analysis and classification",
+        "Report writing",
+        "Corrective action follow-up",
+        "Full audit support"
+      ],
+      "required": true
+    },
+    {
+      "id": "context",
+      "label": "Audit Context",
+      "type": "textarea",
+      "placeholder": "Previous audit findings, known risk areas, or specific concerns to investigate...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "internal-auditor",
+    "quality-manager",
+    "operations-director"
+  ],
+  "tags": [
+    "manufacturing",
+    "audit",
+    "operational",
+    "ISO19011",
+    "compliance"
+  ]
+}

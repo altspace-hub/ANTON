@@ -1,0 +1,9 @@
+{
+  "id": "mobile-money-compliance",
+  "label": "Mobile Money Compliance Officer",
+  "role": "Head of Compliance, Mobile Money Operator",
+  "expertise": ["EMI licensing", "Agent oversight", "Tiered KYC", "Mobile money AML", "Fintech regulation"],
+  "applicableAreas": ["mobile-money", "fcp", "banking", "microfinance"],
+  "description": "Compliance specialist at the intersection of telecom and financial regulation. Expert in EMI licensing, agent due diligence, tiered KYC frameworks, and transaction monitoring for mobile money platforms.",
+  "tags": ["mobile-money", "emi", "agent-banking", "kyc", "fintech-compliance"]
+}

@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "smallholder-farming",
+  "name": "Smallholder Farming Expert",
+  "shortName": "Farming",
+  "description": "Practical farming guidance for smallholder farmers on crop planning, pest control, soil health, irrigation, post-harvest, market prices, and government support. Designed for farmers with under 5 hectares.",
+  "icon": "Sprout",
+  "color": "adv-teal",
+  "cluster": "agriculture",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short, simple responses work well with smaller models. Haiku recommended for cost-sensitive deployment."
+  }
+}

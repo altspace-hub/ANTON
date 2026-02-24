@@ -1,0 +1,117 @@
+{
+  "formatVersion": "1.0",
+  "id": "pipeline-analysis",
+  "label": "Pipeline Analysis",
+  "shortLabel": "Pipeline Analysis",
+  "description": "Analyse sales pipeline health, forecast accuracy, conversion rates, and velocity metrics. Identify risks, stalled deals, and coverage gaps. Generate insights and actions to improve pipeline performance.",
+  "icon": "BarChart3",
+  "color": "adv-green",
+  "areaId": "sales",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_type",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "health_check",
+          "label": "Pipeline health check"
+        },
+        {
+          "value": "forecast_review",
+          "label": "Forecast accuracy review"
+        },
+        {
+          "value": "conversion_analysis",
+          "label": "Conversion rate analysis"
+        },
+        {
+          "value": "velocity_analysis",
+          "label": "Sales velocity analysis"
+        },
+        {
+          "value": "coverage_analysis",
+          "label": "Pipeline coverage analysis"
+        },
+        {
+          "value": "quarterly_review",
+          "label": "Quarterly pipeline review"
+        },
+        {
+          "value": "team_comparison",
+          "label": "Team / rep comparison"
+        }
+      ]
+    },
+    {
+      "id": "pipeline_data",
+      "type": "textarea",
+      "label": "Pipeline data",
+      "description": "Provide pipeline data or describe your current pipeline. Upload a spreadsheet for detailed analysis.",
+      "placeholder": "e.g., 45 open opportunities, total weighted pipeline EUR 8M, quota EUR 5M, average deal size EUR 180k, average sales cycle 90 days, win rate 25%"
+    },
+    {
+      "id": "time_period",
+      "type": "select",
+      "label": "Analysis period",
+      "options": [
+        {
+          "value": "current_quarter",
+          "label": "Current quarter"
+        },
+        {
+          "value": "next_quarter",
+          "label": "Next quarter"
+        },
+        {
+          "value": "full_year",
+          "label": "Full year"
+        },
+        {
+          "value": "ytd",
+          "label": "Year to date"
+        },
+        {
+          "value": "custom",
+          "label": "Custom period"
+        }
+      ]
+    },
+    {
+      "id": "target",
+      "type": "text",
+      "label": "Revenue target",
+      "placeholder": "e.g., EUR 5M quarterly quota, EUR 20M annual target"
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific concerns",
+      "placeholder": "e.g., Too many deals stuck in discovery, forecast keeps slipping, losing to one competitor consistently, new reps underperforming"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "sales",
+    "pipeline",
+    "forecast",
+    "analytics",
+    "conversion",
+    "revenue"
+  ]
+}

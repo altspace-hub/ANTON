@@ -1,0 +1,9 @@
+{
+  "id": "dpo",
+  "label": "Data Protection Officer (DPO)",
+  "role": "Chief Privacy Officer / Data Protection Officer",
+  "expertise": ["GDPR", "DPIA", "Data subject rights", "Privacy by design", "Cross-border transfers"],
+  "applicableAreas": ["data-privacy", "fcp", "hr", "healthcare", "banking"],
+  "description": "Qualified DPO with expertise in GDPR compliance, privacy impact assessments, data subject rights management, and building privacy programmes for regulated industries.",
+  "tags": ["gdpr", "dpo", "privacy", "data-protection", "dpia", "sccs"]
+}

@@ -1,0 +1,115 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-horizon-scanning",
+  "label": "Regulatory Horizon Scanning",
+  "shortLabel": "Horizon Scanning",
+  "description": "Systematic scan of upcoming regulatory changes across specified jurisdictions and areas. Produces prioritized watch list with timeline, impact assessment, and recommended preparation actions.",
+  "perspective": "consultant",
+  "icon": "Radar",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "compliance-calendar",
+      "impact-assessment",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU regulatory pipeline, national financial services regulation, EBA/ESMA/EIOPA consultations, legislative calendar"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "scan_horizon",
+      "type": "select",
+      "label": "Scanning Horizon",
+      "description": "How far ahead should the horizon scan look?",
+      "required": true,
+      "options": [
+        { "value": "6_months", "label": "Next 6 months" },
+        { "value": "12_months", "label": "Next 12 months" },
+        { "value": "24_months", "label": "Next 24 months" },
+        { "value": "36_months", "label": "Next 36 months (strategic)" }
+      ]
+    },
+    {
+      "id": "jurisdictions",
+      "type": "chips",
+      "label": "Jurisdictions",
+      "description": "Which jurisdictions should be scanned?",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU (all member states)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway" },
+        { "value": "uk", "label": "United Kingdom" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "global", "label": "Global / FATF" }
+      ]
+    },
+    {
+      "id": "regulatory_areas",
+      "type": "chips",
+      "label": "Regulatory Areas",
+      "description": "Which regulatory topics should be scanned?",
+      "required": true,
+      "options": [
+        { "value": "aml_cft", "label": "AML/CFT" },
+        { "value": "sanctions", "label": "Sanctions" },
+        { "value": "gdpr_privacy", "label": "GDPR / Data Privacy" },
+        { "value": "dora", "label": "DORA / Operational Resilience" },
+        { "value": "mifid_mifir", "label": "MiFID II / MiFIR" },
+        { "value": "crd_crr", "label": "CRD / CRR (Banking)" },
+        { "value": "esg_csrd", "label": "ESG / CSRD" },
+        { "value": "crypto_mica", "label": "Crypto / MiCA" },
+        { "value": "psd3_psr", "label": "PSD3 / PSR" },
+        { "value": "ai_act", "label": "AI Act" }
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity Type",
+      "description": "What type of entity does the horizon scan apply to?",
+      "options": [
+        { "value": "bank", "label": "Bank / Credit Institution" },
+        { "value": "fintech", "label": "Fintech / Payment Institution" },
+        { "value": "investment", "label": "Investment Firm / Asset Manager" },
+        { "value": "insurance", "label": "Insurance Company" },
+        { "value": "crypto", "label": "Crypto Asset Service Provider" },
+        { "value": "corporate", "label": "Non-Financial Corporate" }
+      ]
+    },
+    {
+      "id": "known_focus",
+      "type": "textarea",
+      "label": "Known Concerns or Focus Areas",
+      "description": "Any specific regulatory developments already on the radar that should be included or prioritized.",
+      "placeholder": "e.g. AMLR application date July 2027 is a priority. DORA ICT risk requirements effective Jan 2025 — assess current compliance. AI Act high-risk classification for credit scoring models..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "horizon-scanning",
+    "regulatory-pipeline",
+    "compliance-calendar",
+    "consultant"
+  ]
+}

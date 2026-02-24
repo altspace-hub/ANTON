@@ -1,0 +1,90 @@
+{
+  "formatVersion": "1.0",
+  "id": "month-end-checklist",
+  "label": "Month-End Close Checklist Runner",
+  "shortLabel": "Month-End Close",
+  "description": "Guides through systematic month-end close procedures. Generates role-specific checklists, identifies unreconciled items, tracks completion status, and produces sign-off documentation.",
+  "perspective": "operational",
+  "icon": "ListChecks",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "monitoring-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Month-end close best practices, reconciliation standards, IFRS/GAAP accrual principles"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "close_period",
+      "type": "text",
+      "label": "Closing period",
+      "required": true,
+      "placeholder": "e.g. January 2025"
+    },
+    {
+      "id": "company_type",
+      "type": "select",
+      "label": "Company type",
+      "required": true,
+      "options": [
+        { "value": "trading", "label": "Trading / manufacturing company" },
+        { "value": "services", "label": "Professional services / consulting" },
+        { "value": "financial_services", "label": "Financial services" },
+        { "value": "holding", "label": "Holding / investment company" },
+        { "value": "group_consolidation", "label": "Group consolidation" }
+      ]
+    },
+    {
+      "id": "accounting_standard",
+      "type": "select",
+      "label": "Accounting standard",
+      "options": [
+        { "value": "ifrs", "label": "IFRS" },
+        { "value": "k3", "label": "Swedish K3 (ÅRL/K3)" },
+        { "value": "k2", "label": "Swedish K2 (simplified)" },
+        { "value": "us_gaap", "label": "US GAAP" }
+      ]
+    },
+    {
+      "id": "open_items",
+      "type": "textarea",
+      "label": "Known open / unreconciled items",
+      "placeholder": "List any items you know are outstanding:\ne.g.\n- Bank reconciliation: 3 items unmatched totalling 45 000 SEK\n- Intercompany balance with DE subsidiary not confirmed\n- Depreciation run not yet executed\n- Accruals for IT consulting invoice not posted"
+    },
+    {
+      "id": "team_roles",
+      "type": "textarea",
+      "label": "Team roles (optional)",
+      "placeholder": "List team members and their roles to generate role-specific sub-checklists.\ne.g.\n- Anna (AP): accounts payable, supplier reconciliations\n- Erik (AR): accounts receivable, collections\n- Sofia (GL): general ledger, accruals, reporting\n- Manager: review and sign-off"
+    },
+    {
+      "id": "deadline",
+      "type": "text",
+      "label": "Close deadline",
+      "placeholder": "e.g. 5 working days after month-end — 7 February 2025"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "month-end",
+    "close",
+    "reconciliation",
+    "operational"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "education-literacy",
+  "name": "Education & Literacy Expert",
+  "shortName": "Education",
+  "description": "Learning support for adults and children. Literacy practice, numeracy, children's homework help, finding scholarships, skills training, digital literacy, and exam preparation.",
+  "icon": "GraduationCap",
+  "color": "adv-teal",
+  "cluster": "community",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Learning support works well with smaller models. Patient, encouraging responses."
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.0",
+  "id": "three-lines-assessment",
+  "label": "Three Lines Model Assessment",
+  "shortLabel": "Three Lines",
+  "description": "Evaluates the effectiveness and independence of an organization's three lines of defense. Identifies overlaps, gaps, and conflicts in governance structure.",
+  "icon": "Layers",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "maturity-assessment",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "IIA Three Lines Model 2020, Basel Committee governance principles, EBA internal governance guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_description",
+      "type": "textarea",
+      "label": "Institution and governance structure",
+      "required": true,
+      "description": "Describe the institution, its size, regulatory status, and current governance structure.",
+      "placeholder": "e.g., Mid-sized Nordic bank (€8B total assets, ECB less-significant institution). 1st line: Business units and Risk Management function embedded in business. 2nd line: Central Risk function, Compliance, Legal. 3rd line: Internal Audit (10 FTEs, reports to Audit Committee)."
+    },
+    {
+      "id": "assessment_evidence",
+      "type": "textarea",
+      "label": "Observations and evidence to assess",
+      "description": "What have you observed about how the three lines function? Include specific examples of gaps, overlaps, or conflicts.",
+      "placeholder": "e.g., Compliance function both sets AML policy AND tests compliance with it. Internal Audit reports administratively to CFO, not directly to Audit Committee. 1st line risk managers are included in 2nd line risk committee. 2nd line approves individual transactions in the credit process..."
+    },
+    {
+      "id": "regulatory_framework",
+      "type": "select",
+      "label": "Applicable governance standard",
+      "options": [
+        {
+          "value": "iia_2020",
+          "label": "IIA Three Lines Model (2020)"
+        },
+        {
+          "value": "eba_governance",
+          "label": "EBA Internal Governance Guidelines (GL/2021/05)"
+        },
+        {
+          "value": "bcbs_239",
+          "label": "BCBS 239 — Risk Data Aggregation (reporting lines)"
+        },
+        {
+          "value": "ecb_ssm",
+          "label": "ECB SSM supervisory expectations"
+        },
+        {
+          "value": "combined",
+          "label": "Combined: IIA + EBA + ECB"
+        }
+      ]
+    },
+    {
+      "id": "assessment_focus",
+      "type": "multi-select",
+      "label": "Assessment dimensions",
+      "options": [
+        {
+          "value": "independence",
+          "label": "Functional independence and reporting lines"
+        },
+        {
+          "value": "mandate_clarity",
+          "label": "Mandate clarity and role boundaries"
+        },
+        {
+          "value": "overlap_gaps",
+          "label": "Overlaps and coverage gaps"
+        },
+        {
+          "value": "resource_adequacy",
+          "label": "Resource adequacy and capability"
+        },
+        {
+          "value": "board_engagement",
+          "label": "Board and senior management engagement"
+        },
+        {
+          "value": "information_flow",
+          "label": "Information flow and escalation paths"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "audit",
+    "governance",
+    "three-lines",
+    "IIA",
+    "independence",
+    "assurance"
+  ]
+}

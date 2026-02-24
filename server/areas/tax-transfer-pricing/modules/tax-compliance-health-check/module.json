@@ -1,0 +1,130 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-compliance-health-check",
+  "label": "Tax Compliance Health Check",
+  "shortLabel": "Health Check",
+  "description": "Assess an entity's tax compliance status across all material tax types and jurisdictions. Identify filing gaps, payment exposures, procedural weaknesses, and governance deficiencies before a tax authority does.",
+  "icon": "ClipboardCheck",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Corporate tax compliance requirements, filing obligations, penalty regimes"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity type",
+      "required": true,
+      "options": [
+        { "value": "subsidiary", "label": "Subsidiary of a multinational group" },
+        { "value": "parent_hq", "label": "Group parent / HQ entity" },
+        { "value": "holding_co", "label": "Holding company" },
+        { "value": "branch", "label": "Branch / permanent establishment" },
+        { "value": "jv", "label": "Joint venture entity" },
+        { "value": "standalone", "label": "Standalone domestic company" }
+      ]
+    },
+    {
+      "id": "jurisdictions",
+      "type": "multi-select",
+      "label": "Jurisdictions in scope",
+      "description": "Which countries / tax jurisdictions should this health check cover?",
+      "options": [
+        { "value": "se", "label": "Sweden" },
+        { "value": "no", "label": "Norway" },
+        { "value": "dk", "label": "Denmark" },
+        { "value": "fi", "label": "Finland" },
+        { "value": "de", "label": "Germany" },
+        { "value": "nl", "label": "Netherlands" },
+        { "value": "uk", "label": "United Kingdom" },
+        { "value": "us", "label": "United States" },
+        { "value": "lu", "label": "Luxembourg" },
+        { "value": "other", "label": "Other (describe in context)" }
+      ]
+    },
+    {
+      "id": "tax_types",
+      "type": "multi-select",
+      "label": "Tax types in scope",
+      "description": "Which tax obligations should be reviewed?",
+      "options": [
+        { "value": "cit", "label": "Corporate income tax (CIT)" },
+        { "value": "vat_gst", "label": "VAT / GST" },
+        { "value": "wht", "label": "Withholding tax (WHT)" },
+        { "value": "transfer_pricing", "label": "Transfer pricing" },
+        { "value": "payroll", "label": "Payroll / employment tax" },
+        { "value": "customs", "label": "Customs & excise" },
+        { "value": "stamp_duty", "label": "Stamp duty / real property taxes" },
+        { "value": "digital_services", "label": "Digital services tax" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known concerns or red flags",
+      "description": "Describe any known compliance gaps, recent changes in business model, historic issues, or areas of particular concern.",
+      "placeholder": "e.g., New subsidiary acquired in 2023, no TP documentation prepared; missed VAT registration in Netherlands; ongoing transfer pricing query from Swedish Tax Agency..."
+    },
+    {
+      "id": "review_period",
+      "type": "select",
+      "label": "Period under review",
+      "options": [
+        { "value": "current_year", "label": "Current financial year" },
+        { "value": "last_3_years", "label": "Last 3 years (statute of limitations)" },
+        { "value": "last_5_years", "label": "Last 5 years" },
+        { "value": "since_incorporation", "label": "Since incorporation / acquisition" }
+      ]
+    },
+    {
+      "id": "prior_audits",
+      "type": "select",
+      "label": "Prior tax authority contact",
+      "options": [
+        { "value": "none", "label": "No prior contact / clean record" },
+        { "value": "routine_queries", "label": "Routine queries resolved" },
+        { "value": "formal_audit", "label": "Formal tax audit completed" },
+        { "value": "ongoing_dispute", "label": "Ongoing dispute or appeal" },
+        { "value": "settlement", "label": "Recent settlement or adjustment" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "tax-director",
+    "transfer-pricing-specialist",
+    "fcp-expert"
+  ],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "notes": "Compliance gap analysis requires multi-jurisdiction knowledge and precise risk scoring."
+  },
+  "tags": [
+    "tax-compliance",
+    "health-check",
+    "gap-analysis",
+    "corporate-income-tax",
+    "filing-obligations",
+    "penalty-exposure",
+    "tax-governance"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "document-id-application",
+  "label": "Document & ID Application Helper",
+  "shortLabel": "Get Your ID",
+  "icon": "CreditCard",
+  "description": "How to get a birth certificate, national ID, or passport. Step-by-step by country.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic navigation works well with haiku. Complex legal matters need sonnet."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Civil registration processes by country: birth certificates, national IDs, passports, voter registration, marriage certificates — Kenya, Nigeria, Ghana, Tanzania, Uganda, Ethiopia, South Africa, India, Bangladesh, Pakistan, Philippines. Required documents, official fees, processing times, late registration procedures." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "document_type",
+      "label": "What document do you need?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "birth-certificate", "label": "Birth certificate" },
+        { "value": "national-id", "label": "National ID" },
+        { "value": "passport", "label": "Passport" },
+        { "value": "voter-registration", "label": "Voter registration" },
+        { "value": "marriage-certificate", "label": "Marriage certificate" }
+      ]
+    },
+    {
+      "id": "situation",
+      "label": "What is your situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "first-time", "label": "First time applying" },
+        { "value": "lost-damaged", "label": "Lost or damaged document" },
+        { "value": "childs-document", "label": "Child's documents" },
+        { "value": "late-registration", "label": "Adult late registration" },
+        { "value": "correction", "label": "Correction needed" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
+  "tags": ["identity", "documents", "birth-certificate", "national-id", "passport", "civil-registration", "bop", "rights", "africa", "south-asia"]
+}

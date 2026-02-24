@@ -1,0 +1,117 @@
+{
+  "formatVersion": "1.0",
+  "id": "citation-management",
+  "label": "Citation & Reference Manager",
+  "shortLabel": "Citations",
+  "icon": "Link",
+  "description": "Format citations, build bibliographies, verify references, check consistency across citation styles, and identify missing or weak sources in your reference list.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "citation_style",
+      "type": "select",
+      "label": "Citation Style",
+      "description": "Which citation format do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "apa7",
+          "label": "APA 7th Edition"
+        },
+        {
+          "value": "harvard",
+          "label": "Harvard"
+        },
+        {
+          "value": "chicago",
+          "label": "Chicago / Turabian"
+        },
+        {
+          "value": "mla",
+          "label": "MLA 9th Edition"
+        },
+        {
+          "value": "oscola",
+          "label": "OSCOLA (Legal)"
+        },
+        {
+          "value": "vancouver",
+          "label": "Vancouver (Medical)"
+        },
+        {
+          "value": "ieee",
+          "label": "IEEE"
+        },
+        {
+          "value": "other",
+          "label": "Other / Custom"
+        }
+      ]
+    },
+    {
+      "id": "task_type",
+      "type": "select",
+      "label": "What Do You Need?",
+      "description": "What citation task should be performed?",
+      "required": true,
+      "options": [
+        {
+          "value": "format",
+          "label": "Format References to Style"
+        },
+        {
+          "value": "review",
+          "label": "Review & Fix Existing References"
+        },
+        {
+          "value": "bibliography",
+          "label": "Build Bibliography from Sources"
+        },
+        {
+          "value": "verify",
+          "label": "Verify / Fact-Check Citations"
+        },
+        {
+          "value": "suggest",
+          "label": "Suggest Additional Sources"
+        }
+      ]
+    },
+    {
+      "id": "references",
+      "type": "textarea",
+      "label": "References / Source Material",
+      "description": "Paste your references or describe the sources you need formatted.",
+      "placeholder": "Paste your reference list here, or describe the papers/books you need cited..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "academic",
+    "citation",
+    "references",
+    "bibliography"
+  ]
+}

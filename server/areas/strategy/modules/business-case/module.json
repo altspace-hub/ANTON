@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "business-case",
+  "label": "Business Case Development",
+  "shortLabel": "Business Case",
+  "icon": "Briefcase",
+  "description": "Build compelling business cases: problem definition, options analysis, financial modelling (NPV, ROI), risk assessment, and investment recommendation.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Business case frameworks, financial modelling, investment appraisal techniques"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_case_type",
+      "type": "select",
+      "label": "Type of investment / decision",
+      "required": true,
+      "options": [
+        {
+          "value": "technology",
+          "label": "Technology investment"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory compliance programme"
+        },
+        {
+          "value": "new_business",
+          "label": "New business / product launch"
+        },
+        {
+          "value": "transformation",
+          "label": "Organisational transformation"
+        },
+        {
+          "value": "acquisition",
+          "label": "Acquisition / partnership"
+        },
+        {
+          "value": "cost_reduction",
+          "label": "Cost reduction / efficiency programme"
+        }
+      ]
+    },
+    {
+      "id": "stage",
+      "type": "select",
+      "label": "Stage of business case",
+      "options": [
+        {
+          "value": "early",
+          "label": "Early concept - framing the problem"
+        },
+        {
+          "value": "outline",
+          "label": "Outline case - shortlisting options"
+        },
+        {
+          "value": "full",
+          "label": "Full business case - detailed analysis"
+        },
+        {
+          "value": "review",
+          "label": "Reviewing an existing business case"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Business context",
+      "placeholder": "Describe what you are deciding, available options, constraints, and decision timeline."
+    }
+  ],
+  "recommendedPersonas": [
+    "devil-advocate",
+    "investor-lens"
+  ],
+  "tags": [
+    "business-case",
+    "roi",
+    "investment",
+    "strategy",
+    "decision"
+  ]
+}

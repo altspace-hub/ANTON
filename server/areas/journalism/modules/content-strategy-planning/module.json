@@ -1,0 +1,79 @@
+{
+  "id": "content-strategy-planning",
+  "areaId": "journalism",
+  "label": "Content Strategy Planning",
+  "shortLabel": "Content Strategy",
+  "icon": "BarChart2",
+  "description": "Develop content strategies for publications, brands, and organisations: audience analysis, content pillars, editorial calendars, channel strategies, and measurement frameworks.",
+  "color": "adv-teal",
+  "tags": ["content-strategy", "editorial", "audience", "brand-journalism", "measurement", "SEO"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Sonnet for most content strategy work. Opus for complex multi-channel enterprise content strategies."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["project-plan", "executive-summary"]
+  },
+  "recommendedPersonas": ["features-editor"],
+  "guidedInputs": [
+    {
+      "id": "organisation_context",
+      "type": "textarea",
+      "label": "Organisation & Content Context",
+      "description": "Who is the organisation or publication? What content do they currently produce? What problem are they trying to solve?",
+      "placeholder": "e.g. B2B fintech company. Currently produces ad-hoc blog posts, no strategy. Goal: establish thought leadership, drive inbound leads from compliance officers.",
+      "required": true
+    },
+    {
+      "id": "target_audience",
+      "type": "textarea",
+      "label": "Target Audience",
+      "description": "Who are the primary and secondary audiences? What are their roles, interests, and content needs?",
+      "placeholder": "e.g. Primary: Chief Compliance Officers at mid-size European banks (250-2,000 staff). Secondary: Compliance managers and AML analysts. They read FT, RegTech press, LinkedIn."
+    },
+    {
+      "id": "business_goals",
+      "type": "multi-select",
+      "label": "Content Goals",
+      "description": "What should this content strategy achieve?",
+      "options": [
+        {"value": "thought_leadership", "label": "Establish thought leadership"},
+        {"value": "lead_generation", "label": "Generate inbound leads"},
+        {"value": "audience_growth", "label": "Grow audience / subscribers"},
+        {"value": "retention", "label": "Retain existing customers"},
+        {"value": "seo_traffic", "label": "Drive SEO / organic traffic"},
+        {"value": "brand_awareness", "label": "Build brand awareness"},
+        {"value": "community", "label": "Build community / engagement"}
+      ],
+      "defaultValue": ["thought_leadership", "lead_generation"]
+    },
+    {
+      "id": "channels",
+      "type": "multi-select",
+      "label": "Content Channels",
+      "description": "Which channels should the strategy cover?",
+      "options": [
+        {"value": "blog", "label": "Blog / website"},
+        {"value": "newsletter", "label": "Email newsletter"},
+        {"value": "linkedin", "label": "LinkedIn"},
+        {"value": "twitter_x", "label": "X / Twitter"},
+        {"value": "podcast", "label": "Podcast"},
+        {"value": "video", "label": "Video / YouTube"},
+        {"value": "webinar", "label": "Webinars / events"},
+        {"value": "whitepaper", "label": "Reports / whitepapers"}
+      ],
+      "defaultValue": ["blog", "newsletter", "linkedin"]
+    },
+    {
+      "id": "resources",
+      "type": "textarea",
+      "label": "Resources & Constraints",
+      "description": "Team size, budget, time commitment, existing assets.",
+      "placeholder": "e.g. 1 part-time content manager, budget €2k/month, 2 subject matter experts available for 2 hours/week each."
+    }
+  ]
+}

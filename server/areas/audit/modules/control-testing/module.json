@@ -1,0 +1,149 @@
+{
+  "formatVersion": "1.0",
+  "id": "control-testing",
+  "label": "Control Testing Design",
+  "shortLabel": "Control Testing",
+  "description": "Design specific audit test procedures, define sampling methodology, specify evidence requirements, and create detailed fieldwork work programmes.",
+  "icon": "TestTube",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "control_area",
+      "type": "select",
+      "label": "Control area to test",
+      "required": true,
+      "options": [
+        {
+          "value": "aml_cdd",
+          "label": "AML — Customer Due Diligence"
+        },
+        {
+          "value": "aml_tm",
+          "label": "AML — Transaction Monitoring"
+        },
+        {
+          "value": "sanctions_screening",
+          "label": "Sanctions Screening"
+        },
+        {
+          "value": "credit_origination",
+          "label": "Credit — Origination & Underwriting"
+        },
+        {
+          "value": "credit_monitoring",
+          "label": "Credit — Portfolio Monitoring"
+        },
+        {
+          "value": "ict_access",
+          "label": "ICT — Access Management"
+        },
+        {
+          "value": "ict_change",
+          "label": "ICT — Change Management"
+        },
+        {
+          "value": "financial_reporting",
+          "label": "Financial Reporting Controls"
+        },
+        {
+          "value": "conduct",
+          "label": "Conduct & Suitability"
+        },
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing / Third Party"
+        },
+        {
+          "value": "other",
+          "label": "Other (describe below)"
+        }
+      ]
+    },
+    {
+      "id": "control_description",
+      "type": "textarea",
+      "label": "Describe the control(s) to be tested",
+      "description": "What are the specific controls? How do they work? What do they prevent or detect?",
+      "placeholder": "e.g., The CDD control requires that all new customers undergo identity verification before account opening. Documents must be verified against official sources and stored in the KYC system within 5 days of account opening."
+    },
+    {
+      "id": "population_size",
+      "type": "select",
+      "label": "Approximate population size",
+      "description": "Number of transactions, customers, or records in the population being tested.",
+      "options": [
+        {
+          "value": "small",
+          "label": "Small (<100)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (100-1,000)"
+        },
+        {
+          "value": "large",
+          "label": "Large (1,000-100,000)"
+        },
+        {
+          "value": "very_large",
+          "label": "Very large (100,000+)"
+        }
+      ]
+    },
+    {
+      "id": "risk_level",
+      "type": "select",
+      "label": "Risk level of this control area",
+      "options": [
+        {
+          "value": "critical",
+          "label": "Critical (🔴)"
+        },
+        {
+          "value": "high",
+          "label": "High (🟠)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (🟡)"
+        },
+        {
+          "value": "low",
+          "label": "Low (🟢)"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "audit",
+    "control-testing",
+    "sampling",
+    "fieldwork",
+    "testing"
+  ]
+}

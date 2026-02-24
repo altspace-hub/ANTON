@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "symptom-assessment",
+  "label": "Symptom Checker & Referral Guide",
+  "shortLabel": "Symptom Checker",
+  "icon": "Stethoscope",
+  "description": "Understand how serious symptoms might be and whether to go to hospital now, soon, or wait and watch.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short triage responses. Safety-first. Always refers to healthcare professionals for diagnosis and treatment."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Community health triage, WHO IMCI guidelines, danger signs, referral criteria for low-resource settings" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "patient_type",
+      "label": "Who is the patient?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "adult", "label": "Adult" },
+        { "value": "child-under-5", "label": "Child under 5" },
+        { "value": "baby-under-1", "label": "Baby under 1" },
+        { "value": "elderly", "label": "Elderly" },
+        { "value": "pregnant-woman", "label": "Pregnant woman" }
+      ]
+    },
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "main_symptom",
+      "label": "What is the main symptom?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "fever", "label": "Fever" },
+        { "value": "diarrhea", "label": "Diarrhea" },
+        { "value": "difficulty-breathing", "label": "Difficulty breathing" },
+        { "value": "severe-pain", "label": "Severe pain" },
+        { "value": "vomiting", "label": "Vomiting" },
+        { "value": "unconscious", "label": "Unconscious / not responding" },
+        { "value": "seizure", "label": "Seizure" },
+        { "value": "bleeding", "label": "Bleeding" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "duration",
+      "label": "How long has this been going on?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "just-started", "label": "Just started" },
+        { "value": "under-24h", "label": "Less than 24 hours" },
+        { "value": "2-3-days", "label": "2-3 days" },
+        { "value": "over-3-days", "label": "Over 3 days" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
+  "tags": ["triage", "symptoms", "referral", "danger-signs", "IMCI", "fever", "diarrhea", "malaria", "community-health"]
+}

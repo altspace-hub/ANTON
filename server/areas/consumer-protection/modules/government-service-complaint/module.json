@@ -1,0 +1,75 @@
+{
+  "formatVersion": "1.0",
+  "id": "government-service-complaint",
+  "label": "Government Service Complaint",
+  "shortLabel": "Gov. Complaint",
+  "icon": "Building2",
+  "description": "How to complain about bad government service. What to do when government officials treat you poorly, delay your service, or ask for a bribe.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Formal appeals and ombudsman submissions need sonnet. General complaint steps work with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Government service complaints by country: internal complaint process, ombudsman offices, anti-corruption bodies (EACC Kenya, ICPC Nigeria, CHRAJ Ghana, CVC India, Ombudsman Philippines), service charters, bribe reporting, police oversight mechanisms." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "service_type",
+      "label": "Which government service?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "identity-docs", "label": "Identity document / passport / birth certificate" },
+        { "value": "land-registry", "label": "Land registry" },
+        { "value": "healthcare", "label": "Public healthcare" },
+        { "value": "education", "label": "Public education" },
+        { "value": "police", "label": "Police" },
+        { "value": "customs", "label": "Customs or immigration" },
+        { "value": "tax", "label": "Tax authority" },
+        { "value": "local-council", "label": "Local council or municipality" }
+      ]
+    },
+    {
+      "id": "problem",
+      "label": "What happened?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "unreasonable-delay", "label": "Unreasonable delay without explanation" },
+        { "value": "bribe-demanded", "label": "Official demanded a bribe" },
+        { "value": "wrong-service", "label": "Given incorrect or incomplete service" },
+        { "value": "poor-treatment", "label": "Treated badly or disrespectfully" },
+        { "value": "denied-service", "label": "Denied service without a reason given" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
+  "tags": ["consumer-protection", "bop", "rights", "government-services", "corruption", "bribery", "ombudsman", "service-charter", "africa", "south-asia"]
+}

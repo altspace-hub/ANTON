@@ -1,0 +1,108 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-exam-prep",
+  "label": "Regulatory Examination Preparation",
+  "shortLabel": "Exam Preparation",
+  "description": "Prepares institutions for regulatory examinations (FI, BaFin, FCA, AMLA). Conducts pre-exam gap assessment, document readiness review, and staff preparation briefings.",
+  "perspective": "consultant",
+  "icon": "ClipboardCheck",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Supervisory examination methodologies, SREP, regulatory inspection priorities, enforcement trends"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulator",
+      "type": "select",
+      "label": "Regulatory Authority",
+      "description": "Which regulatory authority is conducting the examination?",
+      "required": true,
+      "options": [
+        { "value": "fi_sweden", "label": "Finansinspektionen (FI) — Sweden" },
+        { "value": "fiva_finland", "label": "Finanssivalvonta (FiVA) — Finland" },
+        { "value": "fsa_denmark", "label": "Finanstilsynet — Denmark" },
+        { "value": "fsa_norway", "label": "Finanstilsynet — Norway" },
+        { "value": "bafin", "label": "BaFin — Germany" },
+        { "value": "fca", "label": "FCA — UK" },
+        { "value": "amla", "label": "AMLA — EU Direct Supervision" },
+        { "value": "ecb_jst", "label": "ECB / Joint Supervisory Team" },
+        { "value": "other", "label": "Other Regulator" }
+      ]
+    },
+    {
+      "id": "exam_type",
+      "type": "select",
+      "label": "Examination Type",
+      "description": "What type of regulatory examination is this?",
+      "required": true,
+      "options": [
+        { "value": "targeted_aml", "label": "Targeted AML/CFT Examination" },
+        { "value": "full_srep", "label": "Full SREP / Comprehensive Examination" },
+        { "value": "follow_up", "label": "Follow-Up / Enforcement Review" },
+        { "value": "thematic", "label": "Thematic Review (Industry-Wide)" },
+        { "value": "sanctions", "label": "Sanctions Compliance Review" },
+        { "value": "data_request", "label": "Data Request / Document Submission" },
+        { "value": "onsite", "label": "On-Site Inspection" }
+      ]
+    },
+    {
+      "id": "exam_date",
+      "type": "text",
+      "label": "Examination Date / Deadline",
+      "description": "When is the examination scheduled or when is the response deadline?",
+      "placeholder": "e.g. On-site visit: 15–19 March 2025. Document submission deadline: 28 February 2025"
+    },
+    {
+      "id": "focus_areas",
+      "type": "textarea",
+      "label": "Known Examination Focus Areas",
+      "description": "Any known focus areas from the regulator's advance letter or prior supervisory correspondence.",
+      "placeholder": "e.g. Regulator's advance letter indicates focus on: (1) beneficial ownership verification, (2) PEP identification and EDD quality, (3) SAR filing rates and quality, (4) training programme effectiveness..."
+    },
+    {
+      "id": "prior_findings",
+      "type": "textarea",
+      "label": "Prior Examination Findings",
+      "description": "Summary of findings from previous examinations, regulatory letters, or enforcement actions.",
+      "placeholder": "e.g. 2022 FI examination: findings on KYC periodic review backlogs (action plan submitted Dec 2022, reported as addressed Feb 2023). Dear CEO letter Jan 2024 on PEP controls industry-wide..."
+    },
+    {
+      "id": "entity_description",
+      "type": "textarea",
+      "label": "Institution Overview",
+      "description": "Brief description of the institution: size, products, customer base, and AML programme structure.",
+      "placeholder": "e.g. Mid-size Swedish bank, €8bn balance sheet, 120,000 retail customers, 4,500 SME customers, 200 corporate. MLRO in Stockholm with team of 12 FCP staff. Uses Actimize for TM, Fenergo for KYC..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator",
+    "legal-expert"
+  ],
+  "tags": [
+    "regulatory-exam",
+    "supervisory",
+    "examination-prep",
+    "aml",
+    "consultant"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "community-health-worker",
+  "label": "Community Health Worker",
+  "role": "Lead Community Health Volunteer / Community Health Promoter",
+  "expertise": ["Basic health assessment", "Maternal health", "Child health", "Disease prevention", "Referral pathways"],
+  "applicableAreas": ["community-health"],
+  "description": "Trained community health worker with experience in rural and peri-urban settings. Assesses health concerns, provides basic guidance, and refers to professional care when needed. NEVER diagnoses or prescribes.",
+  "tags": ["health", "community-health", "chw", "bop", "maternal", "child-health"]
+}

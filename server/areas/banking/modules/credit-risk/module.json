@@ -1,0 +1,98 @@
+{
+  "formatVersion": "1.0",
+  "id": "credit-risk",
+  "label": "Credit Risk Analysis",
+  "shortLabel": "Credit Risk",
+  "description": "Analyse credit risk for corporate and retail borrowers: financial analysis, risk assessment, collateral review, scenario analysis, and credit recommendation.",
+  "icon": "TrendingDown",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "credit_type",
+      "type": "select",
+      "label": "Type of credit analysis",
+      "required": true,
+      "options": [
+        {
+          "value": "corporate_new",
+          "label": "Corporate lending — new credit"
+        },
+        {
+          "value": "corporate_review",
+          "label": "Corporate lending — annual review"
+        },
+        {
+          "value": "sme",
+          "label": "SME lending"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real estate / property finance"
+        },
+        {
+          "value": "retail_portfolio",
+          "label": "Retail portfolio analysis"
+        },
+        {
+          "value": "structured_finance",
+          "label": "Structured finance / project finance"
+        },
+        {
+          "value": "watchlist",
+          "label": "Watchlist / early warning analysis"
+        }
+      ]
+    },
+    {
+      "id": "borrower_description",
+      "type": "textarea",
+      "label": "Borrower description",
+      "description": "Brief overview of the borrower: industry, size, business model, ownership.",
+      "placeholder": "e.g., Swedish manufacturing company, €50M revenue, privately owned, B2B industrial components supplier, 15-year banking relationship."
+    },
+    {
+      "id": "facility_description",
+      "type": "textarea",
+      "label": "Facility / credit request",
+      "description": "What is being requested or reviewed?",
+      "placeholder": "e.g., €5M revolving credit facility for working capital, 2-year term, secured by accounts receivable."
+    },
+    {
+      "id": "specific_concerns",
+      "type": "textarea",
+      "label": "Key risks or concerns to assess",
+      "placeholder": "e.g., Revenue concentration (top 3 customers = 70% of revenue). Supply chain disruption risk. Recent management change."
+    }
+  ],
+  "recommendedPersonas": [
+    "business-expert"
+  ],
+  "tags": [
+    "credit",
+    "banking",
+    "risk",
+    "lending",
+    "financial-analysis"
+  ]
+}

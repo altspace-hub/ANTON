@@ -1,0 +1,75 @@
+{
+  "formatVersion": "1.0",
+  "id": "win-loss-report",
+  "label": "Win/Loss Analysis Report",
+  "shortLabel": "Win/Loss Report",
+  "description": "Analyzes deal outcomes (wins and losses) to identify patterns, competitive insights, and process improvement opportunities. Produces actionable insights for sales strategy.",
+  "icon": "TrendingUp",
+  "color": "adv-green",
+  "areaId": "sales",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "analysis_period",
+      "type": "text",
+      "label": "Analysis period",
+      "placeholder": "e.g., Q1 2025, H1 2025, Last 12 months"
+    },
+    {
+      "id": "deals_analyzed",
+      "type": "textarea",
+      "label": "Deal outcomes to analyse",
+      "required": true,
+      "placeholder": "Describe the deals (wins and losses) you want to analyse. For each:\n- Deal name or code\n- Win or loss\n- Deal value\n- Competitor (if known)\n- Primary reason for outcome (as you understand it)\n- Key context (industry, stakeholders, timeline)\n\nOr paste deal data in any format — CRM export, meeting notes, post-mortem summaries."
+    },
+    {
+      "id": "win_loss_ratio",
+      "type": "text",
+      "label": "Overall win rate (if known)",
+      "placeholder": "e.g., 35% win rate, 7 wins out of 20 competitive bids"
+    },
+    {
+      "id": "competitive_context",
+      "type": "textarea",
+      "label": "Competitive landscape",
+      "placeholder": "Who are your main competitors? Any known patterns in how you perform against specific competitors?"
+    },
+    {
+      "id": "focus_area",
+      "type": "multi-select",
+      "label": "What are you trying to understand?",
+      "options": [
+        { "value": "competitive", "label": "Competitive positioning and differentiation" },
+        { "value": "pricing", "label": "Pricing and commercial competitiveness" },
+        { "value": "process", "label": "Sales process effectiveness" },
+        { "value": "qualification", "label": "Lead qualification quality" },
+        { "value": "messaging", "label": "Value proposition and messaging" },
+        { "value": "relationships", "label": "Relationship and stakeholder factors" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "win-loss",
+    "sales-analysis",
+    "competitive",
+    "pipeline",
+    "strategy",
+    "improvement"
+  ]
+}

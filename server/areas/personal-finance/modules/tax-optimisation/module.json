@@ -1,0 +1,90 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-optimisation",
+  "label": "Tax Optimisation Advisor",
+  "shortLabel": "Tax Optimisation",
+  "icon": "DollarSign",
+  "description": "Analyse tax situations and identify legitimate optimisation opportunities across income tax, capital gains, property taxes, and retirement contributions. Produces structured decision memos with options analysis, quantified savings potential, and compliance considerations. Always emphasises legal compliance and recommends professional tax advice for implementation.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Nordic tax systems, income tax deductions, capital gains taxation, pension contributions tax relief, ISK accounts, property taxation"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "jurisdiction",
+      "label": "Tax Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "Germany",
+        "Cross-border (specify in notes)"
+      ],
+      "required": true
+    },
+    {
+      "id": "tax-areas",
+      "label": "Tax Areas of Interest",
+      "type": "multiselect",
+      "options": [
+        "Employment income",
+        "Capital gains",
+        "Dividend income",
+        "Pension contributions",
+        "Property/real estate",
+        "Business/self-employment",
+        "Cross-border taxation",
+        "Inheritance/gift tax"
+      ],
+      "required": true
+    },
+    {
+      "id": "employment-type",
+      "label": "Employment Type",
+      "type": "select",
+      "options": [
+        "Employed",
+        "Self-employed",
+        "Business owner",
+        "Mixed income",
+        "Retired",
+        "Student"
+      ],
+      "required": true
+    },
+    {
+      "id": "specific-questions",
+      "label": "Specific Questions",
+      "type": "textarea",
+      "placeholder": "What specific tax optimisation questions do you have...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "tax-advisor",
+    "financial-planner",
+    "individual"
+  ],
+  "tags": [
+    "personal-finance",
+    "tax",
+    "optimisation",
+    "deductions",
+    "planning"
+  ]
+}

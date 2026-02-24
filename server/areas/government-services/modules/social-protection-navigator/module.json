@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "social-protection-navigator",
+  "label": "Social Protection Navigator",
+  "shortLabel": "Social Protection",
+  "icon": "Heart",
+  "description": "Access social safety net programs. Emergency support, unemployment benefits, disability grants, and more.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic navigation works well with haiku. Complex legal matters need sonnet."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Social protection programs by country and need: unemployment support (Kenya NITA, South Africa UIF, India MGNREGA), disability grants, elderly grants, child support programs, emergency food programs, NGO backup resources, appeal processes for rejected applications." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "need",
+      "label": "What is your need?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "lost-job", "label": "Lost job / no income" },
+        { "value": "disability", "label": "Disability" },
+        { "value": "elderly", "label": "Elderly and need support" },
+        { "value": "child-support", "label": "Support for children" },
+        { "value": "food-emergency", "label": "Food emergency" },
+        { "value": "death-of-breadwinner", "label": "Death of breadwinner" }
+      ]
+    },
+    {
+      "id": "situation",
+      "label": "What is your current situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "never-accessed", "label": "Never accessed before" },
+        { "value": "applied-rejected", "label": "Applied and was rejected" },
+        { "value": "urgent-help", "label": "Need urgent help now" },
+        { "value": "checking-eligibility", "label": "Checking eligibility" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
+  "tags": ["social-protection", "safety-net", "unemployment", "disability", "elderly", "food-emergency", "bop", "rights", "africa", "south-asia"]
+}

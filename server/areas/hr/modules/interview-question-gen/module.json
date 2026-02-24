@@ -1,0 +1,149 @@
+{
+  "formatVersion": "1.0",
+  "id": "interview-question-gen",
+  "label": "Interview Question Generator",
+  "shortLabel": "Interview Questions",
+  "description": "Generates role-specific, competency-based interview questions. Creates structured question banks with model answers, scoring guides, and follow-up probes aligned to the role competency framework.",
+  "icon": "MessageSquarePlus",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "training-material",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "role_description",
+      "type": "textarea",
+      "label": "Role and key requirements",
+      "required": true,
+      "description": "Describe the role, level, key responsibilities, and the most important competencies for success.",
+      "placeholder": "e.g., Senior AML Analyst, financial services, responsible for investigating complex TM alerts, escalating to MLRO, managing a small team of junior analysts. Key competencies: analytical thinking, regulatory knowledge, written communication, judgement under ambiguity, team leadership."
+    },
+    {
+      "id": "competencies",
+      "type": "textarea",
+      "label": "Competency framework (if defined)",
+      "description": "List the competencies or values the organisation uses. Leave blank and the module will suggest appropriate competencies for the role.",
+      "placeholder": "e.g., Analytical thinking, Client focus, Integrity, Communication, Collaboration, Problem-solving, Commercial awareness..."
+    },
+    {
+      "id": "interview_type",
+      "type": "select",
+      "label": "Interview type",
+      "required": true,
+      "options": [
+        {
+          "value": "structured_competency",
+          "label": "Structured competency-based (STAR format)"
+        },
+        {
+          "value": "situational",
+          "label": "Situational / hypothetical scenario-based"
+        },
+        {
+          "value": "technical",
+          "label": "Technical and domain knowledge questions"
+        },
+        {
+          "value": "values_culture",
+          "label": "Values and culture fit"
+        },
+        {
+          "value": "combined",
+          "label": "Combined: competency + technical + situational"
+        }
+      ]
+    },
+    {
+      "id": "interview_duration",
+      "type": "select",
+      "label": "Interview duration",
+      "options": [
+        {
+          "value": "30min",
+          "label": "30 minutes (5–6 questions)"
+        },
+        {
+          "value": "45min",
+          "label": "45 minutes (7–8 questions)"
+        },
+        {
+          "value": "60min",
+          "label": "60 minutes (8–10 questions)"
+        },
+        {
+          "value": "90min",
+          "label": "90 minutes (10–14 questions, panel)"
+        }
+      ]
+    },
+    {
+      "id": "seniority",
+      "type": "select",
+      "label": "Candidate level",
+      "options": [
+        {
+          "value": "graduate",
+          "label": "Graduate / entry-level"
+        },
+        {
+          "value": "analyst",
+          "label": "Analyst / associate (2–5 years)"
+        },
+        {
+          "value": "manager",
+          "label": "Manager / senior individual contributor (5–10 years)"
+        },
+        {
+          "value": "director",
+          "label": "Director / head of (10+ years)"
+        },
+        {
+          "value": "executive",
+          "label": "C-suite / executive"
+        }
+      ]
+    },
+    {
+      "id": "scoring_guide",
+      "type": "select",
+      "label": "Include scoring guide?",
+      "options": [
+        {
+          "value": "yes_detailed",
+          "label": "Yes — include model answer indicators and 1–5 scoring guide"
+        },
+        {
+          "value": "yes_basic",
+          "label": "Yes — include key points expected in a strong answer"
+        },
+        {
+          "value": "no",
+          "label": "No — questions only"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "recruitment",
+    "interview",
+    "competency",
+    "STAR",
+    "talent-acquisition"
+  ]
+}

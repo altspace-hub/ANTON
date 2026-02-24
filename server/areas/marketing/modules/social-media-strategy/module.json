@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "social-media-strategy",
+  "label": "Social Media Strategy",
+  "shortLabel": "Social Media",
+  "description": "Build a coherent social media presence strategy: platform selection, content pillars, posting cadence, community management, influencer approach, and organic growth tactics.",
+  "icon": "Share2",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "creative",
+    "outputFormats": [
+      "action-plan",
+      "project-plan",
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Social media platform algorithm updates, content format trends, engagement benchmarks by industry"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "platforms",
+      "type": "multi-select",
+      "label": "Target platforms",
+      "required": true,
+      "description": "Which platforms should this strategy cover?",
+      "options": [
+        { "value": "linkedin", "label": "LinkedIn" },
+        { "value": "instagram", "label": "Instagram" },
+        { "value": "facebook", "label": "Facebook" },
+        { "value": "tiktok", "label": "TikTok" },
+        { "value": "x_twitter", "label": "X (Twitter)" },
+        { "value": "youtube", "label": "YouTube" },
+        { "value": "pinterest", "label": "Pinterest" },
+        { "value": "threads", "label": "Threads" }
+      ]
+    },
+    {
+      "id": "brand_description",
+      "type": "textarea",
+      "label": "Brand and audience description",
+      "description": "Describe the brand, its personality, and the audience you are trying to reach on social media.",
+      "placeholder": "e.g., A sustainable activewear brand targeting women aged 25-40 who care about both performance and environmental impact. Brand voice is energetic, authentic, and community-focused..."
+    },
+    {
+      "id": "current_state",
+      "type": "select",
+      "label": "Current social media maturity",
+      "options": [
+        { "value": "starting_fresh", "label": "Starting from scratch — no presence yet" },
+        { "value": "low_activity", "label": "Profiles exist but posting is inconsistent" },
+        { "value": "active_no_strategy", "label": "Active posting but no clear strategy" },
+        { "value": "strategic_optimising", "label": "Strategy in place — looking to optimise" }
+      ]
+    },
+    {
+      "id": "primary_goal",
+      "type": "chips",
+      "label": "Primary social media goals",
+      "options": [
+        { "value": "brand_awareness", "label": "Brand awareness" },
+        { "value": "community_building", "label": "Community building" },
+        { "value": "lead_generation", "label": "Lead generation" },
+        { "value": "customer_support", "label": "Customer support / retention" },
+        { "value": "thought_leadership", "label": "Thought leadership" },
+        { "value": "product_discovery", "label": "Product discovery / social commerce" },
+        { "value": "talent_attraction", "label": "Employer branding / talent attraction" }
+      ]
+    },
+    {
+      "id": "content_resources",
+      "type": "select",
+      "label": "Content production capacity",
+      "description": "How much resource is available to create social content?",
+      "options": [
+        { "value": "minimal", "label": "Minimal — one person, part-time" },
+        { "value": "small_team", "label": "Small team — 1-2 people dedicated" },
+        { "value": "medium_team", "label": "Medium team — dedicated social team" },
+        { "value": "agency_supported", "label": "Agency-supported" },
+        { "value": "large_team", "label": "Large in-house team + agency" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "pragmatist"
+  ],
+  "tags": [
+    "social-media",
+    "content-marketing",
+    "community-management",
+    "influencer-marketing",
+    "organic-social",
+    "platform-strategy",
+    "brand-voice",
+    "engagement"
+  ]
+}

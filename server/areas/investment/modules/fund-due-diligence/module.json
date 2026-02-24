@@ -1,0 +1,166 @@
+{
+  "formatVersion": "1.0",
+  "id": "fund-due-diligence",
+  "label": "Fund Due Diligence Report",
+  "shortLabel": "Fund Due Diligence",
+  "icon": "Search",
+  "description": "Comprehensive evaluation of investment funds including strategy, performance, risk, operations, and team.",
+  "color": "adv-teal",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AIMA due diligence questionnaires, ILPA principles, UCITS/AIFMD compliance, fund manager track records"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "fund_type",
+      "type": "select",
+      "label": "Fund type",
+      "required": true,
+      "options": [
+        {
+          "value": "ucits",
+          "label": "UCITS"
+        },
+        {
+          "value": "aif",
+          "label": "AIF"
+        },
+        {
+          "value": "hedge_fund",
+          "label": "Hedge Fund"
+        },
+        {
+          "value": "pe",
+          "label": "PE"
+        },
+        {
+          "value": "vc",
+          "label": "VC"
+        },
+        {
+          "value": "real_assets",
+          "label": "Real Assets"
+        },
+        {
+          "value": "money_market",
+          "label": "Money Market"
+        }
+      ]
+    },
+    {
+      "id": "investment_stage",
+      "type": "select",
+      "label": "Investment stage",
+      "required": true,
+      "options": [
+        {
+          "value": "initial_screening",
+          "label": "Initial screening"
+        },
+        {
+          "value": "full_dd",
+          "label": "Full DD"
+        },
+        {
+          "value": "ongoing_monitoring",
+          "label": "Ongoing monitoring"
+        },
+        {
+          "value": "redemption_review",
+          "label": "Redemption review"
+        }
+      ]
+    },
+    {
+      "id": "fund_size",
+      "type": "select",
+      "label": "Fund size (AUM)",
+      "options": [
+        {
+          "value": "sub_100m",
+          "label": "<$100M"
+        },
+        {
+          "value": "100m_1b",
+          "label": "$100M–$1B"
+        },
+        {
+          "value": "1b_10b",
+          "label": "$1B–$10B"
+        },
+        {
+          "value": "above_10b",
+          "label": ">$10B"
+        }
+      ]
+    },
+    {
+      "id": "primary_concern",
+      "type": "multi-select",
+      "label": "Primary due diligence concerns",
+      "options": [
+        {
+          "value": "performance",
+          "label": "Performance"
+        },
+        {
+          "value": "risk",
+          "label": "Risk"
+        },
+        {
+          "value": "operations",
+          "label": "Operations"
+        },
+        {
+          "value": "team",
+          "label": "Team"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance"
+        },
+        {
+          "value": "fees",
+          "label": "Fees"
+        },
+        {
+          "value": "liquidity",
+          "label": "Liquidity"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "risk-specialist",
+    "devil-advocate"
+  ],
+  "tags": [
+    "fund",
+    "due-diligence",
+    "ucits",
+    "aifmd",
+    "hedge-fund",
+    "private-equity",
+    "operational-dd",
+    "aima",
+    "ilpa"
+  ]
+}

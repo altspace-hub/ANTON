@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "solvency-ii",
+  "label": "Solvency II Compliance",
+  "shortLabel": "Solvency II",
+  "icon": "ShieldCheck",
+  "description": "Analyse Solvency II regulatory requirements, assess compliance gaps, and produce structured findings reports. Covers Pillar 1 (quantitative requirements), Pillar 2 (governance and risk management), and Pillar 3 (reporting and disclosure). Supports ORSA reviews, SCR/MCR calculations governance, and supervisory reporting readiness.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Solvency II Directive 2009/138/EC, Delegated Regulation 2015/35, EIOPA guidelines and technical standards, ORSA requirements"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity-type",
+      "label": "Entity Type",
+      "type": "select",
+      "options": [
+        "Life insurer",
+        "Non-life insurer",
+        "Composite insurer",
+        "Reinsurer",
+        "Insurance group",
+        "Captive insurer"
+      ],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "Germany",
+        "UK (post-Brexit)",
+        "EU (general)"
+      ],
+      "required": true
+    },
+    {
+      "id": "pillar-focus",
+      "label": "Pillar Focus",
+      "type": "multiselect",
+      "options": [
+        "Pillar 1 — Quantitative",
+        "Pillar 2 — Governance & ORSA",
+        "Pillar 3 — Reporting & Disclosure",
+        "All Pillars"
+      ],
+      "required": true
+    },
+    {
+      "id": "known-concerns",
+      "label": "Known Concerns or Supervisory Findings",
+      "type": "textarea",
+      "placeholder": "Describe any known gaps, supervisory feedback, or areas of concern...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "compliance-officer",
+    "risk-manager",
+    "actuary"
+  ],
+  "tags": [
+    "insurance",
+    "solvency-ii",
+    "regulatory",
+    "compliance",
+    "EIOPA"
+  ]
+}

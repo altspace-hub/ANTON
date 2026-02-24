@@ -1,0 +1,180 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-exam-prep",
+  "label": "Regulatory Exam Preparation",
+  "shortLabel": "Exam Prep",
+  "description": "Prepare for regulatory examinations and supervisory reviews. Assess readiness, identify gaps, structure documentation, and prepare management for supervisory meetings.",
+  "icon": "ClipboardCheck",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulator",
+      "type": "select",
+      "label": "Supervising authority",
+      "required": true,
+      "options": [
+        {
+          "value": "fi_sweden",
+          "label": "Finansinspektionen (Sweden)"
+        },
+        {
+          "value": "fsa_finland",
+          "label": "FIN-FSA (Finland)"
+        },
+        {
+          "value": "finanstilsynet_dk",
+          "label": "Finanstilsynet (Denmark)"
+        },
+        {
+          "value": "finanstilsynet_no",
+          "label": "Finanstilsynet (Norway)"
+        },
+        {
+          "value": "eba",
+          "label": "EBA / AMLA"
+        },
+        {
+          "value": "ecb_ssm",
+          "label": "ECB / SSM"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "exam_type",
+      "type": "select",
+      "label": "Type of examination",
+      "options": [
+        {
+          "value": "aml_targeted",
+          "label": "AML/CFT targeted examination"
+        },
+        {
+          "value": "srep",
+          "label": "SREP / Prudential review"
+        },
+        {
+          "value": "thematic",
+          "label": "Thematic review (supervisor-led)"
+        },
+        {
+          "value": "on_site",
+          "label": "On-site inspection (general)"
+        },
+        {
+          "value": "follow_up",
+          "label": "Follow-up to previous finding"
+        },
+        {
+          "value": "dora_review",
+          "label": "DORA / Operational resilience"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Examination focus areas",
+      "description": "Select the areas the regulator has indicated will be assessed.",
+      "options": [
+        {
+          "value": "cdd",
+          "label": "CDD / EDD quality"
+        },
+        {
+          "value": "tm",
+          "label": "Transaction monitoring"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions screening"
+        },
+        {
+          "value": "governance",
+          "label": "AML governance and oversight"
+        },
+        {
+          "value": "str",
+          "label": "STR/SAR quality and timeliness"
+        },
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing / third-party risk"
+        },
+        {
+          "value": "data",
+          "label": "Data quality and reporting"
+        },
+        {
+          "value": "training",
+          "label": "Staff training and awareness"
+        }
+      ]
+    },
+    {
+      "id": "known_weaknesses",
+      "type": "textarea",
+      "label": "Known weaknesses or prior findings",
+      "description": "Any known gaps, prior regulatory findings, or internal audit findings that could be raised.",
+      "placeholder": "e.g., Internal audit identified CDD backlog in Q2 2024. Previous FI letter highlighted TM alert closure documentation."
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "Time until examination",
+      "options": [
+        {
+          "value": "less_2_weeks",
+          "label": "Less than 2 weeks"
+        },
+        {
+          "value": "2_4_weeks",
+          "label": "2-4 weeks"
+        },
+        {
+          "value": "1_3_months",
+          "label": "1-3 months"
+        },
+        {
+          "value": "more_3_months",
+          "label": "More than 3 months"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "fcp-expert"
+  ],
+  "tags": [
+    "regulatory",
+    "examination",
+    "supervisory",
+    "fi",
+    "preparation"
+  ]
+}

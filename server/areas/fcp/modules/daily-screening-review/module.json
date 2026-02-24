@@ -1,0 +1,82 @@
+{
+  "formatVersion": "1.0",
+  "id": "daily-screening-review",
+  "label": "Daily Screening Results Review",
+  "shortLabel": "Screening Review",
+  "description": "Morning review of overnight sanctions/PEP screening hits. Categorizes hits by urgency, provides initial assessment of matches, and generates a prioritized action list.",
+  "perspective": "operational",
+  "icon": "ScanSearch",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "action-plan",
+      "quick-briefing"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Sanctions regimes, PEP definitions, screening match assessment methodology"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "screening_date",
+      "type": "text",
+      "label": "Screening Run Date",
+      "description": "The date of the overnight screening batch.",
+      "placeholder": "e.g. 19 February 2025",
+      "required": true
+    },
+    {
+      "id": "screening_type",
+      "type": "chips",
+      "label": "Screening Type(s)",
+      "description": "Which screening categories are covered in this batch?",
+      "required": true,
+      "options": [
+        { "value": "sanctions", "label": "Sanctions" },
+        { "value": "pep", "label": "PEP" },
+        { "value": "adverse_media", "label": "Adverse Media" },
+        { "value": "internal_watchlist", "label": "Internal Watchlist" }
+      ]
+    },
+    {
+      "id": "hit_summary",
+      "type": "textarea",
+      "label": "Screening Hits Summary",
+      "description": "Paste or describe the screening hits from overnight results. Include customer names, match names, match type, score, and any available context.",
+      "placeholder": "e.g.\n1. Customer: Aleksandr Petrov (Corp acct) — Match: Aleksandr Petrov (EU Sanctions, 94% score) — DOB mismatch\n2. Customer: Nordic Trade AS — Match: Nordic Trade LLC (OFAC SDN, 88% score) — Different jurisdiction\n3. Customer: Maria Santos — Match: Maria Santos (PEP, Brazil, 91% score) — Same DOB confirmed...",
+      "required": true
+    },
+    {
+      "id": "total_hits",
+      "type": "text",
+      "label": "Total Number of Hits",
+      "description": "How many total hits did the batch produce?",
+      "placeholder": "e.g. 14 hits across 12 customers"
+    },
+    {
+      "id": "business_context",
+      "type": "textarea",
+      "label": "Business Context",
+      "description": "Any relevant context about specific customers or business relationships that aids assessment.",
+      "placeholder": "e.g. Customer #3 is a long-standing corporate client in trade finance. Customer #1 is a new onboarding from last week..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "sanctions-screening",
+    "pep",
+    "daily-operations",
+    "aml",
+    "operational"
+  ]
+}

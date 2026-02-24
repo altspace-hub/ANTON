@@ -1,0 +1,136 @@
+{
+  "formatVersion": "1.0",
+  "id": "assessment-builder",
+  "label": "Assessment & Quiz Builder",
+  "shortLabel": "Assessments",
+  "description": "Create assessments, quizzes, exams, and rubrics. Generate questions at specified difficulty levels, design marking schemes, and build formative and summative assessments.",
+  "icon": "CheckSquare",
+  "color": "adv-gold",
+  "areaId": "education",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "training-material"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "assessment_type",
+      "type": "select",
+      "label": "Assessment type",
+      "required": true,
+      "options": [
+        {
+          "value": "quiz",
+          "label": "Quiz / Short Test"
+        },
+        {
+          "value": "exam",
+          "label": "Formal Examination"
+        },
+        {
+          "value": "formative",
+          "label": "Formative Assessment"
+        },
+        {
+          "value": "assignment",
+          "label": "Assignment / Project Brief"
+        },
+        {
+          "value": "rubric",
+          "label": "Assessment Rubric / Criteria"
+        },
+        {
+          "value": "oral",
+          "label": "Oral / Presentation Assessment"
+        }
+      ]
+    },
+    {
+      "id": "question_types",
+      "type": "multi-select",
+      "label": "Question types to include",
+      "options": [
+        {
+          "value": "multiple_choice",
+          "label": "Multiple Choice"
+        },
+        {
+          "value": "true_false",
+          "label": "True / False"
+        },
+        {
+          "value": "short_answer",
+          "label": "Short Answer"
+        },
+        {
+          "value": "essay",
+          "label": "Essay / Extended Response"
+        },
+        {
+          "value": "matching",
+          "label": "Matching"
+        },
+        {
+          "value": "case_study",
+          "label": "Case Study / Scenario"
+        },
+        {
+          "value": "practical",
+          "label": "Practical / Applied"
+        }
+      ]
+    },
+    {
+      "id": "difficulty",
+      "type": "select",
+      "label": "Difficulty level",
+      "options": [
+        {
+          "value": "foundation",
+          "label": "Foundation"
+        },
+        {
+          "value": "intermediate",
+          "label": "Intermediate"
+        },
+        {
+          "value": "advanced",
+          "label": "Advanced"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed (progressive difficulty)"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "type": "textarea",
+      "label": "Topic and requirements",
+      "required": true,
+      "placeholder": "Describe the topic, learning objectives being assessed, number of questions, time allocation, and any specific requirements."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "assessment",
+    "quiz",
+    "exam",
+    "education",
+    "testing"
+  ]
+}

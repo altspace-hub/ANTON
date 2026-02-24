@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "tech-debt-tracker",
+  "label": "Technical Debt Assessment",
+  "shortLabel": "Tech Debt",
+  "description": "Identifies, categorizes, and prioritizes technical debt from code descriptions, architecture notes, or incident patterns. Produces debt register with business impact and remediation recommendations.",
+  "icon": "Gauge",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan",
+      "maturity-assessment"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "system_name",
+      "type": "text",
+      "label": "System or codebase name",
+      "required": true,
+      "placeholder": "e.g., Customer API, Legacy Billing System, Monolith, Data Warehouse"
+    },
+    {
+      "id": "tech_stack",
+      "type": "text",
+      "label": "Technology stack",
+      "placeholder": "e.g., Node.js 14 / Express / MongoDB 4.4 / hosted on EC2"
+    },
+    {
+      "id": "team_size",
+      "type": "select",
+      "label": "Engineering team size working on this system",
+      "options": [
+        { "value": "solo", "label": "Solo developer" },
+        { "value": "small", "label": "2-5 engineers" },
+        { "value": "medium", "label": "6-15 engineers" },
+        { "value": "large", "label": "16+ engineers" }
+      ]
+    },
+    {
+      "id": "system_age",
+      "type": "select",
+      "label": "How old is this system?",
+      "options": [
+        { "value": "new", "label": "Less than 1 year" },
+        { "value": "young", "label": "1-3 years" },
+        { "value": "mature", "label": "3-7 years" },
+        { "value": "legacy", "label": "7+ years" }
+      ]
+    },
+    {
+      "id": "debt_description",
+      "type": "textarea",
+      "label": "Known technical debt and pain points",
+      "required": true,
+      "placeholder": "Describe what you know. Include:\n- Areas of code that are hard to change\n- Frequent sources of bugs or incidents\n- Things developers complain about\n- Outdated technologies or patterns\n- Missing tests, documentation, or monitoring\n- Architecture decisions that no longer fit\n- Performance bottlenecks you live with\n\nNo format required — stream of consciousness is fine."
+    },
+    {
+      "id": "incident_patterns",
+      "type": "textarea",
+      "label": "Recent incidents or recurring issues",
+      "placeholder": "e.g., We have a monthly incident where the order processor gets stuck and requires manual restart. Memory usage climbs steadily after every deployment."
+    },
+    {
+      "id": "business_context",
+      "type": "textarea",
+      "label": "Business context and constraints",
+      "placeholder": "e.g., We need to scale from 1k to 10k concurrent users by Q3. The system processes EUR 5M/day in transactions. We have 2 engineers available for debt work, budget is EUR 150k."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "technical-debt",
+    "refactoring",
+    "architecture",
+    "engineering-quality",
+    "legacy",
+    "risk"
+  ]
+}

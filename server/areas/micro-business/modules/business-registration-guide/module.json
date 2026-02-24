@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "business-registration-guide",
+  "label": "Business Registration & Licensing Guide",
+  "shortLabel": "Registration",
+  "icon": "FileText",
+  "description": "Do I need to register my business? Get step-by-step guidance on registration, permits, and what you actually need vs. what you don't need yet.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Business registration requirements for micro-businesses in Kenya, Nigeria, Ghana, Tanzania, Uganda, India, Bangladesh, Pakistan, Philippines"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "market-stall", "label": "Market stall" },
+        { "value": "shop-kiosk", "label": "Shop / kiosk" },
+        { "value": "food-vendor", "label": "Food vendor" },
+        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
+        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "business_size",
+      "type": "select",
+      "label": "Who works in your business?",
+      "required": true,
+      "options": [
+        { "value": "solo", "label": "Solo / myself only" },
+        { "value": "family", "label": "Family business" },
+        { "value": "small-staff", "label": "2–5 employees" }
+      ]
+    },
+    {
+      "id": "concern",
+      "type": "select",
+      "label": "Why are you asking about registration?",
+      "required": false,
+      "options": [
+        { "value": "dont-know", "label": "Don't know if I need to register" },
+        { "value": "officials-asking", "label": "Officials have been asking me" },
+        { "value": "bank-account", "label": "Want to open a bank account" },
+        { "value": "loan", "label": "Want to apply for a loan" },
+        { "value": "harassment", "label": "Police / council harassing me" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "tags": [
+    "micro-business",
+    "bop",
+    "informal-economy",
+    "business-registration",
+    "licensing",
+    "permits",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "pakistan",
+    "philippines"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "animal-health-disease",
+  "label": "Animal Health & Disease Guide",
+  "shortLabel": "Animal Health",
+  "icon": "Stethoscope",
+  "description": "My animal seems sick. Identify symptoms and know when to call the vet immediately.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Animal disease symptoms, triage guidance, common livestock diseases by region and species, biosecurity, zoonotic disease warnings, vaccination schedules" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "animal_type",
+      "label": "What type of animal?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "cattle", "label": "Cattle / Cows" },
+        { "value": "goats", "label": "Goats" },
+        { "value": "sheep", "label": "Sheep" },
+        { "value": "pigs", "label": "Pigs" },
+        { "value": "chickens", "label": "Chickens / Poultry" },
+        { "value": "ducks", "label": "Ducks" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "symptoms",
+      "label": "What symptoms are you seeing?",
+      "type": "chips",
+      "required": true,
+      "options": [
+        { "value": "not-eating", "label": "Not eating" },
+        { "value": "diarrhea", "label": "Diarrhea" },
+        { "value": "coughing", "label": "Coughing" },
+        { "value": "limping", "label": "Limping" },
+        { "value": "swollen", "label": "Swollen area" },
+        { "value": "skin-feathers", "label": "Skin / feathers problem" },
+        { "value": "sudden-death", "label": "Sudden death of others nearby" }
+      ]
+    },
+    {
+      "id": "urgency",
+      "label": "How urgent is the situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "critical", "label": "Critical — multiple animals dying" },
+        { "value": "sick-1-2-days", "label": "Sick for 1–2 days" },
+        { "value": "sick-over-week", "label": "Sick for over a week" },
+        { "value": "checking", "label": "Just checking / prevention" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["animal-health", "disease", "livestock", "poultry", "veterinary", "bop", "triage", "biosecurity", "zoonotic", "africa", "south-asia"]
+}

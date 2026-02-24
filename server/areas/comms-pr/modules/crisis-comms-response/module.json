@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "crisis-comms-response",
+  "label": "Crisis Communication Response",
+  "shortLabel": "Crisis Comms",
+  "description": "Structures crisis communication response for reputational, operational, or regulatory incidents. Develops holding statement, media response, internal communication, and stakeholder update sequence.",
+  "perspective": "operational",
+  "icon": "AlertOctagon",
+  "color": "adv-red",
+  "areaId": "comms-pr",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "quick-briefing",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Crisis communication management, media relations in crisis, regulatory incident communications, reputational risk management"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "crisis_type",
+      "type": "select",
+      "label": "Crisis type",
+      "required": true,
+      "options": [
+        { "value": "regulatory", "label": "Regulatory — supervisory action, fine, enforcement" },
+        { "value": "data_breach", "label": "Data breach / cybersecurity incident" },
+        { "value": "operational", "label": "Operational failure — major outage, service disruption" },
+        { "value": "financial", "label": "Financial — unexpected losses, fraud, restatement" },
+        { "value": "people", "label": "People — executive misconduct, whistleblower, discrimination" },
+        { "value": "product", "label": "Product — safety, quality, mis-selling allegation" },
+        { "value": "reputational", "label": "Reputational — media investigation, social media incident" },
+        { "value": "legal", "label": "Legal — significant litigation, regulatory investigation" }
+      ]
+    },
+    {
+      "id": "incident_description",
+      "type": "textarea",
+      "label": "Incident description",
+      "required": true,
+      "placeholder": "Describe the incident: what happened, when it was discovered, what is known and unknown, who is affected, and the current status.\ne.g. At 14:30 today, we identified a data breach affecting approximately 2,400 customer records. Breach was caused by a misconfigured cloud storage bucket. Customer data exposed: names, email addresses, account numbers. No passwords or payment data. We became aware at 13:45 via automated monitoring. The exposure has been closed as of 15:00. We are currently assessing the full scope."
+    },
+    {
+      "id": "current_status",
+      "type": "select",
+      "label": "Current status of the incident",
+      "options": [
+        { "value": "ongoing", "label": "Ongoing — incident not yet contained" },
+        { "value": "contained", "label": "Contained — immediate risk resolved, investigation ongoing" },
+        { "value": "resolved", "label": "Resolved — fully resolved, remediation in progress" },
+        { "value": "anticipated", "label": "Anticipated — preparing for expected disclosure" }
+      ]
+    },
+    {
+      "id": "media_status",
+      "type": "select",
+      "label": "Media / public awareness",
+      "options": [
+        { "value": "none", "label": "Not yet public / media unaware" },
+        { "value": "enquiry_received", "label": "Media enquiry received" },
+        { "value": "published", "label": "Already published / public" },
+        { "value": "social_media", "label": "Social media discussion already active" }
+      ]
+    },
+    {
+      "id": "regulatory_context",
+      "type": "textarea",
+      "label": "Regulatory context",
+      "placeholder": "Any regulatory notification obligations triggered by this incident?\ne.g. GDPR: 72-hour notification obligation to IMY (Swedish DPA). DORA: operational incident reporting obligations. FI: supervisory notification required."
+    },
+    {
+      "id": "stakeholders_affected",
+      "type": "textarea",
+      "label": "Affected stakeholders",
+      "placeholder": "Who is affected and how?\ne.g. 2,400 customers (data breach victims), employees (internal concern), regulators (IMY, FI), shareholders/investors, media."
+    },
+    {
+      "id": "key_facts",
+      "type": "textarea",
+      "label": "Key confirmed facts",
+      "placeholder": "List what is confirmed and factually certain — this forms the basis of all communications. Separate from speculation or unknown items."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "communications",
+    "crisis",
+    "media",
+    "reputation",
+    "incident",
+    "operational"
+  ]
+}

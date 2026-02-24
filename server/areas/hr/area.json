@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "hr",
+  "name": "Human Resources & People",
+  "shortName": "HR",
+  "description": "Job descriptions, interview frameworks, performance reviews, HR policies, and learning & development programme planning for modern organisations.",
+  "icon": "Users",
+  "color": "adv-blue",
+  "cluster": "people"
+}

@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.0",
+  "id": "procurement-review",
+  "label": "Public Procurement Review",
+  "shortLabel": "Procurement",
+  "description": "Review public procurement processes, tender documents, and bid evaluations for compliance with public procurement directives, fairness, and value for money.",
+  "icon": "ClipboardList",
+  "color": "adv-blue",
+  "areaId": "public-sector",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "procurement_type",
+      "type": "select",
+      "label": "Procurement type",
+      "required": true,
+      "options": [
+        {
+          "value": "open_tender",
+          "label": "Open Tender"
+        },
+        {
+          "value": "restricted",
+          "label": "Restricted Procedure"
+        },
+        {
+          "value": "negotiated",
+          "label": "Negotiated Procedure"
+        },
+        {
+          "value": "framework",
+          "label": "Framework Agreement"
+        },
+        {
+          "value": "concession",
+          "label": "Concession Contract"
+        },
+        {
+          "value": "dynamic",
+          "label": "Dynamic Purchasing System"
+        }
+      ]
+    },
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "Review focus areas",
+      "options": [
+        {
+          "value": "compliance",
+          "label": "Legal Compliance"
+        },
+        {
+          "value": "evaluation",
+          "label": "Evaluation Criteria & Methodology"
+        },
+        {
+          "value": "transparency",
+          "label": "Transparency & Non-discrimination"
+        },
+        {
+          "value": "vfm",
+          "label": "Value for Money"
+        },
+        {
+          "value": "specification",
+          "label": "Technical Specification Quality"
+        },
+        {
+          "value": "sustainability",
+          "label": "Sustainability Requirements"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Procurement context",
+      "placeholder": "Describe the procurement, estimated value, sector, and any specific concerns or issues to investigate."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "procurement",
+    "government",
+    "tender",
+    "public-sector",
+    "compliance"
+  ]
+}

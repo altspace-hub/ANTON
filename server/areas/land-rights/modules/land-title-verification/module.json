@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "land-title-verification",
+  "label": "Land Title Verification Guide",
+  "shortLabel": "Check Title",
+  "icon": "FileSearch",
+  "description": "How do I check if land has a valid title? Steps to verify ownership before buying, renting, or using land.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex title disputes need sonnet. Basic verification steps work well with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Land title verification procedures by country: Kenya Ardhisasa portal, Nigeria State Land Registry, Ghana Lands Commission, India state land records, South Africa Deeds Registry, Tanzania Land Registry. Red flags, due diligence steps, customary vs formal title." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country is the land in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "situation",
+      "label": "What is your situation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "buying", "label": "Buying land" },
+        { "value": "selling", "label": "Selling land" },
+        { "value": "renting", "label": "Renting land or property" },
+        { "value": "neighbour-dispute", "label": "Dispute with a neighbour" },
+        { "value": "inherited", "label": "Inherited land" },
+        { "value": "government-claim", "label": "Government claims the land" }
+      ]
+    },
+    {
+      "id": "title_type",
+      "label": "What type of title does the land have?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "formal-deed", "label": "Formal title deed" },
+        { "value": "leasehold", "label": "Leasehold" },
+        { "value": "community-land", "label": "Community land" },
+        { "value": "customary", "label": "Customary / traditional" },
+        { "value": "no-title", "label": "No title" },
+        { "value": "unknown", "label": "Don't know" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
+  "tags": ["land-rights", "bop", "rights", "title-verification", "due-diligence", "land-fraud", "customary-land", "africa", "south-asia"]
+}

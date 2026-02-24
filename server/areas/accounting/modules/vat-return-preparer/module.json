@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "vat-return-preparer",
+  "label": "VAT Return Data Validator",
+  "shortLabel": "VAT Validator",
+  "description": "Validates VAT return data before submission. Checks input/output VAT consistency, identifies suspicious patterns, ensures correct application of reduced rates and exemptions, and prepares audit trail.",
+  "perspective": "operational",
+  "icon": "ClipboardCheck",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Swedish Mervärdesskattelagen, EU VAT Directive 2006/112/EC, Skatteverket VAT reporting requirements, EC Sales List rules"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "vat_period",
+      "type": "text",
+      "label": "VAT return period",
+      "required": true,
+      "placeholder": "e.g. Q4 2024 (October–December)"
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity type",
+      "required": true,
+      "options": [
+        { "value": "standard_company", "label": "Standard Swedish company (AB/HB)" },
+        { "value": "financial_services", "label": "Financial services (partially exempt)" },
+        { "value": "real_estate", "label": "Real estate / property" },
+        { "value": "ngo", "label": "Non-profit / association" },
+        { "value": "eu_cross_border", "label": "Business with EU cross-border transactions" },
+        { "value": "import_export", "label": "Import/export business" }
+      ]
+    },
+    {
+      "id": "vat_data",
+      "type": "textarea",
+      "label": "VAT return data",
+      "required": true,
+      "placeholder": "Paste your VAT return figures or ledger summary. Include:\n- Output VAT by rate (25%, 12%, 6%)\n- Input VAT by rate\n- Exempt supplies\n- EU acquisitions / reverse charge\n- Export amounts\n- Prior period adjustments\n\ne.g.\nBox 05: Taxable sales 25% — 2 450 000 SEK\nBox 10: Output VAT 25% — 612 500 SEK\nBox 20: Taxable acquisitions from EU — 340 000 SEK\nBox 30: Input VAT deductible — 187 500 SEK\n..."
+    },
+    {
+      "id": "gl_summary",
+      "type": "textarea",
+      "label": "General ledger VAT account summary (optional)",
+      "placeholder": "Paste GL account balances for VAT accounts to cross-check against the return figures."
+    },
+    {
+      "id": "known_issues",
+      "type": "textarea",
+      "label": "Known issues or unusual transactions",
+      "placeholder": "Describe any transactions or adjustments that may require special VAT treatment this period."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "vat",
+    "tax",
+    "compliance",
+    "operational",
+    "sweden"
+  ]
+}

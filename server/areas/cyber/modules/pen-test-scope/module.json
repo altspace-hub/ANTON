@@ -1,0 +1,168 @@
+{
+  "formatVersion": "1.0",
+  "id": "pen-test-scope",
+  "label": "Penetration Testing Scope & Plan",
+  "shortLabel": "Pen Test",
+  "icon": "Target",
+  "description": "Design scope, methodology, rules of engagement, and success criteria for penetration tests. Produces a complete engagement plan aligned to OWASP, PTES, MITRE ATT&CK, and CREST standards.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "project-plan",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "OWASP Testing Guide, PTES, OSSTMM, MITRE ATT&CK, CREST standards, TIBER-EU/DORA TLPT framework"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "test_type",
+      "type": "select",
+      "label": "Type of penetration test",
+      "required": true,
+      "options": [
+        {
+          "value": "external_network",
+          "label": "External Network — perimeter, internet-facing systems"
+        },
+        {
+          "value": "internal_network",
+          "label": "Internal Network — assume-breach, lateral movement"
+        },
+        {
+          "value": "web_application",
+          "label": "Web Application — OWASP Top 10, API security"
+        },
+        {
+          "value": "mobile",
+          "label": "Mobile Application — iOS/Android, OWASP MASVS"
+        },
+        {
+          "value": "social_engineering",
+          "label": "Social Engineering — phishing, vishing, physical"
+        },
+        {
+          "value": "red_team",
+          "label": "Red Team Exercise — full adversary simulation"
+        },
+        {
+          "value": "purple_team",
+          "label": "Purple Team — collaborative detection & response testing"
+        },
+        {
+          "value": "tlpt",
+          "label": "TLPT — Threat-Led Penetration Test (DORA/TIBER-EU)"
+        }
+      ]
+    },
+    {
+      "id": "scope_description",
+      "type": "textarea",
+      "label": "Scope description",
+      "required": true,
+      "placeholder": "e.g. All internet-facing web applications at *.example.com, corporate VPN gateway at vpn.example.com, Office 365 tenant. Out of scope: production databases, payment processing systems."
+    },
+    {
+      "id": "methodology",
+      "type": "select",
+      "label": "Preferred methodology",
+      "options": [
+        {
+          "value": "owasp",
+          "label": "OWASP Testing Guide v4"
+        },
+        {
+          "value": "ptes",
+          "label": "PTES — Penetration Testing Execution Standard"
+        },
+        {
+          "value": "osstmm",
+          "label": "OSSTMM — Open Source Security Testing Methodology Manual"
+        },
+        {
+          "value": "mitre_attck",
+          "label": "MITRE ATT&CK Framework"
+        },
+        {
+          "value": "custom",
+          "label": "Custom / hybrid methodology"
+        }
+      ]
+    },
+    {
+      "id": "test_environment",
+      "type": "select",
+      "label": "Test environment",
+      "options": [
+        {
+          "value": "production",
+          "label": "Production — live systems (requires extra care)"
+        },
+        {
+          "value": "staging",
+          "label": "Staging / Pre-production"
+        },
+        {
+          "value": "isolated",
+          "label": "Isolated test environment"
+        },
+        {
+          "value": "cloud",
+          "label": "Cloud environment (AWS / Azure / GCP)"
+        }
+      ]
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "Engagement timeline",
+      "options": [
+        {
+          "value": "one_week",
+          "label": "1 week"
+        },
+        {
+          "value": "two_weeks",
+          "label": "2 weeks"
+        },
+        {
+          "value": "one_month",
+          "label": "1 month"
+        },
+        {
+          "value": "ongoing",
+          "label": "Ongoing / continuous"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "systems-thinker"
+  ],
+  "tags": [
+    "penetration-testing",
+    "pen-test",
+    "red-team",
+    "purple-team",
+    "owasp",
+    "mitre-attck",
+    "tlpt",
+    "dora",
+    "security-testing",
+    "vulnerability-assessment"
+  ]
+}

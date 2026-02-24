@@ -1,0 +1,60 @@
+{
+  "formatVersion": "1.0",
+  "id": "sharia-compliance-assessment",
+  "label": "Sharia Compliance Assessment",
+  "shortLabel": "Sharia Assessment",
+  "icon": "CheckCircle",
+  "description": "Comprehensive Sharia compliance assessment for financial products, services, and operations against AAOIFI standards, IFSB guidelines, and local Sharia board requirements.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "gap-scoring-matrix", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AAOIFI Sharia Standards, IFSB guidelines, fatwa references, national Sharia board rulings"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "label": "Product / Activity Type",
+      "type": "select",
+      "options": ["Murabaha", "Ijara", "Musharakah", "Mudarabah", "Tawarruq", "Sukuk", "Other"],
+      "required": true
+    },
+    {
+      "id": "institution_type",
+      "label": "Institution Type",
+      "type": "select",
+      "options": ["Full Islamic Bank", "Islamic Window", "NBFI", "Takaful Operator"],
+      "required": true
+    },
+    {
+      "id": "sharia_standard",
+      "label": "Applicable Sharia Standard",
+      "type": "select",
+      "options": ["AAOIFI", "Local Sharia Board", "IFSB", "BNM SAC", "SAMA", "Other"],
+      "required": true
+    },
+    {
+      "id": "scope",
+      "label": "Assessment Scope",
+      "type": "textarea",
+      "placeholder": "What products or activities should be assessed?",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer", "fcp-expert"],
+  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
+  "tags": ["sharia", "compliance", "aaoifi", "ifsb", "assessment", "murabaha", "ijara", "musharakah", "islamic-banking"]
+}

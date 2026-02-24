@@ -1,0 +1,68 @@
+{
+  "formatVersion": "1.0",
+  "id": "okr-progress-tracker",
+  "label": "OKR Progress Assessment",
+  "shortLabel": "OKR Tracker",
+  "icon": "Target",
+  "description": "Assesses quarterly OKR (Objectives and Key Results) progress. Evaluates key result achievement, identifies at-risk objectives, and produces executive summary with recommended focus areas.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "OKR methodology, goal-setting best practices, performance management frameworks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "review_period",
+      "type": "select",
+      "label": "Review period",
+      "required": true,
+      "options": [
+        { "value": "mid_quarter", "label": "Mid-quarter check-in" },
+        { "value": "end_quarter", "label": "End-of-quarter review" },
+        { "value": "annual", "label": "Annual OKR retrospective" }
+      ]
+    },
+    {
+      "id": "okr_data",
+      "type": "textarea",
+      "label": "OKR data (objectives and current key result scores)",
+      "required": true,
+      "placeholder": "Paste your OKRs with current progress scores. Example:\nObjective 1: Grow enterprise revenue\n  KR1: €5M ARR — Current: €3.2M (64%)\n  KR2: 15 new enterprise logos — Current: 9 (60%)\n  KR3: NPS >50 — Current: 44 (below target)\n\nObjective 2: ..."
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Context and blockers",
+      "placeholder": "Describe any significant events, market changes, resource constraints, or organisational issues affecting OKR achievement."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist",
+    "devil-advocate"
+  ],
+  "tags": [
+    "okr",
+    "goal-setting",
+    "performance",
+    "strategy",
+    "quarterly-review"
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "formatVersion": "1.0",
+  "id": "content-strategy",
+  "label": "Content Strategy Builder",
+  "shortLabel": "Content Strategy",
+  "description": "Design comprehensive content strategies with editorial calendars, channel plans, audience mapping, content pillars, and measurement frameworks. Covers thought leadership, social media, web content, and campaign content.",
+  "icon": "Layers",
+  "color": "adv-red",
+  "areaId": "branding",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Content marketing trends, editorial best practices"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "strategy_scope",
+      "type": "select",
+      "label": "Scope of content strategy",
+      "required": true,
+      "options": [
+        {
+          "value": "full_strategy",
+          "label": "Full content strategy"
+        },
+        {
+          "value": "thought_leadership",
+          "label": "Thought leadership programme"
+        },
+        {
+          "value": "social_media",
+          "label": "Social media strategy"
+        },
+        {
+          "value": "editorial_calendar",
+          "label": "Editorial calendar design"
+        },
+        {
+          "value": "content_audit",
+          "label": "Content audit & gap analysis"
+        },
+        {
+          "value": "channel_strategy",
+          "label": "Channel strategy"
+        },
+        {
+          "value": "seo_content",
+          "label": "SEO content strategy"
+        }
+      ]
+    },
+    {
+      "id": "business_goals",
+      "type": "textarea",
+      "label": "Business goals this content should support",
+      "placeholder": "e.g., Generate 50 qualified leads per quarter, establish thought leadership in AML regulation, increase brand awareness in Finnish market"
+    },
+    {
+      "id": "target_audience",
+      "type": "textarea",
+      "label": "Target audience(s)",
+      "placeholder": "e.g., Chief Compliance Officers at Nordic banks, HR directors considering consulting support, CFOs evaluating IFRS 17 implementation partners"
+    },
+    {
+      "id": "channels",
+      "type": "multi-select",
+      "label": "Content channels",
+      "options": [
+        {
+          "value": "website",
+          "label": "Website / Blog"
+        },
+        {
+          "value": "linkedin",
+          "label": "LinkedIn"
+        },
+        {
+          "value": "newsletter",
+          "label": "Email / Newsletter"
+        },
+        {
+          "value": "events",
+          "label": "Events / Webinars"
+        },
+        {
+          "value": "podcast",
+          "label": "Podcast"
+        },
+        {
+          "value": "video",
+          "label": "Video"
+        },
+        {
+          "value": "whitepapers",
+          "label": "Whitepapers / Reports"
+        },
+        {
+          "value": "press",
+          "label": "Press / Media"
+        }
+      ]
+    },
+    {
+      "id": "resources",
+      "type": "textarea",
+      "label": "Available resources",
+      "placeholder": "e.g., 1 content manager, 3 subject matter experts willing to contribute, EUR 50k annual budget, no video production capability"
+    },
+    {
+      "id": "current_state",
+      "type": "textarea",
+      "label": "Current content situation",
+      "placeholder": "e.g., We publish sporadically, no editorial calendar, LinkedIn presence is personal not company-driven, website blog has 20 posts but low traffic"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "branding",
+    "content",
+    "strategy",
+    "editorial",
+    "thought-leadership",
+    "social-media"
+  ]
+}

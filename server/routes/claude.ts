@@ -1,0 +1,956 @@
+import { Router } from 'express';
+import path from 'path';
+import type Database from 'better-sqlite3';
+import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
+import { createAtomExtractor } from '../services/atom-extractor.js';
+import { createOutputStore } from '../services/output-store.js';
+import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
+import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
+import { runMultiAgent } from '../services/multi-agent-orchestrator.js';
+import { writeAuditEntry } from '../services/auditLogger.js';
+import { MODEL_REGISTRY, getModelConfig, getTemperature, isApiKeyAvailable } from '../types/modelAdapter.js';
+import type { PrecisionLevel } from '../types/modelAdapter.js';
+import { streamOpenAI } from '../services/adapters/openaiAdapter.js';
+import { streamGemini } from '../services/adapters/geminiAdapter.js';
+import { streamMistral } from '../services/adapters/mistralAdapter.js';
+import { streamOllama, listOllamaModels } from '../services/adapters/ollamaAdapter.js';
+import { verifyCitations } from '../services/citation-verifier.js';
+import { getAutoAttachSkillIds } from '../services/skills-manager.js';
+import { isKnownAudience, getAudiencePrompt } from '../services/audience-adapter.js';
+import { createBudgetMiddleware } from '../middleware/budget.js';
+import { semanticSearch } from '../services/semantic-search.js';
+import { createQualityRatchet } from '../services/quality-ratchet.js';
+
+const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
+
+export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
+  const router = Router();
+  const checkBudget = createBudgetMiddleware(db);
+  const ratchet = createQualityRatchet(db);
+
+  // Lazy knowledge pipeline instances — shared across requests, initialised on first use
+  let _atomExtractor: ReturnType<typeof createAtomExtractor> | null = null;
+  let _outputStore: ReturnType<typeof createOutputStore> | null = null;
+  function getAtomExtractor() {
+    if (!_atomExtractor) _atomExtractor = createAtomExtractor(db, getClient());
+    return _atomExtractor;
+  }
+  function getSessionOutputStore() {
+    if (!_outputStore) _outputStore = createOutputStore(db);
+    return _outputStore;
+  }
+
+  // POST /api/claude/message — streaming SSE proxy (multi-LLM)
+  router.post('/claude/message', checkBudget, async (req, res) => {
+    try {
+      const {
+        model,
+        thinking,
+        creativity,
+        precision,
+        moduleId,
+        areaId,
+        systemPrompt,
+        outputInstruction,
+        plainTextMode,
+        multiAgentEnabled,
+        multiAgentTeam,
+        multiAgentStyle,
+        userMessage,
+        history,
+        knowledgeSources,
+        outputFormats,
+        selectedPersonas,
+        selectedSkills,
+        multiPerspective,
+        metaCognitiveEnabled,
+        structureReference,
+        referenceOutput,
+        transparencyLevel,
+        writingTone,
+        emojiEnabled,
+        nativeReasoningEnabled,
+        audience,
+        channel,
+        outputLanguage,
+        sessionId,
+        seed,
+      } = req.body;
+
+      // Determine provider and validate API key
+      const selectedModel = (model as string) || 'claude-opus-4-6';
+      // Ollama models are prefixed with 'ollama:' (e.g. 'ollama:llama3.2').
+      // They are not in the MODEL_REGISTRY so we detect them by prefix first.
+      const isOllamaModel = selectedModel.startsWith('ollama:');
+      const modelConfig = isOllamaModel ? undefined : getModelConfig(selectedModel);
+      const provider = isOllamaModel ? 'ollama' : (modelConfig?.provider || 'anthropic');
+
+      if (provider === 'anthropic') {
+        if (!isApiKeyConfigured()) {
+          res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+          return;
+        }
+      } else if (provider !== 'ollama' && !isApiKeyAvailable(selectedModel)) {
+        const keyName = modelConfig?.requiresApiKey || 'API_KEY';
+        res.status(500).json({ error: `${keyName} not configured. Add it in Settings or your .env file.` });
+        return;
+      }
+
+      // Budget cap check (team mode only)
+      if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
+        const budgetRow = db.prepare('SELECT monthly_token_budget FROM users WHERE id = ?').get(req.user.id) as { monthly_token_budget: number } | undefined;
+        const budget = budgetRow?.monthly_token_budget ?? 0;
+        if (budget > 0) {
+          const yearMonth = new Date().toISOString().slice(0, 7);
+          const usageRow = db.prepare(
+            'SELECT COALESCE(input_tokens, 0) + COALESCE(output_tokens, 0) as total FROM user_monthly_usage WHERE user_id = ? AND year_month = ?'
+          ).get(req.user.id, yearMonth) as { total: number } | undefined;
+          const used = usageRow?.total ?? 0;
+          const pct = used / budget;
+          if (pct >= 1) {
+            res.status(402).json({ error: 'Monthly token budget reached — contact your administrator' });
+            return;
+          }
+          if (pct >= 0.8) {
+            res.setHeader('X-Budget-Warning', '80');
+          }
+        }
+      }
+
+      // E5: Global monthly budget cap check (EUR cost-based, applies to all modes)
+      {
+        const settingRow = db.prepare("SELECT value FROM app_settings WHERE key = 'monthly_budget_cap'").get() as { value: string } | undefined;
+        const capFromDb = settingRow ? parseFloat(settingRow.value) : NaN;
+        const capFromEnv = parseFloat(process.env.MONTHLY_BUDGET_CAP || '0');
+        const globalCap = !isNaN(capFromDb) ? capFromDb : capFromEnv;
+        if (globalCap > 0) {
+          const capMonth = new Date().toISOString().slice(0, 7);
+          const capSpentRow = db.prepare(
+            `SELECT COALESCE(SUM(cost), 0) as total FROM messages WHERE strftime('%Y-%m', created_at) = ?`
+          ).get(capMonth) as { total: number };
+          const capSpent = capSpentRow.total ?? 0;
+          if (capSpent >= globalCap) {
+            res.status(402).json({ error: 'Monthly budget cap reached', spent: capSpent, cap: globalCap });
+            return;
+          }
+        }
+      }
+
+      // Save user message to DB before streaming starts
+      if (sessionId && userMessage) {
+        try {
+          db.prepare(
+            `INSERT OR IGNORE INTO messages (id, session_id, role, content, created_at)
+             VALUES (?, ?, 'user', ?, ?)`
+          ).run(crypto.randomUUID(), sessionId, userMessage, new Date().toISOString());
+
+          // Update session timestamp
+          db.prepare(`UPDATE sessions SET updated_at = ? WHERE id = ?`)
+            .run(new Date().toISOString(), sessionId);
+        } catch {
+          // Non-fatal — continue streaming even if save fails
+        }
+      }
+
+      // Build messages array from history + new message.
+      // For assistant messages, use stored content_blocks (which include thinking block
+      // signatures) when available — this preserves extended reasoning context across turns.
+      const messages: Array<{ role: 'user' | 'assistant'; content: string | object[] }> = [];
+
+      // Pre-fetch stored content blocks for assistant messages in this session (C11 fix)
+      const storedBlocksMap = new Map<string, object[]>();
+      if (sessionId) {
+        try {
+          const stored = db.prepare(
+            `SELECT content, content_blocks FROM messages
+             WHERE session_id = ? AND role = 'assistant' AND content_blocks IS NOT NULL`
+          ).all(sessionId) as Array<{ content: string; content_blocks: string }>;
+          for (const row of stored) {
+            try { storedBlocksMap.set(row.content, JSON.parse(row.content_blocks) as object[]); } catch { /* ignore */ }
+          }
+        } catch { /* non-fatal */ }
+      }
+
+      if (history && Array.isArray(history)) {
+        for (const msg of history) {
+          if (msg.role && msg.content) {
+            if (msg.role === 'assistant' && typeof msg.content === 'string') {
+              // Use stored content blocks (with thinking signatures) if available
+              const blocks = storedBlocksMap.get(msg.content);
+              messages.push({ role: 'assistant', content: blocks ?? msg.content });
+            } else {
+              messages.push({ role: msg.role, content: msg.content });
+            }
+          }
+        }
+      }
+      messages.push({ role: 'user', content: userMessage });
+
+      // WP-11: Load user profile for Layer 0 prompt personalisation
+      const userProfile = db
+        .prepare('SELECT * FROM user_profiles WHERE id = ?')
+        .get('default') as Record<string, string | null> | undefined;
+
+      // Resolve uploaded file IDs → absolute paths in the uploads directory
+      // The client sends file IDs (filenames) from the /api/files/upload response.
+      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
+      const uploadedFilePaths = uploadedFileIds
+        .map((id) => path.join(UPLOAD_DIR, id))
+        .filter((p) => {
+          // Security: ensure the resolved path is within UPLOAD_DIR
+          return p.startsWith(UPLOAD_DIR);
+        });
+
+      // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
+      const resolved = knowledgeSources
+        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
+        : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
+
+      // NEW: RAG Search Integration (Phase 4.8 + 4.9)
+      let ragContext = '';
+      let ragChunks: any[] = [];
+      let ragTokenEstimate = 0;
+
+      if (req.body.ragSearch?.enabled && req.body.ragSearch.collections?.length > 0) {
+        const { collections, topK, rerank } = req.body.ragSearch;
+
+        try {
+          const results = await semanticSearch(db as Database.Database, {
+            query: userMessage, // Use user's message as search query
+            collections,
+            topK: topK || 10,
+            rerank: rerank ?? true,
+          });
+
+          ragChunks = results;
+
+          if (results.length > 0) {
+            ragContext = '\n\n## RETRIEVED KNOWLEDGE FROM KNOWLEDGE BASE\n\n';
+            ragContext += `I have retrieved ${results.length} relevant chunks from your knowledge base to help answer this question. Use these as reference material and cite them when applicable.\n\n`;
+
+            results.forEach((result, idx) => {
+              const chunkText = `### Source ${idx + 1}: ${result.citation}\n` +
+                `Relevance: ${(result.relevanceScore * 100).toFixed(1)}%\n` +
+                `Collection: ${result.collectionName}\n\n` +
+                `${result.content}\n\n` +
+                `---\n\n`;
+
+              ragContext += chunkText;
+              // Estimate tokens: ~4 chars per token
+              ragTokenEstimate += Math.ceil(chunkText.length / 4);
+            });
+
+            // Add to resolved knowledge
+            resolved.contextDocuments += ragContext;
+            resolved.tokenEstimate += ragTokenEstimate;
+            resolved.sourceManifest.push(`RAG: ${results.length} chunks from ${collections.length} collection(s)`);
+          }
+        } catch (error) {
+          console.error('[RAG] Search failed:', error);
+          // Non-fatal — continue without RAG results
+        }
+      }
+
+      // Auto-attach output-format-specific skills (e.g., pptx-generation for PowerPoint output)
+      const autoAttachIds = getAutoAttachSkillIds(Array.isArray(outputFormats) ? outputFormats : []);
+      const mergedSkills = Array.isArray(selectedSkills)
+        ? [...new Set([...selectedSkills, ...autoAttachIds])]
+        : autoAttachIds.length > 0 ? autoAttachIds : undefined;
+
+      // Compose the full system prompt through the layered PromptComposer (async).
+      // For Anthropic models that support prompt caching (Opus 4.6, Sonnet 4.5) we use
+      // the split variant so the stable static layers (Foundation + Area Context + Module
+      // Prompt) can be marked with cache_control and cached by Anthropic between API calls,
+      // reducing costs ~90% on those tokens. Dynamic layers (output format instructions,
+      // knowledge additions, reference documents, etc.) are sent in a second uncached block.
+      const promptComposerConfig = {
+        moduleId,
+        areaId,
+        systemPromptOverride: systemPrompt,
+        creativity: creativity || 'balanced',
+        thinking: thinking || 'think_hard',
+        outputInstruction,
+        plainTextMode: !!plainTextMode,
+        selectedPersonas: Array.isArray(selectedPersonas) ? selectedPersonas : undefined,
+        selectedSkills: mergedSkills,
+        multiPerspective: !!multiPerspective,
+        metaCognitiveEnabled: !!metaCognitiveEnabled,
+        structureReference,
+        referenceOutput: referenceOutput || undefined,
+        transparencyLevel: ([0, 1, 2] as number[]).includes(transparencyLevel) ? (transparencyLevel as 0 | 1 | 2) : 0,
+        writingTone: writingTone || 'professional',
+        emojiEnabled: !!emojiEnabled,
+        audience: audience || undefined,
+        channel: channel || undefined,
+        outputLanguage: outputLanguage || undefined,
+        knowledgeSystemAdditions: resolved.systemPromptAdditions,
+        knowledgeContextDocuments: resolved.contextDocuments,
+        userProfile: userProfile || null,
+      } as const;
+
+      // Use the split composer for Anthropic models (supports caching); plain for others.
+      const isCachingModel =
+        provider === 'anthropic' &&
+        (selectedModel === 'claude-opus-4-6' || selectedModel === 'claude-sonnet-4-5-20250929');
+
+      let composedPrompt: string;
+      let staticSystemPrompt: string | undefined;
+
+      if (isCachingModel) {
+        const split = await composeSystemPromptSplit(promptComposerConfig);
+        composedPrompt = split.dynamicPart;   // dynamic portion → system string in StreamConfig
+        staticSystemPrompt = split.staticPart; // static portion → cached block
+      } else {
+        composedPrompt = await composeSystemPrompt(promptComposerConfig);
+        staticSystemPrompt = undefined;
+      }
+
+      // Merge tools from knowledge resolver (web search) with any request-level tools
+      const tools = resolved.tools as Array<{ type: string; name: string }>;
+
+      // Log composed prompt length for debugging
+      const promptLengthDesc = staticSystemPrompt
+        ? `static=${staticSystemPrompt.length} chars (cached) + dynamic=${composedPrompt.length} chars`
+        : `${composedPrompt.length} chars`;
+      console.log(
+        `[ANTON] Prompt: ${promptLengthDesc} | ` +
+        `module=${moduleId || 'none'} | creativity=${creativity || 'balanced'} | ` +
+        `thinking=${thinking} | formats=${(outputFormats || []).length} | ` +
+        `knowledge sources: ${resolved.sourceManifest.join(', ') || 'none'} | ` +
+        `context tokens: ~${resolved.tokenEstimate}`
+      );
+
+      // Compute cost rates for this model
+      const costIn = modelConfig?.costPer1MInput || 15;
+      const costOut = modelConfig?.costPer1MOutput || 75;
+
+      // Callback to save assistant message + audit after streaming completes
+      const onComplete = sessionId
+        ? (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; rawContentBlocks?: unknown[] }) => {
+            try {
+              db.prepare(
+                `INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, created_at)
+                 VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)`
+              ).run(
+                crypto.randomUUID(),
+                sessionId,
+                data.text,
+                data.thinking || null,
+                // Persist full content blocks (with thinking signatures) for multi-turn replay
+                data.rawContentBlocks ? JSON.stringify(data.rawContentBlocks) : null,
+                data.outputTokens,
+                new Date().toISOString()
+              );
+            } catch {
+              // Non-fatal — message was already streamed to user
+            }
+            writeAuditEntry(db, {
+              sessionId,
+              moduleId,
+              areaId,
+              model: selectedModel,
+              thinkingLevel: thinking,
+              creativity,
+              writingTone: writingTone || 'professional',
+              emojiEnabled: !!emojiEnabled,
+              structuredReasoning: !!metaCognitiveEnabled,
+              transparencyLevel: transparencyLevel || 0,
+              inputTokenCount: data.inputTokens || 0,
+              outputTokenCount: data.outputTokens || 0,
+              estimatedCostUsd: ((data.inputTokens || 0) * costIn + (data.outputTokens || 0) * costOut) / 1_000_000,
+              seed: seed !== undefined ? seed : undefined,
+              userId: req.user?.id,
+              ragChunks: ragChunks.length > 0 ? JSON.stringify(ragChunks.map(c => ({ citation: c.citation, relevance: c.relevanceScore }))) : undefined,
+            });
+            // Update per-user monthly usage (team mode only)
+            if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
+              try {
+                const yearMonth = new Date().toISOString().slice(0, 7);
+                const usageId = crypto.randomUUID();
+                db.prepare(`
+                  INSERT INTO user_monthly_usage (id, user_id, year_month, input_tokens, output_tokens)
+                  VALUES (?, ?, ?, ?, ?)
+                  ON CONFLICT(user_id, year_month) DO UPDATE SET
+                    input_tokens = input_tokens + excluded.input_tokens,
+                    output_tokens = output_tokens + excluded.output_tokens
+                `).run(usageId, req.user.id, yearMonth, data.inputTokens || 0, data.outputTokens || 0);
+              } catch {
+                // Non-fatal
+              }
+            }
+            // Quality auto-scoring (non-fatal fire-and-forget)
+            if (moduleId && data.text && data.text.length > 200) {
+              ratchet.scoreOutput({ content: data.text, moduleId, areaId, sessionId, anthropicClient: anthropic })
+                .catch(() => {});
+            }
+            // Auto-save version snapshot
+            if (sessionId && data.text && data.text.length > 100) {
+              try {
+                const last = db.prepare('SELECT MAX(version_number) as max_v FROM versions WHERE entity_type=? AND entity_id=?')
+                  .get('session', sessionId) as { max_v: number | null };
+                db.prepare('INSERT INTO versions (entity_type, entity_id, version_number, label, content) VALUES (?,?,?,?,?)')
+                  .run('session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text);
+              } catch { /* non-fatal */ }
+            }
+            // Apprentice progression
+            if (moduleId) {
+              try {
+                const uid = req.user?.id || 'default';
+                const p = db.prepare('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?')
+                  .get(uid, moduleId) as any;
+                if (!p) {
+                  db.prepare('INSERT OR IGNORE INTO apprentice_profiles (user_id,module_id,area_id,sessions_completed,last_session) VALUES (?,?,?,1,?)')
+                    .run(uid, moduleId, areaId || null, new Date().toISOString());
+                } else {
+                  const newCount = p.sessions_completed + 1;
+                  db.prepare('UPDATE apprentice_profiles SET sessions_completed=?,last_session=? WHERE id=?')
+                    .run(newCount, new Date().toISOString(), p.id);
+                  const s = p.stage;
+                  if (s === 'observer' && newCount >= 3)
+                    db.prepare("UPDATE apprentice_profiles SET stage='guided',promoted_to_guided=? WHERE id=?").run(new Date().toISOString(), p.id);
+                  else if (s === 'guided' && newCount >= 8 && (p.quality_avg ?? 0) >= 7.0)
+                    db.prepare("UPDATE apprentice_profiles SET stage='supervised',promoted_to_supervised=? WHERE id=?").run(new Date().toISOString(), p.id);
+                  else if (s === 'supervised' && newCount >= 20 && (p.quality_avg ?? 0) >= 8.0)
+                    db.prepare("UPDATE apprentice_profiles SET stage='autonomous',promoted_to_autonomous=? WHERE id=?").run(new Date().toISOString(), p.id);
+                }
+              } catch { /* non-fatal */ }
+            }
+            // Auto-extract knowledge atoms from this session output (non-blocking fire-and-forget)
+            // This populates Knowledge Graph, Intelligence Dashboard, and Pattern Detection
+            if (data.text && data.text.length > 200) {
+              try {
+                const workflowId = `module:${moduleId || 'general'}`;
+                const outputId = getSessionOutputStore().storeOutput({
+                  executionId: sessionId,
+                  workflowId,
+                  stepIndex: 0,
+                  stepType: 'module_session',
+                  areaId: areaId || undefined,
+                  moduleId: moduleId || undefined,
+                  outputData: { text: data.text },
+                  workflowName: moduleId ? `Module: ${moduleId}` : 'General Session',
+                  stepName: 'Claude Response',
+                  userId: req.user?.id || 'default',
+                });
+                getAtomExtractor().extractAtoms(outputId).catch(() => {});
+              } catch { /* non-fatal */ }
+            }
+          }
+        : undefined;
+
+      // ── MULTI-AGENT MODE ──────────────────────────────────────
+      // If multi-agent is enabled and provider is Anthropic, run the multi-agent
+      // orchestrator instead of standard streaming
+      if (multiAgentEnabled && provider === 'anthropic') {
+        if (!isApiKeyConfigured()) {
+          res.status(500).json({ error: 'Anthropic API key required for multi-agent mode' });
+          return;
+        }
+
+        console.log(`[MULTI-AGENT] Running ${multiAgentTeam} team in ${multiAgentStyle} mode`);
+
+        try {
+          // Get anthropic client
+          const anthropic = new (await import('@anthropic-ai/sdk')).default({
+            apiKey: process.env.ANTHROPIC_API_KEY!,
+          });
+
+          // Combine static and dynamic prompts for multi-agent context
+          const fullContext = staticSystemPrompt
+            ? `${staticSystemPrompt}\n\n---\n\n${composedPrompt}`
+            : composedPrompt;
+
+          // Run multi-agent orchestration
+          const result = await runMultiAgent({
+            userMessage,
+            context: fullContext,
+            team: multiAgentTeam as 'compliance' | 'strategic' | 'quality',
+            collaborationStyle: multiAgentStyle as 'parallel' | 'debate' | 'consensus',
+            anthropic,
+          });
+
+          // Return synthesis as non-streaming response
+          // (Multi-agent already completed — synthesis is ready)
+          res.setHeader('Content-Type', 'application/json');
+          res.json({
+            content: result.synthesis,
+            agentResults: result.agentResults,
+            totalExecutionTimeMs: result.totalExecutionTimeMs,
+          });
+
+          // Save to database if session exists
+          if (sessionId && onComplete) {
+            // Estimate tokens (rough: ~4 chars per token)
+            const estimatedOutputTokens = Math.ceil(result.synthesis.length / 4);
+            const estimatedInputTokens = Math.ceil(fullContext.length / 4);
+
+            onComplete({
+              text: result.synthesis,
+              thinking: '', // Multi-agent doesn't expose thinking
+              inputTokens: estimatedInputTokens,
+              outputTokens: estimatedOutputTokens,
+            });
+          }
+
+          return;
+        } catch (error) {
+          console.error('[MULTI-AGENT] Error:', error);
+          res.status(500).json({
+            error: error instanceof Error ? error.message : 'Multi-agent execution failed',
+          });
+          return;
+        }
+      }
+
+      // Route to the correct provider adapter
+      if (provider === 'anthropic') {
+        // Use existing Anthropic streaming.
+        // staticSystemPrompt is populated only for caching-capable models (Opus/Sonnet);
+        // for Haiku it is undefined and claude-client will send a plain single block.
+        await streamToResponse(
+          {
+            model: selectedModel as 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
+            thinking: thinking || 'think_hard',
+            system: composedPrompt,
+            staticSystemPrompt,
+            messages,
+            tools: tools.length > 0 ? tools : undefined,
+            nativeReasoningEnabled: !!nativeReasoningEnabled,
+          },
+          res,
+          onComplete
+        );
+      } else {
+        // Non-Anthropic providers: set SSE headers, stream, then finalize
+        const precisionLevel: PrecisionLevel = precision || 'balanced';
+        const temperature = getTemperature(selectedModel, precisionLevel);
+        const maxTokens = modelConfig?.maxOutputTokens || 8192;
+
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+
+        const sendEvent = (event: object) => {
+          res.write(`data: ${JSON.stringify(event)}\n\n`);
+        };
+
+        sendEvent({ type: 'stream_start', messageId: crypto.randomUUID() });
+
+        try {
+          // Non-Anthropic adapters expect plain string content; normalize multi-block messages
+          const plainMessages = messages.map((m) => ({
+            role: m.role,
+            content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+          }));
+
+          let result: { inputTokens: number; outputTokens: number; text: string };
+
+          if (provider === 'openai') {
+            result = await streamOpenAI({
+              model: selectedModel,
+              system: composedPrompt,
+              messages: plainMessages,
+              temperature,
+              maxTokens,
+              nativeReasoningEnabled: !!nativeReasoningEnabled,
+              seed: seed !== undefined ? seed : undefined,
+            }, res);
+          } else if (provider === 'google') {
+            result = await streamGemini({
+              model: selectedModel,
+              system: composedPrompt,
+              messages: plainMessages,
+              temperature,
+              maxTokens,
+              nativeReasoningEnabled: !!nativeReasoningEnabled,
+            }, res);
+          } else if (provider === 'mistral') {
+            result = await streamMistral({
+              model: selectedModel,
+              system: composedPrompt,
+              messages: plainMessages,
+              temperature,
+              maxTokens,
+              nativeReasoningEnabled: !!nativeReasoningEnabled,
+              seed: seed !== undefined ? seed : undefined,
+            }, res);
+          } else if (provider === 'ollama') {
+            // Strip the 'ollama:' prefix to get the bare Ollama model name
+            const ollamaModel = selectedModel.replace(/^ollama:/, '');
+            result = await streamOllama({ model: ollamaModel, system: composedPrompt, messages: plainMessages, temperature, maxTokens }, res);
+          } else {
+            throw new Error(`Unsupported provider: ${provider}`);
+          }
+
+          sendEvent({
+            type: 'usage',
+            inputTokens: result.inputTokens,
+            outputTokens: result.outputTokens,
+            thinkingTokens: 0,
+            cacheCreationTokens: 0,
+            cacheReadTokens: 0,
+          });
+          sendEvent({
+            type: 'stream_end',
+            contentBlocks: [{ type: 'text', content: result.text }],
+          });
+
+          if (onComplete) {
+            onComplete({ text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens });
+          }
+        } catch (adapterError) {
+          const errMsg = adapterError instanceof Error ? adapterError.message : 'Unknown adapter error';
+          sendEvent({ type: 'error', message: errMsg });
+        }
+
+        res.write('data: [DONE]\n\n');
+        res.end();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (!res.headersSent) {
+        res.status(500).json({ error: message });
+      }
+    }
+  });
+
+  // POST /api/claude/preview-prompt — returns the fully composed system prompt + token estimate
+  router.post('/claude/preview-prompt', async (req, res) => {
+    try {
+      const {
+        model,
+        thinking,
+        creativity,
+        moduleId,
+        areaId,
+        systemPrompt,
+        outputInstruction,
+        plainTextMode,
+        selectedPersonas,
+        selectedSkills,
+        multiPerspective,
+        metaCognitiveEnabled,
+        structureReference,
+        referenceOutput,
+        transparencyLevel,
+        writingTone,
+        emojiEnabled,
+        audience,
+        channel,
+        outputLanguage,
+        knowledgeSources,
+      } = req.body;
+
+      // WP-11: Load user profile
+      const userProfile = db
+        .prepare('SELECT * FROM user_profiles WHERE id = ?')
+        .get('default') as Record<string, string | null> | undefined;
+
+      // Resolve uploaded file IDs
+      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
+      const uploadedFilePaths = uploadedFileIds
+        .map((id: string) => path.join(UPLOAD_DIR, id))
+        .filter((p: string) => p.startsWith(UPLOAD_DIR));
+
+      // Resolve knowledge sources
+      const resolved = knowledgeSources
+        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
+        : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
+
+      // Compose the full system prompt
+      const composedPrompt = await composeSystemPrompt({
+        moduleId,
+        areaId,
+        systemPromptOverride: systemPrompt,
+        creativity: creativity || 'balanced',
+        thinking: thinking || 'think_hard',
+        outputInstruction,
+        plainTextMode: !!plainTextMode,
+        selectedPersonas: Array.isArray(selectedPersonas) ? selectedPersonas : undefined,
+        selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : undefined,
+        multiPerspective: !!multiPerspective,
+        metaCognitiveEnabled: !!metaCognitiveEnabled,
+        structureReference,
+        referenceOutput: referenceOutput || undefined,
+        transparencyLevel: ([0, 1, 2] as number[]).includes(transparencyLevel) ? (transparencyLevel as 0 | 1 | 2) : 0,
+        writingTone: writingTone || 'professional',
+        emojiEnabled: !!emojiEnabled,
+        audience: audience || undefined,
+        channel: channel || undefined,
+        outputLanguage: outputLanguage || undefined,
+        knowledgeSystemAdditions: resolved.systemPromptAdditions,
+        knowledgeContextDocuments: resolved.contextDocuments,
+        userProfile: userProfile || null,
+      });
+
+      // Estimate tokens (~4 chars per token)
+      const estimatedTokens = Math.ceil(composedPrompt.length / 4);
+
+      res.json({
+        prompt: composedPrompt,
+        estimatedTokens,
+        knowledgeTokenEstimate: resolved.tokenEstimate,
+        sourceManifest: resolved.sourceManifest,
+        model: model || 'claude-opus-4-6',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: message });
+    }
+  });
+
+  // GET /api/claude/models — available models with metadata (legacy, Anthropic-only)
+  router.get('/claude/models', (_req, res) => {
+    res.json([
+      {
+        id: 'claude-opus-4-6',
+        label: 'Claude Opus 4.6',
+        description: 'Most capable. Best for complex analysis, large documents, nuanced reasoning.',
+        recommended: true,
+        costPerMInputTokens: 15,
+        costPerMOutputTokens: 75,
+      },
+      {
+        id: 'claude-sonnet-4-5-20250929',
+        label: 'Claude Sonnet 4.5',
+        description: 'Balanced speed and quality. Good for drafting, summarising, and routine analysis.',
+        costPerMInputTokens: 3,
+        costPerMOutputTokens: 15,
+      },
+      {
+        id: 'claude-haiku-4-5-20251001',
+        label: 'Claude Haiku 4.5',
+        description: 'Fastest and most affordable. Best for simple questions and quick lookups.',
+        costPerMInputTokens: 1,
+        costPerMOutputTokens: 5,
+      },
+    ]);
+  });
+
+  // GET /api/ollama/models — list locally running Ollama models (no auth required for health check)
+  router.get('/ollama/models', async (_req, res) => {
+    const models = await listOllamaModels();
+    res.json({ models });
+  });
+
+  // GET /api/claude/models-all — all models from MODEL_REGISTRY with key availability
+  router.get('/claude/models-all', (_req, res) => {
+    const models = Object.entries(MODEL_REGISTRY).map(([id, config]) => ({
+      id,
+      provider: config.provider,
+      displayName: config.displayName,
+      contextWindow: config.contextWindow,
+      maxOutputTokens: config.maxOutputTokens,
+      supportsThinking: config.supportsThinking,
+      supportsJsonMode: config.supportsJsonMode,
+      costPer1MInput: config.costPer1MInput,
+      costPer1MOutput: config.costPer1MOutput,
+      costTier: config.costTier,
+      apiKeyConfigured: isApiKeyAvailable(id),
+    }));
+    res.json(models);
+  });
+
+  // POST /api/claude/message-sync — non-streaming endpoint for MCP and integrations
+  // Returns a JSON { content: string } response instead of SSE.
+  // Auth-protected — same as /api/claude/message.
+  router.post('/claude/message-sync', async (req, res) => {
+    try {
+      if (!isApiKeyConfigured()) {
+        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+        return;
+      }
+
+      const {
+        model,
+        thinking,
+        moduleId,
+        areaId,
+        systemPrompt,
+        outputInstruction,
+        userMessage,
+        history,
+        knowledgeSources,
+        creativity,
+        selectedPersonas,
+        selectedSkills,
+        multiPerspective,
+        metaCognitiveEnabled,
+        structureReference,
+        referenceOutput,
+        transparencyLevel,
+        writingTone,
+        emojiEnabled,
+        nativeReasoningEnabled: _nativeReasoningEnabled,
+        audience,
+        channel,
+        outputLanguage,
+      } = req.body;
+
+      if (!userMessage || typeof userMessage !== 'string' || userMessage.trim().length === 0) {
+        res.status(400).json({ error: 'userMessage is required.' });
+        return;
+      }
+
+      // Only Anthropic models are supported in sync mode
+      const selectedModel = (model as string) || 'claude-sonnet-4-5-20250929';
+      const validModels = ['claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'] as const;
+      type SyncModel = typeof validModels[number];
+      const syncModel: SyncModel = (validModels as readonly string[]).includes(selectedModel)
+        ? (selectedModel as SyncModel)
+        : 'claude-sonnet-4-5-20250929';
+
+      // Resolve knowledge sources (no file paths for sync/MCP calls)
+      const resolved = knowledgeSources
+        ? await resolveKnowledgeSources(knowledgeSources, [])
+        : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
+
+      // WP-11: Load user profile for prompt personalisation
+      const userProfile = db
+        .prepare('SELECT * FROM user_profiles WHERE id = ?')
+        .get('default') as Record<string, string | null> | undefined;
+
+      // Compose system prompt (non-streaming path uses plain composer — no cache split needed)
+      const composedPrompt = await composeSystemPrompt({
+        moduleId,
+        areaId,
+        systemPromptOverride: systemPrompt,
+        creativity: creativity || 'balanced',
+        thinking: thinking || 'think',
+        outputInstruction,
+        selectedPersonas: Array.isArray(selectedPersonas) ? selectedPersonas : undefined,
+        selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : undefined,
+        multiPerspective: !!multiPerspective,
+        metaCognitiveEnabled: !!metaCognitiveEnabled,
+        structureReference,
+        referenceOutput: referenceOutput || undefined,
+        transparencyLevel: ([0, 1, 2] as number[]).includes(transparencyLevel) ? (transparencyLevel as 0 | 1 | 2) : 0,
+        writingTone: writingTone || 'professional',
+        emojiEnabled: !!emojiEnabled,
+        audience: audience || undefined,
+        channel: channel || undefined,
+        outputLanguage: outputLanguage || undefined,
+        knowledgeSystemAdditions: resolved.systemPromptAdditions,
+        knowledgeContextDocuments: resolved.contextDocuments,
+        userProfile: userProfile || null,
+      });
+
+      // Build message history
+      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+      if (history && Array.isArray(history)) {
+        for (const msg of history) {
+          if (msg.role && msg.content) {
+            messages.push({ role: msg.role as 'user' | 'assistant', content: String(msg.content) });
+          }
+        }
+      }
+      messages.push({ role: 'user', content: userMessage });
+
+      const result = await callSync({
+        model: syncModel,
+        thinking: (thinking || 'think') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first',
+        system: composedPrompt,
+        messages,
+      });
+
+      res.json({
+        content: result.text,
+        thinking: result.thinking,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: message });
+    }
+  });
+
+  // POST /api/claude/explain-for — Explain-It-Different: rewrite output for a target audience
+  // Streams SSE using the same pattern as /api/claude/message but with a fixed lightweight prompt.
+  // Defaults to claude-sonnet-4-5-20250929 (cost-effective for rewriting tasks).
+  router.post('/claude/explain-for', async (req, res) => {
+    try {
+      if (!isApiKeyConfigured()) {
+        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+        return;
+      }
+
+      const { content, audience, moduleContext, model } = req.body as {
+        content?: string;
+        audience?: string;
+        moduleContext?: string;
+        model?: string;
+      };
+
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        res.status(400).json({ error: 'content is required and must be a non-empty string.' });
+        return;
+      }
+
+      if (!audience || typeof audience !== 'string') {
+        res.status(400).json({ error: 'audience is required.' });
+        return;
+      }
+
+      if (!isKnownAudience(audience)) {
+        res.status(400).json({
+          error: `Unknown audience: "${audience}". Valid values: board, regulator, technical, business, non-expert, external-client, media, legal`,
+        });
+        return;
+      }
+
+      // Build the audience-adapted prompt
+      const userPrompt = getAudiencePrompt(audience, content, moduleContext);
+
+      // Use Sonnet by default — fast and cost-effective for rewriting tasks
+      const selectedModel = (
+        ['claude-opus-4-6', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'].includes(model || '')
+          ? model
+          : 'claude-sonnet-4-5-20250929'
+      ) as 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+
+      await streamToResponse(
+        {
+          model: selectedModel,
+          thinking: 'think',
+          system: 'You are an expert communication specialist at ANTON, a Financial Crime Prevention consultancy. Your role is to rewrite analysis outputs to suit specific audiences without altering underlying facts. Always produce clean Markdown with clear headings.',
+          messages: [{ role: 'user', content: userPrompt }],
+        },
+        res
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (!res.headersSent) {
+        res.status(500).json({ error: message });
+      }
+    }
+  });
+
+  // POST /api/claude/verify-citations — WP-32 Citation Verification Layer
+  router.post('/claude/verify-citations', async (req, res) => {
+    try {
+      if (!isApiKeyConfigured()) {
+        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+        return;
+      }
+
+      const { text } = req.body as { text?: string; sessionId?: string };
+
+      if (!text || typeof text !== 'string' || text.trim().length === 0) {
+        res.status(400).json({ error: 'text is required and must be a non-empty string.' });
+        return;
+      }
+
+      const citations = await verifyCitations(text);
+      res.json({ citations });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ error: message });
+    }
+  });
+
+  return router;
+}

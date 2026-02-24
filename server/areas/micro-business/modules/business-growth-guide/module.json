@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.0",
+  "id": "business-growth-guide",
+  "label": "Business Growth & Scaling Guide",
+  "shortLabel": "Growth Planning",
+  "icon": "TrendingUp",
+  "description": "When and how should I expand my business? Get honest advice on whether your business is ready to grow — and what the first steps should be.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Business growth and scaling strategies for micro-businesses and informal entrepreneurs in developing economies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "market-stall", "label": "Market stall" },
+        { "value": "shop-kiosk", "label": "Shop / kiosk" },
+        { "value": "food-vendor", "label": "Food vendor" },
+        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
+        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "current_status",
+      "type": "select",
+      "label": "How is your business doing right now?",
+      "required": true,
+      "options": [
+        { "value": "small-profit", "label": "Making a small profit" },
+        { "value": "break-even", "label": "Breaking even" },
+        { "value": "sometimes-profit", "label": "Sometimes profit, sometimes not" },
+        { "value": "growing-fast", "label": "Growing fast and overwhelmed" }
+      ]
+    },
+    {
+      "id": "growth_idea",
+      "type": "select",
+      "label": "How do you want to grow?",
+      "required": false,
+      "options": [
+        { "value": "second-location", "label": "Second location" },
+        { "value": "first-employee", "label": "Hire first employee" },
+        { "value": "new-product", "label": "New product / service" },
+        { "value": "bigger-premises", "label": "Bigger premises" },
+        { "value": "loan-to-expand", "label": "Get a loan to expand" },
+        { "value": "all-ideas", "label": "All ideas welcome" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "tags": [
+    "micro-business",
+    "bop",
+    "informal-economy",
+    "business-growth",
+    "scaling",
+    "hiring",
+    "microfinance",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "philippines"
+  ]
+}

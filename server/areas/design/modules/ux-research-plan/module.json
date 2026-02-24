@@ -1,0 +1,67 @@
+{
+  "id": "ux-research-plan",
+  "areaId": "design",
+  "label": "UX Research Plan",
+  "shortLabel": "Research Plan",
+  "icon": "Search",
+  "description": "Design a rigorous user research methodology: select methods, write discussion guides, define participant criteria, and plan analysis.",
+  "color": "adv-teal",
+  "tags": ["ux", "research", "interviews", "usability", "methodology"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Sonnet sufficient for most research planning. Opus for complex multi-method longitudinal studies."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "project-plan"]
+  },
+  "recommendedPersonas": ["ux-researcher", "ux-director"],
+  "guidedInputs": [
+    {
+      "id": "research_goals",
+      "type": "textarea",
+      "label": "Research Goals",
+      "description": "What questions are you trying to answer? What decisions will this research inform?",
+      "placeholder": "e.g. Understand why users abandon checkout. Validate that new navigation is intuitive.",
+      "required": true
+    },
+    {
+      "id": "user_types",
+      "type": "textarea",
+      "label": "Target User Types",
+      "description": "Who are the users you need to research?",
+      "placeholder": "e.g. First-time buyers aged 25-45, mobile-first. B2B procurement managers at mid-size companies.",
+      "required": true
+    },
+    {
+      "id": "product_context",
+      "type": "text",
+      "label": "Product / Service",
+      "description": "What product or service is this research about?",
+      "placeholder": "e.g. Mobile banking app, e-commerce checkout, internal HR portal"
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "Timeline",
+      "description": "How much time is available for the research?",
+      "options": [
+        {"value": "1-2 weeks", "label": "1–2 weeks (lean/guerrilla)"},
+        {"value": "3-4 weeks", "label": "3–4 weeks (standard)"},
+        {"value": "6-8 weeks", "label": "6–8 weeks (thorough)"},
+        {"value": "3+ months", "label": "3+ months (longitudinal)"}
+      ],
+      "defaultValue": "3-4 weeks"
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints & Considerations",
+      "description": "Budget, access to users, legal/privacy restrictions, remote vs in-person, etc.",
+      "placeholder": "e.g. Remote only, GDPR consent required, budget £5k, limited access to B2B users"
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "partnership-evaluation",
+  "label": "Partnership Evaluation Scorecard",
+  "shortLabel": "Partnership Eval",
+  "icon": "Handshake",
+  "description": "Evaluates potential partnerships or alliances using structured scorecard. Assesses strategic fit, capability complementarity, financial terms, risk, and governance considerations.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "gap-scoring-matrix"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Partnership structures, alliance governance, joint venture frameworks, strategic alliance best practices"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "partnership_type",
+      "type": "select",
+      "label": "Type of partnership",
+      "required": true,
+      "options": [
+        { "value": "commercial", "label": "Commercial / referral partnership" },
+        { "value": "technology", "label": "Technology integration or co-development" },
+        { "value": "distribution", "label": "Distribution or channel partnership" },
+        { "value": "jv", "label": "Joint venture or co-investment" },
+        { "value": "strategic_alliance", "label": "Strategic alliance or consortium" },
+        { "value": "supplier", "label": "Key supplier or outsourcing partner" }
+      ]
+    },
+    {
+      "id": "evaluation_stage",
+      "type": "select",
+      "label": "Evaluation stage",
+      "options": [
+        { "value": "initial_screen", "label": "Initial screening — go/no-go for further talks" },
+        { "value": "detailed_eval", "label": "Detailed evaluation — ready to negotiate" },
+        { "value": "due_diligence", "label": "Due diligence — final decision" }
+      ]
+    },
+    {
+      "id": "partner_description",
+      "type": "textarea",
+      "label": "Partner description",
+      "required": true,
+      "placeholder": "Describe the potential partner: who they are, what they do, their size, reputation, and what they are bringing to the partnership."
+    },
+    {
+      "id": "strategic_rationale",
+      "type": "textarea",
+      "label": "Our strategic rationale",
+      "placeholder": "Why are we considering this partnership? What problem does it solve or opportunity does it create for us?"
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Known concerns or red flags",
+      "placeholder": "Any known issues with the partner, structural concerns, or areas requiring particular scrutiny."
+    }
+  ],
+  "recommendedPersonas": [
+    "devil-advocate",
+    "investor-lens"
+  ],
+  "tags": [
+    "partnership",
+    "alliance",
+    "evaluation",
+    "scorecard",
+    "strategy",
+    "decision"
+  ]
+}

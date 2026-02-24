@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.0",
+  "id": "sales-call-prep",
+  "label": "Sales Call Preparation Brief",
+  "shortLabel": "Call Prep",
+  "description": "Prepares comprehensive pre-call briefing for prospect or customer meetings. Includes company research, contact intelligence, tailored talking points, likely objections, and suggested next steps.",
+  "icon": "PhoneCall",
+  "color": "adv-green",
+  "areaId": "sales",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Company news, regulatory updates, industry context"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "meeting_type",
+      "type": "select",
+      "label": "Meeting type",
+      "required": true,
+      "options": [
+        { "value": "first_call", "label": "First call / cold outreach follow-up" },
+        { "value": "discovery", "label": "Discovery call" },
+        { "value": "demo", "label": "Product or solution demo" },
+        { "value": "proposal_review", "label": "Proposal review" },
+        { "value": "negotiation", "label": "Negotiation / commercial discussion" },
+        { "value": "qbr", "label": "Quarterly Business Review (QBR)" },
+        { "value": "executive", "label": "Executive / C-suite meeting" },
+        { "value": "renewal", "label": "Renewal discussion" }
+      ]
+    },
+    {
+      "id": "company_contact",
+      "type": "textarea",
+      "label": "Company and contacts",
+      "required": true,
+      "placeholder": "Company name, industry, size, location.\nContacts attending: name, title, role in decision.\nAny background on the contacts (LinkedIn, previous interactions, known interests)."
+    },
+    {
+      "id": "meeting_goal",
+      "type": "text",
+      "label": "What do you want to achieve in this meeting?",
+      "required": true,
+      "placeholder": "e.g., Understand their compliance programme gaps, confirm budget authority, agree next steps to proposal"
+    },
+    {
+      "id": "what_we_know",
+      "type": "textarea",
+      "label": "What we already know about them",
+      "placeholder": "Previous interaction history, known pain points, things they have said, documents shared, any research already done"
+    },
+    {
+      "id": "our_solution",
+      "type": "text",
+      "label": "What we are selling / proposing",
+      "placeholder": "e.g., AMLR gap analysis and remediation programme, AML advisory retainer, SaaS compliance tool"
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "What are you worried about going into this meeting?",
+      "placeholder": "e.g., They seem price-sensitive, I don't know who the real decision maker is, our last call went off-track, they mentioned a competitor"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "sales-prep",
+    "call-brief",
+    "discovery",
+    "meeting",
+    "objection-handling",
+    "account-management"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "skill-fatf-mutual-evaluation",
+  "label": "FATF Mutual Evaluation Methodology",
+  "category": "methodology",
+  "applicableAreas": ["fcp", "banking", "government"],
+  "description": "FATF 40 Recommendations assessment methodology, Immediate Outcomes, Technical Compliance, how mutual evaluations work, preparation strategies, and common deficiency areas for developing countries.",
+  "tags": ["fatf", "mutual-evaluation", "aml-cft", "technical-compliance", "immediate-outcomes", "grey-list"]
+}

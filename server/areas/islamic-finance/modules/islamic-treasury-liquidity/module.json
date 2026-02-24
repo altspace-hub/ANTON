@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "islamic-treasury-liquidity",
+  "label": "Islamic Treasury & Liquidity Management",
+  "shortLabel": "Islamic Treasury",
+  "icon": "BarChart3",
+  "description": "Manage Sharia-compliant treasury and liquidity operations including interbank placements, Murabaha facilities, Wakala deposits, and IFSB liquidity coverage ratio compliance.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IFSB-12 liquidity risk management, AAOIFI treasury standards, commodity Murabaha structures, IFSB High-Quality Liquid Assets for Islamic banks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_type",
+      "label": "Institution Type",
+      "type": "select",
+      "options": ["Full Islamic Bank", "Islamic Window", "Islamic NBFI"],
+      "required": true
+    },
+    {
+      "id": "liquidity_tools",
+      "label": "Liquidity Instruments Used",
+      "type": "chips",
+      "options": ["Commodity Murabaha", "Wakala", "Interbank Murabaha", "Sukuk", "ISCAP"],
+      "required": false
+    },
+    {
+      "id": "regulatory_framework",
+      "label": "Regulatory Framework",
+      "type": "select",
+      "options": ["IFSB", "AAOIFI", "BNM", "SAMA", "Other"],
+      "required": true
+    }
+  ],
+  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
+  "recommendedSkills": ["skill-ifsb-standards", "skill-aaoifi-standards"],
+  "tags": ["treasury", "liquidity", "ifsb-12", "commodity-murabaha", "wakala", "interbank", "lcr", "hqla", "islamic-banking"]
+}

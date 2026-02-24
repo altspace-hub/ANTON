@@ -1,0 +1,59 @@
+{
+  "id": "information-architecture",
+  "areaId": "design",
+  "label": "Information Architecture",
+  "shortLabel": "IA Design",
+  "icon": "GitBranch",
+  "description": "Design content structures, navigation systems, and labelling strategies for websites, apps, and intranets. Includes card sort analysis and tree testing design.",
+  "color": "adv-teal",
+  "tags": ["information-architecture", "navigation", "taxonomy", "card-sorting", "findability"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Sonnet for most IA work. Opus for large-scale enterprise systems with complex content hierarchies."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "policy-document"]
+  },
+  "recommendedPersonas": ["ux-director", "service-designer"],
+  "guidedInputs": [
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Site / App Context",
+      "description": "What is this product? Who uses it? What are they trying to accomplish?",
+      "placeholder": "e.g. Insurance company intranet — 2,000 staff across claims, underwriting, and compliance. Users need to find policies, forms, HR tools, and IT support.",
+      "required": true
+    },
+    {
+      "id": "content_types",
+      "type": "textarea",
+      "label": "Content Types to Organise",
+      "description": "What types of content or features need to be structured?",
+      "placeholder": "e.g. 450 policy documents, 60 forms, 12 tools/calculators, news/announcements, staff directory, training resources"
+    },
+    {
+      "id": "user_tasks",
+      "type": "textarea",
+      "label": "Primary User Tasks",
+      "description": "What are the most common tasks users need to accomplish?",
+      "placeholder": "e.g. Find and download the claims handling procedure. Submit a holiday request. Access the IT helpdesk."
+    },
+    {
+      "id": "ia_problem",
+      "type": "select",
+      "label": "Primary IA Problem",
+      "description": "What is the main IA challenge to solve?",
+      "options": [
+        {"value": "new_design", "label": "Designing IA from scratch"},
+        {"value": "redesign", "label": "Redesigning existing IA that isn't working"},
+        {"value": "content_growth", "label": "Managing IA that has grown organically"},
+        {"value": "merger", "label": "Merging two separate sites/systems"},
+        {"value": "search_improvement", "label": "Improving findability and search"}
+      ]
+    }
+  ]
+}

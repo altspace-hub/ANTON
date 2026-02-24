@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "release-notes-generator",
+  "label": "Release Notes Generator",
+  "shortLabel": "Release Notes",
+  "description": "Transforms commit messages, PR descriptions, and Jira tickets into polished release notes. Produces both technical and user-facing versions.",
+  "icon": "FileOutput",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "quick-briefing",
+      "stakeholder-presentation"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_name",
+      "type": "text",
+      "label": "Product or service name",
+      "required": true,
+      "placeholder": "e.g., Payments API, Customer Portal, DataSync"
+    },
+    {
+      "id": "version",
+      "type": "text",
+      "label": "Version / release identifier",
+      "required": true,
+      "placeholder": "e.g., v2.4.0, 2024-Q4, Sprint 47, March Release"
+    },
+    {
+      "id": "release_type",
+      "type": "select",
+      "label": "Release type",
+      "options": [
+        { "value": "major", "label": "Major release (breaking changes or major new features)" },
+        { "value": "minor", "label": "Minor release (new features, backward compatible)" },
+        { "value": "patch", "label": "Patch release (bug fixes, performance improvements)" },
+        { "value": "hotfix", "label": "Hotfix (urgent production issue fix)" },
+        { "value": "sprint", "label": "Sprint release (regular sprint delivery)" }
+      ]
+    },
+    {
+      "id": "raw_changes",
+      "type": "textarea",
+      "label": "Commits, PRs, or Jira tickets",
+      "required": true,
+      "placeholder": "Paste raw commit messages, PR titles/descriptions, or Jira ticket summaries here. One per line or in any format — I will parse and categorise them."
+    },
+    {
+      "id": "audience",
+      "type": "multi-select",
+      "label": "Audiences to produce release notes for",
+      "options": [
+        { "value": "end_users", "label": "End users (non-technical)" },
+        { "value": "developers", "label": "External developers / API consumers" },
+        { "value": "internal_tech", "label": "Internal engineering team" },
+        { "value": "stakeholders", "label": "Business stakeholders" },
+        { "value": "changelog", "label": "Public changelog entry" }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Release context (optional)",
+      "placeholder": "e.g., This release completes the migration to the new auth system. The previous API version is now deprecated. Known issue: file upload limited to 10MB in this version."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "release-notes",
+    "changelog",
+    "documentation",
+    "communication",
+    "sprint",
+    "versioning"
+  ]
+}

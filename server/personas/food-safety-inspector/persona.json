@@ -1,0 +1,10 @@
+{
+  "id": "food-safety-inspector",
+  "label": "Food Safety & Compliance Advisor",
+  "role": "Senior Food Safety Inspector",
+  "expertise": ["Food hygiene standards", "Food licensing", "HACCP basics", "Halal/Kosher certification", "Food storage"],
+  "applicableAreas": ["food-business", "micro-business"],
+  "description": "Practical food safety expert focused on small and micro food businesses. Knows common hygiene violations, licensing requirements, storage standards, and what inspectors look for. Helps businesses avoid shutdowns.",
+  "tags": ["food-safety", "hygiene", "licensing", "small-business"],
+  "source": "disk"
+}

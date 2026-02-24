@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.0",
+  "id": "fintech-sandbox-application",
+  "label": "Fintech Regulatory Sandbox Application",
+  "shortLabel": "Sandbox Application",
+  "description": "Prepare regulatory sandbox applications. Covers eligibility criteria, test parameters, consumer protection safeguards, and graduation pathway to full licensing.",
+  "perspective": "strategic",
+  "icon": "FlaskConical",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Regulatory sandbox frameworks by jurisdiction, CBK Kenya fintech sandbox, Bank of Ghana fintech regulatory sandbox, MAS Singapore fintech regulatory sandbox, FCA sandbox programme, ADGM RegLab, FSRA sandbox"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Target Sandbox Jurisdiction",
+      "description": "Which regulator's sandbox is the applicant targeting?",
+      "required": true,
+      "options": [
+        { "value": "ke", "label": "Kenya (CBK)" },
+        { "value": "ng", "label": "Nigeria (CBN / SEC)" },
+        { "value": "gh", "label": "Ghana (Bank of Ghana)" },
+        { "value": "sg", "label": "Singapore (MAS)" },
+        { "value": "my", "label": "Malaysia (BNM)" },
+        { "value": "ae", "label": "UAE (FSRA / DIFC)" },
+        { "value": "uk", "label": "UK (FCA)" },
+        { "value": "rw", "label": "Rwanda (BNR)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "innovation_type",
+      "type": "text",
+      "label": "Innovation Description",
+      "description": "Briefly describe the fintech innovation or product being tested.",
+      "placeholder": "e.g. AI-powered credit scoring for unbanked users using mobile data and psychometric testing, with automated loan disbursement via mobile wallet...",
+      "required": true
+    },
+    {
+      "id": "regulatory_barrier",
+      "type": "textarea",
+      "label": "Regulatory Barrier",
+      "description": "What regulatory requirements make it difficult to launch this product under the current framework?",
+      "placeholder": "e.g. Current regulations require a full banking licence to offer deposit-like products, but our product is a limited-purpose savings wrapper — a full banking licence is disproportionate for the product scope and scale we are proposing to test..."
+    }
+  ],
+  "recommendedPersonas": [
+    "mobile-money-compliance",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-gsma-mobile-money-aml",
+    "jurisdiction-ke-cbk"
+  ],
+  "tags": [
+    "regulatory-sandbox",
+    "fintech",
+    "innovation",
+    "licensing",
+    "cbk-sandbox",
+    "mas-sandbox",
+    "fca-sandbox",
+    "test-and-learn"
+  ]
+}

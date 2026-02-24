@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "competitive-intelligence",
+  "label": "Competitive Intelligence Brief",
+  "shortLabel": "Competitive Intel",
+  "icon": "Crosshair",
+  "description": "Compiles structured competitive intelligence on specific competitors. Analyzes positioning, pricing, product capabilities, recent developments, and implications for strategy.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Competitor positioning, pricing intelligence, product capabilities, recent strategic developments"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "competitor_name",
+      "type": "text",
+      "label": "Competitor name(s)",
+      "required": true,
+      "placeholder": "e.g., McKinsey, Deloitte, Oliver Wyman — comma-separate for multiple"
+    },
+    {
+      "id": "intelligence_focus",
+      "type": "multi-select",
+      "label": "Intelligence dimensions",
+      "options": [
+        { "value": "positioning", "label": "Market positioning and messaging" },
+        { "value": "pricing", "label": "Pricing and commercial model" },
+        { "value": "products", "label": "Product/service capabilities" },
+        { "value": "recent_moves", "label": "Recent strategic moves and announcements" },
+        { "value": "talent", "label": "Talent and key hires" },
+        { "value": "clients", "label": "Client wins and losses" },
+        { "value": "technology", "label": "Technology and tools" }
+      ]
+    },
+    {
+      "id": "strategic_question",
+      "type": "textarea",
+      "label": "Strategic question driving this analysis",
+      "placeholder": "What specific decision or opportunity is this intelligence meant to inform?"
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Your organisation and context",
+      "placeholder": "Describe your organisation, current market position, and what you need to understand to compete more effectively."
+    }
+  ],
+  "recommendedPersonas": [
+    "investor-lens",
+    "journalist"
+  ],
+  "tags": [
+    "competitive-intelligence",
+    "competitor-analysis",
+    "positioning",
+    "strategy",
+    "market-intelligence"
+  ]
+}

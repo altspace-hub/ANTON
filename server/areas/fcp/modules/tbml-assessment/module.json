@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "tbml-assessment",
+  "label": "Trade-Based Money Laundering Assessment",
+  "shortLabel": "TBML Assessment",
+  "icon": "Ship",
+  "description": "Conduct a FATF-methodology trade-based money laundering risk assessment covering over/under invoicing, phantom shipments, commodity price manipulation, free trade zone exploitation, and Black Market Peso Exchange mechanics.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "gap-scoring-matrix", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF TBML guidance 2006/2020, Egmont Group trade finance typologies, APG TBML reports, FinCEN TBML advisories"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_type",
+      "type": "select",
+      "label": "Institution Type",
+      "required": true,
+      "options": [
+        {"value": "trade-finance-bank", "label": "Trade Finance Bank"},
+        {"value": "correspondent-bank", "label": "Correspondent Bank"},
+        {"value": "import-export", "label": "Import/Export Company"},
+        {"value": "ftz-entity", "label": "Free Trade Zone Entity"},
+        {"value": "customs", "label": "Customs Authority"}
+      ]
+    },
+    {
+      "id": "trade_products",
+      "type": "chips",
+      "label": "Trade Finance Products in Scope",
+      "options": [
+        {"value": "lc", "label": "Letters of Credit"},
+        {"value": "doc-collections", "label": "Documentary Collections"},
+        {"value": "open-account", "label": "Open Account"},
+        {"value": "trade-loans", "label": "Trade Loans"},
+        {"value": "supply-chain-finance", "label": "Supply Chain Finance"},
+        {"value": "forfaiting", "label": "Forfaiting"}
+      ]
+    },
+    {
+      "id": "commodities",
+      "type": "chips",
+      "label": "Commodity Categories",
+      "options": [
+        {"value": "bulk-commodities", "label": "Commodities (bulk)"},
+        {"value": "electronics", "label": "Electronics"},
+        {"value": "precious-metals", "label": "Precious Metals & Stones"},
+        {"value": "luxury-goods", "label": "Luxury Goods"},
+        {"value": "textiles", "label": "Textiles"},
+        {"value": "mixed", "label": "Mixed"}
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns or Red Flags",
+      "placeholder": "e.g. Discrepancies between invoice values and market prices, customers in high-risk jurisdictions, unusual payment routing, free trade zone intermediaries..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert"],
+  "recommendedSkills": ["skill-tbml-methods", "skill-fatf-mutual-evaluation"],
+  "tags": ["tbml", "trade-finance", "money-laundering", "commodities", "fcp"]
+}

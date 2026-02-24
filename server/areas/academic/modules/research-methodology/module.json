@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.0",
+  "id": "research-methodology",
+  "label": "Research Methodology Design",
+  "shortLabel": "Methodology",
+  "icon": "FlaskConical",
+  "description": "Design robust research methodologies: select appropriate methods, justify choices, plan data collection, define sampling strategies, and address validity and ethics.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "research_paradigm",
+      "type": "select",
+      "label": "Research Approach",
+      "description": "What is your primary research approach?",
+      "required": true,
+      "options": [
+        {
+          "value": "quantitative",
+          "label": "Quantitative"
+        },
+        {
+          "value": "qualitative",
+          "label": "Qualitative"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed Methods"
+        },
+        {
+          "value": "design-science",
+          "label": "Design Science"
+        },
+        {
+          "value": "action-research",
+          "label": "Action Research"
+        },
+        {
+          "value": "undecided",
+          "label": "Undecided / Need Guidance"
+        }
+      ]
+    },
+    {
+      "id": "research_question",
+      "type": "textarea",
+      "label": "Research Question",
+      "description": "State your research question or hypothesis.",
+      "required": true,
+      "placeholder": "e.g. How do Nordic banks adapt their AML frameworks in response to regulatory technology adoption?"
+    },
+    {
+      "id": "data_access",
+      "type": "textarea",
+      "label": "Data Access & Constraints",
+      "description": "What data or access do you have or need?",
+      "placeholder": "e.g. Access to 5 bank compliance officers for interviews, publicly available enforcement data, limited budget for surveys..."
+    },
+    {
+      "id": "academic_level",
+      "type": "select",
+      "label": "Academic Level",
+      "description": "What level is this research for?",
+      "options": [
+        {
+          "value": "bachelors",
+          "label": "Bachelor's Thesis"
+        },
+        {
+          "value": "masters",
+          "label": "Master's Thesis"
+        },
+        {
+          "value": "phd",
+          "label": "PhD Dissertation"
+        },
+        {
+          "value": "journal",
+          "label": "Journal Article"
+        },
+        {
+          "value": "professional",
+          "label": "Professional / Applied Research"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "academic",
+    "methodology",
+    "research-design",
+    "methods"
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "product-compliance",
+  "label": "Product Compliance Review",
+  "shortLabel": "Product Compliance",
+  "description": "Assess financial product compliance: suitability, disclosure requirements, fair value, product governance, and consumer protection obligations.",
+  "icon": "PackageCheck",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "Product type",
+      "required": true,
+      "options": [
+        {
+          "value": "investment_product",
+          "label": "Investment product (MiFID II)"
+        },
+        {
+          "value": "retail_loan",
+          "label": "Retail loan / mortgage (CCD/MCD)"
+        },
+        {
+          "value": "payment_product",
+          "label": "Payment product (PSD2)"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance / unit-linked (IDD/PRIIPs)"
+        },
+        {
+          "value": "deposit",
+          "label": "Deposit / savings product"
+        },
+        {
+          "value": "crypto_asset",
+          "label": "Crypto-asset product (MiCA)"
+        }
+      ]
+    },
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "Review focus",
+      "options": [
+        {
+          "value": "product_governance",
+          "label": "Product governance (design and approval)"
+        },
+        {
+          "value": "suitability",
+          "label": "Suitability / appropriateness assessment"
+        },
+        {
+          "value": "disclosure",
+          "label": "Disclosure and documentation (KID/KIID)"
+        },
+        {
+          "value": "fair_value",
+          "label": "Fair value and costs"
+        },
+        {
+          "value": "target_market",
+          "label": "Target market definition"
+        },
+        {
+          "value": "distribution",
+          "label": "Distribution channel requirements"
+        }
+      ]
+    },
+    {
+      "id": "product_description",
+      "type": "textarea",
+      "label": "Product description",
+      "placeholder": "Brief description of the product: what it is, who it is for, how it works, pricing structure."
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific compliance concerns",
+      "placeholder": "Any specific areas of concern or regulatory questions about this product."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "business-expert"
+  ],
+  "tags": [
+    "product",
+    "mifid",
+    "conduct",
+    "consumer-protection",
+    "disclosure",
+    "suitability"
+  ]
+}

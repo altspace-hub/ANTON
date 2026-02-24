@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "multi-jurisdiction-comparison",
+  "label": "Multi-Jurisdiction Regulatory Comparison",
+  "shortLabel": "Multi-Jurisdiction",
+  "description": "Compares regulatory requirements across multiple jurisdictions for a specific topic (e.g., AML/CFT, GDPR, licensing). Identifies overlaps, conflicts, and strictest requirements.",
+  "perspective": "consultant",
+  "icon": "Globe",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "regulatory-comparison",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Multi-jurisdiction regulatory requirements, national implementation measures, supervisory expectations"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "regulatory_topic",
+      "type": "textarea",
+      "label": "Regulatory Topic / Question",
+      "description": "What regulatory topic or compliance question should be compared across jurisdictions?",
+      "placeholder": "e.g. KYC requirements for corporate customers, specifically beneficial ownership identification thresholds, verification requirements, and documentation standards...",
+      "required": true
+    },
+    {
+      "id": "jurisdictions",
+      "type": "chips",
+      "label": "Jurisdictions to Compare",
+      "description": "Select the jurisdictions to include in the comparison.",
+      "required": true,
+      "options": [
+        { "value": "eu_amlr", "label": "EU / AMLR" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway" },
+        { "value": "uk", "label": "UK (FCA/HMRC)" },
+        { "value": "germany", "label": "Germany (BaFin)" },
+        { "value": "netherlands", "label": "Netherlands (DNB)" },
+        { "value": "luxembourg", "label": "Luxembourg (CSSF)" },
+        { "value": "ireland", "label": "Ireland (CBI)" },
+        { "value": "us_fincen", "label": "USA (FinCEN)" }
+      ]
+    },
+    {
+      "id": "comparison_purpose",
+      "type": "select",
+      "label": "Purpose of Comparison",
+      "description": "What is the primary purpose of this multi-jurisdiction comparison?",
+      "required": true,
+      "options": [
+        { "value": "group_policy", "label": "Design Group-Level Policy (most restrictive baseline)" },
+        { "value": "market_entry", "label": "Market Entry Assessment" },
+        { "value": "licensing", "label": "Licensing / Regulatory Approval" },
+        { "value": "client_advice", "label": "Client Regulatory Advice" },
+        { "value": "harmonisation", "label": "Policy Harmonisation Across Entities" },
+        { "value": "gap_assessment", "label": "Gap Assessment Against Multiple Frameworks" }
+      ]
+    },
+    {
+      "id": "specific_requirements",
+      "type": "textarea",
+      "label": "Specific Requirements to Compare",
+      "description": "List specific aspects of the topic you want compared (or leave blank for a comprehensive comparison).",
+      "placeholder": "e.g. Compare: (1) UBO ownership threshold %, (2) verification methods accepted, (3) register sources required, (4) refresh frequency, (5) senior managing official fallback requirements..."
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity Type",
+      "description": "What type of entity does this comparison apply to?",
+      "options": [
+        { "value": "bank", "label": "Bank / Credit Institution" },
+        { "value": "payment", "label": "Payment Institution" },
+        { "value": "investment", "label": "Investment Firm" },
+        { "value": "crypto", "label": "Crypto Asset Service Provider" },
+        { "value": "insurance", "label": "Insurance Company" },
+        { "value": "corporate", "label": "Non-Financial Corporate" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "multi-jurisdiction",
+    "regulatory-comparison",
+    "cross-border",
+    "legal",
+    "consultant"
+  ]
+}

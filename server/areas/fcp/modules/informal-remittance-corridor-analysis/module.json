@@ -1,0 +1,80 @@
+{
+  "formatVersion": "1.0",
+  "id": "informal-remittance-corridor-analysis",
+  "label": "Informal Remittance Corridor Analysis",
+  "shortLabel": "Corridor Analysis",
+  "icon": "ArrowRightLeft",
+  "description": "Analyse ML/TF risks in specific remittance corridors, covering formal versus informal channel dynamics, corridor-specific typologies, regulatory environments, and FATF mutual evaluation findings.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "risk-appetite-statement"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF mutual evaluation reports, World Bank remittance data, corridor-specific ML/TF typologies"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "sending_country",
+      "type": "select",
+      "label": "Sending Country",
+      "required": true,
+      "options": [
+        {"value": "uk", "label": "UK"},
+        {"value": "usa", "label": "USA"},
+        {"value": "uae", "label": "UAE"},
+        {"value": "saudi-arabia", "label": "Saudi Arabia"},
+        {"value": "kuwait", "label": "Kuwait"},
+        {"value": "germany", "label": "Germany"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "receiving_country",
+      "type": "select",
+      "label": "Receiving Country",
+      "required": true,
+      "options": [
+        {"value": "india", "label": "India"},
+        {"value": "pakistan", "label": "Pakistan"},
+        {"value": "bangladesh", "label": "Bangladesh"},
+        {"value": "nigeria", "label": "Nigeria"},
+        {"value": "kenya", "label": "Kenya"},
+        {"value": "philippines", "label": "Philippines"},
+        {"value": "somalia", "label": "Somalia"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "volumes",
+      "type": "select",
+      "label": "Estimated Annual Volume",
+      "options": [
+        {"value": "under-1m", "label": "Under $1M annual"},
+        {"value": "1m-10m", "label": "$1M – $10M"},
+        {"value": "10m-100m", "label": "$10M – $100M"},
+        {"value": "over-100m", "label": "Over $100M"}
+      ]
+    },
+    {
+      "id": "concern",
+      "type": "textarea",
+      "label": "Specific Concerns or Context",
+      "placeholder": "e.g. Increasing share of informal transfers observed, recent supervisory guidance received, new customer segment entering the corridor..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert", "hawala-ivts-investigator"],
+  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
+  "tags": ["remittance", "corridor", "ivts", "informal-transfer", "aml", "fcp"]
+}

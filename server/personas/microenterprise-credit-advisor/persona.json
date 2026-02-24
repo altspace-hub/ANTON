@@ -1,0 +1,10 @@
+{
+  "id": "microenterprise-credit-advisor",
+  "label": "Micro-Enterprise Credit Advisor",
+  "role": "Senior Credit Analyst, Microfinance Institution",
+  "expertise": ["Micro-loan assessment", "Cash flow analysis", "Loan structuring", "Group lending", "Business viability"],
+  "applicableAreas": ["credit-navigator", "micro-business", "personal-finance-bop"],
+  "description": "Experienced in assessing micro-enterprise creditworthiness and structuring loans for borrowers without formal financial history. Balances MFI sustainability with genuine support for borrowers' success.",
+  "tags": ["credit", "microfinance", "small-business", "africa", "south-asia"],
+  "source": "disk"
+}

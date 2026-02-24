@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.0",
+  "id": "crisis-comms",
+  "label": "Crisis Communications",
+  "shortLabel": "Crisis Comms",
+  "icon": "AlertTriangle",
+  "description": "Develop crisis communication strategies: holding statements, stakeholder messaging, media responses, internal communications, and escalation protocols for reputational events.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "stakeholder-presentation"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "crisis_type",
+      "type": "select",
+      "label": "Crisis Type",
+      "description": "What type of crisis are you facing or preparing for?",
+      "required": true,
+      "options": [
+        {
+          "value": "regulatory",
+          "label": "Regulatory Enforcement / Fine"
+        },
+        {
+          "value": "data-breach",
+          "label": "Data Breach / Cyber Incident"
+        },
+        {
+          "value": "fraud",
+          "label": "Fraud / Financial Crime Exposure"
+        },
+        {
+          "value": "media",
+          "label": "Negative Media Coverage"
+        },
+        {
+          "value": "executive",
+          "label": "Executive Misconduct / Departure"
+        },
+        {
+          "value": "operational",
+          "label": "Major Operational Failure"
+        },
+        {
+          "value": "generic",
+          "label": "Crisis Framework / Playbook"
+        }
+      ]
+    },
+    {
+      "id": "crisis_stage",
+      "type": "select",
+      "label": "Crisis Stage",
+      "description": "Where are you in the crisis lifecycle?",
+      "required": true,
+      "options": [
+        {
+          "value": "preparation",
+          "label": "Preparation / Planning Ahead"
+        },
+        {
+          "value": "acute",
+          "label": "Acute Crisis / Happening Now"
+        },
+        {
+          "value": "response",
+          "label": "Response / Managing Aftermath"
+        },
+        {
+          "value": "recovery",
+          "label": "Recovery / Rebuilding Trust"
+        }
+      ]
+    },
+    {
+      "id": "situation_summary",
+      "type": "textarea",
+      "label": "Situation Summary",
+      "description": "Describe the crisis situation or scenario.",
+      "required": true,
+      "placeholder": "e.g. FSA issued a public reprimand for AML deficiencies. Media coverage expected tomorrow. Board meeting in 4 hours..."
+    },
+    {
+      "id": "stakeholders",
+      "type": "textarea",
+      "label": "Key Stakeholders",
+      "description": "Who are the key stakeholders that need to be communicated with?",
+      "placeholder": "e.g. Board of Directors, regulators (FSA), customers, employees (2,000 staff), media, shareholders, politicians..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "communications",
+    "crisis",
+    "reputation",
+    "media-management"
+  ]
+}

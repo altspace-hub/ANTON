@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "sustainability-report-drafter",
+  "label": "Sustainability Report Section Writer",
+  "shortLabel": "Report Drafter",
+  "description": "Drafts sections of sustainability/ESG reports from data inputs. Follows GRI, CSRD, or TCFD frameworks and produces narrative that meets disclosure requirements.",
+  "icon": "FileText",
+  "color": "adv-green",
+  "areaId": "esg",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "ESRS standards, GRI Standards, TCFD recommendations, EFRAG implementation guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "framework",
+      "type": "select",
+      "label": "Reporting framework",
+      "required": true,
+      "options": [
+        { "value": "csrd_esrs", "label": "CSRD / ESRS (EU mandatory reporting)" },
+        { "value": "gri", "label": "GRI Standards (Global Reporting Initiative)" },
+        { "value": "tcfd", "label": "TCFD (Task Force on Climate-related Financial Disclosures)" },
+        { "value": "un_sdg", "label": "UN Sustainable Development Goals" },
+        { "value": "integrated", "label": "Integrated (combining multiple frameworks)" }
+      ]
+    },
+    {
+      "id": "section_type",
+      "type": "select",
+      "label": "Report section to draft",
+      "required": true,
+      "options": [
+        { "value": "governance", "label": "Governance (board oversight, governance structures)" },
+        { "value": "strategy", "label": "Strategy (risks, opportunities, business model)" },
+        { "value": "climate_environment", "label": "Climate and environment (GHG, energy, nature)" },
+        { "value": "own_workforce", "label": "Own workforce (employees, health & safety, DEI)" },
+        { "value": "value_chain_workers", "label": "Value chain workers and suppliers" },
+        { "value": "communities", "label": "Communities and affected stakeholders" },
+        { "value": "business_conduct", "label": "Business conduct and ethics" },
+        { "value": "executive_summary", "label": "CEO/Executive message and highlights" },
+        { "value": "materiality", "label": "Materiality assessment results" },
+        { "value": "targets_progress", "label": "Targets and progress" }
+      ]
+    },
+    {
+      "id": "data_inputs",
+      "type": "textarea",
+      "label": "Data and information to include",
+      "required": true,
+      "placeholder": "Provide the data, facts, and context that should be reflected in this section:\n- Specific metrics and numbers\n- Initiatives and programmes underway\n- Progress against targets\n- Governance structures and processes\n- Qualitative descriptions of approach\n\nThe more specific information you provide, the more accurate and useful the draft will be."
+    },
+    {
+      "id": "company_context",
+      "type": "textarea",
+      "label": "Company context",
+      "placeholder": "Brief description of the company: industry, size, geography, business model, key sustainability commitments already made (e.g., net zero commitment, Science Based Target)"
+    },
+    {
+      "id": "tone_guidance",
+      "type": "select",
+      "label": "Report tone",
+      "options": [
+        { "value": "formal", "label": "Formal compliance tone (regulatory, assurance-focused)" },
+        { "value": "transparent", "label": "Transparent and balanced (including challenges)" },
+        { "value": "stakeholder", "label": "Stakeholder-friendly (accessible, engaging narrative)" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "sustainability-reporting",
+    "csrd",
+    "gri",
+    "tcfd",
+    "esg-report",
+    "disclosure"
+  ]
+}

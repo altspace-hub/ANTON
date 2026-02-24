@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "market-entry-briefing",
+  "label": "Market Entry Research Brief",
+  "shortLabel": "Market Entry Brief",
+  "icon": "Map",
+  "description": "Produces rapid market entry assessment for a target geography or segment. Covers market size, competitive dynamics, regulatory requirements, entry strategy options, and risk assessment.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Market entry frameworks, regulatory requirements by jurisdiction, competitive landscape, industry trends"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entry_type",
+      "type": "select",
+      "label": "Market entry type",
+      "required": true,
+      "options": [
+        { "value": "geography", "label": "New country or geography" },
+        { "value": "segment", "label": "New customer segment" },
+        { "value": "product", "label": "New product or service line" },
+        { "value": "channel", "label": "New distribution channel" }
+      ]
+    },
+    {
+      "id": "target_market",
+      "type": "text",
+      "label": "Target market",
+      "required": true,
+      "placeholder": "e.g., Norwegian retail banking, Swedish SME payments, Danish private wealth management"
+    },
+    {
+      "id": "our_offering",
+      "type": "textarea",
+      "label": "Our product/service offering",
+      "required": true,
+      "placeholder": "What are we planning to offer in this market? Describe the product, service, or capability."
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "Entry timeline aspiration",
+      "options": [
+        { "value": "immediate", "label": "Within 6 months" },
+        { "value": "near_term", "label": "6-18 months" },
+        { "value": "medium_term", "label": "18-36 months" },
+        { "value": "exploratory", "label": "Exploratory — no fixed timeline" }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Organisation context",
+      "placeholder": "Describe your organisation, current market position, available resources, and any constraints on market entry."
+    }
+  ],
+  "recommendedPersonas": [
+    "investor-lens",
+    "devil-advocate",
+    "systems-thinker"
+  ],
+  "tags": [
+    "market-entry",
+    "expansion",
+    "market-research",
+    "strategy",
+    "geography"
+  ]
+}

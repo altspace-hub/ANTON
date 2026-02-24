@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "government",
+  "name": "Government & Public Administration",
+  "shortName": "Government",
+  "description": "Policy analysis, regulatory impact assessment, public consultation, grant writing, stakeholder engagement, and digital government service design for public sector professionals.",
+  "icon": "Landmark",
+  "color": "adv-teal",
+  "cluster": "general"
+}

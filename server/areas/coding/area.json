@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "coding",
+  "name": "Coding",
+  "shortName": "Coding",
+  "description": "AI-powered software development: code review with expert lenses, script generation, application building, and professional AI-led project delivery with governance.",
+  "icon": "Terminal",
+  "color": "adv-teal",
+  "cluster": "technology"
+}

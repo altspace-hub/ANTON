@@ -1,0 +1,73 @@
+{
+  "id": "design-system-foundation",
+  "areaId": "design",
+  "label": "Design System Foundation",
+  "shortLabel": "Design System",
+  "icon": "Component",
+  "description": "Create the foundational specifications for a design system: design tokens, component inventory, accessibility standards, governance model, and documentation approach.",
+  "color": "adv-teal",
+  "tags": ["design-system", "tokens", "components", "accessibility", "figma", "storybook"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Sonnet for design system planning. Opus for complex multi-brand, multi-platform design systems."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["policy-document", "detailed-findings"]
+  },
+  "recommendedPersonas": ["ux-director"],
+  "guidedInputs": [
+    {
+      "id": "brand_context",
+      "type": "textarea",
+      "label": "Brand & Product Context",
+      "description": "Describe the brand, its personality, the platforms the design system will cover, and who will use it.",
+      "placeholder": "e.g. B2B SaaS company. Professional but approachable brand. Covers web app + mobile app. 3 product designers + 8 engineers.",
+      "required": true
+    },
+    {
+      "id": "platforms",
+      "type": "multi-select",
+      "label": "Platforms to Cover",
+      "description": "Which platforms does this design system need to support?",
+      "options": [
+        {"value": "web", "label": "Web (browser)"},
+        {"value": "ios", "label": "iOS (native)"},
+        {"value": "android", "label": "Android (native)"},
+        {"value": "react_native", "label": "React Native (cross-platform mobile)"},
+        {"value": "email", "label": "Email templates"},
+        {"value": "print", "label": "Print / PDF"}
+      ],
+      "defaultValue": ["web"]
+    },
+    {
+      "id": "existing_state",
+      "type": "select",
+      "label": "Starting Point",
+      "description": "What is the current design system state?",
+      "options": [
+        {"value": "greenfield", "label": "Starting from scratch"},
+        {"value": "ad_hoc", "label": "Ad-hoc styles exist, no formal system"},
+        {"value": "partial", "label": "Partial system exists, needs expansion"},
+        {"value": "legacy", "label": "Legacy system needs modernisation"}
+      ],
+      "defaultValue": "ad_hoc"
+    },
+    {
+      "id": "team_size",
+      "type": "select",
+      "label": "Team Size",
+      "description": "How many designers and engineers will use this system?",
+      "options": [
+        {"value": "small", "label": "Small (1-3 designers, 1-10 engineers)"},
+        {"value": "medium", "label": "Medium (4-10 designers, 10-30 engineers)"},
+        {"value": "large", "label": "Large (10+ designers, 30+ engineers)"},
+        {"value": "enterprise", "label": "Enterprise (multiple product teams, separate brands)"}
+      ],
+      "defaultValue": "small"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "compensation-benchmarking",
+  "label": "Compensation Benchmarking Analysis",
+  "shortLabel": "Comp Benchmarking",
+  "description": "Analyzes compensation data against market benchmarks. Identifies positions above/below market, pay equity considerations, and recommends adjustments within budget constraints.",
+  "icon": "DollarSign",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "compensation_data",
+      "type": "textarea",
+      "label": "Current compensation data",
+      "required": true,
+      "description": "Provide anonymised compensation data. Use role titles and levels, not names.",
+      "placeholder": "Role | Level | Base Salary (annual) | Bonus % | Other\nSenior Compliance Manager | M4 | €95,000 | 15% | n/a\nCompliance Manager | M3 | €75,000 | 10% | n/a\nCompliance Analyst | A2 | €52,000 | 5% | n/a\n..."
+    },
+    {
+      "id": "benchmark_data",
+      "type": "textarea",
+      "label": "Market benchmark data (if available)",
+      "description": "Paste benchmark data from surveys (Mercer, Radford, Korn Ferry, etc.) or any comparable data. If you don't have benchmarks, describe the market and the module will use knowledge of typical ranges.",
+      "placeholder": "e.g., Based on Mercer 2024 Nordic Financial Services survey:\nSenior Compliance Manager (P50): €105,000; (P25): €92,000; (P75): €118,000\nCompliance Manager (P50): €82,000; (P25): €72,000; (P75): €93,000\n..."
+    },
+    {
+      "id": "market_context",
+      "type": "textarea",
+      "label": "Market and organisation context",
+      "placeholder": "e.g., Nordic financial services market (Stockholm, Helsinki). Mid-sized institution, not competing at top-of-market. Recent retention issues in Compliance. Budget available for adjustments is approximately €150,000 per year."
+    },
+    {
+      "id": "analysis_focus",
+      "type": "multi-select",
+      "label": "Analysis focus areas",
+      "options": [
+        {
+          "value": "market_position",
+          "label": "Market positioning vs. benchmarks (P25/P50/P75)"
+        },
+        {
+          "value": "pay_equity",
+          "label": "Internal pay equity and compression issues"
+        },
+        {
+          "value": "retention_risk",
+          "label": "Retention risk — roles most likely to leave for better pay"
+        },
+        {
+          "value": "adjustment_priority",
+          "label": "Recommended adjustment priorities and sequencing"
+        },
+        {
+          "value": "budget_modelling",
+          "label": "Budget-constrained adjustment scenarios"
+        },
+        {
+          "value": "total_reward",
+          "label": "Total reward (base + bonus + benefits) perspective"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "compensation",
+    "benchmarking",
+    "pay-equity",
+    "total-reward",
+    "retention"
+  ]
+}

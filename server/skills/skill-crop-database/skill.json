@@ -1,0 +1,9 @@
+{
+  "id": "skill-crop-database",
+  "label": "Crop Knowledge Database",
+  "description": "Comprehensive reference on major crops grown across sub-Saharan Africa, South Asia, and Southeast Asia — covering planting seasons, soil requirements, water needs, common pests and diseases, expected yields, and market pricing factors.",
+  "applicableAreas": ["smallholder-farming"],
+  "tags": ["crops", "agriculture", "farming", "planting", "pests", "diseases", "yields", "seeds"],
+  "source": "disk",
+  "category": "thematic"
+}

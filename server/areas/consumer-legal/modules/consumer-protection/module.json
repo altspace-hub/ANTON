@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "consumer-protection",
+  "label": "Consumer Protection",
+  "shortLabel": "Consumer Protection",
+  "description": "Analyse consumer rights issues including defective goods, unfair contract terms, misleading advertising, and consumer credit disputes under applicable consumer protection legislation.",
+  "icon": "Shield",
+  "color": "adv-red",
+  "areaId": "consumer-legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "issue_type",
+      "type": "select",
+      "label": "Consumer issue",
+      "required": true,
+      "options": [
+        {
+          "value": "defective_goods",
+          "label": "Defective Goods / Product Liability"
+        },
+        {
+          "value": "unfair_terms",
+          "label": "Unfair Contract Terms"
+        },
+        {
+          "value": "misleading",
+          "label": "Misleading Advertising / Practices"
+        },
+        {
+          "value": "consumer_credit",
+          "label": "Consumer Credit Dispute"
+        },
+        {
+          "value": "distance_selling",
+          "label": "Distance Selling / E-commerce"
+        },
+        {
+          "value": "warranty",
+          "label": "Warranty / Guarantee Claims"
+        },
+        {
+          "value": "services",
+          "label": "Defective Services"
+        },
+        {
+          "value": "other",
+          "label": "Other Consumer Issue"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction",
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "eu",
+          "label": "EU"
+        }
+      ]
+    },
+    {
+      "id": "situation",
+      "type": "textarea",
+      "label": "Describe the situation",
+      "required": true,
+      "placeholder": "Describe the consumer issue, the product/service, purchase date, any communications with the seller/provider, and what resolution you seek."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "consumer",
+    "protection",
+    "rights",
+    "dispute",
+    "unfair-terms"
+  ]
+}

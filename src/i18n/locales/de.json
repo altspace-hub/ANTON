@@ -1,0 +1,890 @@
+{
+  "nav": {
+    "home": "Startseite",
+    "briefMe": "Briefing",
+    "guideMe": "Führe mich",
+    "openChat": "Offener Chat",
+    "workflows": "Arbeitsabläufe",
+    "projects": "Projekte",
+    "buildModule": "Modul erstellen",
+    "skillsLibrary": "Kompetenzbibliothek",
+    "batchCreate": "Stapelverarbeitung",
+    "auditLog": "Prüfprotokoll",
+    "exchange": "Austausch",
+    "fillForm": "Formular ausfüllen",
+    "challengeThis": "Anfechten",
+    "dualInterpret": "Doppelte Auslegung",
+    "reviewEngine": "Prüfungsmodul",
+    "soundingBoard": "Resonanzboden",
+    "analytics": "Analytik",
+    "dataInsights": "Dateneinblicke",
+    "recentSessions": "Letzte Sitzungen",
+    "noRecentSessions": "Keine aktuellen Sitzungen",
+    "expandSidebar": "Seitenleiste erweitern",
+    "collapseSidebar": "Seitenleiste reduzieren",
+    "closeSidebar": "Seitenleiste schließen",
+    "openSidebar": "Seitenleiste öffnen",
+    "setupProfile": "Profil einrichten"
+  },
+  "header": {
+    "appName": "Anton",
+    "apiConnected": "API verbunden",
+    "apiNotConfigured": "API nicht konfiguriert",
+    "switchToLight": "Zum hellen Modus wechseln",
+    "switchToCorporate": "Zum Unternehmensmodus wechseln",
+    "switchToDark": "Zum dunklen Modus wechseln",
+    "settings": "Einstellungen",
+    "buildModule": "Modul erstellen",
+    "skillsLibrary": "Kompetenzbibliothek",
+    "projects": "Projekte",
+    "workflows": "Arbeitsabläufe",
+    "openChat": "Offener Chat"
+  },
+  "dashboard": {
+    "title": "Anton",
+    "byLine": "von openEXPERT",
+    "subtitle": "KI-gestützte Expertenanalyse. Wählen Sie ein Modul, um zu beginnen, oder setzen Sie eine aktuelle Sitzung fort.",
+    "sessions": "Sitzungen",
+    "aiResponses": "KI-Antworten",
+    "outputTokens": "Ausgabe-Tokens",
+    "thisWeek": "Diese Woche",
+    "thisMonth": "Diesen Monat",
+    "favourites": "Favoriten",
+    "searchPlaceholder": "Module suchen — z.B. DSGVO, Stresstest, Vertragsanalyse...",
+    "noModulesMatch": "Keine Module gefunden",
+    "clearSearch": "Suche löschen",
+    "communityModules": "Community-Module",
+    "community": "Community",
+    "openModule": "Modul öffnen",
+    "recentSessions": "Letzte Sitzungen",
+    "noSessionsYet": "Noch keine Sitzungen. Wählen Sie oben ein Modul aus.",
+    "renameSession": "Sitzung umbenennen",
+    "deleteSession": "Sitzung löschen",
+    "removeFromFavourites": "Aus Favoriten entfernen",
+    "addToFavourites": "Zu Favoriten hinzufügen",
+    "modules": "Module",
+    "starterPacks": "Starter-Pakete",
+    "personalised": "Personalisiert",
+    "completeProfileToPersonalise": "Vervollständigen Sie Ihr",
+    "profileLink": "Profil",
+    "toPersonalise": "zur Personalisierung",
+    "show": "Anzeigen",
+    "hide": "Ausblenden",
+    "forYou": "Für Sie",
+    "getStarted": "Loslegen",
+    "roiThisMonth": "ROI diesen Monat",
+    "roiDescription": "openEXPERT hat Ihnen geschätzte",
+    "roiHours": "Stunden",
+    "roiThisMonthLabel": "diesen Monat gespart (gesch. Wert:",
+    "roiAtRate": "bei",
+    "roiPerHour": "/Std.).",
+    "roiApiCost": "API-Kosten:",
+    "roiRatioSuffix": "Std. gespart pro 1€ ausgegeben"
+  },
+  "module": {
+    "runAnalysis": "Analyse starten",
+    "send": "Senden",
+    "stop": "Stoppen",
+    "thinking": "Analysetiefe",
+    "creativity": "Kreativität",
+    "model": "Modell",
+    "knowledgeSources": "Wissensquellen",
+    "outputFormats": "Ausgabeformate",
+    "systemPrompt": "Systemprompt",
+    "transparencyLevel": "Reasoning-Transparenz",
+    "transparencyOff": "Aus",
+    "transparencySummary": "Zusammenfassung",
+    "transparencyDetailed": "Detailliert",
+    "advancedSettings": "Erweiterte Einstellungen",
+    "files": "Dateien und Ordner",
+    "moduleSettings": "Moduleinstellungen",
+    "customModule": "Benutzerdefiniertes Modul",
+    "moduleNotFound": "Modul nicht gefunden.",
+    "describeTask": "Beschreiben Sie Ihre Analyseaufgabe",
+    "followUp": "Nachfolgenachricht",
+    "describeTaskPlaceholder": "z.B. Analysieren Sie unsere AML-Richtlinie gegenüber den AMLR-Anforderungen für eine nordische Bank mit Privat- und Firmenkundengeschäft...",
+    "followUpPlaceholder": "Stellen Sie eine Folgefrage oder beantragen Sie Änderungen...",
+    "outputWillAppear": "Die Ausgabe erscheint hier.",
+    "configureAndRun": "Konfigurieren Sie die Einstellungen, beschreiben Sie Ihre Aufgabe und klicken Sie auf Starten.",
+    "reviewStatus": "Prüfungsstatus",
+    "draft": "Entwurf",
+    "reviewed": "Geprüft",
+    "approved": "Genehmigt",
+    "markReviewed": "Als geprüft markieren",
+    "approve": "Genehmigen",
+    "saveAsModule": "Als benutzerdefiniertes Modul speichern",
+    "saved": "Gespeichert!",
+    "moduleName": "Modulname...",
+    "saving": "Speichern...",
+    "save": "Speichern",
+    "saveAsModuleDesc": "Speichern Sie Systemprompt, Personas, Kompetenzen und Ausgabeformate dieser Sitzung als wiederverwendbares benutzerdefiniertes Modul.",
+    "tokens": "Tokens",
+    "approachingLimit": "Limit wird erreicht",
+    "reframeFor": "Umformulieren für:",
+    "voiceInput": "Spracheingabe",
+    "stopRecording": "Aufnahme stoppen",
+    "reframeBoard": "Vorstand",
+    "reframeCustomer": "Kunde",
+    "reframeEmployee": "Mitarbeiter",
+    "reframeTechnical": "Technisch",
+    "thinkingControls": {
+      "label": "Wie tief soll Claude analysieren?",
+      "quick": {
+        "label": "Schnell",
+        "description": "Schnelle Antwort, minimale Analyse"
+      },
+      "think": {
+        "label": "Denken",
+        "description": "Standard-Analysetiefe"
+      },
+      "thinkHard": {
+        "label": "Tief denken",
+        "description": "Tiefe Analyse mit sorgfältiger Argumentation"
+      },
+      "investigate": {
+        "label": "Untersuchen",
+        "description": "Gründliche Untersuchung, maximale Tiefe"
+      },
+      "planFirst": {
+        "label": "Erst planen",
+        "description": "Expliziten Plan vor Ausführung erstellen"
+      }
+    },
+    "modelSelector": {
+      "label": "Modell",
+      "recommended": "Empfohlen",
+      "inputCost": "Eingabe",
+      "outputCost": "Ausgabe",
+      "perMillion": "/M",
+      "localOllama": "Lokal (Ollama)",
+      "ollamaNotRunning": "Starten Sie Ollama, um lokale Modelle zu verwenden.",
+      "getOllama": "Ollama holen",
+      "ollamaThen": "dann ausführen",
+      "ollamaPullCommand": "ollama pull llama3.2",
+      "freeLabelLocal": "Kostenlos · Lokal",
+      "noApiKey": "Kein API-Schlüssel erforderlich. Läuft auf Ihrem Rechner."
+    },
+    "knowledgeSource": {
+      "title": "Wissensquellen",
+      "subtitle": "Wo soll Claude regulatorische Texte und Referenzmaterial finden?",
+      "claudeKnowledge": {
+        "title": "Claudes eigenes Wissen",
+        "description": "Claude nutzt sein eingebautes Wissen über Vorschriften, Richtlinien und rechtliche Rahmenbedingungen.",
+        "webSearch": "Websuche aktivieren (Claude durchsucht das Internet nach aktuellen Veröffentlichungen)",
+        "focusArea": "Fokusbereich (optional):",
+        "focusPlaceholder": "z.B. AMLR-Verordnung 2024/1624, AMLA RTS-Konsultationen"
+      },
+      "onlineReference": {
+        "title": "Online-Vorschriften / Dokumentlinks",
+        "description": "Fügen Sie URLs zu spezifischen regulatorischen Texten, Richtlinien oder Online-Dokumenten ein.",
+        "urlPlaceholder": "https://eur-lex.europa.eu/...",
+        "add": "Hinzufügen",
+        "fullText": "Volltext",
+        "summaryOnly": "Nur Zusammenfassung",
+        "eurLexQuickLoad": "Schnellladen von EUR-Lex:",
+        "regulations": {
+          "amlr": "AMLR",
+          "dora": "DORA",
+          "mica": "MiCA",
+          "gdpr": "DSGVO",
+          "amld6": "6AMLD",
+          "nis2": "NIS2"
+        }
+      },
+      "localFolder": {
+        "title": "Lokale Ordner",
+        "description": "Verweisen auf Ordner auf Ihrem Computer mit regulatorischen Texten, Kundendokumenten oder Referenzmaterialien.",
+        "pathPlaceholder": "C:\\Users\\...\\Documents\\Regulations",
+        "add": "Hinzufügen",
+        "includeSubfolders": "Unterordner einschließen"
+      },
+      "combinedMode": {
+        "title": "Kombiniert: Suche + Lokale Dokumente",
+        "description": "Claude nutzt sein Wissen UND Ihre lokalen Dokumente. Am besten zum Vergleich von Kundendokumenten mit Vorschriften.",
+        "localFirst": "Lokale Dokumente zuerst",
+        "merged": "Zusammengeführt",
+        "claudeFirst": "Claude zuerst",
+        "specialInstructions": "Besondere Anweisungen (optional):",
+        "instructionsPlaceholder": "z.B. Vergleichen Sie die Richtlinie des Kunden mit der Verordnung. Wo das Kundendokument schweigt, verwenden Sie den Verordnungstext zur Identifizierung der Lücke."
+      },
+      "indexedKnowledge": {
+        "title": "Indexierte Wissensdatenbank (Ordner)",
+        "description": "Semantische Suche in Ihrer indexierten Dokumentbibliothek. Ruft die relevantesten Passagen ab — nicht ganze Dokumente.",
+        "badge": "Modus 5a",
+        "retrieve": "Abrufen",
+        "passages": "Passagen",
+        "focused": "fokussiert",
+        "broad": "breit",
+        "loadingFolders": "Indexierte Ordner werden geladen...",
+        "notYetIndexed": "Noch nicht indexiert",
+        "indexNow": "Jetzt indexieren",
+        "indexing": "Indexierung läuft...",
+        "reindex": "Neu indexieren",
+        "docs": "Dokumente",
+        "chunks": "Blöcke",
+        "indexed": "indexiert",
+        "folderSelected": "Ordner für Suche ausgewählt",
+        "foldersSelected": "Ordner für Suche ausgewählt",
+        "noIndexedFolders": "Noch keine indexierten Ordner. Fügen Sie zuerst Ordner in Modus 3 (Lokale Ordner) hinzu, dann indexieren Sie sie hier für semantische Suche.",
+        "justNow": "gerade eben",
+        "minutesAgo": "Min. her",
+        "hoursAgo": "Std. her",
+        "daysAgo": "T her"
+      },
+      "knowledgeCollections": {
+        "title": "Wissenssammlungen (RAG)",
+        "description": "Semantische Suche über organisierte Wissenssammlungen mit automatischem Abruf während der Modulausführung.",
+        "badge": "Modus 5b"
+      }
+    },
+    "creativitySlider": {
+      "label": "Schreibstil",
+      "strict": {
+        "label": "Streng",
+        "description": "Präzise, faktisch, formale regulatorische Sprache"
+      },
+      "balanced": {
+        "label": "Ausgewogen",
+        "description": "Genau und zugänglich, professionell aber lesbar"
+      },
+      "creative": {
+        "label": "Kreativ",
+        "description": "Ansprechend mit realen Beispielen, behält Genauigkeit bei"
+      }
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "saved": "Gespeichert",
+    "apiConnection": "API-Verbindung",
+    "refresh": "Aktualisieren",
+    "anthropicApiKey": "Anthropic API-Schlüssel",
+    "configured": "Konfiguriert",
+    "notConfigured": "Nicht konfiguriert",
+    "database": "Datenbank",
+    "connected": "Verbunden",
+    "notConnected": "Nicht verbunden",
+    "version": "Version",
+    "addApiKeyHint": "Fügen Sie Ihren Anthropic API-Schlüssel in die",
+    "envFile": ".env",
+    "file": "Datei ein:",
+    "additionalProviders": "Weitere KI-Anbieter",
+    "additionalProvidersDesc": "Konfigurieren Sie API-Schlüssel für OpenAI-, Google Gemini- oder Mistral-Modelle. Schlüssel werden nur im Arbeitsspeicher des Servers gespeichert (Laufzeit).",
+    "openai": "OpenAI",
+    "googleAi": "Google AI",
+    "mistral": "Mistral",
+    "save": "Speichern",
+    "defaultSettings": "Standardeinstellungen",
+    "defaultSettingsDesc": "Diese Standardwerte werden beim Öffnen einer neuen Modulsitzung angewendet.",
+    "defaultModel": "Standardmodell",
+    "defaultThinking": "Standard-Analysetiefe",
+    "defaultCreativity": "Standard-Kreativität",
+    "language": "Sprache",
+    "languageDesc": "Wählen Sie die Oberflächensprache. Modulinhalte bleiben auf Englisch.",
+    "english": "English",
+    "svenska": "Svenska",
+    "francais": "Français",
+    "deutsch": "Deutsch",
+    "italiano": "Italiano",
+    "espanol": "Español",
+    "hindi": "हिन्दी",
+    "portugues": "Português",
+    "polski": "Polski",
+    "urdu": "اردو",
+    "deployment": "Bereitstellung",
+    "deploymentDesc": "Der aktuelle Bereitstellungsmodus bestimmt die verfügbaren Funktionen.",
+    "mode": "Modus",
+    "team": "Team",
+    "solo": "Solo",
+    "soloModeDesc": "Solo-Modus: Einzelbenutzer-Konfiguration. Alle Funktionen ohne Anmeldung verfügbar. Das Prüfprotokoll verfolgt Ihre persönliche Nutzung und Kosten.",
+    "teamModeDesc": "Team-Modus: Mehrbenutzer-Konfiguration mit vollständigem Prüfpfad, Benutzerzuordnung bei Prüfungen und gemeinsamer Sitzungsverwaltung.",
+    "theme": "Design",
+    "themeDesc": "Wählen Sie das Farbschema der Anwendung.",
+    "myProfile": "Mein Profil",
+    "general": "Allgemein",
+    "navigation": "Navigation",
+    "teamTab": "Team",
+    "teamMembers": "Teammitglieder",
+    "addUser": "Benutzer hinzufügen",
+    "newUser": "Neuer Benutzer",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "displayName": "Anzeigename",
+    "role": "Rolle",
+    "monthlyTokenBudget": "Monatliches Token-Budget (0 = unbegrenzt)",
+    "createUser": "Benutzer erstellen",
+    "cancel": "Abbrechen",
+    "loading": "Lädt...",
+    "usernameCol": "Benutzername",
+    "displayNameCol": "Anzeigename",
+    "roleCol": "Rolle",
+    "budgetCol": "Budget (Tokens)",
+    "usedThisMonthCol": "Diesen Monat verwendet",
+    "lastLoginCol": "Letzte Anmeldung",
+    "actionsCol": "Aktionen",
+    "unlimited": "Unbegrenzt",
+    "never": "Nie",
+    "resetPassword": "Passwort zurücksetzen",
+    "deleteUser": "Benutzer löschen",
+    "usageThisMonth": "Nutzung diesen Monat",
+    "noUsageRecorded": "Noch keine Nutzung aufgezeichnet.",
+    "save2": "Speichern",
+    "budget": "Budget",
+    "budgetDesc": "Legen Sie ein monatliches KI-Ausgabenlimit in EUR fest. Bei Erreichen des Limits werden neue Anfragen blockiert. 0 = kein Limit.",
+    "spendingThisMonth": "Ausgaben diesen Monat",
+    "budgetCapReached": "Monatliches Budget erreicht. Neue KI-Anfragen sind bis zum nächsten Monat gesperrt.",
+    "over80Pct": "Über 80% des Monatsbudgets verbraucht.",
+    "noSpendingLimit": "Kein Ausgabenlimit festgelegt.",
+    "monthlyBudgetCap": "Monatliches KI-Budget (€)",
+    "noLimit": "Kein Limit",
+    "zeroNoLimit": "0 = kein Limit (unbegrenzte Ausgaben)",
+    "saving": "Speichern...",
+    "notifications": "Benachrichtigungen",
+    "notificationsDesc": "E-Mail-Benachrichtigungen für lang laufende Analysen konfigurieren.",
+    "emailNotification": "E-Mail senden wenn eine lange Analyse abgeschlossen ist",
+    "emailNotificationDesc": "Benachrichtigung erhalten wenn Claude eine lange Aufgabe abschließt. Erfordert SMTP-Konfiguration in Ihrer .env-Datei.",
+    "brandTemplates": "Markenvorlagen",
+    "brandTemplatesDesc": "Laden Sie die .docx- oder .pptx-Vorlagen Ihres Unternehmens hoch. Verwenden Sie \"Mit Vorlage exportieren\" in der Exportleiste.",
+    "uploadTemplate": "Vorlage hochladen",
+    "uploading": "Hochladen...",
+    "noTemplatesYet": "Noch keine Vorlagen hochgeladen.",
+    "deleteTemplate": "Vorlage löschen",
+    "navConfig": {
+      "title": "Navigationselemente",
+      "description": "Blenden Sie nicht verwendete Elemente aus, um Ihre Seitenleiste zu vereinfachen.",
+      "visibleCount": "{visible} von {total} sichtbar",
+      "refreshToApply": "Aktualisieren zum Übernehmen",
+      "showAll": "Alle anzeigen",
+      "show": "Anzeigen",
+      "hide": "Ausblenden",
+      "categories": {
+        "interaction": "Interaktionsmodi",
+        "tools": "Werkzeuge & Workflows",
+        "features": "Funktionen",
+        "intelligence": "Intelligenz & Einblicke",
+        "admin": "Administration & Analytik"
+      }
+    }
+  },
+  "brief": {
+    "title": "Briefing",
+    "subtitle": "Stellen Sie jede Frage — erhalten Sie sofort strukturierte Expertenantworten",
+    "placeholder": "Stellen Sie jede Frage — z.B. 'Was sind die wichtigsten AMLR-Pflichten für Zahlungsinstitute?'",
+    "askAnton": "Anton fragen",
+    "goDeeper": "Vertiefen mit einem vollständigen Modul",
+    "ctrlEnter": "Strg+Eingabe zum Senden",
+    "whatDoYouNeed": "Wobei benötigen Sie Hilfe?",
+    "emptyStateDesc": "Stellen Sie jede professionelle Frage in einfacher Sprache. Anton antwortet mit strukturierten Expertenantworten.",
+    "thinking": "denkt nach...",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "downloadMd": ".md",
+    "stop": "Stoppen"
+  },
+  "guide": {
+    "title": "Führe mich",
+    "subtitle": "Lassen Sie uns das richtige Modul für Ihre Aufgabe finden",
+    "step1": "Wobei benötigen Sie Hilfe?",
+    "step2": "Welche Art von Ausgabe?",
+    "step3": "Was beschreibt Sie am besten?",
+    "findModules": "Passende Module finden",
+    "useThis": "Dieses Modul öffnen",
+    "back": "Zurück"
+  },
+  "batch": {
+    "title": "Stapelverarbeitung",
+    "subtitle": "Führen Sie dasselbe Modul N-mal mit verschiedenen Eingaben aus einer CSV aus",
+    "uploadCsv": "CSV hochladen",
+    "selectModule": "Modul auswählen",
+    "configure": "Vorlage konfigurieren",
+    "runBatch": "Stapel starten",
+    "downloadAll": "Alle Ergebnisse herunterladen"
+  },
+  "share": {
+    "sharedAnalysis": "Geteilte Analyse",
+    "createdWith": "Erstellt mit openEXPERT",
+    "expired": "Dieser geteilte Link ist abgelaufen oder existiert nicht",
+    "loading": "Geteilte Analyse wird geladen..."
+  },
+  "export": {
+    "exportAs": "Exportieren als",
+    "export": "Exportieren:",
+    "copy": "Kopieren",
+    "copied": "Kopiert!",
+    "download": "Herunterladen",
+    "withTemplate": "Mit Vorlage",
+    "exporting": "Exportieren...",
+    "chooseBrandTemplate": "Markenvorlage auswählen",
+    "share": "Teilen",
+    "sharing": "Teilen...",
+    "linkCopied": "Link kopiert!",
+    "copyShareableLink": "Teilbaren Link kopieren",
+    "explainDifferently": "Anders erklären",
+    "exportUsingBrandTemplate": "Mit Markenvorlage exportieren",
+    "explainFor": "Erklären für...",
+    "explainForChooseAudience": "Zielgruppe wählen",
+    "explainForSubtitle": "Claude wird die Ausgabe für sie umschreiben",
+    "explainForGenerating": "Generierung läuft...",
+    "explainForReady": "Fertig",
+    "explainForOriginal": "Original",
+    "explainForTryAnother": "Andere Zielgruppe versuchen",
+    "explainForStop": "Stoppen",
+    "explainForCopy": "Kopieren",
+    "explainForCopied": "Kopiert",
+    "explainForDownload": ".md"
+  },
+  "review": {
+    "title": "Prüfungsmodul",
+    "subtitle": "Fügen Sie ein Dokument oder eine Analyse ein und lassen Sie Anton es aus Expertenperspektiven kritisieren.",
+    "reviewMode": "Prüfungsmodus",
+    "documentToReview": "Zu prüfendes Dokument",
+    "pasteText": "Text einfügen",
+    "uploadFiles": "Dateien hochladen",
+    "pasteTextPlaceholder": "Fügen Sie das Dokument, die Richtlinie, die Analyse, das Memo oder den Plan hier ein...",
+    "ctrlEnterToRun": "Strg+Eingabe zum Starten",
+    "readingFiles": "Dateien werden gelesen…",
+    "uploadPrompt": "Klicken zum Hochladen oder Dateien hierher ziehen",
+    "uploadFormats": "PDF, DOCX, TXT, MD, XLSX, CSV",
+    "pasteTextToReview": "Text oben einfügen zum Prüfen",
+    "uploadFileToReview": "Mindestens eine Datei zum Prüfen hochladen",
+    "stopReview": "Prüfung stoppen",
+    "startReview": "Prüfung starten",
+    "readyToReview": "Bereit zur Prüfung",
+    "readyToReviewDesc": "Wählen Sie einen Prüfungsmodus, fügen Sie Ihr Dokument ein und klicken Sie auf Prüfung starten. Anton prüft es aus der gewählten Expertenperspektive.",
+    "reviewing": "wird geprüft...",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "downloadMd": ".md",
+    "tokensTotal": "Tokens gesamt",
+    "file": "Datei",
+    "files": "Dateien"
+  },
+  "common": {
+    "loading": "Lädt...",
+    "error": "Etwas ist schiefgelaufen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "submit": "Absenden",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "view": "Anzeigen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "noResults": "Keine Ergebnisse gefunden"
+  },
+  "connections": {
+    "title": "Verbindungen",
+    "subtitle": "Externe Datenquellen und Integrationen verwalten",
+    "addConnection": "Verbindung hinzufügen",
+    "noConnections": "Noch keine Verbindungen konfiguriert.",
+    "noConnectionsHint": "Klicken Sie auf \"Verbindung hinzufügen\", um Ihre erste Integration zu registrieren.",
+    "loadingConnections": "Verbindungen werden geladen...",
+    "totalConnections": "gesamt",
+    "types": {
+      "database": "Datenbank",
+      "api": "API",
+      "filesystem": "Dateisystem",
+      "email": "E-Mail",
+      "scriptLibrary": "Skript-Bibliothek"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "active": "Aktiv",
+      "disabled": "Deaktiviert",
+      "error": "Fehler"
+    },
+    "actions": {
+      "test": "Testen",
+      "testConnection": "Verbindung testen",
+      "approve": "Genehmigen",
+      "approveConnection": "Verbindung genehmigen",
+      "disableConnection": "Verbindung deaktivieren",
+      "deleteConnection": "Diese Verbindung deaktivieren? Sie kann durch Bearbeiten wieder aktiviert werden."
+    },
+    "details": {
+      "created": "Erstellt",
+      "tested": "Getestet",
+      "configSanitized": "Konfiguration (bereinigt)",
+      "auditLog": "Prüfprotokoll",
+      "loadingAuditLog": "Prüfprotokoll wird geladen...",
+      "noAuditEntries": "Noch keine Prüfeinträge.",
+      "time": "Zeit",
+      "action": "Aktion",
+      "result": "Ergebnis",
+      "by": "Von"
+    },
+    "testResults": {
+      "networkError": "Netzwerkfehler"
+    },
+    "sections": {
+      "pendingApproval": "Genehmigung ausstehend",
+      "active": "Aktiv",
+      "disabledError": "Deaktiviert / Fehler"
+    },
+    "wizard": {
+      "title": "Neue Verbindung",
+      "steps": {
+        "type": "Typ",
+        "configure": "Konfigurieren",
+        "test": "Testen",
+        "save": "Speichern"
+      },
+      "typeSelection": {
+        "prompt": "Wählen Sie den Typ der zu erstellenden Integration:",
+        "errorNoType": "Bitte wählen Sie einen Verbindungstyp.",
+        "database": {
+          "label": "Datenbank",
+          "description": "Verbindung zu SQLite-, PostgreSQL- oder MySQL-Datenbanken"
+        },
+        "api": {
+          "label": "API",
+          "description": "Verbindung zu REST-APIs mit Bearer-, Basic- oder API-Key-Authentifizierung"
+        },
+        "filesystem": {
+          "label": "Dateisystem",
+          "description": "Zugriff auf lokale Ordner mit konfigurierbaren Berechtigungen"
+        },
+        "email": {
+          "label": "E-Mail",
+          "description": "SMTP- oder IMAP-E-Mail-Integration"
+        },
+        "scriptLibrary": {
+          "label": "Skript-Bibliothek",
+          "description": "Ordner mit genehmigten ausführbaren Skripten registrieren"
+        }
+      },
+      "config": {
+        "displayName": "Anzeigename",
+        "displayNamePlaceholder": "z.B. Produktions-DB, Reporting-API",
+        "errorNoName": "Anzeigename ist erforderlich.",
+        "database": {
+          "driver": "Treiber",
+          "drivers": {
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL / MariaDB",
+            "mssql": "Microsoft SQL Server",
+            "mongodb": "MongoDB (NoSQL)"
+          },
+          "filePath": "Datenbank-Dateipfad",
+          "filePathPlaceholder": "/pfad/zur/datenbank.sqlite",
+          "host": "Host / IP-Adresse",
+          "hostPlaceholder": "localhost oder 192.168.1.100",
+          "hostHint": "Verwenden Sie IP oder Hostnamen für Remoteserver",
+          "port": "Port",
+          "databaseName": "Datenbankname",
+          "databaseNamePlaceholder": "mydb",
+          "username": "Benutzername",
+          "password": "Passwort",
+          "ssl": "SSL/TLS-Verschlüsselung aktivieren",
+          "sslVerifyCert": "SSL-Zertifikat verifizieren (deaktivieren für selbstsignierte Zertifikate)",
+          "maxRowsPerQuery": "Max. Zeilen pro Abfrage",
+          "maxRowsPlaceholder": "10000",
+          "allowedTables": "Erlaubte Tabellen (kommagetrennt, leer für alle)",
+          "allowedTablesPlaceholder": "users, orders, products"
+        },
+        "api": {
+          "baseUrl": "Basis-URL",
+          "baseUrlPlaceholder": "https://api.example.com",
+          "authType": "Authentifizierungstyp",
+          "authTypes": {
+            "bearer": "Bearer Token",
+            "basic": "Basic Auth (base64)",
+            "apikey": "API-Key Header",
+            "none": "Keine Authentifizierung"
+          },
+          "authValue": "Authentifizierungswert",
+          "authValuePlaceholder": "Token / Zugangsdaten",
+          "rateLimit": "Rate-Limit (Anf./Min., 0 = unbegrenzt)",
+          "rateLimitPlaceholder": "60",
+          "timeout": "Timeout (Sekunden)",
+          "timeoutPlaceholder": "30",
+          "allowedEndpoints": "Erlaubte Endpunkte",
+          "endpointPathPlaceholder": "/api/endpoint oder /api/*",
+          "addEndpoint": "Hinzufügen",
+          "methods": {
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE",
+            "all": "*"
+          }
+        },
+        "filesystem": {
+          "basePath": "Basispfad",
+          "basePathPlaceholder": "/pfad/zum/ordner oder C:\\Users\\...",
+          "basePathHint": "Jeder Dateizugriff ist auf dieses Verzeichnis und seine Unterverzeichnisse beschränkt.",
+          "allowedExtensions": "Erlaubte Erweiterungen (keine = alle erlaubt)",
+          "permissions": "Berechtigungen",
+          "permissionRead": "Lesen",
+          "permissionWrite": "Schreiben",
+          "maxFileSize": "Max. Dateigröße (MB)",
+          "maxFileSizePlaceholder": "50"
+        },
+        "generic": {
+          "configJson": "Konfiguration (JSON)",
+          "invalidJson": "Ungültiges JSON"
+        }
+      },
+      "test": {
+        "prompt": "Konfiguration vor dem Speichern validieren:",
+        "summary": "Verbindungszusammenfassung",
+        "validate": "Konfiguration validieren",
+        "validating": "Validierung läuft...",
+        "validated": "Konfiguration validiert. Vollständiger Verbindungstest nach dem Speichern verfügbar.",
+        "failed": "Validierung fehlgeschlagen"
+      },
+      "confirm": {
+        "prompt": "Überprüfen und speichern Sie Ihre Verbindung:",
+        "name": "Name",
+        "type": "Typ",
+        "statusAfterSave": "Status nach Speichern",
+        "pendingNotice": "Die Verbindung hat den Status \"ausstehend\", bis ein Administrator sie genehmigt. Aktive Verbindungen stehen allen Benutzern zur Verfügung.",
+        "saveConnection": "Verbindung speichern",
+        "saving": "Speichern..."
+      },
+      "navigation": {
+        "back": "Zurück",
+        "next": "Weiter"
+      },
+      "errors": {
+        "networkError": "Netzwerkfehler — Verbindung konnte nicht gespeichert werden",
+        "saveFailed": "Verbindung konnte nicht erstellt werden"
+      }
+    }
+  },
+  "scripts": {
+    "title": "Skript-Bibliothek",
+    "subtitle": "Genehmigte ausführbare Skripte verwalten",
+    "totalScripts": "Skripte",
+    "registerScript": "Skript registrieren",
+    "noScripts": "Keine Skripte in der Bibliothek.",
+    "noScriptsHint": "Registrieren Sie genehmigte Skripte, um sie für Workflows verfügbar zu machen.",
+    "loadingScripts": "Skripte werden geladen...",
+    "deleteScript": "Skript löschen",
+    "deleteConfirm": "Dieses Skript aus der Bibliothek entfernen?",
+    "status": {
+      "approved": "Genehmigt",
+      "pending": "Ausstehend"
+    },
+    "details": {
+      "scriptPath": "Skriptpfad",
+      "maxRuntime": "Max. Laufzeit",
+      "runtimeSeconds": "s",
+      "memoryLimit": "Speicherlimit",
+      "memoryMb": "MB",
+      "sandbox": "Sandbox",
+      "sandboxEnabled": "Aktiviert",
+      "sandboxDisabled": "Deaktiviert",
+      "networkAccess": "Netzwerkzugriff",
+      "networkAllowed": "Erlaubt",
+      "networkBlocked": "Blockiert",
+      "fileHash": "Datei-Hash (SHA-256)",
+      "parameters": "Parameter",
+      "version": "v"
+    },
+    "languages": {
+      "python": "Python",
+      "bash": "Bash",
+      "r": "R",
+      "powershell": "PowerShell",
+      "node": "Node.js"
+    },
+    "form": {
+      "title": "Neues Skript registrieren",
+      "displayName": "Anzeigename",
+      "displayNamePlaceholder": "Datenexport-Skript",
+      "language": "Sprache",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Was macht dieses Skript?",
+      "scriptPath": "Skript-Dateipfad",
+      "scriptPathPlaceholder": "/pfad/zum/script.py",
+      "maxRuntime": "Max. Laufzeit (Sekunden)",
+      "memoryLimit": "Speicherlimit (MB)",
+      "networkAccess": "Netzwerkzugriff erlauben",
+      "parametersSchema": "Parameterschema (JSON)",
+      "parametersPlaceholder": "{\"param1\": {\"type\": \"string\", \"description\": \"...\"}}",
+      "invalidJson": "Ungültiges JSON in Parametern",
+      "errorRequired": "Anzeigename und Skriptpfad sind erforderlich",
+      "errorSave": "Netzwerkfehler",
+      "registerScript": "Skript registrieren",
+      "registering": "Registrierung läuft...",
+      "cancel": "Abbrechen"
+    }
+  },
+  "analytics": {
+    "title": "Nutzungsanalytik",
+    "subtitle": "Verfolgen Sie Ihre openEXPERT-Nutzung, Kosten und ROI",
+    "stats": {
+      "totalSessions": "Sitzungen gesamt",
+      "totalCost": "Gesamtkosten",
+      "tokensUsed": "Verwendete Tokens",
+      "uniqueModules": "Eindeutige Module",
+      "messages": "Nachrichten",
+      "avgPerSession": "Durchschnitt {amount} / Sitzung",
+      "acrossAllSessions": "über alle Sitzungen",
+      "modulesUsed": "verwendete Module"
+    },
+    "charts": {
+      "sessionActivity": "Sitzungsaktivität — letzte 30 Tage",
+      "dailyCost": "Tägliche Kosten — letzte 30 Tage",
+      "mostUsedModules": "Meistgenutzte Module",
+      "noModuleData": "Noch keine Modulnutzungsdaten",
+      "sessions": "Sitzung",
+      "sessionPlural": "Sitzungen"
+    },
+    "roi": {
+      "title": "ROI-Schätzung",
+      "sessionMultiplier": "{count} Sitzungen × {hours}h Durchschnitt × €{rate}/h =",
+      "estimatedValue": "€{value} geschätzter Wert",
+      "equivalentTo": "Entspricht ungefähr",
+      "workingDays": "{days} Arbeitstag",
+      "workingDaysPlural": "{days} Arbeitstagen",
+      "consultingTimeSaved": "gesparter Beratungszeit.",
+      "basedOn": "Basierend auf typischen Compliance-Beratungskosten von €{rate}/Stunde und geschätzten {hours} Stunden äquivalenter manueller Arbeit pro KI-Sitzung."
+    }
+  },
+  "insights": {
+    "title": "Dateneinblicke",
+    "subtitle": "Verwandeln Sie Ihre Daten in visuelle Intelligenz",
+    "input": {
+      "pasteDataTab": "Daten einfügen",
+      "uploadFileTab": "Datei hochladen",
+      "pasteDataPlaceholder": "CSV, Tabelle oder strukturierte Daten hier einfügen...\n\nBeispiel:\nMonat,SAR-Anzahl,Wert (EUR)\nJan 2024,12,450000\nFeb 2024,18,820000",
+      "chooseFile": "Datei wählen",
+      "acceptedFormats": "Akzeptiert .csv, .xlsx, .txt",
+      "loadedFile": "Geladen: {fileName}",
+      "questionLabel": "Was möchten Sie sehen?",
+      "questionPlaceholder": "z.B. Trends über Zeit zeigen, nach Kategorie vergleichen...",
+      "exampleShowTrends": "Trends über Zeit zeigen",
+      "exampleCompareCategory": "Nach Kategorie vergleichen",
+      "exampleHighlightOutliers": "Ausreißer hervorheben",
+      "exampleShowDistribution": "Verteilung zeigen",
+      "exampleTimelineView": "Zeitachsenansicht",
+      "modelNote": "Anton analysiert Ihre Daten und generiert interaktive Diagramme mit Claude Opus 4.6.",
+      "errorMessage": "Bitte fügen Sie zuerst Daten ein oder laden Sie sie hoch.",
+      "errorQuestion": "Bitte beschreiben Sie, was Sie sehen möchten."
+    },
+    "actions": {
+      "generateInsights": "Einblicke generieren",
+      "stop": "Stoppen",
+      "analyzing": "Anton analysiert Ihre Daten...",
+      "copyRawData": "Rohdaten kopieren",
+      "downloadChartData": "Diagrammdaten herunterladen (.csv)"
+    },
+    "output": {
+      "summaryTitle": "Zusammenfassung",
+      "narrativeTitle": "Narrative Analyse"
+    }
+  },
+  "soundingBoard": {
+    "title": "Resonanzboden",
+    "subtitle": "Ihr persönlicher Berater ist bereit",
+    "talkingWith": "Im Gespräch mit:",
+    "advisorSettings": "Beratereinstellungen",
+    "newConversation": "Neues Gespräch",
+    "changePersonaWarning": "Das Ändern der Beraterpersona setzt das Gespräch zurück. Fortfahren?",
+    "personas": {
+      "strategic": {
+        "label": "Allgemeiner strategischer Berater",
+        "description": "Übergeordnetes Denken, strategische Optionen, Stakeholder-Dynamiken"
+      },
+      "legal": {
+        "label": "Rechtsberater",
+        "description": "Rechtliche Risiken, Verträge, regulatorische Verpflichtungen, Haftung"
+      },
+      "risk": {
+        "label": "Risikoexperte",
+        "description": "Risikoidentifikation, -bewertung, -minderung, Kontrollen"
+      },
+      "regulatory": {
+        "label": "Regulatorischer Spezialist",
+        "description": "Aufsichtserwartungen, regulatorische Auslegung, Compliance-Rahmenwerke"
+      },
+      "financialCrime": {
+        "label": "Finanzkriminalitätsexperte",
+        "description": "AML/CFT, Sanktionen, Betrug, Typologien, Finanzkriminalitätsrisiko"
+      }
+    },
+    "context": {
+      "personaLabel": "Beraterpersona",
+      "aboutYouLabel": "Über Sie",
+      "aboutYouPlaceholder": "Ich bin Leiter Compliance bei einer nordischen Bank. Mein Schwerpunkt ist AML/CFT. Meine aktuelle Herausforderung ist die Vorbereitung auf die AMLA-Aufsicht.",
+      "contextNote": "Dieser Kontext wird lokal gespeichert und in jeder Nachricht an Ihren Berater einbezogen."
+    },
+    "emptyState": {
+      "title": "Ihr persönlicher Berater ist bereit",
+      "description": "Fragen Sie alles — strategische Dilemmata, knifflige Situationen, regulatorische Fragen oder einfach nur laut denken. Ihr {persona} wird mit fokussierter Expertenberatung antworten.",
+      "tipNoContext": "Tipp: Fügen Sie oben Ihren Kontext hinzu, damit Ihr Berater relevantere Ratschläge geben kann.",
+      "example1": "Wie sollte ich eine bevorstehende Aufsichtsprüfung angehen?",
+      "example2": "Was sind die größten Risiken in unserem AMLR-Implementierungsplan?",
+      "example3": "Helfen Sie mir, ein schwieriges Stakeholder-Gespräch durchzudenken",
+      "example4": "Worauf würde sich eine Aufsichtsbehörde bei einer De-Risking-Prüfung konzentrieren?"
+    },
+    "chat": {
+      "inputPlaceholder": "Fragen Sie Ihren {persona}...",
+      "askAdvisor": "Berater fragen",
+      "stop": "Stoppen",
+      "ctrlEnterToSend": "Strg+Eingabe zum Senden",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "thinking": "Denkt nach"
+    }
+  },
+  "formTools": {
+    "fillForm": {
+      "title": "Formular ausfüllen",
+      "subtitle": "Fügen Sie ein beliebiges Formular, einen Fragebogen oder eine Vorlage ein — ANTON füllt es Feld für Feld mit Expertenberatung und Zitaten aus.",
+      "formLabel": "Formular oder Fragebogen",
+      "formPlaceholder": "Fügen Sie Ihr Formular oder Ihren Fragebogen hier ein...",
+      "contextLabel": "Zusätzlicher Kontext",
+      "contextOptional": "(optional)",
+      "contextPlaceholder": "z.B. Dies ist für eine nordische Bank, die der AMLR unterliegt",
+      "fillForm": "Formular ausfüllen",
+      "stop": "Stoppen",
+      "fillingForm": "Formular wird ausgefüllt...",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "download": ".md"
+    },
+    "challengeThis": {
+      "title": "Anfechten",
+      "subtitle": "Fügen Sie ein beliebiges Dokument, einen Plan oder ein Argument ein — ANTON prüft es mit der stärkstmöglichen Kritik.",
+      "documentLabel": "Dokument, Plan oder Argument anzufechten",
+      "documentPlaceholder": "Fügen Sie das Dokument, den Plan oder das Argument ein, das angefochten werden soll...",
+      "contextLabel": "Kontext",
+      "contextOptional": "(optional)",
+      "contextPlaceholder": "z.B. Dies ist eine AML-Richtlinie für ein dänisches Zahlungsinstitut",
+      "challengeIt": "Anfechten",
+      "stop": "Stoppen",
+      "challengeMode": "Anton — Anfechtungsmodus",
+      "analyzing": "analysiert...",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "download": ".md"
+    },
+    "dualInterpret": {
+      "title": "Doppelte Auslegung",
+      "subtitle": "Laden Sie einen rechtlichen/regulatorischen Text hoch oder fügen Sie ihn ein — ANTON interpretiert ihn gleichzeitig als Regulierer und als regulierte Einheit.",
+      "pasteTextTab": "Text einfügen",
+      "enterUrlTab": "URL eingeben",
+      "textLabel": "Rechtlicher oder regulatorischer Text",
+      "textPlaceholder": "Fügen Sie den rechtlichen oder regulatorischen Text zur Interpretation ein...",
+      "urlLabel": "URL zum regulatorischen Text",
+      "urlPlaceholder": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj",
+      "urlNote": "URL-Abruf verwendet die Online-Referenz-Wissensquelle. Für vollständige Dokumentextraktion verwenden Sie das Wissensquellen-Panel in einem Modul. Hier verwendet Anton sein Trainingswissen über den URL-Inhalt plus Websuche.",
+      "interpret": "Interpretieren",
+      "stop": "Stoppen",
+      "dualMode": "Anton — Doppelte Auslegung",
+      "interpreting": "interpretiert...",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "download": ".md"
+    }
+  }
+}

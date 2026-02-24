@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "medicine-dosage-safety",
+  "label": "Medicine Safety & Dosage Guide",
+  "shortLabel": "Medicine Safety",
+  "icon": "Pill",
+  "description": "How to take medicines safely. Understand prescriptions, avoid dangerous combinations, and know when to stop.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Explains existing prescriptions only. Never recommends specific doses. Always refers to pharmacist or prescriber."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Medicine safety, prescription reading, common medicine interactions, antibiotic adherence, safe storage, paracetamol safety" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "situation",
+      "label": "What do you need help with?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "understand-prescription", "label": "Doctor gave a prescription — want to understand it" },
+        { "value": "buying-at-pharmacy", "label": "Buying medicine at a pharmacy" },
+        { "value": "childs-medicine", "label": "Child's medicine" },
+        { "value": "multiple-medicines-interactions", "label": "Taking multiple medicines — check interactions" },
+        { "value": "medicine-effects", "label": "Understanding medicine effects or side effects" }
+      ]
+    },
+    {
+      "id": "patient_type",
+      "label": "Who is taking the medicine?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "adult", "label": "Adult" },
+        { "value": "child", "label": "Child (give weight and age when asking)" },
+        { "value": "elderly", "label": "Elderly" },
+        { "value": "pregnant-woman", "label": "Pregnant woman" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
+  "tags": ["medicine-safety", "prescription", "dosage", "antibiotics", "paracetamol", "drug-interactions", "pharmacy", "storage"]
+}

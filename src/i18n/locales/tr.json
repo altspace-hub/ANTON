@@ -1,0 +1,890 @@
+{
+  "nav": {
+    "home": "Ana Sayfa",
+    "briefMe": "Kısa Bilgi",
+    "guideMe": "Yol Göster",
+    "openChat": "Açık Sohbet",
+    "workflows": "İş Akışları",
+    "projects": "Projeler",
+    "buildModule": "Modül Oluştur",
+    "skillsLibrary": "Beceri Kütüphanesi",
+    "batchCreate": "Toplu Oluştur",
+    "auditLog": "Denetim Günlüğü",
+    "exchange": "Değişim",
+    "fillForm": "Formu Doldur",
+    "challengeThis": "Buna Meydan Oku",
+    "dualInterpret": "İkili Yorumlama",
+    "reviewEngine": "İnceleme Motoru",
+    "soundingBoard": "Danışma Panosu",
+    "analytics": "Analitik",
+    "dataInsights": "Veri İçgörüleri",
+    "recentSessions": "Son Oturumlar",
+    "noRecentSessions": "Son oturum yok",
+    "expandSidebar": "Kenar çubuğunu genişlet",
+    "collapseSidebar": "Kenar çubuğunu daralt",
+    "closeSidebar": "Kenar çubuğunu kapat",
+    "openSidebar": "Kenar çubuğunu aç",
+    "setupProfile": "Profilinizi ayarlayın"
+  },
+  "header": {
+    "appName": "Anton",
+    "apiConnected": "API Bağlı",
+    "apiNotConfigured": "API Yapılandırılmamış",
+    "switchToLight": "Açık moda geç",
+    "switchToCorporate": "Kurumsal moda geç",
+    "switchToDark": "Koyu moda geç",
+    "settings": "Ayarlar",
+    "buildModule": "Modül Oluştur",
+    "skillsLibrary": "Beceri Kütüphanesi",
+    "projects": "Projeler",
+    "workflows": "İş Akışları",
+    "openChat": "Açık Sohbet"
+  },
+  "dashboard": {
+    "title": "Anton",
+    "byLine": "openEXPERT tarafından",
+    "subtitle": "Yapay zeka destekli uzman analizi. Başlamak için bir modül seçin veya son oturumunuza devam edin.",
+    "sessions": "Oturumlar",
+    "aiResponses": "Yapay Zeka Yanıtları",
+    "outputTokens": "Çıktı Token'ları",
+    "thisWeek": "Bu hafta",
+    "thisMonth": "Bu ay",
+    "favourites": "Favoriler",
+    "searchPlaceholder": "Modül ara — örn. GDPR, stres testi, sözleşme incelemesi...",
+    "noModulesMatch": "Eşleşen modül yok",
+    "clearSearch": "Aramayı temizle",
+    "communityModules": "Topluluk Modülleri",
+    "community": "Topluluk",
+    "openModule": "Modülü aç",
+    "recentSessions": "Son Oturumlar",
+    "noSessionsYet": "Henüz oturum yok. Yukarıdan bir modül seçerek başlayın.",
+    "renameSession": "Oturumu yeniden adlandır",
+    "deleteSession": "Oturumu sil",
+    "removeFromFavourites": "Favorilerden kaldır",
+    "addToFavourites": "Favorilere ekle",
+    "modules": "modül",
+    "starterPacks": "Başlangıç Paketleri",
+    "personalised": "Kişiselleştirilmiş",
+    "completeProfileToPersonalise": "Tamamlayın",
+    "profileLink": "profilinizi",
+    "toPersonalise": "kişiselleştirmek için",
+    "show": "Göster",
+    "hide": "Gizle",
+    "forYou": "Sizin için",
+    "getStarted": "Başlayın",
+    "roiThisMonth": "Bu Ay Yatırım Getirisi",
+    "roiDescription": "openEXPERT size tahmini olarak",
+    "roiHours": "saat",
+    "roiThisMonthLabel": "bu ay kazandırdı (tahmini değer:",
+    "roiAtRate": "saat başına",
+    "roiPerHour": "/saat).",
+    "roiApiCost": "API maliyeti:",
+    "roiRatioSuffix": "harcanan €1 başına tasarruf edilen saat"
+  },
+  "module": {
+    "runAnalysis": "Analizi Çalıştır",
+    "send": "Gönder",
+    "stop": "Durdur",
+    "thinking": "Düşünme Seviyesi",
+    "creativity": "Yaratıcılık",
+    "model": "Model",
+    "knowledgeSources": "Bilgi Kaynakları",
+    "outputFormats": "Çıktı Formatları",
+    "systemPrompt": "Sistem İstemi",
+    "transparencyLevel": "Akıl Yürütme Şeffaflığı",
+    "transparencyOff": "Kapalı",
+    "transparencySummary": "Özet",
+    "transparencyDetailed": "Detaylı",
+    "advancedSettings": "Gelişmiş Ayarlar",
+    "files": "Dosyalar ve Klasörler",
+    "moduleSettings": "Modül Ayarları",
+    "customModule": "Özel Modül",
+    "moduleNotFound": "Modül bulunamadı.",
+    "describeTask": "Analiz görevinizi açıklayın",
+    "followUp": "Takip mesajı",
+    "describeTaskPlaceholder": "Örn., Kara para aklama politikamızı İskandinav bankası için AMLR gereksinimlerine göre analiz edin...",
+    "followUpPlaceholder": "Takip sorusu sorun veya değişiklik talep edin...",
+    "outputWillAppear": "Çıktı burada görünecektir.",
+    "configureAndRun": "Ayarları yapılandırın, görevinizi açıklayın ve Çalıştır'a tıklayın.",
+    "reviewStatus": "İnceleme Durumu",
+    "draft": "Taslak",
+    "reviewed": "İncelendi",
+    "approved": "Onaylandı",
+    "markReviewed": "İncelendi Olarak İşaretle",
+    "approve": "Onayla",
+    "saveAsModule": "Özel modül olarak kaydet",
+    "saved": "Kaydedildi!",
+    "moduleName": "Modül adı...",
+    "saving": "Kaydediliyor...",
+    "save": "Kaydet",
+    "saveAsModuleDesc": "Bu oturumun sistem istemini, kişiliklerini, becerilerini ve çıktı formatlarını yeniden kullanılabilir özel bir modül olarak kaydedin.",
+    "tokens": "token",
+    "approachingLimit": "Limite yaklaşılıyor",
+    "reframeFor": "Şunun için yeniden çerçevele:",
+    "voiceInput": "Sesli giriş",
+    "stopRecording": "Kaydı durdur",
+    "reframeBoard": "Yönetim Kurulu",
+    "reframeCustomer": "Müşteri",
+    "reframeEmployee": "Çalışan",
+    "reframeTechnical": "Teknik",
+    "thinkingControls": {
+      "label": "Claude ne kadar derinlemesine analiz etmeli?",
+      "quick": {
+        "label": "Hızlı",
+        "description": "Hızlı yanıt, minimum analiz"
+      },
+      "think": {
+        "label": "Düşün",
+        "description": "Standart analiz derinliği"
+      },
+      "thinkHard": {
+        "label": "Derinlemesine Düşün",
+        "description": "Derin analiz ve dikkatli akıl yürütme"
+      },
+      "investigate": {
+        "label": "İncele",
+        "description": "Kapsamlı inceleme, maksimum derinlik"
+      },
+      "planFirst": {
+        "label": "Önce Planla",
+        "description": "Yürütmeden önce açık plan oluştur"
+      }
+    },
+    "modelSelector": {
+      "label": "Model",
+      "recommended": "Önerilen",
+      "inputCost": "girdi",
+      "outputCost": "çıktı",
+      "perMillion": "/M",
+      "localOllama": "Yerel (Ollama)",
+      "ollamaNotRunning": "Yerel modelleri kullanmak için Ollama'yı başlatın.",
+      "getOllama": "Ollama'yı edinin",
+      "ollamaThen": "ardından çalıştırın",
+      "ollamaPullCommand": "ollama pull llama3.2",
+      "freeLabelLocal": "Ücretsiz · Yerel",
+      "noApiKey": "API anahtarı gerekmez. Makinenizde çalışır."
+    },
+    "knowledgeSource": {
+      "title": "Bilgi Kaynakları",
+      "subtitle": "Claude düzenleyici metinleri ve referans materyalleri nereden bulmalı?",
+      "claudeKnowledge": {
+        "title": "Claude'un Kendi Bilgisi",
+        "description": "Claude, düzenlemeler, yönergeler ve yasal çerçeveler hakkındaki yerleşik bilgisini kullanır.",
+        "webSearch": "Web aramayı etkinleştir (Claude en son yayınları aramak için internette arama yapar)",
+        "focusArea": "Odak alanı (isteğe bağlı):",
+        "focusPlaceholder": "örn., AMLR Düzenlemesi 2024/1624, AMLA RTS danışmaları"
+      },
+      "onlineReference": {
+        "title": "Çevrimiçi Düzenleme / Belge Bağlantıları",
+        "description": "Belirli düzenleyici metinlere, yönergelere veya çevrimiçi belgelere URL'ler yapıştırın.",
+        "urlPlaceholder": "https://eur-lex.europa.eu/...",
+        "add": "Ekle",
+        "fullText": "Tam metin",
+        "summaryOnly": "Yalnızca özet",
+        "eurLexQuickLoad": "EUR-Lex'ten hızlı yükleme:",
+        "regulations": {
+          "amlr": "AMLR",
+          "dora": "DORA",
+          "mica": "MiCA",
+          "gdpr": "GDPR",
+          "amld6": "6AMLD",
+          "nis2": "NIS2"
+        }
+      },
+      "localFolder": {
+        "title": "Yerel Klasörler",
+        "description": "Düzenleme metinleri, müşteri belgeleri veya referans materyalleri içeren bilgisayarınızdaki klasörlere işaret edin.",
+        "pathPlaceholder": "C:\\Users\\...\\Documents\\Regulations",
+        "add": "Ekle",
+        "includeSubfolders": "Alt klasörleri dahil et"
+      },
+      "combinedMode": {
+        "title": "Birleşik: Arama + Yerel Belgeler",
+        "description": "Claude kendi bilgisini VE yerel belgelerinizi kullanır. Müşteri belgelerini düzenlemelerle karşılaştırmak için en iyisi.",
+        "localFirst": "Önce yerel belgeler",
+        "merged": "Birleştirilmiş",
+        "claudeFirst": "Önce Claude",
+        "specialInstructions": "Özel talimatlar (isteğe bağlı):",
+        "instructionsPlaceholder": "örn., Müşterinin politikasını düzenlemeye göre karşılaştırın. Müşteri belgesi sessiz kaldığında, boşluğu belirlemek için düzenleme metnini kullanın."
+      },
+      "indexedKnowledge": {
+        "title": "Dizinlenmiş Bilgi Tabanı (Klasörler)",
+        "description": "Dizinlenmiş belge kütüphanenizde anlamsal arama. Tüm belgeleri değil, en alakalı bölümleri getirir.",
+        "badge": "Mod 5a",
+        "retrieve": "Al",
+        "passages": "bölüm",
+        "focused": "odaklı",
+        "broad": "geniş",
+        "loadingFolders": "Dizinlenmiş klasörler yükleniyor...",
+        "notYetIndexed": "Henüz dizinlenmemiş",
+        "indexNow": "Şimdi Dizinle",
+        "indexing": "Dizinleniyor...",
+        "reindex": "Yeniden Dizinle",
+        "docs": "belge",
+        "chunks": "parça",
+        "indexed": "dizinlendi",
+        "folderSelected": "arama için seçilen klasör",
+        "foldersSelected": "arama için seçilen klasörler",
+        "noIndexedFolders": "Henüz dizinlenmiş klasör yok. Önce Mod 3'te (Yerel Klasörler) klasör ekleyin, ardından anlamsal arama için burada dizinleyin.",
+        "justNow": "şimdi",
+        "minutesAgo": "dk önce",
+        "hoursAgo": "sa önce",
+        "daysAgo": "gün önce"
+      },
+      "knowledgeCollections": {
+        "title": "Bilgi Koleksiyonları (RAG)",
+        "description": "Modül yürütme sırasında otomatik geri getirme ile organize edilmiş bilgi koleksiyonlarında anlamsal arama.",
+        "badge": "Mod 5b"
+      }
+    },
+    "creativitySlider": {
+      "label": "Yazım stili",
+      "strict": {
+        "label": "Kesin",
+        "description": "Hassas, olgusal, resmi düzenleyici dil"
+      },
+      "balanced": {
+        "label": "Dengeli",
+        "description": "Doğru ve erişilebilir, profesyonel ama okunabilir"
+      },
+      "creative": {
+        "label": "Yaratıcı",
+        "description": "Gerçek dünya örnekleriyle ilgi çekici, doğruluğu korur"
+      }
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "saved": "Kaydedildi",
+    "apiConnection": "API Bağlantısı",
+    "refresh": "Yenile",
+    "anthropicApiKey": "Anthropic API Anahtarı",
+    "configured": "Yapılandırıldı",
+    "notConfigured": "Yapılandırılmadı",
+    "database": "Veritabanı",
+    "connected": "Bağlı",
+    "notConnected": "Bağlı değil",
+    "version": "Sürüm",
+    "addApiKeyHint": "Anthropic API anahtarınızı",
+    "envFile": ".env",
+    "file": "dosyasına ekleyin:",
+    "additionalProviders": "Ek Yapay Zeka Sağlayıcıları",
+    "additionalProvidersDesc": "OpenAI, Google Gemini veya Mistral modellerini kullanmak için API anahtarlarını yapılandırın. Anahtarlar yalnızca sunucu belleğinde saklanır (çalışma zamanı).",
+    "openai": "OpenAI",
+    "googleAi": "Google AI",
+    "mistral": "Mistral",
+    "save": "Kaydet",
+    "defaultSettings": "Varsayılan Ayarlar",
+    "defaultSettingsDesc": "Bu varsayılanlar yeni bir modül oturumu açılırken uygulanır.",
+    "defaultModel": "Varsayılan Model",
+    "defaultThinking": "Varsayılan Düşünme",
+    "defaultCreativity": "Varsayılan Yaratıcılık",
+    "language": "Dil",
+    "languageDesc": "Arayüz dilini seçin. Modül içeriği İngilizce kalır.",
+    "english": "English",
+    "svenska": "Svenska",
+    "francais": "Français",
+    "deutsch": "Deutsch",
+    "italiano": "Italiano",
+    "espanol": "Español",
+    "hindi": "हिन्दी",
+    "portugues": "Português",
+    "polski": "Polski",
+    "urdu": "اردو",
+    "deployment": "Dağıtım",
+    "deploymentDesc": "Mevcut dağıtım modu mevcut özellikleri belirler.",
+    "mode": "Mod",
+    "team": "Ekip",
+    "solo": "Bireysel",
+    "soloModeDesc": "Bireysel mod: Tek kullanıcılı kurulum. Tüm özellikler oturum açmadan kullanılabilir. Denetim günlüğü kişisel kullanımınızı ve maliyetinizi takip eder.",
+    "teamModeDesc": "Ekip modu: Tam denetim kaydı, incelemelerde kullanıcı atıfı ve paylaşılan oturum yönetimi ile çok kullanıcılı kurulum.",
+    "theme": "Tema",
+    "themeDesc": "Uygulama renk şemasını seçin.",
+    "myProfile": "Profilim",
+    "general": "Genel",
+    "navigation": "Gezinme",
+    "teamTab": "Ekip",
+    "teamMembers": "Ekip Üyeleri",
+    "addUser": "Kullanıcı Ekle",
+    "newUser": "Yeni Kullanıcı",
+    "username": "Kullanıcı Adı",
+    "password": "Şifre",
+    "displayName": "Görünen Ad",
+    "role": "Rol",
+    "monthlyTokenBudget": "Aylık Token Bütçesi (0 = sınırsız)",
+    "createUser": "Kullanıcı Oluştur",
+    "cancel": "İptal",
+    "loading": "Yükleniyor...",
+    "usernameCol": "Kullanıcı Adı",
+    "displayNameCol": "Görünen Ad",
+    "roleCol": "Rol",
+    "budgetCol": "Bütçe (token)",
+    "usedThisMonthCol": "Bu ay kullanılan",
+    "lastLoginCol": "Son Giriş",
+    "actionsCol": "İşlemler",
+    "unlimited": "Sınırsız",
+    "never": "Hiçbir zaman",
+    "resetPassword": "Şifreyi sıfırla",
+    "deleteUser": "Kullanıcıyı sil",
+    "usageThisMonth": "Bu Ay Kullanım",
+    "noUsageRecorded": "Henüz kullanım kaydedilmedi.",
+    "save2": "Kaydet",
+    "budget": "Bütçe",
+    "budgetDesc": "EUR cinsinden aylık yapay zeka harcama üst sınırı belirleyin. Limite ulaşıldığında yeni istekler engellenir. Sınır olmaksızın 0 olarak ayarlayın.",
+    "spendingThisMonth": "Bu ay harcama",
+    "budgetCapReached": "Aylık bütçe üst sınırına ulaşıldı. Yeni yapay zeka istekleri gelecek aya kadar engellendi.",
+    "over80Pct": "Aylık bütçenin %80'inden fazlası kullanıldı.",
+    "noSpendingLimit": "Harcama sınırı belirlenmedi.",
+    "monthlyBudgetCap": "Aylık yapay zeka bütçe üst sınırı (€)",
+    "noLimit": "Sınır yok",
+    "zeroNoLimit": "0 = sınır yok (sınırsız harcama)",
+    "saving": "Kaydediliyor...",
+    "notifications": "Bildirimler",
+    "notificationsDesc": "Uzun süren analizler için e-posta uyarılarını yapılandırın.",
+    "emailNotification": "Uzun bir analiz tamamlandığında bana e-posta gönder",
+    "emailNotificationDesc": "Claude uzun bir görevi tamamladığında e-posta bildirimi alın. .env dosyanızda SMTP'nin yapılandırılmış olması gerekir.",
+    "brandTemplates": "Marka Şablonları",
+    "brandTemplatesDesc": "Şirketinizin .docx veya .pptx şablonlarını yükleyin. Claude'un çıktısını markalı dosyalarınıza eklemek için dışa aktarma çubuğunda \"Şablonla Dışa Aktar\"ı kullanın.",
+    "uploadTemplate": "Şablon Yükle",
+    "uploading": "Yükleniyor...",
+    "noTemplatesYet": "Henüz şablon yüklenmedi.",
+    "deleteTemplate": "Şablonu sil",
+    "navConfig": {
+      "title": "Gezinme Öğeleri",
+      "description": "Kullanmadığınız öğeleri gizleyerek kenar çubuğunuzu basitleştirin.",
+      "visibleCount": "{total} öğeden {visible} tanesi görünür",
+      "refreshToApply": "Uygulamak için Yenileyin",
+      "showAll": "Tümünü Göster",
+      "show": "Göster",
+      "hide": "Gizle",
+      "categories": {
+        "interaction": "Etkileşim Modları",
+        "tools": "Araçlar ve İş Akışları",
+        "features": "Özellikler",
+        "intelligence": "İstihbarat ve İçgörüler",
+        "admin": "Yönetim ve Analitik"
+      }
+    }
+  },
+  "brief": {
+    "title": "Kısa Bilgi",
+    "subtitle": "Her şeyi sorun — anında uzman düzeyinde yapılandırılmış çıktı alın",
+    "placeholder": "Her şeyi sorun — örn. 'Ödeme kuruluşları için ana AMLR yükümlülükleri nelerdir?'",
+    "askAnton": "Anton'a Sor",
+    "goDeeper": "Tam modülle daha derine in",
+    "ctrlEnter": "Göndermek için Ctrl+Enter",
+    "whatDoYouNeed": "Ne konuda yardıma ihtiyacınız var?",
+    "emptyStateDesc": "Sade dilde herhangi bir profesyonel soru sorun. Anton yapılandırılmış, uzman düzeyinde rehberlikle yanıt verecektir — yapılandırma gerekmez.",
+    "thinking": "düşünüyor...",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "downloadMd": ".md",
+    "stop": "Durdur"
+  },
+  "guide": {
+    "title": "Yol Göster",
+    "subtitle": "Göreviniz için doğru modülü bulalım",
+    "step1": "Ne konuda yardıma ihtiyacınız var?",
+    "step2": "Ne tür bir çıktı?",
+    "step3": "Sizi en iyi ne tanımlar?",
+    "findModules": "Eşleşen Modülleri Bul",
+    "useThis": "Bu Modülü Aç",
+    "back": "Geri"
+  },
+  "batch": {
+    "title": "Toplu Oluştur",
+    "subtitle": "Bir CSV'den farklı girdilerle aynı modülü N kez çalıştırın",
+    "uploadCsv": "CSV Yükle",
+    "selectModule": "Modül Seç",
+    "configure": "Şablonu Yapılandır",
+    "runBatch": "Toplu İşlem Çalıştır",
+    "downloadAll": "Tüm Sonuçları İndir"
+  },
+  "share": {
+    "sharedAnalysis": "Paylaşılan Analiz",
+    "createdWith": "openEXPERT ile oluşturuldu",
+    "expired": "Bu paylaşım bağlantısının süresi doldu veya mevcut değil",
+    "loading": "Paylaşılan analiz yükleniyor..."
+  },
+  "export": {
+    "exportAs": "Farklı dışa aktar",
+    "export": "Dışa aktar:",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı!",
+    "download": "İndir",
+    "withTemplate": "Şablonla",
+    "exporting": "Dışa aktarılıyor...",
+    "chooseBrandTemplate": "Bir marka şablonu seçin",
+    "share": "Paylaş",
+    "sharing": "Paylaşılıyor...",
+    "linkCopied": "Bağlantı kopyalandı!",
+    "copyShareableLink": "Paylaşılabilir bağlantıyı panoya kopyala",
+    "explainDifferently": "Farklı Açıkla",
+    "exportUsingBrandTemplate": "Marka şablonu kullanarak dışa aktar",
+    "explainFor": "Şunun için açıkla...",
+    "explainForChooseAudience": "Hedef kitle seçin",
+    "explainForSubtitle": "Claude çıktıyı onlar için yeniden yazacak",
+    "explainForGenerating": "Oluşturuluyor...",
+    "explainForReady": "Hazır",
+    "explainForOriginal": "Orijinal",
+    "explainForTryAnother": "Başka bir hedef kitle deneyin",
+    "explainForStop": "Durdur",
+    "explainForCopy": "Kopyala",
+    "explainForCopied": "Kopyalandı",
+    "explainForDownload": ".md"
+  },
+  "review": {
+    "title": "İnceleme Motoru",
+    "subtitle": "Herhangi bir belge veya analizi yapıştırın ve Anton'un uzman bakış açılarından eleştirmesini sağlayın.",
+    "reviewMode": "İnceleme Modu",
+    "documentToReview": "İncelenecek belge",
+    "pasteText": "Metin yapıştır",
+    "uploadFiles": "Dosya yükle",
+    "pasteTextPlaceholder": "Belgeyi, politikayı, analizi, notu veya planı buraya yapıştırın...",
+    "ctrlEnterToRun": "Çalıştırmak için Ctrl+Enter",
+    "readingFiles": "Dosyalar okunuyor\u2026",
+    "uploadPrompt": "Yüklemek için tıklayın veya dosyaları buraya sürükleyin",
+    "uploadFormats": "PDF, DOCX, TXT, MD, XLSX, CSV",
+    "pasteTextToReview": "İncelemek için yukarıya metin yapıştırın",
+    "uploadFileToReview": "İncelemek için en az bir dosya yükleyin",
+    "stopReview": "İncelemeyi Durdur",
+    "startReview": "İncelemeyi Başlat",
+    "readyToReview": "İncelemeye hazır",
+    "readyToReviewDesc": "Bir inceleme modu seçin, belgenizi yapıştırın ve İncelemeyi Başlat'a tıklayın. Anton seçilen uzman bakış açısından eleştirecektir.",
+    "reviewing": "inceleniyor...",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "downloadMd": ".md",
+    "tokensTotal": "toplam token",
+    "file": "dosya",
+    "files": "dosya"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "error": "Bir şeyler yanlış gitti",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "close": "Kapat",
+    "submit": "Gönder",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "view": "Görüntüle",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "back": "Geri",
+    "next": "İleri",
+    "previous": "Önceki",
+    "noResults": "Sonuç bulunamadı"
+  },
+  "connections": {
+    "title": "Bağlantılar",
+    "subtitle": "Harici veri kaynaklarını ve entegrasyonları yönetin",
+    "addConnection": "Bağlantı Ekle",
+    "noConnections": "Henüz yapılandırılmış bağlantı yok.",
+    "noConnectionsHint": "İlk entegrasyonunuzu kaydetmek için \"Bağlantı Ekle\"ye tıklayın.",
+    "loadingConnections": "Bağlantılar yükleniyor...",
+    "totalConnections": "toplam",
+    "types": {
+      "database": "Veritabanı",
+      "api": "API",
+      "filesystem": "Dosya Sistemi",
+      "email": "E-posta",
+      "scriptLibrary": "Komut Dosyası Kütüphanesi"
+    },
+    "status": {
+      "pending": "Beklemede",
+      "active": "Etkin",
+      "disabled": "Devre Dışı",
+      "error": "Hata"
+    },
+    "actions": {
+      "test": "Test Et",
+      "testConnection": "Bağlantıyı test et",
+      "approve": "Onayla",
+      "approveConnection": "Bağlantıyı onayla",
+      "disableConnection": "Bağlantıyı devre dışı bırak",
+      "deleteConnection": "Bu bağlantı devre dışı bırakılsın mı? Düzenleyerek yeniden etkinleştirilebilir."
+    },
+    "details": {
+      "created": "Oluşturuldu",
+      "tested": "Test Edildi",
+      "configSanitized": "Yapılandırma (temizlenmiş)",
+      "auditLog": "Denetim Günlüğü",
+      "loadingAuditLog": "Denetim günlüğü yükleniyor...",
+      "noAuditEntries": "Henüz denetim kaydı yok.",
+      "time": "Zaman",
+      "action": "İşlem",
+      "result": "Sonuç",
+      "by": "Tarafından"
+    },
+    "testResults": {
+      "networkError": "Ağ hatası"
+    },
+    "sections": {
+      "pendingApproval": "Onay Bekliyor",
+      "active": "Etkin",
+      "disabledError": "Devre Dışı / Hata"
+    },
+    "wizard": {
+      "title": "Yeni Bağlantı",
+      "steps": {
+        "type": "Tür",
+        "configure": "Yapılandır",
+        "test": "Test Et",
+        "save": "Kaydet"
+      },
+      "typeSelection": {
+        "prompt": "Oluşturulacak entegrasyon türünü seçin:",
+        "errorNoType": "Lütfen bir bağlantı türü seçin.",
+        "database": {
+          "label": "Veritabanı",
+          "description": "SQLite, PostgreSQL veya MySQL veritabanlarına bağlanın"
+        },
+        "api": {
+          "label": "API",
+          "description": "Bearer, basic veya API anahtarı kimlik doğrulaması ile REST API'lerine bağlanın"
+        },
+        "filesystem": {
+          "label": "Dosya Sistemi",
+          "description": "Yapılandırılabilir izinlerle yerel klasörlere erişin"
+        },
+        "email": {
+          "label": "E-posta",
+          "description": "SMTP veya IMAP e-posta entegrasyonu"
+        },
+        "scriptLibrary": {
+          "label": "Komut Dosyası Kütüphanesi",
+          "description": "Onaylanmış yürütülebilir komut dosyalarından oluşan bir klasörü kaydedin"
+        }
+      },
+      "config": {
+        "displayName": "Görünen Ad",
+        "displayNamePlaceholder": "örn. Üretim VT, Raporlama API'si",
+        "errorNoName": "Görünen ad gereklidir.",
+        "database": {
+          "driver": "Sürücü",
+          "drivers": {
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL / MariaDB",
+            "mssql": "Microsoft SQL Server",
+            "mongodb": "MongoDB (NoSQL)"
+          },
+          "filePath": "Veritabanı Dosya Yolu",
+          "filePathPlaceholder": "/path/to/database.sqlite",
+          "host": "Host / IP Adresi",
+          "hostPlaceholder": "localhost veya 192.168.1.100",
+          "hostHint": "Uzak sunucular için IP veya host adı kullanın",
+          "port": "Port",
+          "databaseName": "Veritabanı Adı",
+          "databaseNamePlaceholder": "mydb",
+          "username": "Kullanıcı Adı",
+          "password": "Şifre",
+          "ssl": "SSL/TLS şifrelemeyi etkinleştir",
+          "sslVerifyCert": "SSL sertifikasını doğrula (kendi imzalı sertifikalar için işareti kaldırın)",
+          "maxRowsPerQuery": "Sorgu Başına Maksimum Satır",
+          "maxRowsPlaceholder": "10000",
+          "allowedTables": "İzin Verilen Tablolar (virgülle ayrılmış, tümü için boş bırakın)",
+          "allowedTablesPlaceholder": "users, orders, products"
+        },
+        "api": {
+          "baseUrl": "Temel URL",
+          "baseUrlPlaceholder": "https://api.example.com",
+          "authType": "Kimlik Doğrulama Türü",
+          "authTypes": {
+            "bearer": "Bearer Token",
+            "basic": "Basic Auth (base64)",
+            "apikey": "API Key Header",
+            "none": "Kimlik Doğrulama Yok"
+          },
+          "authValue": "Kimlik Doğrulama Değeri",
+          "authValuePlaceholder": "Token / kimlik bilgileri",
+          "rateLimit": "Hız Sınırı (istek/dk, 0 = sınırsız)",
+          "rateLimitPlaceholder": "60",
+          "timeout": "Zaman Aşımı (saniye)",
+          "timeoutPlaceholder": "30",
+          "allowedEndpoints": "İzin Verilen Uç Noktalar",
+          "endpointPathPlaceholder": "/api/endpoint veya /api/*",
+          "addEndpoint": "Ekle",
+          "methods": {
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE",
+            "all": "*"
+          }
+        },
+        "filesystem": {
+          "basePath": "Temel Yol",
+          "basePathPlaceholder": "/path/to/folder veya C:\\Users\\...",
+          "basePathHint": "Tüm dosya erişimi bu dizin ve alt dizinleriyle sınırlıdır.",
+          "allowedExtensions": "İzin Verilen Uzantılar (hiçbiri = tümüne izin verilir)",
+          "permissions": "İzinler",
+          "permissionRead": "Okuma",
+          "permissionWrite": "Yazma",
+          "maxFileSize": "Maksimum Dosya Boyutu (MB)",
+          "maxFileSizePlaceholder": "50"
+        },
+        "generic": {
+          "configJson": "Yapılandırma (JSON)",
+          "invalidJson": "Geçersiz JSON"
+        }
+      },
+      "test": {
+        "prompt": "Kaydetmeden önce yapılandırmayı doğrulayın:",
+        "summary": "Bağlantı Özeti",
+        "validate": "Yapılandırmayı Doğrula",
+        "validating": "Doğrulanıyor...",
+        "validated": "Yapılandırma doğrulandı. Tam bağlantı testi kaydettikten sonra kullanılabilir.",
+        "failed": "Doğrulama başarısız"
+      },
+      "confirm": {
+        "prompt": "Bağlantınızı gözden geçirin ve kaydedin:",
+        "name": "Ad",
+        "type": "Tür",
+        "statusAfterSave": "Kaydetme sonrası durum",
+        "pendingNotice": "Bağlantı, bir yönetici onaylayana kadar \"beklemede\" durumunda olacaktır. Etkin bağlantılar tüm kullanıcılar tarafından kullanılabilir.",
+        "saveConnection": "Bağlantıyı Kaydet",
+        "saving": "Kaydediliyor..."
+      },
+      "navigation": {
+        "back": "Geri",
+        "next": "İleri"
+      },
+      "errors": {
+        "networkError": "Ağ hatası — bağlantı kaydedilemedi",
+        "saveFailed": "Bağlantı oluşturulamadı"
+      }
+    }
+  },
+  "scripts": {
+    "title": "Komut Dosyası Kütüphanesi",
+    "subtitle": "Onaylanmış yürütülebilir komut dosyalarını yönetin",
+    "totalScripts": "komut dosyası",
+    "registerScript": "Komut Dosyası Kaydet",
+    "noScripts": "Kütüphanede komut dosyası yok.",
+    "noScriptsHint": "İş akışlarında kullanılabilir hale getirmek için onaylanmış komut dosyalarını kaydedin.",
+    "loadingScripts": "Komut dosyaları yükleniyor...",
+    "deleteScript": "Komut dosyasını sil",
+    "deleteConfirm": "Bu komut dosyası kütüphaneden kaldırılsın mı?",
+    "status": {
+      "approved": "Onaylandı",
+      "pending": "Beklemede"
+    },
+    "details": {
+      "scriptPath": "Komut Dosyası Yolu",
+      "maxRuntime": "Maksimum Çalışma Süresi",
+      "runtimeSeconds": "sn",
+      "memoryLimit": "Bellek Sınırı",
+      "memoryMb": "MB",
+      "sandbox": "Sandbox",
+      "sandboxEnabled": "Etkin",
+      "sandboxDisabled": "Devre Dışı",
+      "networkAccess": "Ağ Erişimi",
+      "networkAllowed": "İzin Verildi",
+      "networkBlocked": "Engellendi",
+      "fileHash": "Dosya Hash (SHA-256)",
+      "parameters": "Parametreler",
+      "version": "v"
+    },
+    "languages": {
+      "python": "Python",
+      "bash": "Bash",
+      "r": "R",
+      "powershell": "PowerShell",
+      "node": "Node.js"
+    },
+    "form": {
+      "title": "Yeni Komut Dosyası Kaydet",
+      "displayName": "Görünen Ad",
+      "displayNamePlaceholder": "Veri Dışa Aktarma Komut Dosyası",
+      "language": "Dil",
+      "description": "Açıklama",
+      "descriptionPlaceholder": "Bu komut dosyası ne yapar?",
+      "scriptPath": "Komut Dosyası Dosya Yolu",
+      "scriptPathPlaceholder": "/path/to/script.py",
+      "maxRuntime": "Maksimum Çalışma Süresi (saniye)",
+      "memoryLimit": "Bellek Sınırı (MB)",
+      "networkAccess": "Ağ erişimine izin ver",
+      "parametersSchema": "Parametre Şeması (JSON)",
+      "parametersPlaceholder": "{\"param1\": {\"type\": \"string\", \"description\": \"...\"}}",
+      "invalidJson": "Parametrelerde geçersiz JSON",
+      "errorRequired": "Görünen ad ve komut dosyası yolu gereklidir",
+      "errorSave": "Ağ hatası",
+      "registerScript": "Komut Dosyası Kaydet",
+      "registering": "Kaydediliyor...",
+      "cancel": "İptal"
+    }
+  },
+  "analytics": {
+    "title": "Kullanım Analizi",
+    "subtitle": "openEXPERT kullanımınızı, maliyetinizi ve yatırım getirinizi takip edin",
+    "stats": {
+      "totalSessions": "Toplam Oturum",
+      "totalCost": "Toplam Maliyet",
+      "tokensUsed": "Kullanılan Token",
+      "uniqueModules": "Benzersiz Modüller",
+      "messages": "mesaj",
+      "avgPerSession": "ortalama {amount} / oturum",
+      "acrossAllSessions": "tüm oturumlarda",
+      "modulesUsed": "kullanılan modül"
+    },
+    "charts": {
+      "sessionActivity": "Oturum Etkinliği — Son 30 Gün",
+      "dailyCost": "Günlük Maliyet — Son 30 Gün",
+      "mostUsedModules": "En Çok Kullanılan Modüller",
+      "noModuleData": "Henüz modül kullanım verisi yok",
+      "sessions": "oturum",
+      "sessionPlural": "oturum"
+    },
+    "roi": {
+      "title": "Yatırım Getirisi Tahmini",
+      "sessionMultiplier": "{count} oturum × {hours}s ortalama × €{rate}/s =",
+      "estimatedValue": "€{value} tahmini değer",
+      "equivalentTo": "Yaklaşık olarak eşdeğer",
+      "workingDays": "{days} çalışma günü",
+      "workingDaysPlural": "{days} çalışma günü",
+      "consultingTimeSaved": "danışmanlık zamanı tasarrufu.",
+      "basedOn": "Tipik uyumluluk danışmanlığı oranları €{rate}/saat ve manuel çalışmanın AI oturumu başına tahmini {hours} saatlik eşdeğeri temel alınarak."
+    }
+  },
+  "insights": {
+    "title": "Veri İçgörüleri",
+    "subtitle": "Verilerinizi görsel zekaya dönüştürün",
+    "input": {
+      "pasteDataTab": "Veri Yapıştır",
+      "uploadFileTab": "Dosya Yükle",
+      "pasteDataPlaceholder": "CSV, tablo veya yapılandırılmış verileri buraya yapıştırın...\n\nÖrnek:\nAy,SAR Sayısı,Değer (EUR)\nOcak 2024,12,450000\nŞubat 2024,18,820000",
+      "chooseFile": "Dosya seç",
+      "acceptedFormats": ".csv, .xlsx, .txt kabul eder",
+      "loadedFile": "Yüklendi: {fileName}",
+      "questionLabel": "Ne görmek istersiniz?",
+      "questionPlaceholder": "örn. Zaman içindeki eğilimleri göster, kategoriye göre karşılaştır...",
+      "exampleShowTrends": "Zaman içindeki eğilimleri göster",
+      "exampleCompareCategory": "Kategoriye göre karşılaştır",
+      "exampleHighlightOutliers": "Aykırı değerleri vurgula",
+      "exampleShowDistribution": "Dağılımı göster",
+      "exampleTimelineView": "Zaman çizelgesi görünümü",
+      "modelNote": "Anton verilerinizi analiz edecek ve Claude Opus 4.6 kullanarak etkileşimli grafikler oluşturacak.",
+      "errorMessage": "Lütfen önce veri yapıştırın veya yükleyin.",
+      "errorQuestion": "Lütfen ne görmek istediğinizi açıklayın."
+    },
+    "actions": {
+      "generateInsights": "İçgörüler Oluştur",
+      "stop": "Durdur",
+      "analyzing": "Anton verilerinizi analiz ediyor...",
+      "copyRawData": "Ham veriyi kopyala",
+      "downloadChartData": "Grafik verilerini indir (.csv)"
+    },
+    "output": {
+      "summaryTitle": "Özet",
+      "narrativeTitle": "Anlatı Analizi"
+    }
+  },
+  "soundingBoard": {
+    "title": "Danışma Panosu",
+    "subtitle": "Kişisel danışmanınız hazır",
+    "talkingWith": "İle konuşuyorsunuz:",
+    "advisorSettings": "Danışman ayarları",
+    "newConversation": "Yeni konuşma",
+    "changePersonaWarning": "Danışman kişiliğini değiştirmek konuşmayı sıfırlayacaktır. Devam edilsin mi?",
+    "personas": {
+      "strategic": {
+        "label": "Genel Stratejik Danışman",
+        "description": "Büyük resim düşüncesi, stratejik seçenekler, paydaş dinamikleri"
+      },
+      "legal": {
+        "label": "Hukuk Müşaviri",
+        "description": "Hukuki risk, sözleşmeler, düzenleyici yükümlülükler, sorumluluk"
+      },
+      "risk": {
+        "label": "Risk Uzmanı",
+        "description": "Risk belirleme, değerlendirme, azaltma, kontroller"
+      },
+      "regulatory": {
+        "label": "Düzenleyici Uzman",
+        "description": "Denetleyici beklentiler, düzenleyici yorum, uyumluluk çerçeveleri"
+      },
+      "financialCrime": {
+        "label": "Mali Suç Uzmanı",
+        "description": "AML/CFT, yaptırımlar, dolandırıcılık, tipolojiler, mali suç riski"
+      }
+    },
+    "context": {
+      "personaLabel": "Danışman Kişiliği",
+      "aboutYouLabel": "Hakkınızda",
+      "aboutYouPlaceholder": "Ben İskandinav bankasında Uyumluluk Başkanıyım. Odak noktam AML/CFT. Şu anki zorluk AMLA denetimine hazırlanmak.",
+      "contextNote": "Bu bağlam yerel olarak kaydedilir ve danışmanınıza gönderdiğiniz her mesaja dahil edilir."
+    },
+    "emptyState": {
+      "title": "Kişisel danışmanınız hazır",
+      "description": "Her şeyi sorun — stratejik ikilemler, zor durumlar, düzenleyici sorular veya sadece yüksek sesle düşünmek. {persona} odaklanmış, uzman düzeyinde rehberlikle yanıt verecek.",
+      "tipNoContext": "İpucu: Danışmanınızın daha alakalı tavsiyeler verebilmesi için yukarıda bağlamınızı ekleyin.",
+      "example1": "Yaklaşan denetleyici denetlemeye nasıl yaklaşmalıyım?",
+      "example2": "AMLR uygulama planımızdaki en büyük riskler neler?",
+      "example3": "Zor bir paydaş konuşmasını düşünmeme yardım et",
+      "example4": "Düzenleyici, riskleri azaltma incelemesinde neye odaklanır?"
+    },
+    "chat": {
+      "inputPlaceholder": "{persona} sorun...",
+      "askAdvisor": "Danışmana Sor",
+      "stop": "Durdur",
+      "ctrlEnterToSend": "Göndermek için Ctrl+Enter",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı",
+      "thinking": "Düşünüyor"
+    }
+  },
+  "formTools": {
+    "fillForm": {
+      "title": "Formu Doldur",
+      "subtitle": "Herhangi bir formu, anketi veya şablonu yapıştırın — ANTON uzman rehberliği ve alıntılarla alan alan doldurur.",
+      "formLabel": "Form veya anket",
+      "formPlaceholder": "Formunuzu veya anketinizi buraya yapıştırın...",
+      "contextLabel": "Ek bağlam",
+      "contextOptional": "(isteğe bağlı)",
+      "contextPlaceholder": "örn. Bu AMLR'ye tabi İskandinav bankası için",
+      "fillForm": "Formu Doldur",
+      "stop": "Durdur",
+      "fillingForm": "form dolduruluyor...",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı",
+      "download": ".md"
+    },
+    "challengeThis": {
+      "title": "Buna Meydan Oku",
+      "subtitle": "Herhangi bir belge, plan veya argümanı yapıştırın — ANTON mümkün olan en güçlü eleştiri ile stres testi yapar.",
+      "documentLabel": "Meydan okunacak belge, plan veya argüman",
+      "documentPlaceholder": "Meydan okunacak belgeyi, planı veya argümanı yapıştırın...",
+      "contextLabel": "Bağlam",
+      "contextOptional": "(isteğe bağlı)",
+      "contextPlaceholder": "örn. Bu bir Danimarka ödeme kuruluşu için AML politikası",
+      "challengeIt": "Meydan Oku",
+      "stop": "Durdur",
+      "challengeMode": "Anton — Meydan Okuma Modu",
+      "analyzing": "analiz ediliyor...",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı",
+      "download": ".md"
+    },
+    "dualInterpret": {
+      "title": "İkili Yorumlama",
+      "subtitle": "Bir yasal/düzenleyici metin yükleyin veya yapıştırın — ANTON bunu hem düzenleyici hem de düzenlenen kuruluş olarak aynı anda yorumlar.",
+      "pasteTextTab": "Metin Yapıştır",
+      "enterUrlTab": "URL Gir",
+      "textLabel": "Yasal veya düzenleyici metin",
+      "textPlaceholder": "Yorumlanacak yasal veya düzenleyici metni yapıştırın...",
+      "urlLabel": "Düzenleyici metne URL",
+      "urlPlaceholder": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj",
+      "urlNote": "URL getirme, Çevrimiçi Referans bilgi kaynağını kullanır. Tam belge çıkarımı için bir modülde Bilgi Kaynakları panelini kullanın. Burada Anton, URL içeriği hakkındaki eğitim bilgisini artı web aramasını kullanacaktır.",
+      "interpret": "Yorumla",
+      "stop": "Durdur",
+      "dualMode": "Anton — İkili Yorumlama",
+      "interpreting": "yorumlanıyor...",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı",
+      "download": ".md"
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "formatVersion": "1.0",
+  "id": "media-briefing",
+  "label": "Media Briefing & Q&A Prep",
+  "shortLabel": "Media Briefing",
+  "icon": "Mic",
+  "description": "Prepare for media interviews and briefings: key messages, anticipated questions with model answers, bridging techniques, and dos and don'ts for spokespeople.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "quick-briefing"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "briefing_type",
+      "type": "select",
+      "label": "Briefing Type",
+      "description": "What type of media interaction?",
+      "required": true,
+      "options": [
+        {
+          "value": "interview",
+          "label": "Media Interview (1:1)"
+        },
+        {
+          "value": "press-conference",
+          "label": "Press Conference"
+        },
+        {
+          "value": "panel",
+          "label": "Panel Discussion"
+        },
+        {
+          "value": "podcast",
+          "label": "Podcast / Broadcast"
+        },
+        {
+          "value": "background",
+          "label": "Background Briefing"
+        },
+        {
+          "value": "written",
+          "label": "Written Q&A / Email Interview"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "type": "textarea",
+      "label": "Topic / Subject Matter",
+      "description": "What is the media interaction about?",
+      "required": true,
+      "placeholder": "e.g. Interview with Financial Times about our response to the new EU AML regulation and its impact on Nordic fintech sector..."
+    },
+    {
+      "id": "spokesperson",
+      "type": "textarea",
+      "label": "Spokesperson Details",
+      "description": "Who will be speaking and what is their role?",
+      "placeholder": "e.g. CEO, experienced media performer but tends to go off-message, strong on vision but weak on technical details..."
+    },
+    {
+      "id": "difficult_questions",
+      "type": "textarea",
+      "label": "Anticipated Difficult Questions",
+      "description": "What tough questions might be asked?",
+      "placeholder": "e.g. Why were compliance gaps not detected earlier? How do you respond to competitors' claims? What about the recent enforcement action?"
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "communications",
+    "media",
+    "briefing",
+    "interview-prep"
+  ]
+}

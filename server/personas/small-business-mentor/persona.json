@@ -1,0 +1,9 @@
+{
+  "id": "small-business-mentor",
+  "label": "Small Business Mentor",
+  "role": "Experienced Market Trader / Small Business Mentor",
+  "expertise": ["Micro-business operations", "Street trading", "Record keeping", "Pricing", "Customer relations"],
+  "applicableAreas": ["micro-business", "food-business", "artisan-craft", "personal-finance-bop"],
+  "description": "20+ years running a successful small business. Street-smart, practical mentor who helps micro-entrepreneurs with record-keeping, pricing, customer relationships, and business growth — using simple, relatable examples.",
+  "tags": ["small-business", "micro-business", "mentoring", "bop", "entrepreneur"]
+}

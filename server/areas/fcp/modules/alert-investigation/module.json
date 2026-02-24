@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.0",
+  "id": "alert-investigation",
+  "label": "Alert Investigation Assistant",
+  "shortLabel": "Alert Triage",
+  "description": "Guided triage for transaction monitoring alerts. Analyzes alert context, transaction patterns, customer profile, and risk indicators to produce a structured assessment with recommended disposition.",
+  "perspective": "operational",
+  "icon": "AlertCircle",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "problem-solution",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "AML/CFT typologies, transaction monitoring best practices, FATF guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "alert_id",
+      "type": "text",
+      "label": "Alert ID / Reference",
+      "description": "Internal alert identifier for tracking and documentation.",
+      "placeholder": "e.g. TM-2024-00847",
+      "required": true
+    },
+    {
+      "id": "alert_type",
+      "type": "select",
+      "label": "Alert Rule Triggered",
+      "description": "Which transaction monitoring rule or scenario generated this alert?",
+      "required": true,
+      "options": [
+        { "value": "structuring", "label": "Structuring / Smurfing" },
+        { "value": "high_velocity", "label": "High Velocity / Rapid Movement" },
+        { "value": "unusual_geography", "label": "Unusual Geography / High-Risk Country" },
+        { "value": "dormant_account", "label": "Dormant Account Reactivation" },
+        { "value": "cash_intensive", "label": "Cash-Intensive Activity" },
+        { "value": "round_amounts", "label": "Round Amount Transactions" },
+        { "value": "peer_outlier", "label": "Peer Group Outlier" },
+        { "value": "adverse_media", "label": "Adverse Media / Name Match" },
+        { "value": "pep_transaction", "label": "PEP-Related Transaction" },
+        { "value": "sanctions_proximity", "label": "Sanctions Proximity" },
+        { "value": "other", "label": "Other / Manual Escalation" }
+      ]
+    },
+    {
+      "id": "customer_segment",
+      "type": "select",
+      "label": "Customer Segment",
+      "description": "What is the customer's segment or risk classification?",
+      "required": true,
+      "options": [
+        { "value": "retail_standard", "label": "Retail — Standard Risk" },
+        { "value": "retail_high", "label": "Retail — High Risk" },
+        { "value": "sme", "label": "SME / Business" },
+        { "value": "corporate", "label": "Corporate" },
+        { "value": "pep", "label": "PEP / PEP-Related" },
+        { "value": "correspondent", "label": "Correspondent Banking" },
+        { "value": "crypto_related", "label": "Crypto / VASP Related" }
+      ]
+    },
+    {
+      "id": "transaction_details",
+      "type": "textarea",
+      "label": "Transaction Details",
+      "description": "Summarize the flagged transaction(s): amounts, dates, counterparties, accounts, and patterns.",
+      "placeholder": "e.g. Three cash deposits of €9,800 / €9,500 / €9,200 on consecutive days (12–14 Jan 2025). All deposited at branch ATM. Account normally receives monthly salary of €3,200 with no prior cash activity...",
+      "required": true
+    },
+    {
+      "id": "customer_context",
+      "type": "textarea",
+      "label": "Customer Profile & KYC Context",
+      "description": "Known customer background: occupation, business type, source of funds/wealth, account history, prior alerts.",
+      "placeholder": "e.g. Retail customer, self-employed plumber, age 44. Account opened 2019. KYC last refreshed 2022. No prior SAR filings. No adverse media. Screening clear..."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns or Prior Findings",
+      "description": "Any prior alerts, SARs, audit findings, or specific concerns about this customer or counterparty.",
+      "placeholder": "e.g. Customer flagged in 2023 for unusual wire activity — closed as no reasonable grounds. Now reappearing with cash pattern..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "transaction-monitoring",
+    "alert-triage",
+    "investigation",
+    "aml",
+    "operational"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "workers-rights",
+  "name": "Workers' Rights Expert",
+  "shortName": "Workers' Rights",
+  "description": "Know your workplace rights. Plain-language guidance for informal workers, domestic workers, factory workers, migrant workers and gig workers on pay, safety, dismissal, and legal protection.",
+  "icon": "HardHat",
+  "color": "adv-teal",
+  "cluster": "rights",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Complex legal questions need sonnet. Basic rights information works well with haiku."
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "formatVersion": "1.0",
+  "id": "legal-brief",
+  "label": "Legal Brief Creator",
+  "shortLabel": "Legal Brief",
+  "description": "Draft structured legal memoranda, regulatory opinion letters, and legal briefs with issue identification, applicable law analysis, and conclusions.",
+  "icon": "ScrollText",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "brief_type",
+      "type": "select",
+      "label": "Type of brief or memo",
+      "required": true,
+      "options": [
+        {
+          "value": "legal_memo",
+          "label": "Legal Memorandum"
+        },
+        {
+          "value": "regulatory_opinion",
+          "label": "Regulatory Opinion Letter"
+        },
+        {
+          "value": "compliance_advice",
+          "label": "Compliance Advice Note"
+        },
+        {
+          "value": "issue_analysis",
+          "label": "Legal Issue Analysis"
+        },
+        {
+          "value": "position_paper",
+          "label": "Position Paper"
+        }
+      ]
+    },
+    {
+      "id": "legal_question",
+      "type": "textarea",
+      "label": "Legal question or issue",
+      "required": true,
+      "placeholder": "e.g., Does our proposed AI-driven credit scoring system comply with GDPR Article 22 automated decision-making requirements? What obligations apply and how should we structure compliance?"
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Applicable jurisdictions",
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Primary audience",
+      "options": [
+        {
+          "value": "board",
+          "label": "Board / Senior Management"
+        },
+        {
+          "value": "legal_team",
+          "label": "In-house Legal Team"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance Function"
+        },
+        {
+          "value": "external_counsel",
+          "label": "External Counsel (for review)"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator / Supervisor"
+        }
+      ]
+    },
+    {
+      "id": "background",
+      "type": "textarea",
+      "label": "Background facts and context",
+      "placeholder": "Relevant facts, documents, or context that should inform the analysis."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "legal",
+    "memo",
+    "opinion",
+    "brief",
+    "regulatory"
+  ]
+}

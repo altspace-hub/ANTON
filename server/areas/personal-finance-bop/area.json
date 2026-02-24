@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "personal-finance-bop",
+  "name": "Personal Finance & Savings Expert",
+  "shortName": "Personal Finance",
+  "description": "Simple money guidance for low-income earners. Budget tracking, savings goals, mobile money safety, understanding loans, and planning for the future — in plain language.",
+  "icon": "PiggyBank",
+  "color": "adv-teal",
+  "cluster": "inclusion",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Simple financial guidance works well with smaller models."
+  }
+}

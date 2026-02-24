@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-ng-cbn",
+  "label": "Nigeria — Central Bank of Nigeria (CBN)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "mobile-money", "microfinance"],
+  "description": "Nigerian financial regulatory framework: CBN regulations, MLPPA 2022, BVN/NIN identity system, mobile money (PSBs), fintech ecosystem, and AML/CFT obligations for Africa's largest economy.",
+  "tags": ["nigeria", "cbn", "west-africa", "developing-economy", "mobile-money", "fintech"]
+}

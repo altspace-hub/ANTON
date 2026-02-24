@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "pharma-market-access",
+  "label": "Pharmaceutical Market Access Strategy",
+  "shortLabel": "Market Access",
+  "icon": "TrendingUp",
+  "description": "Develop market access strategies for pharmaceutical and biotech products. Covers HTA submissions, reimbursement negotiations, pricing strategy, HEOR evidence generation, and payer engagement.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "decision-memo",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "HTA methodologies, NICE cost-effectiveness, G-BA benefit assessment, HAS SMR/ASMR, HEOR evidence requirements, managed entry agreements, payer landscape, international reference pricing"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "label": "Product Type",
+      "type": "select",
+      "options": [
+        "Small molecule",
+        "Biologic",
+        "Oncology",
+        "Rare disease",
+        "Vaccine",
+        "Diagnostic"
+      ],
+      "required": true
+    },
+    {
+      "id": "markets",
+      "label": "Target Markets",
+      "type": "multiselect",
+      "options": [
+        "EU (EMA)",
+        "UK (NICE/SMC)",
+        "Germany (IQWiG/G-BA)",
+        "France (HAS)",
+        "US (commercial)",
+        "Other"
+      ],
+      "required": true
+    },
+    {
+      "id": "launch_stage",
+      "label": "Launch Stage",
+      "type": "select",
+      "options": [
+        "Early development",
+        "Phase III planning",
+        "Pre-launch",
+        "Launch",
+        "Post-launch optimisation"
+      ],
+      "required": true
+    },
+    {
+      "id": "current_challenge",
+      "label": "Current Market Access Challenge",
+      "type": "textarea",
+      "placeholder": "Describe your main market access challenge, reimbursement barrier, or strategic question...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "market-access-lead",
+    "medical-affairs-director",
+    "heor-specialist"
+  ],
+  "tags": [
+    "healthcare",
+    "market-access",
+    "hta",
+    "reimbursement",
+    "heor",
+    "pricing",
+    "nice",
+    "g-ba"
+  ]
+}

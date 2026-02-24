@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "programme-health-assessment",
+  "label": "Programme Health Assessment",
+  "shortLabel": "Health Assessment",
+  "description": "Assesses the health of large programmes across delivery, governance, stakeholder, risk, and financial dimensions. Produces RAG-rated dashboard with priority recommendations.",
+  "perspective": "consultant",
+  "icon": "Activity",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "maturity-assessment",
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Programme management health assessment frameworks, P3M3, PMI programme management, OGC Gateway reviews, RAG status assessment"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "programme_overview",
+      "type": "textarea",
+      "label": "Programme overview",
+      "required": true,
+      "placeholder": "Describe the programme: name, strategic objective, total budget, duration, current phase, number of constituent projects, and sponsoring organization.\ne.g. Digital Transformation Programme, strategic objective: migrate core banking to cloud platform, budget EUR 45M, started Jan 2024, end date Dec 2026, 8 workstreams, sponsored by CEO and CIO."
+    },
+    {
+      "id": "current_status",
+      "type": "textarea",
+      "label": "Current status and concerns",
+      "required": true,
+      "placeholder": "Describe the current programme status, known concerns, and what has prompted this health assessment.\ne.g. Programme is 14 months in and 8 months behind schedule. Steering Committee has requested independent review. Three key vendors have raised delivery concerns. Programme Director changed 3 months ago."
+    },
+    {
+      "id": "health_indicators",
+      "type": "textarea",
+      "label": "Available health indicators",
+      "placeholder": "Provide any available programme data: status reports, milestone achievement history, budget spend vs. plan, issue/risk counts and trends, stakeholder feedback, or audit findings.\ne.g. Last 3 status reports all Red. Budget: 62% of funds spent, 40% of milestones achieved. 12 open Critical issues. Stakeholder survey: sponsor satisfaction 3.2/5."
+    },
+    {
+      "id": "assessment_scope",
+      "type": "chips",
+      "label": "Assessment dimensions",
+      "description": "Select which dimensions to assess (default: all).",
+      "options": [
+        { "value": "delivery", "label": "Delivery performance" },
+        { "value": "governance", "label": "Governance & controls" },
+        { "value": "stakeholder", "label": "Stakeholder management" },
+        { "value": "risk", "label": "Risk & issues" },
+        { "value": "financial", "label": "Financial management" },
+        { "value": "benefits", "label": "Benefits realisation" },
+        { "value": "resources", "label": "Resources & capability" }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Primary audience for report",
+      "options": [
+        { "value": "sponsor", "label": "Programme sponsor / executive leadership" },
+        { "value": "steering", "label": "Steering committee" },
+        { "value": "programme_team", "label": "Programme team (improvement focus)" },
+        { "value": "board", "label": "Board / Supervisory Board" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "project-management",
+    "programme",
+    "health-assessment",
+    "governance",
+    "consultant",
+    "rag-status"
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "formatVersion": "1.0",
+  "id": "psd3-gap-analysis",
+  "label": "PSD3/PSR Gap Analysis",
+  "shortLabel": "PSD3 Gap Analysis",
+  "description": "Assesses institution's readiness for Payment Services Regulation (PSD3) requirements. Maps obligations across open banking, authentication, liability, and consumer protection.",
+  "icon": "CreditCard",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "PSD3 directive proposal, Payment Services Regulation (PSR), EBA RTS under PSD2, open banking technical standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_type",
+      "type": "select",
+      "label": "Institution type",
+      "required": true,
+      "options": [
+        {
+          "value": "credit_institution",
+          "label": "Credit institution (bank)"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment institution (PI)"
+        },
+        {
+          "value": "emi",
+          "label": "Electronic money institution (EMI)"
+        },
+        {
+          "value": "psp_all",
+          "label": "Full-service PSP (all categories)"
+        },
+        {
+          "value": "aspsp",
+          "label": "ASPSP (Account Servicing Payment Service Provider)"
+        }
+      ]
+    },
+    {
+      "id": "current_psd2_state",
+      "type": "textarea",
+      "label": "Current PSD2 compliance state",
+      "description": "Describe the institution's current PSD2 compliance status. What is working well, what are known gaps?",
+      "placeholder": "e.g., PSD2 implemented in 2019. SCA for online payments live (redirect model). Open banking API (Berlin Group standard) live since 2020 but has known availability issues. Internal audit found gaps in SCA exemption documentation. No formal PSD2 compliance monitoring programme in place. Fraud liability rules are applied but not consistently documented."
+    },
+    {
+      "id": "payment_services",
+      "type": "multi-select",
+      "label": "Payment services provided",
+      "description": "Which Annex I services does the institution provide?",
+      "options": [
+        {
+          "value": "account_services",
+          "label": "Account services (Annex I(1)) — current/payment accounts"
+        },
+        {
+          "value": "credit_transfers",
+          "label": "Credit transfers (Annex I(3))"
+        },
+        {
+          "value": "direct_debits",
+          "label": "Direct debit (Annex I(4))"
+        },
+        {
+          "value": "card_based",
+          "label": "Card-based payment services (Annex I(5))"
+        },
+        {
+          "value": "money_remittance",
+          "label": "Money remittance (Annex I(6))"
+        },
+        {
+          "value": "pisp",
+          "label": "Payment initiation services — PISP (Annex I(7))"
+        },
+        {
+          "value": "aisp",
+          "label": "Account information services — AISP (Annex I(8))"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "PSD3/PSR focus areas",
+      "options": [
+        {
+          "value": "open_banking",
+          "label": "Open banking / data access obligations"
+        },
+        {
+          "value": "sca",
+          "label": "Strong Customer Authentication requirements"
+        },
+        {
+          "value": "fraud_liability",
+          "label": "Fraud and liability rules"
+        },
+        {
+          "value": "consumer_protection",
+          "label": "Consumer rights and information requirements"
+        },
+        {
+          "value": "operational_resilience",
+          "label": "Operational resilience and incident reporting"
+        },
+        {
+          "value": "licensing",
+          "label": "Licensing and prudential requirements"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "text",
+      "label": "Primary jurisdiction",
+      "placeholder": "e.g., Sweden, Finland, European cross-border"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "banking",
+    "PSD3",
+    "PSR",
+    "payments",
+    "open-banking",
+    "SCA",
+    "gap-analysis"
+  ]
+}

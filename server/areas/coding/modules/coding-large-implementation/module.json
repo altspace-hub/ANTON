@@ -1,0 +1,21 @@
+{
+  "formatVersion": "1.0",
+  "id": "coding-large-implementation",
+  "label": "Implementation",
+  "shortLabel": "Implementation",
+  "icon": "Hammer",
+  "description": "Phase 4 of professional AI-led development: task-by-task code implementation with plan→approve→execute→record workflow.",
+  "color": "adv-gold",
+  "areaId": "coding",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [],
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
+      "localFolder": { "enabled": true, "folderPaths": [], "recursive": true }
+    }
+  },
+  "guidedInputs": [],
+  "tags": ["coding", "implementation", "development", "professional"]
+}

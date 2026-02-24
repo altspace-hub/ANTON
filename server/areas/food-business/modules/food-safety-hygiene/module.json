@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "food-safety-hygiene",
+  "label": "Food Safety & Hygiene Compliance",
+  "shortLabel": "Food Safety",
+  "icon": "ShieldCheck",
+  "description": "Basic food safety rules to keep customers safe and avoid being shut down by health inspectors.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Food safety basics, hygiene rules, and health inspection requirements for micro-food-businesses in Kenya, Nigeria, Ghana, Tanzania, India, Bangladesh, Pakistan, Philippines"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of food business do you have?",
+      "required": true,
+      "options": [
+        { "value": "street-stall", "label": "Street food stall" },
+        { "value": "small-restaurant", "label": "Small restaurant" },
+        { "value": "catering", "label": "Catering" },
+        { "value": "home-based", "label": "Home-based food business" },
+        { "value": "market-vendor", "label": "Market food vendor" }
+      ]
+    },
+    {
+      "id": "concern",
+      "type": "select",
+      "label": "What is your main concern?",
+      "required": true,
+      "options": [
+        { "value": "pass-inspection", "label": "Pass a health inspection" },
+        { "value": "customer-sick", "label": "A customer got sick" },
+        { "value": "improve-hygiene", "label": "Improve my hygiene practices" },
+        { "value": "start-safely", "label": "Start a food business safely" },
+        { "value": "halal-kosher", "label": "Halal or kosher requirements" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "tags": [
+    "bop",
+    "food-business",
+    "food-safety",
+    "hygiene",
+    "health-inspection",
+    "street-food",
+    "catering",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "philippines"
+  ]
+}

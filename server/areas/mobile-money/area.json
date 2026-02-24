@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "mobile-money",
+  "name": "Mobile Money & Digital Finance",
+  "shortName": "Mobile Money",
+  "description": "Compliance, licensing, and risk management for mobile money operators, e-money issuers, and digital finance providers globally. 1.75B+ registered accounts.",
+  "icon": "Smartphone",
+  "color": "adv-teal",
+  "cluster": "inclusion"
+}

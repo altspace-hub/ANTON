@@ -1,0 +1,250 @@
+@import "tailwindcss";
+
+@theme {
+  --color-adv-dark: oklch(0.15 0.02 250);
+  --color-adv-dark-2: oklch(0.18 0.02 250);
+  --color-adv-card: oklch(0.22 0.03 250);
+  --color-adv-teal: oklch(0.78 0.15 170);
+  --color-adv-teal-dark: oklch(0.65 0.13 170);
+  --color-adv-teal-dim: oklch(0.35 0.08 170);
+  --color-adv-teal-soft: oklch(0.25 0.04 200);
+  --color-adv-white: oklch(1 0 0);
+  --color-adv-off-white: oklch(0.9 0 0);
+  --color-adv-gray: oklch(0.75 0 0);
+  --color-adv-gray-med: oklch(0.5 0 0);
+  --color-adv-gold: oklch(0.75 0.14 70);
+  --color-adv-red: oklch(0.6 0.2 25);
+  --color-adv-green: oklch(0.65 0.17 145);
+  --color-adv-blue: oklch(0.65 0.13 240);
+
+  --font-sans: 'Inter', 'Calibri', system-ui, sans-serif;
+
+  --color-background: var(--color-adv-dark);
+  --color-foreground: var(--color-adv-off-white);
+  --color-card: var(--color-adv-card);
+  --color-card-foreground: var(--color-adv-off-white);
+  --color-primary: var(--color-adv-teal);
+  --color-primary-foreground: var(--color-adv-dark);
+  --color-secondary: var(--color-adv-dark-2);
+  --color-secondary-foreground: var(--color-adv-off-white);
+  --color-muted: var(--color-adv-dark-2);
+  --color-muted-foreground: var(--color-adv-gray);
+  --color-accent: var(--color-adv-teal-dim);
+  --color-accent-foreground: var(--color-adv-teal);
+  --color-destructive: var(--color-adv-red);
+  --color-destructive-foreground: var(--color-adv-white);
+  --color-border: oklch(0.3 0.02 250);
+  --color-input: oklch(0.3 0.02 250);
+  --color-ring: var(--color-adv-teal);
+  --color-popover: var(--color-adv-card);
+  --color-popover-foreground: var(--color-adv-off-white);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Light theme overrides
+   Applied when html.light class is present.
+   Overrides the OKLCH custom properties defined in @theme inline.
+   ═══════════════════════════════════════════════════════════════ */
+html.light {
+  /* Backgrounds — warm linen paper feel (hue 80) */
+  --color-adv-dark: oklch(0.965 0.005 80);        /* #F5F3EF — warm linen page bg + inputs */
+  --color-adv-dark-2: oklch(0.985 0.003 80);      /* #FAFAF8 — sidebar/header bg */
+  --color-adv-card: oklch(1.0 0 0);               /* #FFFFFF — card backgrounds */
+
+  /* Primary accent — deep teal, WCAG AA 6.8:1 on white */
+  --color-adv-teal: oklch(0.47 0.14 175);         /* #0D7D6C — buttons, links, active */
+  --color-adv-teal-dark: oklch(0.40 0.12 175);    /* #06655A — hover state */
+  --color-adv-teal-dim: oklch(0.92 0.04 175);     /* #D5F0EB — active selection bg */
+  --color-adv-teal-soft: oklch(0.95 0.025 185);   /* #E5F5F2 — info panels */
+
+  /* Text — warm-tinted darks for hierarchy */
+  --color-adv-white: oklch(0.16 0.02 260);        /* #1A1B2E — headings, bold (19:1) */
+  --color-adv-off-white: oklch(0.28 0.015 260);   /* #3B3D50 — body text, labels (15:1) */
+  --color-adv-gray: oklch(0.45 0.01 260);         /* #636577 — secondary/inactive (7.4:1) */
+  --color-adv-gray-med: oklch(0.58 0.008 260);    /* #878999 — captions, placeholders (4.3:1) */
+
+  /* Status colors — darkened for light bg */
+  --color-adv-gold: oklch(0.62 0.16 65);
+  --color-adv-red: oklch(0.52 0.22 25);
+  --color-adv-green: oklch(0.52 0.15 150);
+  --color-adv-blue: oklch(0.52 0.13 245);
+
+  /* Semantic mappings */
+  --color-background: var(--color-adv-dark);
+  --color-foreground: var(--color-adv-off-white);
+  --color-card: var(--color-adv-card);
+  --color-card-foreground: var(--color-adv-off-white);
+  --color-primary: var(--color-adv-teal);
+  --color-primary-foreground: var(--color-adv-dark); /* Page bg on teal buttons (6.2:1) */
+  --color-secondary: var(--color-adv-dark-2);
+  --color-secondary-foreground: var(--color-adv-off-white);
+  --color-muted: oklch(0.96 0.003 80);             /* Warm muted bg */
+  --color-muted-foreground: var(--color-adv-gray);
+  --color-accent: var(--color-adv-teal-dim);
+  --color-accent-foreground: var(--color-adv-teal); /* Deep teal on teal-dim (5.4:1) */
+  --color-destructive: var(--color-adv-red);
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-border: oklch(0.88 0.008 80);            /* #DDD9D2 — warm gray borders */
+  --color-input: oklch(0.88 0.008 80);
+  --color-ring: var(--color-adv-teal);
+  --color-popover: var(--color-adv-card);
+  --color-popover-foreground: var(--color-adv-off-white);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Corporate blue theme overrides
+   Applied when html.corporate class is present.
+   Navy blue headings (Montserrat), Aptos body text, neutral blue cards.
+   ═══════════════════════════════════════════════════════════════ */
+html.corporate {
+  /* Backgrounds — cool blue-gray tint (hue 250) */
+  --color-adv-dark: oklch(0.965 0.008 250);       /* #F3F5F9 — cool slate page bg */
+  --color-adv-dark-2: oklch(0.99 0.003 250);      /* #FCFCFE — near-white sidebar/header */
+  --color-adv-card: oklch(1.0 0 0);               /* #FFFFFF — white cards */
+
+  /* Primary accent → Royal blue (L=0.50), distinct from navy headings (L=0.25) */
+  --color-adv-teal: oklch(0.50 0.16 250);         /* #2563B2 — buttons, links, active (6.0:1) */
+  --color-adv-teal-dark: oklch(0.43 0.14 250);    /* #1D4E9A — hover state */
+  --color-adv-teal-dim: oklch(0.93 0.03 250);     /* #E0E8F5 — active selection bg */
+  --color-adv-teal-soft: oklch(0.96 0.015 250);   /* #EEF1F8 — info panels */
+
+  /* Text — navy headings vs near-black body for clear hierarchy */
+  --color-adv-white: oklch(0.25 0.08 265);        /* #1E3A7A — navy headings (16:1) */
+  --color-adv-off-white: oklch(0.20 0.01 260);    /* #1F2937 — near-black body text (18:1) */
+  --color-adv-gray: oklch(0.44 0.015 255);        /* #556178 — blue-gray secondary (7.8:1) */
+  --color-adv-gray-med: oklch(0.57 0.01 255);     /* #7F899E — lighter blue-gray captions (4.5:1) */
+
+  /* Status colors */
+  --color-adv-gold: oklch(0.62 0.16 65);
+  --color-adv-red: oklch(0.52 0.22 25);
+  --color-adv-green: oklch(0.52 0.15 150);
+  --color-adv-blue: oklch(0.52 0.13 245);
+
+  /* Semantic overrides */
+  --color-background: var(--color-adv-dark);
+  --color-foreground: var(--color-adv-off-white);
+  --color-card: var(--color-adv-card);
+  --color-card-foreground: var(--color-adv-off-white);
+  --color-primary: var(--color-adv-teal);
+  --color-primary-foreground: var(--color-adv-dark); /* Page bg on royal blue buttons (5.4:1) */
+  --color-secondary: oklch(0.96 0.008 250);
+  --color-secondary-foreground: var(--color-adv-off-white);
+  --color-muted: oklch(0.96 0.006 250);
+  --color-muted-foreground: var(--color-adv-gray);
+  --color-accent: var(--color-adv-teal-dim);
+  --color-accent-foreground: var(--color-adv-teal); /* Royal blue on teal-dim (4.9:1) */
+  --color-destructive: var(--color-adv-red);
+  --color-destructive-foreground: oklch(1 0 0);
+  --color-border: oklch(0.87 0.015 250);           /* #CDD5E1 — blue-gray borders */
+  --color-input: oklch(0.87 0.015 250);
+  --color-ring: var(--color-adv-teal);
+  --color-popover: var(--color-adv-card);
+  --color-popover-foreground: var(--color-adv-off-white);
+
+  /* Body font → Aptos (Windows) with Calibri fallback */
+  --font-sans: 'Aptos', 'Calibri', system-ui, sans-serif;
+}
+
+/* Montserrat headings in corporate mode */
+html.corporate h1,
+html.corporate h2,
+html.corporate h3,
+html.corporate h4,
+html.corporate h5,
+html.corporate h6 {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  color: oklch(0.25 0.08 265);
+}
+
+/* Corporate card shadows — subtle navy tint */
+html.corporate .shadow-lg {
+  --tw-shadow-color: oklch(0.25 0.08 265 / 0.06);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-size: 14px;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100vh;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-adv-dark-2);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-adv-gray-med);
+  }
+
+  /* Light mode card shadows */
+  html.light .shadow-lg {
+    --tw-shadow-color: oklch(0 0 0 / 0.08);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Enhanced Markdown / Prose output styling
+   Makes in-app rendered output look polished and readable.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Headings — larger, clear hierarchy, with breathing room */
+.prose-output h1 { font-size: 1.5rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--color-border); }
+.prose-output h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.6rem; }
+.prose-output h3 { font-size: 1.1rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+.prose-output h4 { font-size: 1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.4rem; }
+.prose-output > :first-child { margin-top: 0; }
+
+/* Paragraphs — comfortable reading */
+.prose-output p { margin-top: 0.5rem; margin-bottom: 0.5rem; line-height: 1.7; }
+
+/* Lists — proper spacing and indentation */
+.prose-output ul, .prose-output ol { margin-top: 0.5rem; margin-bottom: 0.5rem; padding-left: 1.5rem; }
+.prose-output li { margin-top: 0.25rem; margin-bottom: 0.25rem; line-height: 1.65; }
+.prose-output li > ul, .prose-output li > ol { margin-top: 0.2rem; margin-bottom: 0.2rem; }
+
+/* Tables — clean, bordered, readable */
+.prose-output table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem; }
+.prose-output thead th { text-align: left; font-weight: 600; padding: 0.5rem 0.75rem; border-bottom: 2px solid var(--color-adv-teal); color: var(--color-adv-white); background: var(--color-adv-dark-2); }
+.prose-output tbody td { padding: 0.45rem 0.75rem; border-bottom: 1px solid var(--color-border); }
+.prose-output tbody tr:hover { background: oklch(0.2 0.02 250 / 0.5); }
+html.light .prose-output thead th { background: oklch(0.96 0.003 80); }
+html.light .prose-output tbody tr:hover { background: oklch(0.96 0.003 80); }
+html.corporate .prose-output thead th { background: oklch(0.96 0.008 250); }
+html.corporate .prose-output tbody tr:hover { background: oklch(0.96 0.008 250); }
+
+/* Code blocks — distinct background */
+.prose-output pre { background: var(--color-adv-dark); border: 1px solid var(--color-border); border-radius: 0.5rem; padding: 0.75rem 1rem; overflow-x: auto; margin-top: 0.75rem; margin-bottom: 0.75rem; }
+.prose-output pre code { font-size: 0.8rem; line-height: 1.6; }
+.prose-output :not(pre) > code { background: var(--color-adv-dark); border: 1px solid var(--color-border); border-radius: 0.25rem; padding: 0.15rem 0.35rem; font-size: 0.85em; }
+
+/* Blockquotes — teal left border accent */
+.prose-output blockquote { border-left: 3px solid var(--color-adv-teal); padding-left: 1rem; margin-top: 0.75rem; margin-bottom: 0.75rem; color: var(--color-adv-gray); font-style: italic; }
+
+/* Horizontal rules */
+.prose-output hr { border: none; border-top: 1px solid var(--color-border); margin-top: 1.5rem; margin-bottom: 1.5rem; }
+
+/* Bold — slightly brighter for emphasis */
+.prose-output strong { color: var(--color-adv-white); font-weight: 600; }
+
+/* Links */
+.prose-output a { color: var(--color-adv-teal); text-decoration: underline; text-underline-offset: 2px; }

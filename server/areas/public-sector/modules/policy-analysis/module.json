@@ -1,0 +1,143 @@
+{
+  "formatVersion": "1.0",
+  "id": "policy-analysis",
+  "label": "Policy Analysis",
+  "shortLabel": "Policy Analysis",
+  "description": "Analyse public policy proposals, legislative drafts, and regulatory frameworks. Assess policy coherence, stakeholder impact, implementation feasibility, and alignment with government objectives.",
+  "icon": "FileSearch",
+  "color": "adv-blue",
+  "areaId": "public-sector",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "impact-assessment"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "policy_type",
+      "type": "select",
+      "label": "Policy area",
+      "required": true,
+      "options": [
+        {
+          "value": "legislation",
+          "label": "Legislation / Statutory Instrument"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory Framework"
+        },
+        {
+          "value": "fiscal",
+          "label": "Fiscal / Tax Policy"
+        },
+        {
+          "value": "social",
+          "label": "Social Policy"
+        },
+        {
+          "value": "environmental",
+          "label": "Environmental / Climate Policy"
+        },
+        {
+          "value": "digital",
+          "label": "Digital / Technology Policy"
+        },
+        {
+          "value": "other",
+          "label": "Other Policy Area"
+        }
+      ]
+    },
+    {
+      "id": "analysis_scope",
+      "type": "select",
+      "label": "Analysis scope",
+      "required": true,
+      "options": [
+        {
+          "value": "full_review",
+          "label": "Full Policy Review"
+        },
+        {
+          "value": "impact_focus",
+          "label": "Impact Assessment Focus"
+        },
+        {
+          "value": "comparison",
+          "label": "Comparative Policy Analysis"
+        },
+        {
+          "value": "implementation",
+          "label": "Implementation Feasibility"
+        },
+        {
+          "value": "stakeholder",
+          "label": "Stakeholder Impact Analysis"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Policy context and objectives",
+      "placeholder": "Describe the policy proposal, its stated objectives, and any specific concerns or questions you want the analysis to address."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "policy",
+    "government",
+    "legislation",
+    "impact-assessment",
+    "public-sector"
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "formatVersion": "1.0",
+  "id": "emi-licensing-guide",
+  "label": "E-Money Issuer Licensing Guide",
+  "shortLabel": "EMI Licensing",
+  "description": "Step-by-step guide through EMI licence application processes. Covers capital requirements, governance, AML/CFT programme requirements, and common rejection reasons.",
+  "perspective": "strategic",
+  "icon": "FileText",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EMI licensing requirements by jurisdiction, CBK payment service provider guidelines, BSP e-money licensing, EU Electronic Money Directive 2, PSD2 authorisation requirements, MAS payment services act"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Target Jurisdiction",
+      "description": "Which country's licence are you seeking or advising on?",
+      "required": true,
+      "options": [
+        { "value": "ke", "label": "Kenya" },
+        { "value": "ng", "label": "Nigeria" },
+        { "value": "gh", "label": "Ghana" },
+        { "value": "tz", "label": "Tanzania" },
+        { "value": "bd", "label": "Bangladesh" },
+        { "value": "ph", "label": "Philippines" },
+        { "value": "sg", "label": "Singapore" },
+        { "value": "my", "label": "Malaysia" },
+        { "value": "eu", "label": "EU (EMD2)" },
+        { "value": "uk", "label": "UK (FCA)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "business_model",
+      "type": "select",
+      "label": "Business Model",
+      "description": "What is the proposed operational structure of the applicant?",
+      "required": true,
+      "options": [
+        { "value": "mno-led", "label": "MNO-led" },
+        { "value": "bank-subsidiary", "label": "Bank-subsidiary" },
+        { "value": "independent-fintech", "label": "Independent fintech" },
+        { "value": "agent-network", "label": "Agent network" }
+      ]
+    },
+    {
+      "id": "capital_estimate",
+      "type": "select",
+      "label": "Available Capital",
+      "description": "Indicative capital available to meet regulatory minimum requirements.",
+      "required": true,
+      "options": [
+        { "value": "under-1m", "label": "<$1M" },
+        { "value": "1m-5m", "label": "$1M–$5M" },
+        { "value": "5m-20m", "label": "$5M–$20M" },
+        { "value": "over-20m", "label": ">$20M" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "Target Timeline",
+      "description": "When does the applicant need the licence?",
+      "required": true,
+      "options": [
+        { "value": "asap", "label": "ASAP" },
+        { "value": "3-6-months", "label": "3–6 months" },
+        { "value": "6-12-months", "label": "6–12 months" },
+        { "value": "planning-stage", "label": "Planning stage" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "mobile-money-compliance",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-gsma-mobile-money-aml",
+    "jurisdiction-ke-cbk",
+    "jurisdiction-ng-cbn"
+  ],
+  "tags": [
+    "emi-licensing",
+    "mobile-money",
+    "payment-service-provider",
+    "regulatory-authorisation",
+    "capital-adequacy",
+    "fit-and-proper"
+  ]
+}

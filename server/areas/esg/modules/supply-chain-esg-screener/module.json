@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "supply-chain-esg-screener",
+  "label": "Supply Chain ESG Risk Screener",
+  "shortLabel": "Supply Chain ESG",
+  "description": "Assesses ESG risks across the supply chain based on supplier information, geographic exposure, and sector characteristics. Identifies high-risk suppliers requiring enhanced due diligence.",
+  "icon": "Network",
+  "color": "adv-green",
+  "areaId": "esg",
+  "perspective": "consultant",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "maturity-assessment",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Supply chain ESG risk databases, country risk indices, sector risk profiles, CSDDD requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "company_type",
+      "type": "select",
+      "label": "Your organisation type",
+      "required": true,
+      "options": [
+        { "value": "manufacturer", "label": "Manufacturer (produces physical products)" },
+        { "value": "retailer", "label": "Retailer or distributor" },
+        { "value": "services", "label": "Service business" },
+        { "value": "financial", "label": "Financial institution (financing supply chains)" }
+      ]
+    },
+    {
+      "id": "supply_chain_description",
+      "type": "textarea",
+      "label": "Supply chain description",
+      "required": true,
+      "placeholder": "Describe your supply chain:\n- Key categories of suppliers (goods, services, raw materials)\n- Estimated number of direct (tier 1) suppliers\n- Key geographies where suppliers operate\n- Any known high-risk areas (geographies, sectors, commodity types)\n- Approximate annual procurement spend by category"
+    },
+    {
+      "id": "screening_purpose",
+      "type": "select",
+      "label": "Purpose of this screening",
+      "options": [
+        { "value": "csrd_esrs", "label": "CSRD/ESRS S2 (Value chain workers) compliance" },
+        { "value": "csddd", "label": "CSDDD (EU Corporate Sustainability Due Diligence Directive)" },
+        { "value": "procurement", "label": "Procurement risk management" },
+        { "value": "investor", "label": "Investor/rating agency due diligence" },
+        { "value": "reputation", "label": "Reputational risk management" }
+      ]
+    },
+    {
+      "id": "known_risks",
+      "type": "textarea",
+      "label": "Known or suspected supply chain risks",
+      "placeholder": "Describe any risks you are already aware of:\n- Specific geographies with labour rights concerns\n- Commodities with known ESG issues (cobalt, cotton, palm oil, etc.)\n- Previous incidents or allegations\n- Sectors with elevated modern slavery or deforestation risk"
+    },
+    {
+      "id": "current_programme",
+      "type": "textarea",
+      "label": "Existing supplier ESG programme",
+      "placeholder": "What supplier ESG measures are already in place?\n- Supplier code of conduct\n- ESG questionnaires sent to suppliers\n- Third-party audits or certifications required\n- Supplier training programmes\n- Contract clauses for ESG requirements"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "supply-chain",
+    "esg-risk",
+    "due-diligence",
+    "csddd",
+    "esrs",
+    "procurement",
+    "modern-slavery"
+  ]
+}

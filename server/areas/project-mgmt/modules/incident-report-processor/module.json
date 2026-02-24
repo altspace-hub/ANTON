@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "incident-report-processor",
+  "label": "Incident Report Writer",
+  "shortLabel": "Incident Report",
+  "icon": "AlertTriangle",
+  "description": "Structures operational incident reports from event descriptions. Covers timeline, impact, root cause analysis (5-Whys or Fishbone), immediate actions taken, and permanent remediation plan.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Incident management frameworks, root cause analysis techniques, operational risk management"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "incident_type",
+      "type": "select",
+      "label": "Incident type",
+      "required": true,
+      "options": [
+        { "value": "it_outage", "label": "IT / system outage or failure" },
+        { "value": "data_breach", "label": "Data breach or security incident" },
+        { "value": "operational_error", "label": "Operational process error" },
+        { "value": "customer_impact", "label": "Customer-impacting event" },
+        { "value": "regulatory", "label": "Regulatory or compliance incident" },
+        { "value": "physical", "label": "Physical / health and safety incident" },
+        { "value": "financial", "label": "Financial loss or fraud" },
+        { "value": "third_party", "label": "Third-party / supplier failure" }
+      ]
+    },
+    {
+      "id": "severity",
+      "type": "select",
+      "label": "Severity",
+      "required": true,
+      "options": [
+        { "value": "p1_critical", "label": "P1 — Critical (major business impact, customer harm, regulatory reportable)" },
+        { "value": "p2_major", "label": "P2 — Major (significant operational disruption)" },
+        { "value": "p3_moderate", "label": "P3 — Moderate (limited impact, managed within team)" },
+        { "value": "p4_minor", "label": "P4 — Minor (minimal impact, low risk)" }
+      ]
+    },
+    {
+      "id": "incident_description",
+      "type": "textarea",
+      "label": "Incident description",
+      "required": true,
+      "placeholder": "Describe what happened: when it was detected, what the initial symptoms were, what systems or processes were affected, who was involved, and what the initial response was."
+    },
+    {
+      "id": "rca_method",
+      "type": "select",
+      "label": "Root cause analysis method",
+      "options": [
+        { "value": "five_whys", "label": "5-Whys analysis" },
+        { "value": "fishbone", "label": "Fishbone / Ishikawa diagram analysis" },
+        { "value": "both", "label": "Both methods" },
+        { "value": "none", "label": "No formal RCA required — narrative only" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist",
+    "systems-thinker"
+  ],
+  "tags": [
+    "incident",
+    "root-cause-analysis",
+    "operational-risk",
+    "rca",
+    "post-incident",
+    "remediation"
+  ]
+}

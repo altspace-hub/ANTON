@@ -1,0 +1,96 @@
+{
+  "formatVersion": "1.0",
+  "id": "resource-planning",
+  "label": "Resource Planning & Budgeting",
+  "shortLabel": "Resource Planning",
+  "icon": "DollarSign",
+  "description": "Plan project resources: FTE requirements, skills mapping, cost estimation, external support needs, phased budget, and capacity constraints.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "budget-resource-estimate",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Resource planning frameworks, compliance project benchmarks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "planning_task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "full_estimate",
+          "label": "Full resource and cost estimate"
+        },
+        {
+          "value": "fte_model",
+          "label": "FTE requirements by workstream"
+        },
+        {
+          "value": "skills_gap",
+          "label": "Skills gap: what do we have vs need?"
+        },
+        {
+          "value": "vendor_vs_inhouse",
+          "label": "Internal vs external resourcing decision"
+        }
+      ]
+    },
+    {
+      "id": "project_scale",
+      "type": "select",
+      "label": "Project scale",
+      "options": [
+        {
+          "value": "small",
+          "label": "Small (<6 months, <10 FTE)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (6-18 months, 10-30 FTE)"
+        },
+        {
+          "value": "large",
+          "label": "Large (18+ months, 30+ FTE)"
+        },
+        {
+          "value": "programme",
+          "label": "Programme (multiple projects, 50+ FTE)"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Project and resource context",
+      "placeholder": "Describe the project, expected scope, available internal capacity, and budget constraints."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist",
+    "adrian-finance"
+  ],
+  "tags": [
+    "resource-planning",
+    "budget",
+    "fte",
+    "cost",
+    "project-management"
+  ]
+}

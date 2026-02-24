@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "patient-safety-quality",
+  "label": "Patient Safety & Quality Assessment",
+  "shortLabel": "Patient Safety",
+  "icon": "Heart",
+  "description": "Assess patient safety programs, clinical quality indicators, serious adverse event processes, root cause analysis, and accreditation readiness (JCI, ISO 15189, CQC).",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "WHO patient safety goals, JCI International Patient Safety Goals, RCA methodology, FMEA in healthcare, Just Culture framework, clinical quality indicators, accreditation standards"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation_type",
+      "label": "Organisation Type",
+      "type": "select",
+      "options": [
+        "Hospital",
+        "Clinic",
+        "Diagnostic lab",
+        "Pharmaceutical manufacturer",
+        "Medical device company",
+        "Home care"
+      ],
+      "required": true
+    },
+    {
+      "id": "accreditation",
+      "label": "Accreditation Target",
+      "type": "select",
+      "options": [
+        "JCI",
+        "ISO 15189",
+        "CQC (UK)",
+        "TÜV",
+        "National accreditation",
+        "None"
+      ],
+      "required": true
+    },
+    {
+      "id": "focus",
+      "label": "Safety Focus Areas",
+      "type": "multiselect",
+      "options": [
+        "Serious adverse events",
+        "Medication errors",
+        "Surgical safety",
+        "Infection control",
+        "Falls prevention",
+        "Near-miss reporting"
+      ],
+      "required": true
+    },
+    {
+      "id": "concerns",
+      "label": "Known Concerns or Recent Incidents",
+      "type": "textarea",
+      "placeholder": "Describe any recent patient safety incidents, audit findings, or specific concerns to address...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "patient-safety-officer",
+    "quality-manager",
+    "clinical-director"
+  ],
+  "tags": [
+    "healthcare",
+    "patient-safety",
+    "quality",
+    "accreditation",
+    "rca",
+    "jci",
+    "clinical-governance"
+  ]
+}

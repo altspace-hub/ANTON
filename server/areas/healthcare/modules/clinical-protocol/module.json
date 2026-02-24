@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "clinical-protocol",
+  "label": "Clinical Protocol Development",
+  "shortLabel": "Clinical Protocol",
+  "icon": "FileText",
+  "description": "Develop and review clinical protocols and standard operating procedures for healthcare settings. Covers evidence-based protocol design, clinical pathway development, procedure standardisation, and compliance with clinical governance requirements. Produces structured policy documents with clear clinical workflows, decision criteria, and escalation procedures.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Clinical guidelines, evidence-based medicine, clinical governance frameworks, healthcare regulation, patient safety standards"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "clinical-area",
+      "label": "Clinical Area",
+      "type": "select",
+      "options": [
+        "Primary care",
+        "Emergency medicine",
+        "Surgery",
+        "Oncology",
+        "Cardiology",
+        "Mental health",
+        "Paediatrics",
+        "Geriatrics",
+        "Pharmacy",
+        "Nursing",
+        "Other specialty"
+      ],
+      "required": true
+    },
+    {
+      "id": "protocol-type",
+      "label": "Protocol Type",
+      "type": "select",
+      "options": [
+        "Clinical pathway",
+        "Standard operating procedure",
+        "Treatment protocol",
+        "Diagnostic protocol",
+        "Prescribing guideline",
+        "Care plan template",
+        "Emergency response procedure"
+      ],
+      "required": true
+    },
+    {
+      "id": "setting",
+      "label": "Healthcare Setting",
+      "type": "select",
+      "options": [
+        "Hospital",
+        "Primary care clinic",
+        "Specialist clinic",
+        "Home care",
+        "Long-term care facility",
+        "Pharmacy",
+        "Research setting"
+      ],
+      "required": true
+    },
+    {
+      "id": "evidence-base",
+      "label": "Evidence Base",
+      "type": "textarea",
+      "placeholder": "Key guidelines, studies, or evidence sources to incorporate...",
+      "required": false
+    },
+    {
+      "id": "specific-requirements",
+      "label": "Specific Requirements",
+      "type": "textarea",
+      "placeholder": "Any particular regulatory requirements, local adaptations, or constraints...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "clinical-lead",
+    "medical-director",
+    "quality-manager"
+  ],
+  "tags": [
+    "healthcare",
+    "clinical",
+    "protocol",
+    "governance",
+    "patient-safety"
+  ]
+}

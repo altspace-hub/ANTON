@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "islamic-microfinance",
+  "label": "Islamic Microfinance — Qard Hasan Framework",
+  "shortLabel": "Islamic Microfinance",
+  "description": "Design Sharia-compliant microfinance programs covering product structuring, Sharia governance, regulatory compliance, and sustainability for Islamic MFIs and Qard Hasan funds.",
+  "perspective": "strategic",
+  "icon": "Landmark",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document",
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AAOIFI Sharia standards, IFSB Islamic microfinance guidance, Qard Hasan product structures, Islamic Development Bank microfinance research, Pakistan SBP Islamic banking regulations, Indonesia OJK Islamic microfinance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "Primary Product Structure",
+      "description": "Which Sharia-compliant product structure is being designed or assessed?",
+      "required": true,
+      "options": [
+        { "value": "qard-hasan", "label": "Qard Hasan (interest-free loan)" },
+        { "value": "murabaha", "label": "Murabaha (deferred sale)" },
+        { "value": "ijara", "label": "Ijara (leasing)" },
+        { "value": "musharakah", "label": "Musharakah (partnership)" },
+        { "value": "mixed", "label": "Mixed" }
+      ]
+    },
+    {
+      "id": "institution_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of institution is offering the Islamic microfinance product?",
+      "required": true,
+      "options": [
+        { "value": "islamic-mfi", "label": "Islamic MFI" },
+        { "value": "waqf-based", "label": "Waqf-based" },
+        { "value": "conventional-islamic-window", "label": "Conventional MFI adding Islamic window" },
+        { "value": "zakat-fund", "label": "Zakat fund" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Jurisdiction",
+      "description": "In which country is the programme operating?",
+      "required": true,
+      "options": [
+        { "value": "pk", "label": "Pakistan" },
+        { "value": "bd", "label": "Bangladesh" },
+        { "value": "id", "label": "Indonesia" },
+        { "value": "ng", "label": "Nigeria" },
+        { "value": "sd", "label": "Sudan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "sharia_requirements",
+      "type": "textarea",
+      "label": "Sharia Governance Requirements",
+      "description": "Describe any specific Sharia governance requirements, existing Sharia board compositions, or Sharia compliance concerns.",
+      "placeholder": "e.g. Our board requires a Sharia Supervisory Board of at least 3 scholars; we currently use Murabaha for all products but are considering adding Musharakah for agricultural finance; our current service fee structure is being questioned by one of our scholars..."
+    }
+  ],
+  "recommendedPersonas": [
+    "microfinance-director",
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards",
+    "skill-ifsb-standards",
+    "jurisdiction-pk-sbp"
+  ],
+  "tags": [
+    "islamic-microfinance",
+    "qard-hasan",
+    "murabaha",
+    "sharia-compliance",
+    "waqf",
+    "zakat",
+    "aaoifi",
+    "ifsb",
+    "halal-finance"
+  ]
+}

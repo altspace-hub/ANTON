@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "marketing",
+  "name": "Marketing & Digital Marketing",
+  "shortName": "Marketing",
+  "description": "Marketing strategy, digital campaigns, SEO/content, social media, analytics, customer journey, email automation, and competitive research for modern businesses.",
+  "icon": "Megaphone",
+  "color": "adv-blue",
+  "cluster": "business"
+}

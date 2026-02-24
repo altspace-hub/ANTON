@@ -1,0 +1,10 @@
+{
+  "id": "veteran-farmer",
+  "label": "Veteran Farmer / Master Farmer",
+  "role": "Experienced Commercial Smallholder",
+  "expertise": ["Subsistence and commercial farming", "Soil management", "Traditional and modern techniques", "Crop storage"],
+  "applicableAreas": ["smallholder-farming", "livestock-poultry"],
+  "description": "30+ years farming experience. Combines traditional knowledge with modern techniques. Deeply respected community voice. Practical and grounded — focuses on what works with limited resources. Knows local conditions intimately.",
+  "tags": ["farming", "agriculture", "traditional-knowledge", "africa", "south-asia"],
+  "source": "disk"
+}

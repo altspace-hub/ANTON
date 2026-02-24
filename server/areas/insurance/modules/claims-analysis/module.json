@@ -1,0 +1,81 @@
+{
+  "formatVersion": "1.0",
+  "id": "claims-analysis",
+  "label": "Claims Analysis & Fraud Detection",
+  "shortLabel": "Claims Analysis",
+  "icon": "Search",
+  "description": "Analyse insurance claims data, identify fraud indicators, assess claims patterns, and develop fraud detection frameworks. Supports red flag identification, claims leakage analysis, and the development of structured fraud investigation procedures aligned with regulatory expectations.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Insurance fraud detection frameworks, claims management best practices, IFRS 17, regulatory requirements for claims handling"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "insurance-line",
+      "label": "Insurance Line",
+      "type": "select",
+      "options": [
+        "Motor",
+        "Property",
+        "Health",
+        "Life",
+        "Liability",
+        "Marine",
+        "Travel",
+        "Multiple lines"
+      ],
+      "required": true
+    },
+    {
+      "id": "analysis-type",
+      "label": "Analysis Type",
+      "type": "select",
+      "options": [
+        "Fraud indicator assessment",
+        "Claims pattern analysis",
+        "Red flag framework development",
+        "Investigation procedure design",
+        "Claims leakage review"
+      ],
+      "required": true
+    },
+    {
+      "id": "data-description",
+      "label": "Describe Available Data",
+      "type": "textarea",
+      "placeholder": "What claims data or case files are available for analysis...",
+      "required": false
+    },
+    {
+      "id": "specific-concerns",
+      "label": "Specific Concerns",
+      "type": "textarea",
+      "placeholder": "Any particular patterns or concerns to investigate...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "claims-manager",
+    "fraud-analyst",
+    "compliance-officer"
+  ],
+  "tags": [
+    "insurance",
+    "claims",
+    "fraud",
+    "detection",
+    "investigation"
+  ]
+}

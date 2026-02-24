@@ -1,0 +1,94 @@
+{
+  "formatVersion": "1.0",
+  "id": "mobile-money-safety",
+  "label": "Mobile Money Safety Guide",
+  "shortLabel": "Mobile Money Safety",
+  "icon": "Smartphone",
+  "description": "Keep your mobile money safe. Protect yourself from SIM swap, phishing, and other scams that steal mobile money.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Safety rules are simple and clear — haiku delivers them well."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Mobile money fraud, SIM swap attacks, scam patterns on M-Pesa, MTN MoMo, bKash, GCash, Easypaisa"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "platform",
+      "type": "select",
+      "label": "Which mobile money service do you use?",
+      "required": true,
+      "options": [
+        { "value": "mpesa-kenya", "label": "M-Pesa (Kenya)" },
+        { "value": "mtn-momo", "label": "MTN MoMo" },
+        { "value": "airtel-money", "label": "Airtel Money" },
+        { "value": "easypaisa", "label": "Easypaisa (Pakistan)" },
+        { "value": "bkash", "label": "bKash (Bangladesh)" },
+        { "value": "gcash", "label": "GCash (Philippines)" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "concern",
+      "type": "select",
+      "label": "What do you need help with?",
+      "required": true,
+      "options": [
+        { "value": "learn-basics", "label": "Learn safety basics" },
+        { "value": "something-suspicious", "label": "Something suspicious happened" },
+        { "value": "lost-phone", "label": "I lost my phone" },
+        { "value": "wrong-transfer", "label": "I sent money to the wrong number" },
+        { "value": "account-locked", "label": "My account is locked" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "mobile-money",
+    "fraud-prevention",
+    "sim-swap",
+    "scam-awareness",
+    "mpesa",
+    "mtn-momo",
+    "bkash",
+    "gcash",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "bangladesh",
+    "pakistan",
+    "philippines"
+  ]
+}

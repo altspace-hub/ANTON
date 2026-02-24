@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-pk-sbp",
+  "label": "Pakistan — State Bank of Pakistan (SBP)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "islamic-finance", "mobile-money", "microfinance"],
+  "description": "Pakistani financial regulatory framework: SBP regulations, Anti-Money Laundering Act, Islamic banking framework (20% of banking assets), branchless banking, Zakat deduction system, and fintech regulatory environment.",
+  "tags": ["pakistan", "sbp", "south-asia", "islamic-finance", "mobile-money"]
+}

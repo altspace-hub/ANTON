@@ -1,0 +1,69 @@
+{
+  "id": "service-design-blueprint",
+  "areaId": "design",
+  "label": "Service Design Blueprint",
+  "shortLabel": "Service Blueprint",
+  "icon": "Map",
+  "description": "Map the end-to-end service experience across all channels and touchpoints. Align front-stage interactions with back-stage processes, systems, and support structures.",
+  "color": "adv-teal",
+  "tags": ["service-design", "blueprint", "customer-journey", "touchpoints", "process-mapping"],
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Sonnet for most service blueprinting. Opus for complex multi-channel services with many stakeholders."
+  },
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "project-plan"]
+  },
+  "recommendedPersonas": ["service-designer", "ux-director"],
+  "guidedInputs": [
+    {
+      "id": "service_description",
+      "type": "textarea",
+      "label": "Service Description",
+      "description": "What service is being blueprinted? Who delivers it? Who uses it?",
+      "placeholder": "e.g. Onboarding for a new small business banking customer — from initial inquiry to first transaction.",
+      "required": true
+    },
+    {
+      "id": "service_scenario",
+      "type": "textarea",
+      "label": "Scenario / User Journey",
+      "description": "What specific scenario or user journey should the blueprint cover?",
+      "placeholder": "e.g. A freelancer applies for a business account online, uploads documents, waits for verification, and receives the account."
+    },
+    {
+      "id": "touchpoints",
+      "type": "multi-select",
+      "label": "Service Channels / Touchpoints",
+      "description": "Which channels are involved in this service?",
+      "options": [
+        {"value": "website", "label": "Website / Web app"},
+        {"value": "mobile_app", "label": "Mobile app"},
+        {"value": "in_person", "label": "In-person / Branch / Store"},
+        {"value": "phone", "label": "Phone / Call centre"},
+        {"value": "email", "label": "Email"},
+        {"value": "chatbot", "label": "Chatbot / Live chat"},
+        {"value": "post", "label": "Physical mail"},
+        {"value": "third_party", "label": "Third-party / Partner"}
+      ],
+      "defaultValue": ["website", "email"]
+    },
+    {
+      "id": "blueprint_purpose",
+      "type": "select",
+      "label": "Blueprint Purpose",
+      "description": "What is this blueprint for?",
+      "options": [
+        {"value": "current_state", "label": "Document current state (as-is)"},
+        {"value": "future_state", "label": "Design future state (to-be)"},
+        {"value": "problem_analysis", "label": "Identify pain points and failure points"},
+        {"value": "redesign", "label": "Redesign a broken service"}
+      ],
+      "defaultValue": "future_state"
+    }
+  ]
+}

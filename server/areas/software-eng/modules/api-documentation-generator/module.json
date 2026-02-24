@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "api-documentation-generator",
+  "label": "API Documentation Generator",
+  "shortLabel": "API Docs",
+  "description": "Generates comprehensive API documentation from endpoint descriptions, code snippets, or OpenAPI specs. Includes usage examples, error codes, authentication, and rate limiting.",
+  "icon": "FileCode2",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "api_name",
+      "type": "text",
+      "label": "API name",
+      "required": true,
+      "placeholder": "e.g., Payments API, User Management Service, Data Export API"
+    },
+    {
+      "id": "api_type",
+      "type": "select",
+      "label": "API type",
+      "required": true,
+      "options": [
+        { "value": "rest", "label": "REST API" },
+        { "value": "graphql", "label": "GraphQL" },
+        { "value": "grpc", "label": "gRPC" },
+        { "value": "websocket", "label": "WebSocket" },
+        { "value": "sdk", "label": "SDK / Client Library" }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Primary audience",
+      "options": [
+        { "value": "external", "label": "External developers (public API)" },
+        { "value": "partner", "label": "Partner developers (private/partner API)" },
+        { "value": "internal", "label": "Internal teams only" }
+      ]
+    },
+    {
+      "id": "endpoints_or_spec",
+      "type": "textarea",
+      "label": "API endpoints, methods, or spec",
+      "required": true,
+      "placeholder": "Paste endpoint descriptions, code snippets, OpenAPI YAML/JSON, or a list of methods. Example:\nPOST /payments — Creates a new payment\nGET /payments/{id} — Retrieves a payment by ID\nDELETE /payments/{id} — Cancels a pending payment"
+    },
+    {
+      "id": "auth_method",
+      "type": "select",
+      "label": "Authentication method",
+      "options": [
+        { "value": "api_key", "label": "API Key (header or query param)" },
+        { "value": "bearer", "label": "Bearer Token (JWT)" },
+        { "value": "oauth2", "label": "OAuth 2.0" },
+        { "value": "basic", "label": "Basic Authentication" },
+        { "value": "none", "label": "No authentication" },
+        { "value": "other", "label": "Other / describe below" }
+      ]
+    },
+    {
+      "id": "additional_context",
+      "type": "textarea",
+      "label": "Additional context",
+      "placeholder": "e.g., Rate limits (100 req/min per API key), supported regions (EU-only), versioning policy (breaking changes in major versions only), known limitations, sandbox environment URL"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "api",
+    "documentation",
+    "rest",
+    "openapi",
+    "developer-experience",
+    "integration"
+  ]
+}

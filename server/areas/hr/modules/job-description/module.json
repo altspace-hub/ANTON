@@ -1,0 +1,138 @@
+{
+  "formatVersion": "1.0",
+  "id": "job-description",
+  "label": "Job Description Writer",
+  "shortLabel": "Job Descriptions",
+  "description": "Draft professional, inclusive job descriptions with clear requirements, responsibilities, and competency profiles. Ensures alignment with role level, market standards, and anti-discrimination best practices.",
+  "icon": "FileText",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "role_title",
+      "type": "text",
+      "label": "Role title",
+      "description": "The job title for the position you are hiring for.",
+      "placeholder": "e.g., Senior Compliance Officer, AML Analyst, Head of Risk",
+      "required": true
+    },
+    {
+      "id": "role_level",
+      "type": "select",
+      "label": "Seniority level",
+      "description": "The level of the role in the organisational hierarchy.",
+      "options": [
+        {
+          "value": "junior",
+          "label": "Junior / Entry-level"
+        },
+        {
+          "value": "mid",
+          "label": "Mid-level / Experienced"
+        },
+        {
+          "value": "senior",
+          "label": "Senior / Lead"
+        },
+        {
+          "value": "manager",
+          "label": "Manager / Team Lead"
+        },
+        {
+          "value": "director",
+          "label": "Director / Head of"
+        },
+        {
+          "value": "c_suite",
+          "label": "C-Suite / Executive"
+        }
+      ]
+    },
+    {
+      "id": "department",
+      "type": "text",
+      "label": "Department or function",
+      "description": "The team or department this role belongs to.",
+      "placeholder": "e.g., Compliance, Risk Management, Legal, Operations"
+    },
+    {
+      "id": "industry",
+      "type": "select",
+      "label": "Industry",
+      "description": "The industry context affects required qualifications and terminology.",
+      "options": [
+        {
+          "value": "banking",
+          "label": "Banking & Financial Services"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Payment Services"
+        },
+        {
+          "value": "consulting",
+          "label": "Consulting / Advisory"
+        },
+        {
+          "value": "public_sector",
+          "label": "Public Sector / Regulator"
+        },
+        {
+          "value": "technology",
+          "label": "Technology"
+        },
+        {
+          "value": "general",
+          "label": "General / Cross-industry"
+        }
+      ]
+    },
+    {
+      "id": "location",
+      "type": "text",
+      "label": "Location and working arrangement",
+      "description": "Where the role is based and the working model.",
+      "placeholder": "e.g., Stockholm, hybrid (3 days office), fully remote within Nordics"
+    },
+    {
+      "id": "key_responsibilities",
+      "type": "textarea",
+      "label": "Key responsibilities (optional)",
+      "description": "If you already know the core responsibilities, list them here. Otherwise, Claude will suggest appropriate ones.",
+      "placeholder": "e.g., Lead the AML compliance programme, manage a team of 5 analysts, report to the Chief Compliance Officer"
+    },
+    {
+      "id": "special_requirements",
+      "type": "textarea",
+      "label": "Special requirements or notes",
+      "description": "Any specific certifications, languages, or other requirements.",
+      "placeholder": "e.g., Must hold CAMS certification, fluent in Swedish and English, experience with Norkom/Actimize preferred"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "recruitment",
+    "job-description",
+    "hiring",
+    "talent"
+  ]
+}

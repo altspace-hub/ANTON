@@ -1,0 +1,62 @@
+{
+  "formatVersion": "1.0",
+  "id": "public-consultation-response",
+  "label": "Public Consultation Response",
+  "shortLabel": "Consultation Response",
+  "icon": "MessageSquare",
+  "description": "Draft effective consultation responses to government, regulatory, and international consultations. Structured argumentation, evidence citation, and policy recommendation writing.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "decision-memo"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Public consultation best practice, consultation response structure, argumentation and evidence standards, regulatory consultation conventions (FATF, EU, UK Parliamentary inquiries), how officials read and process responses"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "consultation_type",
+      "label": "What type of consultation?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "government-consultation", "label": "Government consultation" },
+        { "value": "parliamentary-inquiry", "label": "Parliamentary inquiry" },
+        { "value": "regulatory-consultation", "label": "Regulatory body consultation" },
+        { "value": "international-organisation", "label": "International organisation (FATF, EU, UN)" }
+      ]
+    },
+    {
+      "id": "organisation_type",
+      "label": "What type of organisation are you?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "government-body", "label": "Government body" },
+        { "value": "industry-association", "label": "Industry association" },
+        { "value": "ngo", "label": "NGO / Civil society" },
+        { "value": "think-tank", "label": "Think tank / Academic" },
+        { "value": "business", "label": "Business" }
+      ]
+    },
+    {
+      "id": "position",
+      "label": "What is your key position on this consultation?",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Briefly describe your organisation's main position, key concerns, and what you are recommending. The AI will help structure and develop this into a full response."
+    }
+  ],
+  "recommendedPersonas": ["policy-analyst", "legal-expert"],
+  "tags": ["consultation", "government", "regulatory", "policy-response", "stakeholder", "parliamentary", "FATF", "EU", "public-administration"]
+}

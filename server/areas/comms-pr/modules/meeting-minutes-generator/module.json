@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "meeting-minutes-generator",
+  "label": "Meeting Minutes Generator",
+  "shortLabel": "Meeting Minutes",
+  "description": "Transforms meeting notes or transcripts into formatted minutes. Structures: attendees, agenda items, decisions made, actions agreed (with owners and deadlines), and next steps.",
+  "perspective": "operational",
+  "icon": "NotebookPen",
+  "color": "adv-green",
+  "areaId": "comms-pr",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Formal meeting minutes conventions, corporate governance meeting documentation, board minutes standards"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "meeting_type",
+      "type": "select",
+      "label": "Meeting type",
+      "required": true,
+      "options": [
+        { "value": "board", "label": "Board meeting / Supervisory Board" },
+        { "value": "steering", "label": "Steering Committee / Project Board" },
+        { "value": "management", "label": "Management team meeting" },
+        { "value": "project", "label": "Project team meeting" },
+        { "value": "client", "label": "Client meeting" },
+        { "value": "operational", "label": "Operational / departmental meeting" },
+        { "value": "workshop", "label": "Workshop / working session" }
+      ]
+    },
+    {
+      "id": "meeting_details",
+      "type": "textarea",
+      "label": "Meeting details",
+      "required": true,
+      "placeholder": "Date, time, location/platform, meeting name or reference.\ne.g. AMLR Steering Committee — 19 February 2025, 09:00-11:00, Teams video call"
+    },
+    {
+      "id": "attendees",
+      "type": "textarea",
+      "label": "Attendees",
+      "placeholder": "List attendees with name, role, and organization where relevant. Note any apologies.\ne.g.\nPresent: Johan Andersson (CFO, Chair), Lisa Berg (CTO), Anna Lindqvist (Compliance Director), Karl Svensson (PM, Advisense), Maria Ek (Data Lead)\nApologies: Erik Nilsson (Legal)"
+    },
+    {
+      "id": "meeting_notes",
+      "type": "textarea",
+      "label": "Meeting notes or transcript",
+      "required": true,
+      "placeholder": "Paste your meeting notes, transcript, or bullet-point record of the discussion. The quality of the input determines the quality of the minutes — include: key discussion points, decisions made, and actions agreed with owners.\n\ne.g.\n- Reviewed status report — project is amber. Vendor delay 6 weeks.\n- Agreed to escalate to programme board next week if vendor doesn't confirm recovery plan by Friday\n- Lisa to chase IT infrastructure team about environment readiness — done by 21 Feb\n- Anna raised concern about data quality report — needs more detail on error rate by system\n- Karl to produce breakdown by source system by Monday\n- Next meeting: 5 March same time"
+    },
+    {
+      "id": "formality_level",
+      "type": "select",
+      "label": "Formality level",
+      "options": [
+        { "value": "formal", "label": "Formal — legal/governance quality (board, audit committee)" },
+        { "value": "standard", "label": "Standard — professional business minutes" },
+        { "value": "informal", "label": "Summary — concise action-focused record" }
+      ]
+    },
+    {
+      "id": "confidentiality",
+      "type": "text",
+      "label": "Confidentiality classification (optional)",
+      "placeholder": "e.g. Confidential — Internal Use Only"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "communications",
+    "meetings",
+    "minutes",
+    "governance",
+    "operational"
+  ]
+}

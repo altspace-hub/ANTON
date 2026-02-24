@@ -1,0 +1,114 @@
+{
+  "formatVersion": "1.0",
+  "id": "personal-contracts",
+  "label": "Personal Contract Review",
+  "shortLabel": "Contract Review",
+  "description": "Review personal contracts including service agreements, subscription terms, insurance policies, and membership agreements. Identify risks, unfair terms, and hidden obligations.",
+  "icon": "FileSearch",
+  "color": "adv-red",
+  "areaId": "consumer-legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "contract_type",
+      "type": "select",
+      "label": "Contract type",
+      "required": true,
+      "options": [
+        {
+          "value": "service",
+          "label": "Service Agreement"
+        },
+        {
+          "value": "subscription",
+          "label": "Subscription / Membership"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Policy"
+        },
+        {
+          "value": "loan",
+          "label": "Loan / Credit Agreement"
+        },
+        {
+          "value": "purchase",
+          "label": "Purchase Agreement"
+        },
+        {
+          "value": "construction",
+          "label": "Construction / Renovation"
+        },
+        {
+          "value": "other",
+          "label": "Other Personal Contract"
+        }
+      ]
+    },
+    {
+      "id": "review_focus",
+      "type": "multi-select",
+      "label": "Review focus",
+      "options": [
+        {
+          "value": "unfair_terms",
+          "label": "Unfair Terms"
+        },
+        {
+          "value": "hidden_costs",
+          "label": "Hidden Costs / Fees"
+        },
+        {
+          "value": "termination",
+          "label": "Termination / Cancellation Rights"
+        },
+        {
+          "value": "liability",
+          "label": "Liability Limitations"
+        },
+        {
+          "value": "data_privacy",
+          "label": "Data Privacy / GDPR"
+        },
+        {
+          "value": "dispute_resolution",
+          "label": "Dispute Resolution"
+        }
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific concerns",
+      "placeholder": "Describe any specific clauses or terms you are concerned about, or areas where you want particular attention."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert"
+  ],
+  "tags": [
+    "contract",
+    "review",
+    "consumer",
+    "personal",
+    "terms"
+  ]
+}

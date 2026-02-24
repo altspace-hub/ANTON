@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "personal-finance",
+  "name": "Personal Finance",
+  "shortName": "Personal Finance",
+  "description": "Intelligent personal finance advisory tools for financial planners, wealth advisors, and individuals seeking structured financial guidance. Covers budget planning, tax optimisation, pension and retirement planning, debt management, and savings and investment strategy. Produces actionable plans grounded in sound financial principles and current regulatory frameworks.",
+  "icon": "Wallet",
+  "color": "adv-green",
+  "cluster": "personal"
+}

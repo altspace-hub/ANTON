@@ -1,0 +1,77 @@
+{
+  "formatVersion": "1.0",
+  "id": "kpi-dashboard-updater",
+  "label": "KPI Dashboard Commentary Generator",
+  "shortLabel": "KPI Commentary",
+  "icon": "BarChart2",
+  "description": "Transforms KPI data into management commentary. Explains variances, contextualizes trends, identifies actionable insights, and frames recommendations. For monthly/quarterly reporting.",
+  "color": "adv-green",
+  "areaId": "project-mgmt",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Management reporting best practices, KPI frameworks, business performance analysis"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "reporting_period",
+      "type": "text",
+      "label": "Reporting period",
+      "required": true,
+      "placeholder": "e.g., January 2026, Q1 2026, Week 7"
+    },
+    {
+      "id": "kpi_data",
+      "type": "textarea",
+      "label": "KPI data",
+      "required": true,
+      "placeholder": "Paste your KPI data. Include: KPI name, actual, target/budget, prior period, and any brief context notes.\n\nExample:\nRevenue: €2.4M actual, €2.8M target, €2.1M prior period\nCustomer satisfaction (NPS): 42 actual, 50 target, 38 prior period\nOperating costs: €1.9M actual, €1.8M budget, €1.7M prior period"
+    },
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Report audience",
+      "required": true,
+      "options": [
+        { "value": "board", "label": "Board of directors" },
+        { "value": "exec", "label": "Executive leadership team" },
+        { "value": "management", "label": "Senior management" },
+        { "value": "operational", "label": "Operational team" },
+        { "value": "investors", "label": "Investors / shareholders" }
+      ]
+    },
+    {
+      "id": "additional_context",
+      "type": "textarea",
+      "label": "Additional context",
+      "placeholder": "Any market conditions, operational events, seasonal factors, or one-off items that explain performance."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "kpi",
+    "dashboard",
+    "reporting",
+    "commentary",
+    "management-reporting",
+    "performance"
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "formatVersion": "1.0",
+  "id": "risk-appetite",
+  "label": "Risk Appetite Framework",
+  "shortLabel": "Risk Appetite",
+  "description": "Design or review risk appetite statements, tolerance levels, risk limits, and KRI frameworks. Board-ready risk appetite documentation.",
+  "icon": "Gauge",
+  "color": "adv-red",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "design",
+          "label": "Design a new risk appetite framework"
+        },
+        {
+          "value": "review",
+          "label": "Review and update existing framework"
+        },
+        {
+          "value": "statement",
+          "label": "Draft risk appetite statement"
+        },
+        {
+          "value": "kri",
+          "label": "Design KRI framework and thresholds"
+        },
+        {
+          "value": "cascade",
+          "label": "Cascade appetite to business lines"
+        }
+      ]
+    },
+    {
+      "id": "organisation_type",
+      "type": "select",
+      "label": "Organisation type",
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment Firm"
+        },
+        {
+          "value": "large_corporate",
+          "label": "Large Corporate"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "risk_categories",
+      "type": "multi-select",
+      "label": "Risk categories to address",
+      "options": [
+        {
+          "value": "credit",
+          "label": "Credit Risk"
+        },
+        {
+          "value": "market",
+          "label": "Market Risk"
+        },
+        {
+          "value": "liquidity",
+          "label": "Liquidity Risk"
+        },
+        {
+          "value": "operational",
+          "label": "Operational Risk"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance / Regulatory Risk"
+        },
+        {
+          "value": "reputational",
+          "label": "Reputational Risk"
+        },
+        {
+          "value": "aml",
+          "label": "ML/TF Risk"
+        },
+        {
+          "value": "strategic",
+          "label": "Strategic Risk"
+        }
+      ]
+    },
+    {
+      "id": "current_state",
+      "type": "textarea",
+      "label": "Current state (if reviewing)",
+      "placeholder": "Brief description of what exists today — appetite statement, limits, KRIs, reporting."
+    }
+  ],
+  "recommendedPersonas": [
+    "fsa-regulator",
+    "fcp-expert"
+  ],
+  "tags": [
+    "risk-appetite",
+    "kri",
+    "governance",
+    "risk-management",
+    "board"
+  ]
+}

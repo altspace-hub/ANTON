@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "audit-report",
+  "label": "Internal Audit Report",
+  "shortLabel": "Audit Report",
+  "description": "Compile complete internal audit reports: executive summary, findings with ratings, root cause themes, management action plans, and distribution.",
+  "icon": "FileText",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "audit_scope",
+      "type": "textarea",
+      "label": "Audit scope and objective",
+      "required": true,
+      "placeholder": "e.g., AML/CFT compliance audit of the retail banking division, covering CDD, PEP screening, transaction monitoring, and STR reporting for the period January-June 2024."
+    },
+    {
+      "id": "overall_rating",
+      "type": "select",
+      "label": "Overall audit opinion",
+      "required": true,
+      "options": [
+        {
+          "value": "satisfactory",
+          "label": "Satisfactory — Controls effective, minor improvements"
+        },
+        {
+          "value": "needs_improvement",
+          "label": "Needs Improvement — Some material weaknesses"
+        },
+        {
+          "value": "unsatisfactory",
+          "label": "Unsatisfactory — Significant control failures"
+        },
+        {
+          "value": "critical",
+          "label": "Critical — Major regulatory or financial risk"
+        }
+      ]
+    },
+    {
+      "id": "findings_summary",
+      "type": "textarea",
+      "label": "Summary of findings",
+      "description": "List the key findings with their severity ratings and core issue.",
+      "placeholder": "1. CDD completeness — High: 40% of high-risk files missing EDD documentation\n2. TM alert closure — Medium: 25% of closed alerts lack documented rationale\n3. STR timeliness — Low: Average 12 days to file, target is 10 days"
+    },
+    {
+      "id": "context",
+      "type": "textarea",
+      "label": "Contextual information",
+      "placeholder": "Prior audit results, relevant regulatory context, management environment, significant changes during the period..."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "audit",
+    "report",
+    "findings",
+    "iia",
+    "opinion"
+  ]
+}

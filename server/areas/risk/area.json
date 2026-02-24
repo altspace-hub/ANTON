@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "risk",
+  "name": "Risk Management",
+  "shortName": "Risk",
+  "description": "Enterprise risk assessment, risk appetite frameworks, operational risk, scenario analysis, and third-party risk management for financial and corporate organisations.",
+  "icon": "AlertTriangle",
+  "color": "adv-red",
+  "cluster": "finance"
+}

@@ -1,0 +1,106 @@
+{
+  "formatVersion": "1.0",
+  "id": "engagement-delivery",
+  "label": "Engagement Delivery Management",
+  "shortLabel": "Delivery",
+  "description": "Structure engagement delivery: scope management, status reporting, issue escalation, quality control, and client relationship management throughout a consulting engagement.",
+  "icon": "Rocket",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "status_report",
+          "label": "Status report (steering committee / client)"
+        },
+        {
+          "value": "scope_change",
+          "label": "Scope change / variation management"
+        },
+        {
+          "value": "issue_escalation",
+          "label": "Issue escalation note"
+        },
+        {
+          "value": "project_plan",
+          "label": "Detailed project plan"
+        },
+        {
+          "value": "quality_checklist",
+          "label": "Deliverable quality checklist"
+        },
+        {
+          "value": "lessons_learned",
+          "label": "Lessons learned / close-out review"
+        }
+      ]
+    },
+    {
+      "id": "engagement_context",
+      "type": "textarea",
+      "label": "Engagement context",
+      "required": true,
+      "placeholder": "Brief description: what the engagement is, where we are in delivery, key workstreams, team composition."
+    },
+    {
+      "id": "current_status",
+      "type": "select",
+      "label": "Overall engagement status",
+      "options": [
+        {
+          "value": "green",
+          "label": "🟢 On Track"
+        },
+        {
+          "value": "amber",
+          "label": "🟡 At Risk"
+        },
+        {
+          "value": "red",
+          "label": "🔴 Off Track"
+        }
+      ]
+    },
+    {
+      "id": "key_issues",
+      "type": "textarea",
+      "label": "Key issues or concerns",
+      "placeholder": "Any blockers, risks, scope questions, client concerns, or team issues that need to be addressed."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "tags": [
+    "delivery",
+    "project-management",
+    "status",
+    "consulting",
+    "engagement"
+  ]
+}

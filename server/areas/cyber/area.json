@@ -1,0 +1,23 @@
+{
+  "formatVersion": "1.0",
+  "id": "cyber",
+  "name": "Cybersecurity & Information Security",
+  "shortName": "Cyber",
+  "description": "Digital operational resilience, ICT risk management, DORA compliance, cybersecurity assessment, incident response, and third-party cyber risk for financial institutions.",
+  "icon": "ShieldAlert",
+  "color": "adv-red",
+  "cluster": "technology",
+  "moduleIds": [
+    "dora-compliance",
+    "security-assessment",
+    "incident-response",
+    "ict-risk-management",
+    "third-party-cyber-risk",
+    "nis2-compliance",
+    "pen-test-scope",
+    "incident-response-plan",
+    "third-party-security",
+    "security-awareness-training",
+    "cloud-security-review"
+  ]
+}

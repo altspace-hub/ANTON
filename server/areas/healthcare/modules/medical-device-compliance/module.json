@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.0",
+  "id": "medical-device-compliance",
+  "label": "Medical Device Regulatory Compliance",
+  "shortLabel": "Medical Devices",
+  "icon": "Stethoscope",
+  "description": "Navigate medical device regulatory compliance globally. Covers EU MDR/IVDR, FDA 510(k)/PMA, risk classification, technical documentation, Post-Market Surveillance, and QMS requirements (ISO 13485).",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU MDR 2017/745, EU IVDR 2017/746, FDA 510(k), PMA, ISO 13485 QMS, risk classification rules, technical documentation, Post-Market Surveillance, UDI, SaMD regulation, clinical evaluation"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "device_type",
+      "label": "Device Type",
+      "type": "select",
+      "options": [
+        "Active implantable",
+        "Active non-implantable",
+        "Non-active implantable",
+        "IVD",
+        "Software as a Medical Device (SaMD)",
+        "Other"
+      ],
+      "required": true
+    },
+    {
+      "id": "risk_class",
+      "label": "Risk Classification",
+      "type": "select",
+      "options": [
+        "EU Class I",
+        "EU Class IIa",
+        "EU Class IIb",
+        "EU Class III",
+        "IVD Class A-D",
+        "FDA Class I-III",
+        "Unknown — help me classify"
+      ],
+      "required": true
+    },
+    {
+      "id": "target_markets",
+      "label": "Target Markets",
+      "type": "multiselect",
+      "options": [
+        "EU (MDR 2017/745)",
+        "UK (UKCA)",
+        "US (FDA)",
+        "Japan (PMDA)",
+        "Australia (TGA)",
+        "Other"
+      ],
+      "required": true
+    },
+    {
+      "id": "stage",
+      "label": "Current Stage",
+      "type": "select",
+      "options": [
+        "Design phase",
+        "Technical documentation",
+        "Conformity assessment",
+        "Post-market",
+        "QMS only"
+      ],
+      "required": true
+    }
+  ],
+  "recommendedPersonas": [
+    "regulatory-affairs-manager",
+    "quality-systems-lead",
+    "r-and-d-director"
+  ],
+  "tags": [
+    "healthcare",
+    "medical-devices",
+    "mdr",
+    "ivdr",
+    "fda",
+    "iso-13485",
+    "post-market-surveillance",
+    "regulatory-compliance"
+  ]
+}

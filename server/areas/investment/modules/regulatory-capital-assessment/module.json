@@ -1,0 +1,172 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-capital-assessment",
+  "label": "Regulatory Capital Assessment (Basel III/IV)",
+  "shortLabel": "Capital Assessment",
+  "icon": "Building2",
+  "description": "Calculate and assess regulatory capital requirements under Basel III/IV, CRR2/CRR3 for banks and investment firms.",
+  "color": "adv-teal",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Basel III/IV framework, CRR2/CRR3, IFR/IFD, EBA Q&As, ECB SREP methodology, FRTB, SA-CCR"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity type",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment firm"
+        },
+        {
+          "value": "broker_dealer",
+          "label": "Broker-dealer"
+        },
+        {
+          "value": "central_counterparty",
+          "label": "Central counterparty"
+        }
+      ]
+    },
+    {
+      "id": "capital_framework",
+      "type": "select",
+      "label": "Capital framework",
+      "options": [
+        {
+          "value": "basel_iii",
+          "label": "Basel III"
+        },
+        {
+          "value": "basel_iv",
+          "label": "Basel IV"
+        },
+        {
+          "value": "crr2",
+          "label": "CRR2"
+        },
+        {
+          "value": "crr3",
+          "label": "CRR3"
+        },
+        {
+          "value": "ifr_ifd",
+          "label": "IFR/IFD"
+        }
+      ]
+    },
+    {
+      "id": "capital_focus",
+      "type": "multi-select",
+      "label": "Capital focus areas",
+      "options": [
+        {
+          "value": "cet1",
+          "label": "CET1"
+        },
+        {
+          "value": "at1",
+          "label": "AT1"
+        },
+        {
+          "value": "tier_2",
+          "label": "Tier 2"
+        },
+        {
+          "value": "leverage_ratio",
+          "label": "Leverage ratio"
+        },
+        {
+          "value": "lcr",
+          "label": "LCR"
+        },
+        {
+          "value": "nsfr",
+          "label": "NSFR"
+        },
+        {
+          "value": "frtb",
+          "label": "FRTB"
+        },
+        {
+          "value": "sa_ccr",
+          "label": "SA-CCR"
+        },
+        {
+          "value": "output_floor",
+          "label": "Output floor"
+        }
+      ]
+    },
+    {
+      "id": "assessment_type",
+      "type": "select",
+      "label": "Assessment type",
+      "options": [
+        {
+          "value": "gap_analysis",
+          "label": "Gap analysis"
+        },
+        {
+          "value": "ratio_calculation",
+          "label": "Ratio calculation"
+        },
+        {
+          "value": "stress_test",
+          "label": "Stress test"
+        },
+        {
+          "value": "icaap",
+          "label": "ICAAP"
+        },
+        {
+          "value": "srep_prep",
+          "label": "SREP prep"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "risk-specialist",
+    "amanda-legal"
+  ],
+  "tags": [
+    "basel-iii",
+    "basel-iv",
+    "crr3",
+    "cet1",
+    "capital-requirements",
+    "frtb",
+    "lcr",
+    "nsfr",
+    "srep",
+    "icaap",
+    "ifr",
+    "leverage-ratio"
+  ]
+}

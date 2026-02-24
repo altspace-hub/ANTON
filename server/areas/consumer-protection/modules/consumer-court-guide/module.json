@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.0",
+  "id": "consumer-court-guide",
+  "label": "Consumer Court & Tribunal Guide",
+  "shortLabel": "Consumer Court",
+  "icon": "Scale",
+  "description": "How to take a consumer complaint to court or tribunal. When to go to consumer court, how to file, and what to expect.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Preparing actual filings and legal strategy needs sonnet. Understanding the process works with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Consumer courts and tribunals by country: Kenya Magistrate's Court, Nigeria Consumer Protection Tribunal, South Africa Small Claims Court and National Consumer Tribunal, India Consumer Disputes Redressal Commissions (district/state/national), Philippines Consumer Arbitration Office. Filing process, costs, timelines, self-representation, remedies available." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "dispute_value",
+      "label": "How much money is involved?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "under-50", "label": "Under $50 (or equivalent)" },
+        { "value": "50-to-500", "label": "$50 to $500" },
+        { "value": "500-to-5000", "label": "$500 to $5,000" },
+        { "value": "over-5000", "label": "Over $5,000" }
+      ]
+    },
+    {
+      "id": "complaint_type",
+      "label": "What type of complaint is it?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "product-defect", "label": "Product defect or quality" },
+        { "value": "service-failure", "label": "Service not delivered" },
+        { "value": "fraud", "label": "Fraud or scam" },
+        { "value": "mobile-money", "label": "Mobile money dispute" },
+        { "value": "utility", "label": "Utility billing" },
+        { "value": "financial-product", "label": "Financial product or loan" }
+      ]
+    },
+    {
+      "id": "previous_steps",
+      "label": "What have you already tried?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "tried-internal", "label": "Tried internal complaint with the company" },
+        { "value": "tried-regulator", "label": "Tried a regulatory complaint" },
+        { "value": "tried-both", "label": "Tried both — still not resolved" },
+        { "value": "neither", "label": "Neither yet" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
+  "tags": ["consumer-protection", "bop", "rights", "consumer-court", "small-claims", "tribunal", "self-representation", "legal-remedies", "africa", "south-asia"]
+}

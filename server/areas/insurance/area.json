@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "insurance",
+  "name": "Insurance & Actuarial",
+  "shortName": "Insurance",
+  "description": "Comprehensive AI-powered tools for insurance professionals, actuaries, and compliance officers. Covers Solvency II compliance, claims analysis and fraud detection, product governance, Insurance Distribution Directive (IDD) compliance, and actuarial communications. Designed to support insurers, reinsurers, and intermediaries navigating complex regulatory frameworks across European and Nordic markets.",
+  "icon": "Shield",
+  "color": "adv-blue",
+  "cluster": "finance"
+}

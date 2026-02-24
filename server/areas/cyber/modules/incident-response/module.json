@@ -1,0 +1,118 @@
+{
+  "formatVersion": "1.0",
+  "id": "incident-response",
+  "label": "Cyber Incident Response",
+  "shortLabel": "Incident Response",
+  "icon": "Siren",
+  "description": "Structure cyber incident response: classification, escalation, regulatory reporting obligations (DORA), containment strategy, root cause analysis, and lessons learned. Supports both live incident management and post-incident review.",
+  "color": "adv-red",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "DORA incident classification RTS, EBA incident reporting requirements"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "incident_phase",
+      "type": "select",
+      "label": "Where are you in the incident lifecycle?",
+      "required": true,
+      "options": [
+        {
+          "value": "active",
+          "label": "Active incident — need immediate guidance"
+        },
+        {
+          "value": "contained",
+          "label": "Incident contained — structuring response and reporting"
+        },
+        {
+          "value": "post_incident",
+          "label": "Post-incident — root cause analysis and lessons learned"
+        },
+        {
+          "value": "planning",
+          "label": "Planning — building incident response capability"
+        }
+      ]
+    },
+    {
+      "id": "incident_type",
+      "type": "select",
+      "label": "Type of incident",
+      "options": [
+        {
+          "value": "ransomware",
+          "label": "Ransomware / Malware"
+        },
+        {
+          "value": "data_breach",
+          "label": "Data breach / Unauthorised access"
+        },
+        {
+          "value": "ddos",
+          "label": "DDoS / Availability disruption"
+        },
+        {
+          "value": "insider",
+          "label": "Insider threat / Privileged abuse"
+        },
+        {
+          "value": "supply_chain",
+          "label": "Third-party / Supply chain compromise"
+        },
+        {
+          "value": "bec",
+          "label": "Business Email Compromise / Fraud"
+        },
+        {
+          "value": "system_failure",
+          "label": "Critical system failure / Outage"
+        },
+        {
+          "value": "other",
+          "label": "Other / Unknown"
+        }
+      ]
+    },
+    {
+      "id": "is_dora_reportable",
+      "type": "toggle",
+      "label": "Is this potentially a DORA major incident? (significant disruption to critical functions)"
+    },
+    {
+      "id": "incident_context",
+      "type": "textarea",
+      "label": "Incident description and current situation",
+      "placeholder": "Describe what happened, when, what systems are affected, what actions have been taken so far."
+    }
+  ],
+  "recommendedPersonas": [
+    "devil-advocate",
+    "auditor"
+  ],
+  "tags": [
+    "incident-response",
+    "dora",
+    "cyber",
+    "breach",
+    "crisis-management",
+    "root-cause"
+  ]
+}

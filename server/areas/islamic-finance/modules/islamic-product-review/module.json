@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "islamic-product-review",
+  "label": "Islamic Product Review",
+  "shortLabel": "Product Review",
+  "icon": "ClipboardCheck",
+  "description": "Detailed review of Islamic finance products for Sharia compliance, documentation completeness, regulatory requirements, and operational soundness.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "decision-memo"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AAOIFI Sharia Standards by product type, national Sharia board resolutions, product documentation requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "label": "Product Type",
+      "type": "select",
+      "options": ["Murabaha", "Ijara", "Musharakah", "Mudarabah", "Tawarruq", "Istisna", "Salam", "Qard"],
+      "required": true
+    },
+    {
+      "id": "product_stage",
+      "label": "Review Stage",
+      "type": "select",
+      "options": ["New Product", "Existing Product Review", "Product Modification"],
+      "required": true
+    },
+    {
+      "id": "concern_areas",
+      "label": "Specific Concerns",
+      "type": "textarea",
+      "placeholder": "Specific Sharia or regulatory concerns to address",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer"],
+  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
+  "tags": ["product-review", "sharia", "murabaha", "ijara", "tawarruq", "istisna", "salam", "documentation", "compliance"]
+}

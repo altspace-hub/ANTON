@@ -1,0 +1,87 @@
+{
+  "formatVersion": "1.0",
+  "id": "csrd-data-collector",
+  "label": "CSRD Data Collection Orchestrator",
+  "shortLabel": "CSRD Data",
+  "description": "Structures CSRD (Corporate Sustainability Reporting Directive) data collection across departments. Maps ESRS requirements to data sources, owners, and collection methods.",
+  "icon": "Database",
+  "color": "adv-green",
+  "areaId": "esg",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan",
+      "monitoring-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "ESRS standards, EFRAG guidance, CSRD Directive 2022/2464, EFRAG Q&A"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "company_type",
+      "type": "select",
+      "label": "Entity type",
+      "required": true,
+      "options": [
+        { "value": "large_listed", "label": "Large listed company (>500 employees)" },
+        { "value": "large_unlisted", "label": "Large non-listed company" },
+        { "value": "sme_listed", "label": "Listed SME" },
+        { "value": "non_eu", "label": "Non-EU parent (>EUR 150M EU turnover)" },
+        { "value": "financial", "label": "Financial institution (bank, insurer, asset manager)" }
+      ]
+    },
+    {
+      "id": "reporting_year",
+      "type": "text",
+      "label": "First CSRD reporting year",
+      "required": true,
+      "placeholder": "e.g., 2024, 2025, 2026"
+    },
+    {
+      "id": "material_topics",
+      "type": "textarea",
+      "label": "Material ESRS topics (from your Double Materiality Assessment)",
+      "placeholder": "List the ESRS topics that your Double Materiality Assessment identified as material. If not yet completed, describe your business and I will suggest likely material topics.\n\nExample: Climate change (E1), Own workforce (S1), Business conduct (G1)"
+    },
+    {
+      "id": "current_data_state",
+      "type": "textarea",
+      "label": "Current data collection state",
+      "placeholder": "What sustainability data do you already collect? What systems store it? Who is currently responsible? Are you already reporting under GRI, TCFD, or other frameworks?"
+    },
+    {
+      "id": "departments",
+      "type": "textarea",
+      "label": "Key departments / functions",
+      "placeholder": "List the main departments that will need to provide data (e.g., Finance, HR, Facilities/Real Estate, Procurement, IT, Operations, Risk, Investor Relations)"
+    },
+    {
+      "id": "specific_challenge",
+      "type": "textarea",
+      "label": "Specific challenge or focus area",
+      "placeholder": "e.g., Scope 3 data collection is our biggest challenge, we don't know how to map ESRS requirements to our existing systems, we need to set up a data governance process"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "csrd",
+    "esrs",
+    "data-collection",
+    "sustainability",
+    "reporting",
+    "data-governance"
+  ]
+}

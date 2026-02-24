@@ -1,0 +1,88 @@
+{
+  "formatVersion": "1.0",
+  "id": "management-presentation",
+  "label": "Management Presentation",
+  "shortLabel": "Presentation",
+  "icon": "Presentation",
+  "description": "Convert analysis findings into structured management presentations. Generate slide-by-slide content with speaker notes, RAG tables, and export to PowerPoint.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "management-presentation",
+      "stakeholder-presentation"
+    ],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "audience",
+      "type": "select",
+      "label": "Presentation Audience",
+      "required": true,
+      "options": [
+        {
+          "value": "board",
+          "label": "Board / Board Risk Committee"
+        },
+        {
+          "value": "exco",
+          "label": "Executive / Senior Management"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator / Supervisor"
+        },
+        {
+          "value": "audit",
+          "label": "Audit Committee / Internal Audit"
+        },
+        {
+          "value": "client",
+          "label": "Client"
+        },
+        {
+          "value": "team",
+          "label": "Project / Delivery Team"
+        }
+      ]
+    },
+    {
+      "id": "findings_summary",
+      "type": "textarea",
+      "label": "Findings to Present",
+      "required": true,
+      "placeholder": "Paste or summarize the key findings, conclusions, and recommendations you want to present..."
+    },
+    {
+      "id": "slide_count",
+      "type": "number",
+      "label": "Target Slide Count",
+      "placeholder": "e.g. 12",
+      "defaultValue": 10
+    }
+  ],
+  "recommendedPersonas": [
+    "cco",
+    "fcp-expert"
+  ],
+  "tags": [
+    "presentation",
+    "management",
+    "board",
+    "slides"
+  ]
+}

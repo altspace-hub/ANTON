@@ -1,0 +1,158 @@
+{
+  "formatVersion": "1.0",
+  "id": "compliance-framework",
+  "label": "Compliance Framework Builder",
+  "shortLabel": "Compliance Framework",
+  "description": "Design or restructure compliance frameworks: policy hierarchies, control architectures, three lines of defence, monitoring programmes, and governance structures.",
+  "icon": "LayoutDashboard",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution type",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "payment",
+          "label": "Payment Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "fund",
+          "label": "Fund Manager"
+        },
+        {
+          "value": "corporate",
+          "label": "Large Corporate (non-financial)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "framework_scope",
+      "type": "multi-select",
+      "label": "Framework scope areas",
+      "description": "Which compliance domains should the framework cover?",
+      "options": [
+        {
+          "value": "aml",
+          "label": "AML/CFT"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions"
+        },
+        {
+          "value": "mifid",
+          "label": "MiFID / Conduct"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR / Data Protection"
+        },
+        {
+          "value": "dora",
+          "label": "DORA / Operational Resilience"
+        },
+        {
+          "value": "consumer",
+          "label": "Consumer Protection"
+        },
+        {
+          "value": "market_abuse",
+          "label": "Market Abuse / MAR"
+        },
+        {
+          "value": "prudential",
+          "label": "Prudential / Capital"
+        }
+      ]
+    },
+    {
+      "id": "task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "design",
+          "label": "Design a new framework from scratch"
+        },
+        {
+          "value": "review",
+          "label": "Review and assess existing framework"
+        },
+        {
+          "value": "gap",
+          "label": "Gap analysis against regulatory requirements"
+        },
+        {
+          "value": "policy_hierarchy",
+          "label": "Policy hierarchy and document structure"
+        },
+        {
+          "value": "controls",
+          "label": "Control design and mapping"
+        },
+        {
+          "value": "monitoring",
+          "label": "Compliance monitoring programme"
+        }
+      ]
+    },
+    {
+      "id": "current_state",
+      "type": "textarea",
+      "label": "Current state description",
+      "description": "Briefly describe what is in place today — policies, committees, testing, reporting.",
+      "placeholder": "e.g., We have an AML policy from 2021 and a compliance committee but no structured monitoring programme. No DORA framework exists."
+    }
+  ],
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "compliance",
+    "framework",
+    "governance",
+    "three-lines",
+    "policy"
+  ]
+}

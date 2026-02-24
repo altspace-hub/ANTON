@@ -1,0 +1,162 @@
+{
+  "formatVersion": "1.0",
+  "id": "audit-planning",
+  "label": "Audit Planning",
+  "shortLabel": "Audit Plan",
+  "description": "Design risk-based audit plans for internal audits, compliance reviews, and thematic examinations. Includes scope, methodology, resource allocation, and timeline.",
+  "icon": "ClipboardList",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "maturity-assessment"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "audit_type",
+      "type": "select",
+      "label": "Type of audit",
+      "required": true,
+      "options": [
+        {
+          "value": "internal_compliance",
+          "label": "Internal Audit — Compliance"
+        },
+        {
+          "value": "internal_operational",
+          "label": "Internal Audit — Operational"
+        },
+        {
+          "value": "internal_financial",
+          "label": "Internal Audit — Financial"
+        },
+        {
+          "value": "internal_it",
+          "label": "Internal Audit — IT / Cyber"
+        },
+        {
+          "value": "regulatory_exam",
+          "label": "Regulatory Examination Preparation"
+        },
+        {
+          "value": "thematic_review",
+          "label": "Thematic Review"
+        },
+        {
+          "value": "follow_up",
+          "label": "Follow-Up Audit"
+        }
+      ]
+    },
+    {
+      "id": "scope_areas",
+      "type": "multi-select",
+      "label": "Scope areas",
+      "description": "Which areas should the audit cover?",
+      "options": [
+        {
+          "value": "aml",
+          "label": "AML/CFT"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions"
+        },
+        {
+          "value": "credit_risk",
+          "label": "Credit Risk"
+        },
+        {
+          "value": "operational_risk",
+          "label": "Operational Risk"
+        },
+        {
+          "value": "it_cyber",
+          "label": "IT & Cyber / DORA"
+        },
+        {
+          "value": "data_governance",
+          "label": "Data Governance"
+        },
+        {
+          "value": "financial_reporting",
+          "label": "Financial Reporting"
+        },
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing / Third Party"
+        },
+        {
+          "value": "governance",
+          "label": "Governance & Internal Controls"
+        },
+        {
+          "value": "customer_protection",
+          "label": "Customer Protection / Conduct"
+        }
+      ]
+    },
+    {
+      "id": "entity_context",
+      "type": "textarea",
+      "label": "Entity context",
+      "description": "Brief description of the entity: size, business model, regulatory status, known risk areas.",
+      "placeholder": "e.g., Mid-sized Swedish bank, 800 employees, retail and SME lending focus, recent FI examination on AML controls..."
+    },
+    {
+      "id": "prior_findings",
+      "type": "toggle",
+      "label": "Are there prior audit findings to consider?"
+    },
+    {
+      "id": "time_budget",
+      "type": "select",
+      "label": "Available audit time",
+      "options": [
+        {
+          "value": "1_2_weeks",
+          "label": "1-2 weeks"
+        },
+        {
+          "value": "3_4_weeks",
+          "label": "3-4 weeks"
+        },
+        {
+          "value": "5_8_weeks",
+          "label": "5-8 weeks"
+        },
+        {
+          "value": "8_plus",
+          "label": "8+ weeks"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "fsa-regulator"
+  ],
+  "tags": [
+    "audit",
+    "planning",
+    "risk-based",
+    "internal-audit",
+    "iia"
+  ]
+}

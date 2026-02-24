@@ -1,0 +1,16 @@
+{
+  "formatVersion": "1.0",
+  "id": "government-services",
+  "name": "Government Services Navigator",
+  "shortName": "Gov Services",
+  "description": "Navigate government services confidently. Get IDs, access subsidies, file complaints, understand your rights in courts, and report corruption — in plain language by country.",
+  "icon": "Building2",
+  "color": "adv-teal",
+  "cluster": "rights",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Basic navigation works well with haiku. Complex legal matters need sonnet."
+  }
+}

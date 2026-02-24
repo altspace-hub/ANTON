@@ -1,0 +1,93 @@
+{
+  "formatVersion": "1.0",
+  "id": "soil-health-assessment",
+  "label": "Soil Health Assessment",
+  "shortLabel": "Soil Health",
+  "icon": "Layers",
+  "description": "Is my soil healthy? Simple tests you can do yourself to understand your soil and improve it without expensive lab tests.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Soil health assessment, simple field tests, composting, organic soil improvement, soil types and structure for smallholder farming" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "region",
+      "label": "Where is your farm?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "east-africa", "label": "East Africa" },
+        { "value": "west-africa", "label": "West Africa" },
+        { "value": "southern-africa", "label": "Southern Africa" },
+        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
+        { "value": "southeast-asia", "label": "Southeast Asia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "soil_colour",
+      "label": "What colour is your soil?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "dark-brown-black", "label": "Dark brown or black (rich)" },
+        { "value": "light-brown", "label": "Light brown" },
+        { "value": "reddish", "label": "Reddish" },
+        { "value": "pale-yellow", "label": "Pale or yellow" },
+        { "value": "grey", "label": "Grey" },
+        { "value": "clay-grey", "label": "Clay grey (sits in water)" }
+      ]
+    },
+    {
+      "id": "what_grows_now",
+      "label": "How are your crops growing?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "good-crops", "label": "Good crops, healthy plants" },
+        { "value": "weak-thin", "label": "Weak or thin crops" },
+        { "value": "almost-nothing", "label": "Almost nothing grows well" },
+        { "value": "mixed", "label": "Some areas good, some bad" }
+      ]
+    },
+    {
+      "id": "crop_history",
+      "label": "What has been planted before?",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "same-crop-3-years", "label": "Same crop for 3 or more years" },
+        { "value": "rotated", "label": "Rotated different crops" },
+        { "value": "new-land", "label": "New land, never farmed" },
+        { "value": "was-forest-grassland", "label": "Was forest or grassland" }
+      ]
+    },
+    {
+      "id": "concern",
+      "label": "What is your main concern?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "low-yields", "label": "Low yields year after year" },
+        { "value": "hard-soil", "label": "Soil feels very hard" },
+        { "value": "waterlogging", "label": "Water sits on the field" },
+        { "value": "erosion", "label": "Soil washing away" },
+        { "value": "all", "label": "All of these issues" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["soil-health", "composting", "green-manure", "soil-testing", "organic-matter", "erosion", "waterlogging", "fertility", "smallholder", "no-cost-improvement"]
+}

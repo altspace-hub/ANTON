@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "grazing-pasture-management",
+  "label": "Grazing & Pasture Management",
+  "shortLabel": "Pasture",
+  "icon": "Sprout",
+  "description": "Manage your grazing land sustainably. Rotational grazing, pasture improvement, and dry-season strategies.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Rotational grazing, stocking rates, improved pasture grasses (Napier, Brachiaria), hay making, silage basics, water point management, zero-grazing cut-and-carry, communal grazing challenges in Africa and South Asia" }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "ethiopia", "label": "Ethiopia" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "land_type",
+      "label": "What type of land do you have?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "small-plot", "label": "Small plot (under 2 ha)" },
+        { "value": "medium", "label": "Medium (2–10 ha)" },
+        { "value": "communal-grazing", "label": "Large communal grazing" },
+        { "value": "tethered-zero", "label": "Tethered / zero grazing" },
+        { "value": "no-land", "label": "No land (buy all feed)" }
+      ]
+    },
+    {
+      "id": "animal_type",
+      "label": "What type of animal?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "cattle", "label": "Cattle / Cows" },
+        { "value": "goats", "label": "Goats" },
+        { "value": "sheep", "label": "Sheep" },
+        { "value": "mixed", "label": "Mixed herd" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "problem",
+      "label": "What is your main challenge?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "overgrazing", "label": "Overgrazing" },
+        { "value": "dry-season", "label": "Dry season shortage" },
+        { "value": "poor-quality", "label": "Poor quality pasture" },
+        { "value": "soil-erosion", "label": "Soil erosion" },
+        { "value": "all", "label": "All of these" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
+  "tags": ["grazing", "pasture", "rotational-grazing", "land-management", "dry-season", "feed", "bop", "livestock", "africa", "south-asia"]
+}

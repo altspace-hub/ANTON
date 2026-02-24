@@ -1,0 +1,890 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "briefMe": "Tóm tắt nhanh",
+    "guideMe": "Hướng dẫn",
+    "openChat": "Trò chuyện mở",
+    "workflows": "Quy trình làm việc",
+    "projects": "Dự án",
+    "buildModule": "Xây dựng module",
+    "skillsLibrary": "Thư viện kỹ năng",
+    "batchCreate": "Tạo hàng loạt",
+    "auditLog": "Nhật ký kiểm toán",
+    "exchange": "Trao đổi",
+    "fillForm": "Điền biểu mẫu này",
+    "challengeThis": "Thách thức điều này",
+    "dualInterpret": "Diễn giải kép",
+    "reviewEngine": "Công cụ đánh giá",
+    "soundingBoard": "Bảng tham vấn",
+    "analytics": "Phân tích",
+    "dataInsights": "Thông tin chi tiết dữ liệu",
+    "recentSessions": "Phiên gần đây",
+    "noRecentSessions": "Không có phiên gần đây",
+    "expandSidebar": "Mở rộng thanh bên",
+    "collapseSidebar": "Thu gọn thanh bên",
+    "closeSidebar": "Đóng thanh bên",
+    "openSidebar": "Mở thanh bên",
+    "setupProfile": "Thiết lập hồ sơ của bạn"
+  },
+  "header": {
+    "appName": "Anton",
+    "apiConnected": "API đã kết nối",
+    "apiNotConfigured": "API chưa được cấu hình",
+    "switchToLight": "Chuyển sang chế độ sáng",
+    "switchToCorporate": "Chuyển sang chế độ doanh nghiệp",
+    "switchToDark": "Chuyển sang chế độ tối",
+    "settings": "Cài đặt",
+    "buildModule": "Xây dựng module",
+    "skillsLibrary": "Thư viện kỹ năng",
+    "projects": "Dự án",
+    "workflows": "Quy trình làm việc",
+    "openChat": "Trò chuyện mở"
+  },
+  "dashboard": {
+    "title": "Anton",
+    "byLine": "bởi openEXPERT",
+    "subtitle": "Phân tích chuyên gia được hỗ trợ bởi AI. Chọn một module để bắt đầu hoặc tiếp tục phiên gần đây.",
+    "sessions": "Phiên",
+    "aiResponses": "Phản hồi AI",
+    "outputTokens": "Token đầu ra",
+    "thisWeek": "Tuần này",
+    "thisMonth": "Tháng này",
+    "favourites": "Yêu thích",
+    "searchPlaceholder": "Tìm kiếm module — ví dụ: GDPR, kiểm tra áp lực, đánh giá hợp đồng...",
+    "noModulesMatch": "Không có module phù hợp",
+    "clearSearch": "Xóa tìm kiếm",
+    "communityModules": "Module cộng đồng",
+    "community": "Cộng đồng",
+    "openModule": "Mở module",
+    "recentSessions": "Phiên gần đây",
+    "noSessionsYet": "Chưa có phiên nào. Bắt đầu bằng cách chọn một module ở trên.",
+    "renameSession": "Đổi tên phiên",
+    "deleteSession": "Xóa phiên",
+    "removeFromFavourites": "Xóa khỏi yêu thích",
+    "addToFavourites": "Thêm vào yêu thích",
+    "modules": "module",
+    "starterPacks": "Gói khởi đầu",
+    "personalised": "Được cá nhân hóa",
+    "completeProfileToPersonalise": "Hoàn thành",
+    "profileLink": "hồ sơ",
+    "toPersonalise": "của bạn để cá nhân hóa",
+    "show": "Hiển thị",
+    "hide": "Ẩn",
+    "forYou": "Dành cho bạn",
+    "getStarted": "Bắt đầu",
+    "roiThisMonth": "ROI tháng này",
+    "roiDescription": "openEXPERT đã tiết kiệm cho bạn khoảng",
+    "roiHours": "giờ",
+    "roiThisMonthLabel": "trong tháng này (giá trị ước tính:",
+    "roiAtRate": "ở mức",
+    "roiPerHour": "/giờ).",
+    "roiApiCost": "Chi phí API:",
+    "roiRatioSuffix": "giờ tiết kiệm được trên mỗi €1 chi tiêu"
+  },
+  "module": {
+    "runAnalysis": "Chạy phân tích",
+    "send": "Gửi",
+    "stop": "Dừng",
+    "thinking": "Mức độ suy nghĩ",
+    "creativity": "Sáng tạo",
+    "model": "Mô hình",
+    "knowledgeSources": "Nguồn kiến thức",
+    "outputFormats": "Định dạng đầu ra",
+    "systemPrompt": "Lời nhắc hệ thống",
+    "transparencyLevel": "Tính minh bạch lập luận",
+    "transparencyOff": "Tắt",
+    "transparencySummary": "Tóm tắt",
+    "transparencyDetailed": "Chi tiết",
+    "advancedSettings": "Cài đặt nâng cao",
+    "files": "Tệp & Thư mục",
+    "moduleSettings": "Cài đặt module",
+    "customModule": "Module tùy chỉnh",
+    "moduleNotFound": "Không tìm thấy module.",
+    "describeTask": "Mô tả nhiệm vụ phân tích của bạn",
+    "followUp": "Tin nhắn tiếp theo",
+    "describeTaskPlaceholder": "ví dụ: Phân tích chính sách AML của chúng tôi theo các yêu cầu AMLR cho ngân hàng Bắc Âu với dịch vụ ngân hàng bán lẻ và doanh nghiệp...",
+    "followUpPlaceholder": "Đặt câu hỏi tiếp theo hoặc yêu cầu thay đổi...",
+    "outputWillAppear": "Kết quả sẽ xuất hiện ở đây.",
+    "configureAndRun": "Cấu hình cài đặt, mô tả nhiệm vụ của bạn và nhấp Chạy.",
+    "reviewStatus": "Trạng thái đánh giá",
+    "draft": "Bản nháp",
+    "reviewed": "Đã đánh giá",
+    "approved": "Đã phê duyệt",
+    "markReviewed": "Đánh dấu đã đánh giá",
+    "approve": "Phê duyệt",
+    "saveAsModule": "Lưu làm module tùy chỉnh",
+    "saved": "Đã lưu!",
+    "moduleName": "Tên module...",
+    "saving": "Đang lưu...",
+    "save": "Lưu",
+    "saveAsModuleDesc": "Lưu lời nhắc hệ thống, persona, kỹ năng và định dạng đầu ra của phiên này làm module tùy chỉnh có thể tái sử dụng.",
+    "tokens": "token",
+    "approachingLimit": "Sắp đạt giới hạn",
+    "reframeFor": "Định hình lại cho:",
+    "voiceInput": "Đầu vào bằng giọng nói",
+    "stopRecording": "Dừng ghi âm",
+    "reframeBoard": "Hội đồng quản trị",
+    "reframeCustomer": "Khách hàng",
+    "reframeEmployee": "Nhân viên",
+    "reframeTechnical": "Kỹ thuật",
+    "thinkingControls": {
+      "label": "Claude nên phân tích sâu đến mức nào?",
+      "quick": {
+        "label": "Nhanh",
+        "description": "Phản hồi nhanh, phân tích tối thiểu"
+      },
+      "think": {
+        "label": "Suy nghĩ",
+        "description": "Độ sâu phân tích tiêu chuẩn"
+      },
+      "thinkHard": {
+        "label": "Suy nghĩ kỹ",
+        "description": "Phân tích sâu với lý luận cẩn thận"
+      },
+      "investigate": {
+        "label": "Điều tra",
+        "description": "Điều tra kỹ lưỡng, độ sâu tối đa"
+      },
+      "planFirst": {
+        "label": "Lập kế hoạch trước",
+        "description": "Tạo kế hoạch rõ ràng trước khi thực hiện"
+      }
+    },
+    "modelSelector": {
+      "label": "Mô hình",
+      "recommended": "Được đề xuất",
+      "inputCost": "đầu vào",
+      "outputCost": "đầu ra",
+      "perMillion": "/M",
+      "localOllama": "Cục bộ (Ollama)",
+      "ollamaNotRunning": "Khởi động Ollama để sử dụng các mô hình cục bộ.",
+      "getOllama": "Tải Ollama",
+      "ollamaThen": "sau đó chạy",
+      "ollamaPullCommand": "ollama pull llama3.2",
+      "freeLabelLocal": "Miễn phí · Cục bộ",
+      "noApiKey": "Không cần khóa API. Chạy trên máy của bạn."
+    },
+    "knowledgeSource": {
+      "title": "Nguồn kiến thức",
+      "subtitle": "Claude nên tìm văn bản quy định và tài liệu tham khảo ở đâu?",
+      "claudeKnowledge": {
+        "title": "Kiến thức riêng của Claude",
+        "description": "Claude sử dụng kiến thức tích hợp sẵn về quy định, hướng dẫn và khung pháp lý.",
+        "webSearch": "Bật tìm kiếm web (Claude tìm kiếm trên internet để tìm các ấn phẩm mới nhất)",
+        "focusArea": "Lĩnh vực tập trung (tùy chọn):",
+        "focusPlaceholder": "ví dụ: Quy định AMLR 2024/1624, tham vấn RTS AMLA"
+      },
+      "onlineReference": {
+        "title": "Liên kết Quy định / Tài liệu trực tuyến",
+        "description": "Dán URL đến văn bản quy định, hướng dẫn hoặc tài liệu trực tuyến cụ thể.",
+        "urlPlaceholder": "https://eur-lex.europa.eu/...",
+        "add": "Thêm",
+        "fullText": "Toàn văn",
+        "summaryOnly": "Chỉ tóm tắt",
+        "eurLexQuickLoad": "Tải nhanh từ EUR-Lex:",
+        "regulations": {
+          "amlr": "AMLR",
+          "dora": "DORA",
+          "mica": "MiCA",
+          "gdpr": "GDPR",
+          "amld6": "6AMLD",
+          "nis2": "NIS2"
+        }
+      },
+      "localFolder": {
+        "title": "Thư mục cục bộ",
+        "description": "Trỏ đến thư mục trên máy tính của bạn chứa văn bản quy định, tài liệu khách hàng hoặc tài liệu tham khảo.",
+        "pathPlaceholder": "C:\\Users\\...\\Documents\\Regulations",
+        "add": "Thêm",
+        "includeSubfolders": "Bao gồm thư mục con"
+      },
+      "combinedMode": {
+        "title": "Kết hợp: Tìm kiếm + Tài liệu cục bộ",
+        "description": "Claude sử dụng kiến thức của nó VÀ tài liệu cục bộ của bạn. Tốt nhất để so sánh tài liệu khách hàng với quy định.",
+        "localFirst": "Tài liệu cục bộ trước",
+        "merged": "Được hợp nhất",
+        "claudeFirst": "Claude trước",
+        "specialInstructions": "Hướng dẫn đặc biệt (tùy chọn):",
+        "instructionsPlaceholder": "ví dụ: So sánh chính sách của khách hàng với quy định. Nơi nào tài liệu khách hàng không đề cập, sử dụng văn bản quy định để xác định khoảng trống."
+      },
+      "indexedKnowledge": {
+        "title": "Cơ sở kiến thức được lập chỉ mục (Thư mục)",
+        "description": "Tìm kiếm ngữ nghĩa trong thư viện tài liệu được lập chỉ mục của bạn. Truy xuất các đoạn liên quan nhất — không phải toàn bộ tài liệu.",
+        "badge": "Chế độ 5a",
+        "retrieve": "Truy xuất",
+        "passages": "đoạn",
+        "focused": "tập trung",
+        "broad": "rộng",
+        "loadingFolders": "Đang tải thư mục được lập chỉ mục...",
+        "notYetIndexed": "Chưa được lập chỉ mục",
+        "indexNow": "Lập chỉ mục ngay",
+        "indexing": "Đang lập chỉ mục...",
+        "reindex": "Lập chỉ mục lại",
+        "docs": "tài liệu",
+        "chunks": "phần",
+        "indexed": "đã lập chỉ mục",
+        "folderSelected": "thư mục được chọn để tìm kiếm",
+        "foldersSelected": "thư mục được chọn để tìm kiếm",
+        "noIndexedFolders": "Chưa có thư mục được lập chỉ mục. Thêm thư mục trong Chế độ 3 (Thư mục cục bộ) trước, sau đó lập chỉ mục ở đây để tìm kiếm ngữ nghĩa.",
+        "justNow": "vừa xong",
+        "minutesAgo": "p trước",
+        "hoursAgo": "g trước",
+        "daysAgo": "n trước"
+      },
+      "knowledgeCollections": {
+        "title": "Bộ sưu tập kiến thức (RAG)",
+        "description": "Tìm kiếm ngữ nghĩa trong các bộ sưu tập kiến thức có tổ chức với truy xuất tự động trong quá trình thực thi module.",
+        "badge": "Chế độ 5b"
+      }
+    },
+    "creativitySlider": {
+      "label": "Phong cách viết",
+      "strict": {
+        "label": "Nghiêm ngặt",
+        "description": "Chính xác, theo sự thật, ngôn ngữ quy định chính thức"
+      },
+      "balanced": {
+        "label": "Cân bằng",
+        "description": "Chính xác và dễ tiếp cận, chuyên nghiệp nhưng dễ đọc"
+      },
+      "creative": {
+        "label": "Sáng tạo",
+        "description": "Hấp dẫn với các ví dụ thực tế, duy trì độ chính xác"
+      }
+    }
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "saved": "Đã lưu",
+    "apiConnection": "Kết nối API",
+    "refresh": "Làm mới",
+    "anthropicApiKey": "Khóa API Anthropic",
+    "configured": "Đã cấu hình",
+    "notConfigured": "Chưa cấu hình",
+    "database": "Cơ sở dữ liệu",
+    "connected": "Đã kết nối",
+    "notConnected": "Chưa kết nối",
+    "version": "Phiên bản",
+    "addApiKeyHint": "Thêm khóa API Anthropic của bạn vào tệp",
+    "envFile": ".env",
+    "file": ":",
+    "additionalProviders": "Nhà cung cấp AI bổ sung",
+    "additionalProvidersDesc": "Cấu hình khóa API để sử dụng mô hình OpenAI, Google Gemini hoặc Mistral. Khóa chỉ được lưu trong bộ nhớ máy chủ (runtime).",
+    "openai": "OpenAI",
+    "googleAi": "Google AI",
+    "mistral": "Mistral",
+    "save": "Lưu",
+    "defaultSettings": "Cài đặt mặc định",
+    "defaultSettingsDesc": "Các giá trị mặc định này được áp dụng khi mở phiên module mới.",
+    "defaultModel": "Mô hình mặc định",
+    "defaultThinking": "Suy nghĩ mặc định",
+    "defaultCreativity": "Sáng tạo mặc định",
+    "language": "Ngôn ngữ",
+    "languageDesc": "Chọn ngôn ngữ giao diện. Nội dung module vẫn bằng tiếng Anh.",
+    "english": "English",
+    "svenska": "Svenska",
+    "francais": "Français",
+    "deutsch": "Deutsch",
+    "italiano": "Italiano",
+    "espanol": "Español",
+    "hindi": "हिन्दी",
+    "portugues": "Português",
+    "polski": "Polski",
+    "urdu": "اردو",
+    "deployment": "Triển khai",
+    "deploymentDesc": "Chế độ triển khai hiện tại xác định các tính năng có sẵn.",
+    "mode": "Chế độ",
+    "team": "Nhóm",
+    "solo": "Đơn lẻ",
+    "soloModeDesc": "Chế độ đơn lẻ: Thiết lập người dùng đơn. Tất cả tính năng có sẵn mà không cần đăng nhập. Nhật ký kiểm toán theo dõi việc sử dụng và chi phí cá nhân của bạn.",
+    "teamModeDesc": "Chế độ nhóm: Thiết lập nhiều người dùng với nhật ký kiểm toán đầy đủ, phân bổ người dùng khi đánh giá và quản lý phiên chia sẻ.",
+    "theme": "Giao diện",
+    "themeDesc": "Chọn bảng màu ứng dụng.",
+    "myProfile": "Hồ sơ của tôi",
+    "general": "Chung",
+    "navigation": "Điều hướng",
+    "teamTab": "Nhóm",
+    "teamMembers": "Thành viên nhóm",
+    "addUser": "Thêm người dùng",
+    "newUser": "Người dùng mới",
+    "username": "Tên người dùng",
+    "password": "Mật khẩu",
+    "displayName": "Tên hiển thị",
+    "role": "Vai trò",
+    "monthlyTokenBudget": "Ngân sách token hàng tháng (0 = không giới hạn)",
+    "createUser": "Tạo người dùng",
+    "cancel": "Hủy",
+    "loading": "Đang tải...",
+    "usernameCol": "Tên người dùng",
+    "displayNameCol": "Tên hiển thị",
+    "roleCol": "Vai trò",
+    "budgetCol": "Ngân sách (token)",
+    "usedThisMonthCol": "Đã sử dụng tháng này",
+    "lastLoginCol": "Đăng nhập lần cuối",
+    "actionsCol": "Hành động",
+    "unlimited": "Không giới hạn",
+    "never": "Chưa bao giờ",
+    "resetPassword": "Đặt lại mật khẩu",
+    "deleteUser": "Xóa người dùng",
+    "usageThisMonth": "Sử dụng tháng này",
+    "noUsageRecorded": "Chưa ghi nhận sử dụng nào.",
+    "save2": "Lưu",
+    "budget": "Ngân sách",
+    "budgetDesc": "Đặt giới hạn chi tiêu AI hàng tháng bằng EUR. Khi đạt giới hạn, các yêu cầu mới sẽ bị chặn. Đặt 0 để không giới hạn.",
+    "spendingThisMonth": "Chi tiêu tháng này",
+    "budgetCapReached": "Đã đạt giới hạn ngân sách hàng tháng. Các yêu cầu AI mới bị chặn cho đến tháng sau.",
+    "over80Pct": "Đã sử dụng hơn 80% ngân sách hàng tháng.",
+    "noSpendingLimit": "Chưa đặt giới hạn chi tiêu.",
+    "monthlyBudgetCap": "Giới hạn ngân sách AI hàng tháng (€)",
+    "noLimit": "Không giới hạn",
+    "zeroNoLimit": "0 = không giới hạn (chi tiêu không hạn chế)",
+    "saving": "Đang lưu...",
+    "notifications": "Thông báo",
+    "notificationsDesc": "Cấu hình thông báo email cho các phân tích chạy dài.",
+    "emailNotification": "Gửi email cho tôi khi phân tích dài hoàn thành",
+    "emailNotificationDesc": "Nhận thông báo email khi Claude hoàn thành một nhiệm vụ dài. Yêu cầu SMTP được cấu hình trong tệp .env của bạn.",
+    "brandTemplates": "Mẫu thương hiệu",
+    "brandTemplatesDesc": "Tải lên mẫu .docx hoặc .pptx của công ty bạn. Sử dụng \"Xuất bằng mẫu\" trong thanh xuất để chèn kết quả của Claude vào các tệp có thương hiệu của bạn.",
+    "uploadTemplate": "Tải lên mẫu",
+    "uploading": "Đang tải lên...",
+    "noTemplatesYet": "Chưa tải lên mẫu nào.",
+    "deleteTemplate": "Xóa mẫu",
+    "navConfig": {
+      "title": "Mục điều hướng",
+      "description": "Ẩn các mục bạn không sử dụng để đơn giản hóa thanh bên của bạn.",
+      "visibleCount": "{visible} trong số {total} hiển thị",
+      "refreshToApply": "Làm mới để áp dụng",
+      "showAll": "Hiển thị tất cả",
+      "show": "Hiển thị",
+      "hide": "Ẩn",
+      "categories": {
+        "interaction": "Chế độ tương tác",
+        "tools": "Công cụ & Quy trình làm việc",
+        "features": "Tính năng",
+        "intelligence": "Thông minh & Thông tin chi tiết",
+        "admin": "Quản trị & Phân tích"
+      }
+    }
+  },
+  "brief": {
+    "title": "Tóm tắt nhanh",
+    "subtitle": "Hỏi bất cứ điều gì — nhận kết quả có cấu trúc cấp chuyên gia ngay lập tức",
+    "placeholder": "Hỏi bất cứ điều gì — ví dụ: 'Những nghĩa vụ AMLR chính cho các tổ chức thanh toán là gì?'",
+    "askAnton": "Hỏi Anton",
+    "goDeeper": "Đi sâu hơn với module đầy đủ",
+    "ctrlEnter": "Ctrl+Enter để gửi",
+    "whatDoYouNeed": "Bạn cần giúp gì?",
+    "emptyStateDesc": "Đặt bất kỳ câu hỏi chuyên nghiệp nào bằng ngôn ngữ đơn giản. Anton sẽ phản hồi bằng hướng dẫn có cấu trúc cấp chuyên gia — không cần cấu hình.",
+    "thinking": "đang suy nghĩ...",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "downloadMd": ".md",
+    "stop": "Dừng"
+  },
+  "guide": {
+    "title": "Hướng dẫn",
+    "subtitle": "Hãy để chúng tôi tìm module phù hợp cho nhiệm vụ của bạn",
+    "step1": "Bạn cần giúp gì?",
+    "step2": "Loại đầu ra nào?",
+    "step3": "Điều gì mô tả bạn tốt nhất?",
+    "findModules": "Tìm module phù hợp",
+    "useThis": "Mở module này",
+    "back": "Quay lại"
+  },
+  "batch": {
+    "title": "Tạo hàng loạt",
+    "subtitle": "Chạy cùng một module N lần với các đầu vào khác nhau từ CSV",
+    "uploadCsv": "Tải lên CSV",
+    "selectModule": "Chọn module",
+    "configure": "Cấu hình mẫu",
+    "runBatch": "Chạy hàng loạt",
+    "downloadAll": "Tải xuống tất cả kết quả"
+  },
+  "share": {
+    "sharedAnalysis": "Phân tích được chia sẻ",
+    "createdWith": "Được tạo bằng openEXPERT",
+    "expired": "Liên kết chia sẻ này đã hết hạn hoặc không tồn tại",
+    "loading": "Đang tải phân tích được chia sẻ..."
+  },
+  "export": {
+    "exportAs": "Xuất dưới dạng",
+    "export": "Xuất:",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép!",
+    "download": "Tải xuống",
+    "withTemplate": "Với mẫu",
+    "exporting": "Đang xuất...",
+    "chooseBrandTemplate": "Chọn mẫu thương hiệu",
+    "share": "Chia sẻ",
+    "sharing": "Đang chia sẻ...",
+    "linkCopied": "Đã sao chép liên kết!",
+    "copyShareableLink": "Sao chép liên kết có thể chia sẻ vào clipboard",
+    "explainDifferently": "Giải thích theo cách khác",
+    "exportUsingBrandTemplate": "Xuất bằng mẫu thương hiệu",
+    "explainFor": "Giải thích cho...",
+    "explainForChooseAudience": "Chọn đối tượng",
+    "explainForSubtitle": "Claude sẽ viết lại kết quả cho họ",
+    "explainForGenerating": "Đang tạo...",
+    "explainForReady": "Sẵn sàng",
+    "explainForOriginal": "Bản gốc",
+    "explainForTryAnother": "Thử đối tượng khác",
+    "explainForStop": "Dừng",
+    "explainForCopy": "Sao chép",
+    "explainForCopied": "Đã sao chép",
+    "explainForDownload": ".md"
+  },
+  "review": {
+    "title": "Công cụ đánh giá",
+    "subtitle": "Dán bất kỳ tài liệu hoặc phân tích nào và để Anton phê bình từ quan điểm chuyên gia.",
+    "reviewMode": "Chế độ đánh giá",
+    "documentToReview": "Tài liệu cần đánh giá",
+    "pasteText": "Dán văn bản",
+    "uploadFiles": "Tải lên tệp",
+    "pasteTextPlaceholder": "Dán tài liệu, chính sách, phân tích, bản ghi nhớ hoặc kế hoạch vào đây...",
+    "ctrlEnterToRun": "Ctrl+Enter để chạy",
+    "readingFiles": "Đang đọc tệp…",
+    "uploadPrompt": "Nhấp để tải lên hoặc kéo tệp vào đây",
+    "uploadFormats": "PDF, DOCX, TXT, MD, XLSX, CSV",
+    "pasteTextToReview": "Dán văn bản ở trên để đánh giá",
+    "uploadFileToReview": "Tải lên ít nhất một tệp để đánh giá",
+    "stopReview": "Dừng đánh giá",
+    "startReview": "Bắt đầu đánh giá",
+    "readyToReview": "Sẵn sàng đánh giá",
+    "readyToReviewDesc": "Chọn chế độ đánh giá, dán tài liệu của bạn và nhấp Bắt đầu đánh giá. Anton sẽ phê bình từ quan điểm chuyên gia được chọn.",
+    "reviewing": "đang đánh giá...",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "downloadMd": ".md",
+    "tokensTotal": "tổng số token",
+    "file": "tệp",
+    "files": "tệp"
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "submit": "Gửi",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa",
+    "view": "Xem",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "previous": "Trước đó",
+    "noResults": "Không tìm thấy kết quả"
+  },
+  "connections": {
+    "title": "Kết nối",
+    "subtitle": "Quản lý nguồn dữ liệu bên ngoài và tích hợp",
+    "addConnection": "Thêm kết nối",
+    "noConnections": "Chưa có kết nối được cấu hình.",
+    "noConnectionsHint": "Nhấp \"Thêm kết nối\" để đăng ký tích hợp đầu tiên của bạn.",
+    "loadingConnections": "Đang tải kết nối...",
+    "totalConnections": "tổng",
+    "types": {
+      "database": "Cơ sở dữ liệu",
+      "api": "API",
+      "filesystem": "Hệ thống tệp",
+      "email": "Email",
+      "scriptLibrary": "Thư viện script"
+    },
+    "status": {
+      "pending": "Đang chờ",
+      "active": "Hoạt động",
+      "disabled": "Đã vô hiệu hóa",
+      "error": "Lỗi"
+    },
+    "actions": {
+      "test": "Kiểm tra",
+      "testConnection": "Kiểm tra kết nối",
+      "approve": "Phê duyệt",
+      "approveConnection": "Phê duyệt kết nối",
+      "disableConnection": "Vô hiệu hóa kết nối",
+      "deleteConnection": "Vô hiệu hóa kết nối này? Có thể được kích hoạt lại bằng cách chỉnh sửa nó."
+    },
+    "details": {
+      "created": "Đã tạo",
+      "tested": "Đã kiểm tra",
+      "configSanitized": "Cấu hình (đã làm sạch)",
+      "auditLog": "Nhật ký kiểm toán",
+      "loadingAuditLog": "Đang tải nhật ký kiểm toán...",
+      "noAuditEntries": "Chưa có mục nhật ký kiểm toán.",
+      "time": "Thời gian",
+      "action": "Hành động",
+      "result": "Kết quả",
+      "by": "Bởi"
+    },
+    "testResults": {
+      "networkError": "Lỗi mạng"
+    },
+    "sections": {
+      "pendingApproval": "Đang chờ phê duyệt",
+      "active": "Hoạt động",
+      "disabledError": "Đã vô hiệu hóa / Lỗi"
+    },
+    "wizard": {
+      "title": "Kết nối mới",
+      "steps": {
+        "type": "Loại",
+        "configure": "Cấu hình",
+        "test": "Kiểm tra",
+        "save": "Lưu"
+      },
+      "typeSelection": {
+        "prompt": "Chọn loại tích hợp để tạo:",
+        "errorNoType": "Vui lòng chọn loại kết nối.",
+        "database": {
+          "label": "Cơ sở dữ liệu",
+          "description": "Kết nối đến cơ sở dữ liệu SQLite, PostgreSQL hoặc MySQL"
+        },
+        "api": {
+          "label": "API",
+          "description": "Kết nối đến REST API với xác thực bearer, basic hoặc khóa API"
+        },
+        "filesystem": {
+          "label": "Hệ thống tệp",
+          "description": "Truy cập thư mục cục bộ với quyền có thể cấu hình"
+        },
+        "email": {
+          "label": "Email",
+          "description": "Tích hợp email SMTP hoặc IMAP"
+        },
+        "scriptLibrary": {
+          "label": "Thư viện script",
+          "description": "Đăng ký một thư mục các script có thể thực thi được phê duyệt"
+        }
+      },
+      "config": {
+        "displayName": "Tên hiển thị",
+        "displayNamePlaceholder": "ví dụ: DB sản xuất, API báo cáo",
+        "errorNoName": "Yêu cầu tên hiển thị.",
+        "database": {
+          "driver": "Driver",
+          "drivers": {
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL / MariaDB",
+            "mssql": "Microsoft SQL Server",
+            "mongodb": "MongoDB (NoSQL)"
+          },
+          "filePath": "Đường dẫn tệp cơ sở dữ liệu",
+          "filePathPlaceholder": "/path/to/database.sqlite",
+          "host": "Host / Địa chỉ IP",
+          "hostPlaceholder": "localhost hoặc 192.168.1.100",
+          "hostHint": "Sử dụng IP hoặc hostname cho máy chủ từ xa",
+          "port": "Cổng",
+          "databaseName": "Tên cơ sở dữ liệu",
+          "databaseNamePlaceholder": "mydb",
+          "username": "Tên người dùng",
+          "password": "Mật khẩu",
+          "ssl": "Bật mã hóa SSL/TLS",
+          "sslVerifyCert": "Xác minh chứng chỉ SSL (bỏ chọn cho chứng chỉ tự ký)",
+          "maxRowsPerQuery": "Số hàng tối đa mỗi truy vấn",
+          "maxRowsPlaceholder": "10000",
+          "allowedTables": "Bảng được phép (phân tách bằng dấu phẩy, để trống cho tất cả)",
+          "allowedTablesPlaceholder": "users, orders, products"
+        },
+        "api": {
+          "baseUrl": "URL cơ sở",
+          "baseUrlPlaceholder": "https://api.example.com",
+          "authType": "Loại xác thực",
+          "authTypes": {
+            "bearer": "Token Bearer",
+            "basic": "Xác thực cơ bản (base64)",
+            "apikey": "Header khóa API",
+            "none": "Không xác thực"
+          },
+          "authValue": "Giá trị xác thực",
+          "authValuePlaceholder": "Token / thông tin đăng nhập",
+          "rateLimit": "Giới hạn tốc độ (req/phút, 0 = không giới hạn)",
+          "rateLimitPlaceholder": "60",
+          "timeout": "Thời gian chờ (giây)",
+          "timeoutPlaceholder": "30",
+          "allowedEndpoints": "Endpoints được phép",
+          "endpointPathPlaceholder": "/api/endpoint hoặc /api/*",
+          "addEndpoint": "Thêm",
+          "methods": {
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE",
+            "all": "*"
+          }
+        },
+        "filesystem": {
+          "basePath": "Đường dẫn cơ sở",
+          "basePathPlaceholder": "/path/to/folder hoặc C:\\Users\\...",
+          "basePathHint": "Tất cả quyền truy cập tệp bị hạn chế trong thư mục này và các thư mục con của nó.",
+          "allowedExtensions": "Phần mở rộng được phép (không có = tất cả được phép)",
+          "permissions": "Quyền",
+          "permissionRead": "Đọc",
+          "permissionWrite": "Ghi",
+          "maxFileSize": "Kích thước tệp tối đa (MB)",
+          "maxFileSizePlaceholder": "50"
+        },
+        "generic": {
+          "configJson": "Cấu hình (JSON)",
+          "invalidJson": "JSON không hợp lệ"
+        }
+      },
+      "test": {
+        "prompt": "Xác thực cấu hình trước khi lưu:",
+        "summary": "Tóm tắt kết nối",
+        "validate": "Xác thực cấu hình",
+        "validating": "Đang xác thực...",
+        "validated": "Cấu hình đã được xác thực. Kiểm tra kết nối đầy đủ có sẵn sau khi lưu.",
+        "failed": "Xác thực thất bại"
+      },
+      "confirm": {
+        "prompt": "Xem xét và lưu kết nối của bạn:",
+        "name": "Tên",
+        "type": "Loại",
+        "statusAfterSave": "Trạng thái sau khi lưu",
+        "pendingNotice": "Kết nối sẽ ở trạng thái \"đang chờ\" cho đến khi quản trị viên phê duyệt nó. Các kết nối hoạt động có sẵn cho tất cả người dùng.",
+        "saveConnection": "Lưu kết nối",
+        "saving": "Đang lưu..."
+      },
+      "navigation": {
+        "back": "Quay lại",
+        "next": "Tiếp theo"
+      },
+      "errors": {
+        "networkError": "Lỗi mạng — không thể lưu kết nối",
+        "saveFailed": "Không thể tạo kết nối"
+      }
+    }
+  },
+  "scripts": {
+    "title": "Thư viện script",
+    "subtitle": "Quản lý các script có thể thực thi được phê duyệt",
+    "totalScripts": "script",
+    "registerScript": "Đăng ký script",
+    "noScripts": "Không có script trong thư viện.",
+    "noScriptsHint": "Đăng ký các script được phê duyệt để cung cấp cho quy trình làm việc.",
+    "loadingScripts": "Đang tải script...",
+    "deleteScript": "Xóa script",
+    "deleteConfirm": "Xóa script này khỏi thư viện?",
+    "status": {
+      "approved": "Đã phê duyệt",
+      "pending": "Đang chờ"
+    },
+    "details": {
+      "scriptPath": "Đường dẫn script",
+      "maxRuntime": "Thời gian chạy tối đa",
+      "runtimeSeconds": "giây",
+      "memoryLimit": "Giới hạn bộ nhớ",
+      "memoryMb": "MB",
+      "sandbox": "Sandbox",
+      "sandboxEnabled": "Đã bật",
+      "sandboxDisabled": "Đã tắt",
+      "networkAccess": "Truy cập mạng",
+      "networkAllowed": "Được phép",
+      "networkBlocked": "Đã chặn",
+      "fileHash": "Hash tệp (SHA-256)",
+      "parameters": "Tham số",
+      "version": "v"
+    },
+    "languages": {
+      "python": "Python",
+      "bash": "Bash",
+      "r": "R",
+      "powershell": "PowerShell",
+      "node": "Node.js"
+    },
+    "form": {
+      "title": "Đăng ký script mới",
+      "displayName": "Tên hiển thị",
+      "displayNamePlaceholder": "Script xuất dữ liệu",
+      "language": "Ngôn ngữ",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Script này làm gì?",
+      "scriptPath": "Đường dẫn tệp script",
+      "scriptPathPlaceholder": "/path/to/script.py",
+      "maxRuntime": "Thời gian chạy tối đa (giây)",
+      "memoryLimit": "Giới hạn bộ nhớ (MB)",
+      "networkAccess": "Cho phép truy cập mạng",
+      "parametersSchema": "Schema tham số (JSON)",
+      "parametersPlaceholder": "{\"param1\": {\"type\": \"string\", \"description\": \"...\"}}",
+      "invalidJson": "JSON không hợp lệ trong tham số",
+      "errorRequired": "Yêu cầu tên hiển thị và đường dẫn script",
+      "errorSave": "Lỗi mạng",
+      "registerScript": "Đăng ký script",
+      "registering": "Đang đăng ký...",
+      "cancel": "Hủy"
+    }
+  },
+  "analytics": {
+    "title": "Phân tích sử dụng",
+    "subtitle": "Theo dõi việc sử dụng, chi phí và ROI openEXPERT của bạn",
+    "stats": {
+      "totalSessions": "Tổng số phiên",
+      "totalCost": "Tổng chi phí",
+      "tokensUsed": "Token đã sử dụng",
+      "uniqueModules": "Module duy nhất",
+      "messages": "tin nhắn",
+      "avgPerSession": "trung bình {amount} / phiên",
+      "acrossAllSessions": "trên tất cả các phiên",
+      "modulesUsed": "module đã sử dụng"
+    },
+    "charts": {
+      "sessionActivity": "Hoạt động phiên — 30 ngày qua",
+      "dailyCost": "Chi phí hàng ngày — 30 ngày qua",
+      "mostUsedModules": "Module được sử dụng nhiều nhất",
+      "noModuleData": "Chưa có dữ liệu sử dụng module",
+      "sessions": "phiên",
+      "sessionPlural": "phiên"
+    },
+    "roi": {
+      "title": "Ước tính ROI",
+      "sessionMultiplier": "{count} phiên × {hours}g trung bình × €{rate}/g =",
+      "estimatedValue": "€{value} giá trị ước tính",
+      "equivalentTo": "Tương đương với khoảng",
+      "workingDays": "{days} ngày làm việc",
+      "workingDaysPlural": "{days} ngày làm việc",
+      "consultingTimeSaved": "thời gian tư vấn đã tiết kiệm.",
+      "basedOn": "Dựa trên mức phí tư vấn tuân thủ điển hình €{rate}/giờ và ước tính {hours} giờ công việc thủ công tương đương mỗi phiên AI."
+    }
+  },
+  "insights": {
+    "title": "Thông tin chi tiết dữ liệu",
+    "subtitle": "Biến đổi dữ liệu của bạn thành thông minh trực quan",
+    "input": {
+      "pasteDataTab": "Dán dữ liệu",
+      "uploadFileTab": "Tải lên tệp",
+      "pasteDataPlaceholder": "Dán CSV, bảng hoặc dữ liệu có cấu trúc tại đây...\n\nVí dụ:\nTháng,Số SAR,Giá trị (EUR)\nTháng 1 2024,12,450000\nTháng 2 2024,18,820000",
+      "chooseFile": "Chọn tệp",
+      "acceptedFormats": "Chấp nhận .csv, .xlsx, .txt",
+      "loadedFile": "Đã tải: {fileName}",
+      "questionLabel": "Bạn muốn xem gì?",
+      "questionPlaceholder": "ví dụ: Hiển thị xu hướng theo thời gian, so sánh theo danh mục...",
+      "exampleShowTrends": "Hiển thị xu hướng theo thời gian",
+      "exampleCompareCategory": "So sánh theo danh mục",
+      "exampleHighlightOutliers": "Làm nổi bật các giá trị ngoại lai",
+      "exampleShowDistribution": "Hiển thị phân phối",
+      "exampleTimelineView": "Chế độ xem dòng thời gian",
+      "modelNote": "Anton sẽ phân tích dữ liệu của bạn và tạo biểu đồ tương tác bằng Claude Opus 4.6.",
+      "errorMessage": "Vui lòng dán hoặc tải lên dữ liệu trước.",
+      "errorQuestion": "Vui lòng mô tả những gì bạn muốn xem."
+    },
+    "actions": {
+      "generateInsights": "Tạo thông tin chi tiết",
+      "stop": "Dừng",
+      "analyzing": "Anton đang phân tích dữ liệu của bạn...",
+      "copyRawData": "Sao chép dữ liệu thô",
+      "downloadChartData": "Tải xuống dữ liệu biểu đồ (.csv)"
+    },
+    "output": {
+      "summaryTitle": "Tóm tắt",
+      "narrativeTitle": "Phân tích tường thuật"
+    }
+  },
+  "soundingBoard": {
+    "title": "Bảng tham vấn",
+    "subtitle": "Cố vấn cá nhân của bạn đã sẵn sàng",
+    "talkingWith": "Đang nói chuyện với:",
+    "advisorSettings": "Cài đặt cố vấn",
+    "newConversation": "Cuộc trò chuyện mới",
+    "changePersonaWarning": "Thay đổi persona cố vấn sẽ đặt lại cuộc trò chuyện. Tiếp tục?",
+    "personas": {
+      "strategic": {
+        "label": "Cố vấn chiến lược chung",
+        "description": "Tư duy bức tranh lớn, lựa chọn chiến lược, động lực của các bên liên quan"
+      },
+      "legal": {
+        "label": "Cố vấn pháp lý",
+        "description": "Rủi ro pháp lý, hợp đồng, nghĩa vụ quy định, trách nhiệm pháp lý"
+      },
+      "risk": {
+        "label": "Chuyên gia rủi ro",
+        "description": "Xác định rủi ro, đánh giá, giảm thiểu, kiểm soát"
+      },
+      "regulatory": {
+        "label": "Chuyên gia quy định",
+        "description": "Kỳ vọng giám sát, diễn giải quy định, khung tuân thủ"
+      },
+      "financialCrime": {
+        "label": "Chuyên gia tội phạm tài chính",
+        "description": "AML/CFT, trừng phạt, gian lận, phương thức, rủi ro tội phạm tài chính"
+      }
+    },
+    "context": {
+      "personaLabel": "Persona cố vấn",
+      "aboutYouLabel": "Về bạn",
+      "aboutYouPlaceholder": "Tôi là Trưởng phòng Tuân thủ tại một ngân hàng Bắc Âu. Tôi tập trung vào AML/CFT. Thách thức hiện tại của tôi là chuẩn bị cho giám sát AMLA.",
+      "contextNote": "Ngữ cảnh này được lưu cục bộ và được bao gồm trong mọi tin nhắn gửi đến cố vấn của bạn."
+    },
+    "emptyState": {
+      "title": "Cố vấn cá nhân của bạn đã sẵn sàng",
+      "description": "Hỏi bất cứ điều gì — tình huống khó xử về chiến lược, tình huống khó xử, câu hỏi về quy định hoặc chỉ suy nghĩ to. {persona} của bạn sẽ phản hồi với hướng dẫn tập trung cấp chuyên gia.",
+      "tipNoContext": "Mẹo: Thêm ngữ cảnh của bạn ở trên để cố vấn có thể đưa ra lời khuyên phù hợp hơn.",
+      "example1": "Tôi nên tiếp cận cuộc thanh tra giám sát sắp tới như thế nào?",
+      "example2": "Những rủi ro lớn nhất trong kế hoạch triển khai AMLR của chúng tôi là gì?",
+      "example3": "Giúp tôi suy nghĩ về một cuộc trò chuyện khó khăn với các bên liên quan",
+      "example4": "Cơ quan quản lý sẽ tập trung vào điều gì trong đánh giá giảm thiểu rủi ro?"
+    },
+    "chat": {
+      "inputPlaceholder": "Hỏi {persona} của bạn...",
+      "askAdvisor": "Hỏi cố vấn",
+      "stop": "Dừng",
+      "ctrlEnterToSend": "Ctrl+Enter để gửi",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "thinking": "Đang suy nghĩ"
+    }
+  },
+  "formTools": {
+    "fillForm": {
+      "title": "Điền biểu mẫu này",
+      "subtitle": "Dán bất kỳ biểu mẫu, bảng câu hỏi hoặc mẫu nào — ANTON điền từng trường với hướng dẫn chuyên gia và trích dẫn.",
+      "formLabel": "Biểu mẫu hoặc bảng câu hỏi",
+      "formPlaceholder": "Dán biểu mẫu hoặc bảng câu hỏi của bạn tại đây...",
+      "contextLabel": "Ngữ cảnh bổ sung",
+      "contextOptional": "(tùy chọn)",
+      "contextPlaceholder": "ví dụ: Đây là cho một ngân hàng Bắc Âu tuân theo AMLR",
+      "fillForm": "Điền biểu mẫu",
+      "stop": "Dừng",
+      "fillingForm": "đang điền biểu mẫu...",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "download": ".md"
+    },
+    "challengeThis": {
+      "title": "Thách thức điều này",
+      "subtitle": "Dán bất kỳ tài liệu, kế hoạch hoặc lập luận nào — ANTON kiểm tra áp lực với phê bình mạnh mẽ nhất có thể.",
+      "documentLabel": "Tài liệu, kế hoạch hoặc lập luận để thách thức",
+      "documentPlaceholder": "Dán tài liệu, kế hoạch hoặc lập luận để thách thức...",
+      "contextLabel": "Ngữ cảnh",
+      "contextOptional": "(tùy chọn)",
+      "contextPlaceholder": "ví dụ: Đây là chính sách AML cho một tổ chức thanh toán của Đan Mạch",
+      "challengeIt": "Thách thức nó",
+      "stop": "Dừng",
+      "challengeMode": "Anton — Chế độ thách thức",
+      "analyzing": "đang phân tích...",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "download": ".md"
+    },
+    "dualInterpret": {
+      "title": "Diễn giải kép",
+      "subtitle": "Tải lên hoặc dán văn bản pháp lý/quy định — ANTON diễn giải nó như cả cơ quan quản lý và đơn vị được quản lý cùng một lúc.",
+      "pasteTextTab": "Dán văn bản",
+      "enterUrlTab": "Nhập URL",
+      "textLabel": "Văn bản pháp lý hoặc quy định",
+      "textPlaceholder": "Dán văn bản pháp lý hoặc quy định để diễn giải...",
+      "urlLabel": "URL đến văn bản quy định",
+      "urlPlaceholder": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj",
+      "urlNote": "Lấy URL sử dụng nguồn kiến thức Tham khảo trực tuyến. Để trích xuất tài liệu đầy đủ, sử dụng bảng Nguồn kiến thức trong module. Ở đây, Anton sẽ sử dụng kiến thức đào tạo của nó về nội dung URL cộng với tìm kiếm web.",
+      "interpret": "Diễn giải",
+      "stop": "Dừng",
+      "dualMode": "Anton — Diễn giải kép",
+      "interpreting": "đang diễn giải...",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "download": ".md"
+    }
+  }
+}

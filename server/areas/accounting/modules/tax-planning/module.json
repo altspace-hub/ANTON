@@ -1,0 +1,131 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-planning",
+  "label": "Tax Planning Support",
+  "shortLabel": "Tax Planning",
+  "description": "Analyse tax implications, structure transactions for tax efficiency, evaluate cross-border tax considerations, and support corporate tax planning within Nordic and EU frameworks.",
+  "icon": "DollarSign",
+  "color": "adv-gold",
+  "areaId": "accounting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Nordic tax law, EU tax directives, OECD BEPS"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "tax_area",
+      "type": "select",
+      "label": "Tax area",
+      "required": true,
+      "options": [
+        {
+          "value": "corporate",
+          "label": "Corporate income tax"
+        },
+        {
+          "value": "vat",
+          "label": "VAT / indirect tax"
+        },
+        {
+          "value": "transfer_pricing",
+          "label": "Transfer pricing"
+        },
+        {
+          "value": "cross_border",
+          "label": "Cross-border structuring"
+        },
+        {
+          "value": "ma_restructuring",
+          "label": "M&A / restructuring tax"
+        },
+        {
+          "value": "employment",
+          "label": "Employment / payroll tax"
+        },
+        {
+          "value": "withholding",
+          "label": "Withholding tax"
+        },
+        {
+          "value": "incentives",
+          "label": "Tax incentives & credits"
+        },
+        {
+          "value": "compliance",
+          "label": "Tax compliance & reporting"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "multi-select",
+      "label": "Relevant jurisdictions",
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "eu",
+          "label": "EU-wide"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "us",
+          "label": "United States"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "entity_structure",
+      "type": "textarea",
+      "label": "Entity structure (if relevant)",
+      "placeholder": "e.g., Swedish parent, Finnish subsidiary, Danish branch. Intercompany services and IP licensing between entities."
+    },
+    {
+      "id": "specific_question",
+      "type": "textarea",
+      "label": "Specific question or scenario",
+      "placeholder": "e.g., We are considering relocating our IP holding from Sweden to Ireland. What are the tax implications including exit taxation? We also need to understand the Pillar Two minimum tax impact."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "accounting",
+    "tax",
+    "corporate-tax",
+    "vat",
+    "transfer-pricing",
+    "beps",
+    "compliance"
+  ]
+}

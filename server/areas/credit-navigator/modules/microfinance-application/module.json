@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "microfinance-application",
+  "label": "Microfinance Application Helper",
+  "shortLabel": "MFI Application",
+  "icon": "FileText",
+  "description": "How to apply for a microfinance loan. Prepare your application, understand requirements, and improve your chances of approval.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Step-by-step application coaching works well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Microfinance loan application requirements, cash flow preparation, group loans, creditworthiness building for informal businesses"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "mfi_type",
+      "type": "select",
+      "label": "What type of microfinance loan are you applying for?",
+      "required": true,
+      "options": [
+        { "value": "grameen-group", "label": "Grameen-style group loan" },
+        { "value": "individual", "label": "Individual loan" },
+        { "value": "sacco", "label": "SACCO or cooperative loan" },
+        { "value": "ngo-mfi", "label": "NGO microfinance institution" },
+        { "value": "bank-micro", "label": "Bank microfinance product" }
+      ]
+    },
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What type of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "trading-market", "label": "Trading or market stall" },
+        { "value": "food", "label": "Food preparation or selling" },
+        { "value": "craft", "label": "Craft or tailoring" },
+        { "value": "service", "label": "Service business" },
+        { "value": "agriculture", "label": "Agriculture" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "loan_purpose",
+      "type": "select",
+      "label": "What will the loan be used for?",
+      "required": true,
+      "options": [
+        { "value": "stock-inventory", "label": "Stock or inventory" },
+        { "value": "equipment", "label": "Equipment or tools" },
+        { "value": "working-capital", "label": "Working capital" },
+        { "value": "expand", "label": "Expand the business" },
+        { "value": "first-loan", "label": "My first ever loan" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "microfinance",
+    "loan-application",
+    "mfi",
+    "group-loan",
+    "credit-access",
+    "informal-business",
+    "cash-flow",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

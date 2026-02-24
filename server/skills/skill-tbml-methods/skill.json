@@ -1,0 +1,8 @@
+{
+  "id": "skill-tbml-methods",
+  "label": "Trade-Based Money Laundering (TBML) Methods",
+  "category": "domain",
+  "applicableAreas": ["fcp", "banking"],
+  "description": "Comprehensive knowledge of TBML techniques: over/under-invoicing, phantom shipments, BMPE, free trade zone abuse, and detection red flags based on FATF and APG typologies.",
+  "tags": ["tbml", "trade-finance", "aml", "fcp", "letters-of-credit", "customs"]
+}

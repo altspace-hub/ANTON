@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "utility-bill-dispute",
+  "label": "Utility Bill Dispute Helper",
+  "shortLabel": "Utility Bills",
+  "icon": "Zap",
+  "description": "My electricity or water bill seems wrong. Steps to challenge incorrect utility bills and get an accurate reading.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Formal regulator complaints need sonnet. Basic dispute steps work with haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Utility bill disputes: electricity, water, gas, telecoms. Meter reading, estimated billing, meter test rights, disconnection process, reconnection rights, low-income tariffs. Utility regulators by country: EPRA Kenya, NERC Nigeria, Energy Commission Ghana, CERC India." }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "country",
+      "label": "Which country are you in?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other country" }
+      ]
+    },
+    {
+      "id": "utility_type",
+      "label": "Which utility?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "electricity", "label": "Electricity" },
+        { "value": "water", "label": "Water" },
+        { "value": "gas", "label": "Gas" },
+        { "value": "internet", "label": "Internet" },
+        { "value": "phone-telecoms", "label": "Phone or telecoms" }
+      ]
+    },
+    {
+      "id": "issue",
+      "label": "What is the problem?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "bill-too-high", "label": "Bill is much higher than usual" },
+        { "value": "estimated-bill", "label": "Bill is estimated — no actual meter reading" },
+        { "value": "charged-no-service", "label": "Charged for a period with no service" },
+        { "value": "faulty-meter", "label": "Meter may be faulty" },
+        { "value": "disconnection-notice", "label": "Received disconnection notice" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
+  "tags": ["consumer-protection", "bop", "rights", "utility-bills", "electricity", "water", "meter-dispute", "estimated-billing", "disconnection", "africa", "south-asia"]
+}

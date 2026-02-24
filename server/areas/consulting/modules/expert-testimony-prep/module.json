@@ -1,0 +1,116 @@
+{
+  "formatVersion": "1.0",
+  "id": "expert-testimony-prep",
+  "label": "Expert Testimony & Witness Preparation",
+  "shortLabel": "Expert Testimony",
+  "icon": "Scale",
+  "description": "Prepare expert witness reports, regulatory submissions, and supporting materials for legal and regulatory proceedings.",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary",
+      "decision-memo"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "proceeding_type",
+      "type": "select",
+      "label": "Type of proceeding",
+      "required": true,
+      "options": [
+        {
+          "value": "litigation",
+          "label": "Litigation"
+        },
+        {
+          "value": "arbitration",
+          "label": "Arbitration"
+        },
+        {
+          "value": "regulatory_investigation",
+          "label": "Regulatory investigation"
+        },
+        {
+          "value": "parliamentary_inquiry",
+          "label": "Parliamentary inquiry"
+        },
+        {
+          "value": "public_consultation",
+          "label": "Public consultation"
+        },
+        {
+          "value": "enforcement_action",
+          "label": "Enforcement action"
+        }
+      ]
+    },
+    {
+      "id": "expert_role",
+      "type": "select",
+      "label": "Expert role",
+      "required": true,
+      "options": [
+        {
+          "value": "independent_expert",
+          "label": "Independent expert"
+        },
+        {
+          "value": "party_appointed_expert",
+          "label": "Party-appointed expert"
+        },
+        {
+          "value": "consultant_to_counsel",
+          "label": "Consultant to counsel"
+        },
+        {
+          "value": "regulatory_submitter",
+          "label": "Regulatory submitter"
+        }
+      ]
+    },
+    {
+      "id": "subject_matter",
+      "type": "textarea",
+      "label": "Subject matter of the proceedings",
+      "required": true,
+      "placeholder": "e.g., AML control failures at a payment institution, sanctions screening adequacy, UCITS mandate breach, transaction monitoring effectiveness"
+    },
+    {
+      "id": "jurisdiction",
+      "type": "text",
+      "label": "Jurisdiction and regulator / court",
+      "placeholder": "e.g., England & Wales, FCA enforcement; Sweden, FI regulatory review; ICC Arbitration"
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "amanda-legal"
+  ],
+  "tags": [
+    "expert-witness",
+    "regulatory-enforcement",
+    "litigation",
+    "arbitration",
+    "fca",
+    "sec",
+    "legal-proceedings",
+    "compliance-evidence"
+  ]
+}

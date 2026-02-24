@@ -1,0 +1,105 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-provision-reporting",
+  "label": "Tax Provision & Reporting",
+  "shortLabel": "Tax Provision",
+  "description": "Prepare and review corporate tax provisions under IFRS (IAS 12) or US GAAP (ASC 740). Analyse deferred tax positions, uncertain tax positions (UTPs), effective tax rate (ETR), and Pillar Two GloBE top-up tax disclosures.",
+  "icon": "Receipt",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "IAS 12 Income Taxes, ASC 740, IFRS 17, Pillar Two GloBE top-up tax accounting"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "reporting_standard",
+      "type": "select",
+      "label": "Accounting standard",
+      "required": true,
+      "options": [
+        { "value": "ifrs_ias12", "label": "IFRS — IAS 12 Income Taxes" },
+        { "value": "us_gaap_asc740", "label": "US GAAP — ASC 740" },
+        { "value": "local_gaap", "label": "Local GAAP (specify in context)" },
+        { "value": "dual_ifrs_gaap", "label": "Dual reporting (IFRS + local GAAP)" }
+      ]
+    },
+    {
+      "id": "provision_scope",
+      "type": "multi-select",
+      "label": "Provision areas to address",
+      "options": [
+        { "value": "current_tax", "label": "Current tax (current year charge)" },
+        { "value": "deferred_tax", "label": "Deferred tax assets and liabilities" },
+        { "value": "utp", "label": "Uncertain tax positions (UTPs / FIN 48 reserves)" },
+        { "value": "etr_analysis", "label": "Effective tax rate (ETR) reconciliation" },
+        { "value": "pillar_two", "label": "Pillar Two GloBE top-up tax (IFRS Amendments)" },
+        { "value": "valuation_allowance", "label": "Deferred tax asset valuation / recoverability" },
+        { "value": "tax_disclosures", "label": "Financial statement tax disclosures (notes)" }
+      ]
+    },
+    {
+      "id": "reporting_period",
+      "type": "select",
+      "label": "Reporting period",
+      "options": [
+        { "value": "year_end", "label": "Annual year-end provision" },
+        { "value": "interim_q1", "label": "Interim — Q1" },
+        { "value": "interim_q2", "label": "Interim — Q2 / Half year" },
+        { "value": "interim_q3", "label": "Interim — Q3" },
+        { "value": "acquisition", "label": "Acquisition / purchase price allocation" },
+        { "value": "prior_year_adjustment", "label": "Prior year adjustment / restatement" }
+      ]
+    },
+    {
+      "id": "jurisdictions_material",
+      "type": "textarea",
+      "label": "Material jurisdictions",
+      "description": "List the jurisdictions that are material for the tax provision (by ETR impact or deferred tax balance).",
+      "placeholder": "e.g., Sweden (main operating entity, 20.6% CIT), Germany (significant deferred tax asset on loss carryforwards), Luxembourg (holding structure, IP box regime)..."
+    },
+    {
+      "id": "specific_issues",
+      "type": "textarea",
+      "label": "Specific provision issues or questions",
+      "description": "Any specific items requiring analysis: uncertain positions, rate changes, valuation concerns, Pillar Two qualifying conditions.",
+      "placeholder": "e.g., Uncertain position on intercompany royalty deductibility, DTA recoverability assessment needed for German entity with five-year loss history, Pillar Two QDMTT election in Ireland..."
+    }
+  ],
+  "recommendedPersonas": [
+    "tax-director",
+    "fcp-expert"
+  ],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "notes": "Provision work requires deep IAS 12 / ASC 740 technical knowledge; Opus for complex UTP and Pillar Two analysis."
+  },
+  "tags": [
+    "tax-provision",
+    "IAS-12",
+    "ASC-740",
+    "deferred-tax",
+    "ETR",
+    "uncertain-tax-positions",
+    "pillar-two",
+    "GloBE",
+    "IFRS"
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.0",
+  "id": "proposal-writing",
+  "label": "Sales Proposal Writer",
+  "shortLabel": "Proposals",
+  "description": "Write compelling sales proposals and RFP responses. Covers executive summaries, approach descriptions, team profiles, pricing presentations, and win themes. Tailored to the client's specific needs and decision criteria.",
+  "icon": "FileText",
+  "color": "adv-green",
+  "areaId": "sales",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "client-proposal"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Client industry context, competitive positioning"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "proposal_type",
+      "type": "select",
+      "label": "Proposal type",
+      "required": true,
+      "options": [
+        {
+          "value": "proactive",
+          "label": "Proactive proposal (we are proposing)"
+        },
+        {
+          "value": "rfp",
+          "label": "RFP / RFI response"
+        },
+        {
+          "value": "follow_up",
+          "label": "Follow-up proposal after meeting"
+        },
+        {
+          "value": "framework",
+          "label": "Framework agreement proposal"
+        },
+        {
+          "value": "extension",
+          "label": "Engagement extension / expansion"
+        },
+        {
+          "value": "unsolicited",
+          "label": "Unsolicited thought leadership proposal"
+        }
+      ]
+    },
+    {
+      "id": "client_info",
+      "type": "textarea",
+      "label": "Client information",
+      "placeholder": "e.g., Nordea, largest Nordic bank, 28,000 employees, currently upgrading AML/CFT framework to comply with AMLR. MLRO is our main contact. They have been working with Deloitte but want fresh perspective.",
+      "required": true
+    },
+    {
+      "id": "scope",
+      "type": "textarea",
+      "label": "Proposed scope of work",
+      "placeholder": "e.g., Phase 1: AMLR gap analysis (6 weeks), Phase 2: Remediation roadmap (2 weeks), Phase 3: Implementation support (6 months). Team: 1 partner, 2 seniors, 1 analyst.",
+      "required": true
+    },
+    {
+      "id": "differentiators",
+      "type": "textarea",
+      "label": "Our differentiators for this deal",
+      "placeholder": "e.g., We have done AMLR gap analysis for 15 Nordic banks already, our team includes former regulators, we have proprietary gap analysis methodology, we are faster and more practical than Big 4"
+    },
+    {
+      "id": "client_concerns",
+      "type": "textarea",
+      "label": "Known client concerns or priorities",
+      "placeholder": "e.g., Tight deadline (must complete by Q3), budget constrained, previous consultant delivered academic report with no practical use, need people who understand their specific business"
+    },
+    {
+      "id": "pricing",
+      "type": "textarea",
+      "label": "Pricing information",
+      "placeholder": "e.g., Fixed fee EUR 350,000 for Phase 1+2, T&M for Phase 3 at blended rate EUR 2,200/day, payment terms: monthly invoicing 30 days"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "sales",
+    "proposal",
+    "rfp",
+    "client",
+    "pitch",
+    "business-development"
+  ]
+}

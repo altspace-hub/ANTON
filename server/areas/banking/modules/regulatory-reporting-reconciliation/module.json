@@ -1,0 +1,123 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-reporting-reconciliation",
+  "label": "Regulatory Reporting Reconciliation",
+  "shortLabel": "Reg Reporting Recon",
+  "description": "Validates regulatory reporting data (COREP, FINREP, AnaCredit, etc.) before submission. Identifies material errors, threshold breaches, and required corrections.",
+  "icon": "FileCheck2",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "EBA COREP/FINREP technical standards, ECB AnaCredit reporting framework, reporting validation rules"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "report_type",
+      "type": "select",
+      "label": "Regulatory report type",
+      "required": true,
+      "options": [
+        {
+          "value": "corep_own_funds",
+          "label": "COREP — Own Funds (C 01.00 etc.)"
+        },
+        {
+          "value": "corep_leverage",
+          "label": "COREP — Leverage Ratio (C 47.00)"
+        },
+        {
+          "value": "corep_liquidity",
+          "label": "COREP — Liquidity (LCR / NSFR)"
+        },
+        {
+          "value": "finrep",
+          "label": "FINREP — Financial reporting"
+        },
+        {
+          "value": "anacredit",
+          "label": "AnaCredit — Granular credit data"
+        },
+        {
+          "value": "almm",
+          "label": "ALMM — Additional Liquidity Monitoring"
+        },
+        {
+          "value": "resolution_reporting",
+          "label": "Resolution / MREL reporting"
+        },
+        {
+          "value": "other",
+          "label": "Other — describe in context field"
+        }
+      ]
+    },
+    {
+      "id": "reporting_data",
+      "type": "textarea",
+      "label": "Reporting data or summary for review",
+      "required": true,
+      "description": "Paste key data points, template values, or a description of what you need to validate.",
+      "placeholder": "e.g., COREP C 01.00 review for Q1 2025:\nRow 010 (Own Funds): €485.2m\nRow 020 (CET1): €412.6m\nCET1 ratio: 14.2%\nPrior quarter CET1: 13.8% — increase of 0.4pp\n\nQuestion: Row 050 (Additional Tier 1) shows zero this quarter vs. €28m prior quarter. The AT1 instrument matured but replacement not yet in place. Need to verify treatment..."
+    },
+    {
+      "id": "reconciliation_concerns",
+      "type": "textarea",
+      "label": "Specific reconciliation concerns",
+      "description": "What specific figures, movements, or treatments are you uncertain about?",
+      "placeholder": "e.g., Significant movement in RWA between quarters not fully explained. New exposure added in Q4 not sure of correct CRR asset class. Counterparty concentration breach may have occurred but calculation unclear."
+    },
+    {
+      "id": "submission_deadline",
+      "type": "text",
+      "label": "Submission deadline",
+      "placeholder": "e.g., 12 May 2025 (COREP T+12 submission)"
+    },
+    {
+      "id": "supervisor",
+      "type": "select",
+      "label": "Supervisory authority",
+      "options": [
+        {
+          "value": "ecb_ssm",
+          "label": "ECB (SSM — Significant Institution)"
+        },
+        {
+          "value": "national_ca",
+          "label": "National Competent Authority (less significant)"
+        },
+        {
+          "value": "eba",
+          "label": "EBA (direct reporting)"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "banking",
+    "regulatory-reporting",
+    "COREP",
+    "FINREP",
+    "reconciliation",
+    "Basel",
+    "capital"
+  ]
+}

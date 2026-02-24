@@ -1,0 +1,158 @@
+{
+  "formatVersion": "1.0",
+  "id": "copywriting",
+  "label": "Copywriting Assistant",
+  "shortLabel": "Copywriting",
+  "description": "Write compelling copy for websites, marketing materials, social media, email campaigns, ads, and thought leadership pieces. Adapts tone and style to your brand voice and target audience.",
+  "icon": "PenTool",
+  "color": "adv-red",
+  "areaId": "branding",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "creative",
+    "outputFormats": [
+      "quick-briefing"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "copy_type",
+      "type": "select",
+      "label": "Type of copy",
+      "required": true,
+      "options": [
+        {
+          "value": "website",
+          "label": "Website pages"
+        },
+        {
+          "value": "landing_page",
+          "label": "Landing page"
+        },
+        {
+          "value": "blog_article",
+          "label": "Blog / article"
+        },
+        {
+          "value": "linkedin",
+          "label": "LinkedIn post(s)"
+        },
+        {
+          "value": "newsletter",
+          "label": "Email / newsletter"
+        },
+        {
+          "value": "ad_copy",
+          "label": "Advertising copy"
+        },
+        {
+          "value": "brochure",
+          "label": "Brochure / one-pager"
+        },
+        {
+          "value": "case_study",
+          "label": "Case study"
+        },
+        {
+          "value": "press_release",
+          "label": "Press release"
+        },
+        {
+          "value": "tagline",
+          "label": "Tagline / strapline options"
+        },
+        {
+          "value": "internal_comms",
+          "label": "Internal communications"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "topic",
+      "type": "textarea",
+      "label": "Topic or brief",
+      "description": "What should the copy be about?",
+      "placeholder": "e.g., Our new AML compliance advisory service for mid-size banks. Key message: we make compliance simple and practical, not bureaucratic.",
+      "required": true
+    },
+    {
+      "id": "audience",
+      "type": "text",
+      "label": "Target audience",
+      "placeholder": "e.g., Chief Compliance Officers at Nordic banks"
+    },
+    {
+      "id": "tone",
+      "type": "select",
+      "label": "Tone of voice",
+      "options": [
+        {
+          "value": "professional",
+          "label": "Professional & authoritative"
+        },
+        {
+          "value": "approachable",
+          "label": "Approachable & conversational"
+        },
+        {
+          "value": "bold",
+          "label": "Bold & confident"
+        },
+        {
+          "value": "empathetic",
+          "label": "Empathetic & supportive"
+        },
+        {
+          "value": "technical",
+          "label": "Technical & precise"
+        },
+        {
+          "value": "inspirational",
+          "label": "Inspirational & visionary"
+        },
+        {
+          "value": "brand_voice",
+          "label": "Match our existing brand voice (upload guidelines)"
+        }
+      ]
+    },
+    {
+      "id": "key_messages",
+      "type": "textarea",
+      "label": "Key messages to include",
+      "placeholder": "e.g., 1) 20 years of Nordic compliance expertise, 2) Practical approach vs. checkbox compliance, 3) Team of 50+ specialists"
+    },
+    {
+      "id": "cta",
+      "type": "text",
+      "label": "Call to action",
+      "placeholder": "e.g., Book a consultation, Download the guide, Contact us, Learn more"
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints or requirements",
+      "placeholder": "e.g., Max 200 words, include specific keywords for SEO, must mention the client's award, avoid mentioning competitors"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "branding",
+    "copywriting",
+    "marketing",
+    "content",
+    "social-media",
+    "website"
+  ]
+}

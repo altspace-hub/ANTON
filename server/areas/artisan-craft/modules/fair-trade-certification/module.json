@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "fair-trade-certification",
+  "label": "Fair Trade & Certification Navigator",
+  "shortLabel": "Fair Trade",
+  "icon": "Award",
+  "description": "Get fair trade certified. Understand the process, costs, and benefits of fair trade and ethical trade certification.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Fair trade certification for artisans — WFTO, Fairtrade International, Fair Trade USA, certification process, costs, and benefits for craft cooperatives in developing countries"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "craft_type",
+      "type": "select",
+      "label": "What type of craft do you make?",
+      "required": true,
+      "options": [
+        { "value": "weaving-fabric", "label": "Weaving or fabric" },
+        { "value": "pottery", "label": "Pottery" },
+        { "value": "jewellery", "label": "Jewellery" },
+        { "value": "woodwork", "label": "Woodwork" },
+        { "value": "leather", "label": "Leather goods" },
+        { "value": "beadwork", "label": "Beadwork" },
+        { "value": "basketry", "label": "Basketry" },
+        { "value": "embroidery", "label": "Embroidery" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "south-africa", "label": "South Africa" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "indonesia", "label": "Indonesia" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "certification_interest",
+      "type": "select",
+      "label": "Which certification are you interested in?",
+      "required": true,
+      "options": [
+        { "value": "wfto", "label": "World Fair Trade Organization (WFTO)" },
+        { "value": "fairtrade-international", "label": "Fairtrade International" },
+        { "value": "fair-trade-usa", "label": "Fair Trade USA" },
+        { "value": "sa8000", "label": "SA8000 (labour standards)" },
+        { "value": "dont-know", "label": "I don't know which — need guidance" },
+        { "value": "exploring", "label": "Just exploring options" }
+      ]
+    },
+    {
+      "id": "group_or_individual",
+      "type": "select",
+      "label": "Are you applying as an individual or group?",
+      "required": true,
+      "options": [
+        { "value": "individual", "label": "Individual artisan" },
+        { "value": "cooperative", "label": "Cooperative or artisan group" },
+        { "value": "social-enterprise", "label": "NGO or social enterprise" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "tags": [
+    "bop",
+    "artisan",
+    "craft",
+    "fair-trade",
+    "wfto",
+    "fairtrade",
+    "certification",
+    "ethical-trade",
+    "cooperative",
+    "export",
+    "womens-economic-empowerment"
+  ]
+}

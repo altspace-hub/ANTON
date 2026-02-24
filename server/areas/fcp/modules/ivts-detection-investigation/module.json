@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "ivts-detection-investigation",
+  "label": "IVTS Detection & Investigation Guide",
+  "shortLabel": "IVTS Investigation",
+  "icon": "Search",
+  "description": "Structured investigation methodology for suspected hawala and informal value transfer system activity. Covers financial intelligence analysis, typology matching, settlement mechanism identification, and SAR/STR preparation.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "problem-solution"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF IVTS guidance, APG hawala typologies, FinCEN SAR guidance, UNODC underground banking reports"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "case_trigger",
+      "type": "select",
+      "label": "Case Trigger",
+      "required": true,
+      "options": [
+        {"value": "str-received", "label": "STR received"},
+        {"value": "transaction-pattern", "label": "Transaction pattern detected"},
+        {"value": "regulatory-referral", "label": "Regulatory referral"},
+        {"value": "law-enforcement", "label": "Law enforcement request"},
+        {"value": "internal-audit", "label": "Internal audit finding"}
+      ]
+    },
+    {
+      "id": "transaction_pattern",
+      "type": "chips",
+      "label": "Observed Transaction Patterns",
+      "options": [
+        {"value": "structured-payments", "label": "Structured payments"},
+        {"value": "round-dollar", "label": "Round-dollar amounts"},
+        {"value": "third-party", "label": "Third-party payments"},
+        {"value": "cash-then-wire", "label": "Cash deposits followed by wire"},
+        {"value": "shared-beneficiary", "label": "Shared beneficiary accounts"}
+      ]
+    },
+    {
+      "id": "geography",
+      "type": "chips",
+      "label": "Relevant Corridors",
+      "options": [
+        {"value": "south-asia", "label": "South Asia (India/Pakistan/Bangladesh)"},
+        {"value": "middle-east", "label": "Middle East / GCC"},
+        {"value": "east-africa", "label": "East Africa"},
+        {"value": "west-africa", "label": "West Africa"},
+        {"value": "southeast-asia", "label": "Southeast Asia"},
+        {"value": "europe-diaspora", "label": "Europe (diaspora communities)"}
+      ]
+    },
+    {
+      "id": "case_details",
+      "type": "textarea",
+      "label": "Case Details",
+      "placeholder": "Describe the specific transactions, entities involved, timeline, amounts, and any other relevant information..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert", "hawala-ivts-investigator"],
+  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
+  "tags": ["hawala", "ivts", "investigation", "financial-intelligence", "fcp"]
+}

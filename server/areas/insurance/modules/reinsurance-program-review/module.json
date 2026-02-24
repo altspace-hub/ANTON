@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "reinsurance-program-review",
+  "label": "Reinsurance Program Review",
+  "shortLabel": "Reinsurance Review",
+  "icon": "Network",
+  "description": "Evaluate reinsurance program structures for adequacy, efficiency, and strategic alignment. Covers proportional and non-proportional treaty design, facultative placements, reinsurer credit quality, pricing adequacy, aggregate protection, IFRS 17 impact on reinsurance held, and retakaful for Islamic insurers.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Reinsurance program design, treaty and facultative structures, reinsurer rating methodologies, IFRS 17 reinsurance held requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Cedant / Entity Type",
+      "required": true,
+      "options": [
+        "Primary insurer",
+        "Lloyd's managing agency",
+        "Captive insurer",
+        "Takaful operator"
+      ]
+    },
+    {
+      "id": "lines_of_business",
+      "type": "multiselect",
+      "label": "Lines of Business",
+      "options": [
+        "Property CAT",
+        "Property per risk",
+        "Casualty / liability",
+        "Marine and cargo",
+        "Life and health",
+        "Financial lines (D&O, cyber)",
+        "Specialty and aviation"
+      ]
+    },
+    {
+      "id": "review_purpose",
+      "type": "select",
+      "label": "Purpose of Review",
+      "required": true,
+      "options": [
+        "Annual renewal — adequacy review",
+        "Post-loss review",
+        "New line of business — program design",
+        "Rating agency or capital model requirement",
+        "Capital optimisation exercise"
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific Concerns or Context",
+      "placeholder": "e.g. Recent large loss testing aggregate limits, new CAT model output suggests under-protection, rating agency pushing for higher reinsurer credit quality...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "risk-manager",
+    "actuary",
+    "finance-director"
+  ],
+  "tags": [
+    "reinsurance",
+    "insurance",
+    "program-design",
+    "treaty",
+    "capital-management",
+    "ifrs17"
+  ]
+}

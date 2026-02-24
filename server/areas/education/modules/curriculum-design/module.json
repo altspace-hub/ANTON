@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "curriculum-design",
+  "label": "Curriculum Design",
+  "shortLabel": "Curriculum",
+  "description": "Design complete curricula, course outlines, and learning pathways. Map learning outcomes, sequence content, plan assessments, and ensure alignment with educational standards.",
+  "icon": "Layers",
+  "color": "adv-gold",
+  "areaId": "education",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "curriculum_scope",
+      "type": "select",
+      "label": "Curriculum scope",
+      "required": true,
+      "options": [
+        {
+          "value": "single_course",
+          "label": "Single Course / Module"
+        },
+        {
+          "value": "semester",
+          "label": "Semester Programme"
+        },
+        {
+          "value": "year",
+          "label": "Full Year Curriculum"
+        },
+        {
+          "value": "programme",
+          "label": "Multi-Year Programme"
+        },
+        {
+          "value": "professional",
+          "label": "Professional Certification Programme"
+        }
+      ]
+    },
+    {
+      "id": "level",
+      "type": "select",
+      "label": "Educational level",
+      "required": true,
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary Education"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary Education"
+        },
+        {
+          "value": "higher",
+          "label": "Higher Education / University"
+        },
+        {
+          "value": "professional",
+          "label": "Professional / Corporate Training"
+        },
+        {
+          "value": "continuing",
+          "label": "Continuing Education"
+        }
+      ]
+    },
+    {
+      "id": "subject_area",
+      "type": "textarea",
+      "label": "Subject and learning outcomes",
+      "required": true,
+      "placeholder": "Describe the subject area, target competencies, any national curriculum standards to align with, and desired learning outcomes."
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "curriculum",
+    "design",
+    "education",
+    "learning-outcomes",
+    "course"
+  ]
+}

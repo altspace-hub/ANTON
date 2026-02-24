@@ -1,0 +1,64 @@
+{
+  "formatVersion": "1.0",
+  "id": "hawala-ivts-risk-assessment",
+  "label": "Hawala/IVTS Risk Assessment",
+  "shortLabel": "Hawala Risk",
+  "icon": "Network",
+  "description": "Assess ML/TF risks associated with informal value transfer systems (hawala, fei-ch'ien, hundi) operating in or connected to regulated financial institutions.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "gap-scoring-matrix", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_type",
+      "type": "select",
+      "label": "Institution Type",
+      "required": true,
+      "options": [
+        {"value": "bank", "label": "Bank"},
+        {"value": "mto", "label": "Money Transfer Operator"},
+        {"value": "exchange", "label": "Currency Exchange"},
+        {"value": "msb", "label": "Other Money Service Business"},
+        {"value": "regulator", "label": "Regulator / FIU"}
+      ]
+    },
+    {
+      "id": "corridors",
+      "type": "chips",
+      "label": "Relevant Corridors",
+      "options": [
+        {"value": "south-asia", "label": "South Asia (India/Pakistan/Bangladesh)"},
+        {"value": "middle-east", "label": "Middle East / GCC"},
+        {"value": "east-africa", "label": "East Africa"},
+        {"value": "west-africa", "label": "West Africa"},
+        {"value": "southeast-asia", "label": "Southeast Asia"},
+        {"value": "europe-diaspora", "label": "Europe (diaspora communities)"}
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns or Indicators",
+      "placeholder": "e.g. Multiple structured payments to same beneficiary country, customers in hawala-linked professions, STRs received..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert", "hawala-ivts-investigator"],
+  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
+  "tags": ["hawala", "ivts", "informal-remittance", "aml", "fcp"]
+}

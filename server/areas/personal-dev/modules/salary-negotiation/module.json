@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "salary-negotiation",
+  "label": "Salary Negotiation Coach",
+  "shortLabel": "Salary Negotiation",
+  "icon": "DollarSign",
+  "description": "Prepare for salary negotiations with market benchmarking, negotiation strategy, script templates, and guidance on total compensation packages.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "negotiation_context",
+      "type": "select",
+      "label": "Negotiation Context",
+      "description": "What is the negotiation situation?",
+      "required": true,
+      "options": [
+        {
+          "value": "new-offer",
+          "label": "New Job Offer"
+        },
+        {
+          "value": "promotion",
+          "label": "Promotion / Internal Move"
+        },
+        {
+          "value": "annual-review",
+          "label": "Annual Salary Review"
+        },
+        {
+          "value": "counter-offer",
+          "label": "Counter-Offer Situation"
+        },
+        {
+          "value": "contract-renewal",
+          "label": "Contract Renewal"
+        }
+      ]
+    },
+    {
+      "id": "role_details",
+      "type": "textarea",
+      "label": "Role & Company Details",
+      "description": "Describe the role, company, and location.",
+      "required": true,
+      "placeholder": "e.g. Compliance Director at a Swedish bank in Stockholm, team of 25, reporting to CRO..."
+    },
+    {
+      "id": "current_compensation",
+      "type": "textarea",
+      "label": "Current / Offered Compensation",
+      "description": "What are you currently earning or being offered?",
+      "placeholder": "e.g. Current: SEK 85K/month + 2 months bonus. Offer: SEK 95K/month + company car..."
+    },
+    {
+      "id": "target_range",
+      "type": "textarea",
+      "label": "Target Range & Priorities",
+      "description": "What is your target and what matters most?",
+      "placeholder": "e.g. Target SEK 105K/month, flexible on bonus structure, remote work 2 days/week is important..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "career",
+    "salary",
+    "negotiation",
+    "compensation"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.0",
+  "id": "inventory-management",
+  "label": "Inventory Management",
+  "shortLabel": "Stock Control",
+  "icon": "Package",
+  "description": "How do I manage my stock better? Simple systems to track what you have, avoid running out, and reduce waste.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Short practical responses work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Simple inventory and stock control methods for informal micro-businesses and market traders"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_type",
+      "type": "select",
+      "label": "What kind of business do you have?",
+      "required": true,
+      "options": [
+        { "value": "shop-kiosk-dry", "label": "Shop / kiosk (dry goods)" },
+        { "value": "food-vendor", "label": "Food vendor (perishable)" },
+        { "value": "market-stall", "label": "Market stall" },
+        { "value": "tailor-fabric", "label": "Tailor (fabric / materials)" },
+        { "value": "hardware", "label": "Hardware" },
+        { "value": "mixed", "label": "Mixed" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Which country are you in?",
+      "required": true,
+      "options": [
+        { "value": "kenya", "label": "Kenya" },
+        { "value": "nigeria", "label": "Nigeria" },
+        { "value": "ghana", "label": "Ghana" },
+        { "value": "tanzania", "label": "Tanzania" },
+        { "value": "uganda", "label": "Uganda" },
+        { "value": "india", "label": "India" },
+        { "value": "bangladesh", "label": "Bangladesh" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "philippines", "label": "Philippines" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "main_problem",
+      "type": "select",
+      "label": "What is your biggest stock problem?",
+      "required": true,
+      "options": [
+        { "value": "run-out", "label": "Running out of fast-selling items" },
+        { "value": "slow-stock", "label": "Too much slow-moving stock" },
+        { "value": "spoilage", "label": "Goods going bad" },
+        { "value": "dont-know", "label": "Don't know what I have" },
+        { "value": "theft", "label": "Theft / shrinkage" }
+      ]
+    },
+    {
+      "id": "recording_ability",
+      "type": "select",
+      "label": "How do you prefer to keep records?",
+      "required": false,
+      "options": [
+        { "value": "write", "label": "I can write records" },
+        { "value": "count-only", "label": "I prefer to count only" },
+        { "value": "phone", "label": "I use a phone" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "tags": [
+    "micro-business",
+    "bop",
+    "informal-economy",
+    "inventory",
+    "stock-control",
+    "spoilage",
+    "waste-reduction",
+    "kenya",
+    "nigeria",
+    "india",
+    "philippines"
+  ]
+}

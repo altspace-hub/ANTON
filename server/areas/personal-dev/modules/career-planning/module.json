@@ -1,0 +1,91 @@
+{
+  "formatVersion": "1.0",
+  "id": "career-planning",
+  "label": "Career Path Planning",
+  "shortLabel": "Career Planning",
+  "icon": "TrendingUp",
+  "description": "Map your career trajectory: assess current position, identify target roles, close skill gaps, build development plans, and design a strategic career roadmap.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "career_stage",
+      "type": "select",
+      "label": "Career Stage",
+      "description": "Where are you in your career?",
+      "required": true,
+      "options": [
+        {
+          "value": "early",
+          "label": "Early Career (0-5 years)"
+        },
+        {
+          "value": "mid",
+          "label": "Mid-Career (5-15 years)"
+        },
+        {
+          "value": "senior",
+          "label": "Senior / Leadership (15+ years)"
+        },
+        {
+          "value": "transition",
+          "label": "Career Transition / Pivot"
+        },
+        {
+          "value": "returning",
+          "label": "Returning to Work"
+        }
+      ]
+    },
+    {
+      "id": "current_role",
+      "type": "textarea",
+      "label": "Current Position",
+      "description": "Describe your current role, responsibilities, and industry.",
+      "required": true,
+      "placeholder": "e.g. Senior AML Analyst at a Nordic bank, 6 years experience, team of 4, focused on transaction monitoring..."
+    },
+    {
+      "id": "aspirations",
+      "type": "textarea",
+      "label": "Career Aspirations",
+      "description": "Where do you want to be in 3-5 years?",
+      "placeholder": "e.g. Head of Financial Crime at a major bank, or pivot into RegTech consulting, or start my own advisory firm..."
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints & Preferences",
+      "description": "Any limitations or strong preferences?",
+      "placeholder": "e.g. Based in Helsinki, open to remote roles, family commitments limit travel, interested in board positions..."
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "career",
+    "planning",
+    "development",
+    "professional-growth"
+  ]
+}

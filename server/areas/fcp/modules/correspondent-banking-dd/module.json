@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "correspondent-banking-dd",
+  "label": "Correspondent Banking Due Diligence",
+  "shortLabel": "Correspondent DD",
+  "icon": "Building2",
+  "description": "Expert methodology for correspondent banking due diligence. Covers the Wolfsberg CBDD questionnaire, FATF R.13 requirements, key risk factors, information-sharing obligations, and responding to de-risking pressure.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "decision-memo"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Wolfsberg Correspondent Banking Due Diligence questionnaire, FATF R.13 guidance, FSB de-risking reports, World Bank correspondent banking surveys"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "perspective",
+      "type": "select",
+      "label": "Assessment Perspective",
+      "required": true,
+      "options": [
+        {"value": "respondent-seeking", "label": "Respondent bank seeking correspondent"},
+        {"value": "correspondent-assessing", "label": "Correspondent bank assessing respondent"},
+        {"value": "regulator-reviewing", "label": "Regulator reviewing relationship"}
+      ]
+    },
+    {
+      "id": "respondent_jurisdiction",
+      "type": "select",
+      "label": "Respondent Bank Jurisdiction",
+      "required": true,
+      "options": [
+        {"value": "sub-saharan-africa", "label": "Sub-Saharan Africa"},
+        {"value": "north-africa", "label": "North Africa"},
+        {"value": "middle-east", "label": "Middle East"},
+        {"value": "south-asia", "label": "South Asia"},
+        {"value": "southeast-asia", "label": "Southeast Asia"},
+        {"value": "central-asia", "label": "Central Asia"},
+        {"value": "other", "label": "Other"}
+      ]
+    },
+    {
+      "id": "relationship_type",
+      "type": "select",
+      "label": "Relationship Type",
+      "options": [
+        {"value": "usd-clearing", "label": "USD clearing"},
+        {"value": "eur-clearing", "label": "EUR clearing"},
+        {"value": "trade-finance", "label": "Trade Finance"},
+        {"value": "nostro-vostro", "label": "Nostro/Vostro account"},
+        {"value": "full-correspondent", "label": "Full correspondent relationship"}
+      ]
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Specific Concerns or Context",
+      "placeholder": "e.g. Incomplete CBDD questionnaire responses, high-risk jurisdiction with weak AML enforcement, ownership opacity, previous regulatory sanctions, recent de-risking pressure from other correspondents..."
+    }
+  ],
+  "recommendedPersonas": ["fcp-expert", "legal-expert"],
+  "recommendedSkills": ["skill-fatf-mutual-evaluation"],
+  "tags": ["correspondent-banking", "cbdd", "de-risking", "wolfsberg", "fatf-r13", "fcp"]
+}

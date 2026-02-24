@@ -1,0 +1,170 @@
+{
+  "formatVersion": "1.0",
+  "id": "api-design",
+  "label": "API Design Advisor",
+  "shortLabel": "API Design",
+  "description": "Design RESTful and GraphQL APIs with consistent conventions, proper error handling, pagination, versioning, authentication, and documentation. Review existing APIs for quality and standards compliance.",
+  "icon": "Database",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task_type",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        {
+          "value": "design_new",
+          "label": "Design a new API"
+        },
+        {
+          "value": "review_existing",
+          "label": "Review existing API design"
+        },
+        {
+          "value": "standards",
+          "label": "Create API design standards / guidelines"
+        },
+        {
+          "value": "versioning",
+          "label": "API versioning strategy"
+        },
+        {
+          "value": "documentation",
+          "label": "Generate API documentation"
+        },
+        {
+          "value": "migration",
+          "label": "API migration / deprecation plan"
+        }
+      ]
+    },
+    {
+      "id": "api_style",
+      "type": "select",
+      "label": "API style",
+      "options": [
+        {
+          "value": "rest",
+          "label": "REST"
+        },
+        {
+          "value": "graphql",
+          "label": "GraphQL"
+        },
+        {
+          "value": "grpc",
+          "label": "gRPC"
+        },
+        {
+          "value": "websocket",
+          "label": "WebSocket"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed / multiple styles"
+        },
+        {
+          "value": "undecided",
+          "label": "Need recommendation"
+        }
+      ]
+    },
+    {
+      "id": "consumers",
+      "type": "multi-select",
+      "label": "API consumers",
+      "options": [
+        {
+          "value": "internal_frontend",
+          "label": "Internal frontend (SPA, mobile app)"
+        },
+        {
+          "value": "internal_services",
+          "label": "Internal microservices"
+        },
+        {
+          "value": "external_partners",
+          "label": "External partners / B2B"
+        },
+        {
+          "value": "public",
+          "label": "Public developers"
+        },
+        {
+          "value": "mobile",
+          "label": "Mobile applications"
+        }
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "textarea",
+      "label": "Domain and resources",
+      "placeholder": "e.g., E-commerce platform: users, products, orders, payments, reviews. Need CRUD operations plus search, checkout flow, and real-time inventory updates.",
+      "required": true
+    },
+    {
+      "id": "auth_requirements",
+      "type": "select",
+      "label": "Authentication requirements",
+      "options": [
+        {
+          "value": "api_key",
+          "label": "API key"
+        },
+        {
+          "value": "oauth2",
+          "label": "OAuth 2.0 / OIDC"
+        },
+        {
+          "value": "jwt",
+          "label": "JWT tokens"
+        },
+        {
+          "value": "mutual_tls",
+          "label": "Mutual TLS"
+        },
+        {
+          "value": "mixed",
+          "label": "Multiple methods"
+        },
+        {
+          "value": "undecided",
+          "label": "Need recommendation"
+        }
+      ]
+    },
+    {
+      "id": "constraints",
+      "type": "textarea",
+      "label": "Constraints or requirements",
+      "placeholder": "e.g., Must support pagination for large result sets, need real-time updates for order status, rate limiting required, backward compatibility with v1 API"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "software",
+    "api",
+    "rest",
+    "graphql",
+    "design",
+    "documentation",
+    "integration"
+  ]
+}

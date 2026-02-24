@@ -1,0 +1,123 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-response-drafter",
+  "label": "Regulatory Response Drafter",
+  "shortLabel": "Reg Response",
+  "description": "Draft formal responses to regulatory enquiries, supervisory letters, and consultation papers. Structure evidence-based, defensible responses that demonstrate compliance awareness and proactive remediation.",
+  "icon": "ScrollText",
+  "color": "adv-teal",
+  "areaId": "fcp",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "response_type",
+      "type": "select",
+      "label": "Response type",
+      "required": true,
+      "options": [
+        {
+          "value": "supervisory_letter",
+          "label": "Response to Supervisory Letter"
+        },
+        {
+          "value": "information_request",
+          "label": "Information Request Response"
+        },
+        {
+          "value": "consultation_response",
+          "label": "Consultation Paper Response"
+        },
+        {
+          "value": "inspection_findings",
+          "label": "Response to Inspection Findings"
+        },
+        {
+          "value": "remediation_plan",
+          "label": "Remediation Plan Submission"
+        },
+        {
+          "value": "periodic_report",
+          "label": "Periodic Regulatory Report"
+        }
+      ]
+    },
+    {
+      "id": "regulator",
+      "type": "select",
+      "label": "Regulator / Authority",
+      "options": [
+        {
+          "value": "fi_se",
+          "label": "Finansinspektionen (Sweden)"
+        },
+        {
+          "value": "fin_fsa",
+          "label": "FIN-FSA (Finland)"
+        },
+        {
+          "value": "dfsa",
+          "label": "Danish FSA"
+        },
+        {
+          "value": "fsa_no",
+          "label": "Finanstilsynet (Norway)"
+        },
+        {
+          "value": "eba",
+          "label": "EBA"
+        },
+        {
+          "value": "ecb",
+          "label": "ECB"
+        },
+        {
+          "value": "amla",
+          "label": "AMLA"
+        },
+        {
+          "value": "fca",
+          "label": "FCA (UK)"
+        },
+        {
+          "value": "other",
+          "label": "Other Regulator"
+        }
+      ]
+    },
+    {
+      "id": "deadline",
+      "type": "textarea",
+      "label": "Response deadline and key issues",
+      "placeholder": "Note the response deadline, key issues raised by the regulator, and any internal findings or remediation already underway."
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "regulatory",
+    "response",
+    "supervisory",
+    "fcp",
+    "compliance"
+  ]
+}

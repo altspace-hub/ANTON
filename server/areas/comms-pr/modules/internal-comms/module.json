@@ -1,0 +1,138 @@
+{
+  "formatVersion": "1.0",
+  "id": "internal-comms",
+  "label": "Internal Communications",
+  "shortLabel": "Internal Comms",
+  "icon": "Users",
+  "description": "Create internal communications: town hall scripts, email announcements, change communications, intranet articles, and employee engagement content.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "training-material"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "comms_type",
+      "type": "select",
+      "label": "Communication Type",
+      "description": "What type of internal communication?",
+      "required": true,
+      "options": [
+        {
+          "value": "announcement",
+          "label": "Corporate Announcement"
+        },
+        {
+          "value": "change",
+          "label": "Change Communication"
+        },
+        {
+          "value": "townhall",
+          "label": "Town Hall / All-Hands Script"
+        },
+        {
+          "value": "newsletter",
+          "label": "Internal Newsletter / Update"
+        },
+        {
+          "value": "policy",
+          "label": "Policy Communication"
+        },
+        {
+          "value": "engagement",
+          "label": "Employee Engagement Campaign"
+        }
+      ]
+    },
+    {
+      "id": "audience",
+      "type": "chips",
+      "label": "Target Audience",
+      "description": "Who is the target audience?",
+      "required": true,
+      "options": [
+        {
+          "value": "all-staff",
+          "label": "All Staff"
+        },
+        {
+          "value": "management",
+          "label": "Management / Leadership"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance Team"
+        },
+        {
+          "value": "front-line",
+          "label": "Front-Line Staff"
+        },
+        {
+          "value": "it",
+          "label": "IT / Technology"
+        },
+        {
+          "value": "new-joiners",
+          "label": "New Joiners"
+        }
+      ]
+    },
+    {
+      "id": "message_content",
+      "type": "textarea",
+      "label": "Key Message",
+      "description": "What is the core message you need to communicate?",
+      "required": true,
+      "placeholder": "e.g. New AML policy effective from Q2, changes to customer onboarding process, mandatory training required for all front-line staff..."
+    },
+    {
+      "id": "tone",
+      "type": "select",
+      "label": "Desired Tone",
+      "description": "What tone should the communication have?",
+      "options": [
+        {
+          "value": "formal",
+          "label": "Formal / Official"
+        },
+        {
+          "value": "warm",
+          "label": "Warm / Engaging"
+        },
+        {
+          "value": "urgent",
+          "label": "Urgent / Action-Required"
+        },
+        {
+          "value": "celebratory",
+          "label": "Celebratory / Positive"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "pragmatist"
+  ],
+  "tags": [
+    "communications",
+    "internal",
+    "employee",
+    "engagement"
+  ]
+}

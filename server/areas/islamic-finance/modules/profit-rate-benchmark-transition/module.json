@@ -1,0 +1,53 @@
+{
+  "formatVersion": "1.0",
+  "id": "profit-rate-benchmark-transition",
+  "label": "Profit-Rate Benchmark Transition",
+  "shortLabel": "Benchmark Transition",
+  "icon": "ArrowRightLeft",
+  "description": "Manage transition from IBOR benchmarks to risk-free rates for Islamic finance products while maintaining Sharia compliance and addressing reference rate uncertainty.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["impact-assessment", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IBOR to RFR transition guidance, AAOIFI benchmark transition guidance, ISDA Islamic finance IBOR fallbacks, SOFR SONIA alternatives for Islamic products"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_types",
+      "label": "Affected Product Types",
+      "type": "chips",
+      "options": ["Murabaha", "Ijara", "Musharakah", "Sukuk", "All"],
+      "required": false
+    },
+    {
+      "id": "current_benchmark",
+      "label": "Current Benchmark Reference",
+      "type": "select",
+      "options": ["LIBOR", "SAIBOR", "KLIBOR", "EIBOR", "Other IBOR"],
+      "required": true
+    },
+    {
+      "id": "sharia_board",
+      "label": "Approving Sharia Board",
+      "type": "text",
+      "placeholder": "Which Sharia board approved current benchmark reference?",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
+  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
+  "tags": ["ibor-transition", "rfr", "profit-rate", "benchmark", "sofr", "saibor", "klibor", "murabaha", "ijara", "sukuk", "sharia-compliance"]
+}

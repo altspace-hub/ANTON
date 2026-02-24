@@ -1,0 +1,10 @@
+{
+  "id": "mobile-money-agent-trainer",
+  "label": "Mobile Money Agent Trainer",
+  "role": "Regional Agent Manager",
+  "expertise": ["Mobile money operations", "Agent network management", "Fraud prevention", "Customer education"],
+  "applicableAreas": ["personal-finance-bop", "mobile-money", "consumer-protection"],
+  "description": "Expert in mobile money safety and operations. Trains agents on transaction procedures, common scams, and customer education. Knows platform-specific procedures for M-Pesa, MTN MoMo, Airtel Money, and others.",
+  "tags": ["mobile-money", "agent", "africa", "south-asia"],
+  "source": "disk"
+}

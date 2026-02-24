@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "personal-dev",
+  "name": "Personal Development & Career",
+  "shortName": "Career",
+  "description": "CV writing, interview preparation, salary negotiation, career path planning, and personal brand building for professionals at every stage.",
+  "icon": "TrendingUp",
+  "color": "adv-teal",
+  "cluster": "personal"
+}

@@ -1,0 +1,131 @@
+{
+  "formatVersion": "1.0",
+  "id": "product-approval-review",
+  "label": "New Product Approval Compliance Review",
+  "shortLabel": "Product Approval",
+  "description": "Assesses new financial products against regulatory requirements, risk appetite, and compliance frameworks. Produces structured approval recommendation with conditions.",
+  "icon": "PackageCheck",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "detailed-findings"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "MiFID II product governance, EU PRIIPs, CRD/CRR, PSD2/PSD3, consumer protection requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_description",
+      "type": "textarea",
+      "label": "Product description",
+      "required": true,
+      "description": "Describe the new product: what it is, how it works, target market, pricing, and key features.",
+      "placeholder": "e.g., Fixed-term savings product offering 3.5% interest for 12-month deposits, minimum €10,000. Available to retail and SME customers. No early withdrawal option. Interest paid at maturity. Target market: risk-averse retail savers seeking guaranteed return. Distribution: online and branch."
+    },
+    {
+      "id": "product_category",
+      "type": "select",
+      "label": "Product category",
+      "required": true,
+      "options": [
+        {
+          "value": "retail_deposit",
+          "label": "Retail deposit product"
+        },
+        {
+          "value": "credit_lending",
+          "label": "Credit / lending product"
+        },
+        {
+          "value": "investment_product",
+          "label": "Investment product (MiFID / PRIIPs)"
+        },
+        {
+          "value": "payment_service",
+          "label": "Payment service"
+        },
+        {
+          "value": "insurance_ancillary",
+          "label": "Insurance-based investment / ancillary"
+        },
+        {
+          "value": "digital_crypto",
+          "label": "Digital asset / crypto-related"
+        },
+        {
+          "value": "structured_product",
+          "label": "Structured product"
+        }
+      ]
+    },
+    {
+      "id": "target_market",
+      "type": "multi-select",
+      "label": "Target customer segment",
+      "options": [
+        {
+          "value": "retail_general",
+          "label": "Retail — general public"
+        },
+        {
+          "value": "retail_vulnerable",
+          "label": "Retail — including potentially vulnerable customers"
+        },
+        {
+          "value": "professional",
+          "label": "Professional clients"
+        },
+        {
+          "value": "eligible_counterparty",
+          "label": "Eligible counterparties"
+        },
+        {
+          "value": "sme",
+          "label": "SME / micro-enterprise"
+        },
+        {
+          "value": "corporate",
+          "label": "Large corporate"
+        }
+      ]
+    },
+    {
+      "id": "regulatory_concerns",
+      "type": "textarea",
+      "label": "Known regulatory concerns or constraints",
+      "description": "Any regulatory issues the business team has already identified, or constraints from legal or risk.",
+      "placeholder": "e.g., Concerns about early withdrawal restrictions under consumer credit directive. Unclear whether product triggers PRIIPs KID requirement. Previous similar product raised questions from regulator about target market definition."
+    },
+    {
+      "id": "jurisdiction",
+      "type": "text",
+      "label": "Jurisdiction(s)",
+      "placeholder": "e.g., Sweden (Finansinspektionen), Nordic region, EU cross-border"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "banking",
+    "product-governance",
+    "compliance",
+    "new-product",
+    "MiFID",
+    "PRIIPs",
+    "approval"
+  ]
+}

@@ -1,0 +1,890 @@
+{
+  "nav": {
+    "home": "Home",
+    "briefMe": "Korte vraag",
+    "guideMe": "Begeleid mij",
+    "openChat": "Open chat",
+    "workflows": "Workflows",
+    "projects": "Projecten",
+    "buildModule": "Module bouwen",
+    "skillsLibrary": "Vaardighedenbibliotheek",
+    "batchCreate": "Batch aanmaken",
+    "auditLog": "Auditlog",
+    "exchange": "Exchange",
+    "fillForm": "Dit formulier invullen",
+    "challengeThis": "Uitdagen",
+    "dualInterpret": "Dubbele interpretatie",
+    "reviewEngine": "Beoordelingsmotor",
+    "soundingBoard": "Klankbord",
+    "analytics": "Analytics",
+    "dataInsights": "Data-inzichten",
+    "recentSessions": "Recente sessies",
+    "noRecentSessions": "Geen recente sessies",
+    "expandSidebar": "Zijbalk uitvouwen",
+    "collapseSidebar": "Zijbalk invouwen",
+    "closeSidebar": "Zijbalk sluiten",
+    "openSidebar": "Zijbalk openen",
+    "setupProfile": "Uw profiel instellen"
+  },
+  "header": {
+    "appName": "Anton",
+    "apiConnected": "API verbonden",
+    "apiNotConfigured": "API niet geconfigureerd",
+    "switchToLight": "Overschakelen naar lichte modus",
+    "switchToCorporate": "Overschakelen naar bedrijfsmodus",
+    "switchToDark": "Overschakelen naar donkere modus",
+    "settings": "Instellingen",
+    "buildModule": "Module bouwen",
+    "skillsLibrary": "Vaardighedenbibliotheek",
+    "projects": "Projecten",
+    "workflows": "Workflows",
+    "openChat": "Open chat"
+  },
+  "dashboard": {
+    "title": "Anton",
+    "byLine": "door openEXPERT",
+    "subtitle": "AI-gestuurde expertanalyse. Selecteer een module om te beginnen, of hervat een recente sessie.",
+    "sessions": "Sessies",
+    "aiResponses": "AI-reacties",
+    "outputTokens": "Outputtokens",
+    "thisWeek": "Deze week",
+    "thisMonth": "Deze maand",
+    "favourites": "Favorieten",
+    "searchPlaceholder": "Modules zoeken — bijv. GDPR, stresstest, contractbeoordeling...",
+    "noModulesMatch": "Geen overeenkomende modules",
+    "clearSearch": "Zoekopdracht wissen",
+    "communityModules": "Communitymodules",
+    "community": "Community",
+    "openModule": "Module openen",
+    "recentSessions": "Recente sessies",
+    "noSessionsYet": "Nog geen sessies. Begin door hierboven een module te selecteren.",
+    "renameSession": "Sessie hernoemen",
+    "deleteSession": "Sessie verwijderen",
+    "removeFromFavourites": "Uit favorieten verwijderen",
+    "addToFavourites": "Aan favorieten toevoegen",
+    "modules": "modules",
+    "starterPacks": "Starterspakketten",
+    "personalised": "Gepersonaliseerd",
+    "completeProfileToPersonalise": "Voltooi uw",
+    "profileLink": "profiel",
+    "toPersonalise": "om te personaliseren",
+    "show": "Tonen",
+    "hide": "Verbergen",
+    "forYou": "Voor u",
+    "getStarted": "Aan de slag",
+    "roiThisMonth": "ROI deze maand",
+    "roiDescription": "openEXPERT heeft u naar schatting bespaard",
+    "roiHours": "uur",
+    "roiThisMonthLabel": "deze maand (geschatte waarde:",
+    "roiAtRate": "tegen",
+    "roiPerHour": "/uur).",
+    "roiApiCost": "API-kosten:",
+    "roiRatioSuffix": "uur bespaard per €1 uitgegeven"
+  },
+  "module": {
+    "runAnalysis": "Analyse uitvoeren",
+    "send": "Verzenden",
+    "stop": "Stoppen",
+    "thinking": "Denkniveau",
+    "creativity": "Creativiteit",
+    "model": "Model",
+    "knowledgeSources": "Kennisbronnen",
+    "outputFormats": "Outputformaten",
+    "systemPrompt": "Systeemprompt",
+    "transparencyLevel": "Redenering transparantie",
+    "transparencyOff": "Uit",
+    "transparencySummary": "Samenvatting",
+    "transparencyDetailed": "Gedetailleerd",
+    "advancedSettings": "Geavanceerde instellingen",
+    "files": "Bestanden en mappen",
+    "moduleSettings": "Module-instellingen",
+    "customModule": "Aangepaste module",
+    "moduleNotFound": "Module niet gevonden.",
+    "describeTask": "Beschrijf uw analysetaak",
+    "followUp": "Vervolgbericht",
+    "describeTaskPlaceholder": "bijv., Analyseer ons AML-beleid tegen AMLR-vereisten voor een Noordse bank met retail- en zakelijke bankactiviteiten...",
+    "followUpPlaceholder": "Stel een vervolgvraag of vraag wijzigingen aan...",
+    "outputWillAppear": "Output verschijnt hier.",
+    "configureAndRun": "Configureer instellingen, beschrijf uw taak en klik op Uitvoeren.",
+    "reviewStatus": "Beoordelingsstatus",
+    "draft": "Concept",
+    "reviewed": "Beoordeeld",
+    "approved": "Goedgekeurd",
+    "markReviewed": "Markeren als beoordeeld",
+    "approve": "Goedkeuren",
+    "saveAsModule": "Opslaan als aangepaste module",
+    "saved": "Opgeslagen!",
+    "moduleName": "Modulenaam...",
+    "saving": "Opslaan...",
+    "save": "Opslaan",
+    "saveAsModuleDesc": "Sla de systeemprompt, persona's, vaardigheden en outputformaten van deze sessie op als een herbruikbare aangepaste module.",
+    "tokens": "tokens",
+    "approachingLimit": "Nadert limiet",
+    "reframeFor": "Herformuleren voor:",
+    "voiceInput": "Spraakinvoer",
+    "stopRecording": "Opname stoppen",
+    "reframeBoard": "Bestuur",
+    "reframeCustomer": "Klant",
+    "reframeEmployee": "Medewerker",
+    "reframeTechnical": "Technisch",
+    "thinkingControls": {
+      "label": "Hoe diep moet Claude analyseren?",
+      "quick": {
+        "label": "Snel",
+        "description": "Snelle reactie, minimale analyse"
+      },
+      "think": {
+        "label": "Denken",
+        "description": "Standaard analysediepte"
+      },
+      "thinkHard": {
+        "label": "Diep denken",
+        "description": "Diepe analyse met zorgvuldige redenering"
+      },
+      "investigate": {
+        "label": "Onderzoeken",
+        "description": "Grondig onderzoek, maximale diepte"
+      },
+      "planFirst": {
+        "label": "Eerst plannen",
+        "description": "Maak expliciet plan voor uitvoering"
+      }
+    },
+    "modelSelector": {
+      "label": "Model",
+      "recommended": "Aanbevolen",
+      "inputCost": "invoer",
+      "outputCost": "uitvoer",
+      "perMillion": "/M",
+      "localOllama": "Lokaal (Ollama)",
+      "ollamaNotRunning": "Start Ollama om lokale modellen te gebruiken.",
+      "getOllama": "Download Ollama",
+      "ollamaThen": "en voer uit",
+      "ollamaPullCommand": "ollama pull llama3.2",
+      "freeLabelLocal": "Gratis · Lokaal",
+      "noApiKey": "Geen API-sleutel nodig. Draait op uw machine."
+    },
+    "knowledgeSource": {
+      "title": "Kennisbronnen",
+      "subtitle": "Waar moet Claude regelgevende tekst en referentiemateriaal vinden?",
+      "claudeKnowledge": {
+        "title": "Claude's eigen kennis",
+        "description": "Claude gebruikt zijn ingebouwde kennis van regelgeving, richtlijnen en juridische kaders.",
+        "webSearch": "Schakel webzoeken in (Claude zoekt op internet naar de nieuwste publicaties)",
+        "focusArea": "Focusgebied (optioneel):",
+        "focusPlaceholder": "bijv., AMLR Verordening 2024/1624, AMLA RTS-consultaties"
+      },
+      "onlineReference": {
+        "title": "Online regelgeving / documentlinks",
+        "description": "Plak URL's naar specifieke regelgevende teksten, richtlijnen of online documenten.",
+        "urlPlaceholder": "https://eur-lex.europa.eu/...",
+        "add": "Toevoegen",
+        "fullText": "Volledige tekst",
+        "summaryOnly": "Alleen samenvatting",
+        "eurLexQuickLoad": "Snel laden van EUR-Lex:",
+        "regulations": {
+          "amlr": "AMLR",
+          "dora": "DORA",
+          "mica": "MiCA",
+          "gdpr": "GDPR",
+          "amld6": "6AMLD",
+          "nis2": "NIS2"
+        }
+      },
+      "localFolder": {
+        "title": "Lokale mappen",
+        "description": "Wijs naar mappen op uw computer met regelgevingsteksten, klantdocumenten of referentiematerialen.",
+        "pathPlaceholder": "C:\\Users\\...\\Documents\\Regulations",
+        "add": "Toevoegen",
+        "includeSubfolders": "Submappen opnemen"
+      },
+      "combinedMode": {
+        "title": "Gecombineerd: Zoeken + lokale documenten",
+        "description": "Claude gebruikt zijn kennis EN uw lokale documenten. Het beste voor het vergelijken van klantdocumenten met regelgeving.",
+        "localFirst": "Lokale documenten eerst",
+        "merged": "Samengevoegd",
+        "claudeFirst": "Claude eerst",
+        "specialInstructions": "Speciale instructies (optioneel):",
+        "instructionsPlaceholder": "bijv., Vergelijk het beleid van de klant met de regelgeving. Waar het klantdocument zwijgt, gebruik de regelgevingstekst om de lacune te identificeren."
+      },
+      "indexedKnowledge": {
+        "title": "Geïndexeerde kennisbank (mappen)",
+        "description": "Semantisch zoeken in uw geïndexeerde documentenbibliotheek. Haalt de meest relevante passages op — geen hele documenten.",
+        "badge": "Modus 5a",
+        "retrieve": "Ophalen",
+        "passages": "passages",
+        "focused": "gefocust",
+        "broad": "breed",
+        "loadingFolders": "Geïndexeerde mappen laden...",
+        "notYetIndexed": "Nog niet geïndexeerd",
+        "indexNow": "Nu indexeren",
+        "indexing": "Indexeren...",
+        "reindex": "Opnieuw indexeren",
+        "docs": "documenten",
+        "chunks": "stukken",
+        "indexed": "geïndexeerd",
+        "folderSelected": "map geselecteerd voor zoeken",
+        "foldersSelected": "mappen geselecteerd voor zoeken",
+        "noIndexedFolders": "Nog geen geïndexeerde mappen. Voeg eerst mappen toe in Modus 3 (Lokale mappen) en indexeer ze hier voor semantisch zoeken.",
+        "justNow": "zojuist",
+        "minutesAgo": "m geleden",
+        "hoursAgo": "u geleden",
+        "daysAgo": "d geleden"
+      },
+      "knowledgeCollections": {
+        "title": "Kenniscollecties (RAG)",
+        "description": "Semantisch zoeken in georganiseerde kenniscollecties met automatische ophaling tijdens module-uitvoering.",
+        "badge": "Modus 5b"
+      }
+    },
+    "creativitySlider": {
+      "label": "Schrijfstijl",
+      "strict": {
+        "label": "Strikt",
+        "description": "Precies, feitelijk, formele regelgevingstaal"
+      },
+      "balanced": {
+        "label": "Evenwichtig",
+        "description": "Nauwkeurig en toegankelijk, professioneel maar leesbaar"
+      },
+      "creative": {
+        "label": "Creatief",
+        "description": "Boeiend met praktijkvoorbeelden, behoudt nauwkeurigheid"
+      }
+    }
+  },
+  "settings": {
+    "title": "Instellingen",
+    "saved": "Opgeslagen",
+    "apiConnection": "API-verbinding",
+    "refresh": "Vernieuwen",
+    "anthropicApiKey": "Anthropic API-sleutel",
+    "configured": "Geconfigureerd",
+    "notConfigured": "Niet geconfigureerd",
+    "database": "Database",
+    "connected": "Verbonden",
+    "notConnected": "Niet verbonden",
+    "version": "Versie",
+    "addApiKeyHint": "Voeg uw Anthropic API-sleutel toe aan het",
+    "envFile": ".env",
+    "file": "bestand:",
+    "additionalProviders": "Aanvullende AI-providers",
+    "additionalProvidersDesc": "Configureer API-sleutels om OpenAI, Google Gemini of Mistral-modellen te gebruiken. Sleutels worden alleen opgeslagen in het servergeheugen (runtime).",
+    "openai": "OpenAI",
+    "googleAi": "Google AI",
+    "mistral": "Mistral",
+    "save": "Opslaan",
+    "defaultSettings": "Standaardinstellingen",
+    "defaultSettingsDesc": "Deze standaardwaarden worden toegepast bij het openen van een nieuwe modulesessie.",
+    "defaultModel": "Standaardmodel",
+    "defaultThinking": "Standaard denkniveau",
+    "defaultCreativity": "Standaard creativiteit",
+    "language": "Taal",
+    "languageDesc": "Kies de interfacetaal. Module-inhoud blijft in het Engels.",
+    "english": "English",
+    "svenska": "Svenska",
+    "francais": "Français",
+    "deutsch": "Deutsch",
+    "italiano": "Italiano",
+    "espanol": "Español",
+    "hindi": "हिन्दी",
+    "portugues": "Português",
+    "polski": "Polski",
+    "urdu": "اردو",
+    "deployment": "Implementatie",
+    "deploymentDesc": "De huidige implementatiemodus bepaalt beschikbare functies.",
+    "mode": "Modus",
+    "team": "Team",
+    "solo": "Solo",
+    "soloModeDesc": "Solo-modus: Enkele gebruiker. Alle functies beschikbaar zonder inloggen. Auditlog volgt uw persoonlijk gebruik en kosten.",
+    "teamModeDesc": "Teammodus: Multi-gebruiker met volledig audittrail, gebruikersattributie bij beoordelingen en gedeeld sessiebeheer.",
+    "theme": "Thema",
+    "themeDesc": "Kies het kleurenschema van de applicatie.",
+    "myProfile": "Mijn profiel",
+    "general": "Algemeen",
+    "navigation": "Navigatie",
+    "teamTab": "Team",
+    "teamMembers": "Teamleden",
+    "addUser": "Gebruiker toevoegen",
+    "newUser": "Nieuwe gebruiker",
+    "username": "Gebruikersnaam",
+    "password": "Wachtwoord",
+    "displayName": "Weergavenaam",
+    "role": "Rol",
+    "monthlyTokenBudget": "Maandelijks tokenbudget (0 = onbeperkt)",
+    "createUser": "Gebruiker aanmaken",
+    "cancel": "Annuleren",
+    "loading": "Laden...",
+    "usernameCol": "Gebruikersnaam",
+    "displayNameCol": "Weergavenaam",
+    "roleCol": "Rol",
+    "budgetCol": "Budget (tokens)",
+    "usedThisMonthCol": "Deze maand gebruikt",
+    "lastLoginCol": "Laatste login",
+    "actionsCol": "Acties",
+    "unlimited": "Onbeperkt",
+    "never": "Nooit",
+    "resetPassword": "Wachtwoord resetten",
+    "deleteUser": "Gebruiker verwijderen",
+    "usageThisMonth": "Gebruik deze maand",
+    "noUsageRecorded": "Nog geen gebruik geregistreerd.",
+    "save2": "Opslaan",
+    "budget": "Budget",
+    "budgetDesc": "Stel een maandelijks AI-uitgavenplafond in EUR in. Wanneer de limiet is bereikt, worden nieuwe aanvragen geblokkeerd. Stel in op 0 voor geen limiet.",
+    "spendingThisMonth": "Uitgaven deze maand",
+    "budgetCapReached": "Maandelijks budgetplafond bereikt. Nieuwe AI-aanvragen zijn geblokkeerd tot volgende maand.",
+    "over80Pct": "Meer dan 80% van het maandelijks budget gebruikt.",
+    "noSpendingLimit": "Geen uitgavenlimiet ingesteld.",
+    "monthlyBudgetCap": "Maandelijks AI-budgetplafond (€)",
+    "noLimit": "Geen limiet",
+    "zeroNoLimit": "0 = geen limiet (onbeperkte uitgaven)",
+    "saving": "Opslaan...",
+    "notifications": "Meldingen",
+    "notificationsDesc": "Configureer e-mailwaarschuwingen voor langdurige analyses.",
+    "emailNotification": "E-mail mij wanneer een lange analyse voltooid is",
+    "emailNotificationDesc": "Ontvang een e-mailmelding wanneer Claude een langdurige taak voltooit. Vereist dat SMTP is geconfigureerd in uw .env-bestand.",
+    "brandTemplates": "Merksjablonen",
+    "brandTemplatesDesc": "Upload de .docx- of .pptx-sjablonen van uw bedrijf. Gebruik \"Exporteren met sjabloon\" in de exportbalk om de output van Claude in uw merkbestanden te injecteren.",
+    "uploadTemplate": "Sjabloon uploaden",
+    "uploading": "Uploaden...",
+    "noTemplatesYet": "Nog geen sjablonen geüpload.",
+    "deleteTemplate": "Sjabloon verwijderen",
+    "navConfig": {
+      "title": "Navigatie-items",
+      "description": "Verberg items die u niet gebruikt om uw zijbalk te vereenvoudigen.",
+      "visibleCount": "{visible} van {total} zichtbaar",
+      "refreshToApply": "Vernieuwen om toe te passen",
+      "showAll": "Alles tonen",
+      "show": "Tonen",
+      "hide": "Verbergen",
+      "categories": {
+        "interaction": "Interactiemodi",
+        "tools": "Tools en workflows",
+        "features": "Functies",
+        "intelligence": "Intelligentie en inzichten",
+        "admin": "Beheer en analytics"
+      }
+    }
+  },
+  "brief": {
+    "title": "Korte vraag",
+    "subtitle": "Stel wat dan ook — ontvang direct gestructureerde output op expertniveau",
+    "placeholder": "Stel wat dan ook — bijv. 'Wat zijn de belangrijkste AMLR-verplichtingen voor betalingsinstellingen?'",
+    "askAnton": "Vraag Anton",
+    "goDeeper": "Dieper gaan met een volledige module",
+    "ctrlEnter": "Ctrl+Enter om te verzenden",
+    "whatDoYouNeed": "Waarmee heeft u hulp nodig?",
+    "emptyStateDesc": "Stel elke professionele vraag in gewone taal. Anton zal reageren met gestructureerde begeleiding op expertniveau — geen configuratie vereist.",
+    "thinking": "aan het denken...",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd",
+    "downloadMd": ".md",
+    "stop": "Stoppen"
+  },
+  "guide": {
+    "title": "Begeleid mij",
+    "subtitle": "Laat ons de juiste module voor uw taak vinden",
+    "step1": "Waarmee heeft u hulp nodig?",
+    "step2": "Welk type output?",
+    "step3": "Wat beschrijft u het beste?",
+    "findModules": "Overeenkomende modules zoeken",
+    "useThis": "Deze module openen",
+    "back": "Terug"
+  },
+  "batch": {
+    "title": "Batch aanmaken",
+    "subtitle": "Voer dezelfde module N keer uit met verschillende invoer vanuit een CSV",
+    "uploadCsv": "CSV uploaden",
+    "selectModule": "Module selecteren",
+    "configure": "Sjabloon configureren",
+    "runBatch": "Batch uitvoeren",
+    "downloadAll": "Alle resultaten downloaden"
+  },
+  "share": {
+    "sharedAnalysis": "Gedeelde analyse",
+    "createdWith": "Gemaakt met openEXPERT",
+    "expired": "Deze gedeelde link is verlopen of bestaat niet",
+    "loading": "Gedeelde analyse laden..."
+  },
+  "export": {
+    "exportAs": "Exporteren als",
+    "export": "Exporteren:",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd!",
+    "download": "Downloaden",
+    "withTemplate": "Met sjabloon",
+    "exporting": "Exporteren...",
+    "chooseBrandTemplate": "Kies een merksjabloon",
+    "share": "Delen",
+    "sharing": "Delen...",
+    "linkCopied": "Link gekopieerd!",
+    "copyShareableLink": "Deelbare link naar klembord kopiëren",
+    "explainDifferently": "Anders uitleggen",
+    "exportUsingBrandTemplate": "Exporteren met een merksjabloon",
+    "explainFor": "Uitleggen voor...",
+    "explainForChooseAudience": "Doelgroep kiezen",
+    "explainForSubtitle": "Claude zal de output voor hen herschrijven",
+    "explainForGenerating": "Genereren...",
+    "explainForReady": "Klaar",
+    "explainForOriginal": "Origineel",
+    "explainForTryAnother": "Andere doelgroep proberen",
+    "explainForStop": "Stoppen",
+    "explainForCopy": "Kopiëren",
+    "explainForCopied": "Gekopieerd",
+    "explainForDownload": ".md"
+  },
+  "review": {
+    "title": "Beoordelingsmotor",
+    "subtitle": "Plak een document of analyse en laat Anton het vanuit expertperspectieven beoordelen.",
+    "reviewMode": "Beoordelingsmodus",
+    "documentToReview": "Te beoordelen document",
+    "pasteText": "Tekst plakken",
+    "uploadFiles": "Bestand(en) uploaden",
+    "pasteTextPlaceholder": "Plak het document, beleid, analyse, memo of plan hier...",
+    "ctrlEnterToRun": "Ctrl+Enter om uit te voeren",
+    "readingFiles": "Bestanden lezen…",
+    "uploadPrompt": "Klik om te uploaden of sleep bestanden hierheen",
+    "uploadFormats": "PDF, DOCX, TXT, MD, XLSX, CSV",
+    "pasteTextToReview": "Plak hierboven tekst om te beoordelen",
+    "uploadFileToReview": "Upload minstens één bestand om te beoordelen",
+    "stopReview": "Beoordeling stoppen",
+    "startReview": "Beoordeling starten",
+    "readyToReview": "Klaar om te beoordelen",
+    "readyToReviewDesc": "Selecteer een beoordelingsmodus, plak uw document en klik op Beoordeling starten. Anton zal het vanuit het geselecteerde expertperspectief beoordelen.",
+    "reviewing": "aan het beoordelen...",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd",
+    "downloadMd": ".md",
+    "tokensTotal": "tokens totaal",
+    "file": "bestand",
+    "files": "bestanden"
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Er is iets misgegaan",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "submit": "Verzenden",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "view": "Weergeven",
+    "search": "Zoeken",
+    "filter": "Filteren",
+    "back": "Terug",
+    "next": "Volgende",
+    "previous": "Vorige",
+    "noResults": "Geen resultaten gevonden"
+  },
+  "connections": {
+    "title": "Verbindingen",
+    "subtitle": "Beheer externe gegevensbronnen en integraties",
+    "addConnection": "Verbinding toevoegen",
+    "noConnections": "Nog geen verbindingen geconfigureerd.",
+    "noConnectionsHint": "Klik op \"Verbinding toevoegen\" om uw eerste integratie te registreren.",
+    "loadingConnections": "Verbindingen laden...",
+    "totalConnections": "totaal",
+    "types": {
+      "database": "Database",
+      "api": "API",
+      "filesystem": "Bestandssysteem",
+      "email": "E-mail",
+      "scriptLibrary": "Scriptbibliotheek"
+    },
+    "status": {
+      "pending": "In behandeling",
+      "active": "Actief",
+      "disabled": "Uitgeschakeld",
+      "error": "Fout"
+    },
+    "actions": {
+      "test": "Testen",
+      "testConnection": "Verbinding testen",
+      "approve": "Goedkeuren",
+      "approveConnection": "Verbinding goedkeuren",
+      "disableConnection": "Verbinding uitschakelen",
+      "deleteConnection": "Deze verbinding uitschakelen? Deze kan opnieuw worden ingeschakeld door te bewerken."
+    },
+    "details": {
+      "created": "Aangemaakt",
+      "tested": "Getest",
+      "configSanitized": "Configuratie (gesaneerd)",
+      "auditLog": "Auditlog",
+      "loadingAuditLog": "Auditlog laden...",
+      "noAuditEntries": "Nog geen auditgegevens.",
+      "time": "Tijd",
+      "action": "Actie",
+      "result": "Resultaat",
+      "by": "Door"
+    },
+    "testResults": {
+      "networkError": "Netwerkfout"
+    },
+    "sections": {
+      "pendingApproval": "Wacht op goedkeuring",
+      "active": "Actief",
+      "disabledError": "Uitgeschakeld / Fout"
+    },
+    "wizard": {
+      "title": "Nieuwe verbinding",
+      "steps": {
+        "type": "Type",
+        "configure": "Configureren",
+        "test": "Testen",
+        "save": "Opslaan"
+      },
+      "typeSelection": {
+        "prompt": "Selecteer het type integratie dat u wilt aanmaken:",
+        "errorNoType": "Selecteer een verbindingstype.",
+        "database": {
+          "label": "Database",
+          "description": "Verbind met SQLite-, PostgreSQL- of MySQL-databases"
+        },
+        "api": {
+          "label": "API",
+          "description": "Verbind met REST API's met bearer-, basic- of API key-authenticatie"
+        },
+        "filesystem": {
+          "label": "Bestandssysteem",
+          "description": "Toegang tot lokale mappen met configureerbare rechten"
+        },
+        "email": {
+          "label": "E-mail",
+          "description": "SMTP- of IMAP-e-mailintegratie"
+        },
+        "scriptLibrary": {
+          "label": "Scriptbibliotheek",
+          "description": "Registreer een map met goedgekeurde uitvoerbare scripts"
+        }
+      },
+      "config": {
+        "displayName": "Weergavenaam",
+        "displayNamePlaceholder": "bijv. Productie-DB, Rapportage-API",
+        "errorNoName": "Weergavenaam is verplicht.",
+        "database": {
+          "driver": "Driver",
+          "drivers": {
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL / MariaDB",
+            "mssql": "Microsoft SQL Server",
+            "mongodb": "MongoDB (NoSQL)"
+          },
+          "filePath": "Databasebestandspad",
+          "filePathPlaceholder": "/pad/naar/database.sqlite",
+          "host": "Host / IP-adres",
+          "hostPlaceholder": "localhost of 192.168.1.100",
+          "hostHint": "Gebruik IP of hostnaam voor externe servers",
+          "port": "Poort",
+          "databaseName": "Databasenaam",
+          "databaseNamePlaceholder": "mijndatabase",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "ssl": "SSL/TLS-versleuteling inschakelen",
+          "sslVerifyCert": "SSL-certificaat verifiëren (uitvinken voor zelfondertekende certificaten)",
+          "maxRowsPerQuery": "Max rijen per query",
+          "maxRowsPlaceholder": "10000",
+          "allowedTables": "Toegestane tabellen (kommagescheiden, leeg laten voor alle)",
+          "allowedTablesPlaceholder": "gebruikers, bestellingen, producten"
+        },
+        "api": {
+          "baseUrl": "Basis-URL",
+          "baseUrlPlaceholder": "https://api.voorbeeld.nl",
+          "authType": "Authenticatietype",
+          "authTypes": {
+            "bearer": "Bearer Token",
+            "basic": "Basic Auth (base64)",
+            "apikey": "API Key Header",
+            "none": "Geen authenticatie"
+          },
+          "authValue": "Authenticatiewaarde",
+          "authValuePlaceholder": "Token / credentials",
+          "rateLimit": "Snelheidslimiet (req/min, 0 = onbeperkt)",
+          "rateLimitPlaceholder": "60",
+          "timeout": "Time-out (seconden)",
+          "timeoutPlaceholder": "30",
+          "allowedEndpoints": "Toegestane endpoints",
+          "endpointPathPlaceholder": "/api/endpoint of /api/*",
+          "addEndpoint": "Toevoegen",
+          "methods": {
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE",
+            "all": "*"
+          }
+        },
+        "filesystem": {
+          "basePath": "Basispad",
+          "basePathPlaceholder": "/pad/naar/map of C:\\Gebruikers\\...",
+          "basePathHint": "Alle bestandstoegang is beperkt tot deze map en submappen.",
+          "allowedExtensions": "Toegestane extensies (geen = alle toegestaan)",
+          "permissions": "Rechten",
+          "permissionRead": "Lezen",
+          "permissionWrite": "Schrijven",
+          "maxFileSize": "Max bestandsgrootte (MB)",
+          "maxFileSizePlaceholder": "50"
+        },
+        "generic": {
+          "configJson": "Configuratie (JSON)",
+          "invalidJson": "Ongeldige JSON"
+        }
+      },
+      "test": {
+        "prompt": "Valideer configuratie voordat u opslaat:",
+        "summary": "Verbindingssamenvatting",
+        "validate": "Configuratie valideren",
+        "validating": "Valideren...",
+        "validated": "Configuratie gevalideerd. Volledige connectiviteitstest beschikbaar na opslaan.",
+        "failed": "Validatie mislukt"
+      },
+      "confirm": {
+        "prompt": "Controleer en sla uw verbinding op:",
+        "name": "Naam",
+        "type": "Type",
+        "statusAfterSave": "Status na opslaan",
+        "pendingNotice": "De verbinding krijgt de status \"in behandeling\" totdat een beheerder deze goedkeurt. Actieve verbindingen zijn beschikbaar voor alle gebruikers.",
+        "saveConnection": "Verbinding opslaan",
+        "saving": "Opslaan..."
+      },
+      "navigation": {
+        "back": "Terug",
+        "next": "Volgende"
+      },
+      "errors": {
+        "networkError": "Netwerkfout — kon verbinding niet opslaan",
+        "saveFailed": "Verbinding aanmaken mislukt"
+      }
+    }
+  },
+  "scripts": {
+    "title": "Scriptbibliotheek",
+    "subtitle": "Beheer goedgekeurde uitvoerbare scripts",
+    "totalScripts": "scripts",
+    "registerScript": "Script registreren",
+    "noScripts": "Geen scripts in de bibliotheek.",
+    "noScriptsHint": "Registreer goedgekeurde scripts om ze beschikbaar te maken voor workflows.",
+    "loadingScripts": "Scripts laden...",
+    "deleteScript": "Script verwijderen",
+    "deleteConfirm": "Dit script uit de bibliotheek verwijderen?",
+    "status": {
+      "approved": "Goedgekeurd",
+      "pending": "In behandeling"
+    },
+    "details": {
+      "scriptPath": "Scriptpad",
+      "maxRuntime": "Max uitvoertijd",
+      "runtimeSeconds": "s",
+      "memoryLimit": "Geheugenlimiet",
+      "memoryMb": "MB",
+      "sandbox": "Sandbox",
+      "sandboxEnabled": "Ingeschakeld",
+      "sandboxDisabled": "Uitgeschakeld",
+      "networkAccess": "Netwerktoegang",
+      "networkAllowed": "Toegestaan",
+      "networkBlocked": "Geblokkeerd",
+      "fileHash": "Bestandshash (SHA-256)",
+      "parameters": "Parameters",
+      "version": "v"
+    },
+    "languages": {
+      "python": "Python",
+      "bash": "Bash",
+      "r": "R",
+      "powershell": "PowerShell",
+      "node": "Node.js"
+    },
+    "form": {
+      "title": "Nieuw script registreren",
+      "displayName": "Weergavenaam",
+      "displayNamePlaceholder": "Data-exportscript",
+      "language": "Taal",
+      "description": "Beschrijving",
+      "descriptionPlaceholder": "Wat doet dit script?",
+      "scriptPath": "Scriptbestandspad",
+      "scriptPathPlaceholder": "/pad/naar/script.py",
+      "maxRuntime": "Max uitvoertijd (seconden)",
+      "memoryLimit": "Geheugenlimiet (MB)",
+      "networkAccess": "Netwerktoegang toestaan",
+      "parametersSchema": "Parameterschema (JSON)",
+      "parametersPlaceholder": "{\"param1\": {\"type\": \"string\", \"description\": \"...\"}}",
+      "invalidJson": "Ongeldige JSON in parameters",
+      "errorRequired": "Weergavenaam en scriptpad zijn verplicht",
+      "errorSave": "Netwerkfout",
+      "registerScript": "Script registreren",
+      "registering": "Registreren...",
+      "cancel": "Annuleren"
+    }
+  },
+  "analytics": {
+    "title": "Gebruiksanalyse",
+    "subtitle": "Volg uw openEXPERT-gebruik, kosten en ROI",
+    "stats": {
+      "totalSessions": "Totale sessies",
+      "totalCost": "Totale kosten",
+      "tokensUsed": "Gebruikte tokens",
+      "uniqueModules": "Unieke modules",
+      "messages": "berichten",
+      "avgPerSession": "gem. {amount} / sessie",
+      "acrossAllSessions": "over alle sessies",
+      "modulesUsed": "gebruikte modules"
+    },
+    "charts": {
+      "sessionActivity": "Sessieactiviteit — Laatste 30 dagen",
+      "dailyCost": "Dagelijkse kosten — Laatste 30 dagen",
+      "mostUsedModules": "Meest gebruikte modules",
+      "noModuleData": "Nog geen modulegebruiksgegevens",
+      "sessions": "sessie",
+      "sessionPlural": "sessies"
+    },
+    "roi": {
+      "title": "ROI-schatting",
+      "sessionMultiplier": "{count} sessies × {hours}u gem. × €{rate}/u =",
+      "estimatedValue": "€{value} geschatte waarde",
+      "equivalentTo": "Equivalent aan ongeveer",
+      "workingDays": "{days} werkdag",
+      "workingDaysPlural": "{days} werkdagen",
+      "consultingTimeSaved": "aan bespaarde advieswerkzaamheden.",
+      "basedOn": "Gebaseerd op gebruikelijke compliance consultancy tarieven van €{rate}/uur en een geschatte {hours} uur aan equivalent handmatig werk per AI-sessie."
+    }
+  },
+  "insights": {
+    "title": "Data-inzichten",
+    "subtitle": "Transformeer uw data in visuele intelligentie",
+    "input": {
+      "pasteDataTab": "Plak data",
+      "uploadFileTab": "Bestand uploaden",
+      "pasteDataPlaceholder": "Plak CSV, tabel of gestructureerde data hier...\n\nVoorbeeld:\nMaand,SAR Aantal,Waarde (EUR)\nJan 2024,12,450000\nFeb 2024,18,820000",
+      "chooseFile": "Kies bestand",
+      "acceptedFormats": "Accepteert .csv, .xlsx, .txt",
+      "loadedFile": "Geladen: {fileName}",
+      "questionLabel": "Wat wilt u zien?",
+      "questionPlaceholder": "bijv. Toon trends in de tijd, vergelijk per categorie...",
+      "exampleShowTrends": "Toon trends in de tijd",
+      "exampleCompareCategory": "Vergelijk per categorie",
+      "exampleHighlightOutliers": "Markeer uitschieters",
+      "exampleShowDistribution": "Toon distributie",
+      "exampleTimelineView": "Tijdlijnweergave",
+      "modelNote": "Anton zal uw data analyseren en interactieve grafieken genereren met Claude Opus 4.6.",
+      "errorMessage": "Plak of upload eerst data.",
+      "errorQuestion": "Beschrijf wat u wilt zien."
+    },
+    "actions": {
+      "generateInsights": "Inzichten genereren",
+      "stop": "Stoppen",
+      "analyzing": "Anton analyseert uw data...",
+      "copyRawData": "Ruwe data kopiëren",
+      "downloadChartData": "Grafiekdata downloaden (.csv)"
+    },
+    "output": {
+      "summaryTitle": "Samenvatting",
+      "narrativeTitle": "Narratieve analyse"
+    }
+  },
+  "soundingBoard": {
+    "title": "Klankbord",
+    "subtitle": "Uw persoonlijke adviseur is klaar",
+    "talkingWith": "In gesprek met:",
+    "advisorSettings": "Adviseurinstellingen",
+    "newConversation": "Nieuw gesprek",
+    "changePersonaWarning": "Het wijzigen van de adviseurpersona zal het gesprek resetten. Doorgaan?",
+    "personas": {
+      "strategic": {
+        "label": "Algemene strategische adviseur",
+        "description": "Denken op hoofdlijnen, strategische opties, stakeholderdynamiek"
+      },
+      "legal": {
+        "label": "Juridisch adviseur",
+        "description": "Juridisch risico, contracten, regelgevingsverplichtingen, aansprakelijkheid"
+      },
+      "risk": {
+        "label": "Risico-expert",
+        "description": "Risicoherkenning, -beoordeling, -beperking en -controles"
+      },
+      "regulatory": {
+        "label": "Toezichtspecialist",
+        "description": "Toezichtverwachtingen, regelgevingsinterpretatie, compliance frameworks"
+      },
+      "financialCrime": {
+        "label": "Financiële criminaliteit expert",
+        "description": "AML/CFT, sancties, fraude, typologieën, financiële criminaliteitsrisico's"
+      }
+    },
+    "context": {
+      "personaLabel": "Adviseurpersona",
+      "aboutYouLabel": "Over u",
+      "aboutYouPlaceholder": "Ik ben hoofd compliance bij een Noordse bank. Mijn focus is AML/CFT. Mijn huidige uitdaging is het voorbereiden op AMLA-toezicht.",
+      "contextNote": "Deze context wordt lokaal opgeslagen en opgenomen in elk bericht aan uw adviseur."
+    },
+    "emptyState": {
+      "title": "Uw persoonlijke adviseur is klaar",
+      "description": "Vraag wat dan ook — strategische dilemma's, lastige situaties, regelgevingsvragen of gewoon hardop denken. Uw {persona} zal reageren met gerichte begeleiding op expertniveau.",
+      "tipNoContext": "Tip: Voeg uw context hierboven toe zodat uw adviseur meer relevante adviezen kan geven.",
+      "example1": "Hoe moet ik een aanstaande toezichtinspectie benaderen?",
+      "example2": "Wat zijn de grootste risico's in ons AMLR-implementatieplan?",
+      "example3": "Help me bij het doordenken van een lastig stakeholdergesprek",
+      "example4": "Waar zou een toezichthouder zich op focussen bij een de-risking review?"
+    },
+    "chat": {
+      "inputPlaceholder": "Vraag uw {persona}...",
+      "askAdvisor": "Vraag adviseur",
+      "stop": "Stoppen",
+      "ctrlEnterToSend": "Ctrl+Enter om te verzenden",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "thinking": "Aan het denken"
+    }
+  },
+  "formTools": {
+    "fillForm": {
+      "title": "Dit formulier invullen",
+      "subtitle": "Plak een formulier, vragenlijst of sjabloon — ANTON vult het veld voor veld in met expertbegeleiding en bronvermeldingen.",
+      "formLabel": "Formulier of vragenlijst",
+      "formPlaceholder": "Plak uw formulier of vragenlijst hier...",
+      "contextLabel": "Aanvullende context",
+      "contextOptional": "(optioneel)",
+      "contextPlaceholder": "bijv. Dit is voor een Noordse bank die onder AMLR valt",
+      "fillForm": "Formulier invullen",
+      "stop": "Stoppen",
+      "fillingForm": "formulier invullen...",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "download": ".md"
+    },
+    "challengeThis": {
+      "title": "Uitdagen",
+      "subtitle": "Plak een document, plan of argument — ANTON stresstest het met de sterkst mogelijke kritiek.",
+      "documentLabel": "Document, plan of argument om uit te dagen",
+      "documentPlaceholder": "Plak het document, plan of argument om uit te dagen...",
+      "contextLabel": "Context",
+      "contextOptional": "(optioneel)",
+      "contextPlaceholder": "bijv. Dit is een AML-beleid voor een Deense betalingsinstelling",
+      "challengeIt": "Uitdagen",
+      "stop": "Stoppen",
+      "challengeMode": "Anton — Uitdagingsmodus",
+      "analyzing": "analyseren...",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "download": ".md"
+    },
+    "dualInterpret": {
+      "title": "Dubbele interpretatie",
+      "subtitle": "Upload of plak een juridische/regelgevingstekst — ANTON interpreteert het tegelijkertijd als zowel toezichthouder als gereguleerde entiteit.",
+      "pasteTextTab": "Tekst plakken",
+      "enterUrlTab": "URL invoeren",
+      "textLabel": "Juridische of regelgevingstekst",
+      "textPlaceholder": "Plak de juridische of regelgevingstekst om te interpreteren...",
+      "urlLabel": "URL naar regelgevingstekst",
+      "urlPlaceholder": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj",
+      "urlNote": "URL-ophalen gebruikt de Online Reference kennisbron. Voor volledige documentextractie gebruikt u het Kennisbronnen-paneel in een module. Hier gebruikt Anton zijn trainingskennis van de URL-inhoud plus webzoekopdracht.",
+      "interpret": "Interpreteren",
+      "stop": "Stoppen",
+      "dualMode": "Anton — Dubbele interpretatie",
+      "interpreting": "interpreteren...",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "download": ".md"
+    }
+  }
+}

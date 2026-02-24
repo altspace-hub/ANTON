@@ -1,0 +1,22 @@
+{
+  "formatVersion": "1.0",
+  "id": "investment",
+  "name": "Investment & Asset Management",
+  "shortName": "Investment",
+  "description": "Investment analysis, portfolio review, fund compliance, and MiFID II/MiFIR advisory for investment managers, asset managers, and investment advisors.",
+  "icon": "LineChart",
+  "color": "adv-teal",
+  "cluster": "finance",
+  "moduleIds": [
+    "investment-analysis",
+    "portfolio-review",
+    "fund-compliance",
+    "mifid-advisory",
+    "fund-due-diligence",
+    "portfolio-risk-analytics",
+    "esg-investment-screening",
+    "investor-reporting-factsheet",
+    "regulatory-capital-assessment",
+    "alternative-investment-dd"
+  ]
+}

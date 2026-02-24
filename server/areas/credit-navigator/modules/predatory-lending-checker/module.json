@@ -1,0 +1,89 @@
+{
+  "formatVersion": "1.0",
+  "id": "predatory-lending-checker",
+  "label": "Predatory Lending Red Flag Checker",
+  "shortLabel": "Loan Red Flags",
+  "icon": "AlertOctagon",
+  "description": "Is this lender dangerous? Check for red flags of predatory lending before you sign anything.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Clear protective warnings work well with smaller models."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Predatory lending patterns, advance-fee fraud, Ponzi schemes dressed as investment loans, illegal debt collection, mobile loan app abuses"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "lender_type",
+      "type": "select",
+      "label": "What type of lender is this?",
+      "required": true,
+      "options": [
+        { "value": "mobile-app", "label": "Mobile application" },
+        { "value": "moneylender", "label": "Individual moneylender" },
+        { "value": "small-finance-company", "label": "Small finance company" },
+        { "value": "investment-scheme", "label": "'Investment' or loan scheme" },
+        { "value": "import-export-loan", "label": "Import/export or trade loan" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "red_flags_seen",
+      "type": "chips",
+      "label": "Which of these have you noticed? (select all that apply)",
+      "required": false,
+      "options": [
+        { "value": "high-rate", "label": "Very high interest rate" },
+        { "value": "pressure-to-sign", "label": "Pressure to sign quickly" },
+        { "value": "unclear-cost", "label": "Not clear about total cost" },
+        { "value": "upfront-fee", "label": "They want an upfront fee before giving the loan" },
+        { "value": "excess-collateral", "label": "Want collateral worth much more than the loan" },
+        { "value": "no-contract", "label": "No written contract" },
+        { "value": "not-registered", "label": "Cannot prove they are registered" }
+      ]
+    },
+    {
+      "id": "amount",
+      "type": "select",
+      "label": "How much is the loan for?",
+      "required": false,
+      "options": [
+        { "value": "under-100", "label": "Under $100" },
+        { "value": "100-500", "label": "$100 to $500" },
+        { "value": "500-2000", "label": "$500 to $2,000" },
+        { "value": "over-2000", "label": "Over $2,000" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "tags": [
+    "bop",
+    "financial-inclusion",
+    "predatory-lending",
+    "loan-scam",
+    "advance-fee-fraud",
+    "ponzi-scheme",
+    "consumer-protection",
+    "red-flags",
+    "mobile-loan-abuse",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india",
+    "bangladesh",
+    "philippines"
+  ]
+}

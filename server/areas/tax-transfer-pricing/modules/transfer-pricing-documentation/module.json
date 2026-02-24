@@ -1,0 +1,131 @@
+{
+  "formatVersion": "1.0",
+  "id": "transfer-pricing-documentation",
+  "label": "Transfer Pricing Documentation",
+  "shortLabel": "TP Docs",
+  "description": "Draft and structure transfer pricing documentation in compliance with OECD BEPS Action 13: Master File, Local File, and Country-by-Country Report. Includes functional analysis, benchmarking guidance, and policy narratives.",
+  "icon": "FileSearch",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "policy-document",
+      "executive-summary"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "OECD Transfer Pricing Guidelines 2022, BEPS Action 13, local TP documentation requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "doc_type",
+      "type": "select",
+      "label": "Documentation to prepare",
+      "required": true,
+      "options": [
+        { "value": "master_file", "label": "Master File (OECD Chapter V, Annex I)" },
+        { "value": "local_file", "label": "Local File (OECD Chapter V, Annex II)" },
+        { "value": "cbcr", "label": "Country-by-Country Report (CbCR)" },
+        { "value": "tp_policy", "label": "Group Transfer Pricing Policy" },
+        { "value": "benchmarking_memo", "label": "Benchmarking / Comparability Analysis Memo" },
+        { "value": "full_package", "label": "Full Three-Tier Package (Master File + Local File)" }
+      ]
+    },
+    {
+      "id": "transaction_types",
+      "type": "multi-select",
+      "label": "Intercompany transaction types",
+      "description": "Which intercompany transactions require documentation?",
+      "options": [
+        { "value": "goods", "label": "Sale / purchase of goods" },
+        { "value": "services", "label": "Intragroup services" },
+        { "value": "ip_royalties", "label": "IP licensing / royalties" },
+        { "value": "financial_loans", "label": "Intragroup loans / financial transactions" },
+        { "value": "guarantees", "label": "Financial guarantees" },
+        { "value": "cost_sharing", "label": "Cost contribution / cost-sharing arrangements" },
+        { "value": "management_fees", "label": "Management fees / head office charges" },
+        { "value": "commissionnaire", "label": "Commissionnaire / limited risk arrangements" }
+      ]
+    },
+    {
+      "id": "tp_method",
+      "type": "select",
+      "label": "Primary TP method (if known)",
+      "options": [
+        { "value": "cup", "label": "Comparable Uncontrolled Price (CUP)" },
+        { "value": "resale_price", "label": "Resale Price Method (RPM)" },
+        { "value": "cost_plus", "label": "Cost Plus Method (CPM)" },
+        { "value": "tnmm", "label": "Transactional Net Margin Method (TNMM)" },
+        { "value": "profit_split", "label": "Profit Split Method (PSM)" },
+        { "value": "not_determined", "label": "Not yet determined — advise on best method" }
+      ]
+    },
+    {
+      "id": "local_jurisdiction",
+      "type": "select",
+      "label": "Local entity jurisdiction",
+      "required": true,
+      "options": [
+        { "value": "se", "label": "Sweden" },
+        { "value": "no", "label": "Norway" },
+        { "value": "dk", "label": "Denmark" },
+        { "value": "fi", "label": "Finland" },
+        { "value": "de", "label": "Germany" },
+        { "value": "nl", "label": "Netherlands" },
+        { "value": "uk", "label": "United Kingdom" },
+        { "value": "us", "label": "United States" },
+        { "value": "other", "label": "Other (describe in context)" }
+      ]
+    },
+    {
+      "id": "entity_profile",
+      "type": "textarea",
+      "label": "Entity functional profile",
+      "description": "Describe the local entity's functions, assets, and risks (FAR analysis input). What does it do, what assets does it own, what risks does it bear?",
+      "placeholder": "e.g., Swedish subsidiary acts as limited-risk distributor for Nordic markets. Purchases finished goods from German parent at agreed transfer prices. No IP ownership. Holds trade receivables. Market risk borne by German parent..."
+    },
+    {
+      "id": "group_revenue",
+      "type": "select",
+      "label": "Group consolidated revenue (prior year)",
+      "description": "Required to determine CbCR filing threshold (EUR 750M).",
+      "options": [
+        { "value": "below_750m_eur", "label": "Below EUR 750 million" },
+        { "value": "above_750m_eur", "label": "EUR 750 million or above (CbCR mandatory)" },
+        { "value": "unknown", "label": "Unknown / to be confirmed" }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "transfer-pricing-specialist",
+    "tax-director"
+  ],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "opus",
+    "notes": "TP documentation requires deep OECD Guidelines knowledge and precise legal-technical drafting. Always use Opus."
+  },
+  "tags": [
+    "transfer-pricing",
+    "BEPS",
+    "master-file",
+    "local-file",
+    "CbCR",
+    "OECD-guidelines",
+    "arm's-length",
+    "functional-analysis",
+    "benchmarking"
+  ]
+}

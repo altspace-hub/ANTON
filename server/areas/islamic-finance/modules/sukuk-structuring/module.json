@@ -1,0 +1,60 @@
+{
+  "formatVersion": "1.0",
+  "id": "sukuk-structuring",
+  "label": "Sukuk Structuring Guide",
+  "shortLabel": "Sukuk Structuring",
+  "icon": "GitBranch",
+  "description": "Structure Sharia-compliant sukuk (Islamic bonds) from inception through documentation. Covers asset selection, SPV structuring, Sharia documentation, pricing, and regulatory requirements.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "decision-memo"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AAOIFI Sharia Standard No. 17 (Investment Sukuk), IFSB capital markets standards, global sukuk market precedents"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "sukuk_type",
+      "label": "Sukuk Structure Type",
+      "type": "select",
+      "options": ["Ijara Sukuk", "Musharakah Sukuk", "Murabaha Sukuk", "Wakala Sukuk", "Hybrid"],
+      "required": true
+    },
+    {
+      "id": "amount",
+      "label": "Indicative Issuance Size",
+      "type": "text",
+      "placeholder": "e.g. USD 500 million",
+      "required": false
+    },
+    {
+      "id": "tenor",
+      "label": "Tenor",
+      "type": "select",
+      "options": ["Short-term (<1 year)", "Medium (1–5 years)", "Long (5–10 years)", "Very long (10+ years)"],
+      "required": true
+    },
+    {
+      "id": "underlying_assets",
+      "label": "Underlying Assets or Activities",
+      "type": "textarea",
+      "placeholder": "Describe the underlying assets or activities to be securitised",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
+  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
+  "tags": ["sukuk", "structuring", "capital-markets", "ijara", "wakala", "musharakah", "spv", "aaoifi", "islamic-bonds"]
+}

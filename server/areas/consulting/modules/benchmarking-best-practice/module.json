@@ -1,0 +1,129 @@
+{
+  "formatVersion": "1.0",
+  "id": "benchmarking-best-practice",
+  "label": "Benchmarking & Best Practice Study",
+  "shortLabel": "Benchmarking",
+  "icon": "BarChart",
+  "description": "Conduct peer benchmarking analysis and best practice research to support client recommendations.",
+  "color": "adv-green",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary",
+      "regulatory-comparison"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Industry surveys, regulatory findings, EBA convergence reports, BIS papers, public disclosures"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "benchmarking_topic",
+      "type": "textarea",
+      "label": "Benchmarking topic",
+      "required": true,
+      "placeholder": "e.g., AML compliance operating models at European banks, transaction monitoring system selection, SFDR disclosure practices, sanctions screening coverage rates"
+    },
+    {
+      "id": "peer_group_type",
+      "type": "select",
+      "label": "Peer group type",
+      "options": [
+        {
+          "value": "industry_peers",
+          "label": "Industry peers"
+        },
+        {
+          "value": "best_in_class",
+          "label": "Best-in-class"
+        },
+        {
+          "value": "regulatory_expectations",
+          "label": "Regulatory expectations"
+        },
+        {
+          "value": "global_leaders",
+          "label": "Global leaders"
+        },
+        {
+          "value": "own_historical",
+          "label": "Own historical"
+        }
+      ]
+    },
+    {
+      "id": "data_sources",
+      "type": "multi-select",
+      "label": "Data sources",
+      "options": [
+        {
+          "value": "public_reports",
+          "label": "Public reports"
+        },
+        {
+          "value": "regulatory_findings",
+          "label": "Regulatory findings"
+        },
+        {
+          "value": "industry_surveys",
+          "label": "Industry surveys"
+        },
+        {
+          "value": "gartner",
+          "label": "Gartner / analyst reports"
+        },
+        {
+          "value": "client_data",
+          "label": "Client data"
+        }
+      ]
+    },
+    {
+      "id": "output_use",
+      "type": "select",
+      "label": "Output use",
+      "options": [
+        {
+          "value": "board_presentation",
+          "label": "Board presentation"
+        },
+        {
+          "value": "strategy_paper",
+          "label": "Strategy paper"
+        },
+        {
+          "value": "regulatory_submission",
+          "label": "Regulatory submission"
+        },
+        {
+          "value": "internal_improvement",
+          "label": "Internal improvement"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "devil-advocate"
+  ],
+  "tags": [
+    "benchmarking",
+    "best-practice",
+    "peer-comparison",
+    "industry-research",
+    "regulatory-comparison",
+    "market-analysis"
+  ]
+}

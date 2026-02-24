@@ -1,0 +1,101 @@
+{
+  "formatVersion": "1.0",
+  "id": "lease-review",
+  "label": "Lease Agreement Review",
+  "shortLabel": "Lease Review",
+  "icon": "FileSearch",
+  "description": "Review and analyse commercial and residential lease agreements. Identifies key terms, unusual clauses, risk areas, and tenant/landlord obligations. Produces structured findings covering rent mechanics, break clauses, repair obligations, alienation provisions, and compliance with local tenancy legislation.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Commercial lease law, tenant rights legislation, lease agreement best practices, real estate contract analysis"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "lease-type",
+      "label": "Lease Type",
+      "type": "select",
+      "options": [
+        "Commercial — office",
+        "Commercial — retail",
+        "Commercial — industrial",
+        "Residential",
+        "Ground lease",
+        "Sublease"
+      ],
+      "required": true
+    },
+    {
+      "id": "review-perspective",
+      "label": "Review Perspective",
+      "type": "select",
+      "options": [
+        "Tenant",
+        "Landlord",
+        "Neutral/advisory"
+      ],
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "select",
+      "options": [
+        "Sweden",
+        "Finland",
+        "Denmark",
+        "Norway",
+        "UK",
+        "Germany",
+        "Other EU"
+      ],
+      "required": true
+    },
+    {
+      "id": "focus-areas",
+      "label": "Focus Areas",
+      "type": "multiselect",
+      "options": [
+        "Rent and indexation",
+        "Break clauses",
+        "Repair and maintenance",
+        "Alienation/assignment",
+        "Insurance",
+        "Service charges",
+        "Termination",
+        "All clauses"
+      ],
+      "required": true
+    },
+    {
+      "id": "specific-concerns",
+      "label": "Specific Concerns",
+      "type": "textarea",
+      "placeholder": "Any particular clauses or issues to focus on...",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "real-estate-lawyer",
+    "property-manager",
+    "tenant-advisor"
+  ],
+  "tags": [
+    "real-estate",
+    "lease",
+    "contract",
+    "review",
+    "legal"
+  ]
+}

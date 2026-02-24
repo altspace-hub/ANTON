@@ -1,0 +1,8 @@
+{
+  "id": "jurisdiction-gh-bog",
+  "label": "Ghana — Bank of Ghana (BoG)",
+  "category": "jurisdiction",
+  "applicableAreas": ["fcp", "banking", "mobile-money", "microfinance"],
+  "description": "Ghanaian financial regulatory framework: Anti-Money Laundering Act 2020, FIC reporting obligations, Mobile Money Interoperability (GhIPSS), Bank of Ghana fintech sandbox, and West African monetary integration context.",
+  "tags": ["ghana", "bog", "west-africa", "mobile-money", "ecowas"]
+}

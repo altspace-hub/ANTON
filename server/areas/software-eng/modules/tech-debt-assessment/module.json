@@ -1,0 +1,181 @@
+{
+  "formatVersion": "1.0",
+  "id": "tech-debt-assessment",
+  "label": "Tech Debt Assessment",
+  "shortLabel": "Tech Debt",
+  "description": "Systematically identify, categorise, and prioritise technical debt. Assess its business impact, create remediation roadmaps, and build the case for investing in code quality and infrastructure improvements.",
+  "icon": "AlertTriangle",
+  "color": "adv-teal",
+  "areaId": "software-eng",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "assessment_scope",
+      "type": "select",
+      "label": "Assessment scope",
+      "required": true,
+      "options": [
+        {
+          "value": "full_system",
+          "label": "Full system / codebase assessment"
+        },
+        {
+          "value": "specific_area",
+          "label": "Specific area or component"
+        },
+        {
+          "value": "infrastructure",
+          "label": "Infrastructure & DevOps"
+        },
+        {
+          "value": "dependencies",
+          "label": "Dependencies & libraries"
+        },
+        {
+          "value": "testing",
+          "label": "Testing & quality"
+        },
+        {
+          "value": "documentation",
+          "label": "Documentation & knowledge"
+        },
+        {
+          "value": "security",
+          "label": "Security debt"
+        }
+      ]
+    },
+    {
+      "id": "system_age",
+      "type": "select",
+      "label": "System age",
+      "options": [
+        {
+          "value": "less_1",
+          "label": "Less than 1 year"
+        },
+        {
+          "value": "1_3",
+          "label": "1-3 years"
+        },
+        {
+          "value": "3_5",
+          "label": "3-5 years"
+        },
+        {
+          "value": "5_10",
+          "label": "5-10 years"
+        },
+        {
+          "value": "10_plus",
+          "label": "10+ years"
+        }
+      ]
+    },
+    {
+      "id": "team_size",
+      "type": "select",
+      "label": "Engineering team size",
+      "options": [
+        {
+          "value": "small",
+          "label": "Small (1-5 engineers)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (5-15 engineers)"
+        },
+        {
+          "value": "large",
+          "label": "Large (15-50 engineers)"
+        },
+        {
+          "value": "enterprise",
+          "label": "Enterprise (50+ engineers)"
+        }
+      ]
+    },
+    {
+      "id": "symptoms",
+      "type": "multi-select",
+      "label": "Symptoms you are experiencing",
+      "options": [
+        {
+          "value": "slow_delivery",
+          "label": "Slowing feature delivery velocity"
+        },
+        {
+          "value": "frequent_bugs",
+          "label": "Frequent bugs / regressions"
+        },
+        {
+          "value": "hard_to_change",
+          "label": "Code is hard to change"
+        },
+        {
+          "value": "onboarding",
+          "label": "New engineers take too long to onboard"
+        },
+        {
+          "value": "performance",
+          "label": "Performance degradation"
+        },
+        {
+          "value": "outages",
+          "label": "Frequent outages / incidents"
+        },
+        {
+          "value": "security",
+          "label": "Security vulnerabilities"
+        },
+        {
+          "value": "dependencies",
+          "label": "Outdated / unmaintained dependencies"
+        },
+        {
+          "value": "no_tests",
+          "label": "Insufficient test coverage"
+        },
+        {
+          "value": "fear_of_change",
+          "label": "Team afraid to make changes"
+        }
+      ]
+    },
+    {
+      "id": "tech_stack",
+      "type": "textarea",
+      "label": "Technology stack",
+      "placeholder": "e.g., Python 3.8 / Django 3.2, PostgreSQL 12, React 16, deployed on AWS EC2, Jenkins CI, no containerisation"
+    },
+    {
+      "id": "known_issues",
+      "type": "textarea",
+      "label": "Known technical issues",
+      "placeholder": "e.g., Monolithic codebase with circular dependencies, no automated testing, manual deployments taking 2 hours, database schema is undocumented, using deprecated libraries"
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "software",
+    "tech-debt",
+    "quality",
+    "maintenance",
+    "refactoring",
+    "modernisation"
+  ]
+}

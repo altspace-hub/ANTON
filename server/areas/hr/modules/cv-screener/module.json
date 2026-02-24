@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "cv-screener",
+  "label": "CV/Resume Screener",
+  "shortLabel": "CV Screener",
+  "description": "Screens candidate CVs/resumes against job requirements. Evaluates qualification match, experience relevance, career progression, and flags red/green signals. Produces ranked shortlist with assessment notes.",
+  "icon": "UserSearch",
+  "color": "adv-blue",
+  "areaId": "hr",
+  "perspective": "operational",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": false
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "job_requirements",
+      "type": "textarea",
+      "label": "Job requirements and competency criteria",
+      "required": true,
+      "description": "Paste the job description or list the key requirements: must-have qualifications, experience, technical skills, and competencies.",
+      "placeholder": "e.g., Senior Compliance Manager — 7+ years in financial services compliance, AML/CFT expertise required, CAMS or equivalent preferred, experience managing a team of 5+, strong regulatory interaction experience (FCA/FSA), excellent written and verbal communication in English (Swedish preferred)..."
+    },
+    {
+      "id": "cv_content",
+      "type": "textarea",
+      "label": "CV(s) to screen",
+      "required": true,
+      "description": "Paste one or more CVs. For multiple candidates, separate each with '---' and a candidate identifier (Candidate A, B, etc.).",
+      "placeholder": "Paste CV text here. For multiple CVs use:\n---\nCANDIDATE A\n[CV text]\n---\nCANDIDATE B\n[CV text]"
+    },
+    {
+      "id": "priority_criteria",
+      "type": "textarea",
+      "label": "Must-have criteria (dealbreakers)",
+      "description": "List any absolute requirements — candidates who do not meet these should be screened out regardless of other strengths.",
+      "placeholder": "e.g., Must have AML/CFT compliance experience. Must be eligible to work in Sweden without visa sponsorship. Must have minimum 5 years financial services experience."
+    },
+    {
+      "id": "screening_focus",
+      "type": "multi-select",
+      "label": "Screening dimensions to assess",
+      "options": [
+        {
+          "value": "qualifications",
+          "label": "Academic qualifications and professional certifications"
+        },
+        {
+          "value": "experience_match",
+          "label": "Experience relevance and depth"
+        },
+        {
+          "value": "career_progression",
+          "label": "Career progression and trajectory"
+        },
+        {
+          "value": "tenure",
+          "label": "Employment tenure and stability"
+        },
+        {
+          "value": "industry_fit",
+          "label": "Industry and sector alignment"
+        },
+        {
+          "value": "skills_match",
+          "label": "Technical and functional skills match"
+        },
+        {
+          "value": "red_flags",
+          "label": "Red flags and areas for exploration"
+        }
+      ]
+    },
+    {
+      "id": "output_format_preference",
+      "type": "select",
+      "label": "Output preference",
+      "options": [
+        {
+          "value": "ranked_shortlist",
+          "label": "Ranked shortlist with summary assessment per candidate"
+        },
+        {
+          "value": "pass_fail",
+          "label": "Pass / Hold / Reject per candidate with rationale"
+        },
+        {
+          "value": "comparative",
+          "label": "Comparative assessment table across candidates"
+        }
+      ]
+    }
+  ],
+  "recommendedPersonas": [],
+  "tags": [
+    "hr",
+    "recruitment",
+    "screening",
+    "cv",
+    "shortlist",
+    "talent-acquisition"
+  ]
+}
