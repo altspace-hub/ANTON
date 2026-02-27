@@ -10,7 +10,12 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 **One-time setup (do this once on each new computer):**
 
-1. Install **Node.js** — download the LTS installer from [nodejs.org](https://nodejs.org) and run it
+1. Install **Node.js 20+** — download the LTS installer from [nodejs.org](https://nodejs.org) and run it.
+   Already installed but on an older version? Upgrade via terminal:
+   ```bash
+   winget upgrade OpenJS.NodeJS.LTS
+   ```
+   Then close and reopen the terminal. Check your version with `node --version` — it should show v20 or higher.
 2. Open a terminal and install pnpm:
    ```bash
    npm install -g pnpm
