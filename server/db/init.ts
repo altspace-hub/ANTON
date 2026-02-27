@@ -2008,6 +2008,62 @@ export function initDatabase(): Database.Database {
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_engagements_user ON engagements(user_id)`); } catch { /* already exists */ }
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_engagements_project ON engagements(project_id)`); } catch { /* already exists */ }
 
+  // ── Embeddings table (cross-content-type vector store) ────────────────────
+  db.exec(`CREATE TABLE IF NOT EXISTS embeddings (
+    id TEXT PRIMARY KEY,
+    content_type TEXT NOT NULL,
+    content_id TEXT NOT NULL,
+    content_text TEXT NOT NULL,
+    embedding TEXT NOT NULL,
+    embedding_model TEXT NOT NULL,
+    embedding_dimension INTEGER NOT NULL,
+    metadata TEXT DEFAULT '{}',
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(content_type, content_id, embedding_model)
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_embeddings_content ON embeddings(content_type, content_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_embeddings_model ON embeddings(embedding_model)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_embeddings_type ON embeddings(content_type)`);
+
+  // Add embedding column to checkpoint_decisions for institutional memory
+  const cdCols = db.prepare("PRAGMA table_info(checkpoint_decisions)").all() as Array<{ name: string }>;
+  if (!cdCols.some(c => c.name === 'embedding')) {
+    try { db.exec('ALTER TABLE checkpoint_decisions ADD COLUMN embedding TEXT'); } catch { /* already exists */ }
+  }
+
+  // ── Messaging connections type expansion ──────────────────────────────────
+  // Expand the connections CHECK constraint to include 'messaging' type.
+  const connSql2 = (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='connections'").get() as { sql: string } | undefined)?.sql ?? '';
+  if (!connSql2.includes("'messaging'")) {
+    try {
+      db.transaction(() => {
+        db.exec(`CREATE TABLE connections_v3 (
+          id TEXT PRIMARY KEY,
+          display_name TEXT NOT NULL,
+          type TEXT NOT NULL CHECK(type IN ('database', 'api', 'filesystem', 'email', 'script_library', 'channel_bridge', 'messaging')),
+          config JSON NOT NULL,
+          permissions JSON NOT NULL DEFAULT '[]',
+          created_by TEXT NOT NULL,
+          approved_by TEXT,
+          approved_at DATETIME,
+          status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'active', 'disabled', 'error')),
+          last_tested DATETIME,
+          last_test_result TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        db.exec(`INSERT INTO connections_v3 SELECT * FROM connections`);
+        db.exec(`DROP TABLE connections`);
+        db.exec(`ALTER TABLE connections_v3 RENAME TO connections`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_connections_status ON connections(status)`);
+      })();
+      console.log('[db] Migrated connections table: added messaging type support');
+    } catch (migErr) {
+      console.error('[db] connections v3 migration error (non-fatal):', migErr);
+    }
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }

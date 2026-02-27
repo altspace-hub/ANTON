@@ -185,6 +185,11 @@ export function createBlankStep(type: WorkflowStepType): WorkflowStep {
       description: 'Save a dataset to a file or database',
       config: { exportDestination: 'file' as const, exportFileType: 'csv' as const },
     },
+    messaging_notification: {
+      label: 'Messaging Notification',
+      description: 'Send a message to a Slack or Teams channel',
+      config: { level: 'info' as const },
+    },
   };
 
   const def = defaults[type];

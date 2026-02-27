@@ -116,19 +116,11 @@ function getOutputCeiling(model: string): number {
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
   if (model === 'claude-opus-4-6') {
-    // Opus 4.6: use adaptive thinking with effort parameter per CLAUDE.md spec.
-    // Adaptive lets the model self-select reasoning depth; effort controls the cap.
+    // Opus 4.6: use adaptive thinking. The model self-selects reasoning depth.
+    // Note: 'effort' is NOT a valid top-level API parameter — omit it entirely.
     if (level === 'quick') return {};
-    const effortMap: Record<ThinkingLevel, 'low' | 'medium' | 'high' | 'max'> = {
-      quick: 'low',
-      think: 'medium',
-      think_hard: 'high',
-      investigate: 'max',
-      plan_first: 'max',
-    };
     return {
       thinking: { type: 'adaptive' as const },
-      effort: effortMap[level],
     };
   }
 

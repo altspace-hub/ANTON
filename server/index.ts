@@ -80,6 +80,8 @@ import { createSuggestionsRoutes } from './routes/suggestions.js';
 import { createBenchmarkRoutes } from './routes/benchmark.js';
 import { createMcpRouter } from './mcp/mcp-server.js';
 import { createConnectorTemplatesRoutes } from './routes/connector-templates.js';
+import { createIntegrationsRoutes } from './routes/integrations.js';
+import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
 import { ensureWorkspacesRoot } from './services/workspace.js';
@@ -136,11 +138,15 @@ app.use(
 );
 
 // ── CORS — localhost only ─────────────────────────────────────
+// In dev, Vite may land on any port (5173, 5174, 5175…) if earlier ports are taken.
+// Allow any http://localhost:<port> origin so the proxy always works.
+const isLocalhostOrigin = (origin: string) => /^http:\/\/localhost(:\d+)?$/.test(origin);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow same-origin requests (no Origin header) and whitelisted origins
-      if (!origin || allowedOrigins.some((allowed) => origin === allowed)) {
+      // Allow same-origin requests (no Origin header), any localhost port, or explicit whitelist
+      if (!origin || isLocalhostOrigin(origin) || allowedOrigins.some((allowed) => origin === allowed)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin '${origin}' is not allowed`));
@@ -161,6 +167,8 @@ app.use('/api/claude/message', claudeLimiter);
 app.use('/api/claude/message-sync', claudeLimiter);
 
 app.use(express.json({ limit: '50mb' }));
+// URL-encoded body parsing for Slack slash commands (application/x-www-form-urlencoded)
+app.use('/api/integrations/slack/commands', express.urlencoded({ extended: true }));
 
 // Initialize database
 const db = initDatabase();
@@ -335,6 +343,7 @@ app.use('/api', createAudienceAdapterRoutes());
 app.use('/api', createSuggestionsRoutes(db));
 app.use('/api', createBenchmarkRoutes(db));
 app.use('/api', createConnectorTemplatesRoutes());
+app.use('/api', createIntegrationsRoutes(db));
 
 // Serve static React build in production
 const clientDist = path.join(__dirname, '..', 'dist', 'client');
@@ -350,6 +359,13 @@ app.listen(PORT, () => {
   // Start background dataset cleanup (runs every hour)
   startDatasetCleanup(db);
   console.log('Dataset cleanup service started');
+
+  // Start embedding pipeline (runs in background, 10s delay to avoid blocking startup)
+  setTimeout(() => {
+    runEmbeddingPipeline(db).catch(err => {
+      console.warn('[embedding-pipeline] Startup run failed (non-fatal):', err instanceof Error ? err.message : err);
+    });
+  }, 10000);
 
   // Start deadline reminder service (checks every 15 minutes)
   try {

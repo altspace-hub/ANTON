@@ -25,7 +25,8 @@ export type WorkflowStepType =
   | 'data_import'
   | 'data_transform'
   | 'data_merge'
-  | 'data_export';
+  | 'data_export'
+  | 'messaging_notification';
 
 export interface DecisionCondition {
   leftOperand: string;   // e.g. "{{step_3.risk_score}}"
@@ -130,6 +131,12 @@ export interface WorkflowStep {
     // ── notification ──────────────────────────────────────────
     webhookUrl?: string;
     messageTemplate?: string;
+
+    // ── messaging_notification ────────────────────────────────
+    // connectionId reused from api_call; plus:
+    titleTemplate?: string;   // message title with {{variable}} substitution
+    linkUrl?: string;          // link back to session/workflow (supports {{variables}})
+    level?: 'info' | 'success' | 'warning' | 'error';
 
     // ── checkpoint ───────────────────────────────────────────
     checkpointMessage?: string;

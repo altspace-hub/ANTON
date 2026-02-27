@@ -8,7 +8,7 @@ import type { Database } from 'better-sqlite3';
 import { encryptConfig, decryptConfig } from './credential-vault.js';
 import { getDriver } from './db-drivers/driver-registry.js';
 
-export type ConnectionType = 'database' | 'api' | 'filesystem' | 'email' | 'script_library';
+export type ConnectionType = 'database' | 'api' | 'filesystem' | 'email' | 'script_library' | 'messaging';
 export type ConnectionStatus = 'pending' | 'active' | 'disabled' | 'error';
 
 export interface Connection {

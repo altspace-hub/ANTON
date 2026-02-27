@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import { embedAndStore } from './hybrid-search.js';
 
 // ── Taxonomy ────────────────────────────────────────────────────────────────
 
@@ -174,7 +175,8 @@ Rules:
     }
 
     // Persist each atom inside a transaction for atomicity
-    const insertAll = db.transaction(() => {
+    const insertAll = db.transaction((): string[] => {
+      const ids: string[] = [];
       for (const raw of rawAtoms) {
         if (!raw.content || !raw.atom_type || !raw.category) continue;
 
@@ -199,6 +201,8 @@ Rules:
           valid_until: raw.valid_until ?? null,
         });
 
+        ids.push(atomId);
+
         // Store individual entity refs for graph traversal
         if (Array.isArray(raw.entities)) {
           for (const ent of raw.entities) {
@@ -213,12 +217,37 @@ Rules:
           }
         }
       }
+      return ids;
     });
 
+    let insertedAtomIds: string[] = [];
     try {
-      insertAll();
+      insertedAtomIds = insertAll();
     } catch (err) {
       console.error('[atom-extractor] DB insert failed for output', outputId, err);
+    }
+
+    // Fire-and-forget: embed each atom for semantic search (non-blocking)
+    if (insertedAtomIds.length > 0) {
+      (async () => {
+        for (const atomId of insertedAtomIds) {
+          const atom = selectAtomById.get(atomId);
+          if (!atom) continue;
+          await embedAndStore(db, {
+            contentType: 'knowledge_atom',
+            contentId: atomId,
+            contentText: atom.content,
+            metadata: {
+              category: atom.category,
+              atom_type: atom.atom_type,
+              source_area_id: atom.source_area_id,
+              source_workflow_id: atom.source_workflow_id,
+            },
+          }).catch(err => {
+            console.warn('[atom-extractor] embed failed for atom', atomId, err instanceof Error ? err.message : err);
+          });
+        }
+      })();
     }
   }
 

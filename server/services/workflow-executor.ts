@@ -29,6 +29,7 @@ const HEADLESS_STEP_TYPES = new Set([
   'data_merge',
   'notification',
   'email_send',
+  'messaging_notification',
 ]);
 
 // Step types that require frontend/user interaction
@@ -358,6 +359,61 @@ async function executeHeadlessStep(
       const subject = step.config?.subjectTemplate ? resolveTemplate(step.config.subjectTemplate, context) : '';
       console.log(`[workflow-executor] Email stub: to="${to}" subject="${subject}"`);
       return { output: { to, subject, sent: false, _note: 'Email not yet implemented' } };
+    }
+
+    case 'messaging_notification': {
+      const connectionId = step.config?.connectionId as string | undefined;
+      if (!connectionId) {
+        console.warn('[workflow-executor] messaging_notification: no connectionId configured');
+        return { output: { sent: false, error: 'No connectionId configured' } };
+      }
+
+      const conn = db.prepare(
+        "SELECT * FROM connections WHERE id = ? AND type = 'messaging' AND status = 'active'"
+      ).get(connectionId) as { config: string } | undefined;
+
+      if (!conn) {
+        console.warn(`[workflow-executor] messaging_notification: connection ${connectionId} not found or not active`);
+        return { output: { sent: false, error: 'Messaging connection not found or not active' } };
+      }
+
+      try {
+        const { decryptConfig } = await import('./credential-vault.js');
+        const cfg = decryptConfig(JSON.parse(conn.config) as Record<string, unknown>) as Record<string, unknown>;
+        const platform = cfg.platform as string;
+        const webhookUrl = cfg.webhook_url as string;
+
+        const title = step.config.titleTemplate
+          ? resolveTemplate(step.config.titleTemplate, context)
+          : 'ANTON Workflow Notification';
+        const body = step.config.bodyTemplate
+          ? resolveTemplate(step.config.bodyTemplate, context)
+          : 'Workflow step completed.';
+        const url = step.config.linkUrl
+          ? resolveTemplate(step.config.linkUrl, context)
+          : undefined;
+        const level = step.config.level || 'info';
+
+        const msg = { title, body, url, level };
+
+        if (platform === 'slack') {
+          const { sendSlackMessage } = await import('./integrations/slack-webhook.js');
+          const result = await sendSlackMessage({ webhookUrl }, msg);
+          console.log(`[workflow-executor] Slack message sent: ${result.ok ? 'ok' : result.error}`);
+          return { output: { sent: result.ok, platform: 'slack', error: result.error } };
+        } else if (platform === 'teams') {
+          const { sendTeamsMessage } = await import('./integrations/teams-webhook.js');
+          const result = await sendTeamsMessage({ webhookUrl }, msg);
+          console.log(`[workflow-executor] Teams message sent: ${result.ok ? 'ok' : result.error}`);
+          return { output: { sent: result.ok, platform: 'teams', error: result.error } };
+        } else {
+          return { output: { sent: false, error: `Unknown platform: ${platform}` } };
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[workflow-executor] messaging_notification error: ${msg}`);
+        return { output: { sent: false, error: msg } };
+      }
     }
 
     default:

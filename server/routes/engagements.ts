@@ -823,7 +823,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
       // Opus 4.6: adaptive thinking with effort=high (recommended, deprecates fixed budget_tokens).
       // Haiku: no thinking, direct execution.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const thinkingParam: any = isQuick ? {} : { thinking: { type: 'adaptive' }, effort: 'high' };
+      const thinkingParam: any = isQuick ? {} : { thinking: { type: 'adaptive' } };
 
       // 1M context beta: add header when enabled via ANTHROPIC_LONG_CONTEXT_BETA=true in .env
       const longContextEnabled = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';

@@ -7,6 +7,7 @@ import {
   deserializeEmbedding,
 } from './embeddings.js';
 import { nanoid } from 'nanoid';
+import { embedAndStore } from './hybrid-search.js';
 
 export function createInstitutionalMemory(db: Database.Database) {
 
@@ -57,6 +58,27 @@ export function createInstitutionalMemory(db: Database.Database) {
       params.decidedBy,
       serializeEmbedding(embedding)
     );
+
+    // Also store in unified embeddings table for cross-content hybrid search
+    const decisionText = [
+      `Decision: ${params.humanDecision}`,
+      params.humanReasoning ? `Reasoning: ${params.humanReasoning}` : '',
+      params.contextSnapshot ? `Context: ${JSON.stringify(params.contextSnapshot).slice(0, 500)}` : '',
+    ].filter(Boolean).join('\n');
+
+    embedAndStore(db, {
+      contentType: 'checkpoint',
+      contentId: id,
+      contentText: decisionText,
+      metadata: {
+        workflowId: params.workflowId,
+        stepIndex: params.stepIndex,
+        decidedBy: params.decidedBy,
+        isOverride: params.isOverride,
+      },
+    }).catch(err => {
+      console.warn('[institutional-memory] Failed to store in unified embeddings table:', err instanceof Error ? err.message : err);
+    });
 
     return id;
   }
