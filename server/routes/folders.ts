@@ -5,6 +5,19 @@ import fs from 'fs-extra';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
 
+/** Resolve the list of allowed base directories from the environment. */
+function getAllowedBases(): string[] {
+  const raw = process.env.ALLOWED_FOLDER_PATHS || './uploads,./outputs';
+  return raw.split(',').map(p => path.resolve(p.trim()));
+}
+
+/** Return true if the resolved path is within one of the allowed bases. */
+function isPathAllowed(resolvedPath: string): boolean {
+  return getAllowedBases().some(
+    base => resolvedPath === base || resolvedPath.startsWith(base + path.sep)
+  );
+}
+
 export function createFolderRoutes(db: Database.Database) {
   const router = Router();
 
@@ -14,6 +27,11 @@ export function createFolderRoutes(db: Database.Database) {
       const { path: dirPath } = req.body;
       if (!dirPath || !path.isAbsolute(dirPath)) {
         res.status(400).json({ error: 'Absolute path required' });
+        return;
+      }
+
+      if (!isPathAllowed(path.resolve(dirPath))) {
+        res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }
 
@@ -49,6 +67,11 @@ export function createFolderRoutes(db: Database.Database) {
       const { path: folderPath, label } = req.body;
       if (!folderPath || !path.isAbsolute(folderPath)) {
         res.status(400).json({ error: 'Absolute path required' });
+        return;
+      }
+
+      if (!isPathAllowed(path.resolve(folderPath))) {
+        res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }
 
@@ -100,6 +123,11 @@ export function createFolderRoutes(db: Database.Database) {
       const { path: folderPath, recursive = true, filter } = req.body;
       if (!folderPath || !path.isAbsolute(folderPath)) {
         res.status(400).json({ error: 'Absolute path required' });
+        return;
+      }
+
+      if (!isPathAllowed(path.resolve(folderPath))) {
+        res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }
 

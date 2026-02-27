@@ -1,0 +1,79 @@
+{
+  "id": "coworker-fcp-investigator",
+  "name": "FCP Alert Investigator",
+  "description": "End-to-end transaction monitoring alert triage workflow. Investigates alerts, supports human review decisions, and generates audit-quality investigation reports.",
+  "role_identity": "FCP Investigator",
+  "icon": "Shield",
+  "color": "adv-red",
+  "tags": ["fcp", "investigations", "aml", "transaction-monitoring"],
+  "estimated_duration": "15-30 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "alert_id", "label": "Alert ID / Reference", "type": "text", "required": true },
+    { "id": "alert_type", "label": "Alert Type / Rule", "type": "text", "required": false },
+    { "id": "priority", "label": "Priority", "type": "select", "options": ["high", "medium", "low"], "default": "medium" }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "Compile Alert Context",
+      "description": "ANTON investigates the alert using all available context, transaction data, and customer profile.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "fcp",
+        "moduleId": "alert-investigation",
+        "thinking": "think_hard",
+        "creativity": "strict",
+        "promptTemplate": "Investigate transaction monitoring alert {{alert_id}}.\nAlert type / rule triggered: {{alert_type}}\nPriority: {{priority}}\n\nStructure your investigation covering: customer profile summary, transaction pattern analysis, red flags identified, contextual factors, and a preliminary risk assessment with recommendation.",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "Human Review & Decision",
+      "description": "Review ANTON's assessment and select your disposition decision.",
+      "index": 1,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the investigation assessment above and select your decision for alert {{alert_id}}.",
+        "checkpointContext": "step-0",
+        "inputFields": [
+          {
+            "id": "decision",
+            "label": "Disposition Decision",
+            "type": "select",
+            "required": true,
+            "options": ["Close as false positive", "Request additional information", "Escalate to SAR team", "Refer to relationship manager"]
+          },
+          {
+            "id": "reasoning",
+            "label": "Decision Rationale",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "Document your reasoning for the decision..."
+          }
+        ],
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Generate Investigation Report",
+      "description": "ANTON produces the final audit-quality investigation report incorporating the human decision.",
+      "index": 2,
+      "type": "claude",
+      "config": {
+        "areaId": "fcp",
+        "moduleId": "sar-quality-check",
+        "thinking": "think_hard",
+        "creativity": "strict",
+        "promptTemplate": "Generate a formal investigation report for alert {{alert_id}}.\n\nInvestigation summary from analysis: {{step-0.output}}\n\nReviewer decision: {{step-1.decision}}\nReviewer reasoning: {{step-1.reasoning}}\n\nProduce a complete, audit-quality investigation report with: executive summary, facts established, analysis, decision rationale, and next steps if applicable.",
+        "outputFormat": "detailed-findings",
+        "dependsOn": ["step-1"]
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   // FCP icons
   SearchCheck, FileText, Shield, Radar, GraduationCap, Database, BarChart3,
@@ -26,7 +26,7 @@ import {
   // Wave 2 icons — Investment & Project Mgmt
   LineChart, PieChart, FolderKanban, Users,
   // UI icons
-  ArrowRight, Clock, LayoutGrid, MessageSquare, Zap, Trash2, Pencil, Check, X, X as XIcon,
+  ArrowRight, ChevronRight, Clock, LayoutGrid, MessageSquare, Zap, Trash2, Pencil, Check, X, X as XIcon,
   Star, Puzzle,
 } from 'lucide-react';
 import { MODULES, MODELS, AREAS } from '@/lib/constants';
@@ -110,16 +110,19 @@ function formatSessionCost(session: Session): string | null {
   return `${tokenStr} tok · ${costStr}`;
 }
 
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+function useFormatRelativeTime() {
+  const { t } = useTranslation();
+  return function formatRelativeTime(dateStr: string): string {
+    const date = new Date(dateStr);
+    const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (diffMins < 1) return t('time.justNow');
+    if (diffMins < 60) return t('time.minutesAgo', { count: diffMins });
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return t('time.hoursAgo', { count: diffHours });
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return t('time.daysAgo', { count: diffDays });
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  };
 }
 
 type SessionStats = {
@@ -134,6 +137,7 @@ type SessionStats = {
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const formatRelativeTime = useFormatRelativeTime();
   const { checkHealth, health } = useSettingsStore();
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
   const [continueWorkSessions, setContinueWorkSessions] = useState<Session[]>([]);
@@ -152,6 +156,10 @@ export default function Dashboard() {
       return false;
     }
   });
+  const navigate = useNavigate();
+  const [scheduledNotifications, setScheduledNotifications] = useState<Array<{
+    id: string; title: string; message?: string; link?: string; created_at: string;
+  }>>([]);
 
   useEffect(() => {
     checkHealth();
@@ -175,6 +183,24 @@ export default function Dashboard() {
       })
       .catch(() => {});
   }, [checkHealth]);
+
+  useEffect(() => {
+    const fetchScheduledNotifs = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch('/api/notifications', { headers });
+        if (res.ok) {
+          const data = await res.json();
+          const scheduled = data.filter((n: any) =>
+            (n.type === 'scheduled_workflow' || n.type === 'radar_scan') && !n.read_at
+          );
+          setScheduledNotifications(scheduled);
+        }
+      } catch { /* ignore */ }
+    };
+    fetchScheduledNotifs();
+  }, []);
 
   // Score a starter pack against the user's profile. Higher = better match.
   function scorePackForProfile(pack: typeof STARTER_PACKS[0]): number {
@@ -293,7 +319,7 @@ export default function Dashboard() {
         <div className="mb-6 flex items-start gap-3 rounded-xl border border-adv-red/40 bg-adv-red/10 px-5 py-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-adv-red" />
           <div>
-            <p className="text-sm font-semibold text-adv-red">Anthropic API key not configured</p>
+            <p className="text-sm font-semibold text-adv-red">{t('dashboard.apiKeyNotConfigured')}</p>
             <p className="mt-1 text-xs text-adv-off-white">
               Add your key to the{' '}
               <code className="rounded bg-adv-dark px-1 py-0.5 font-mono text-adv-teal">.env</code>{' '}
@@ -315,6 +341,45 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+
+      {/* Scheduled Job Results Widget */}
+      {scheduledNotifications.length > 0 && (
+        <div className="mb-6 rounded-xl border border-adv-gold/30 bg-adv-gold/5 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <Clock className="h-5 w-5 text-adv-gold mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-adv-gold">
+                {scheduledNotifications.length} scheduled job{scheduledNotifications.length !== 1 ? 's' : ''} completed since your last visit
+              </p>
+              <ul className="mt-2 space-y-1">
+                {scheduledNotifications.slice(0, 3).map(n => (
+                  <li key={n.id} className="text-xs text-adv-off-white flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-adv-gold flex-shrink-0" />
+                    {n.title}
+                    {n.message && <span className="text-adv-gray"> — {n.message}</span>}
+                  </li>
+                ))}
+                {scheduledNotifications.length > 3 && (
+                  <li className="text-xs text-adv-gray-med">
+                    +{scheduledNotifications.length - 3} more
+                  </li>
+                )}
+              </ul>
+            </div>
+            <button
+              onClick={() => {
+                const firstWithLink = scheduledNotifications.find(n => n.link);
+                if (firstWithLink?.link) navigate(firstWithLink.link);
+                else navigate('/workflows');
+              }}
+              className="text-xs font-medium text-adv-gold hover:text-adv-off-white flex items-center gap-0.5 flex-shrink-0"
+            >
+              {t('dashboard.viewResults')}
+              <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stat Cards */}
       {stats !== null && (
@@ -467,7 +532,7 @@ export default function Dashboard() {
         <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-adv-white hover:text-adv-teal transition-colors">
           <span className="inline-flex items-center gap-2">
             <Users className="h-4 w-4 text-adv-teal" />
-            My Workflow Tasks
+            {t('dashboard.myWorkflowTasks')}
           </span>
         </summary>
         <div className="border-t border-border px-5 pb-5 pt-4">
@@ -722,7 +787,7 @@ export default function Dashboard() {
                 <h3 className="mb-2 text-sm font-semibold text-adv-white group-hover:text-adv-gold transition-colors">
                   {mod.name}
                 </h3>
-                <p className="mb-4 text-xs leading-relaxed text-adv-gray">{mod.description || 'No description'}</p>
+                <p className="mb-4 text-xs leading-relaxed text-adv-gray">{mod.description || t('dashboard.noDescription')}</p>
                 <div className="flex items-center gap-1 text-xs text-adv-gold opacity-0 transition-opacity group-hover:opacity-100">
                   {t('dashboard.openModule')} <ArrowRight className="h-3 w-3" />
                 </div>

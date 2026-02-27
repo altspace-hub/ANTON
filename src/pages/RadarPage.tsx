@@ -77,6 +77,7 @@ interface ScanStatus {
 interface RadarSettings {
   autoScanEnabled: boolean;
   autoScanIntervalHours: number;
+  auto_scan_cron?: string;
 }
 
 function getAuthHeader(): Record<string, string> {
@@ -141,6 +142,9 @@ export default function RadarPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [radarSettings, setRadarSettings] = useState<RadarSettings>({ autoScanEnabled: false, autoScanIntervalHours: 24 });
   const [settingsLoading, setSettingsLoading] = useState(false);
+  const [scanScheduleType, setScanScheduleType] = useState<'interval' | 'cron'>('interval');
+  const [cronExpression, setCronExpression] = useState('');
+  const [cronError, setCronError] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function fetchData() {
@@ -225,14 +229,29 @@ export default function RadarPage() {
       const res = await fetch('/api/radar/settings', { headers: getAuthHeader() });
       const data = (await res.json()) as RadarSettings;
       setRadarSettings(data);
+      if (data.auto_scan_cron) {
+        setScanScheduleType('cron');
+        setCronExpression(data.auto_scan_cron);
+      }
     } catch {
       // ignore
     }
   }
 
   async function saveSettings(updated: Partial<RadarSettings>) {
+    if (scanScheduleType === 'cron' && cronExpression) {
+      const parts = cronExpression.trim().split(/\s+/);
+      if (parts.length !== 5) {
+        setCronError('Cron expression must have 5 parts: minute hour day month weekday');
+        return;
+      }
+    }
     setSettingsLoading(true);
-    const merged = { ...radarSettings, ...updated };
+    const merged = {
+      ...radarSettings,
+      ...updated,
+      auto_scan_cron: scanScheduleType === 'cron' ? cronExpression : '',
+    };
     setRadarSettings(merged);
     try {
       await fetch('/api/radar/settings', {
@@ -394,7 +413,7 @@ export default function RadarPage() {
             </label>
 
             {/* Interval selector */}
-            {radarSettings.autoScanEnabled && (
+            {radarSettings.autoScanEnabled && scanScheduleType === 'interval' && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-adv-gray">Scan every:</span>
                 {[6, 12, 24, 48, 168].map((h) => (
@@ -414,9 +433,88 @@ export default function RadarPage() {
               </div>
             )}
           </div>
+
+          {/* Schedule type toggle */}
+          {radarSettings.autoScanEnabled && (
+            <div className="mt-4 space-y-3">
+              <label className="text-sm font-medium text-adv-gray">
+                Auto-scan schedule
+              </label>
+              <div className="flex rounded-lg overflow-hidden border border-border">
+                <button
+                  onClick={() => { setScanScheduleType('interval'); setCronError(''); }}
+                  className={`flex-1 px-3 py-2 text-sm transition-colors ${scanScheduleType === 'interval'
+                    ? 'bg-adv-teal text-adv-dark'
+                    : 'bg-adv-dark text-adv-gray hover:text-adv-off-white'}`}
+                >
+                  Every N hours
+                </button>
+                <button
+                  onClick={() => setScanScheduleType('cron')}
+                  className={`flex-1 px-3 py-2 text-sm transition-colors ${scanScheduleType === 'cron'
+                    ? 'bg-adv-teal text-adv-dark'
+                    : 'bg-adv-dark text-adv-gray hover:text-adv-off-white'}`}
+                >
+                  Specific time
+                </button>
+              </div>
+
+              {scanScheduleType === 'cron' && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: 'Daily 6am', value: '0 6 * * *' },
+                      { label: 'Weekdays 8am', value: '0 8 * * 1-5' },
+                      { label: 'Mon 7am', value: '0 7 * * 1' },
+                    ].map(preset => (
+                      <button
+                        key={preset.value}
+                        onClick={() => { setCronExpression(preset.value); setCronError(''); }}
+                        className={`px-2 py-1.5 text-xs rounded-md border transition-colors ${
+                          cronExpression === preset.value
+                            ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                            : 'border-border hover:border-adv-gray-med text-adv-gray'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={cronExpression}
+                      onChange={e => {
+                        setCronExpression(e.target.value);
+                        setCronError('');
+                      }}
+                      placeholder="0 6 * * * (min hour day month weekday)"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-adv-dark text-adv-off-white font-mono placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    />
+                    {cronError && <p className="text-xs text-adv-red mt-1">{cronError}</p>}
+                    {cronExpression && !cronError && (
+                      <p className="text-xs text-adv-gray-med mt-1">
+                        Cron: {cronExpression}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => saveSettings({})}
+                    disabled={settingsLoading || !cronExpression}
+                    className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-50"
+                  >
+                    {settingsLoading ? 'Saving...' : 'Save cron schedule'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <p className="mt-2 text-xs text-adv-gray-med">
             {radarSettings.autoScanEnabled
-              ? `Automatically scans all active sources every ${radarSettings.autoScanIntervalHours < 168 ? `${radarSettings.autoScanIntervalHours} hours` : 'week'}.`
+              ? scanScheduleType === 'cron' && cronExpression
+                ? `Scheduled scan with cron: ${cronExpression}`
+                : `Automatically scans all active sources every ${radarSettings.autoScanIntervalHours < 168 ? `${radarSettings.autoScanIntervalHours} hours` : 'week'}.`
               : 'Auto-scan is disabled. Use "Scan Now" to scan manually.'}
           </p>
         </div>

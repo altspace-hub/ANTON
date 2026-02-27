@@ -1,14 +1,31 @@
 import { useState } from 'react';
-import { ShieldCheck, Settings, AlertTriangle, Activity } from 'lucide-react';
+import { ShieldCheck, Settings, AlertTriangle, Activity, Download, Loader2 } from 'lucide-react';
 import ComplianceDashboard from '@/features/compliance/ComplianceDashboard';
 import RulesManager from '@/features/compliance/RulesManager';
 import ViolationsManager from '@/features/compliance/ViolationsManager';
 import ExecutionsLog from '@/features/compliance/ExecutionsLog';
+import { exportComplianceRulesetAnton } from '@/lib/api';
 
 type Tab = 'dashboard' | 'rules' | 'violations' | 'executions';
 
 export default function CompliancePage() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [exportingAnton, setExportingAnton] = useState(false);
+
+  const handleExportAnton = async () => {
+    if (exportingAnton) return;
+    setExportingAnton(true);
+    try {
+      const blob = await exportComplianceRulesetAnton({ name: 'Compliance Ruleset', description: 'Exported compliance rules' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `compliance-ruleset-${Date.now()}.anton`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* non-fatal */ }
+    finally { setExportingAnton(false); }
+  };
 
   const tabs = [
     { id: 'dashboard' as const, label: 'Dashboard', icon: ShieldCheck },
@@ -31,6 +48,15 @@ export default function CompliancePage() {
               Automated compliance rule engine for quality assurance and governance
             </p>
           </div>
+          <button
+            onClick={handleExportAnton}
+            disabled={exportingAnton}
+            className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-50"
+            title="Export all active compliance rules as a shareable .anton file"
+          >
+            {exportingAnton ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            Export Rules as .anton
+          </button>
         </div>
 
         {/* Tabs */}

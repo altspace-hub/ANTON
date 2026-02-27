@@ -1,5 +1,7 @@
 import * as cron from 'node-cron';
 import type { Database } from 'better-sqlite3';
+import { executeScheduledWorkflow } from './workflow-executor.js';
+import { createNotification } from './notification-service.js';
 
 interface ScheduleRow {
   id: number;
@@ -38,6 +40,30 @@ export function scheduleWorkflow(db: Database, schedule: ScheduleRow) {
       db.prepare('INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?, ?, ?, ?)')
         .run('workflow_scheduled_run', 'workflow', schedule.workflow_id, JSON.stringify({ schedule_id: schedule.id }));
     } catch { /* audit table may not exist in all deploys */ }
+
+    // Execute the workflow
+    try {
+      const result = await executeScheduledWorkflow(db, schedule.workflow_id, schedule.id);
+      createNotification(db, {
+        userId: 'solo',
+        type: 'scheduled_workflow',
+        title: `Scheduled workflow completed`,
+        message: result.success
+          ? `Completed successfully (${result.stepsCompleted} steps, ${result.stepsSkipped} skipped)`
+          : `Failed: ${result.error}`,
+        link: `/workflows`,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error(`[scheduler] Workflow execution failed: ${message}`);
+      createNotification(db, {
+        userId: 'solo',
+        type: 'scheduled_workflow',
+        title: `Scheduled workflow failed`,
+        message: message,
+        link: `/workflows`,
+      });
+    }
   });
 
   activeTasks.set(schedule.id, task);

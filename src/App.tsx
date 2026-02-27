@@ -1,14 +1,17 @@
 import { useEffect, lazy, Suspense, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import MainLayout from './components/layout/MainLayout';
 import { useAuthStore } from './stores/useAuthStore';
 import PWAInstallPrompt from './components/shared/PWAInstallPrompt';
 import { CommandPalette } from './components/shared/CommandPalette';
+import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 
 // Core pages — loaded eagerly (always needed on first render)
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import SharePage from './pages/SharePage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // ModulePage is lazy — it pulls in ~300 KB of module components, WritingStylePanel,
 // and EXPERT_ROLES. Deferring it keeps the initial bundle ~40% smaller.
@@ -53,6 +56,10 @@ const CompliancePage = lazy(() => import('./pages/CompliancePage'));
 const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'));
 const MyWorkPage = lazy(() => import('./pages/MyWorkPage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
+const ComparisonPage = lazy(() => import('./pages/ComparisonPage'));
+const GovernanceDashboard = lazy(() => import('./pages/GovernanceDashboard'));
+const SkillPacksPage = lazy(() => import('./pages/SkillPacksPage'));
+const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 
 // Presentations Area pages
 const PresentationsLandingPage = lazy(() => import('./pages/PresentationsLandingPage'));
@@ -70,11 +77,42 @@ const CodingLargeReleasePage = lazy(() => import('./pages/CodingLargeReleasePage
 const InstructionBuilderPage = lazy(() => import('./pages/InstructionBuilderPage'));
 const AlignmentReviewerPage = lazy(() => import('./pages/AlignmentReviewerPage'));
 
+// Engagement Task pages
+const EngagementListPage = lazy(() => import('./pages/EngagementListPage'));
+const EngagementWorkspacePage = lazy(() => import('./pages/EngagementWorkspacePage'));
+
 export default function App() {
+  const { i18n } = useTranslation();
   const { user, isLoading, isTeamMode, checkAuth, setIsTeamMode } = useAuthStore();
   // Controls whether the landing page has been dismissed.
   // In solo mode the user can bypass it with one click; in team mode login is required.
-  const [hasEntered, setHasEntered] = useState(false);
+  // Persisted to localStorage so a page refresh doesn't flash the start page.
+  const [hasEntered, setHasEntered] = useState(() =>
+    localStorage.getItem('openexpert-has-entered') === 'true'
+  );
+  // Onboarding tour — shown once on first launch, dismissed via localStorage flag
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    const rtlLanguages = ['ar', 'fa', 'he', 'ur'];
+    document.documentElement.dir = rtlLanguages.includes(i18n.language) ? 'rtl' : 'ltr';
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
+  // Restore language preference from user profile on mount (best-effort).
+  // localStorage wins for anonymous/solo users; profile wins when it differs.
+  useEffect(() => {
+    const storedLang = localStorage.getItem('openexpert-language');
+    fetch('/api/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(profile => {
+        if (profile?.output_language && profile.output_language !== storedLang) {
+          i18n.changeLanguage(profile.output_language);
+          localStorage.setItem('openexpert-language', profile.output_language);
+        }
+      })
+      .catch(() => {}); // best-effort
+  }, []);
 
   useEffect(() => {
     // Fetch deployment config then check auth
@@ -89,6 +127,15 @@ export default function App() {
         checkAuth();
       });
   }, [checkAuth, setIsTeamMode]);
+
+  // Show tour on first launch (after auth check completes)
+  useEffect(() => {
+    if (!isLoading && (user || hasEntered)) {
+      if (shouldShowTour()) {
+        setShowTour(true);
+      }
+    }
+  }, [isLoading, user, hasEntered]);
 
   // Show loading spinner while checking auth
   if (isLoading) {
@@ -105,7 +152,7 @@ export default function App() {
   if (!user && !hasEntered) {
     return (
       <LoginPage
-        onEnterWithoutLogin={!isTeamMode ? () => setHasEntered(true) : undefined}
+        onEnterWithoutLogin={!isTeamMode ? () => { localStorage.setItem('openexpert-has-entered', 'true'); setHasEntered(true); } : undefined}
       />
     );
   }
@@ -129,10 +176,14 @@ export default function App() {
     <>
       <PWAInstallPrompt />
       <CommandPalette />
+      <OnboardingTour isOpen={showTour} onClose={() => setShowTour(false)} />
       <Suspense fallback={fallback}>
       <Routes>
         {/* Standalone public page — no sidebar/header */}
         <Route path="/share/:token" element={<SharePage />} />
+
+        {/* Password reset — public, standalone */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Main app layout — ProtectedRoute re-checks auth on every navigation */}
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
@@ -175,6 +226,10 @@ export default function App() {
           <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
           <Route path="/my-work" element={<MyWorkPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/compare" element={<ComparisonPage />} />
+          <Route path="/governance" element={<GovernanceDashboard />} />
+          <Route path="/skill-packs" element={<SkillPacksPage />} />
+          <Route path="/marketplace" element={<MarketplacePage />} />
           {/* Presentations Area */}
           <Route path="/presentations" element={<PresentationsLandingPage />} />
           <Route path="/presentations/builder" element={<PresentationBuilderPage />} />
@@ -189,6 +244,9 @@ export default function App() {
           <Route path="/coding/large/project/:projectId/releases/:releaseId" element={<CodingLargeReleasePage />} />
           <Route path="/coding/instruction-builder" element={<InstructionBuilderPage />} />
           <Route path="/coding/alignment-reviewer" element={<AlignmentReviewerPage />} />
+          {/* Engagement Task */}
+          <Route path="/engagements" element={<EngagementListPage />} />
+          <Route path="/engagements/:id" element={<EngagementWorkspacePage />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>

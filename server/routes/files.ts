@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
+import { fileTypeFromBuffer } from 'file-type';
 import { extractTextFromFile } from '../services/text-extractor.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -36,6 +37,28 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });
     return;
+  }
+
+  // MIME type validation - verify file content matches declared extension
+  const ALLOWED_MIMES: Record<string, string> = {
+    '.pdf':  'application/pdf',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.doc':  'application/msword',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.csv':  'text/csv',
+    '.html': 'text/html',
+  };
+
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  const expectedMime = ALLOWED_MIMES[ext];
+  if (expectedMime) {
+    const fileBuffer = await fs.readFile(req.file.path);
+    const detected = await fileTypeFromBuffer(fileBuffer);
+    if (detected && detected.mime !== expectedMime) {
+      await fs.remove(req.file.path);
+      res.status(400).json({ error: `File content does not match declared type (expected ${expectedMime}, got ${detected.mime})` });
+      return;
+    }
   }
 
   // Extract text content from the uploaded file

@@ -14,9 +14,9 @@
 
 import type { Response } from 'express';
 import type Database from 'better-sqlite3';
-import { createModelAdapter, getProviderFromModelId, getCustomModelConfigs, type UnifiedLLMRequest } from './model-adapter';
-import * as claudeClient from './claude-client';
-import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types';
+import { createModelAdapter, getProviderFromModelId, getCustomModelConfigs, type UnifiedLLMRequest } from './model-adapter.js';
+import * as claudeClient from './claude-client.js';
+import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 
 // ── Configuration ──────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ function getApiKeyForModel(modelId: string, db?: Database.Database): string | un
   // Check custom model slots for API key overrides
   if (db) {
     const customModels = getCustomModelConfigs(db);
-    const match = customModels.find((m) => m.modelId === modelId);
+    const match = customModels.find((m: { modelId: string }) => m.modelId === modelId);
     if (match) {
       // Custom API key override takes priority
       if (match.apiKeyOverride) return match.apiKeyOverride;
@@ -308,5 +308,5 @@ export async function checkProviderHealth(provider: 'anthropic' | 'openai' | 'go
 
 // ── Export Legacy Functions for Compatibility ──────────────────
 
-export { isApiKeyConfigured } from './claude-client';
-export { getClient } from './claude-client';
+export { isApiKeyConfigured } from './claude-client.js';
+export { getClient } from './claude-client.js';

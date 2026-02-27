@@ -1,0 +1,80 @@
+{
+  "id": "coworker-project-lead",
+  "name": "Daily Standup Prep",
+  "description": "Prepares structured sprint standup material from your notes and blockers. Reviews sprint progress, flags risks, and generates a standup agenda with retrospective prep for end-of-sprint reviews.",
+  "role_identity": "Project Lead",
+  "icon": "FolderKanban",
+  "color": "adv-teal",
+  "tags": ["project-management", "agile", "standup", "sprint", "retrospective"],
+  "estimated_duration": "10-15 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "sprint_number", "label": "Sprint / Iteration", "type": "text", "required": true, "placeholder": "e.g., Sprint 14, Week 3 of Phase 2" },
+    { "id": "project_name", "label": "Project Name", "type": "text", "required": true },
+    { "id": "standup_type", "label": "Standup Type", "type": "select", "options": ["Daily standup", "Sprint review", "End-of-sprint retrospective"], "default": "Daily standup" }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "Sprint Progress Analysis",
+      "description": "ANTON analyses sprint plan vs. actual progress and identifies at-risk items.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "project-mgmt",
+        "moduleId": "sprint-planning-assistant",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Prepare {{standup_type}} material for {{project_name}} — {{sprint_number}}.\n\nReview sprint progress and prepare: what was completed yesterday/this week, what is in progress, what is planned for today/next, blockers and impediments, and sprint burn-down status.\n\nFlag any items at risk of not completing within the sprint and suggest prioritisation decisions.",
+        "outputFormat": "quick-briefing",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "Retrospective Facilitation",
+      "description": "ANTON prepares retrospective prompts and structures the retro agenda (for sprint reviews only).",
+      "index": 1,
+      "type": "claude",
+      "config": {
+        "areaId": "project-mgmt",
+        "moduleId": "retrospective-facilitator",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Based on the sprint analysis for {{project_name}} — {{sprint_number}}:\n{{step-0.output}}\n\nPrepare a structured retrospective agenda using the Start/Stop/Continue format. Include specific discussion prompts based on the sprint outcomes observed, identified blockers, and team performance patterns.",
+        "outputFormat": "action-plan",
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Team Lead Review",
+      "description": "Review the prepared material and add team context before the standup.",
+      "index": 2,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the standup material and retrospective agenda. Add any team context, mood observations, or specific topics you want to raise.",
+        "checkpointContext": "step-0,step-1",
+        "inputFields": [
+          {
+            "id": "additional_context",
+            "label": "Additional team context or topics",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Team morale notes, upcoming leave, external dependencies, stakeholder communications needed..."
+          },
+          {
+            "id": "ready_to_run",
+            "label": "Ready to proceed",
+            "type": "select",
+            "required": true,
+            "options": ["Yes, material is ready", "Minor updates needed (noted above)", "Major revision needed"]
+          }
+        ],
+        "dependsOn": ["step-1"]
+      }
+    }
+  ]
+}

@@ -1,15 +1,18 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Shield, Scale, Briefcase, FileSearch, Zap, Send, Square, Copy, Check, Download, Upload, FileText, X as XIcon } from 'lucide-react';
+import { Users, Shield, Scale, Briefcase, FileSearch, Zap, Send, Square, Copy, Check, Download, Upload, FileText, X as XIcon, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { streamMessage } from '@/lib/api';
+import { streamMessage, exportReviewPanelAnton } from '@/lib/api';
 import type { StreamEvent, ModelId } from '@/lib/types';
+import { DOMAIN_REVIEWERS } from '@/lib/domain-reviewers';
 
 interface ReviewMode {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Optional emoji icon — when set, rendered instead of the Lucide icon */
+  emojiIcon?: string;
   description: string;
   instruction: string;
   accentColor: string;
@@ -73,6 +76,19 @@ const REVIEW_MODES: ReviewMode[] = [
   },
 ];
 
+// Domain reviewers adapted to the local ReviewMode shape.
+// The `icon` field uses a neutral Lucide icon as a fallback; the emoji is rendered via `emojiIcon`.
+const DOMAIN_REVIEW_MODES: ReviewMode[] = DOMAIN_REVIEWERS.map((r) => ({
+  id: r.id,
+  label: r.name,
+  icon: FileSearch, // fallback Lucide icon — emojiIcon takes precedence in render
+  emojiIcon: r.icon,
+  description: r.description,
+  instruction: r.prompt,
+  accentColor: 'text-adv-teal',
+  accentBg: 'bg-adv-teal-dim',
+}));
+
 const BASE_SYSTEM_PROMPT = `You are Anton in Review Engine mode. You are an expert analytical reviewer.
 
 After your review, always conclude with a structured section:
@@ -105,6 +121,7 @@ const EMPTY_KS = {
 
 export default function ReviewEnginePage() {
   const { t } = useTranslation();
+  const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [selectedModeId, setSelectedModeId] = useState<string>('peer-review');
   const [selectedModel, setSelectedModel] = useState<ModelId>('claude-opus-4-6');
   const [inputTab, setInputTab] = useState<'paste' | 'upload'>('paste');
@@ -119,7 +136,34 @@ export default function ReviewEnginePage() {
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  const selectedMode = REVIEW_MODES.find((m) => m.id === selectedModeId) ?? REVIEW_MODES[0];
+  const allReviewModes = [...REVIEW_MODES, ...DOMAIN_REVIEW_MODES];
+  const selectedMode = allReviewModes.find((m) => m.id === selectedModeId) ?? REVIEW_MODES[0];
+  const [exportingAnton, setExportingAnton] = useState(false);
+
+  const handleExportReviewPanel = async () => {
+    if (exportingAnton) return;
+    setExportingAnton(true);
+    try {
+      const blob = await exportReviewPanelAnton({
+        name: 'Review Engine Panel',
+        description: 'Expert review perspectives from the Review Engine',
+        reviewers: allReviewModes.map((m) => ({
+          id: m.id,
+          name: m.label,
+          icon: m.emojiIcon,
+          prompt: m.instruction,
+          focusAreas: [],
+        })),
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `review-panel-${Date.now()}.anton`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* non-fatal */ }
+    finally { setExportingAnton(false); }
+  };
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -182,6 +226,7 @@ export default function ReviewEnginePage() {
           history: [],
           outputFormats: [],
           knowledgeSources: EMPTY_KS,
+          transparencyLevel,
         },
         controller.signal
       );
@@ -244,16 +289,27 @@ export default function ReviewEnginePage() {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b border-border bg-adv-dark-2 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-adv-teal-dim">
-            <FileSearch className="h-5 w-5 text-adv-teal" />
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-adv-teal-dim">
+              <FileSearch className="h-5 w-5 text-adv-teal" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-adv-off-white">{t('review.title')}</h1>
+              <p className="text-xs text-adv-gray">
+                {t('review.subtitle')}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold text-adv-off-white">{t('review.title')}</h1>
-            <p className="text-xs text-adv-gray">
-              {t('review.subtitle')}
-            </p>
-          </div>
+          <button
+            onClick={handleExportReviewPanel}
+            disabled={exportingAnton}
+            className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-50"
+            title="Export all review perspectives as a shareable .anton file"
+          >
+            {exportingAnton ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            Export Panel as .anton
+          </button>
         </div>
       </div>
 
@@ -266,6 +322,8 @@ export default function ReviewEnginePage() {
             <label className="mb-3 block text-sm font-semibold text-adv-off-white">
               {t('review.reviewMode')}
             </label>
+
+            {/* Standard review modes */}
             <div className="space-y-2">
               {REVIEW_MODES.map((mode) => {
                 const Icon = mode.icon;
@@ -308,6 +366,58 @@ export default function ReviewEnginePage() {
                 );
               })}
             </div>
+
+            {/* Domain Reviewers group */}
+            <div className="mt-4">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">
+                Domain Reviewers
+              </p>
+              <div className="space-y-2">
+                {DOMAIN_REVIEW_MODES.map((mode) => {
+                  const isSelected = selectedModeId === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      onClick={() => setSelectedModeId(mode.id)}
+                      disabled={isStreaming}
+                      className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
+                        isSelected
+                          ? 'border-adv-teal bg-adv-teal-dim'
+                          : 'border-border bg-adv-card hover:border-adv-teal/40 hover:bg-adv-card'
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                            isSelected ? mode.accentBg : 'bg-adv-dark'
+                          }`}
+                        >
+                          {mode.emojiIcon ? (
+                            <span className="text-base leading-none">{mode.emojiIcon}</span>
+                          ) : (
+                            <mode.icon
+                              className={`h-4 w-4 ${isSelected ? mode.accentColor : 'text-adv-gray'}`}
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className={`text-sm font-medium ${
+                              isSelected ? 'text-adv-teal' : 'text-adv-off-white'
+                            }`}
+                          >
+                            {mode.label}
+                          </div>
+                          <div className="mt-0.5 text-xs text-adv-gray leading-relaxed">
+                            {mode.description}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Model selector */}
@@ -332,6 +442,34 @@ export default function ReviewEnginePage() {
                   }`}
                 >
                   {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Transparency toggle */}
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+              Transparency
+            </label>
+            <div className="flex gap-1.5">
+              {([
+                { level: 0 as const, label: 'Off' },
+                { level: 1 as const, label: 'Summary' },
+                { level: 2 as const, label: 'Detailed' },
+              ]).map(({ level, label }) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setTransparencyLevel(level)}
+                  disabled={isStreaming}
+                  className={`flex-1 rounded-lg border px-2 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                    transparencyLevel === level
+                      ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                      : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                  }`}
+                >
+                  {label}
                 </button>
               ))}
             </div>

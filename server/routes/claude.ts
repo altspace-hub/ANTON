@@ -8,6 +8,7 @@ import { composeSystemPrompt, composeSystemPromptSplit } from '../services/promp
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import { runMultiAgent } from '../services/multi-agent-orchestrator.js';
 import { writeAuditEntry } from '../services/auditLogger.js';
+import { safeError } from '../lib/error-response.js';
 import { MODEL_REGISTRY, getModelConfig, getTemperature, isApiKeyAvailable } from '../types/modelAdapter.js';
 import type { PrecisionLevel } from '../types/modelAdapter.js';
 import { streamOpenAI } from '../services/adapters/openaiAdapter.js';
@@ -201,9 +202,15 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           return p.startsWith(UPLOAD_DIR);
         });
 
+      // When the 1M context beta is enabled, give the knowledge resolver an 800k budget
+      // so large document sets aren't truncated. The beta header is added to the actual
+      // API call later (after we know the final token estimate).
+      const longContextBetaEnabled = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
+      const knowledgeBudget = longContextBetaEnabled ? 800_000 : undefined;
+
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
       const resolved = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
+        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths, { contextBudget: knowledgeBudget })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // NEW: RAG Search Integration (Phase 4.8 + 4.9)
@@ -378,9 +385,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
                 // Non-fatal
               }
             }
-            // Quality auto-scoring (non-fatal fire-and-forget)
-            if (moduleId && data.text && data.text.length > 200) {
-              ratchet.scoreOutput({ content: data.text, moduleId, areaId, sessionId, anthropicClient: anthropic })
+            // Quality auto-scoring (non-fatal fire-and-forget) — always run; fall back to 'open-chat' module
+            if (data.text && data.text.length > 200) {
+              ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
                 .catch(() => {});
             }
             // Auto-save version snapshot
@@ -496,7 +503,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         } catch (error) {
           console.error('[MULTI-AGENT] Error:', error);
           res.status(500).json({
-            error: error instanceof Error ? error.message : 'Multi-agent execution failed',
+            error: safeError(error),
           });
           return;
         }
@@ -507,15 +514,22 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         // Use existing Anthropic streaming.
         // staticSystemPrompt is populated only for caching-capable models (Opus/Sonnet);
         // for Haiku it is undefined and claude-client will send a plain single block.
-        await streamToResponse(
+        // Enable 1M token context beta when context is large and env flag is set.
+      // The header is safe to include only when ANTHROPIC_LONG_CONTEXT_BETA=true
+      // because it requires beta API access and incurs long-context pricing.
+      const longContextBeta = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
+      const useLongContext = longContextBeta && resolved.tokenEstimate > 200_000;
+
+      await streamToResponse(
           {
-            model: selectedModel as 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
+            model: selectedModel as 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
             thinking: thinking || 'think_hard',
             system: composedPrompt,
             staticSystemPrompt,
             messages,
             tools: tools.length > 0 ? tools : undefined,
             nativeReasoningEnabled: !!nativeReasoningEnabled,
+            useLongContext,
           },
           res,
           onComplete
@@ -610,9 +624,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         res.end();
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
       if (!res.headersSent) {
-        res.status(500).json({ error: message });
+        res.status(500).json({ error: safeError(error) });
       }
     }
   });
@@ -697,8 +710,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         model: model || 'claude-opus-4-6',
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -863,8 +875,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         outputTokens: result.outputTokens,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 
@@ -922,9 +933,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         res
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
       if (!res.headersSent) {
-        res.status(500).json({ error: message });
+        res.status(500).json({ error: safeError(error) });
       }
     }
   });
@@ -947,8 +957,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const citations = await verifyCitations(text);
       res.json({ citations });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

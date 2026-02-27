@@ -1,0 +1,80 @@
+{
+  "id": "coworker-middle-manager",
+  "name": "Weekly Status Reporter",
+  "description": "Prepares weekly team status reports from notes and KPI data. Drafts the report, captures your review and edits, then formats the final version for distribution.",
+  "role_identity": "Team Manager",
+  "icon": "ClipboardList",
+  "color": "adv-blue",
+  "tags": ["management", "reporting", "weekly", "team"],
+  "estimated_duration": "10-20 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "team_name", "label": "Team Name", "type": "text", "required": true },
+    { "id": "reporting_week", "label": "Reporting Week", "type": "text", "required": true, "placeholder": "e.g., Week of 17 Feb 2026" },
+    { "id": "audience", "label": "Report Audience", "type": "select", "options": ["Direct manager", "Department head", "Executive team", "All stakeholders"], "default": "Direct manager" }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "Draft Weekly Status Report",
+      "description": "ANTON drafts the weekly status report from your inputs.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "project-mgmt",
+        "moduleId": "status-reporting",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Draft a weekly status report for the {{team_name}} team.\nReporting week: {{reporting_week}}\nAudience: {{audience}}\n\nStructure: This week's accomplishments, work in progress, blockers and issues, next week's priorities, and key metrics. Use a professional, concise format appropriate for {{audience}}.",
+        "outputFormat": "quick-briefing",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "Review & Approve Report",
+      "description": "Review ANTON's draft. Add details, corrections, or approve as-is.",
+      "index": 1,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the drafted status report. Add any missing information, corrections, or additional context before finalising.",
+        "checkpointContext": "step-0",
+        "inputFields": [
+          {
+            "id": "edits",
+            "label": "Corrections or additions",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Paste any corrections or additional content to incorporate (leave blank if the draft is correct as-is)..."
+          },
+          {
+            "id": "approved",
+            "label": "Approval",
+            "type": "select",
+            "required": true,
+            "options": ["Approved as-is", "Approved with edits above", "Needs significant revision"]
+          }
+        ],
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Finalise and Format Report",
+      "description": "ANTON incorporates your edits and produces the final distribution-ready version.",
+      "index": 2,
+      "type": "claude",
+      "config": {
+        "areaId": "project-mgmt",
+        "moduleId": "status-reporting",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Finalise the weekly status report for {{team_name}} — {{reporting_week}}.\n\nDraft: {{step-0.output}}\n\nApproval status: {{step-1.approved}}\nEdits to incorporate: {{step-1.edits}}\n\nProduce the final, polished version ready for distribution to {{audience}}. Incorporate all edits. Ensure consistent formatting, clean presentation, and appropriate length for the audience.",
+        "outputFormat": "executive-summary",
+        "dependsOn": ["step-1"]
+      }
+    }
+  ]
+}

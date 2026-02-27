@@ -5,6 +5,8 @@ import { MODULES } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { BudgetIndicator } from '@/components/shared/BudgetIndicator';
+import PrivacyIndicator from '@/components/shared/PrivacyIndicator';
+import { NotificationDropdown } from '@/components/shared/NotificationDropdown';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -37,6 +39,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
     parts.push({ label: t('header.workflows'), path: '/workflows' });
   } else if (location.pathname === '/prompt') {
     parts.push({ label: t('header.openChat'), path: '/prompt' });
+  } else if (location.pathname === '/governance') {
+    parts.push({ label: t('nav.governance'), path: '/governance' });
+  } else if (location.pathname === '/skill-packs') {
+    parts.push({ label: t('nav.skillPacks'), path: '/skill-packs' });
+  } else if (location.pathname === '/compare') {
+    parts.push({ label: t('nav.compareAnton'), path: '/compare' });
+  } else if (location.pathname === '/marketplace') {
+    parts.push({ label: t('nav.marketplace'), path: '/marketplace' });
   }
 
   const apiOk = health?.apiKeyConfigured;
@@ -78,6 +88,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <span className="hidden text-adv-gray-med sm:inline">{apiOk ? t('header.apiConnected') : t('header.apiNotConfigured')}</span>
         </div>
 
+        {/* Privacy / Data Sovereignty Indicator */}
+        <PrivacyIndicator />
+
         {/* Budget Indicator */}
         <BudgetIndicator />
 
@@ -110,12 +123,15 @@ export default function Header({ onMenuClick }: HeaderProps) {
             window.dispatchEvent(event);
           }}
           className="hidden lg:flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors border border-adv-gray-med/30"
-          title="Open command palette (Cmd+K / Ctrl+K)"
+          title={t('header.commandPaletteTooltip')}
         >
           <Command className="h-3.5 w-3.5" />
-          <span className="hidden xl:inline">Commands</span>
+          <span className="hidden xl:inline">{t('header.commands')}</span>
           <kbd className="hidden xl:inline-block ml-1 px-1 py-0.5 text-[10px] bg-adv-dark rounded">⌘K</kbd>
         </button>
+
+        {/* Notification Bell */}
+        <NotificationDropdown />
 
         {/* Theme Toggle */}
         <button

@@ -563,6 +563,26 @@ export async function getModuleFeedbackStats(moduleId: string): Promise<{
   return res.json();
 }
 
+export interface SessionQualityScore {
+  id: string;
+  moduleId: string;
+  overall: number;
+  completeness: number;
+  accuracy: number;
+  structure: number;
+  actionability: number;
+  citations: number;
+  isRegression: boolean;
+  scoredAt: string;
+  reasoning?: { strengths?: string[]; weaknesses?: string[]; improvementSuggestion?: string } | null;
+}
+
+export async function getSessionQualityScore(sessionId: string): Promise<SessionQualityScore | null> {
+  const res = await fetchWithAuth(`${API_BASE}/quality/by-session/${encodeURIComponent(sessionId)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
 // ── EUR-Lex API ──────────────────────────────────────────────
 
 export async function fetchEurLexList(): Promise<Array<{
@@ -589,4 +609,93 @@ export async function fetchEurLexText(celexNumber: string): Promise<{ text: stri
   });
   if (!res.ok) throw new Error('EUR-Lex fetch failed');
   return res.json();
+}
+
+// ── Skill Packs API (Wave 2.2) ────────────────────────────────
+
+export interface SkillPack {
+  id: string;
+  name: string;
+  description: string;
+  target_role: string;
+  target_industry: string;
+  modules: string[];
+  workflow_template: unknown | null;
+  persona_configs: unknown | null;
+  skills_attached: unknown | null;
+  quality_baselines: unknown | null;
+  getting_started: string;
+  is_default: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+export async function getSkillPacks(): Promise<SkillPack[]> {
+  const res = await fetchWithAuth(`${API_BASE}/skill-packs`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function getSkillPack(id: string): Promise<SkillPack | null> {
+  const res = await fetchWithAuth(`${API_BASE}/skill-packs/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function createSkillPack(pack: Partial<SkillPack>): Promise<SkillPack> {
+  const res = await fetchWithAuth(`${API_BASE}/skill-packs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(pack),
+  });
+  if (!res.ok) throw new Error('Failed to create skill pack');
+  return res.json();
+}
+
+/** Download a compliance ruleset as a .anton file */
+export async function exportComplianceRulesetAnton(options: { name?: string; description?: string; categories?: string[] } = {}): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/compliance-ruleset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+  });
+  if (!res.ok) throw new Error('Failed to export compliance ruleset');
+  return res.blob();
+}
+
+/** Download quality baselines as a .anton file */
+export async function exportQualityBaselineAnton(options: { name?: string; description?: string; moduleIds?: string[] } = {}): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/quality-baseline`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+  });
+  if (!res.ok) throw new Error('Failed to export quality baselines');
+  return res.blob();
+}
+
+/** Download a review panel as a .anton file */
+export async function exportReviewPanelAnton(params: {
+  name: string;
+  description?: string;
+  reviewers: Array<{ id: string; name: string; icon?: string; prompt: string; focusAreas?: string[] }>;
+}): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/review-panel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error('Failed to export review panel');
+  return res.blob();
+}
+
+/** Download a Trust Certificate PDF for the given session */
+export async function exportTrustCertificate(sessionId: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/export/trust-certificate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId }),
+  });
+  if (!res.ok) throw new Error('Failed to generate trust certificate');
+  return res.blob();
 }

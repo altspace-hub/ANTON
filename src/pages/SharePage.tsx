@@ -211,7 +211,7 @@ export default function SharePage() {
           >
             openEXPERT
           </a>
-          {' '}by Advisense
+          {' '}by openEXPERT
         </p>
       </footer>
     </div>

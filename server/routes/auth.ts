@@ -7,6 +7,7 @@ import { sendPasswordResetEmail } from '../services/email.js';
 import { logSecurityEvent } from '../services/security-logger.js';
 import * as oidcClient from 'openid-client';
 import { getUserBudgetStatus } from '../services/budget-manager.js';
+import { safeError } from '../lib/error-response.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -141,6 +142,9 @@ export function createAuthRoutes(db: Database) {
     db.prepare('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, user.id as string, expiresAt);
     db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id as string);
 
+    // Auto-accept any pending project invitations for this email
+    acceptPendingInvitations(db, user.id as string, user.email as string);
+
     res.json({ user: authUser, token });
   });
 
@@ -181,8 +185,8 @@ export function createAuthRoutes(db: Database) {
       res.status(400).json({ error: 'Token and new password are required' });
       return;
     }
-    if (newPassword.length < 6) {
-      res.status(400).json({ error: 'Password must be at least 6 characters' });
+    if (newPassword.length < 12) {
+      res.status(400).json({ error: 'Password must be at least 12 characters' });
       return;
     }
 
@@ -198,6 +202,7 @@ export function createAuthRoutes(db: Database) {
     try {
       const hash = await bcrypt.hash(newPassword, 10);
       db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, record.user_id as string);
+      db.prepare('DELETE FROM user_sessions WHERE user_id = ?').run(record.user_id as string);
       db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?').run(record.id as number);
       res.json({ success: true });
     } catch (err) {
@@ -251,8 +256,7 @@ export function createAuthRoutes(db: Database) {
       const status = getUserBudgetStatus(db, session.id);
       res.json({ budget: status });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      res.status(500).json({ error: message });
+      res.status(500).json({ error: safeError(err) });
     }
   });
 
@@ -402,8 +406,7 @@ export function createAuthRoutes(db: Database) {
       const serverMetadata = config.serverMetadata();
       res.json({ ok: true, issuer: serverMetadata.issuer });
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      res.status(500).json({ ok: false, error: `OIDC discovery failed: ${message}` });
+      res.status(500).json({ ok: false, error: `OIDC discovery failed: ${safeError(err)}` });
     }
   });
 

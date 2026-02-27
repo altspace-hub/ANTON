@@ -366,7 +366,7 @@ async function executeStep(
             connectTimeout: 10000,
           });
 
-          const [results] = await connection.execute(query, parameters);
+          const [results] = await connection.execute(query, parameters as (string | number | boolean | null | Date | Buffer)[]);
           rows = (Array.isArray(results) ? results : []).slice(0, maxRows);
           rowCount = rows.length;
           await connection.end();

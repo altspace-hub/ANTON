@@ -1,0 +1,21 @@
+node_modules
+dist
+data
+uploads
+outputs
+.env
+.env.local
+.git
+.gitignore
+*.log
+tsconfig*.tsbuildinfo
+
+# Documentation (not needed in image)
+*.md
+!README.md
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

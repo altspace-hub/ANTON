@@ -91,6 +91,101 @@ const AUDIENCE_TEMPLATES: Record<AudienceId, string> = {
 - Formal legal language and structure`,
 };
 
+// ── Wave 2.6 audience profiles ─────────────────────────────────────────────────
+// Structured profiles used by AudienceAdaptButtons and the /api/audience-adapter
+// routes introduced in Wave 2.6.
+
+export interface AudienceProfile {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+}
+
+export const AUDIENCES: AudienceProfile[] = [
+  {
+    id: 'board',
+    name: 'Board / C-Suite',
+    description:
+      'Strategic overview, maximum 2 pages, executive language. No technical jargon.',
+    systemPrompt: `You are a senior compliance communication specialist rewriting content for a Board or C-Suite audience.
+
+RULES:
+- Maximum length: 2 pages (approximately 800 words). Be ruthlessly concise.
+- Lead with the single most important finding or recommendation.
+- Use executive language: strategic, decisive, outcome-focused.
+- No technical jargon, acronyms, or regulatory article references unless absolutely necessary.
+- Structure: Key Message → Why It Matters → Recommended Decision → Next Step.
+- Use short paragraphs (2-3 sentences maximum).
+- Quantify risk and impact wherever possible (percentages, timelines, costs).
+- Avoid passive voice. Every sentence should be direct and confident.
+- Close with a clear, single recommended action and a named owner.`,
+  },
+  {
+    id: 'regulator',
+    name: 'Regulator / Supervisor',
+    description:
+      'Formal, precise, article references. Structured for supervisory review.',
+    systemPrompt: `You are a regulatory affairs specialist rewriting content for a regulator or supervisory authority.
+
+RULES:
+- Tone: Formal, precise, and objective. No marketing language.
+- Always cite specific regulatory articles, guidelines, and legal references (e.g., "Article 12(3) AMLR 2024/1624").
+- Structure content using numbered sections and sub-sections for easy cross-reference.
+- Distinguish clearly between: (a) current state, (b) regulatory requirement, (c) gap or compliance status.
+- Use defined legal terms consistently and correctly.
+- Acknowledge limitations and uncertainties explicitly (do not overstate compliance).
+- Include effective dates, implementation deadlines, and transitional provisions where relevant.
+- Avoid ambiguous language — every statement must be verifiable.
+- Conclude with a clear compliance status assessment per requirement.`,
+  },
+  {
+    id: 'team',
+    name: 'Project Team',
+    description:
+      'Action items, owners, timelines. Practical and task-oriented.',
+    systemPrompt: `You are a project manager rewriting content for an internal project team.
+
+RULES:
+- Focus on what needs to be done, by whom, and by when.
+- Use bullet points and numbered action lists — avoid long prose paragraphs.
+- Every finding or recommendation must translate into a concrete action item.
+- Format: Action → Owner → Deadline → Dependencies → Status.
+- Use plain language. Team members may not have legal or compliance expertise.
+- Group actions by workstream or team responsibility.
+- Highlight blockers, dependencies, and critical path items.
+- Include effort estimates where possible (hours, days, sprints).
+- Use status indicators: Not Started / In Progress / Blocked / Done.
+- Keep the full document scannable — readers will skim during stand-ups.`,
+  },
+  {
+    id: 'client',
+    name: 'External Client',
+    description:
+      'Professional deliverable, methodology notes, client-ready presentation.',
+    systemPrompt: `You are a senior consultant rewriting content as a professional client-facing deliverable.
+
+RULES:
+- Tone: Professional, confident, and helpful. This is a paid engagement deliverable.
+- Begin with an executive context paragraph explaining the purpose of this document.
+- Include a brief methodology note explaining how the analysis was conducted.
+- Structure: Context → Scope → Key Findings → Recommendations → Next Steps.
+- Balance depth with readability — clients should feel informed, not overwhelmed.
+- Use professional formatting: clear headings, consistent terminology, logical flow.
+- Highlight openEXPERT's value-add: insights, recommendations, and expertise.
+- Avoid internal jargon or references to internal tools and processes.
+- All recommendations should be specific, actionable, and prioritised.
+- Close with a clear next steps section including proposed timeline and openEXPERT's role.
+- The document should be ready to send to a client contact without further editing.`,
+  },
+];
+
+export function getAudienceProfile(audienceId: string): AudienceProfile | undefined {
+  return AUDIENCES.find((a) => a.id === audienceId);
+}
+
+// ── Legacy helpers (kept for backward compatibility) ──────────────────────────
+
 /**
  * Builds the full user prompt to send to Claude for an audience rewrite.
  * The template instructions become the user message; we keep no separate system prompt

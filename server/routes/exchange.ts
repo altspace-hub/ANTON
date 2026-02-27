@@ -2,7 +2,13 @@ import { Router } from 'express';
 import multer from 'multer';
 import type { Database } from 'better-sqlite3';
 import { exportModuleToAnton } from '../services/antonExport.js';
-import { bundleModuleToAnton } from '../services/anton-bundler.js';
+import {
+  bundleModuleToAnton,
+  bundleComplianceRuleset,
+  bundleReviewPanel,
+  bundleQualityBaseline,
+  bundleAudienceProfile,
+} from '../services/anton-bundler.js';
 import { validateAntonFile } from '../services/anton-validator.js';
 import { importAntonFile } from '../services/anton-importer.js';
 
@@ -60,6 +66,76 @@ export function createExchangeRoutes(db: Database) {
       res.json(result);
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : 'Validation failed' });
+    }
+  });
+
+  // ── New bundle type exports ────────────────────────────────────
+
+  // POST /api/exchange/export-bundle/compliance-ruleset
+  router.post('/exchange/export-bundle/compliance-ruleset', async (req, res) => {
+    try {
+      const { name, description, categories, author } = req.body as {
+        name?: string; description?: string; categories?: string[]; author?: string;
+      };
+      const buffer = await bundleComplianceRuleset(db, { name, description, categories, author });
+      const filename = `compliance-ruleset-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/quality-baseline
+  router.post('/exchange/export-bundle/quality-baseline', async (req, res) => {
+    try {
+      const { name, description, moduleIds, author } = req.body as {
+        name?: string; description?: string; moduleIds?: string[]; author?: string;
+      };
+      const buffer = await bundleQualityBaseline(db, { name, description, moduleIds, author });
+      const filename = `quality-baseline-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/review-panel
+  router.post('/exchange/export-bundle/review-panel', async (req, res) => {
+    try {
+      const { name, description, applicableAreas, reviewers, panelSettings, author } = req.body as Parameters<typeof bundleReviewPanel>[0];
+      if (!name || !reviewers || reviewers.length === 0) {
+        res.status(400).json({ error: 'name and reviewers are required' });
+        return;
+      }
+      const buffer = await bundleReviewPanel({ name, description, applicableAreas, reviewers, panelSettings, author });
+      const filename = `review-panel-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/audience-profile
+  router.post('/exchange/export-bundle/audience-profile', async (req, res) => {
+    try {
+      const params = req.body as Parameters<typeof bundleAudienceProfile>[0];
+      if (!params.name || !params.systemPrompt) {
+        res.status(400).json({ error: 'name and systemPrompt are required' });
+        return;
+      }
+      const buffer = await bundleAudienceProfile(params);
+      const filename = `audience-profile-${params.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
     }
   });
 

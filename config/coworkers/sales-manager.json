@@ -1,0 +1,96 @@
+{
+  "id": "coworker-sales-manager",
+  "name": "Pipeline & Forecast Reviewer",
+  "description": "Analyses sales pipeline health, generates competitive intelligence for key deals, and produces a forecast summary with deal-level recommendations for sales leadership review.",
+  "role_identity": "Sales Manager",
+  "icon": "TrendingUp",
+  "color": "adv-green",
+  "tags": ["sales", "pipeline", "forecast", "competitive-intelligence"],
+  "estimated_duration": "20-35 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "review_period", "label": "Review Period", "type": "text", "required": true, "placeholder": "e.g., Q1 2026 Week 7" },
+    { "id": "pipeline_data", "label": "Pipeline Data", "type": "textarea", "required": true, "placeholder": "Paste pipeline summary: deal names, stages, values, expected close dates, competitor situation..." },
+    { "id": "forecast_target", "label": "Quarter Forecast Target", "type": "text", "required": true, "placeholder": "e.g., €2.4M" }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "Analyse Pipeline Health",
+      "description": "ANTON analyses pipeline composition, velocity, coverage ratio, and deal-level risk.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "sales",
+        "moduleId": "pipeline-analysis",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "promptTemplate": "Analyse the {{review_period}} sales pipeline for forecast target {{forecast_target}}.\n\nPipeline data:\n{{pipeline_data}}\n\nProduce: pipeline coverage analysis, weighted forecast, deals at risk, deals to accelerate, and overall forecast confidence (high/medium/low) with supporting rationale.",
+        "outputFormat": "executive-summary",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "Competitive Intelligence on Key Deals",
+      "description": "ANTON produces competitive intelligence on the competitors appearing in the pipeline.",
+      "index": 1,
+      "type": "claude",
+      "config": {
+        "areaId": "strategy",
+        "moduleId": "competitive-intelligence",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "promptTemplate": "Based on the pipeline analysis, identify the key competitors in contested deals:\n{{step-0.output}}\n\nFor each competitor appearing in active deals, produce a brief competitive battlecard: their likely pitch, their weaknesses, and 2-3 specific tactics to win against them.",
+        "outputFormat": "quick-briefing",
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Sales Manager Review",
+      "description": "Review analysis and add deal-specific context and overrides.",
+      "index": 2,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the pipeline analysis and competitive intelligence. Flag any deal-specific context, forecast overrides, or corrections.",
+        "checkpointContext": "step-0,step-1",
+        "inputFields": [
+          {
+            "id": "overrides",
+            "label": "Forecast overrides or deal notes",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Any deals where you want to override the analysis, add context, or provide deal-specific intelligence..."
+          },
+          {
+            "id": "commit_number",
+            "label": "Committed forecast for period",
+            "type": "text",
+            "required": true,
+            "placeholder": "Your committed forecast number for the period"
+          }
+        ],
+        "dependsOn": ["step-1"]
+      }
+    },
+    {
+      "id": "step-3",
+      "label": "Generate Final Forecast Report",
+      "description": "ANTON produces the final forecast report incorporating your overrides.",
+      "index": 3,
+      "type": "claude",
+      "config": {
+        "areaId": "sales",
+        "moduleId": "pipeline-analysis",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Produce the final {{review_period}} pipeline and forecast report.\n\nAnalysis: {{step-0.output}}\nCompetitive intel: {{step-1.output}}\nManager overrides: {{step-2.overrides}}\nCommitted forecast: {{step-2.commit_number}} vs. target {{forecast_target}}\n\nProduce a board-ready pipeline review: headline forecast vs. target, key deals summary, top 3 risks, top 3 accelerators, and competitive situation.",
+        "outputFormat": "executive-summary",
+        "dependsOn": ["step-2"]
+      }
+    }
+  ]
+}

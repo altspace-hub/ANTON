@@ -50,7 +50,7 @@
       "id": "attendees",
       "type": "textarea",
       "label": "Attendees",
-      "placeholder": "List attendees with name, role, and organization where relevant. Note any apologies.\ne.g.\nPresent: Johan Andersson (CFO, Chair), Lisa Berg (CTO), Anna Lindqvist (Compliance Director), Karl Svensson (PM, Advisense), Maria Ek (Data Lead)\nApologies: Erik Nilsson (Legal)"
+      "placeholder": "List attendees with name, role, and organization where relevant. Note any apologies.\ne.g.\nPresent: Johan Andersson (CFO, Chair), Lisa Berg (CTO), Anna Lindqvist (Compliance Director), Karl Svensson (PM, openEXPERT), Maria Ek (Data Lead)\nApologies: Erik Nilsson (Legal)"
     },
     {
       "id": "meeting_notes",

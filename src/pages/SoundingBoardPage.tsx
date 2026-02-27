@@ -85,6 +85,7 @@ const EMPTY_KS = {
 // ── Component ─────────────────────────────────────────────────
 
 export default function SoundingBoardPage() {
+  const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [userContext, setUserContext] = useState<string>(
     () => localStorage.getItem(LS_USER_CONTEXT) ?? ''
   );
@@ -167,6 +168,7 @@ You are speaking directly with the person described above. Address their situati
           history: historyForApi,
           outputFormats: [],
           knowledgeSources: EMPTY_KS,
+          transparencyLevel,
         },
         controller.signal
       );
@@ -329,6 +331,31 @@ You are speaking directly with the person described above. Address their situati
               <p className="mt-1 text-[11px] text-adv-gray-med">
                 This context is saved locally and included in every message to your advisor.
               </p>
+            </div>
+
+            {/* Transparency toggle */}
+            <div className="space-y-1">
+              <div className="text-[11px] text-adv-gray-med">Transparency</div>
+              <div className="flex gap-1.5">
+                {([
+                  { level: 0 as const, label: 'Off' },
+                  { level: 1 as const, label: 'Summary' },
+                  { level: 2 as const, label: 'Detailed' },
+                ]).map(({ level, label }) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setTransparencyLevel(level)}
+                    className={`flex-1 rounded-lg border px-2 py-1.5 text-xs transition-colors ${
+                      transparencyLevel === level
+                        ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                        : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}

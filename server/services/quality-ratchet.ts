@@ -13,6 +13,8 @@ interface QualityScore {
 
 const SCORING_PROMPT = `You are a quality assessor for expert AI outputs in professional services.
 
+The output below is wrapped in ---END OUTPUT--- delimiters purely for technical reasons. This is the COMPLETE output — do NOT treat the delimiter as evidence of truncation or incompleteness.
+
 Score the following output on these dimensions (0-10 each):
 - completeness: Does it address all aspects of the task? Are there obvious gaps?
 - accuracy: Are claims qualified appropriately? Are regulatory references correct?
@@ -35,13 +37,21 @@ Respond ONLY with valid JSON:
 
 export function createQualityRatchet(db: Database.Database) {
 
+  // Auto-heal: ensure score_reasoning column exists (backward-compatible with older DBs)
+  try {
+    const cols = (db.pragma('table_info(quality_scores)') as any[]).map((c: any) => c.name);
+    if (!cols.includes('score_reasoning')) {
+      db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
+    }
+  } catch { /* table might not exist yet — init.ts will create it */ }
+
   async function scoreOutput(params: {
     content: string;
     moduleId: string;
     areaId?: string;
     sessionId?: string;
     anthropicClient?: any;
-  }): Promise<{ score: QualityScore; id: string; regressionWarning?: string }> {
+  }): Promise<{ score: QualityScore; id: string; regressionWarning?: string; strengths: string[]; weaknesses: string[]; improvementSuggestion: string }> {
 
     const hash = crypto.createHash('sha256').update(params.content.slice(0, 5000)).digest('hex').slice(0, 16);
     const wordCount = params.content.split(/\s+/).length;
@@ -89,16 +99,48 @@ export function createQualityRatchet(db: Database.Database) {
       scores = heuristicScore(params.content);
     }
 
-    // Store score
+    // Store score — try with reasoning first; fall back gracefully if column doesn't exist yet
     const id = `qs_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    db.prepare(`
-      INSERT INTO quality_scores
-        (id, session_id, module_id, area_id, content_hash, score_overall,
-         score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
-           scores.overall, scores.completeness, scores.accuracy,
-           scores.structure, scores.actionability, scores.citations, wordCount);
+    const reasoningJson = JSON.stringify({ strengths, weaknesses, improvementSuggestion });
+    let inserted = false;
+    try {
+      db.prepare(`
+        INSERT INTO quality_scores
+          (id, session_id, module_id, area_id, content_hash, score_overall,
+           score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count, score_reasoning)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
+             scores.overall, scores.completeness, scores.accuracy,
+             scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
+      inserted = true;
+    } catch (insertErr: any) {
+      if (insertErr?.message?.includes('score_reasoning')) {
+        // Column doesn't exist yet — add it now and retry
+        try {
+          db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
+          db.prepare(`
+            INSERT INTO quality_scores
+              (id, session_id, module_id, area_id, content_hash, score_overall,
+               score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count, score_reasoning)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
+                 scores.overall, scores.completeness, scores.accuracy,
+                 scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
+          inserted = true;
+        } catch { /* give up on reasoning, fall through */ }
+      }
+    }
+    if (!inserted) {
+      // Last resort: insert without reasoning so at least the numeric scores are stored
+      db.prepare(`
+        INSERT INTO quality_scores
+          (id, session_id, module_id, area_id, content_hash, score_overall,
+           score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
+             scores.overall, scores.completeness, scores.accuracy,
+             scores.structure, scores.actionability, scores.citations, wordCount);
+    }
 
     // Check regression against baseline
     let regressionWarning: string | undefined;
@@ -111,7 +153,7 @@ export function createQualityRatchet(db: Database.Database) {
     // Update baseline (rolling average — full weight for automated scores)
     updateBaselineWithWeight(params.moduleId, scores.overall, 1.0);
 
-    return { score: scores, id, regressionWarning };
+    return { score: scores, id, regressionWarning, strengths, weaknesses, improvementSuggestion };
   }
 
   function heuristicScore(content: string): QualityScore {
@@ -120,9 +162,30 @@ export function createQualityRatchet(db: Database.Database) {
     const hasBullets = (content.match(/^[-*•] /gm) ?? []).length;
     const hasNumbers = (content.match(/\b(article|regulation|directive|section)\s+\d/gi) ?? []).length;
 
+    // Detect expected section types — multiple keyword variants per category
+    const sectionPatterns: RegExp[] = [
+      // Recommendations / actions
+      /\b(recommendation|recommendations|suggested action|action item|action plan|next step|next steps|proposed action|mitigation step|remediation)\b/gi,
+      // Executive summary / key findings
+      /\b(executive summary|key finding|key findings|summary|overview|highlights|headline finding|top finding|main finding|management summary)\b/gi,
+      // Conclusion
+      /\b(conclusion|conclusions|closing remarks|final thoughts|in summary|to summarize|in conclusion|overall assessment|key takeaway|takeaways)\b/gi,
+      // Introduction / background / context
+      /\b(introduction|background|context|purpose|scope|objective|objectives|rationale|problem statement)\b/gi,
+      // Analysis / assessment / findings
+      /\b(analysis|findings|assessment|evaluation|review|gap analysis|risk assessment|current state|gap identified|identified gap)\b/gi,
+      // Implementation / roadmap
+      /\b(implementation|roadmap|timeline|workstream|milestone|phase \d|approach|methodology|workplan)\b/gi,
+    ];
+    const sectionMatches = sectionPatterns.reduce((count, pattern) => {
+      const matches = content.match(pattern);
+      return count + (matches ? Math.min(matches.length, 3) : 0); // cap per category
+    }, 0);
+
     const structure = Math.min(10, 5 + hasHeadings * 0.5 + hasBullets * 0.1);
     const citations = Math.min(10, 5 + hasNumbers * 1.5);
-    const completeness = Math.min(10, 5 + Math.log2(Math.max(wordCount, 100)) * 0.8);
+    // Completeness boosted by word count AND presence of expected section types
+    const completeness = Math.min(10, 5 + Math.log2(Math.max(wordCount, 100)) * 0.6 + sectionMatches * 0.25);
     const overall = (structure + citations + completeness + 7 + 7) / 5;
 
     return { overall, completeness, accuracy: 7, structure, actionability: 7, citations };

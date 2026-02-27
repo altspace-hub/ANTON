@@ -5,15 +5,25 @@
 // ── Models & AI Configuration ──────────────────────────────
 
 export type ModelId =
+  // Anthropic Claude
   | 'claude-opus-4-6'
   | 'claude-sonnet-4-6'
   | 'claude-sonnet-4-5-20250929'
   | 'claude-haiku-4-5-20251001'
+  // OpenAI
+  | 'gpt-4.1'
   | 'gpt-4o'
   | 'gpt-4o-mini'
+  // Google Gemini
+  | 'gemini-2.5-pro'
+  | 'gemini-2.5-flash'
   | 'gemini-2.0-flash'
+  // Mistral
   | 'mistral-large-latest'
-  | `ollama:${string}`    // local Ollama models, e.g. 'ollama:llama3.2', 'ollama:mistral'
+  | 'mistral-medium-latest'
+  | 'mistral-small-latest'
+  // Ollama (local)
+  | `ollama:${string}`
   | (string & {}); // allows additional model IDs without breaking type narrowing
 
 export type ModelProvider = 'anthropic' | 'openai' | 'google' | 'mistral' | 'ollama';

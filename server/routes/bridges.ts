@@ -185,7 +185,7 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
       const maxLength = Number(bridgeConfig.max_response_length ?? 1500);
 
       const systemPrompt = [
-        `You are an expert AML/CFT and financial crime compliance assistant for Advisense FCP.`,
+        `You are an expert AML/CFT and financial crime compliance assistant for openEXPERT.`,
         `You are responding via a messaging channel. Your response MUST be:`,
         `- Plain text only. No markdown formatting, no asterisks, no bullet symbols, no headers.`,
         `- Maximum ${maxLength} characters total.`,

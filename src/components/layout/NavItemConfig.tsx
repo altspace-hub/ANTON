@@ -18,6 +18,7 @@ interface NavItem {
 // All navigation items that can be hidden
 export const ALL_NAV_ITEMS: NavItem[] = [
   // Interaction Modes
+  { id: 'engagements', label: 'Engagement Tasks', category: 'interaction' },
   { id: 'discover', label: 'Discover', category: 'interaction' },
   { id: 'brief', label: 'Brief Me', category: 'interaction' },
   { id: 'guide', label: 'Guide Me', category: 'interaction' },
@@ -39,6 +40,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'projects', label: 'Projects', category: 'tools' },
   { id: 'build-module', label: 'Build Module', category: 'tools' },
   { id: 'skills', label: 'Skills Library', category: 'tools' },
+  { id: 'skill-packs', label: 'Skill Packs', category: 'tools' },
   { id: 'batch', label: 'Batch Create', category: 'tools' },
 
   // Features
@@ -47,6 +49,9 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'quality', label: 'Quality Ratchet', category: 'features' },
   { id: 'apprentice', label: 'Apprentice Model', category: 'features' },
   { id: 'knowledge-base', label: 'Knowledge Base', category: 'features' },
+  { id: 'governance', label: 'Governance Dashboard', category: 'features' },
+  { id: 'compare', label: 'Compare ANTON', category: 'features' },
+  { id: 'marketplace', label: 'Marketplace', category: 'features' },
 
   // Intelligence
   { id: 'knowledge', label: 'Knowledge Atoms', category: 'intelligence' },

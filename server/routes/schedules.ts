@@ -32,7 +32,7 @@ export function createScheduleRoutes(db: Database.Database) {
   // POST /api/workflows/:workflowId/schedules — create a schedule
   router.post('/workflows/:workflowId/schedules', (req, res) => {
     try {
-      const { cron_expression } = req.body as { cron_expression: string };
+      const { cron_expression, workflow_definition } = req.body as { cron_expression: string; workflow_definition?: unknown };
       if (!cron_expression?.trim()) {
         res.status(400).json({ error: 'cron_expression is required' });
         return;
@@ -42,9 +42,11 @@ export function createScheduleRoutes(db: Database.Database) {
         return;
       }
 
+      // Store the workflow definition JSON so the scheduler can execute it headlessly
+      const definitionJson = workflow_definition ? JSON.stringify(workflow_definition) : null;
       const result = db.prepare(
-        'INSERT INTO workflow_schedules (workflow_id, cron_expression, is_active) VALUES (?, ?, 1)'
-      ).run(req.params.workflowId, cron_expression.trim());
+        'INSERT INTO workflow_schedules (workflow_id, cron_expression, is_active, workflow_definition) VALUES (?, ?, 1, ?)'
+      ).run(req.params.workflowId, cron_expression.trim(), definitionJson);
 
       const newId = result.lastInsertRowid as number;
       const newSchedule = db.prepare('SELECT * FROM workflow_schedules WHERE id = ?').get(newId) as ScheduleRow;

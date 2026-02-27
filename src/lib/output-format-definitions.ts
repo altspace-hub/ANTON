@@ -771,10 +771,10 @@ Produce a professional client engagement proposal for financial crime prevention
 Structure:
 
 **1. COVER PAGE CONTENT**
-Proposal title, client name, date, reference number, prepared by (Advisense FCP), and classification (Confidential).
+Proposal title, client name, date, reference number, prepared by (openEXPERT), and classification (Confidential).
 
 **2. EXECUTIVE SUMMARY** (max 1 page)
-Lead with the client's problem, not our solution. In 3–4 sentences articulate: what challenge the client faces, what the regulatory or business consequence of inaction is, and what outcome this engagement will deliver. Close with a single sentence on why Advisense is the right partner.
+Lead with the client's problem, not our solution. In 3–4 sentences articulate: what challenge the client faces, what the regulatory or business consequence of inaction is, and what outcome this engagement will deliver. Close with a single sentence on why openEXPERT is the right partner.
 
 **3. OUR UNDERSTANDING OF YOUR SITUATION**
 Demonstrate that we understand the client's context — their institution type, regulatory environment, the specific challenge they face, and the constraints they operate under (time, resources, political, technical). Reference any specific information provided. This section should make the client think: "They get it." Do NOT use generic industry boilerplate.
@@ -801,15 +801,15 @@ Include: kickoff, interim checkpoints, draft deliverable review, final delivery,
 [PLACEHOLDER — Fee structure to be completed by engagement lead]
 Note: Include assumptions that underpin the estimate (number of interviews, document volume, travel requirements, workshops, etc.) so the client understands what drives cost. Optionally present two fee options: a full scope and a phased/reduced scope.
 
-**9. WHY ADVISENSE FCP**
+**9. WHY openEXPERT**
 3–4 specific differentiators relevant to this engagement. Back each with concrete evidence (experience, methodologies, regulatory relationships, delivery track record). Do NOT use generic consulting clichés. This should feel like evidence, not marketing.
 
 **10. NEXT STEPS**
-Clear, time-bound actions: what we need from the client, when we need it, and who from Advisense to contact to proceed. Specify the decision deadline if one exists.
+Clear, time-bound actions: what we need from the client, when we need it, and who from openEXPERT to contact to proceed. Specify the decision deadline if one exists.
 
 **APPENDICES** (as needed)
 - Relevant engagement references (anonymised)
-- Advisense FCP team profiles
+- openEXPERT team profiles
 - Sample deliverable format
 
 Quality bar: Every section must feel specific to the client. If you do not have enough information about the client to be specific, flag clearly what information is needed before the proposal can be finalised. Do NOT produce generic consulting filler.`,

@@ -73,7 +73,13 @@ export interface RagModeConfig {
 export async function resolveKnowledgeSources(
   config: KnowledgeSourceConfig,
   uploadedFilePaths: string[] = [],
-  options?: { db?: Database.Database; ragMode?: RagModeConfig; userQuery?: string },
+  options?: {
+    db?: Database.Database;
+    ragMode?: RagModeConfig;
+    userQuery?: string;
+    /** Override the default 160k token budget. Set to ~800k when using the 1M context beta. */
+    contextBudget?: number;
+  },
 ): Promise<ResolvedKnowledge> {
   const result: ResolvedKnowledge = {
     systemPromptAdditions: '',
@@ -82,6 +88,9 @@ export async function resolveKnowledgeSources(
     tokenEstimate: 0,
     sourceManifest: [],
   };
+
+  // Use caller-provided budget (e.g. 800k for 1M context beta), else env/default.
+  const effectiveBudget = options?.contextBudget ?? AVAILABLE_CONTEXT_TOKENS;
 
   let usedTokens = 0;
   const contextParts: string[] = [];
@@ -110,7 +119,7 @@ export async function resolveKnowledgeSources(
     result.sourceManifest.push(`${config.modes.onlineReference.urls.length} online reference(s)`);
 
     for (const url of config.modes.onlineReference.urls) {
-      if (usedTokens >= AVAILABLE_CONTEXT_TOKENS) {
+      if (usedTokens >= effectiveBudget) {
         contextParts.push(`\n### ONLINE REFERENCE (SKIPPED — context budget reached): ${url}`);
         continue;
       }
@@ -144,7 +153,7 @@ export async function resolveKnowledgeSources(
       const filePaths = await scanFolder(folderPath, recursive, extensions);
 
       for (const filePath of filePaths) {
-        if (usedTokens >= AVAILABLE_CONTEXT_TOKENS) {
+        if (usedTokens >= effectiveBudget) {
           contextParts.push(`\n### LOCAL DOCUMENT (SKIPPED — context budget): ${path.basename(filePath)}`);
           continue;
         }
@@ -166,7 +175,7 @@ export async function resolveKnowledgeSources(
 
   if (uploadedFilePaths.length > 0) {
     for (const filePath of uploadedFilePaths) {
-      if (usedTokens >= AVAILABLE_CONTEXT_TOKENS) {
+      if (usedTokens >= effectiveBudget) {
         contextParts.push(`\n### UPLOADED FILE (SKIPPED — context budget): ${path.basename(filePath)}`);
         continue;
       }
@@ -234,7 +243,7 @@ export async function resolveKnowledgeSources(
             usedTokens += estimateTokens(result.content);
 
             // Stop if we exceed context budget
-            if (usedTokens >= AVAILABLE_CONTEXT_TOKENS) break;
+            if (usedTokens >= effectiveBudget) break;
           }
 
           contextParts.unshift(ragParts.join('\n'));

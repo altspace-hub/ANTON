@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BarChart2,
   Activity,
@@ -59,10 +60,10 @@ function formatCost(n: number): string {
   return `€${n.toFixed(2)}`;
 }
 
-function abbreviateDate(dateStr: string): string {
+function abbreviateDate(dateStr: string, locale: string): string {
   // dateStr = "YYYY-MM-DD"
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
 // ── Custom Tooltip ───────────────────────────────────────────────
@@ -153,6 +154,7 @@ function ChartCard({ title, loading, children }: { title: string; loading?: bool
 // ── Main Page ────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const { i18n } = useTranslation();
   const [overview, setOverview] = useState<OverviewData | null>(null);
   const [sessionsOverTime, setSessionsOverTime] = useState<TimePoint[]>([]);
   const [moduleUsage, setModuleUsage] = useState<ModuleUsage[]>([]);
@@ -186,12 +188,12 @@ export default function AnalyticsPage() {
   // Abbreviated date for chart X axis
   const sessionChartData = sessionsOverTime.map((d) => ({
     ...d,
-    label: abbreviateDate(d.date),
+    label: abbreviateDate(d.date, i18n.language),
   }));
 
   const costChartData = costTrend.map((d) => ({
     ...d,
-    label: abbreviateDate(d.date),
+    label: abbreviateDate(d.date, i18n.language),
   }));
 
   // For horizontal bar chart, recharts needs width to be a number prop on Bar, not a %
@@ -376,7 +378,7 @@ export default function AnalyticsPage() {
           <>
             <p className="mb-3 text-lg font-bold text-adv-off-white">
               {overview?.totalSessions ?? 0} sessions &times; {hoursPerSession}h avg &times; €{ratePerHour}/hr ={' '}
-              <span className="text-adv-teal">€{estimatedValue.toLocaleString('en-EU')} estimated value</span>
+              <span className="text-adv-teal">€{estimatedValue.toLocaleString(i18n.language)} estimated value</span>
             </p>
             <p className="text-sm text-adv-gray">
               Equivalent to approximately{' '}

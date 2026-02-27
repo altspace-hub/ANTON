@@ -190,7 +190,7 @@ await fetch(`/api/versions/session/${sessionId}`, {
 
 ## Design System Compliance
 
-**Colors (Advisense dark theme):**
+**Colors (openEXPERT dark theme):**
 - Background: `bg-adv-dark` (#0B1426)
 - Card: `bg-adv-card` (#152238)
 - Teal (primary): `text-adv-teal` (#2DD4A8)

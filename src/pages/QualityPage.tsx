@@ -7,9 +7,13 @@ import {
   AlertTriangle,
   Settings,
   X,
+  Download,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { MODULES } from '@/lib/constants';
-import { getModuleFeedbackStats } from '@/lib/api';
+import { getModuleFeedbackStats, exportQualityBaselineAnton } from '@/lib/api';
 
 interface QualityBaseline {
   module_id: string;
@@ -30,6 +34,7 @@ interface QualityScore {
   score_citations: number;
   is_regression: number;
   scored_at: string;
+  score_reasoning?: string | null;
 }
 
 interface ModuleTrend {
@@ -42,6 +47,95 @@ interface FeedbackStats {
   avgRating: number;
   distribution: Record<string, number>;
   recentComments: { rating: number; comment: string; created_at: string }[];
+}
+
+function ReasoningScoreRow({
+  score,
+  reasoning,
+  hasReasoning,
+  getScoreColor,
+}: {
+  score: QualityScore;
+  reasoning: { strengths?: string[]; weaknesses?: string[]; improvementSuggestion?: string } | null;
+  hasReasoning: boolean;
+  getScoreColor: (s: number) => string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-lg bg-adv-dark-2 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          {score.is_regression === 1 && (
+            <AlertTriangle className="h-4 w-4 text-adv-red flex-shrink-0" />
+          )}
+          <div>
+            <div className={`text-lg font-bold ${getScoreColor(score.score_overall)}`}>
+              {score.score_overall.toFixed(1)}
+            </div>
+            <div className="text-xs text-adv-gray">
+              {new Date(score.scored_at).toLocaleDateString()}{' '}
+              {new Date(score.scored_at).toLocaleTimeString()}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {score.is_regression === 1 && (
+            <span className="rounded bg-adv-red/10 px-2 py-1 text-xs font-medium text-adv-red">
+              Regression
+            </span>
+          )}
+          {hasReasoning && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+              title="Show AI reasoning"
+            >
+              {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              {expanded ? 'Hide' : 'Why?'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {expanded && hasReasoning && reasoning && (
+        <div className="border-t border-border/50 px-4 pb-3 pt-2 space-y-2">
+          {reasoning.strengths && reasoning.strengths.length > 0 && (
+            <div>
+              <div className="text-xs font-medium text-adv-green mb-1">✓ Strengths</div>
+              <ul className="space-y-0.5">
+                {reasoning.strengths.map((s, i) => (
+                  <li key={i} className="text-xs text-adv-off-white flex items-start gap-1.5">
+                    <span className="text-adv-green mt-0.5">•</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {reasoning.weaknesses && reasoning.weaknesses.length > 0 && (
+            <div>
+              <div className="text-xs font-medium text-adv-gold mb-1">⚠ Weaknesses</div>
+              <ul className="space-y-0.5">
+                {reasoning.weaknesses.map((w, i) => (
+                  <li key={i} className="text-xs text-adv-off-white flex items-start gap-1.5">
+                    <span className="text-adv-gold mt-0.5">•</span>
+                    {w}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {reasoning.improvementSuggestion && (
+            <div className="rounded bg-adv-teal-soft px-3 py-2">
+              <span className="text-xs text-adv-teal font-medium">💡 Suggestion: </span>
+              <span className="text-xs italic text-adv-off-white">{reasoning.improvementSuggestion}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function getAuthHeader(): Record<string, string> {
@@ -57,6 +151,22 @@ export default function QualityPage() {
   const [leaderboardFeedback, setLeaderboardFeedback] = useState<Record<string, FeedbackStats>>({});
   const [loading, setLoading] = useState(true);
   const [showThresholdModal, setShowThresholdModal] = useState(false);
+  const [exportingAnton, setExportingAnton] = useState(false);
+
+  const handleExportBaselines = async () => {
+    if (exportingAnton) return;
+    setExportingAnton(true);
+    try {
+      const blob = await exportQualityBaselineAnton({ name: 'Quality Baselines', description: 'Module quality baselines from Quality Ratchet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quality-baselines-${Date.now()}.anton`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* non-fatal */ }
+    finally { setExportingAnton(false); }
+  };
 
   // Threshold configuration (could be persisted in localStorage)
   const [thresholds, setThresholds] = useState({
@@ -204,13 +314,24 @@ export default function QualityPage() {
             <p className="text-sm text-adv-gray">Track output quality and prevent regression</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowThresholdModal(true)}
-          className="flex items-center gap-2 rounded-lg border border-border bg-adv-card px-4 py-2 text-sm text-adv-white transition-colors hover:bg-adv-dark-2"
-        >
-          <Settings className="h-4 w-4" />
-          Thresholds
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportBaselines}
+            disabled={exportingAnton || leaderboard.length === 0}
+            className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/10 px-3 py-2 text-sm text-adv-teal transition-colors hover:bg-adv-teal/20 disabled:opacity-50"
+            title="Export quality baselines as a shareable .anton file"
+          >
+            {exportingAnton ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Export as .anton
+          </button>
+          <button
+            onClick={() => setShowThresholdModal(true)}
+            className="flex items-center gap-2 rounded-lg border border-border bg-adv-card px-4 py-2 text-sm text-adv-white transition-colors hover:bg-adv-dark-2"
+          >
+            <Settings className="h-4 w-4" />
+            Thresholds
+          </button>
+        </div>
       </div>
 
       {/* Stats Dashboard */}
@@ -400,34 +521,29 @@ export default function QualityPage() {
                       .slice()
                       .reverse()
                       .slice(0, 10)
-                      .map((score) => (
-                        <div
-                          key={score.id}
-                          className="flex items-center justify-between rounded-lg bg-adv-dark-2 px-4 py-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            {score.is_regression === 1 && (
-                              <AlertTriangle className="h-4 w-4 text-adv-red" />
-                            )}
-                            <div>
-                              <div
-                                className={`text-lg font-bold ${getScoreColor(score.score_overall)}`}
-                              >
-                                {score.score_overall.toFixed(1)}
-                              </div>
-                              <div className="text-xs text-adv-gray">
-                                {new Date(score.scored_at).toLocaleDateString()}{' '}
-                                {new Date(score.scored_at).toLocaleTimeString()}
-                              </div>
-                            </div>
-                          </div>
-                          {score.is_regression === 1 && (
-                            <span className="rounded bg-adv-red/10 px-2 py-1 text-xs font-medium text-adv-red">
-                              Regression
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                      .map((score) => {
+                        const reasoning = (() => {
+                          try {
+                            return score.score_reasoning ? JSON.parse(score.score_reasoning) : null;
+                          } catch {
+                            return null;
+                          }
+                        })();
+                        const hasReasoning = reasoning && (
+                          (reasoning.strengths?.length > 0) ||
+                          (reasoning.weaknesses?.length > 0) ||
+                          reasoning.improvementSuggestion
+                        );
+                        return (
+                          <ReasoningScoreRow
+                            key={score.id}
+                            score={score}
+                            reasoning={reasoning}
+                            hasReasoning={!!hasReasoning}
+                            getScoreColor={getScoreColor}
+                          />
+                        );
+                      })}
                   </div>
                 )}
               </div>

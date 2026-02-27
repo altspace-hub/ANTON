@@ -1,0 +1,87 @@
+{
+  "id": "coworker-ecommerce-manager",
+  "name": "Product Sourcing & Planning",
+  "description": "Supports e-commerce product managers with competitive intelligence on competing products, evaluates potential supplier partnerships, and produces a sourcing decision memo.",
+  "role_identity": "E-commerce / Product Manager",
+  "icon": "Package",
+  "color": "adv-gold",
+  "tags": ["ecommerce", "sourcing", "product-management", "competitive-intelligence", "partnerships"],
+  "estimated_duration": "20-30 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "product_category", "label": "Product Category", "type": "text", "required": true, "placeholder": "e.g., Running shoes, B2B SaaS analytics tools, Organic skincare" },
+    { "id": "target_segment", "label": "Target Customer Segment", "type": "text", "required": true, "placeholder": "e.g., Professional runners aged 25-40, CFOs at mid-market firms" },
+    { "id": "sourcing_question", "label": "Sourcing / Planning Question", "type": "textarea", "required": true, "placeholder": "What specific sourcing decision or product planning question do you need to answer?" }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "Competitive Product Intelligence",
+      "description": "ANTON compiles competitive intelligence on leading products and competitors in the category.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "strategy",
+        "moduleId": "competitive-intelligence",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "promptTemplate": "Compile competitive product intelligence for the {{product_category}} category, targeting {{target_segment}}.\n\nSourcing question to inform: {{sourcing_question}}\n\nAnalyse: leading products in market, key competitors, pricing and positioning, product capabilities and gaps, recent market movements, and customer pain points not being served. Identify white space or differentiation opportunities.",
+        "outputFormat": "detailed-findings",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "Supplier Partnership Evaluation",
+      "description": "ANTON evaluates potential supplier or brand partnerships relevant to the sourcing decision.",
+      "index": 1,
+      "type": "claude",
+      "config": {
+        "areaId": "strategy",
+        "moduleId": "partnership-evaluation",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "promptTemplate": "Based on the competitive intelligence:\n{{step-0.output}}\n\nEvaluate sourcing and supplier partnership options for {{product_category}} targeting {{target_segment}}.\n\nAssess: build vs. buy vs. partner options, key supplier types in this category, evaluation criteria for supplier selection, typical commercial terms, key risks in supplier relationships, and recommended sourcing strategy.",
+        "outputFormat": "decision-memo",
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Product Manager Review",
+      "description": "Review the analysis and add your specific supplier candidates or constraints.",
+      "index": 2,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the competitive intelligence and partnership evaluation. Add specific suppliers you are considering, budget constraints, timeline requirements, or other factors.",
+        "checkpointContext": "step-0,step-1",
+        "inputFields": [
+          {
+            "id": "specific_suppliers",
+            "label": "Specific suppliers or partners to evaluate",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "List any specific suppliers or partners you want to include in the final recommendation..."
+          },
+          {
+            "id": "constraints",
+            "label": "Budget, timeline, or other constraints",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Budget range, required timeline, minimum order quantities, geographic constraints, etc."
+          },
+          {
+            "id": "decision_needed",
+            "label": "Decision needed from this analysis",
+            "type": "text",
+            "required": true,
+            "placeholder": "What specific decision will this analysis inform?"
+          }
+        ],
+        "dependsOn": ["step-1"]
+      }
+    }
+  ]
+}

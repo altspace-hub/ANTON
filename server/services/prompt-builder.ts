@@ -160,6 +160,90 @@ export function getMetaCognitiveInstruction(): string {
   return META_COGNITIVE_INSTRUCTION;
 }
 
+/**
+ * Builds a formatted string summarising the last 3 sessions in a project,
+ * excluding the current session. Each entry takes the first 200 words of
+ * the session's last assistant message.
+ *
+ * Returns an empty string when no previous sessions exist or when projectId
+ * is not provided.
+ */
+export async function buildProjectContextSummary(
+  db: import('better-sqlite3').Database,
+  projectId: string,
+  currentSessionId?: string
+): Promise<string> {
+  if (!projectId) return '';
+
+  try {
+    // Query last 3 sessions in this project, excluding current
+    const sessionQuery = currentSessionId
+      ? `SELECT id, title, module_id, updated_at
+           FROM sessions
+           WHERE project_id = ? AND id != ?
+           ORDER BY updated_at DESC
+           LIMIT 3`
+      : `SELECT id, title, module_id, updated_at
+           FROM sessions
+           WHERE project_id = ?
+           ORDER BY updated_at DESC
+           LIMIT 3`;
+
+    const params: string[] = currentSessionId
+      ? [projectId, currentSessionId]
+      : [projectId];
+
+    const sessions = db.prepare(sessionQuery).all(...params) as Array<{
+      id: string;
+      title: string;
+      module_id: string;
+      updated_at: string;
+    }>;
+
+    if (!sessions || sessions.length === 0) return '';
+
+    const lines: string[] = ['## Previous Project Work'];
+
+    for (const session of sessions) {
+      // Get last assistant message for this session
+      const msgRow = db
+        .prepare(
+          `SELECT content FROM messages
+           WHERE session_id = ? AND role = 'assistant'
+           ORDER BY created_at DESC
+           LIMIT 1`
+        )
+        .get(session.id) as { content: string } | undefined;
+
+      if (!msgRow?.content) continue;
+
+      // Take first 200 words
+      const words = msgRow.content.trim().split(/\s+/);
+      const snippet = words.slice(0, 200).join(' ') + (words.length > 200 ? '…' : '');
+
+      // Format date as "Mon DD" (e.g. "Feb 20")
+      let dateLabel = session.updated_at;
+      try {
+        const d = new Date(session.updated_at);
+        dateLabel = d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+      } catch {
+        // keep raw value if parsing fails
+      }
+
+      lines.push(`[Session: ${session.title} — ${dateLabel}] ${snippet}`);
+    }
+
+    // If only the header was added (no messages found), return empty
+    if (lines.length <= 1) return '';
+
+    return lines.join('\n');
+  } catch (err) {
+    // Non-fatal — return empty so the rest of the prompt is unaffected
+    console.warn('[prompt-builder] buildProjectContextSummary error (non-fatal):', err);
+    return '';
+  }
+}
+
 export function getStructureReferenceInstruction(structureRef: { mode: string; description: string; fileName?: string }): string {
   if (!structureRef || structureRef.mode === 'none') return '';
 

@@ -10,6 +10,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: false, // Never register SW in dev — prevents stale cache breaking hot-reload
+      },
       manifest: {
         name: 'openEXPERT by ANTON',
         short_name: 'openEXPERT',
@@ -46,6 +49,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    // Pre-bundle these at dev-server startup so the browser never stalls
+    // waiting for on-demand bundling of heavy packages.
+    include: [
+      'react', 'react-dom', 'react-dom/client',
+      'react-router-dom',
+      'react-i18next', 'i18next', 'i18next-http-backend',
+      'zustand',
+      'lucide-react',
+      'recharts',
+      'react-markdown', 'remark-gfm', 'rehype-highlight',
+    ],
+  },
   server: {
     port: 5173,
     proxy: {
@@ -58,15 +74,18 @@ export default defineConfig({
   build: {
     outDir: 'dist/client',
     chunkSizeWarningLimit: 800,
+    // Limit parallel file processing to reduce peak RAM usage on Windows
+    // (Rollup 4.x WebAssembly can try to reserve huge contiguous blocks otherwise)
     rollupOptions: {
+      maxParallelFileOps: 3,
       output: {
         manualChunks: {
           // React core — rarely changes
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           // Heavy UI libs
           'vendor-markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight'],
-          // i18n
-          'vendor-i18n': ['react-i18next', 'i18next'],
+          // i18n (locale JSON now served from public/ — no longer bundled)
+          'vendor-i18n': ['react-i18next', 'i18next', 'i18next-http-backend'],
           // Zustand stores
           'stores': [
             './src/stores/useSessionStore',
@@ -77,6 +96,8 @@ export default defineConfig({
           'constants': ['./src/lib/constants'],
           // Charts (recharts is large — isolate for long-term caching)
           'vendor-charts': ['recharts'],
+          // Lucide icons — large tree of components
+          'vendor-icons': ['lucide-react'],
         },
       },
     },

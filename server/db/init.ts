@@ -346,6 +346,13 @@ export function initDatabase(): Database.Database {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  // Add workflow_definition column to workflow_schedules for headless execution
+  const schedCols = db.prepare("PRAGMA table_info(workflow_schedules)").all() as Array<{ name: string }>;
+  const schedColNames = schedCols.map((c) => c.name);
+  if (!schedColNames.includes('workflow_definition')) {
+    db.exec('ALTER TABLE workflow_schedules ADD COLUMN workflow_definition TEXT');
+  }
+
   // Version History table
   db.exec(`CREATE TABLE IF NOT EXISTS versions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -820,6 +827,35 @@ export function initDatabase(): Database.Database {
   )`);
   db.prepare("INSERT OR IGNORE INTO radar_settings (key, value) VALUES ('auto_scan_enabled', '0')").run();
   db.prepare("INSERT OR IGNORE INTO radar_settings (key, value) VALUES ('auto_scan_interval_hours', '24')").run();
+  db.prepare("INSERT OR IGNORE INTO radar_settings (key, value) VALUES ('auto_scan_cron', '')").run();
+
+  // ── Notifications table ──────────────────────────────────────────────────
+  db.exec(`CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL DEFAULT 'solo',
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT,
+    link TEXT,
+    read_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, read_at)');
+
+  // ── Workflow Runs table (for tracking scheduled execution history) ────────
+  db.exec(`CREATE TABLE IF NOT EXISTS workflow_runs (
+    id TEXT PRIMARY KEY,
+    workflow_id TEXT NOT NULL,
+    trigger_source TEXT,
+    status TEXT DEFAULT 'running' CHECK(status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+    current_step INTEGER DEFAULT 0,
+    error_message TEXT,
+    user_id TEXT,
+    started_at TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at TEXT
+  )`);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_workflow_runs_workflow ON workflow_runs(workflow_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_workflow_runs_status ON workflow_runs(status)');
 
   // ── Radar: add category columns (safe migration) ──────────────────────────
   const radarSourceCols = db.prepare("PRAGMA table_info(radar_sources)").all() as Array<{ name: string }>;
@@ -971,6 +1007,11 @@ export function initDatabase(): Database.Database {
     model_used TEXT,
     notes TEXT
   )`);
+  // Ensure score_reasoning column exists (added post-v0.5 — safe to run on any DB)
+  const qsCols = (db.pragma('table_info(quality_scores)') as any[]).map((c: any) => c.name);
+  if (!qsCols.includes('score_reasoning')) {
+    db.exec(`ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL`);
+  }
 
   db.exec(`CREATE TABLE IF NOT EXISTS quality_baselines (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
@@ -1493,12 +1534,18 @@ export function initDatabase(): Database.Database {
       db.prepare('INSERT INTO users (id, username, password_hash, role, display_name) VALUES (?, ?, ?, ?, ?)').run(
         adminId, 'admin', hash, 'admin', 'Administrator'
       );
-      console.log('===========================================');
-      console.log('ADMIN ACCOUNT CREATED (first launch):');
-      console.log('  Username: admin');
-      console.log(`  Password: ${generatedPassword}`);
-      console.log('Save this password — it will not be shown again.');
-      console.log('===========================================');
+      const credentialsPath = path.resolve(path.dirname(DB_PATH), 'initial-credentials.txt');
+      const credentialsContent = [
+        'openEXPERT — Initial Admin Credentials',
+        '=======================================',
+        'Username: admin',
+        `Password: ${generatedPassword}`,
+        '',
+        'DELETE THIS FILE after your first login and change the password.',
+        `Generated: ${new Date().toISOString()}`,
+      ].join('\n');
+      fs.writeFileSync(credentialsPath, credentialsContent, { encoding: 'utf-8', mode: 0o600 });
+      console.log('✓ Admin account created. Credentials written to data/initial-credentials.txt (delete after first login).');
     }
   }
 
@@ -1560,6 +1607,406 @@ export function initDatabase(): Database.Database {
   } catch (e) {
     console.warn('[db] output_feedback table already exists or migration failed (safe to ignore):', e);
   }
+
+  // ── Skill Packs (Wave 2.2) ────────────────────────────────────────────────
+  db.exec(`CREATE TABLE IF NOT EXISTS skill_packs (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    target_role TEXT,
+    target_industry TEXT,
+    modules TEXT NOT NULL DEFAULT '[]',
+    workflow_template TEXT,
+    persona_configs TEXT,
+    skills_attached TEXT,
+    quality_baselines TEXT,
+    getting_started TEXT,
+    is_default INTEGER DEFAULT 0,
+    created_by TEXT DEFAULT 'system',
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+
+  // Seed default skill packs on first launch
+  const skillPacksExist = db.prepare("SELECT COUNT(*) as c FROM skill_packs").get() as { c: number };
+  if (skillPacksExist.c === 0) {
+    db.prepare(`INSERT INTO skill_packs (id, name, description, target_role, target_industry, modules, getting_started, is_default, created_by) VALUES
+      (
+        'pack-mlro',
+        'MLRO / Compliance Officer Pack',
+        'A complete toolkit for Money Laundering Reporting Officers and compliance professionals working in AML/CFT, sanctions, and regulatory implementation. Pre-configured for AMLR, EBA guidelines, and Nordic/European financial institutions.',
+        'MLRO / Compliance Officer',
+        'Financial Services',
+        '["aml-risk-assessment","gap-analysis","policy-document","sanctions-screening","investigation-support"]',
+        'Start with the Gap Analysis module to assess your current AML/CFT framework against AMLR requirements. Use the Risk Assessment module to produce your Business-Wide Risk Assessment. Generate compliant policies with the Document Creation module.',
+        1,
+        'system'
+      ),
+      (
+        'pack-startup',
+        'Startup Founder Pack',
+        'Designed for founders navigating regulatory obligations, investor communications, and strategic decision-making. Covers compliance basics, risk assessment, and stakeholder reporting.',
+        'Startup Founder / CEO',
+        'Technology / Startup',
+        '["regulatory-monitor","document-creation","risk-assessment","training-content"]',
+        'Begin with the Regulatory Monitor to understand your compliance obligations. Use the Document Creation module to draft your first compliance policies. Run a Risk Assessment to identify your key exposure areas.',
+        1,
+        'system'
+      ),
+      (
+        'pack-hr',
+        'HR Business Partner Pack',
+        'Tailored for HR professionals managing employment compliance, training obligations, whistleblower frameworks, and workforce risk. Includes tools for policy drafting and training content creation.',
+        'HR Business Partner / CHRO',
+        'Human Resources',
+        '["document-creation","training-content","investigation-support","risk-assessment"]',
+        'Use the Document Creation module to update HR policies for current regulatory requirements. Create training materials with the Training Content module for employee onboarding and compliance awareness. Use Investigation Support for structured HR investigations.',
+        1,
+        'system'
+      ),
+      (
+        'pack-audit',
+        'Audit Engagement Pack',
+        'Built for internal and external auditors conducting compliance audits, gap assessments, and control testing. Pre-configured for structured findings reports, RACI matrices, and audit action plans.',
+        'Internal / External Auditor',
+        'Audit & Assurance',
+        '["gap-analysis","investigation-support","risk-assessment","data-management"]',
+        'Start with the Gap Analysis module to scope the audit and identify control deficiencies. Use Investigation Support to structure findings and root cause analysis. Generate action plans and tracking matrices with the Risk Assessment module.',
+        1,
+        'system'
+      ),
+      (
+        'pack-pm',
+        'Project Delivery Pack',
+        'For project managers and programme leads delivering regulatory change, compliance transformation, or technology implementation projects. Focused on planning, RACI, milestone tracking, and stakeholder communication.',
+        'Project Manager / Programme Lead',
+        'Regulatory Change / Transformation',
+        '["gap-analysis","document-creation","regulatory-monitor","risk-assessment","training-content"]',
+        'Use Gap Analysis to define the scope and baseline of your regulatory change programme. Create project plans and RACI matrices with the Document Creation module. Monitor regulatory developments with the Regulatory Monitor and assess change impact with Risk Assessment.',
+        1,
+        'system'
+      )
+    `).run();
+    console.log('[db] Seeded 5 default skill packs');
+  }
+
+  // Wave 2.3: Workflow templates table
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS workflow_templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT,
+      category TEXT,
+      steps TEXT NOT NULL DEFAULT '[]',
+      is_default INTEGER DEFAULT 0,
+      created_by TEXT DEFAULT 'system',
+      created_at TEXT DEFAULT (datetime('now'))
+    )`);
+
+    // Seed 3 default templates only when none exist yet
+    const wftCount = db.prepare("SELECT COUNT(*) as c FROM workflow_templates WHERE is_default = 1").get() as { c: number };
+    if (wftCount.c === 0) {
+      db.prepare(
+        `INSERT OR IGNORE INTO workflow_templates (id, name, description, category, steps, is_default, created_by) VALUES
+          (
+            'wft-analysis-board',
+            'Analysis → Board Report',
+            'Run a detailed analysis then package findings into a board-ready report.',
+            'reporting',
+            '["Run gap or risk analysis","Review and refine key findings","Generate executive summary","Export as board-ready PDF or DOCX"]',
+            1,
+            'system'
+          ),
+          (
+            'wft-gap-remediation',
+            'Gap Analysis → Remediation → Tracking',
+            'Identify compliance gaps, plan remediation actions, and track progress to closure.',
+            'compliance',
+            '["Conduct AMLR gap analysis against current state","Prioritise gaps by severity and effort","Create remediation action plan with owners and deadlines","Track closure status and verify completion"]',
+            1,
+            'system'
+          ),
+          (
+            'wft-research-publish',
+            'Research → Draft → Review → Publish',
+            'Research a regulatory topic, draft a document, run a peer review, and publish the final version.',
+            'document',
+            '["Research regulatory topic using Claude knowledge and web search","Draft policy or guidance document","Peer review and quality check","Incorporate feedback and publish final version"]',
+            1,
+            'system'
+          )`
+      ).run();
+      console.log('[db] Seeded 3 default workflow_templates');
+    }
+  } catch (e) {
+    console.warn('[db] workflow_templates table already exists or seed failed (safe to ignore):', e);
+  }
+
+  // ── Engagement Task tables ────────────────────────────────────────────────
+  try {
+    // Core engagement record
+    db.exec(`CREATE TABLE IF NOT EXISTS engagements (
+      id TEXT PRIMARY KEY,
+      project_id TEXT,
+      title TEXT NOT NULL,
+      engagement_type TEXT NOT NULL DEFAULT 'full' CHECK (engagement_type IN ('full', 'lite')),
+      status TEXT NOT NULL DEFAULT 'setup' CHECK (status IN (
+        'setup', 'scope_agreement', 'client_intelligence', 'resource_collection',
+        'configuration', 'workstream_planning', 'execution', 'review', 'quality_gate', 'completed', 'archived'
+      )),
+      your_organisation TEXT,
+      client_name TEXT,
+      domain_areas TEXT DEFAULT '[]',
+      engagement_brief TEXT DEFAULT '{}',
+      quality_blueprint TEXT DEFAULT '{}',
+      thinking_level TEXT DEFAULT 'think_hard',
+      expert_panel TEXT DEFAULT '[]',
+      review_modes TEXT DEFAULT '[]',
+      knowledge_config TEXT DEFAULT '{}',
+      scope_confirmed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_documents (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      document_type TEXT NOT NULL CHECK (document_type IN (
+        'engagement_letter', 'project_plan', 'good_example'
+      )),
+      file_path TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      extracted_content TEXT,
+      extraction_summary TEXT DEFAULT '{}',
+      uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_workstreams (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      description TEXT,
+      expert_panel TEXT DEFAULT '[]',
+      thinking_level TEXT,
+      timeline_start TEXT,
+      timeline_end TEXT,
+      execution_status TEXT DEFAULT 'pending' CHECK (execution_status IN (
+        'pending', 'blocked', 'ready', 'executing', 'review', 'completed'
+      )),
+      dependencies TEXT DEFAULT '[]',
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_scope_items (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      description TEXT,
+      category TEXT,
+      workstream_id TEXT REFERENCES engagement_workstreams(id),
+      deliverable_ids TEXT DEFAULT '[]',
+      methodology TEXT DEFAULT '[]',
+      dependencies TEXT DEFAULT '[]',
+      status TEXT DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'modified', 'added', 'removed')),
+      original_text TEXT,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_resources (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      workstream_id TEXT REFERENCES engagement_workstreams(id),
+      category TEXT NOT NULL CHECK (category IN (
+        'documents', 'meetings', 'regulations', 'data', 'code', 'good_example', 'other'
+      )),
+      title TEXT NOT NULL,
+      file_path TEXT,
+      url TEXT,
+      extracted_content TEXT,
+      extraction_summary TEXT,
+      relevance_tags TEXT DEFAULT '[]',
+      status TEXT DEFAULT 'uploaded' CHECK (status IN (
+        'uploaded', 'processing', 'reviewed', 'not_available', 'coming_later'
+      )),
+      uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_resource_categories (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      workstream_id TEXT REFERENCES engagement_workstreams(id),
+      category TEXT NOT NULL,
+      status TEXT DEFAULT 'available' CHECK (status IN ('available', 'coming_later', 'not_available')),
+      notes TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_deliverables (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      format TEXT,
+      description TEXT,
+      scope_item_ids TEXT DEFAULT '[]',
+      quality_standard TEXT,
+      delivery_date TEXT,
+      status TEXT DEFAULT 'pending' CHECK (status IN (
+        'pending', 'in_progress', 'draft', 'review', 'approved', 'delivered'
+      )),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_iterations (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      workstream_id TEXT REFERENCES engagement_workstreams(id),
+      iteration_number INTEGER NOT NULL,
+      output_content TEXT,
+      confidence_assessment TEXT DEFAULT '{}',
+      gap_analysis TEXT DEFAULT '[]',
+      scope_creep_flags TEXT DEFAULT '[]',
+      resources_used TEXT DEFAULT '[]',
+      expert_reviews TEXT DEFAULT '{}',
+      quality_scores TEXT DEFAULT '{}',
+      status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'reviewed', 'approved', 'superseded')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_boundaries (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      boundary_type TEXT NOT NULL CHECK (boundary_type IN ('assumption', 'exclusion', 'limitation', 'risk')),
+      description TEXT NOT NULL,
+      source TEXT,
+      original_text TEXT,
+      status TEXT DEFAULT 'active' CHECK (status IN ('active', 'resolved', 'removed')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_client_intelligence (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      client_name TEXT NOT NULL,
+      division_department TEXT,
+      region_jurisdiction TEXT,
+      products_in_scope TEXT DEFAULT '[]',
+      scale_indicators TEXT DEFAULT '{}',
+      regulatory_supervisors TEXT DEFAULT '[]',
+      recent_regulatory_history TEXT DEFAULT '[]',
+      peer_comparators TEXT DEFAULT '[]',
+      business_model_description TEXT,
+      technology_landscape TEXT DEFAULT '{}',
+      organisational_context TEXT,
+      engagement_trigger TEXT,
+      client_maturity_signal TEXT,
+      sensitivities TEXT,
+      online_research_authorised INTEGER DEFAULT 0,
+      source_channels TEXT DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_stakeholders (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      role TEXT,
+      organisation TEXT,
+      contact_info TEXT,
+      sign_off_authority TEXT DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_changelog (
+      id TEXT PRIMARY KEY,
+      engagement_id TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      phase TEXT NOT NULL,
+      action TEXT NOT NULL,
+      description TEXT NOT NULL,
+      previous_value TEXT,
+      new_value TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    // Indexes
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagements_status ON engagements(status, created_at DESC)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagements_client ON engagements(client_name)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagement_docs_eng ON engagement_documents(engagement_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagement_ws_eng ON engagement_workstreams(engagement_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagement_scope_eng ON engagement_scope_items(engagement_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagement_resources_eng ON engagement_resources(engagement_id, category)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagement_iterations_ws ON engagement_iterations(workstream_id, iteration_number)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_engagement_changelog_eng ON engagement_changelog(engagement_id, created_at DESC)`);
+
+    console.log('[db] Engagement Task tables created/verified');
+  } catch (e) {
+    console.warn('[db] Engagement tables migration error (non-fatal):', e);
+  }
+
+  // Safe column additions — ALTER TABLE fails silently if column already exists
+  try { db.exec(`ALTER TABLE engagement_stakeholders ADD COLUMN stakeholder_type TEXT DEFAULT 'client_contact'`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE engagement_stakeholders ADD COLUMN expertise_areas TEXT DEFAULT '[]'`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE engagement_stakeholders ADD COLUMN notes TEXT`); } catch { /* already exists */ }
+
+  // ── Peer Benchmarks + Quality Gate + Expert Config migrations ────────────────
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_peer_benchmarks (
+      id               TEXT PRIMARY KEY,
+      engagement_id    TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      benchmark_type   TEXT NOT NULL CHECK(benchmark_type IN ('web_search', 'internal')),
+      source_engagement_id TEXT,
+      anonymized_label TEXT NOT NULL,
+      domain           TEXT,
+      scope_similarity TEXT,
+      maturity_data    TEXT DEFAULT '{}',
+      key_findings     TEXT DEFAULT '[]',
+      search_query     TEXT,
+      raw_content      TEXT,
+      created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS engagement_quality_gates (
+      id                  TEXT PRIMARY KEY,
+      engagement_id       TEXT NOT NULL REFERENCES engagements(id) ON DELETE CASCADE,
+      iteration_id        TEXT,
+      scope_completeness  TEXT DEFAULT '{}',
+      blueprint_alignment TEXT DEFAULT '{}',
+      cross_consistency   TEXT DEFAULT '{}',
+      assumptions_section TEXT,
+      executive_summary   TEXT,
+      expert_reviews      TEXT DEFAULT '{}',
+      overall_score       REAL,
+      release_ready       INTEGER DEFAULT 0,
+      blockers            TEXT DEFAULT '[]',
+      status              TEXT DEFAULT 'pending',
+      created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_peer_benchmarks_eng ON engagement_peer_benchmarks(engagement_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_quality_gates_eng   ON engagement_quality_gates(engagement_id, created_at DESC)`);
+
+    console.log('[db] Peer benchmarks + Quality Gate tables created/verified');
+  } catch (e) {
+    console.warn('[db] Peer/QG migration error (non-fatal):', e);
+  }
+
+  // Safe column additions for engagements table
+  try { db.exec(`ALTER TABLE engagements ADD COLUMN enable_as_benchmark INTEGER DEFAULT 0`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE engagements ADD COLUMN knowledge_config TEXT DEFAULT '{}'`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE engagements ADD COLUMN workstream_plan_confirmed INTEGER DEFAULT 0`); } catch { /* already exists */ }
+
+  // Safe column addition: thinking_content on engagement_iterations
+  try { db.exec(`ALTER TABLE engagement_iterations ADD COLUMN thinking_content TEXT`); } catch { /* already exists */ }
+
+  // Safe column addition: RAG directory for large document sets (engagement resources)
+  try { db.exec(`ALTER TABLE engagements ADD COLUMN rag_directory_path TEXT`); } catch { /* already exists */ }
+
+  // Safe migration: add user_id ownership to engagements (team mode isolation)
+  try { db.exec(`ALTER TABLE engagements ADD COLUMN user_id TEXT REFERENCES users(id)`); } catch { /* already exists */ }
+  try { db.exec(`UPDATE engagements SET user_id = 'solo' WHERE user_id IS NULL`); } catch { /* safe */ }
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_engagements_user ON engagements(user_id)`); } catch { /* already exists */ }
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_engagements_project ON engagements(project_id)`); } catch { /* already exists */ }
 
   console.log(`Database initialized at ${DB_PATH}`);
   return db;

@@ -1,0 +1,46 @@
+appId: ai.openexpert.app
+productName: openEXPERT
+copyright: Copyright © 2025 openEXPERT
+
+directories:
+  output: dist-installer
+
+files:
+  - dist/client/**
+  - dist/server/**
+  - dist/electron/**
+  - node_modules/**
+
+extraResources:
+  - from: public/
+    to: public/
+  - from: electron/icons/
+    to: app/electron/icons/
+  - from: electron/setup-wizard.html
+    to: app/electron/setup-wizard.html
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: electron/icons/app.png
+  requestedExecutionLevel: asInvoker
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: electron/icons/app.png
+  category: public.app-category.productivity
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  icon: electron/icons/app.png
+
+nsis:
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: false
+  createStartMenuShortcut: true

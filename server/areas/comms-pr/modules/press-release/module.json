@@ -70,7 +70,7 @@
       "label": "Key Message / News",
       "description": "What is the main news? What do you want the headline to say?",
       "required": true,
-      "placeholder": "e.g. Advisense launches AI-powered compliance workbench for Nordic financial institutions, reducing gap analysis time by 80%..."
+      "placeholder": "e.g. openEXPERT launches AI-powered compliance workbench for Nordic financial institutions, reducing gap analysis time by 80%..."
     },
     {
       "id": "target_media",

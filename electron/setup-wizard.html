@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>openEXPERT — First-time Setup</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0B1426;
+      color: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-app-region: drag;
+    }
+
+    .card {
+      background: #0F1D35;
+      border: 1px solid rgba(45, 212, 168, 0.2);
+      border-radius: 16px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 460px;
+      -webkit-app-region: no-drag;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: #2DD4A8;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #0B1426;
+      flex-shrink: 0;
+    }
+    .logo-text { line-height: 1.2; }
+    .logo-name  { font-size: 17px; font-weight: 700; color: #F1F5F9; }
+    .logo-sub   { font-size: 12px; color: #64748B; }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #F1F5F9;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #94A3B8;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .field { margin-bottom: 20px; }
+    label  {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .label-required { color: #2DD4A8; margin-left: 3px; }
+
+    input[type="text"], input[type="password"], input[type="number"] {
+      width: 100%;
+      background: #0B1426;
+      border: 1px solid #1E3A5F;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #E2E8F0;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    input:focus { border-color: #2DD4A8; }
+    input::placeholder { color: #334155; }
+    input.error { border-color: #EF4444; }
+
+    .hint {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 5px;
+      line-height: 1.5;
+    }
+    .hint a { color: #2DD4A8; text-decoration: none; }
+    .hint a:hover { text-decoration: underline; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #1E2D45;
+      margin: 24px 0 20px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 16px;
+    }
+
+    .optional-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .error-msg {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #FCA5A5;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: #2DD4A8;
+      color: #0B1426;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-primary:hover  { background: #34D399; }
+    .btn-primary:active { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: transparent;
+      color: #64748B;
+      border: 1px solid #1E3A5F;
+      border-radius: 8px;
+      padding: 11px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-secondary:hover { color: #94A3B8; border-color: #334155; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(11,20,38,0.3);
+      border-top-color: #0B1426;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .show-toggle {
+      background: none;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 11px;
+      margin-top: 4px;
+      padding: 0;
+      text-decoration: underline;
+    }
+    .show-toggle:hover { color: #64748B; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">A</div>
+      <div class="logo-text">
+        <div class="logo-name">openEXPERT</div>
+        <div class="logo-sub">by FutureChains / Anton</div>
+      </div>
+    </div>
+
+    <h1>Welcome — let's get you set up</h1>
+    <p class="subtitle">
+      openEXPERT runs entirely on your machine. The only thing that leaves your
+      computer are the prompts you send to AI providers. Paste your API key
+      below to get started.
+    </p>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- Anthropic API key (required) -->
+    <div class="field">
+      <label>Anthropic API Key <span class="label-required">*</span></label>
+      <input type="password" id="anthropicKey" placeholder="sk-ant-api03-…" autocomplete="off" />
+      <button class="show-toggle" id="toggleKey" type="button">show</button>
+      <p class="hint">
+        Get your key at
+        <a href="#" onclick="openExternal('https://console.anthropic.com/settings/keys')">
+          console.anthropic.com
+        </a>
+        — Claude powers the AI features.
+      </p>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="section-title">Optional — other AI providers</div>
+    <div class="optional-grid">
+      <div class="field">
+        <label>OpenAI Key</label>
+        <input type="password" id="openaiKey" placeholder="sk-…" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Google AI Key</label>
+        <input type="password" id="googleKey" placeholder="AIza…" autocomplete="off" />
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="section-title">Server</div>
+    <div class="field" style="max-width: 140px">
+      <label>Port</label>
+      <input type="number" id="port" value="3001" min="1024" max="65535" />
+      <p class="hint">Default 3001 — change only if it's already in use.</p>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" id="saveBtn" onclick="saveConfig()">
+        Save &amp; Launch openEXPERT
+      </button>
+      <button class="btn-secondary" onclick="skipSetup()">Skip</button>
+    </div>
+  </div>
+
+  <script>
+    // Show/hide API key
+    const keyInput = document.getElementById('anthropicKey');
+    document.getElementById('toggleKey').addEventListener('click', function () {
+      const isPass = keyInput.type === 'password';
+      keyInput.type = isPass ? 'text' : 'password';
+      this.textContent = isPass ? 'hide' : 'show';
+    });
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+    function hideError() {
+      document.getElementById('errorMsg').classList.remove('visible');
+    }
+
+    function openExternal(url) {
+      window.electronAPI?.openExternal(url);
+    }
+
+    async function saveConfig() {
+      hideError();
+      const key = document.getElementById('anthropicKey').value.trim();
+      if (!key) {
+        document.getElementById('anthropicKey').classList.add('error');
+        showError('An Anthropic API key is required to use openEXPERT.');
+        document.getElementById('anthropicKey').focus();
+        return;
+      }
+      document.getElementById('anthropicKey').classList.remove('error');
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Saving…';
+
+      const config = {
+        ANTHROPIC_API_KEY:  key,
+        OPENAI_API_KEY:     document.getElementById('openaiKey').value.trim(),
+        GOOGLE_API_KEY:     document.getElementById('googleKey').value.trim(),
+        PORT:               document.getElementById('port').value.trim(),
+      };
+
+      try {
+        await window.electronAPI?.saveConfig(config);
+        btn.innerHTML = '✓ Saved — launching…';
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = 'Save &amp; Launch openEXPERT';
+        showError('Failed to save: ' + (err?.message || err));
+      }
+    }
+
+    function skipSetup() {
+      window.electronAPI?.skipSetup();
+    }
+
+    // Allow Enter key on the API key field
+    document.getElementById('anthropicKey').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveConfig();
+    });
+  </script>
+</body>
+</html>

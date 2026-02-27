@@ -1,0 +1,87 @@
+{
+  "id": "coworker-hr-recruitment",
+  "name": "Recruitment Pipeline Manager",
+  "description": "End-to-end recruitment pipeline support. Screens CVs against role requirements, generates tailored interview questions for shortlisted candidates, and captures structured hiring decisions.",
+  "role_identity": "HR / Talent Acquisition",
+  "icon": "Users",
+  "color": "adv-blue",
+  "tags": ["hr", "recruitment", "cv-screening", "interviews", "talent"],
+  "estimated_duration": "20-40 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "role_title", "label": "Role Title", "type": "text", "required": true, "placeholder": "e.g., Senior AML Compliance Analyst, Head of Engineering" },
+    { "id": "role_requirements", "label": "Key Role Requirements", "type": "textarea", "required": true, "placeholder": "Essential and desirable requirements. Experience level, key skills, qualifications, soft skills, and any specific competencies." },
+    { "id": "cv_batch", "label": "CV / Application Batch", "type": "textarea", "required": true, "placeholder": "Paste the CV content or application summaries for the candidates to screen. Use clear candidate separators (e.g., === CANDIDATE 1: John Smith ==)." }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "CV Screening & Scoring",
+      "description": "ANTON screens each CV against role requirements and produces a ranked shortlist.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "hr",
+        "moduleId": "cv-screener",
+        "thinking": "think_hard",
+        "creativity": "strict",
+        "promptTemplate": "Screen the following CVs for the {{role_title}} position.\n\nRole requirements:\n{{role_requirements}}\n\nCandidates:\n{{cv_batch}}\n\nFor each candidate produce:\n- Overall score (1-10) with rationale\n- Strengths matched to requirements\n- Gaps or concerns\n- Recommendation: Invite to interview / Hold / Reject\n- 1-2 specific points requiring clarification\n\nProduce a ranked shortlist summary at the end.",
+        "outputFormat": "gap-scoring-matrix",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "Generate Interview Questions",
+      "description": "ANTON generates tailored, competency-based interview questions for shortlisted candidates.",
+      "index": 1,
+      "type": "claude",
+      "config": {
+        "areaId": "hr",
+        "moduleId": "interview-question-gen",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "promptTemplate": "Generate tailored interview questions for the {{role_title}} position.\n\nShortlisted candidates and their profiles:\n{{step-0.output}}\n\nRole requirements:\n{{role_requirements}}\n\nFor each shortlisted candidate, produce:\n1. 3-4 competency-based questions targeting their specific gaps or experience claims\n2. 2 role-specific technical questions\n3. 1 scenario question testing judgment\n\nAlso produce a standard question set (5-6 questions) applicable to all candidates.",
+        "outputFormat": "training-material",
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Hiring Manager Shortlist Decision",
+      "description": "Hiring manager reviews ANTON's screening and approves the interview shortlist.",
+      "index": 2,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the CV screening results and proposed shortlist. Approve, modify, or override the shortlist before interview invitations are sent.",
+        "checkpointContext": "step-0,step-1",
+        "inputFields": [
+          {
+            "id": "shortlist_decision",
+            "label": "Shortlist approval",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "Confirm who to invite. Example:\nInvite: John Smith, Maria Garcia, David Chen\nHold: Sarah Wilson (rescreen if top 3 decline)\nReject: All others\n\nNote any overrides to ANTON's recommendations with reasoning."
+          },
+          {
+            "id": "interview_format",
+            "label": "Interview format",
+            "type": "select",
+            "required": true,
+            "options": ["1 round — competency interview", "2 rounds — screening then panel", "3 rounds — phone screen, competency, final", "Assessment centre"]
+          },
+          {
+            "id": "additional_requirements",
+            "label": "Additional assessment requirements",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Any specific topics, scenarios, or assessments to add to the interview process..."
+          }
+        ],
+        "dependsOn": ["step-1"]
+      }
+    }
+  ]
+}

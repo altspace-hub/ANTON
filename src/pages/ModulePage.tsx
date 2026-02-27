@@ -895,6 +895,7 @@ export default function ModulePage() {
                 `Based on the following review feedback, please rewrite and improve your previous output. Apply all the suggestions and corrections noted in the review while maintaining the same output format and structure.\n\n--- REVIEW FEEDBACK ---\n${reviewText}`
               );
             }}
+            onUpgradeThinking={(level) => setThinking(level)}
           />
         )}
         </div>{/* end scrollable output area */}

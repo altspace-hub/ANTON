@@ -18,6 +18,7 @@ Response format (JSON only):
   "action": "specific action name",
   "parameters": { ... },
   "confidence": 0.0-1.0,
+  "reasoning": "one sentence explaining how you interpreted this command",
   "clarification": "optional question if ambiguous"
 }
 
@@ -47,6 +48,7 @@ export interface ParsedCommand {
   action: string;
   parameters: Record<string, any>;
   confidence: number;
+  reasoning?: string;
   clarification?: string;
 }
 
@@ -61,7 +63,7 @@ export async function parseCommand(userInput: string, anthropic: Anthropic): Pro
   try {
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
+      max_tokens: 400,
       messages: [{
         role: 'user',
         content: `${COMMAND_PARSING_PROMPT}\n\nUser command: "${userInput}"\n\nJSON response:`,

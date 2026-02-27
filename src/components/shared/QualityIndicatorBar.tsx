@@ -1,4 +1,5 @@
-import { BookOpen, Clock, List, FileText, CheckCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { BookOpen, Clock, List, FileText, CheckCircle, CheckCircle2, XCircle, X } from 'lucide-react';
 
 interface QualityIndicatorBarProps {
   content: string;
@@ -57,24 +58,34 @@ const FORMAT_SECTIONS: Record<string, string[]> = {
   'budget-resource-estimate': ['resource', 'cost', 'assumption'],
 };
 
+interface CompletenessResult {
+  score: number;
+  found: string[];
+  missing: string[];
+}
+
 /**
  * Computes a completeness score (0–100) by checking how many of the expected
  * section keywords for the given output format IDs appear in the text.
+ * Returns found and missing keyword lists for display.
  *
  * When no format IDs are supplied, falls back to a legacy 3-signal heuristic.
  */
-export function computeCompleteness(text: string, outputFormatIds?: string[]): number {
-  if (!text || text.trim().length === 0) return 0;
+export function computeCompleteness(text: string, outputFormatIds?: string[]): CompletenessResult {
+  if (!text || text.trim().length === 0) return { score: 0, found: [], missing: [] };
 
   const lower = text.toLowerCase();
 
   if (!outputFormatIds || outputFormatIds.length === 0) {
     // Legacy fallback: generic structural signals
-    const hasExecutiveSummary = /executive summary|key findings|summary/i.test(text);
-    const hasRecommendations = /recommend|action|next step/i.test(text);
-    const hasConclusion = /conclusion|summary|in conclusion/i.test(text);
-    const found = [hasExecutiveSummary, hasRecommendations, hasConclusion].filter(Boolean).length;
-    return Math.round((found / 3) * 100);
+    const checks = [
+      { label: 'Executive summary / key findings', match: /executive summary|key findings|summary/i.test(text) },
+      { label: 'Recommendations / actions',        match: /recommend|action|next step/i.test(text) },
+      { label: 'Conclusion',                       match: /conclusion|summary|in conclusion/i.test(text) },
+    ];
+    const found   = checks.filter((c) => c.match).map((c) => c.label);
+    const missing = checks.filter((c) => !c.match).map((c) => c.label);
+    return { score: Math.round((found.length / checks.length) * 100), found, missing };
   }
 
   // Gather all expected keywords across selected formats (de-duplicated)
@@ -88,10 +99,11 @@ export function computeCompleteness(text: string, outputFormatIds?: string[]): n
     }
   }
 
-  if (allKeywords.length === 0) return 100; // unknown format — assume complete
+  if (allKeywords.length === 0) return { score: 100, found: [], missing: [] };
 
-  const foundCount = allKeywords.filter((kw) => lower.includes(kw)).length;
-  return Math.round((foundCount / allKeywords.length) * 100);
+  const found   = allKeywords.filter((kw) => lower.includes(kw));
+  const missing = allKeywords.filter((kw) => !lower.includes(kw));
+  return { score: Math.round((found.length / allKeywords.length) * 100), found, missing };
 }
 
 function analyzeQuality(content: string, moduleId?: string, outputFormatIds?: string[]) {
@@ -109,19 +121,33 @@ function analyzeQuality(content: string, moduleId?: string, outputFormatIds?: st
   // Show citations only for regulatory/FCP modules
   const showCitations = moduleId ? REGULATORY_MODULES.has(moduleId) : false;
 
-  const completenessScore = computeCompleteness(content, outputFormatIds);
+  const completeness = computeCompleteness(content, outputFormatIds);
 
-  return { wordCount, readingTimeMin, sectionCount, citations, showCitations, completenessScore };
+  return { wordCount, readingTimeMin, sectionCount, citations, showCitations, completeness };
 }
 
 interface CompletenessBadgeProps {
   score: number;
+  found: string[];
+  missing: string[];
 }
 
-function CompletenessBadge({ score }: CompletenessBadgeProps) {
+function CompletenessBadge({ score, found, missing }: CompletenessBadgeProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
   let colorClass: string;
   let label: string;
-
   if (score >= 90) {
     colorClass = 'bg-adv-green/20 text-adv-green border-adv-green/30';
     label = 'Complete';
@@ -133,21 +159,59 @@ function CompletenessBadge({ score }: CompletenessBadgeProps) {
     label = 'Incomplete';
   }
 
+  const hasDetail = found.length > 0 || missing.length > 0;
+
   return (
-    <span
-      title={`Completeness: ${score}% of expected sections found`}
-      className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${colorClass}`}
-    >
-      <CheckCircle className="h-3 w-3" />
-      {score}% {label}
-    </span>
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => hasDetail && setOpen((v) => !v)}
+        title={hasDetail ? 'Click to see matched and missing sections' : `${score}% of expected sections found`}
+        className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-opacity ${colorClass} ${hasDetail ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
+      >
+        <CheckCircle className="h-3 w-3" />
+        {score}% {label}
+      </button>
+
+      {open && hasDetail && (
+        <div className="absolute bottom-6 left-0 z-50 w-64 rounded-lg border border-border bg-adv-card shadow-xl">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border px-3 py-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-adv-teal">
+              Expected sections
+            </span>
+            <button onClick={() => setOpen(false)} className="text-adv-gray-med hover:text-adv-off-white">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="max-h-56 overflow-y-auto p-2 space-y-0.5">
+            {found.map((kw) => (
+              <div key={kw} className="flex items-center gap-2 rounded px-2 py-1">
+                <CheckCircle2 className="h-3 w-3 shrink-0 text-adv-green" />
+                <span className="text-[11px] text-adv-gray capitalize">{kw}</span>
+              </div>
+            ))}
+            {missing.map((kw) => (
+              <div key={kw} className="flex items-center gap-2 rounded px-2 py-1">
+                <XCircle className="h-3 w-3 shrink-0 text-adv-red" />
+                <span className="text-[11px] text-adv-gray-med capitalize">{kw}</span>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-border px-3 py-2">
+            <p className="text-[10px] text-adv-gray-med leading-relaxed">
+              Checks whether the output covers the key topics expected for your selected output format.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
 export default function QualityIndicatorBar({ content, moduleId, outputFormatIds }: QualityIndicatorBarProps) {
   if (!content || content.trim().length === 0) return null;
 
-  const { wordCount, readingTimeMin, sectionCount, citations, showCitations, completenessScore } =
+  const { wordCount, readingTimeMin, sectionCount, citations, showCitations, completeness } =
     analyzeQuality(content, moduleId, outputFormatIds);
 
   return (
@@ -180,8 +244,8 @@ export default function QualityIndicatorBar({ content, moduleId, outputFormatIds
         </span>
       )}
 
-      {/* Completeness badge */}
-      <CompletenessBadge score={completenessScore} />
+      {/* Completeness badge — clickable to see matched/missing sections */}
+      <CompletenessBadge score={completeness.score} found={completeness.found} missing={completeness.missing} />
     </div>
   );
 }

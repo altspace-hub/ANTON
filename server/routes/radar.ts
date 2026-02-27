@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import * as cron from 'node-cron';
 import { createRegulatoryRadar } from '../services/regulatory-radar.js';
 import type { createRadarFetcher } from '../services/radar-fetcher.js';
 
@@ -218,6 +219,7 @@ Return ONLY valid JSON (no markdown, no extra text):
       res.json({
         autoScanEnabled: settings['auto_scan_enabled'] === '1',
         autoScanIntervalHours: parseInt(settings['auto_scan_interval_hours'] || '24', 10),
+        autoScanCron: settings['auto_scan_cron'] || '',
       });
     } catch (err) {
       console.error('[radar] settings read error:', err);
@@ -228,7 +230,7 @@ Return ONLY valid JSON (no markdown, no extra text):
   // PUT /api/radar/settings — update auto-scan settings
   router.put('/radar/settings', (req, res) => {
     try {
-      const { autoScanEnabled, autoScanIntervalHours } = req.body as { autoScanEnabled?: boolean; autoScanIntervalHours?: number };
+      const { autoScanEnabled, autoScanIntervalHours, autoScanCron } = req.body as { autoScanEnabled?: boolean; autoScanIntervalHours?: number; autoScanCron?: string };
       const updateStmt = db.prepare('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))');
 
       if (autoScanEnabled !== undefined) {
@@ -236,6 +238,12 @@ Return ONLY valid JSON (no markdown, no extra text):
       }
       if (autoScanIntervalHours !== undefined) {
         updateStmt.run('auto_scan_interval_hours', String(autoScanIntervalHours));
+      }
+      if (autoScanCron !== undefined) {
+        if (autoScanCron && !cron.validate(autoScanCron)) {
+          return res.status(400).json({ error: 'Invalid cron expression' });
+        }
+        updateStmt.run('auto_scan_cron', autoScanCron || '');
       }
 
       // Apply schedule changes to the fetcher

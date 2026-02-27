@@ -346,6 +346,7 @@ const EXAMPLE_CHIPS = [
 // ── Main page ─────────────────────────────────────────────────
 
 export default function DataInsightsPage() {
+  const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [activeTab, setActiveTab] = useState<'paste' | 'upload'>('paste');
   const [pastedData, setPastedData] = useState('');
   const [question, setQuestion] = useState('');
@@ -458,7 +459,7 @@ export default function DataInsightsPage() {
             selectedSkills: [],
             multiPerspective: false,
             metaCognitiveEnabled: false,
-            transparencyLevel: 0,
+            transparencyLevel,
           },
           controller.signal
         );
@@ -664,6 +665,31 @@ export default function DataInsightsPage() {
                 className="rounded-full border border-border bg-adv-dark-2 px-3 py-1 text-xs text-adv-gray transition-colors hover:border-adv-teal hover:text-adv-teal"
               >
                 {chip}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Transparency toggle */}
+        <div className="mt-3 space-y-1">
+          <div className="text-[11px] text-adv-gray-med">Transparency</div>
+          <div className="flex gap-1.5">
+            {([
+              { level: 0 as const, label: 'Off' },
+              { level: 1 as const, label: 'Summary' },
+              { level: 2 as const, label: 'Detailed' },
+            ]).map(({ level, label }) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setTransparencyLevel(level)}
+                className={`flex-1 rounded-lg border px-2 py-1.5 text-xs transition-colors ${
+                  transparencyLevel === level
+                    ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                    : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                }`}
+              >
+                {label}
               </button>
             ))}
           </div>

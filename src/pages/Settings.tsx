@@ -64,10 +64,10 @@ const CREATIVITY_OPTIONS: { value: CreativityLevel; label: string }[] = [
   { value: 'creative', label: 'Creative' },
 ];
 
-const THEME_OPTIONS: { value: 'dark' | 'light' | 'corporate'; label: string }[] = [
-  { value: 'dark', label: 'Dark' },
-  { value: 'light', label: 'Light' },
-  { value: 'corporate', label: 'Corporate' },
+const THEME_OPTIONS: { value: 'dark' | 'light' | 'corporate'; labelKey: string }[] = [
+  { value: 'dark', labelKey: 'settings.themeDark' },
+  { value: 'light', labelKey: 'settings.themeLight' },
+  { value: 'corporate', labelKey: 'settings.themeCorporate' },
 ];
 
 const BASE_TABS = [
@@ -503,6 +503,11 @@ export default function Settings() {
     setLanguageState(lang);
     localStorage.setItem('openexpert-language', lang);
     i18n.changeLanguage(lang);
+    fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ output_language: lang }),
+    }).catch(() => {}); // best-effort, don't block UI
     flash();
   }
 
@@ -584,7 +589,7 @@ export default function Settings() {
           className={`${TAB_BASE} ${activeTab === 'connections' ? TAB_ACTIVE : TAB_INACTIVE} flex items-center gap-1.5`}
         >
           <Plug className="h-3.5 w-3.5" />
-          Connections
+          {t('settings.connections')}
         </button>
       </div>
 
@@ -604,8 +609,8 @@ export default function Settings() {
       {activeTab === 'knowledge' && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-base font-semibold text-adv-off-white">Knowledge Library</h3>
-            <p className="mt-1 text-sm text-adv-gray">Register named document corpora for use across all modules. Index them once, reuse everywhere.</p>
+            <h3 className="text-base font-semibold text-adv-off-white">{t('settings.knowledgeLibrary')}</h3>
+            <p className="mt-1 text-sm text-adv-gray">{t('settings.knowledgeLibraryDesc')}</p>
           </div>
           <KnowledgeLibraryManager />
         </div>
@@ -654,9 +659,9 @@ export default function Settings() {
                     <label className="mb-1 block text-xs text-adv-gray">{t('settings.role')}</label>
                     <select value={newRole} onChange={(e) => setNewRole(e.target.value as 'analyst' | 'viewer' | 'admin')}
                       className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none">
-                      <option value="analyst">Analyst</option>
-                      <option value="viewer">Viewer</option>
-                      <option value="admin">Admin</option>
+                      <option value="analyst">{t('settings.roleAnalyst')}</option>
+                      <option value="viewer">{t('settings.roleViewer')}</option>
+                      <option value="admin">{t('settings.roleAdmin')}</option>
                     </select>
                   </div>
                   <div>
@@ -683,8 +688,8 @@ export default function Settings() {
                       <th className="pb-2 text-left text-adv-gray font-medium">{t('settings.usernameCol')}</th>
                       <th className="pb-2 text-left text-adv-gray font-medium">{t('settings.displayNameCol')}</th>
                       <th className="pb-2 text-left text-adv-gray font-medium">{t('settings.roleCol')}</th>
-                      <th className="pb-2 text-right text-adv-gray font-medium">Budget</th>
-                      <th className="pb-2 text-right text-adv-gray font-medium">Used / %</th>
+                      <th className="pb-2 text-right text-adv-gray font-medium">{t('settings.budgetCol')}</th>
+                      <th className="pb-2 text-right text-adv-gray font-medium">{t('settings.usedPctCol')}</th>
                       <th className="pb-2 text-right text-adv-gray font-medium">{t('settings.lastLoginCol')}</th>
                       <th className="pb-2 text-right text-adv-gray font-medium">{t('settings.actionsCol')}</th>
                     </tr>
@@ -720,7 +725,7 @@ export default function Settings() {
                               <button
                                 onClick={() => { setEditingBudget(u.id); setEditBudgetValue(u.monthly_token_budget); }}
                                 className="text-adv-gray hover:text-adv-teal transition-colors"
-                                title="Click to edit budget"
+                                title={t('settings.clickToEditBudget')}
                               >
                                 {u.monthly_token_budget === 0 ? '∞' : u.monthly_token_budget.toLocaleString()}
                               </button>
@@ -736,7 +741,7 @@ export default function Settings() {
                                 <button
                                   onClick={() => handleResetUsage(u.id)}
                                   className="rounded p-1 text-adv-gray hover:text-adv-gold transition-colors"
-                                  title="Reset usage"
+                                  title={t('settings.resetUsage')}
                                 >
                                   <RefreshCw className="h-3 w-3" />
                                 </button>
@@ -748,7 +753,7 @@ export default function Settings() {
                             <div className="flex items-center justify-end gap-1.5">
                               {editingUser === u.id ? (
                                 <>
-                                  <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="new password"
+                                  <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder={t('settings.newPasswordPlaceholder')}
                                     className="w-28 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none" />
                                   <button onClick={() => handleResetPassword(u.id)} className="rounded px-2 py-1 text-xs text-adv-teal hover:bg-adv-teal/10 transition-colors">{t('settings.save2')}</button>
                                   <button onClick={() => { setEditingUser(null); setEditPassword(''); }} className="rounded px-2 py-1 text-xs text-adv-gray hover:text-adv-off-white transition-colors">{t('settings.cancel')}</button>
@@ -791,7 +796,7 @@ export default function Settings() {
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-xs text-adv-off-white">{row.display_name || row.username}</span>
                         <span className="text-xs text-adv-gray-med">
-                          {total.toLocaleString()} tokens
+                          {total.toLocaleString()} {t('settings.tokensUnit')}
                           {row.monthly_token_budget > 0 && ` / ${row.monthly_token_budget.toLocaleString()}`}
                         </span>
                       </div>
@@ -870,6 +875,41 @@ export default function Settings() {
               </span>
             </div>
           </div>
+
+          {/* OpenAI */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-adv-gray">{t('settings.openai')} API Key</span>
+            <div className="flex items-center gap-2">
+              <Circle className={`h-2 w-2 ${providerStatus.OPENAI_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
+              <span className="text-xs text-adv-gray-med">
+                {providerStatus.OPENAI_API_KEY ? t('settings.configured') : t('settings.notConfigured')}
+              </span>
+            </div>
+          </div>
+
+          {/* Google AI */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-adv-gray">{t('settings.googleAi')} API Key</span>
+            <div className="flex items-center gap-2">
+              <Circle className={`h-2 w-2 ${providerStatus.GOOGLE_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
+              <span className="text-xs text-adv-gray-med">
+                {providerStatus.GOOGLE_API_KEY ? t('settings.configured') : t('settings.notConfigured')}
+              </span>
+            </div>
+          </div>
+
+          {/* Mistral */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-adv-gray">{t('settings.mistral')} API Key</span>
+            <div className="flex items-center gap-2">
+              <Circle className={`h-2 w-2 ${providerStatus.MISTRAL_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
+              <span className="text-xs text-adv-gray-med">
+                {providerStatus.MISTRAL_API_KEY ? t('settings.configured') : t('settings.notConfigured')}
+              </span>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-2" />
 
           <div className="flex items-center justify-between">
             <span className="text-sm text-adv-gray">{t('settings.database')}</span>
@@ -989,10 +1029,10 @@ export default function Settings() {
       <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-purple-400" />
-          <h2 className="text-sm font-semibold text-adv-white">Custom Models</h2>
+          <h2 className="text-sm font-semibold text-adv-white">{t('settings.customModels')}</h2>
         </div>
         <p className="mt-1 text-xs text-adv-gray-med">
-          Add up to 2 custom models. They appear in the model selector across all modules. Use any model ID from a supported provider.
+          {t('settings.customModelsDesc')}
         </p>
 
         <div className="mt-4 space-y-3">
@@ -1008,11 +1048,11 @@ export default function Settings() {
                 <div className="flex items-center gap-2">
                   {isOpen ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray" /> : <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />}
                   <span className="text-sm font-medium text-adv-off-white">
-                    {state.displayName || `Custom Model ${slot}`}
+                    {state.displayName || t('settings.customModelSlot', { slot })}
                   </span>
                   {state.enabled && state.modelId && (
                     <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-400">
-                      Active
+                      {t('settings.customModelActive')}
                     </span>
                   )}
                 </div>
@@ -1037,13 +1077,13 @@ export default function Settings() {
                         state.enabled ? 'translate-x-4' : 'translate-x-0.5'
                       }`} />
                     </button>
-                    <span className="text-xs text-adv-off-white">Enabled</span>
+                    <span className="text-xs text-adv-off-white">{t('settings.customModelEnabled')}</span>
                   </label>
 
                   <div className="grid grid-cols-2 gap-3">
                     {/* Display Name */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">Display Name</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelDisplayName')}</label>
                       <input
                         type="text"
                         value={state.displayName}
@@ -1055,7 +1095,7 @@ export default function Settings() {
 
                     {/* Model ID */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">Model ID</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelId')}</label>
                       <input
                         type="text"
                         value={state.modelId}
@@ -1067,7 +1107,7 @@ export default function Settings() {
 
                     {/* Provider */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">Provider</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelProvider')}</label>
                       <select
                         value={state.provider}
                         onChange={(e) => setter({ ...state, provider: e.target.value as any })}
@@ -1082,14 +1122,14 @@ export default function Settings() {
 
                     {/* API Key source */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">API Key</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelApiKey')}</label>
                       <select
                         value={state.apiKeySource}
                         onChange={(e) => setter({ ...state, apiKeySource: e.target.value as 'provider' | 'custom' })}
                         className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
                       >
-                        <option value="provider">Use provider's key</option>
-                        <option value="custom">Custom API key</option>
+                        <option value="provider">{t('settings.customModelUseProviderKey')}</option>
+                        <option value="custom">{t('settings.customModelCustomApiKey')}</option>
                       </select>
                     </div>
                   </div>
@@ -1097,7 +1137,7 @@ export default function Settings() {
                   {/* Custom API key input */}
                   {state.apiKeySource === 'custom' && (
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">Custom API Key</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelCustomApiKeyLabel')}</label>
                       <input
                         type="password"
                         value={state.apiKeyOverride}
@@ -1111,7 +1151,7 @@ export default function Settings() {
                   <div className="grid grid-cols-4 gap-3">
                     {/* Context Window */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">Context Window</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelContextWindow')}</label>
                       <input
                         type="number"
                         min={0}
@@ -1123,7 +1163,7 @@ export default function Settings() {
 
                     {/* Max Output */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">Max Output</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelMaxOutput')}</label>
                       <input
                         type="number"
                         min={0}
@@ -1135,7 +1175,7 @@ export default function Settings() {
 
                     {/* Input cost */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">$/M Input</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelInputCost')}</label>
                       <input
                         type="number"
                         min={0}
@@ -1148,7 +1188,7 @@ export default function Settings() {
 
                     {/* Output cost */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">$/M Output</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelOutputCost')}</label>
                       <input
                         type="number"
                         min={0}
@@ -1163,7 +1203,7 @@ export default function Settings() {
                   <div className="grid grid-cols-3 gap-3">
                     {/* Cost tier */}
                     <div>
-                      <label className="mb-1 block text-xs text-adv-gray">Cost Tier</label>
+                      <label className="mb-1 block text-xs text-adv-gray">{t('settings.customModelCostTier')}</label>
                       <select
                         value={state.costTier}
                         onChange={(e) => setter({ ...state, costTier: Number(e.target.value) as 0 | 1 | 2 | 3 })}
@@ -1184,7 +1224,7 @@ export default function Settings() {
                         onChange={(e) => setter({ ...state, supportsThinking: e.target.checked })}
                         className="h-3.5 w-3.5 rounded border-border bg-adv-dark text-adv-teal focus:ring-adv-teal"
                       />
-                      <span className="text-xs text-adv-off-white">Thinking</span>
+                      <span className="text-xs text-adv-off-white">{t('settings.customModelThinking')}</span>
                     </label>
 
                     {/* Supports JSON */}
@@ -1195,7 +1235,7 @@ export default function Settings() {
                         onChange={(e) => setter({ ...state, supportsJsonMode: e.target.checked })}
                         className="h-3.5 w-3.5 rounded border-border bg-adv-dark text-adv-teal focus:ring-adv-teal"
                       />
-                      <span className="text-xs text-adv-off-white">JSON Mode</span>
+                      <span className="text-xs text-adv-off-white">{t('settings.customModelJsonMode')}</span>
                     </label>
                   </div>
 
@@ -1206,7 +1246,7 @@ export default function Settings() {
                       disabled={customSaving === slot}
                       className="rounded-lg bg-adv-teal px-4 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50"
                     >
-                      {customSaving === slot ? 'Saving...' : 'Save'}
+                      {customSaving === slot ? t('settings.customModelSaving') : t('settings.customModelSave')}
                     </button>
                     {state.modelId && (
                       <button
@@ -1216,7 +1256,7 @@ export default function Settings() {
                         }}
                         className="rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white transition-colors"
                       >
-                        Clear
+                        {t('settings.customModelClear')}
                       </button>
                     )}
                   </div>
@@ -1240,17 +1280,137 @@ export default function Settings() {
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm text-adv-gray">{t('settings.defaultModel')}</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {MODEL_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleSetModel(opt.value)}
-                  className={`${CHIP_BASE} ${defaultModel === opt.value ? CHIP_ACTIVE : CHIP_INACTIVE}`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+
+            {/* Claude (always available) */}
+            <div className="mb-3">
+              <p className="mb-1.5 text-xs text-adv-gray-med">Claude (Anthropic)</p>
+              <div className="flex flex-wrap gap-2">
+                {MODEL_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSetModel(opt.value)}
+                    className={`${CHIP_BASE} ${defaultModel === opt.value ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* OpenAI */}
+            <div className="mb-3">
+              <p className="mb-1.5 text-xs text-adv-gray-med">
+                OpenAI
+                {!providerStatus.OPENAI_API_KEY && (
+                  <span className="ml-1 opacity-50">— {t('settings.notConfigured')}</span>
+                )}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { value: 'gpt-4.1',      label: 'GPT-4.1',      tier: '● Flagship' },
+                  { value: 'gpt-4o',       label: 'GPT-4o',        tier: '◑ Balanced' },
+                  { value: 'gpt-4o-mini',  label: 'GPT-4o Mini',   tier: '○ Fast' },
+                ] as { value: ModelId; label: string; tier: string }[]).map(({ value: modelValue, label }) => {
+                  const disabled = !providerStatus.OPENAI_API_KEY;
+                  return (
+                    <button
+                      key={modelValue}
+                      onClick={() => { if (!disabled) handleSetModel(modelValue); }}
+                      disabled={disabled}
+                      title={disabled ? 'Add OPENAI_API_KEY to .env to enable' : undefined}
+                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray-med/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Google AI */}
+            <div className="mb-3">
+              <p className="mb-1.5 text-xs text-adv-gray-med">
+                Google AI
+                {!providerStatus.GOOGLE_API_KEY && (
+                  <span className="ml-1 opacity-50">— {t('settings.notConfigured')}</span>
+                )}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { value: 'gemini-2.5-pro',   label: 'Gemini 2.5 Pro' },
+                  { value: 'gemini-2.5-flash',  label: 'Gemini 2.5 Flash' },
+                  { value: 'gemini-2.0-flash',  label: 'Gemini 2.0 Flash' },
+                ] as { value: ModelId; label: string }[]).map(({ value: modelValue, label }) => {
+                  const disabled = !providerStatus.GOOGLE_API_KEY;
+                  return (
+                    <button
+                      key={modelValue}
+                      onClick={() => { if (!disabled) handleSetModel(modelValue); }}
+                      disabled={disabled}
+                      title={disabled ? 'Add GOOGLE_API_KEY to .env to enable' : undefined}
+                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray-med/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mistral */}
+            <div className="mb-3">
+              <p className="mb-1.5 text-xs text-adv-gray-med">
+                Mistral
+                {!providerStatus.MISTRAL_API_KEY && (
+                  <span className="ml-1 opacity-50">— {t('settings.notConfigured')}</span>
+                )}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { value: 'mistral-large-latest',   label: 'Mistral Large' },
+                  { value: 'mistral-medium-latest',  label: 'Mistral Medium' },
+                  { value: 'mistral-small-latest',   label: 'Mistral Small' },
+                ] as { value: ModelId; label: string }[]).map(({ value: modelValue, label }) => {
+                  const disabled = !providerStatus.MISTRAL_API_KEY;
+                  return (
+                    <button
+                      key={modelValue}
+                      onClick={() => { if (!disabled) handleSetModel(modelValue); }}
+                      disabled={disabled}
+                      title={disabled ? 'Add MISTRAL_API_KEY to .env to enable' : undefined}
+                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray-med/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom model slots */}
+            {(customSlot1.enabled && customSlot1.modelId) || (customSlot2.enabled && customSlot2.modelId) ? (
+              <div className="mb-3">
+                <p className="mb-1.5 text-xs text-adv-gray-med">{t('settings.customModels')}</p>
+                <div className="flex flex-wrap gap-2">
+                  {customSlot1.enabled && customSlot1.modelId && (
+                    <button
+                      onClick={() => handleSetModel(customSlot1.modelId)}
+                      className={`${CHIP_BASE} ${defaultModel === customSlot1.modelId ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+                    >
+                      {customSlot1.displayName || 'Custom 1'}
+                    </button>
+                  )}
+                  {customSlot2.enabled && customSlot2.modelId && (
+                    <button
+                      onClick={() => handleSetModel(customSlot2.modelId)}
+                      className={`${CHIP_BASE} ${defaultModel === customSlot2.modelId ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+                    >
+                      {customSlot2.displayName || 'Custom 2'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Default Thinking */}
@@ -1371,16 +1531,9 @@ export default function Settings() {
           </div>
           <div className="rounded-lg bg-adv-dark/50 p-3 text-xs text-adv-gray-med">
             {deploymentMode === 'solo' ? (
-              <>
-                <strong className="text-adv-off-white">Solo mode:</strong> Single-user setup. All features available without login.
-                Audit log tracks your personal usage and cost. To enable team features (user attribution, shared review workflows),
-                set <code className="rounded bg-adv-dark px-1">DEPLOYMENT_MODE=team</code> in your <code className="rounded bg-adv-dark px-1">.env</code> file and restart the server.
-              </>
+              <>{t('settings.soloModeDescription')}</>
             ) : (
-              <>
-                <strong className="text-adv-off-white">Team mode:</strong> Multi-user setup with full audit trail, user attribution
-                on reviews, and shared session management. Review statuses show who approved each AI output.
-              </>
+              <>{t('settings.teamModeDescription')}</>
             )}
           </div>
         </div>
@@ -1397,7 +1550,7 @@ export default function Settings() {
               onClick={() => handleSetTheme(opt.value)}
               className={`${CHIP_BASE} ${theme === opt.value ? CHIP_ACTIVE : CHIP_INACTIVE}`}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           ))}
         </div>
@@ -1528,6 +1681,21 @@ export default function Settings() {
               />
             </button>
           </label>
+
+          {/* SMTP configuration guidance */}
+          <div className="mt-3 rounded-lg bg-adv-dark/50 border border-border p-3">
+            <p className="mb-2 text-xs font-semibold text-adv-off-white">SMTP configuration (.env)</p>
+            <pre className="text-xs text-adv-gray leading-relaxed whitespace-pre-wrap font-mono">{`SMTP_HOST=smtp.gmail.com        # your mail server
+SMTP_PORT=587                  # 587 (TLS) or 465 (SSL)
+SMTP_USER=you@yourdomain.com   # login address
+SMTP_PASS=your-app-password    # app password or SMTP password
+SMTP_FROM_NAME=Anton           # display name on outgoing mail
+SMTP_FROM_EMAIL=you@domain.com # optional, defaults to SMTP_USER`}</pre>
+            <p className="mt-2 text-xs text-adv-gray-med">
+              Emails will appear to come from <span className="text-adv-off-white">Anton</span> (or your custom <code className="rounded bg-adv-dark px-1">SMTP_FROM_NAME</code>).
+              Add these to your <code className="rounded bg-adv-dark px-1">.env</code> file and restart the server.
+            </p>
+          </div>
         </div>
       </div>
 

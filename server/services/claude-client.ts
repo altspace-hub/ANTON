@@ -39,6 +39,9 @@ interface StreamConfig {
   tools?: Array<{ type: string; name: string }>;
   maxTokens?: number;
   nativeReasoningEnabled?: boolean;
+  /** When true, adds the anthropic-beta: context-1m-2025-08-07 header to unlock
+   *  up to 1M token context for Opus 4.6 and Sonnet 4.6. Requires API beta access. */
+  useLongContext?: boolean;
 }
 
 export interface StreamCompletionData {
@@ -99,9 +102,17 @@ async function withRetry<T>(factory: () => Promise<T>): Promise<T> {
 
 // ── Thinking Config Resolution ─────────────────────────────
 
-// Hard ceiling on max_tokens to avoid exceeding the Anthropic API limit.
-// Opus 4.6 and Sonnet 4.6 support up to 32 000 output tokens (thinking inclusive).
-const MAX_TOKENS_CEILING = 32_000;
+// Per-model max output token ceilings (Anthropic API limits, August 2025).
+// Opus 4.6: 128 000  |  Sonnet 4.6: 64 000  |  all others: 32 000
+const MODEL_MAX_OUTPUT: Partial<Record<string, number>> = {
+  'claude-opus-4-6':             128_000,
+  'claude-sonnet-4-6':            64_000,
+  'claude-sonnet-4-5-20250929':   64_000,
+  'claude-haiku-4-5-20251001':    32_000,
+};
+function getOutputCeiling(model: string): number {
+  return MODEL_MAX_OUTPUT[model] ?? 32_000;
+}
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
   if (model === 'claude-opus-4-6') {
@@ -135,11 +146,12 @@ function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
 }
 
 function getMaxTokens(model: ModelId, thinkingLevel: ThinkingLevel): number {
-  // For Opus 4.6 (adaptive thinking), max_tokens controls the output ceiling only —
-  // no budget to add. For other models: budget + text output, capped at ceiling.
-  if (model === 'claude-opus-4-6') {
-    return MAX_TOKENS_CEILING;
-  }
+  const ceiling = getOutputCeiling(model);
+  // Opus 4.6 uses adaptive thinking — max_tokens sets the total output ceiling.
+  if (model === 'claude-opus-4-6') return ceiling;
+  // Sonnet 4.6 also supports adaptive thinking; honour its 64k ceiling.
+  if (model === 'claude-sonnet-4-6') return ceiling;
+  // Other models: thinking budget + text output, capped at model ceiling.
   const thinkingBudgets: Record<ThinkingLevel, number> = {
     quick: 0,
     think: 4096,
@@ -148,9 +160,9 @@ function getMaxTokens(model: ModelId, thinkingLevel: ThinkingLevel): number {
     plan_first: 16000,
   };
   const budget = thinkingBudgets[thinkingLevel];
-  const textOutput = model === 'claude-sonnet-4-6' ? 12000 : 8192;
+  const textOutput = 8192;
   const total = budget > 0 ? budget + textOutput : textOutput;
-  return Math.min(total, MAX_TOKENS_CEILING);
+  return Math.min(total, ceiling);
 }
 
 // ── Client ─────────────────────────────────────────────────
@@ -269,12 +281,15 @@ export async function streamToResponse(
 
     sendEvent({ type: 'stream_start', messageId: crypto.randomUUID() });
 
+    // Build per-request options (beta header for 1M context if requested).
+    const requestOptions = config.useLongContext
+      ? { headers: { 'anthropic-beta': 'context-1m-2025-08-07' } }
+      : undefined;
+
     // Wrap stream creation in withRetry so transient 429/500/503 errors are retried
     // with exponential backoff (1s → 2s → 4s) before surfacing to the caller.
-    // anthropic.messages.stream() returns MessageStream synchronously, so we wrap
-    // it in an async factory so withRetry's Promise<T> signature is satisfied.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await withRetry(async () => anthropic.messages.stream(requestParams as any));
+    const stream = await withRetry(async () => anthropic.messages.stream(requestParams as any, requestOptions as any));
 
     for await (const event of stream) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -20,6 +20,56 @@ import type { Database } from 'better-sqlite3';
 
 // ── Types ──────────────────────────────────────────────────────
 
+/** All bundle types in the .anton format registry */
+export type AntonBundleType =
+  | 'module'
+  | 'skill'
+  | 'persona'
+  | 'workflow'
+  | 'skill-pack'
+  | 'coding-blueprint'
+  | 'coding-review-profile'
+  | 'script-lite-template'
+  | 'script-medium-template'
+  | 'instruction-builder-project'
+  | 'compliance-ruleset'
+  | 'radar-config'
+  | 'quality-baseline'
+  | 'brand-template'
+  | 'output-chain'
+  | 'review-panel'
+  | 'project-template'
+  | 'audience-profile';
+
+/** Registry entry — describes a bundle type without needing full handler objects */
+interface BundleTypeEntry {
+  label: string;
+  description: string;
+  contentsKey: string;          // key in the `contents` count object
+  primaryContentDir: string;    // subdirectory under contents/ (e.g. 'modules')
+}
+
+export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
+  'module':                       { label: 'Expert Module',             description: 'Custom expert module with system prompt and config', contentsKey: 'modules',              primaryContentDir: 'modules' },
+  'skill':                        { label: 'Skill',                     description: 'Reusable prompt fragment',                          contentsKey: 'skills',               primaryContentDir: 'skills' },
+  'persona':                      { label: 'Persona',                   description: 'Expert persona definition',                         contentsKey: 'personas',             primaryContentDir: 'personas' },
+  'workflow':                     { label: 'Workflow',                   description: 'Multi-step workflow template',                      contentsKey: 'workflows',            primaryContentDir: 'workflows' },
+  'skill-pack':                   { label: 'Skill Pack',                 description: 'Curated bundle of modules and workflows',           contentsKey: 'skill_packs',          primaryContentDir: 'skill-packs' },
+  'coding-blueprint':             { label: 'Coding Blueprint',           description: 'Full software project template',                    contentsKey: 'coding_blueprints',    primaryContentDir: 'coding-blueprints' },
+  'coding-review-profile':        { label: 'Code Review Profile',        description: 'Code review lens configuration',                    contentsKey: 'coding_review_profiles', primaryContentDir: 'coding-review-profiles' },
+  'script-lite-template':         { label: 'Script Lite Template',       description: 'Data analysis script template',                     contentsKey: 'script_lite_templates', primaryContentDir: 'script-lite-templates' },
+  'script-medium-template':       { label: 'Script Medium Template',     description: 'Multi-file application template',                   contentsKey: 'script_medium_templates', primaryContentDir: 'script-medium-templates' },
+  'instruction-builder-project':  { label: 'Instruction Builder Project', description: 'AI tool instruction set project',                  contentsKey: 'instruction_builder_projects', primaryContentDir: 'instruction-builder-projects' },
+  'compliance-ruleset':           { label: 'Compliance Ruleset',         description: 'Custom compliance rule configuration',              contentsKey: 'compliance_rulesets',  primaryContentDir: 'compliance-rulesets' },
+  'radar-config':                 { label: 'Radar Configuration',        description: 'Regulatory radar source configuration',             contentsKey: 'radar_configs',        primaryContentDir: 'radar-configs' },
+  'quality-baseline':             { label: 'Quality Baseline',           description: 'Quality thresholds per module/area',                contentsKey: 'quality_baselines',    primaryContentDir: 'quality-baselines' },
+  'brand-template':               { label: 'Brand Template',             description: 'Export styling and branding configuration',         contentsKey: 'brand_templates',      primaryContentDir: 'brand-templates' },
+  'output-chain':                 { label: 'Output Chain',               description: 'Sequential module chain for document production',   contentsKey: 'output_chains',        primaryContentDir: 'output-chains' },
+  'review-panel':                 { label: 'Review Panel',               description: 'Expert review perspective configuration',           contentsKey: 'review_panels',        primaryContentDir: 'review-panels' },
+  'project-template':             { label: 'Project Template',           description: 'Complete project setup with all components',        contentsKey: 'project_templates',    primaryContentDir: 'project-templates' },
+  'audience-profile':             { label: 'Audience Profile',           description: 'Stakeholder communication adaptation profile',      contentsKey: 'audience_profiles',    primaryContentDir: 'audience-profiles' },
+};
+
 interface ModuleExportData {
   id: string;
   name: string;
@@ -37,7 +87,32 @@ interface ModuleExportData {
   updatedAt?: string;
 }
 
-interface AntonManifest {
+/** Spec-compliant manifest for any .anton bundle */
+interface SpecManifest {
+  format_version: '1.0.0';
+  bundle_type: AntonBundleType;
+  package: {
+    id: string;
+    name: string;
+    version: string;
+    author: { name: string; organization: string; email: string; url: string };
+    license: string;
+    created_at: string;
+    updated_at: string;
+    tags: string[];
+    target_areas: string[];
+    target_roles: string[];
+    min_platform_version: string;
+    languages: string[];
+    description: string;
+  };
+  contents: Record<string, number>;
+  compatibility: { llm_providers: string[] };
+}
+
+/** Legacy manifest kept for backward compat with anton-importer.ts */
+interface AntonManifest extends SpecManifest {
+  // Legacy fields read by anton-importer.ts and anton-validator.ts
   version: '1.0.0';
   meta: {
     id: string;
@@ -64,6 +139,62 @@ interface AntonManifest {
     systemPromptFile: 'system-prompt.md';
     guidedInputsFile: 'guided-inputs.json';
     defaultConfigFile: 'default-config.json';
+  };
+}
+
+// ── Spec Manifest Builder ───────────────────────────────────────
+
+/**
+ * Build the spec-compliant portion of an .anton manifest.
+ * Used by all new bundle type functions.
+ */
+function buildSpecManifest(params: {
+  bundleType: AntonBundleType;
+  id: string;
+  name: string;
+  description?: string;
+  version?: string;
+  author?: string;
+  organization?: string;
+  tags?: string[];
+  contentsCount?: Record<string, number>;
+  createdAt?: string;
+  updatedAt?: string;
+}): SpecManifest {
+  const now = new Date().toISOString();
+  const registry = BUNDLE_TYPE_REGISTRY[params.bundleType];
+  const contents: Record<string, number> = {
+    modules: 0, skills: 0, personas: 0, workflows: 0,
+    compliance_rulesets: 0, radar_configs: 0, quality_baselines: 0,
+    review_panels: 0, audience_profiles: 0, output_chains: 0, brand_templates: 0,
+    ...params.contentsCount,
+    [registry.contentsKey]: (params.contentsCount?.[registry.contentsKey] ?? 1),
+  };
+  return {
+    format_version: '1.0.0',
+    bundle_type: params.bundleType,
+    package: {
+      id: `com.openexpert.${params.bundleType}.${params.id}`,
+      name: params.name,
+      version: params.version || '1.0.0',
+      author: {
+        name: params.author || 'Unknown',
+        organization: params.organization || '',
+        email: '',
+        url: '',
+      },
+      license: 'Proprietary',
+      created_at: params.createdAt || now,
+      updated_at: params.updatedAt || now,
+      tags: params.tags || [],
+      target_areas: [],
+      target_roles: [],
+      min_platform_version: '2.0.0',
+      languages: ['en'],
+      description: params.description || '',
+    },
+    contents,
+    compatibility: { llm_providers: ['anthropic'] },
   };
 }
 
@@ -139,8 +270,22 @@ export async function bundleModuleToAnton(
   contentHash.update(defaultConfigContent);
   const checksum = contentHash.digest('hex');
 
-  // Build final manifest
+  // Build final manifest — spec-compliant fields + legacy fields for backward compat with importer
+  const specPart = buildSpecManifest({
+    bundleType: 'module',
+    id: exportData.id,
+    name: exportData.name,
+    description: exportData.description,
+    version: exportData.version,
+    author: exportData.author,
+    tags: exportData.tags,
+    contentsCount: { modules: 1 },
+    createdAt: exportData.createdAt,
+    updatedAt: exportData.updatedAt,
+  });
   const manifest: AntonManifest = {
+    ...specPart,
+    // Legacy fields: validator checks manifest.version, importer reads manifest.meta.*
     version: '1.0.0',
     meta: {
       id: exportData.id,
@@ -212,6 +357,7 @@ export async function bundleCodingReviewProfile(
 
   // manifest.json
   const manifest = {
+    bundle_type: 'coding-review-profile' as AntonBundleType,
     type: 'coding-review-profile',
     version: '1.0.0',
     created: session.created_at || new Date().toISOString(),
@@ -316,6 +462,7 @@ export async function bundleScriptLiteTemplate(
 
   // manifest.json
   const manifest = {
+    bundle_type: 'script-lite-template' as AntonBundleType,
     type: 'script-lite-template',
     version: '1.0.0',
     description,
@@ -414,6 +561,7 @@ export async function bundleScriptMediumTemplate(
 
   // manifest.json
   const manifest = {
+    bundle_type: 'script-medium-template' as AntonBundleType,
     type: 'script-medium-template',
     version: '1.0.0',
     description,
@@ -504,6 +652,7 @@ export async function bundleCodingLargeBlueprint(
 
   // manifest.json
   const manifest = {
+    bundle_type: 'coding-blueprint' as AntonBundleType,
     type: 'coding-large-blueprint',
     version: '1.0.0',
     project_id: project.id,
@@ -649,6 +798,7 @@ export async function bundleInstructionBuilderProject(
 
   // manifest.json
   const manifest = {
+    bundle_type: 'instruction-builder-project' as AntonBundleType,
     type: 'instruction-builder-project',
     version: '1.0.0',
     project_id: project.id,
@@ -718,6 +868,305 @@ ${project.description || 'No description available.'}
 
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created instruction-builder bundle for project "${project.name}" (${buffer.length} bytes)`);
+  return buffer;
+}
+
+// ── NEW BUNDLE TYPES ─────────────────────────────────────────────────────────
+
+/**
+ * Bundle compliance rules from the compliance_rules table as a .anton file.
+ * Optionally filter by category.
+ */
+export async function bundleComplianceRuleset(
+  db: Database,
+  options: {
+    name?: string;
+    description?: string;
+    categories?: string[];
+    author?: string;
+  } = {}
+): Promise<Buffer> {
+  const whereClause = options.categories && options.categories.length > 0
+    ? `WHERE category IN (${options.categories.map(() => '?').join(',')}) AND active = 1`
+    : 'WHERE active = 1';
+  const params = options.categories && options.categories.length > 0 ? options.categories : [];
+
+  const rules = db.prepare(
+    `SELECT id, rule_code, title, description, category, severity, regulatory_source, rule_logic, auto_remediate, remediation_steps
+     FROM compliance_rules ${whereClause} ORDER BY category, severity DESC`
+  ).all(...params) as any[];
+
+  const rulesetId = `compliance-ruleset-${Date.now()}`;
+  const rulesetName = options.name || 'Compliance Ruleset';
+
+  const specManifest = buildSpecManifest({
+    bundleType: 'compliance-ruleset',
+    id: rulesetId,
+    name: rulesetName,
+    description: options.description || `${rules.length} compliance rules`,
+    author: options.author,
+    contentsCount: { compliance_rulesets: 1 },
+  });
+
+  const rulesetPayload = {
+    bundle_type: 'compliance-ruleset',
+    ruleset: {
+      id: rulesetId,
+      name: rulesetName,
+      description: options.description || '',
+      rules: rules.map((r) => ({
+        rule_id: r.rule_code,
+        name: r.title,
+        description: r.description || '',
+        category: r.category,
+        severity: r.severity,
+        regulatory_source: r.regulatory_source || '',
+        rule_logic: safeJsonParse(r.rule_logic, {}),
+        action: 'warn',
+        auto_remediate: !!r.auto_remediate,
+        remediation_steps: r.remediation_steps || '',
+      })),
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(
+    `contents/compliance-rulesets/${rulesetId}.json`,
+    Buffer.from(JSON.stringify(rulesetPayload, null, 2), 'utf-8')
+  );
+  zip.addFile(
+    'README.md',
+    Buffer.from(
+      `# ${rulesetName}\n\n${options.description || ''}\n\n## Rules (${rules.length})\n\n` +
+      rules.map((r) => `- **${r.rule_code}** (${r.severity}): ${r.title}`).join('\n') +
+      '\n\n---\n**Exported via ANTON**\n',
+      'utf-8'
+    )
+  );
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created compliance-ruleset bundle "${rulesetName}" (${rules.length} rules, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle a review panel configuration as a .anton file.
+ * A review panel is a named set of expert reviewer perspectives.
+ */
+export async function bundleReviewPanel(params: {
+  name: string;
+  description?: string;
+  applicableAreas?: number[];
+  reviewers: Array<{
+    id: string;
+    name: string;
+    icon?: string;
+    prompt: string;
+    focusAreas?: string[];
+  }>;
+  panelSettings?: {
+    minReviewersForApproval?: number;
+    requireAllClear?: boolean;
+    autoRunOnThinkingLevel?: string[];
+  };
+  author?: string;
+}): Promise<Buffer> {
+  const panelId = `review-panel-${params.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+
+  const specManifest = buildSpecManifest({
+    bundleType: 'review-panel',
+    id: panelId,
+    name: params.name,
+    description: params.description,
+    author: params.author,
+    contentsCount: { review_panels: 1 },
+  });
+
+  const panelPayload = {
+    bundle_type: 'review-panel',
+    panel: {
+      id: panelId,
+      name: params.name,
+      description: params.description || '',
+      applicable_areas: params.applicableAreas || [],
+      reviewers: params.reviewers.map((r) => ({
+        id: r.id,
+        name: r.name,
+        icon: r.icon || '🔍',
+        prompt: r.prompt,
+        focus_areas: r.focusAreas || [],
+      })),
+      panel_settings: {
+        min_reviewers_for_approval: params.panelSettings?.minReviewersForApproval ?? 2,
+        require_all_clear: params.panelSettings?.requireAllClear ?? false,
+        auto_run_on_thinking_level: params.panelSettings?.autoRunOnThinkingLevel ?? ['investigate'],
+      },
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(
+    `contents/review-panels/${panelId}.json`,
+    Buffer.from(JSON.stringify(panelPayload, null, 2), 'utf-8')
+  );
+  zip.addFile(
+    'README.md',
+    Buffer.from(
+      `# ${params.name}\n\n${params.description || ''}\n\n## Reviewers (${params.reviewers.length})\n\n` +
+      params.reviewers.map((r) => `- ${r.icon || '🔍'} **${r.name}**: ${r.focusAreas?.join(', ') || ''}`).join('\n') +
+      '\n\n---\n**Exported via ANTON**\n',
+      'utf-8'
+    )
+  );
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created review-panel bundle "${params.name}" (${params.reviewers.length} reviewers, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle quality baselines from the quality_baselines table as a .anton file.
+ * Optionally filter by specific module IDs.
+ */
+export async function bundleQualityBaseline(
+  db: Database,
+  options: {
+    name?: string;
+    description?: string;
+    moduleIds?: string[];
+    author?: string;
+  } = {}
+): Promise<Buffer> {
+  const whereClause = options.moduleIds && options.moduleIds.length > 0
+    ? `WHERE module_id IN (${options.moduleIds.map(() => '?').join(',')})`
+    : '';
+  const params = options.moduleIds && options.moduleIds.length > 0 ? options.moduleIds : [];
+
+  const baselines = db.prepare(
+    `SELECT module_id, baseline_score, sample_size, established_at, updated_at
+     FROM quality_baselines ${whereClause} ORDER BY module_id`
+  ).all(...params) as any[];
+
+  const baselineId = `quality-baseline-${Date.now()}`;
+  const baselineName = options.name || 'Quality Baselines';
+
+  const specManifest = buildSpecManifest({
+    bundleType: 'quality-baseline',
+    id: baselineId,
+    name: baselineName,
+    description: options.description || `Quality baselines for ${baselines.length} modules`,
+    author: options.author,
+    contentsCount: { quality_baselines: 1 },
+  });
+
+  const baselinePayload = {
+    bundle_type: 'quality-baseline',
+    baseline: {
+      id: baselineId,
+      name: baselineName,
+      description: options.description || '',
+      baselines: baselines.map((b) => ({
+        module_id: b.module_id,
+        baseline_score: b.baseline_score,
+        sample_size: b.sample_size,
+        established_at: b.established_at,
+        updated_at: b.updated_at,
+        enforcement: 'warn',
+      })),
+      grade_labels: {
+        '9.0+': 'Exceptional — ready for regulatory submission',
+        '8.0-8.9': 'Strong — client-ready',
+        '7.0-7.9': 'Acceptable — internal use or with review',
+        '6.0-6.9': 'Below standard — requires rework',
+        '<6.0': 'Insufficient — do not distribute',
+      },
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(
+    `contents/quality-baselines/${baselineId}.json`,
+    Buffer.from(JSON.stringify(baselinePayload, null, 2), 'utf-8')
+  );
+  zip.addFile(
+    'README.md',
+    Buffer.from(
+      `# ${baselineName}\n\n${options.description || ''}\n\n## Baselines (${baselines.length} modules)\n\n` +
+      baselines.map((b) => `- **${b.module_id}**: ${b.baseline_score.toFixed(1)}/10 (n=${b.sample_size})`).join('\n') +
+      '\n\n---\n**Exported via ANTON**\n',
+      'utf-8'
+    )
+  );
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created quality-baseline bundle "${baselineName}" (${baselines.length} modules, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle an audience profile as a .anton file.
+ * An audience profile defines how to adapt output for a specific stakeholder type.
+ */
+export async function bundleAudienceProfile(params: {
+  id?: string;
+  name: string;
+  description?: string;
+  tone?: string;
+  maxLength?: string;
+  languagePreferences?: { avoid?: string[]; prefer?: string[] };
+  emphasis?: string[];
+  structure?: string[];
+  systemPrompt: string;
+  author?: string;
+}): Promise<Buffer> {
+  const profileId = params.id || `audience-profile-${params.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
+
+  const specManifest = buildSpecManifest({
+    bundleType: 'audience-profile',
+    id: profileId,
+    name: params.name,
+    description: params.description,
+    author: params.author,
+    contentsCount: { audience_profiles: 1 },
+  });
+
+  const profilePayload = {
+    bundle_type: 'audience-profile',
+    audience: {
+      id: profileId,
+      name: params.name,
+      description: params.description || '',
+      tone: params.tone || 'professional',
+      max_length: params.maxLength || 'No limit',
+      language_preferences: {
+        avoid: params.languagePreferences?.avoid || [],
+        prefer: params.languagePreferences?.prefer || [],
+      },
+      emphasis: params.emphasis || [],
+      structure: params.structure || [],
+      system_prompt: params.systemPrompt,
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(
+    `contents/audience-profiles/${profileId}.json`,
+    Buffer.from(JSON.stringify(profilePayload, null, 2), 'utf-8')
+  );
+  zip.addFile(
+    'README.md',
+    Buffer.from(
+      `# ${params.name}\n\n${params.description || ''}\n\n## Tone\n${params.tone || 'professional'}\n\n## System Prompt\n${params.systemPrompt}\n\n---\n**Exported via ANTON**\n`,
+      'utf-8'
+    )
+  );
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created audience-profile bundle "${params.name}" (${buffer.length} bytes)`);
   return buffer;
 }
 

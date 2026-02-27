@@ -65,16 +65,52 @@ const OUTPUT_FORMAT_PROMPTS: Record<OutputFormat, string> = {
 };
 
 const MODEL_LABELS: Record<string, string> = {
-  'claude-opus-4-6': 'Opus',
-  'claude-sonnet-4-6': 'Sonnet',
-  'claude-haiku-4-5-20251001': 'Haiku',
+  'claude-opus-4-6':           'Claude Opus 4.6',
+  'claude-sonnet-4-6':         'Claude Sonnet 4.6',
+  'claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+  'gpt-4o':                    'GPT-4o',
+  'gpt-4o-mini':               'GPT-4o mini',
+  'gemini-2.0-flash':          'Gemini 2.0 Flash',
+  'mistral-large-latest':      'Mistral Large',
 };
 
-const MODEL_OPTIONS: { id: ModelId; label: string }[] = [
-  { id: 'claude-opus-4-6', label: 'Opus' },
-  { id: 'claude-sonnet-4-6', label: 'Sonnet' },
-  { id: 'claude-haiku-4-5-20251001', label: 'Haiku' },
+/** Flat list for the model <select> — value is the model ID (except ollama which is a prefix) */
+const MODEL_GROUPS: { groupLabel: string; models: { id: string; label: string }[] }[] = [
+  {
+    groupLabel: 'Anthropic — Claude',
+    models: [
+      { id: 'claude-opus-4-6',           label: 'Claude Opus 4.6 (best quality)' },
+      { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6 (balanced)' },
+      { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (fast)' },
+    ],
+  },
+  {
+    groupLabel: 'OpenAI — GPT',
+    models: [
+      { id: 'gpt-4o',      label: 'GPT-4o' },
+      { id: 'gpt-4o-mini', label: 'GPT-4o mini (fast)' },
+    ],
+  },
+  {
+    groupLabel: 'Google — Gemini',
+    models: [
+      { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+    ],
+  },
+  {
+    groupLabel: 'Mistral',
+    models: [
+      { id: 'mistral-large-latest', label: 'Mistral Large' },
+    ],
+  },
+  {
+    groupLabel: 'Ollama — Local',
+    models: [
+      { id: '__ollama__', label: 'Ollama (local model)…' },
+    ],
+  },
 ];
+
 
 const EMPTY_KS = {
   modes: {
@@ -173,9 +209,22 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
     ROLE_PRESETS.find((r) => r.id === member.role) ? '' : member.role
   );
   const isCustom = !ROLE_PRESETS.slice(0, -1).find((r) => r.id === member.role);
+  const isOllama = String(member.model).startsWith('ollama:');
+  const [ollamaModel, setOllamaModel] = useState(isOllama ? String(member.model).replace('ollama:', '') : '');
+
+  // Select value: '__ollama__' when model starts with 'ollama:', else the model id
+  const selectValue = isOllama ? '__ollama__' : String(member.model);
+
+  function handleModelChange(val: string) {
+    if (val === '__ollama__') {
+      onUpdate({ ...member, model: `ollama:${ollamaModel || 'llama3.2'}` as ModelId });
+    } else {
+      onUpdate({ ...member, model: val as ModelId });
+    }
+  }
 
   return (
-    <div className="relative rounded-xl border border-border bg-adv-card p-4 min-w-[180px]">
+    <div className="relative rounded-xl border border-border bg-adv-card p-4 min-w-[200px]">
       <button
         onClick={onRemove}
         disabled={disabled}
@@ -219,22 +268,33 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
 
       <div>
         <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">Model</label>
-        <div className="flex gap-1.5 flex-wrap">
-          {MODEL_OPTIONS.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => onUpdate({ ...member, model: m.id })}
-              disabled={disabled}
-              className={`rounded border px-2 py-1 text-[10px] font-medium transition-colors disabled:opacity-60 ${
-                member.model === m.id
-                  ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
-                  : 'border-border text-adv-gray hover:border-adv-teal/40'
-              }`}
-            >
-              {m.label}
-            </button>
+        <select
+          value={selectValue}
+          onChange={(e) => handleModelChange(e.target.value)}
+          disabled={disabled}
+          className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none disabled:opacity-60"
+        >
+          {MODEL_GROUPS.map((g) => (
+            <optgroup key={g.groupLabel} label={g.groupLabel}>
+              {g.models.map((m) => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </optgroup>
           ))}
-        </div>
+        </select>
+        {isOllama && (
+          <input
+            type="text"
+            value={ollamaModel}
+            onChange={(e) => {
+              setOllamaModel(e.target.value);
+              onUpdate({ ...member, model: `ollama:${e.target.value}` as ModelId });
+            }}
+            placeholder="e.g. llama3.2, mistral, gemma3"
+            disabled={disabled}
+            className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none disabled:opacity-60"
+          />
+        )}
       </div>
     </div>
   );
@@ -530,21 +590,19 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
             Chair Model
           </label>
-          <div className="flex gap-1.5 flex-wrap">
-            {MODEL_OPTIONS.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setSetup((prev) => ({ ...prev, chairModel: m.id }))}
-                className={`rounded border px-2 py-1 text-[10px] font-medium transition-colors ${
-                  setup.chairModel === m.id
-                    ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
-                    : 'border-border text-adv-gray hover:border-adv-teal/40'
-                }`}
-              >
-                {m.label}
-              </button>
+          <select
+            value={setup.chairModel}
+            onChange={(e) => setSetup((prev) => ({ ...prev, chairModel: e.target.value as ModelId }))}
+            className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          >
+            {MODEL_GROUPS.map((g) => (
+              <optgroup key={g.groupLabel} label={g.groupLabel}>
+                {g.models.filter(m => m.id !== '__ollama__').map((m) => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
+                ))}
+              </optgroup>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Rounds */}

@@ -4,7 +4,9 @@ import remarkGfm from 'remark-gfm';
 import {
   Users, Scale, Eye, CheckCircle, Swords, AlignLeft,
   ChevronDown, ChevronRight, Square, Sparkles, RefreshCw,
+  Landmark, Briefcase, Search, Handshake,
 } from 'lucide-react';
+import { DOMAIN_REVIEWERS } from '@/lib/domain-reviewers';
 import { streamReviewDirect, fetchReviewModes } from '@/lib/api';
 
 interface ReviewMode {
@@ -27,7 +29,10 @@ interface ReviewLauncherProps {
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Users, Scale, Eye, CheckCircle, Swords, AlignLeft,
+  Landmark, Briefcase, Search, Handshake,
 };
+
+const DOMAIN_REVIEWER_IDS = new Set(DOMAIN_REVIEWERS.map((r) => r.id));
 
 const COLOR_MAP: Record<string, string> = {
   teal:  'border-adv-teal/30 bg-adv-teal/5 text-adv-teal',
@@ -82,8 +87,10 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
     <div className={embedded ? '' : 'border-t border-border px-4 pb-4 pt-3'}>
       {/* Mode selector */}
       <p className="mb-3 text-xs text-adv-gray-med">Select a review mode to get a structured critique of the output above.</p>
+
+      {/* Standard review modes */}
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {modes.map((mode) => {
+        {modes.filter((m) => !DOMAIN_REVIEWER_IDS.has(m.id)).map((mode) => {
           const Icon = ICON_MAP[mode.icon] || Sparkles;
           const colorClass = COLOR_MAP[mode.color] || COLOR_MAP['teal'];
           const isSelected = selectedMode === mode.id;
@@ -104,6 +111,38 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
           );
         })}
       </div>
+
+      {/* Domain Reviewers */}
+      {modes.some((m) => DOMAIN_REVIEWER_IDS.has(m.id)) && (
+        <>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">
+            Domain Reviewers
+          </p>
+          <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {modes.filter((m) => DOMAIN_REVIEWER_IDS.has(m.id)).map((mode) => {
+              const domainReviewer = DOMAIN_REVIEWERS.find((r) => r.id === mode.id);
+              const Icon = ICON_MAP[mode.icon] || Sparkles;
+              const colorClass = COLOR_MAP[mode.color] || COLOR_MAP['teal'];
+              const isSelected = selectedMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => setSelectedMode(isSelected ? null : mode.id)}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-all ${
+                    isSelected
+                      ? `${colorClass} ring-1 ring-current/50`
+                      : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                  }`}
+                  title={mode.description}
+                >
+                  <span className="shrink-0 text-sm leading-none">{domainReviewer?.icon}</span>
+                  <span className="font-medium">{mode.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {selectedMode && (
         <div className="mb-3 rounded-lg bg-adv-dark px-3 py-2 text-xs text-adv-gray-med">

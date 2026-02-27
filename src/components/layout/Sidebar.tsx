@@ -153,6 +153,7 @@ interface DeadlinesNavLinkProps {
 }
 
 function DeadlinesNavLink({ sidebarCollapsed, collapsedLinkClass, linkClass }: DeadlinesNavLinkProps) {
+  const { t } = useTranslation();
   const [urgentCount, setUrgentCount] = useState(0);
 
   useEffect(() => {
@@ -171,7 +172,7 @@ function DeadlinesNavLink({ sidebarCollapsed, collapsedLinkClass, linkClass }: D
   return (
     <NavLink
       to="/deadlines"
-      title={sidebarCollapsed ? 'Deadlines' : undefined}
+      title={sidebarCollapsed ? t('nav.deadlines') : undefined}
       className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
     >
       <div className="relative shrink-0">
@@ -184,7 +185,7 @@ function DeadlinesNavLink({ sidebarCollapsed, collapsedLinkClass, linkClass }: D
       </div>
       {!sidebarCollapsed && (
         <span className="flex flex-1 items-center justify-between">
-          Deadlines
+          {t('nav.deadlines')}
           {urgentCount > 0 && (
             <span className="ml-auto rounded-full bg-adv-red/20 px-1.5 py-0.5 text-[10px] font-semibold text-adv-red">
               {urgentCount}
@@ -361,7 +362,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           <>
             <div className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-adv-gold flex items-center gap-2">
               <Star className="h-3 w-3 fill-adv-gold" />
-              Favorites
+              {t('nav.favorites')}
             </div>
 
             {/* Home - if favorited */}
@@ -384,10 +385,11 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             {/* Map through ALL_NAV_ITEMS to show favorited ones */}
             {ALL_NAV_ITEMS.filter(item => favoriteNavItems.has(item.id) && !hiddenNavItems.has(item.id)).map(item => {
               const navConfig = {
-                'discover': { to: '/discover', icon: Search, label: 'Discover' },
-                'my-work': { to: '/my-work', icon: Briefcase, label: 'My Work' },
-                'coding': { to: '/coding', icon: Terminal, label: 'Coding' },
-                'presentations': { to: '/presentations', icon: Presentation, label: 'Presentations' },
+                'engagements': { to: '/engagements', icon: Briefcase, label: t('nav.engagementTasks') },
+                'discover': { to: '/discover', icon: Search, label: t('nav.discover') },
+                'my-work': { to: '/my-work', icon: Briefcase, label: t('nav.myWork') },
+                'coding': { to: '/coding', icon: Terminal, label: t('nav.coding') },
+                'presentations': { to: '/presentations', icon: Presentation, label: t('nav.presentations') },
                 'brief': { to: '/brief', icon: MessageCircle, label: t('nav.briefMe') },
                 'guide': { to: '/guide', icon: Compass, label: t('nav.guideMe') },
                 'fill': { to: '/fill', icon: FileEdit, label: t('nav.fillForm') },
@@ -396,30 +398,34 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'review': { to: '/review', icon: ScanText, label: t('nav.reviewEngine') },
                 'prompt': { to: '/prompt', icon: MessageSquare, label: t('nav.openChat') },
                 'sounding-board': { to: '/sounding-board', icon: MessageSquare, label: t('nav.soundingBoard') },
-                'ab-test': { to: '/ab-test', icon: FlaskConical, label: 'A/B Prompt Testing' },
-                'council': { to: '/council', icon: Users, label: 'AI Council' },
+                'ab-test': { to: '/ab-test', icon: FlaskConical, label: t('nav.abPromptTesting') },
+                'council': { to: '/council', icon: Users, label: t('nav.aiCouncil') },
                 'workflows': { to: '/workflows', icon: Workflow, label: t('nav.workflows') },
-                'datasets': { to: '/datasets', icon: Database, label: 'Saved Datasets' },
-                'coworkers': { to: '/coworkers', icon: Bot, label: 'Coworkers' },
+                'datasets': { to: '/datasets', icon: Database, label: t('nav.savedDatasets') },
+                'coworkers': { to: '/coworkers', icon: Bot, label: t('nav.coworkers') },
                 'projects': { to: '/projects', icon: FolderOpen, label: t('nav.projects') },
                 'build-module': { to: '/build-module', icon: Puzzle, label: t('nav.buildModule') },
                 'skills': { to: '/skills', icon: Zap, label: t('nav.skillsLibrary') },
                 'batch': { to: '/batch', icon: Layers, label: t('nav.batchCreate') },
                 'audit': { to: '/audit', icon: ClipboardCheck, label: t('nav.auditLog') },
-                'connections': { to: '/settings?tab=connections', icon: Plug, label: 'Connections' },
+                'connections': { to: '/settings?tab=connections', icon: Plug, label: t('nav.connections') },
                 'exchange': { to: '/exchange', icon: Package, label: t('nav.exchange') },
                 'analytics': { to: '/analytics', icon: BarChart2, label: t('nav.analytics') },
                 'insights': { to: '/insights', icon: TrendingUp, label: t('nav.dataInsights') },
-                'knowledge': { to: '/knowledge', icon: BookOpen, label: 'Knowledge' },
-                'knowledge-base': { to: '/knowledge-base', icon: DatabaseIcon, label: 'Knowledge Base' },
-                'graph': { to: '/graph', icon: Network, label: 'Knowledge Graph' },
-                'intelligence': { to: '/intelligence', icon: Brain, label: 'Intelligence' },
-                'patterns': { to: '/patterns', icon: Zap, label: 'Patterns' },
-                'compliance': { to: '/compliance', icon: ShieldCheck, label: 'Compliance' },
-                'deadlines': { to: '/deadlines', icon: Calendar, label: 'Deadlines' },
-                'radar': { to: '/radar', icon: Radar, label: 'Radar' },
-                'quality': { to: '/quality', icon: Star, label: 'Quality' },
-                'apprentice': { to: '/apprentice', icon: GraduationCap, label: 'My Journey' },
+                'knowledge': { to: '/knowledge', icon: BookOpen, label: t('nav.knowledge') },
+                'knowledge-base': { to: '/knowledge-base', icon: DatabaseIcon, label: t('nav.knowledgeBase') },
+                'graph': { to: '/graph', icon: Network, label: t('nav.knowledgeGraph') },
+                'intelligence': { to: '/intelligence', icon: Brain, label: t('nav.intelligence') },
+                'patterns': { to: '/patterns', icon: Zap, label: t('nav.patterns') },
+                'compliance': { to: '/compliance', icon: ShieldCheck, label: t('nav.compliance') },
+                'deadlines': { to: '/deadlines', icon: Calendar, label: t('nav.deadlines') },
+                'radar': { to: '/radar', icon: Radar, label: t('nav.radar') },
+                'quality': { to: '/quality', icon: Star, label: t('nav.quality') },
+                'apprentice': { to: '/apprentice', icon: GraduationCap, label: t('nav.myJourney') },
+                'skill-packs': { to: '/skill-packs', icon: Package, label: t('nav.skillPacks') },
+                'governance': { to: '/governance', icon: Shield, label: t('nav.governance') },
+                'compare': { to: '/compare', icon: GitCompare, label: t('nav.compare') },
+                'marketplace': { to: '/marketplace', icon: Rocket, label: t('nav.marketplace') },
               }[item.id];
 
               if (!navConfig) return null;
@@ -453,7 +459,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             onClick={() => toggleSection('interaction')}
             className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray-med hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
-            <span>Interactive Modes</span>
+            <span>{t('nav.interactiveModes')}</span>
             <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${sectionsExpanded.interaction ? '' : '-rotate-90'}`} />
           </button>
         )}
@@ -478,7 +484,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <NavLinkWithStar
           to="/discover"
           navId="discover"
-          title={sidebarCollapsed ? 'Discover' : undefined}
+          title={sidebarCollapsed ? t('nav.discover') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('discover')}
           isHidden={hiddenNavItems.has('discover')}
@@ -486,13 +492,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Search className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Discover'}
+          {!sidebarCollapsed && t('nav.discover')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/my-work"
           navId="my-work"
-          title={sidebarCollapsed ? 'My Work' : undefined}
+          title={sidebarCollapsed ? t('nav.myWork') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('my-work')}
           isHidden={hiddenNavItems.has('my-work')}
@@ -500,13 +506,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Briefcase className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'My Work'}
+          {!sidebarCollapsed && t('nav.myWork')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/coding"
           navId="coding"
-          title={sidebarCollapsed ? 'Coding' : undefined}
+          title={sidebarCollapsed ? t('nav.coding') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('coding')}
           isHidden={hiddenNavItems.has('coding')}
@@ -514,13 +520,27 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Terminal className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Coding'}
+          {!sidebarCollapsed && t('nav.coding')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/engagements"
+          navId="engagements"
+          title={sidebarCollapsed ? t('nav.engagementTasks') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('engagements')}
+          isHidden={hiddenNavItems.has('engagements')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Briefcase className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.engagementTasks')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/presentations"
           navId="presentations"
-          title={sidebarCollapsed ? 'Presentations' : undefined}
+          title={sidebarCollapsed ? t('nav.presentations') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('presentations')}
           isHidden={hiddenNavItems.has('presentations')}
@@ -528,7 +548,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Presentation className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Presentations'}
+          {!sidebarCollapsed && t('nav.presentations')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
@@ -646,7 +666,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <NavLinkWithStar
           to="/ab-test"
           navId="ab-test"
-          title={sidebarCollapsed ? 'A/B Prompt Testing' : undefined}
+          title={sidebarCollapsed ? t('nav.abPromptTesting') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('ab-test')}
           isHidden={hiddenNavItems.has('ab-test')}
@@ -654,13 +674,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <FlaskConical className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'A/B Prompt Testing'}
+          {!sidebarCollapsed && t('nav.abPromptTesting')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/council"
           navId="council"
-          title={sidebarCollapsed ? 'AI Council' : undefined}
+          title={sidebarCollapsed ? t('nav.aiCouncil') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('council')}
           isHidden={hiddenNavItems.has('council')}
@@ -668,7 +688,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Users className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'AI Council'}
+          {!sidebarCollapsed && t('nav.aiCouncil')}
         </NavLinkWithStar>
 
         </>)}
@@ -679,7 +699,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             onClick={() => toggleSection('tools')}
             className="mb-1 mt-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray-med hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
-            <span>Tools & Features</span>
+            <span>{t('nav.toolsAndFeatures')}</span>
             <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${sectionsExpanded.tools ? '' : '-rotate-90'}`} />
           </button>
         )}
@@ -703,7 +723,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <NavLinkWithStar
           to="/datasets"
           navId="datasets"
-          title={sidebarCollapsed ? 'Saved Datasets' : undefined}
+          title={sidebarCollapsed ? t('nav.savedDatasets') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('datasets')}
           isHidden={hiddenNavItems.has('datasets')}
@@ -711,13 +731,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Database className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Saved Datasets'}
+          {!sidebarCollapsed && t('nav.savedDatasets')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/coworkers"
           navId="coworkers"
-          title={sidebarCollapsed ? 'Coworkers' : undefined}
+          title={sidebarCollapsed ? t('nav.coworkers') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('coworkers')}
           isHidden={hiddenNavItems.has('coworkers')}
@@ -725,7 +745,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Bot className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Coworkers'}
+          {!sidebarCollapsed && t('nav.coworkers')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
@@ -771,6 +791,62 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </NavLinkWithStar>
 
         <NavLinkWithStar
+          to="/skill-packs"
+          navId="skill-packs"
+          title={sidebarCollapsed ? t('nav.skillPacks') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('skill-packs')}
+          isHidden={hiddenNavItems.has('skill-packs')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Package className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.skillPacks')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/governance"
+          navId="governance"
+          title={sidebarCollapsed ? t('nav.governanceDashboard') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('governance')}
+          isHidden={hiddenNavItems.has('governance')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Shield className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.governance')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/compare"
+          navId="compare"
+          title={sidebarCollapsed ? t('nav.compareAnton') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('compare')}
+          isHidden={hiddenNavItems.has('compare')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <GitCompare className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.compare')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/marketplace"
+          navId="marketplace"
+          title={sidebarCollapsed ? t('nav.marketplace') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('marketplace')}
+          isHidden={hiddenNavItems.has('marketplace')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Rocket className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.marketplace')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
           to="/batch"
           navId="batch"
           title={sidebarCollapsed ? t('nav.batchCreate') : undefined}
@@ -802,7 +878,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <NavLinkWithStar
           to="/settings?tab=connections"
           navId="connections"
-          title={sidebarCollapsed ? 'Connections' : undefined}
+          title={sidebarCollapsed ? t('nav.connections') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('connections')}
           isHidden={hiddenNavItems.has('connections')}
@@ -810,7 +886,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Plug className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Connections'}
+          {!sidebarCollapsed && t('nav.connections')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
@@ -858,7 +934,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <NavLinkWithStar
           to="/knowledge"
           navId="knowledge"
-          title={sidebarCollapsed ? 'Knowledge' : undefined}
+          title={sidebarCollapsed ? t('nav.knowledge') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('knowledge')}
           isHidden={hiddenNavItems.has('knowledge')}
@@ -866,13 +942,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <BookOpen className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Knowledge'}
+          {!sidebarCollapsed && t('nav.knowledge')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/knowledge-base"
           navId="knowledge-base"
-          title={sidebarCollapsed ? 'Knowledge Base' : undefined}
+          title={sidebarCollapsed ? t('nav.knowledgeBase') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('knowledge-base')}
           isHidden={hiddenNavItems.has('knowledge-base')}
@@ -880,13 +956,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <DatabaseIcon className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Knowledge Base'}
+          {!sidebarCollapsed && t('nav.knowledgeBase')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/graph"
           navId="graph"
-          title={sidebarCollapsed ? 'Knowledge Graph' : undefined}
+          title={sidebarCollapsed ? t('nav.knowledgeGraph') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('graph')}
           isHidden={hiddenNavItems.has('graph')}
@@ -894,13 +970,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Network className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Knowledge Graph'}
+          {!sidebarCollapsed && t('nav.knowledgeGraph')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/intelligence"
           navId="intelligence"
-          title={sidebarCollapsed ? 'Intelligence Dashboard' : undefined}
+          title={sidebarCollapsed ? t('nav.intelligenceDashboard') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('intelligence')}
           isHidden={hiddenNavItems.has('intelligence')}
@@ -908,13 +984,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Brain className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Intelligence'}
+          {!sidebarCollapsed && t('nav.intelligence')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/patterns"
           navId="patterns"
-          title={sidebarCollapsed ? 'Pattern Detection' : undefined}
+          title={sidebarCollapsed ? t('nav.patternDetection') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('patterns')}
           isHidden={hiddenNavItems.has('patterns')}
@@ -922,13 +998,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Zap className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Patterns'}
+          {!sidebarCollapsed && t('nav.patterns')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/compliance"
           navId="compliance"
-          title={sidebarCollapsed ? 'Compliance' : undefined}
+          title={sidebarCollapsed ? t('nav.compliance') : undefined}
           className={({ isActive}) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('compliance')}
           isHidden={hiddenNavItems.has('compliance')}
@@ -936,7 +1012,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <ShieldCheck className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Compliance'}
+          {!sidebarCollapsed && t('nav.compliance')}
         </NavLinkWithStar>
 
         {/* Deadlines — with urgency badge */}
@@ -949,7 +1025,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <NavLinkWithStar
           to="/radar"
           navId="radar"
-          title={sidebarCollapsed ? 'Regulatory Radar' : undefined}
+          title={sidebarCollapsed ? t('nav.regulatoryRadar') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('radar')}
           isHidden={hiddenNavItems.has('radar')}
@@ -957,13 +1033,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Radar className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Radar'}
+          {!sidebarCollapsed && t('nav.radar')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/quality"
           navId="quality"
-          title={sidebarCollapsed ? 'Quality' : undefined}
+          title={sidebarCollapsed ? t('nav.quality') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('quality')}
           isHidden={hiddenNavItems.has('quality')}
@@ -971,13 +1047,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <Star className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'Quality'}
+          {!sidebarCollapsed && t('nav.quality')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/apprentice"
           navId="apprentice"
-          title={sidebarCollapsed ? 'My Journey' : undefined}
+          title={sidebarCollapsed ? t('nav.myJourney') : undefined}
           className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
           isFavorite={favoriteNavItems.has('apprentice')}
           isHidden={hiddenNavItems.has('apprentice')}
@@ -985,7 +1061,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           sidebarCollapsed={sidebarCollapsed}
         >
           <GraduationCap className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && 'My Journey'}
+          {!sidebarCollapsed && t('nav.myJourney')}
         </NavLinkWithStar>
 
         </>)}
@@ -998,7 +1074,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             onClick={() => toggleSection('modules')}
             className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray-med hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
-            <span>Modules</span>
+            <span>{t('nav.modules')}</span>
             <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${sectionsExpanded.modules ? '' : '-rotate-90'}`} />
           </button>
         )}
@@ -1111,7 +1187,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 <div className="flex items-center gap-2">
                   <Puzzle className="h-3.5 w-3.5 shrink-0 text-adv-teal" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">
-                    My Modules
+                    {t('nav.myModules')}
                   </span>
                   <span className="text-[10px] text-adv-gray-med">{myModules.length}</span>
                 </div>

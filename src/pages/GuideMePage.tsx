@@ -7,7 +7,115 @@ import {
   ArrowLeft,
   CheckCircle2,
   Sparkles,
+  Building2,
+  Scale,
+  Briefcase,
+  Users,
+  ClipboardCheck,
+  Cpu,
+  TrendingUp,
+  Rocket,
+  MoreHorizontal,
 } from 'lucide-react';
+
+// ─── Industry quick-start paths ─────────────────────────────────────────────
+
+interface Industry {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  /** Module IDs that are especially relevant for this industry */
+  relevantModuleIds: string[];
+}
+
+const INDUSTRIES: Industry[] = [
+  {
+    id: 'banking-finance',
+    label: 'Banking & Finance',
+    icon: <Building2 className="h-4 w-4" />,
+    relevantModuleIds: [
+      'gap-analysis', 'sanctions-advisory', 'regulatory-monitor',
+      'risk-assessment', 'data-management', 'investigation-support',
+      'model-validation', 'document-creation',
+    ],
+  },
+  {
+    id: 'legal-compliance',
+    label: 'Legal & Compliance',
+    icon: <Scale className="h-4 w-4" />,
+    relevantModuleIds: [
+      'regulatory-interpretation', 'contract-review', 'compliance-framework',
+      'regulatory-change-impact', 'gdpr-privacy', 'legal-brief',
+      'gap-analysis', 'document-creation',
+    ],
+  },
+  {
+    id: 'consulting',
+    label: 'Consulting',
+    icon: <Briefcase className="h-4 w-4" />,
+    relevantModuleIds: [
+      'engagement-proposal', 'engagement-execution', 'management-presentation',
+      'proposal-generator', 'stakeholder-mapping', 'client-presentation',
+      'gap-analysis', 'risk-assessment',
+    ],
+  },
+  {
+    id: 'hr-people',
+    label: 'HR & People',
+    icon: <Users className="h-4 w-4" />,
+    relevantModuleIds: [
+      'job-description', 'interview-framework', 'performance-review',
+      'hr-policy', 'ld-planning', 'training-content',
+      'change-management', 'resource-planning',
+    ],
+  },
+  {
+    id: 'audit-assurance',
+    label: 'Audit & Assurance',
+    icon: <ClipboardCheck className="h-4 w-4" />,
+    relevantModuleIds: [
+      'audit-planning', 'control-testing', 'finding-writer',
+      'audit-report', 'sox-isae', 'regulatory-exam-prep',
+      'gap-analysis', 'risk-assessment',
+    ],
+  },
+  {
+    id: 'technology',
+    label: 'Technology',
+    icon: <Cpu className="h-4 w-4" />,
+    relevantModuleIds: [
+      'code-review', 'architecture-review', 'technical-spec',
+      'api-design', 'tech-debt-assessment', 'dora-compliance',
+      'ict-risk-management', 'data-governance',
+    ],
+  },
+  {
+    id: 'strategy-ops',
+    label: 'Strategy & Ops',
+    icon: <TrendingUp className="h-4 w-4" />,
+    relevantModuleIds: [
+      'business-case', 'strategic-analysis', 'market-entry',
+      'competitive-analysis', 'project-planning', 'status-reporting',
+      'resource-planning', 'scenario-analysis',
+    ],
+  },
+  {
+    id: 'startups',
+    label: 'Startups',
+    icon: <Rocket className="h-4 w-4" />,
+    relevantModuleIds: [
+      'business-plan', 'pitch-deck', 'funding-strategy',
+      'mvp-scoping', 'cofounder-agreements', 'business-case',
+      'market-entry', 'engagement-proposal',
+    ],
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    icon: <MoreHorizontal className="h-4 w-4" />,
+    relevantModuleIds: [],
+  },
+];
 
 const CATEGORIES = [
   { id: 'strategy', label: 'Strategy' },
@@ -156,6 +264,14 @@ export default function GuideMePage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedOutputs, setSelectedOutputs] = useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
+
+  function handleIndustrySelect(industryId: string) {
+    const next = selectedIndustry === industryId ? null : industryId;
+    setSelectedIndustry(next);
+    const industry = INDUSTRIES.find((i) => i.id === industryId);
+    console.log('[GuideMePage] Industry selected:', next, '| Relevant modules:', industry?.relevantModuleIds ?? []);
+  }
 
   const toggleChip = (id: string, list: string[], setList: (v: string[]) => void) => {
     setList(list.includes(id) ? list.filter((c) => c !== id) : [...list, id]);
@@ -188,6 +304,40 @@ export default function GuideMePage() {
           Answer a few questions and we will recommend the best module for your task.
         </p>
       </div>
+
+      {/* Industry quick-start section */}
+      {step === 1 && (
+        <div className="mb-6 rounded-xl border border-border bg-adv-dark-2 p-4">
+          <p className="mb-3 text-xs font-medium text-adv-gray">
+            Quick start — select your industry (optional)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {INDUSTRIES.map((industry) => (
+              <button
+                key={industry.id}
+                onClick={() => handleIndustrySelect(industry.id)}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  selectedIndustry === industry.id
+                    ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                    : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                }`}
+              >
+                {industry.icon}
+                {industry.label}
+              </button>
+            ))}
+          </div>
+          {selectedIndustry && selectedIndustry !== 'other' && (
+            <p className="mt-3 text-xs text-adv-teal">
+              Showing modules relevant to{' '}
+              <span className="font-semibold">
+                {INDUSTRIES.find((i) => i.id === selectedIndustry)?.label}
+              </span>
+              . The wizard below will refine recommendations further.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Progress indicator */}
       {step <= 3 && (

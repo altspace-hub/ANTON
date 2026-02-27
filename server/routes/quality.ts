@@ -68,5 +68,33 @@ export function createQualityRoutes(db: Database.Database, anthropic?: any) {
     }
   });
 
+  // GET /api/quality/by-session/:sessionId — most recent quality score for a session
+  router.get('/quality/by-session/:sessionId', requireAuth, (req, res) => {
+    try {
+      const row = db.prepare(
+        `SELECT * FROM quality_scores WHERE session_id = ? ORDER BY scored_at DESC LIMIT 1`
+      ).get(req.params.sessionId) as Record<string, unknown> | undefined;
+      if (!row) return res.json(null);
+      let reasoning: { strengths?: string[]; weaknesses?: string[]; improvementSuggestion?: string } | null = null;
+      try { if (row.score_reasoning) reasoning = JSON.parse(row.score_reasoning as string); } catch { /* ignore */ }
+      res.json({
+        id: row.id,
+        moduleId: row.module_id,
+        overall: row.score_overall,
+        completeness: row.score_completeness,
+        accuracy: row.score_accuracy,
+        structure: row.score_structure,
+        actionability: row.score_actionability,
+        citations: row.score_citations,
+        isRegression: !!row.is_regression,
+        scoredAt: row.scored_at,
+        reasoning,
+      });
+    } catch (error) {
+      console.error('Quality by-session error:', error);
+      res.status(500).json({ error: 'Failed to fetch session quality score' });
+    }
+  });
+
   return router;
 }

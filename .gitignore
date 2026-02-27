@@ -13,3 +13,50 @@ audit-report.json
 vulnerability-report.json
 LICENSES.csv
 licenses-report.csv
+to_git_repo/
+
+# Claude Code local memory (not for the repo)
+.claude/
+
+# Loose dev screenshots and generated output files in root
+pic_*.png
+anton_gui.png
+gui_white_mode.png
+meal_app.png
+landingpage_proposal.pdf
+landingpage_proposal.pptx
+open-chat-output*.pdf
+open-chat-output.docx
+openEXPERT_Master_Plan.xlsx
+pics_for_landingpage/
+
+# Misc test/scratch files
+t.txt
+gen_test.txt
+bop_data.json
+professional_data.json
+globalsouth_data.json
+check_schema.ts
+test-audit.ts
+test-workspace.ts
+test-graph-build.sql
+debug-projects.js
+package.json.tmp
+
+# Test results and playwright reports
+test-results/
+playwright-report/
+
+# Electron build output (large binaries — not for git)
+dist-installer/
+
+# Test databases and screenshots (generated, not source)
+tests/screenshots/
+tests/*.db
+
+# TypeScript incremental build cache
+tsconfig.app.tsbuildinfo
+tsconfig.node.tsbuildinfo
+
+# Workspace data (user-specific runtime state)
+workspaces/

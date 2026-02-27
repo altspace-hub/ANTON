@@ -193,7 +193,8 @@ export async function injectIntoPptxTemplate(
   outputPath: string
 ): Promise<void> {
   // Dynamic import — pptxgenjs uses ESM default export
-  const PptxGenJS = (await import('pptxgenjs')).default;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const PptxGenJS = (await import('pptxgenjs')).default as any;
   const pptx = new PptxGenJS();
 
   const templateName = path.basename(templatePath);

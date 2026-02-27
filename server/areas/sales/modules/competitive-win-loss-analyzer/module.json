@@ -30,7 +30,7 @@
       "type": "text",
       "label": "Our company / firm name",
       "required": true,
-      "placeholder": "e.g., Advisense, Acme Consulting"
+      "placeholder": "e.g., openEXPERT, Acme Consulting"
     },
     {
       "id": "competitors",

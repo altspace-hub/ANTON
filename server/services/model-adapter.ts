@@ -22,8 +22,8 @@ import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Mistral } from '@mistralai/mistralai';
 import type Database from 'better-sqlite3';
-import type { ModelProvider, ThinkingLevel, CreativityLevel } from '../../src/lib/types';
-import type { CustomModelConfig } from '../routes/settings';
+import type { ModelProvider, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
+import type { CustomModelConfig } from '../routes/settings.js';
 
 // ── Unified Request Interface ──────────────────────────────────
 
@@ -67,7 +67,7 @@ abstract class BaseAdapter {
    * Different providers have different optimal ranges.
    */
   protected mapTemperature(creativity: CreativityLevel, providerMax: number): number {
-    const baseTemps = { strict: 0.0, balanced: 0.5, creative: 0.9 };
+    const baseTemps: Record<string, number> = { strict: 0.0, balanced: 0.5, creative: 0.9 };
     const baseTemp = baseTemps[creativity];
     // Normalize to provider's range (e.g., GPT uses 0-2, Claude uses 0-1)
     return (baseTemp / 1.0) * providerMax;

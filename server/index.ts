@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDatabase } from './db/init.js';
 import { authLimiter, userLimiter, claudeLimiter } from './middleware/rate-limit.js';
-import healthRouter from './routes/health.js';
+import { createHealthRouter } from './routes/health.js';
 import { createClaudeRoutes } from './routes/claude.js';
 import filesRouter from './routes/files.js';
 import { createSessionRoutes } from './routes/sessions.js';
@@ -44,9 +44,12 @@ import { createMemoryRoutes } from './routes/memory.js';
 import { createCanvasRoutes } from './routes/canvas.js';
 import { createRadarRoutes } from './routes/radar.js';
 import { createRadarFetcher } from './services/radar-fetcher.js';
+import createNotificationsRouter from './routes/notifications.js';
+import * as cron from 'node-cron';
 import { createProjectFilesRoutes } from './routes/project-files.js';
 import { createProjectCollaborationRoutes } from './routes/project-collaboration.js';
 import { createQualityRoutes } from './routes/quality.js';
+import { createEngagementsRoutes } from './routes/engagements.js';
 import { createApprenticeRoutes } from './routes/apprentice.js';
 import { createKnowledgeGraphRoutes } from './routes/knowledge-graph.js';
 import { createIntelligenceDashboardRoutes } from './routes/intelligence-dashboard.js';
@@ -70,7 +73,15 @@ import { createInstructionBuilderRoutes } from './routes/instruction-builder.js'
 import { createAlignmentReviewerRoutes } from './routes/alignment-reviewer.js';
 import { createKnowledgeLibraryRoutes } from './routes/knowledge-library.js';
 import { createBatchRoutes } from './routes/batch.js';
+import { createSkillPacksRoutes } from './routes/skill-packs.js';
+import { createModelRouterRoutes } from './routes/model-router.js';
+import { createAudienceAdapterRoutes } from './routes/audience-adapter.js';
+import { createSuggestionsRoutes } from './routes/suggestions.js';
+import { createBenchmarkRoutes } from './routes/benchmark.js';
+import { createMcpRouter } from './mcp/mcp-server.js';
+import { createConnectorTemplatesRoutes } from './routes/connector-templates.js';
 import Anthropic from '@anthropic-ai/sdk';
+import jwt from 'jsonwebtoken';
 import { ensureWorkspacesRoot } from './services/workspace.js';
 
 // ── Startup validation ────────────────────────────────────────
@@ -199,6 +210,21 @@ setTimeout(() => {
   }
 }, 30000);
 
+// MCP authentication guard - team mode only
+if (process.env.DEPLOYMENT_MODE === 'team' && process.env.MCP_SECRET) {
+  app.use('/mcp', (req, res, next) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token !== process.env.MCP_SECRET) {
+      return res.status(401).json({ error: 'MCP access requires Authorization: Bearer <MCP_SECRET>' });
+    }
+    next();
+  });
+}
+
+// MCP endpoint — mounted at /mcp, outside /api and outside auth middleware
+// MCP clients (Cursor, Claude Code) do not perform browser auth
+app.use('/mcp', createMcpRouter(db));
+
 // API routes — auth routes and config must be registered BEFORE the auth middleware
 app.use('/api', createAuthRoutes(db));
 
@@ -206,14 +232,33 @@ app.use('/api', createAuthRoutes(db));
 app.use('/api', createBridgePublicRoutes(db, anthropic));
 
 // Deployment config endpoint (public — no auth required)
-app.get('/api/config', (_req, res) => {
-  res.json({
-    deploymentMode: process.env.DEPLOYMENT_MODE || 'solo',
-    version: '1.0.0',
-    googleOAuthEnabled: !!process.env.GOOGLE_CLIENT_ID,
-    githubOAuthEnabled: !!process.env.GITHUB_CLIENT_ID,
-    oidcEnabled: !!(process.env.OIDC_ISSUER_URL && process.env.OIDC_CLIENT_ID),
-  });
+app.get('/api/config', (req, res) => {
+  const deploymentMode = process.env.DEPLOYMENT_MODE || 'solo';
+  const base = { deploymentMode, version: '0.2.0' };
+
+  const oauthFlags = {
+    googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    githubOAuthEnabled: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
+    oidcEnabled: !!process.env.OIDC_ISSUER_URL,
+  };
+
+  if (deploymentMode !== 'team') {
+    // Solo mode: always return full config
+    return res.json({ ...base, ...oauthFlags });
+  }
+
+  // Team mode: only authenticated users see OAuth flags
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  let isAuthenticated = false;
+  if (token) {
+    try {
+      jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+      isAuthenticated = true;
+    } catch { /* invalid token */ }
+  }
+
+  res.json(isAuthenticated ? { ...base, ...oauthFlags } : base);
 });
 
 // Auth middleware — protects all subsequent /api routes
@@ -223,13 +268,14 @@ app.use('/api', authMiddleware);
 // Apply per-user rate limiter to all authenticated API routes
 app.use('/api', userLimiter);
 
-app.use('/api', healthRouter);
+app.use('/api', createHealthRouter(db));
 app.use('/api', createClaudeRoutes(db, anthropic));
 app.use('/api', filesRouter);
 app.use('/api', createSessionRoutes(db));
 app.use('/api', createFolderRoutes(db));
 app.use('/api', createExportRouter(db));
 app.use('/api', createTemplatesRouter(db));
+app.use('/api', createCustomModuleRoutes(db, anthropic)); // must be before modulesRouter — /modules/community would otherwise be swallowed by /modules/:id wildcard
 app.use('/api', modulesRouter);
 app.use('/api', createProfileRoutes(db));
 app.use('/api', createReviewRoutes(db, anthropic));
@@ -237,7 +283,6 @@ app.use('/api', createProjectRoutes(db));
 app.use('/api', createProjectFilesRoutes(db));
 app.use('/api', createProjectCollaborationRoutes(db));
 app.use('/api', createSkillsRoutes(db));
-app.use('/api', createCustomModuleRoutes(db, anthropic));
 app.use('/api', createAuditRoutes(db));
 app.use('/api', createExchangeRoutes(db));
 app.use('/api', createSettingsRoutes(db));
@@ -260,7 +305,9 @@ app.use('/api', createCanvasRoutes(db));
 // Initialize radar fetcher for automated feed scanning
 const radarFetcher = anthropic ? createRadarFetcher(db, anthropic) : undefined;
 app.use('/api', createRadarRoutes(db, radarFetcher));
+app.use('/api', createNotificationsRouter(db));
 app.use('/api', createQualityRoutes(db, anthropic));
+app.use('/api/engagements', createEngagementsRoutes(db));
 app.use('/api', createApprenticeRoutes(db));
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
@@ -282,6 +329,12 @@ app.use('/api', createPresentationsRoutes(db));
 app.use('/api', createInstructionBuilderRoutes(db));
 app.use('/api', createAlignmentReviewerRoutes(db));
 app.use('/api/batch', createBatchRoutes(anthropic, db));
+app.use('/api', createSkillPacksRoutes(db));
+app.use('/api', createModelRouterRoutes());
+app.use('/api', createAudienceAdapterRoutes());
+app.use('/api', createSuggestionsRoutes(db));
+app.use('/api', createBenchmarkRoutes(db));
+app.use('/api', createConnectorTemplatesRoutes());
 
 // Serve static React build in production
 const clientDist = path.join(__dirname, '..', 'dist', 'client');
@@ -320,6 +373,21 @@ app.listen(PORT, () => {
         console.log(`[radar] Auto-scan enabled (${hours}h interval)`);
       } else {
         console.log('[radar] Auto-scan disabled (change in Radar settings)');
+      }
+
+      // Also check for cron-based radar schedule
+      const radarCronExpr = (db.prepare("SELECT value FROM radar_settings WHERE key = 'auto_scan_cron'").get() as { value: string } | undefined)?.value;
+      if (radarCronExpr && cron.validate(radarCronExpr)) {
+        cron.schedule(radarCronExpr, async () => {
+          console.log('[radar-cron] Starting scheduled radar scan');
+          try {
+            await radarFetcher!.scanAllSources();
+            console.log('[radar-cron] Scheduled scan completed');
+          } catch (err) {
+            console.error('[radar-cron] Scan failed:', err);
+          }
+        });
+        console.log(`[radar-cron] Scheduled radar scan: ${radarCronExpr}`);
       }
     } catch (err) {
       console.error('[radar] Failed to read auto-scan settings:', err);

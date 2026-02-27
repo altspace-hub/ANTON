@@ -1,15 +1,24 @@
 import { Router } from 'express';
+import type Database from 'better-sqlite3';
 import { isApiKeyConfigured } from '../services/claude-client.js';
 
-const router = Router();
+export function createHealthRouter(db: Database.Database) {
+  const router = Router();
 
-router.get('/health', (_req, res) => {
-  res.json({
-    status: 'ok',
-    apiKeyConfigured: isApiKeyConfigured(),
-    database: true,
-    version: '0.1.0',
+  router.get('/health', (_req, res) => {
+    let dbOk = false;
+    try {
+      db.prepare('SELECT 1').get();
+      dbOk = true;
+    } catch { /* db not ready */ }
+
+    res.json({
+      status: 'ok',
+      apiKeyConfigured: isApiKeyConfigured(),
+      database: dbOk,
+      version: '0.2.0',
+    });
   });
-});
 
-export default router;
+  return router;
+}

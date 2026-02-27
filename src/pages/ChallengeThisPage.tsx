@@ -40,6 +40,7 @@ const EMPTY_KS = {
 };
 
 export default function ChallengeThisPage() {
+  const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [docContent, setDocContent] = useState('');
   const [context, setContext] = useState('');
   const [daModel, setDaModel] = useState<ModelId>('claude-opus-4-6');
@@ -82,6 +83,7 @@ export default function ChallengeThisPage() {
           history: [],
           outputFormats: [],
           knowledgeSources: EMPTY_KS,
+          transparencyLevel,
           ...(hasFiles ? { uploadedFileIds } : {}),
         },
         controller.signal
@@ -232,6 +234,33 @@ export default function ChallengeThisPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Transparency toggle */}
+          <div className="rounded-xl border border-border bg-adv-card px-4 py-3">
+            <div className="space-y-1">
+              <div className="text-[11px] text-adv-gray-med">Transparency</div>
+              <div className="flex gap-1.5">
+                {([
+                  { level: 0 as const, label: 'Off' },
+                  { level: 1 as const, label: 'Summary' },
+                  { level: 2 as const, label: 'Detailed' },
+                ]).map(({ level, label }) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setTransparencyLevel(level)}
+                    className={`flex-1 rounded-lg border px-2 py-1.5 text-xs transition-colors ${
+                      transparencyLevel === level
+                        ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                        : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Document upload */}

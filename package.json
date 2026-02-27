@@ -1,7 +1,8 @@
 {
   "name": "openexpert",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
+  "main": "dist/electron/main.js",
   "type": "module",
   "scripts": {
     "dev": "concurrently -n client,server -c blue,green \"pnpm run dev:client\" \"pnpm run dev:server\"",
@@ -32,7 +33,12 @@
     "security:pentest": "tsx scripts/security-audit.ts",
     "test:intelligent": "tsx scripts/intelligent-testing.ts",
     "test:claude": "tsx scripts/intelligent-testing.ts",
-    "test:audit": "tsx test-audit.ts"
+    "test:audit": "tsx test-audit.ts",
+    "electron:dev": "concurrently \"pnpm run dev:server\" \"sleep 3 && electron .\"",
+    "electron:build": "electron-rebuild -f -w better-sqlite3 && pnpm run build && tsc -p tsconfig.server.build.json && tsc -p tsconfig.electron.json && electron-builder",
+    "electron:pack": "electron-builder --dir",
+    "electron:icons": "tsx scripts/generate-icons.ts",
+    "postinstall": "echo 'Run pnpm run electron:build to rebuild native modules for Electron'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -56,9 +62,11 @@
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "express-rate-limit": "^8.2.1",
+    "file-type": "^19.6.0",
     "fs-extra": "^11.2.0",
     "helmet": "^8.1.0",
     "i18next": "^23.16.8",
+    "i18next-http-backend": "^3.0.2",
     "jsonwebtoken": "^9.0.3",
     "jszip": "^3.10.1",
     "lucide-react": "^0.469.0",
@@ -89,6 +97,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.0.6",
     "@types/adm-zip": "^0.5.7",
@@ -113,6 +122,9 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/ui": "^4.0.18",
     "concurrently": "^9.1.2",
+    "cross-env": "^10.1.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
     "license-checker": "^25.0.1",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.0.6",
@@ -128,6 +140,9 @@
     "onlyBuiltDependencies": [
       "better-sqlite3",
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "rollup": "4.57.1"
+    }
   }
 }

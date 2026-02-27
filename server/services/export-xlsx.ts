@@ -8,6 +8,128 @@
  * Non-table content is put on a "Summary" sheet as readable text.
  */
 
+// ── Locale-aware export section labels ───────────────────────
+const EXPORT_LABELS: Record<string, Record<string, string>> = {
+  en: {
+    executiveSummary: 'Executive Summary',
+    analysis: 'Analysis',
+    recommendations: 'Recommendations',
+    introduction: 'Introduction',
+    conclusion: 'Conclusion',
+    references: 'References',
+    methodology: 'Methodology',
+    background: 'Background',
+    keyFindings: 'Key Findings',
+  },
+  ar: {
+    executiveSummary: 'الملخص التنفيذي',
+    analysis: 'التحليل',
+    recommendations: 'التوصيات',
+    introduction: 'مقدمة',
+    conclusion: 'خاتمة',
+    references: 'المراجع',
+    methodology: 'المنهجية',
+    background: 'الخلفية',
+    keyFindings: 'النتائج الرئيسية',
+  },
+  de: {
+    executiveSummary: 'Zusammenfassung',
+    analysis: 'Analyse',
+    recommendations: 'Empfehlungen',
+    introduction: 'Einleitung',
+    conclusion: 'Fazit',
+    references: 'Referenzen',
+    methodology: 'Methodik',
+    background: 'Hintergrund',
+    keyFindings: 'Wichtigste Erkenntnisse',
+  },
+  es: {
+    executiveSummary: 'Resumen Ejecutivo',
+    analysis: 'Análisis',
+    recommendations: 'Recomendaciones',
+    introduction: 'Introducción',
+    conclusion: 'Conclusión',
+    references: 'Referencias',
+    methodology: 'Metodología',
+    background: 'Antecedentes',
+    keyFindings: 'Hallazgos Clave',
+  },
+  fr: {
+    executiveSummary: 'Résumé Exécutif',
+    analysis: 'Analyse',
+    recommendations: 'Recommandations',
+    introduction: 'Introduction',
+    conclusion: 'Conclusion',
+    references: 'Références',
+    methodology: 'Méthodologie',
+    background: 'Contexte',
+    keyFindings: 'Conclusions Clés',
+  },
+  hi: {
+    executiveSummary: 'कार्यकारी सारांश',
+    analysis: 'विश्लेषण',
+    recommendations: 'सिफारिशें',
+    introduction: 'परिचय',
+    conclusion: 'निष्कर्ष',
+    references: 'संदर्भ',
+    methodology: 'पद्धति',
+    background: 'पृष्ठभूमि',
+    keyFindings: 'मुख्य निष्कर्ष',
+  },
+  ja: {
+    executiveSummary: 'エグゼクティブサマリー',
+    analysis: '分析',
+    recommendations: '推奨事項',
+    introduction: 'はじめに',
+    conclusion: '結論',
+    references: '参考文献',
+    methodology: '方法論',
+    background: '背景',
+    keyFindings: '主な発見事項',
+  },
+  ko: {
+    executiveSummary: '경영진 요약',
+    analysis: '분석',
+    recommendations: '권고사항',
+    introduction: '서론',
+    conclusion: '결론',
+    references: '참고문헌',
+    methodology: '방법론',
+    background: '배경',
+    keyFindings: '주요 결과',
+  },
+  pt: {
+    executiveSummary: 'Resumo Executivo',
+    analysis: 'Análise',
+    recommendations: 'Recomendações',
+    introduction: 'Introdução',
+    conclusion: 'Conclusão',
+    references: 'Referências',
+    methodology: 'Metodologia',
+    background: 'Contexto',
+    keyFindings: 'Principais Conclusões',
+  },
+  'zh-CN': {
+    executiveSummary: '执行摘要',
+    analysis: '分析',
+    recommendations: '建议',
+    introduction: '介绍',
+    conclusion: '结论',
+    references: '参考文献',
+    methodology: '方法论',
+    background: '背景',
+    keyFindings: '主要发现',
+  },
+};
+
+/**
+ * Returns localised section header labels for the given language.
+ * Falls back to English for any language not in the map.
+ */
+export function getExportLabels(language: string): Record<string, string> {
+  return EXPORT_LABELS[language] ?? EXPORT_LABELS['en'];
+}
+
 import ExcelJS from 'exceljs';
 
 // ── Brand config type ────────────────────────────────────────

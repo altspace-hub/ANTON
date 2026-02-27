@@ -20,6 +20,7 @@ You can handle any professional question — compliance, legal, risk, strategy, 
 
 export default function BriefMePage() {
   const { t } = useTranslation();
+  const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -80,7 +81,7 @@ export default function BriefMePage() {
           selectedSkills: [],
           multiPerspective: false,
           metaCognitiveEnabled: false,
-          transparencyLevel: 0,
+          transparencyLevel,
         },
         controller.signal
       );
@@ -314,6 +315,30 @@ export default function BriefMePage() {
 
         {/* Input area */}
         <div className="border-t border-border bg-adv-dark-2 px-6 py-4">
+          {/* Transparency toggle */}
+          <div className="mb-3 flex items-center gap-3">
+            <span className="text-[11px] text-adv-gray-med shrink-0">Transparency:</span>
+            <div className="flex gap-1.5">
+              {([
+                { level: 0 as const, label: 'Off' },
+                { level: 1 as const, label: 'Summary' },
+                { level: 2 as const, label: 'Detailed' },
+              ]).map(({ level, label }) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setTransparencyLevel(level)}
+                  className={`rounded-lg border px-2.5 py-1 text-xs transition-colors ${
+                    transparencyLevel === level
+                      ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                      : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex items-end gap-3">
             <textarea
               ref={textareaRef}

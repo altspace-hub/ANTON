@@ -1,0 +1,79 @@
+{
+  "id": "coworker-customer-support",
+  "name": "Support Ticket Triage",
+  "description": "Categorises and prioritises incoming support tickets, drafts response templates for common issues, and flags complex cases for human review before responses are sent.",
+  "role_identity": "Customer Support Lead",
+  "icon": "MessageSquare",
+  "color": "adv-blue",
+  "tags": ["customer-support", "triage", "tickets", "responses"],
+  "estimated_duration": "10-20 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "ticket_batch", "label": "Ticket Batch", "type": "textarea", "required": true, "placeholder": "Paste the ticket batch. For each ticket include: ticket ID, subject, customer type, and message content." },
+    { "id": "product_context", "label": "Product / Service Context", "type": "text", "required": true, "placeholder": "Brief description of your product or service" },
+    { "id": "sla_targets", "label": "Response SLA Targets", "type": "text", "required": false, "placeholder": "e.g., P1: 1 hour, P2: 4 hours, P3: 24 hours" }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "Categorise and Prioritise Tickets",
+      "description": "ANTON categorises tickets by type and priority, flags complexity, and identifies patterns.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "consulting",
+        "moduleId": "client-presentation",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Triage the following support tickets for {{product_context}}.\n\nSLA targets: {{sla_targets}}\n\nTickets:\n{{ticket_batch}}\n\nFor each ticket produce:\n- Priority (P1 Critical / P2 High / P3 Standard / P4 Low)\n- Category (Bug, Feature Request, How-to Question, Billing, Complaint, Data Issue, Other)\n- Complexity (Simple: standard response / Complex: needs investigation / Escalate: requires specialist)\n- Suggested owner type (Front-line / Technical / Management)\n- Brief note on reasoning\n\nAlso identify any patterns across the batch (multiple tickets with the same issue, unusual volume in a category).",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "Draft Response Templates",
+      "description": "ANTON drafts response templates for Simple and P2/P3 tickets.",
+      "index": 1,
+      "type": "claude",
+      "config": {
+        "areaId": "comms-pr",
+        "moduleId": "stakeholder-messaging",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Based on the ticket triage:\n{{step-0.output}}\n\nDraft response templates for all Simple tickets and P2/P3 tickets. For each response:\n- Address the customer's actual question or complaint\n- Be professional, empathetic, and helpful\n- Include specific next steps or resolution information\n- Flag any responses that require information you do not have (mark as [NEEDS INFO: ...])\n\nDo NOT draft responses for Complex or Escalate tickets — mark these as [REQUIRES HUMAN RESPONSE].",
+        "outputFormat": "policy-document",
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Support Lead Review",
+      "description": "Review drafted responses and approve, edit, or redirect complex tickets.",
+      "index": 2,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the triage and drafted responses. Approve responses for sending, edit where needed, and decide how to handle escalated tickets.",
+        "checkpointContext": "step-0,step-1",
+        "inputFields": [
+          {
+            "id": "response_decisions",
+            "label": "Response approvals and edits",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "For each ticket: [Ticket ID] — Approve / Edit (paste correction) / Reassign to [person/team]\n\nFor escalations: [Ticket ID] — Assign to [specialist] / Will handle personally"
+          },
+          {
+            "id": "pattern_action",
+            "label": "Action on any patterns identified",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "If ANTON identified ticket patterns, describe any systemic actions you want to take..."
+          }
+        ],
+        "dependsOn": ["step-1"]
+      }
+    }
+  ]
+}

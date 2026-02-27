@@ -115,7 +115,7 @@ export function IdentityPanel() {
             id="profile-company"
             type="text"
             className={inputClass}
-            placeholder="e.g., Advisense"
+            placeholder="e.g., openEXPERT"
             value={profile.company}
             onChange={(e) => handleChange('company', e.target.value)}
           />

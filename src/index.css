@@ -99,7 +99,7 @@ html.light {
 /* ═══════════════════════════════════════════════════════════════
    Corporate blue theme overrides
    Applied when html.corporate class is present.
-   Navy blue headings (Montserrat), Aptos body text, neutral blue cards.
+   Navy blue headings (Montserrat), Inter body text, neutral blue cards.
    ═══════════════════════════════════════════════════════════════ */
 html.corporate {
   /* Backgrounds — cool blue-gray tint (hue 250) */
@@ -146,8 +146,6 @@ html.corporate {
   --color-popover: var(--color-adv-card);
   --color-popover-foreground: var(--color-adv-off-white);
 
-  /* Body font → Aptos (Windows) with Calibri fallback */
-  --font-sans: 'Aptos', 'Calibri', system-ui, sans-serif;
 }
 
 /* Montserrat headings in corporate mode */

@@ -26,7 +26,7 @@ export function createCommandRoutes(db: Database.Database, anthropic: Anthropic 
   });
 
   router.post('/commands/execute', async (req, res) => {
-    const { input } = req.body;
+    const { input, parsed: preParsed } = req.body;
     if (!input) {
       return res.status(400).json({ error: 'input required' });
     }
@@ -36,7 +36,8 @@ export function createCommandRoutes(db: Database.Database, anthropic: Anthropic 
     }
 
     try {
-      const parsed = await parseCommand(input, anthropic);
+      // If caller already parsed (e.g. after confirmation step), skip re-parsing
+      const parsed = preParsed ?? await parseCommand(input, anthropic);
       const result = await executeCommand(parsed, {
         db,
         userId: (req as any).user?.id

@@ -9,6 +9,128 @@
 
 import PDFDocument from 'pdfkit';
 
+// ── Locale-aware export section labels ───────────────────────
+const EXPORT_LABELS: Record<string, Record<string, string>> = {
+  en: {
+    executiveSummary: 'Executive Summary',
+    analysis: 'Analysis',
+    recommendations: 'Recommendations',
+    introduction: 'Introduction',
+    conclusion: 'Conclusion',
+    references: 'References',
+    methodology: 'Methodology',
+    background: 'Background',
+    keyFindings: 'Key Findings',
+  },
+  ar: {
+    executiveSummary: 'الملخص التنفيذي',
+    analysis: 'التحليل',
+    recommendations: 'التوصيات',
+    introduction: 'مقدمة',
+    conclusion: 'خاتمة',
+    references: 'المراجع',
+    methodology: 'المنهجية',
+    background: 'الخلفية',
+    keyFindings: 'النتائج الرئيسية',
+  },
+  de: {
+    executiveSummary: 'Zusammenfassung',
+    analysis: 'Analyse',
+    recommendations: 'Empfehlungen',
+    introduction: 'Einleitung',
+    conclusion: 'Fazit',
+    references: 'Referenzen',
+    methodology: 'Methodik',
+    background: 'Hintergrund',
+    keyFindings: 'Wichtigste Erkenntnisse',
+  },
+  es: {
+    executiveSummary: 'Resumen Ejecutivo',
+    analysis: 'Análisis',
+    recommendations: 'Recomendaciones',
+    introduction: 'Introducción',
+    conclusion: 'Conclusión',
+    references: 'Referencias',
+    methodology: 'Metodología',
+    background: 'Antecedentes',
+    keyFindings: 'Hallazgos Clave',
+  },
+  fr: {
+    executiveSummary: 'Résumé Exécutif',
+    analysis: 'Analyse',
+    recommendations: 'Recommandations',
+    introduction: 'Introduction',
+    conclusion: 'Conclusion',
+    references: 'Références',
+    methodology: 'Méthodologie',
+    background: 'Contexte',
+    keyFindings: 'Conclusions Clés',
+  },
+  hi: {
+    executiveSummary: 'कार्यकारी सारांश',
+    analysis: 'विश्लेषण',
+    recommendations: 'सिफारिशें',
+    introduction: 'परिचय',
+    conclusion: 'निष्कर्ष',
+    references: 'संदर्भ',
+    methodology: 'पद्धति',
+    background: 'पृष्ठभूमि',
+    keyFindings: 'मुख्य निष्कर्ष',
+  },
+  ja: {
+    executiveSummary: 'エグゼクティブサマリー',
+    analysis: '分析',
+    recommendations: '推奨事項',
+    introduction: 'はじめに',
+    conclusion: '結論',
+    references: '参考文献',
+    methodology: '方法論',
+    background: '背景',
+    keyFindings: '主な発見事項',
+  },
+  ko: {
+    executiveSummary: '경영진 요약',
+    analysis: '분석',
+    recommendations: '권고사항',
+    introduction: '서론',
+    conclusion: '결론',
+    references: '참고문헌',
+    methodology: '방법론',
+    background: '배경',
+    keyFindings: '주요 결과',
+  },
+  pt: {
+    executiveSummary: 'Resumo Executivo',
+    analysis: 'Análise',
+    recommendations: 'Recomendações',
+    introduction: 'Introdução',
+    conclusion: 'Conclusão',
+    references: 'Referências',
+    methodology: 'Metodologia',
+    background: 'Contexto',
+    keyFindings: 'Principais Conclusões',
+  },
+  'zh-CN': {
+    executiveSummary: '执行摘要',
+    analysis: '分析',
+    recommendations: '建议',
+    introduction: '介绍',
+    conclusion: '结论',
+    references: '参考文献',
+    methodology: '方法论',
+    background: '背景',
+    keyFindings: '主要发现',
+  },
+};
+
+/**
+ * Returns localised section header labels for the given language.
+ * Falls back to English for any language not in the map.
+ */
+export function getExportLabels(language: string): Record<string, string> {
+  return EXPORT_LABELS[language] ?? EXPORT_LABELS['en'];
+}
+
 // ── Brand config type ────────────────────────────────────────
 interface BrandFontEntry { family: string; size: string; color: string }
 interface BrandConfig {
@@ -102,9 +224,9 @@ export function generatePdf(
       size: 'A4',
       margins: { top: PAGE.margin, bottom: PAGE.margin, left: PAGE.margin, right: PAGE.margin },
       info: {
-        Title:   metadata.title  || 'openEXPERT Output',
-        Author:  metadata.author || 'openEXPERT by ANTON',
-        Creator: 'openEXPERT by ANTON',
+        Title:   metadata.title  || 'ANTON Output',
+        Author:  metadata.author || 'ANTON by openEXPERT',
+        Creator: 'ANTON by openEXPERT',
       },
     });
 
@@ -118,21 +240,21 @@ export function generatePdf(
     // ── Header bar ───────────────────────────────────────────
     doc.rect(0, 0, PAGE.width, 40).fill(DEF_COLOR.dark2);
     doc.fillColor(ps.accent).font(FONT.bold).fontSize(11)
-      .text('openEXPERT', PAGE.margin, 13);
+      .text('ANTON', PAGE.margin, 13);
     doc.fillColor(DEF_COLOR.gray).font(FONT.regular).fontSize(9)
-      .text('by ANTON', PAGE.margin + 85, 15);
+      .text('by openEXPERT', PAGE.margin + 55, 15);
     doc.fillColor(DEF_COLOR.grayMed).font(FONT.regular).fontSize(8)
       .text(
         new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
         0, 15, { align: 'right', width: PAGE.width - PAGE.margin }
       );
 
-    doc.moveDown(2);
+    doc.moveDown(2.5);
 
     // ── Document title ───────────────────────────────────────
     if (metadata.title) {
       doc.fillColor(ps.accent).font(FONT.bold).fontSize(20)
-        .text(metadata.title, { align: 'left' })
+        .text(metadata.title, PAGE.margin, doc.y, { width: bodyWidth, align: 'left' })
         .moveDown(0.5);
       doc.moveTo(PAGE.margin, doc.y)
         .lineTo(PAGE.margin + bodyWidth, doc.y)
@@ -152,17 +274,27 @@ export function generatePdf(
       }
     }
 
-    function renderInline(text: string, opts: { fontSize?: number } = {}) {
+    function renderInline(text: string, opts: { fontSize?: number; x?: number; width?: number } = {}) {
       const segments = parseInline(text);
+      if (segments.length === 0) return;
       const fs = opts.fontSize ?? 10;
-      for (const seg of segments) {
+      const startX = opts.x ?? PAGE.margin;
+      const w = opts.width ?? bodyWidth;
+      for (let si = 0; si < segments.length; si++) {
+        const seg = segments[si];
+        const isLast = si === segments.length - 1;
         doc.fillColor(ps.bodyColor)
           .font(seg.bold ? FONT.bold : seg.italic ? FONT.italic : FONT.regular)
           .fontSize(fs);
-        doc.text(seg.text, { continued: true, lineGap: 2 });
+        if (si === 0) {
+          // Anchor first segment with explicit position + width so we never inherit
+          // a narrow column from a prior PDFKit continued call (e.g. bullet dot).
+          // continued: false on the last segment so PDFKit properly advances doc.y.
+          doc.text(seg.text, startX, doc.y, { continued: !isLast, lineGap: 2, width: w });
+        } else {
+          doc.text(seg.text, { continued: !isLast, lineGap: 2 });
+        }
       }
-      // End the continued text
-      doc.text('', { continued: false });
     }
 
     while (i < lines.length) {
@@ -173,7 +305,7 @@ export function generatePdf(
         ensureSpace(80);
         doc.moveDown(0.8);
         doc.fillColor(ps.h1Color).font(FONT.bold).fontSize(ps.h1Size)
-          .text(line.slice(2).trim(), { lineGap: 4 });
+          .text(line.slice(2).trim(), PAGE.margin, doc.y, { lineGap: 4, width: bodyWidth });
         doc.moveTo(PAGE.margin, doc.y + 2)
           .lineTo(PAGE.margin + bodyWidth, doc.y + 2)
           .strokeColor(ps.accent).lineWidth(1).stroke();
@@ -186,7 +318,7 @@ export function generatePdf(
         ensureSpace(60);
         doc.moveDown(0.6);
         doc.fillColor(ps.h2Color).font(FONT.bold).fontSize(ps.h2Size)
-          .text(line.slice(3).trim(), { lineGap: 3 });
+          .text(line.slice(3).trim(), PAGE.margin, doc.y, { lineGap: 3, width: bodyWidth });
         doc.moveDown(0.4);
         i++; continue;
       }
@@ -196,7 +328,7 @@ export function generatePdf(
         ensureSpace(40);
         doc.moveDown(0.4);
         doc.fillColor(ps.h3Color).font(FONT.bold).fontSize(ps.h3Size)
-          .text(line.slice(4).trim(), { lineGap: 2 });
+          .text(line.slice(4).trim(), PAGE.margin, doc.y, { lineGap: 2, width: bodyWidth });
         doc.moveDown(0.3);
         i++; continue;
       }
@@ -204,7 +336,7 @@ export function generatePdf(
       // H4
       if (line.startsWith('#### ')) {
         doc.fillColor(ps.h4Color).font(FONT.bold).fontSize(10)
-          .text(line.slice(5).trim(), { lineGap: 2 });
+          .text(line.slice(5).trim(), PAGE.margin, doc.y, { lineGap: 2, width: bodyWidth });
         i++; continue;
       }
 
@@ -231,11 +363,13 @@ export function generatePdf(
           const colCount = parsed.headers.length;
           const colW = bodyWidth / colCount;
 
+          const stripMd = (s: string) => s.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
+
           // Header
           doc.rect(PAGE.margin, doc.y, bodyWidth, 20).fill(DEF_COLOR.dark2);
           parsed.headers.forEach((h, ci) => {
             doc.fillColor(ps.accent).font(FONT.bold).fontSize(8)
-              .text(h, PAGE.margin + colW * ci + 4, doc.y - 15, {
+              .text(stripMd(h), PAGE.margin + colW * ci + 4, doc.y - 15, {
                 width: colW - 8, height: 18, ellipsis: true,
               });
           });
@@ -249,7 +383,7 @@ export function generatePdf(
             doc.rect(PAGE.margin, rowY, bodyWidth, 18).fill(bg);
             cells.forEach((cell, ci) => {
               doc.fillColor(ps.bodyColor).font(FONT.regular).fontSize(8)
-                .text(cell, PAGE.margin + colW * ci + 4, rowY + 4, {
+                .text(stripMd(cell), PAGE.margin + colW * ci + 4, rowY + 4, {
                   width: colW - 8, height: 14, ellipsis: true,
                 });
             });
@@ -263,12 +397,37 @@ export function generatePdf(
       // Bullet
       if (line.match(/^[\s]*[-*]\s+/)) {
         const depth = (line.match(/^(\s*)/) || ['', ''])[1].length;
-        const text = line.replace(/^[\s]*[-*]\s+/, '');
+        const rawText = line.replace(/^[\s]*[-*]\s+/, '');
         const indent = PAGE.margin + depth * 10;
+        const dotWidth = 16;
+        const textX = indent + dotWidth;
+        const textWidth = PAGE.margin + bodyWidth - textX;
+        const bulletY = doc.y;
+        // Render dot at absolute position (advances doc.y by one line)
         doc.fillColor(ps.accent).font(FONT.bold).fontSize(10)
-          .text('•', indent, doc.y, { continued: true, width: 14 });
-        doc.fillColor(ps.bodyColor).font(FONT.regular).fontSize(10)
-          .text(' ' + text, { lineGap: 2, width: bodyWidth - depth * 10 - 14 });
+          .text('•', indent, bulletY, { width: dotWidth });
+        // Reset y to same line so text sits beside the dot
+        doc.y = bulletY;
+        // renderInline handles **bold** / *italic* and starts at explicit x/width
+        renderInline(rawText, { x: textX, width: textWidth });
+        i++; continue;
+      }
+
+      // Numbered list (1. 2. 3. …)
+      if (line.match(/^\s*\d+\.\s+/)) {
+        const depth = (line.match(/^(\s*)/) || ['', ''])[1].length;
+        const numMatch = line.match(/^\s*(\d+)\.\s+/);
+        const num = numMatch ? numMatch[1] : '1';
+        const rawText = line.replace(/^\s*\d+\.\s+/, '');
+        const indent = PAGE.margin + depth * 10;
+        const numWidth = 20;
+        const textX = indent + numWidth;
+        const textWidth = PAGE.margin + bodyWidth - textX;
+        const listY = doc.y;
+        doc.fillColor(ps.accent).font(FONT.bold).fontSize(10)
+          .text(`${num}.`, indent, listY, { width: numWidth });
+        doc.y = listY;
+        renderInline(rawText, { x: textX, width: textWidth });
         i++; continue;
       }
 
@@ -292,7 +451,7 @@ export function generatePdf(
       doc.rect(0, PAGE.height - 30, PAGE.width, 30).fill(DEF_COLOR.dark2);
       doc.fillColor(DEF_COLOR.grayMed).font(FONT.regular).fontSize(8)
         .text(
-          `openEXPERT by ANTON  |  Page ${p + 1} of ${pages.count}`,
+          `ANTON by openEXPERT  |  Page ${p + 1} of ${pages.count}`,
           PAGE.margin, PAGE.height - 18, { align: 'center', width: bodyWidth }
         );
     }

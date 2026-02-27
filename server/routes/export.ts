@@ -28,7 +28,7 @@ export function createExportRouter(db: Database.Database): Router {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const basename = (metadata?.filename as string) || `openexpert-${timestamp}`;
       const title    = (metadata?.title  as string) || basename;
-      const author   = (metadata?.author as string) || 'openEXPERT by ANTON';
+      const author   = (metadata?.author as string) || 'ANTON by openEXPERT';
 
       // Load brand config from user profile
       let brandConfig = null;
@@ -157,6 +157,124 @@ export function createExportRouter(db: Database.Database): Router {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Template export failed';
       console.error('[export/with-template] Error:', message);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  // POST /api/export/trust-certificate — generate a quality trust certificate PDF for a session
+  router.post('/export/trust-certificate', async (req, res) => {
+    try {
+      const { sessionId } = req.body as { sessionId?: string };
+      if (!sessionId) {
+        res.status(400).json({ error: 'sessionId is required' });
+        return;
+      }
+
+      // Fetch session row
+      const session = db.prepare('SELECT id, module_id, title, config, created_at FROM sessions WHERE id = ?').get(sessionId) as
+        | { id: string; module_id: string | null; title: string | null; config: string | null; created_at: string }
+        | undefined;
+
+      if (!session) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      // Parse config for model info
+      let modelUsed = 'Unknown';
+      try {
+        const cfg = session.config ? JSON.parse(session.config) : {};
+        if (cfg.model) modelUsed = cfg.model;
+      } catch { /* ignore */ }
+
+      // Fetch latest quality score for this session
+      const qualityRow = db.prepare(
+        `SELECT score_overall, score_completeness, score_accuracy, score_structure, score_actionability, score_citations, scored_at
+         FROM quality_scores WHERE session_id = ? ORDER BY scored_at DESC LIMIT 1`
+      ).get(sessionId) as {
+        score_overall: number; score_completeness: number | null; score_accuracy: number | null;
+        score_structure: number | null; score_actionability: number | null; score_citations: number | null;
+        scored_at: string;
+      } | undefined;
+
+      // Fetch user feedback for this session
+      const feedbackRows = db.prepare(
+        `SELECT rating, comment FROM output_feedback WHERE session_id = ? ORDER BY created_at DESC LIMIT 5`
+      ).all(sessionId) as Array<{ rating: number; comment: string | null }>;
+
+      const avgRating = feedbackRows.length > 0
+        ? (feedbackRows.reduce((s, r) => s + r.rating, 0) / feedbackRows.length).toFixed(1)
+        : null;
+
+      const stars = (n: number) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+      const fmt = (v: number | null | undefined) => v != null ? `${v.toFixed(1)} / 10` : '—';
+      const certDate = new Date().toISOString().split('T')[0];
+      const moduleLabel = (session.module_id ?? 'General').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      const sessionTitle = session.title || session.id;
+
+      const markdown = [
+        `# ANTON Quality Certificate`,
+        ``,
+        `| | |`,
+        `|---|---|`,
+        `| **Session** | ${sessionTitle} |`,
+        `| **Module** | ${moduleLabel} |`,
+        `| **Model** | ${modelUsed} |`,
+        `| **Session Date** | ${session.created_at.split('T')[0]} |`,
+        `| **Certificate Date** | ${certDate} |`,
+        ``,
+        `---`,
+        ``,
+        ...(qualityRow ? [
+          `## Automated Quality Assessment`,
+          ``,
+          `| Dimension | Score |`,
+          `|---|---|`,
+          `| **Overall** | **${fmt(qualityRow.score_overall)}** |`,
+          `| Completeness | ${fmt(qualityRow.score_completeness)} |`,
+          `| Accuracy | ${fmt(qualityRow.score_accuracy)} |`,
+          `| Structure | ${fmt(qualityRow.score_structure)} |`,
+          `| Actionability | ${fmt(qualityRow.score_actionability)} |`,
+          `| Citations | ${fmt(qualityRow.score_citations)} |`,
+          ``,
+          `*Assessed: ${qualityRow.scored_at.split('T')[0]}*`,
+          ``,
+          `---`,
+          ``,
+        ] : [
+          `## Automated Quality Assessment`,
+          ``,
+          `*No automated quality score available for this session.*`,
+          ``,
+          `---`,
+          ``,
+        ]),
+        ...(avgRating != null ? [
+          `## User Feedback`,
+          ``,
+          `${stars(parseFloat(avgRating))} **${avgRating} / 5** (${feedbackRows.length} rating${feedbackRows.length !== 1 ? 's' : ''})`,
+          ``,
+          ...feedbackRows.filter(r => r.comment).map(r => `> "${r.comment}"`),
+          ``,
+          `---`,
+          ``,
+        ] : []),
+        `*This certificate was automatically generated by ANTON on ${certDate}.*`,
+        `*Quality scores reflect automated assessment by Claude Haiku across six dimensions.*`,
+        `*This certificate does not constitute professional advice.*`,
+      ].join('\n');
+
+      const brandConfig: null = null; // use defaults
+      const buffer = await generatePdf(markdown, { title: `Trust Certificate — ${sessionTitle}`, author: 'ANTON by openEXPERT' }, brandConfig);
+
+      const filename = `trust-certificate-${sessionId.slice(0, 8)}-${certDate}.pdf`;
+      await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Trust certificate generation failed';
+      console.error('[export/trust-certificate] Error:', message);
       res.status(500).json({ error: message });
     }
   });

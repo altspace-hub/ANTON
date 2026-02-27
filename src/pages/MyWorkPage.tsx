@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import {
   Search, Clock, ArrowRight, Trash2, Pencil, Check, X,
@@ -47,16 +48,19 @@ const iconBgMap: Record<string, string> = {
   'adv-red':   'bg-adv-red/10 text-adv-red',
 };
 
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+function useFormatRelativeTime() {
+  const { t } = useTranslation();
+  return function formatRelativeTime(dateStr: string): string {
+    const date = new Date(dateStr);
+    const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (diffMins < 1) return t('time.justNow');
+    if (diffMins < 60) return t('time.minutesAgo', { count: diffMins });
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return t('time.hoursAgo', { count: diffHours });
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return t('time.daysAgo', { count: diffDays });
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  };
 }
 
 function formatSessionCost(session: Session): string | null {
@@ -79,6 +83,8 @@ type TimeFilter = 'all' | 'today' | 'week' | 'month';
 type SortMode = 'recent' | 'most-used';
 
 export default function MyWorkPage() {
+  const { t } = useTranslation();
+  const formatRelativeTime = useFormatRelativeTime();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -242,18 +248,18 @@ export default function MyWorkPage() {
   }
 
   const timeButtons: { value: TimeFilter; label: string }[] = [
-    { value: 'all', label: 'All' },
-    { value: 'today', label: 'Today' },
-    { value: 'week', label: 'This Week' },
-    { value: 'month', label: 'This Month' },
+    { value: 'all', label: t('myWork.filterAll') },
+    { value: 'today', label: t('myWork.filterToday') },
+    { value: 'week', label: t('myWork.filterThisWeek') },
+    { value: 'month', label: t('myWork.filterThisMonth') },
   ];
 
   return (
     <div className="mx-auto max-w-4xl">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-adv-white">My Work</h1>
-        <p className="mt-1 text-sm text-adv-gray">Pick up where you left off</p>
+        <h1 className="text-2xl font-bold text-adv-white">{t('myWork.title')}</h1>
+        <p className="mt-1 text-sm text-adv-gray">{t('myWork.subtitle')}</p>
       </div>
 
       {/* Search */}
@@ -263,7 +269,7 @@ export default function MyWorkPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search sessions by title or note..."
+          placeholder={t('myWork.searchPlaceholder')}
           className="w-full rounded-xl border border-border bg-adv-card py-2.5 pl-9 pr-9 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
         />
         {search && (
@@ -285,7 +291,7 @@ export default function MyWorkPage() {
             onChange={(e) => setModuleFilter(e.target.value)}
             className="appearance-none rounded-lg border border-border bg-adv-card py-1.5 pl-3 pr-8 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
           >
-            <option value="">All Modules</option>
+            <option value="">{t('myWork.allModules')}</option>
             {usedModuleIds.map((mid) => {
               const mod = MODULES.find((m) => m.id === mid);
               return (
@@ -322,8 +328,8 @@ export default function MyWorkPage() {
             onChange={(e) => setSortMode(e.target.value as SortMode)}
             className="appearance-none rounded-lg border border-border bg-adv-card py-1.5 pl-3 pr-8 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
           >
-            <option value="recent">Most Recent</option>
-            <option value="most-used">Most Used</option>
+            <option value="recent">{t('myWork.sortMostRecent')}</option>
+            <option value="most-used">{t('myWork.sortMostUsed')}</option>
           </select>
           <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray-med" />
         </div>
@@ -335,15 +341,15 @@ export default function MyWorkPage() {
           <MessageSquare className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
           <p className="text-sm text-adv-gray-med">
             {debouncedSearch || moduleFilter || timeFilter !== 'all'
-              ? 'No sessions match your filters.'
-              : 'No sessions yet. Start working with any module to see your work here.'}
+              ? t('myWork.noSessionsMatch')
+              : t('myWork.noSessionsYet')}
           </p>
           {(debouncedSearch || moduleFilter || timeFilter !== 'all') && (
             <button
               onClick={() => { setSearch(''); setModuleFilter(''); setTimeFilter('all'); }}
               className="mt-2 text-xs text-adv-teal hover:underline"
             >
-              Clear all filters
+              {t('myWork.clearAllFilters')}
             </button>
           )}
         </div>
@@ -359,7 +365,11 @@ export default function MyWorkPage() {
             return (
               <Link
                 key={session.id}
-                to={`/module/${session.module_id}?session=${session.id}`}
+                to={
+                  session.module_id === 'open-chat'
+                    ? `/prompt?session=${session.id}`
+                    : `/module/${session.module_id}?session=${session.id}`
+                }
                 className={`group relative flex items-start gap-4 rounded-xl border border-border border-l-2 ${accentClass} bg-adv-card p-4 transition-all hover:border-adv-teal/30 hover:shadow-lg`}
               >
                 {/* Icon */}
@@ -402,7 +412,7 @@ export default function MyWorkPage() {
                   <p className="mt-0.5 text-xs text-adv-gray-med">
                     {mod?.shortLabel || session.module_id}
                     {costStr && <> · {costStr}</>}
-                    {session.message_count ? <> · {session.message_count} messages</> : null}
+                    {session.message_count ? <> · {session.message_count} {t('myWork.messages')}</> : null}
                   </p>
 
                   {/* Note */}
@@ -416,7 +426,7 @@ export default function MyWorkPage() {
                           onChange={(e) => setNoteValue(e.target.value)}
                           onKeyDown={(e) => handleNoteKey(e, session.id)}
                           onBlur={() => commitNote(session.id)}
-                          placeholder="Add a note..."
+                          placeholder={t('myWork.addNote')}
                           className="min-w-0 flex-1 rounded border border-adv-gold/50 bg-adv-dark px-1.5 py-0.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:outline-none"
                         />
                         <button onClick={(e) => { e.preventDefault(); commitNote(session.id); }} className="text-adv-gold hover:text-adv-gold/80">
@@ -440,7 +450,7 @@ export default function MyWorkPage() {
                         className="flex items-center gap-1 text-xs text-adv-gray-med/50 opacity-0 group-hover:opacity-100 hover:text-adv-gold transition-all"
                       >
                         <StickyNote className="h-3 w-3 shrink-0" />
-                        Add a note...
+                        {t('myWork.addNote')}
                       </button>
                     )}
                   </div>
@@ -464,7 +474,7 @@ export default function MyWorkPage() {
                             className="flex items-center gap-1 text-[10px] text-adv-gray-med/50 opacity-0 group-hover:opacity-100 hover:text-adv-teal transition-all"
                           >
                             <FolderKanban className="h-3 w-3" />
-                            Add to project
+                            {t('myWork.addToProject')}
                           </button>
                         )}
                         {assigningProjectId === session.id && (
@@ -477,7 +487,7 @@ export default function MyWorkPage() {
                                 onClick={(e) => doAssign(e, session.id, null)}
                                 className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-adv-red hover:bg-adv-red/10 transition-colors"
                               >
-                                Remove from project
+                                {t('myWork.removeFromProject')}
                               </button>
                             )}
                             {projects.map((p) => (
@@ -495,7 +505,7 @@ export default function MyWorkPage() {
                               </button>
                             ))}
                             {projects.length === 0 && (
-                              <p className="px-3 py-2 text-xs text-adv-gray-med">No projects yet</p>
+                              <p className="px-3 py-2 text-xs text-adv-gray-med">{t('myWork.noProjects')}</p>
                             )}
                           </div>
                         )}
@@ -513,18 +523,18 @@ export default function MyWorkPage() {
 
                 {/* Hover actions */}
                 {renamingId !== session.id && editingNoteId !== session.id && (
-                  <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute right-3 top-9 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => startRename(e, session)}
                       className="rounded p-1 text-adv-gray hover:text-adv-teal transition-colors"
-                      title="Rename"
+                      title={t('myWork.actionRename')}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={(e) => handleDelete(e, session.id)}
                       className="rounded p-1 text-adv-gray hover:text-adv-red transition-colors"
-                      title="Delete"
+                      title={t('myWork.actionDelete')}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -544,14 +554,14 @@ export default function MyWorkPage() {
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-adv-card px-4 py-2 text-sm text-adv-gray hover:text-adv-teal hover:border-adv-teal/30 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Loading...' : 'Load More'}
+            {loading ? t('common.loading') : t('myWork.loadMore')}
             {!loading && <ArrowRight className="h-3.5 w-3.5" />}
           </button>
         </div>
       )}
 
       {loading && sessions.length === 0 && (
-        <div className="mt-8 text-center text-sm text-adv-gray-med">Loading your sessions...</div>
+        <div className="mt-8 text-center text-sm text-adv-gray-med">{t('myWork.loadingSessions')}</div>
       )}
     </div>
   );

@@ -1471,7 +1471,7 @@ export default function ScriptMediumPage() {
             </div>
           ) : (
             /* ── Normal Three-Column Layout ─────────────────────────────── */
-            <div className="grid grid-cols-12 gap-4" style={{ minHeight: '500px' }}>
+            <div className="grid grid-cols-12 gap-4" style={{ minHeight: '600px' }}>
 
               {/* ── Left column: File Manifest (3/12) ─────────────────────── */}
               <div className="col-span-3">
@@ -1508,8 +1508,8 @@ export default function ScriptMediumPage() {
                 </div>
               </div>
 
-              {/* ── Center column: Code Viewer (5/12) ─────────────────────── */}
-              <div className="col-span-5">
+              {/* ── Center column: Code Viewer (4/12) ─────────────────────── */}
+              <div className="col-span-4">
                 {selectedFile && selectedFileContent ? (
                   <CodeViewer
                     code={selectedFileContent}
@@ -1538,8 +1538,8 @@ export default function ScriptMediumPage() {
                 )}
               </div>
 
-              {/* ── Right column: Architecture Notes / Streaming (4/12) ──── */}
-              <div className="col-span-4 flex flex-col gap-4">
+              {/* ── Right column: Architecture Notes / Streaming (5/12) ──── */}
+              <div className="col-span-5 flex flex-col gap-4">
                 {/* Architecture Notes (shown after streaming completes) */}
                 {generateDone && architectureNotes && (
                   <div className="rounded-lg border border-border bg-adv-card">
@@ -1549,7 +1549,7 @@ export default function ScriptMediumPage() {
                         Architecture Notes
                       </h3>
                     </div>
-                    <div className="max-h-[300px] overflow-auto p-4">
+                    <div className="max-h-[200px] overflow-auto p-4">
                       <div className="prose-output max-w-none text-sm text-adv-off-white whitespace-pre-wrap leading-relaxed">
                         {architectureNotes}
                       </div>
@@ -1565,7 +1565,7 @@ export default function ScriptMediumPage() {
                       {isStreaming ? 'Generating...' : 'Conversation'}
                     </h3>
                   </div>
-                  <div className="max-h-[400px] overflow-auto p-4">
+                  <div className="max-h-[600px] overflow-auto p-4">
                     {messages.length === 0 && !isStreaming ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="text-center">

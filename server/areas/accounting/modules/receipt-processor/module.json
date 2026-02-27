@@ -40,7 +40,7 @@
       "id": "company_name",
       "type": "text",
       "label": "Company name",
-      "placeholder": "e.g. Advisense AB"
+      "placeholder": "e.g. openEXPERT AB"
     },
     {
       "id": "employee_name",

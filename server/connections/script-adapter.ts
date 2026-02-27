@@ -74,7 +74,9 @@ export async function runScript(
   };
 
   for (const [key, value] of Object.entries(parameters)) {
-    env[`PARAM_${key.toUpperCase()}`] = String(value);
+    const safeKey = key.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+    const safeValue = String(value).slice(0, 10_000);
+    env[`PARAM_${safeKey}`] = safeValue;
   }
 
   // Ensure output directory exists

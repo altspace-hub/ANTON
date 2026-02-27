@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useClaude } from '@/hooks/useClaude';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { streamMessage, fetchSessions, fetchSession, deleteSession } from '@/lib/api';
@@ -14,6 +15,7 @@ import FileUploader from '@/components/shared/FileUploader';
 import ExportBar from '@/components/shared/ExportBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
 import SkillAttacher from '@/components/platform/SkillAttacher';
+import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -59,15 +61,19 @@ const emptyKnowledgeSources: KnowledgeSourceConfig = {
 type ImproveState = 'idle' | 'analyzing' | 'questions' | 'suggestions' | 'building';
 
 export default function PromptPage() {
+  const [searchParams] = useSearchParams();
+
   const {
     thinking, creativity, model, knowledgeSources, selectedOutputFormats,
     selectedPersonas, selectedSkills, multiPerspective, metaCognitiveEnabled,
     sessionId, systemPrompt: currentSystemPrompt,
     plainTextMode, structureReference, transparencyLevel, writingTone, emojiEnabled,
+    nativeReasoningEnabled,
     audience, channel, outputLanguage, uploadedFileIds,
     setThinking, setCreativity, setModel, setSystemPrompt,
     setKnowledgeSources, setSelectedOutputFormats,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, clearSession,
+    setTransparencyLevel, setWritingTone, setEmojiEnabled, setNativeReasoningEnabled,
     truncateMessagesAt,
     setModule, setAreaId, restoreSession,
   } = useSessionStore();
@@ -158,6 +164,13 @@ export default function PromptPage() {
       // Failed to restore — stay on current session
     }
   }, [sessionId, restoreSession, setModule, setSystemPrompt, setSelectedPersonas]);
+
+  // Restore session from ?session= URL param (e.g. when arriving from My Work)
+  useEffect(() => {
+    const sessionParam = searchParams.get('session');
+    if (sessionParam) handleRestoreSession(sessionParam);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Start a new chat
   const handleNewChat = useCallback(() => {
@@ -435,6 +448,19 @@ export default function PromptPage() {
             <KnowledgeSourcePanel config={knowledgeSources} onChange={setKnowledgeSources} />
             <OutputFormatSelector selected={selectedOutputFormats} onChange={setSelectedOutputFormats} />
             <SkillAttacher selected={selectedSkills} onChange={setSelectedSkills} />
+            <SessionTogglesPanel
+              writingTone={writingTone}
+              emojiEnabled={emojiEnabled}
+              metaCognitiveEnabled={metaCognitiveEnabled}
+              transparencyLevel={transparencyLevel}
+              nativeReasoningEnabled={nativeReasoningEnabled}
+              currentModel={model}
+              onWritingToneChange={setWritingTone}
+              onEmojiChange={setEmojiEnabled}
+              onMetaCognitiveChange={setMetaCognitiveEnabled}
+              onTransparencyChange={setTransparencyLevel}
+              onNativeReasoningChange={setNativeReasoningEnabled}
+            />
             <FileUploader files={files} onUpload={upload} onRemove={remove} />
           </div>
         </div>
@@ -529,6 +555,7 @@ export default function PromptPage() {
                 `Based on the following review feedback, please rewrite and improve your previous output. Address each point raised:\n\n${reviewText}`
               );
             }}
+            onUpgradeThinking={(level) => setThinking(level)}
           />
       )}
 

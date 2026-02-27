@@ -1,0 +1,87 @@
+{
+  "id": "coworker-tech-ops",
+  "name": "Morning Systems Health Check",
+  "description": "Daily morning health check for tech operations teams. Reviews overnight incidents and alerts, produces a structured health status report, and identifies items requiring immediate attention before the daily standup.",
+  "role_identity": "Tech Ops / Platform Engineer",
+  "icon": "Cpu",
+  "color": "adv-teal",
+  "tags": ["tech-ops", "monitoring", "incidents", "platform", "devops"],
+  "estimated_duration": "10-15 minutes",
+  "execution_mode": "guided",
+  "is_template": true,
+  "required_connections": [],
+  "input_parameters": [
+    { "id": "check_date", "label": "Check Date", "type": "text", "required": true, "placeholder": "e.g., 2026-02-19" },
+    { "id": "systems_monitored", "label": "Systems in Scope", "type": "text", "required": true, "placeholder": "e.g., Payment API, Auth Service, Data Pipeline, Core DB" },
+    { "id": "overnight_events", "label": "Overnight Events / Alerts", "type": "textarea", "required": true, "placeholder": "Paste overnight monitoring alerts, on-call log entries, or system events. Include: timestamp, system, event type, severity, and current status." }
+  ],
+  "steps": [
+    {
+      "id": "step-0",
+      "label": "Analyse Overnight Events",
+      "description": "ANTON analyses overnight alerts and events to identify incidents, patterns, and priority issues.",
+      "index": 0,
+      "type": "claude",
+      "config": {
+        "areaId": "project-mgmt",
+        "moduleId": "incident-report-processor",
+        "thinking": "think_hard",
+        "creativity": "strict",
+        "promptTemplate": "Analyse overnight system events for {{check_date}} across: {{systems_monitored}}.\n\nEvents:\n{{overnight_events}}\n\nProduce:\n1. System health summary (Green/Amber/Red per system)\n2. Incidents requiring immediate action (P1/P2)\n3. Incidents being monitored (P3/P4 — no immediate action)\n4. Resolved incidents (closed overnight)\n5. Patterns or trends worth noting\n6. Recommended first actions for the morning",
+        "outputFormat": "quick-briefing",
+        "dependsOn": []
+      }
+    },
+    {
+      "id": "step-1",
+      "label": "On-Call Engineer Review",
+      "description": "Review the health analysis, add context from direct system access, and decide on escalations.",
+      "index": 1,
+      "type": "checkpoint",
+      "config": {
+        "checkpointMessage": "Review the overnight health analysis. Confirm system statuses, add any context from direct monitoring access, and decide on escalations.",
+        "checkpointContext": "step-0",
+        "inputFields": [
+          {
+            "id": "status_corrections",
+            "label": "Status corrections or additional context",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "Any corrections to ANTON's analysis, additional context from live system checks, or items ANTON missed..."
+          },
+          {
+            "id": "escalations",
+            "label": "Escalations required",
+            "type": "textarea",
+            "required": false,
+            "placeholder": "List any items that need to be escalated immediately and to whom. Leave blank if no escalations needed."
+          },
+          {
+            "id": "overall_health",
+            "label": "Overall Platform Health",
+            "type": "select",
+            "required": true,
+            "options": ["All Green — no action required", "Amber — monitoring, no immediate impact", "Red — active incident, business impact", "Critical — major incident in progress"]
+          }
+        ],
+        "dependsOn": ["step-0"]
+      }
+    },
+    {
+      "id": "step-2",
+      "label": "Generate Standup Health Brief",
+      "description": "ANTON produces the morning health brief for the team standup and stakeholder notification.",
+      "index": 2,
+      "type": "claude",
+      "config": {
+        "areaId": "project-mgmt",
+        "moduleId": "status-reporting",
+        "thinking": "think",
+        "creativity": "balanced",
+        "promptTemplate": "Produce the {{check_date}} morning platform health brief.\n\nOvernight analysis: {{step-0.output}}\nEngineer corrections: {{step-1.status_corrections}}\nEscalations: {{step-1.escalations}}\nOverall health: {{step-1.overall_health}}\n\nGenerate a concise standup-ready brief: headline status, systems affected (if any), active incidents with ownership, items resolved overnight, and today's watchlist. Also produce a one-paragraph stakeholder notification for any Amber or Red items.",
+        "outputFormat": "quick-briefing",
+        "dependsOn": ["step-1"]
+      }
+    }
+  ]
+}

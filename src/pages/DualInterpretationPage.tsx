@@ -41,6 +41,7 @@ const EMPTY_KS = {
 type InputTab = 'paste' | 'url' | 'upload';
 
 export default function DualInterpretationPage() {
+  const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [activeTab, setActiveTab] = useState<InputTab>('paste');
   const [textContent, setTextContent] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -88,6 +89,7 @@ export default function DualInterpretationPage() {
           history: [],
           outputFormats: [],
           knowledgeSources: EMPTY_KS,
+          transparencyLevel,
           ...(hasFiles ? { uploadedFileIds } : {}),
         },
         controller.signal
@@ -197,6 +199,31 @@ export default function DualInterpretationPage() {
           >
             Upload Document
           </button>
+        </div>
+
+        {/* Transparency toggle */}
+        <div className="space-y-1">
+          <div className="text-[11px] text-adv-gray-med">Transparency</div>
+          <div className="flex gap-1.5">
+            {([
+              { level: 0 as const, label: 'Off' },
+              { level: 1 as const, label: 'Summary' },
+              { level: 2 as const, label: 'Detailed' },
+            ]).map(({ level, label }) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setTransparencyLevel(level)}
+                className={`flex-1 rounded-lg border px-2 py-1.5 text-xs transition-colors ${
+                  transparencyLevel === level
+                    ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
+                    : 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Input section */}
