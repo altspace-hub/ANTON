@@ -46,6 +46,16 @@ if not exist "node_modules\.bin\tsx" (
     )
 )
 
+if not exist "dist\client" (
+    echo   Building ANTON - this only happens once...
+    call pnpm run build
+    if errorlevel 1 (
+        echo   ERROR: Build failed.
+        pause
+        exit /b 1
+    )
+)
+
 start /min "" cmd /c "timeout /t 5 /nobreak >nul && start http://localhost:3001"
 
 echo   Starting server... your browser will open in a few seconds.

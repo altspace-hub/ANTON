@@ -44,6 +44,16 @@ if [ ! -f "node_modules/.bin/tsx" ]; then
     fi
 fi
 
+# Build client if no dist folder exists
+if [ ! -d "dist/client" ]; then
+    echo "  Building ANTON — this only happens once..."
+    pnpm run build
+    if [ $? -ne 0 ]; then
+        echo "  ERROR: Build failed."
+        exit 1
+    fi
+fi
+
 # Open browser after 5 seconds in the background
 (sleep 5 && (xdg-open http://localhost:3001 2>/dev/null || open http://localhost:3001 2>/dev/null)) &
 
