@@ -63,7 +63,7 @@ Create `server/areas/legal/modules/contract-summary/module.json`:
   "icon": "FileText",
   "description": "Extract key terms, obligations, risks, and red flags from any commercial contract.",
   "version": "1.0.0",
-  "author": "Advisense FCP Team",
+  "author": "Daniel Bardun & Futurechain",
 
   "defaultModel": "claude-opus-4-6",
   "defaultThinking": "think_hard",

@@ -93,8 +93,8 @@ Set up collections to automatically monitor folders:
 ```json
 {
   "watchDirectories": [
-    "/Users/daniel/Advisense/Regulations/AMLR",
-    "/Users/daniel/Advisense/Regulations/AMLA"
+    "/Users/daniel/Futurechain/Regulations/AMLR",
+    "/Users/daniel/Futurechain/Regulations/AMLA"
   ],
   "autoIndex": true
 }
@@ -490,4 +490,4 @@ For questions or issues:
 
 **Version:** 1.0
 **Last Updated:** 2026-02-19
-**Author:** Advisense FCP Team
+**Author:** Daniel Bardun & Futurechain

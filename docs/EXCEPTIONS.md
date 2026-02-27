@@ -7,7 +7,7 @@ This document tracks approved exceptions to the standard [Dependency Policy](DEP
 ### openexpert@0.1.0 - UNLICENSED
 - **Package**: openexpert (main application)
 - **License**: UNLICENSED
-- **Reason**: This is the main application package, not a dependency. The application itself is proprietary and internal to Advisense/FutureChain AB.
+- **Reason**: This is the main application package, not a dependency. The application itself is proprietary and internal to Futurechain.
 - **Risk**: None - this is our own codebase
 - **Approved by**: Development team
 - **Date**: 2026-02-19

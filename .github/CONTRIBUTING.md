@@ -232,7 +232,7 @@ If your module needs custom guided inputs beyond what `module.json` supports, cr
 ### Styling
 
 - Tailwind CSS utility classes only. No custom CSS files (except `src/index.css` for base styles).
-- Dark theme always. Use the Advisense colour tokens:
+- Dark theme always. Use the ANTON colour tokens:
   - `bg-adv-dark`, `bg-adv-card` for backgrounds
   - `text-adv-off-white`, `text-adv-gray` for text
   - `text-adv-teal`, `bg-adv-teal`, `border-adv-teal` for primary accents and interactive states
@@ -315,4 +315,4 @@ Use the GitHub issue templates:
 
 ## Questions?
 
-Open a GitHub Discussion or reach out to the Advisense FCP team. We are happy to help you get your contribution merged.
+Open a GitHub Discussion or reach out to the Daniel Bardun & Futurechain. We are happy to help you get your contribution merged.

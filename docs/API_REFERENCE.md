@@ -444,17 +444,17 @@ Returns the immediate contents of a directory.
 **Request body:**
 
 ```json
-{ "path": "/Users/daniel/Advisense/Regulations/AMLR" }
+{ "path": "/Users/daniel/Futurechain/Regulations/AMLR" }
 ```
 
 **Response `200`:**
 
 ```json
 {
-  "path": "/Users/daniel/Advisense/Regulations/AMLR",
+  "path": "/Users/daniel/Futurechain/Regulations/AMLR",
   "items": [
-    { "name": "AMLR-2024-1624-full.pdf", "path": "/Users/daniel/Advisense/Regulations/AMLR/AMLR-2024-1624-full.pdf", "isDirectory": false, "extension": ".pdf", "isSupported": true, "sizeBytes": 2097152 },
-    { "name": "RTS-drafts", "path": "/Users/daniel/Advisense/Regulations/AMLR/RTS-drafts", "isDirectory": true, "extension": null, "isSupported": false }
+    { "name": "AMLR-2024-1624-full.pdf", "path": "/Users/daniel/Futurechain/Regulations/AMLR/AMLR-2024-1624-full.pdf", "isDirectory": false, "extension": ".pdf", "isSupported": true, "sizeBytes": 2097152 },
+    { "name": "RTS-drafts", "path": "/Users/daniel/Futurechain/Regulations/AMLR/RTS-drafts", "isDirectory": true, "extension": null, "isSupported": false }
   ]
 }
 ```
@@ -469,7 +469,7 @@ Saves a folder path to SQLite so it is available across all sessions.
 
 ```json
 {
-  "path": "/Users/daniel/Advisense/Regulations/AMLR",
+  "path": "/Users/daniel/Futurechain/Regulations/AMLR",
   "label": "AMLR Regulation Texts"
 }
 ```
@@ -479,7 +479,7 @@ Saves a folder path to SQLite so it is available across all sessions.
 ```json
 {
   "id": "folder-uuid",
-  "path": "/Users/daniel/Advisense/Regulations/AMLR",
+  "path": "/Users/daniel/Futurechain/Regulations/AMLR",
   "label": "AMLR Regulation Texts",
   "registeredAt": "2026-02-25T10:00:00Z"
 }
@@ -496,7 +496,7 @@ Returns all folders registered by the current user.
 ```json
 {
   "folders": [
-    { "id": "folder-uuid", "path": "/Users/daniel/Advisense/Regulations/AMLR", "label": "AMLR Regulation Texts", "registeredAt": "2026-02-25T10:00:00Z" }
+    { "id": "folder-uuid", "path": "/Users/daniel/Futurechain/Regulations/AMLR", "label": "AMLR Regulation Texts", "registeredAt": "2026-02-25T10:00:00Z" }
   ]
 }
 ```
@@ -519,7 +519,7 @@ Scans a folder, extracts text from all supported files, and returns a full inven
 
 ```json
 {
-  "path": "/Users/daniel/Advisense/Regulations/AMLR",
+  "path": "/Users/daniel/Futurechain/Regulations/AMLR",
   "recursive": true,
   "filter": [".pdf", ".docx"]
 }
@@ -535,7 +535,7 @@ Scans a folder, extracts text from all supported files, and returns a full inven
 
 ```json
 {
-  "path": "/Users/daniel/Advisense/Regulations/AMLR",
+  "path": "/Users/daniel/Futurechain/Regulations/AMLR",
   "files": [
     { "name": "AMLR-2024-1624-full.pdf", "path": "...", "extension": ".pdf", "sizeBytes": 2097152, "wordCount": 89000, "tokenEstimate": 118667 }
   ],
@@ -862,7 +862,7 @@ All export endpoints accept a JSON body and return a file download with appropri
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| POST | `/api/export/docx` | Yes | Convert Markdown to DOCX with Advisense styling |
+| POST | `/api/export/docx` | Yes | Convert Markdown to DOCX with Futurechain styling |
 | POST | `/api/export/xlsx` | Yes | Convert structured data to formatted XLSX |
 | POST | `/api/export/pdf` | Yes | Convert Markdown to branded PDF via Puppeteer |
 | POST | `/api/export/pptx` | Yes | Convert a presentation outline to PPTX |
@@ -1247,7 +1247,7 @@ curl -X POST http://localhost:3001/api/files/upload \
 curl -X POST http://localhost:3001/api/folders/browse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
-  -d '{"path": "/Users/daniel/Advisense/Regulations/AMLR"}'
+  -d '{"path": "/Users/daniel/Futurechain/Regulations/AMLR"}'
 ```
 
 ---

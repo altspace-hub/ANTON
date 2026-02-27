@@ -292,7 +292,7 @@ For questions or issues with RAG:
 1. Check the **Context Budget** indicator
 2. Review the **Audit Log** for RAG entries
 3. Try hybrid mode (Mode 3 + Mode 5b) for comparison
-4. Contact your Advisense administrator
+4. Contact your system administrator
 
 ---
 
