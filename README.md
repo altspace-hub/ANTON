@@ -10,7 +10,7 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 **One-time setup (do this once on each new computer):**
 
-1. Install **Node.js 20+** — download the LTS installer from [nodejs.org](https://nodejs.org) and run it.
+1. Install **Node.js 22+** — download the LTS installer from [nodejs.org](https://nodejs.org) and run it.
    Already installed but on an older version? Upgrade via terminal:
    ```bash
    winget upgrade OpenJS.NodeJS.LTS
@@ -68,7 +68,7 @@ Data (sessions, uploads) persists in named Docker volumes across restarts.
 
 ### Option C — Native (pnpm)
 
-**Requirements:** Node.js 20+, pnpm
+**Requirements:** Node.js 22+, pnpm
 
 ```bash
 # 1. Clone and install
