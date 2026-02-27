@@ -18,6 +18,9 @@ to_git_repo/
 # Claude Code local memory (not for the repo)
 .claude/
 
+# Local-only scratch files and scripts (not for the repo)
+not_to_git/
+
 # Loose dev screenshots and generated output files in root
 pic_*.png
 anton_gui.png
