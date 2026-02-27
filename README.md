@@ -6,7 +6,20 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 ## Quick Start
 
-### Option A — Docker (recommended)
+### Option A — Windows launcher (easiest)
+
+**Requirements:** Node.js 20+, pnpm — no terminal knowledge needed.
+
+1. Copy `.env.example` to `.env` and add your `ANTHROPIC_API_KEY`
+2. Run `pnpm install` and `pnpm run db:init` once (first time only)
+3. Double-click **`START ANTON.bat`**
+4. ANTON opens automatically at [http://localhost:3001](http://localhost:3001)
+
+To stop: close the terminal window that opened.
+
+---
+
+### Option B — Docker
 
 **Requirements:** Docker Desktop
 
@@ -31,7 +44,7 @@ Data (sessions, uploads) persists in named Docker volumes across restarts.
 
 ---
 
-### Option B — Native (pnpm)
+### Option C — Native (pnpm)
 
 **Requirements:** Node.js 20+, pnpm
 

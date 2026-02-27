@@ -36,6 +36,14 @@ then walks through the conventions you need to contribute confidently.
 
 ## Quick Start
 
+### Windows — double-click launcher (recommended for non-developers)
+
+1. Copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY`
+2. Run once in a terminal: `pnpm install && pnpm run db:init`
+3. Double-click **`START ANTON.bat`** — ANTON starts and the browser opens automatically
+
+### Developers — terminal
+
 ```bash
 git clone <repo-url> openexpert && cd openexpert
 cp .env.example .env
