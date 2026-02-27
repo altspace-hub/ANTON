@@ -34,10 +34,12 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 **Every time you want to run ANTON:**
 
-6. Double-click **`START ANTON.bat`**
+6. Start ANTON:
+   - **Windows:** Double-click **`START ANTON.bat`**
+   - **Linux / Mac:** Run `./start-anton.sh` in a terminal
 7. ANTON opens automatically at [http://localhost:3001](http://localhost:3001)
 
-To stop: close the terminal window that opened.
+To stop: close the terminal window (Windows) or press `Ctrl+C` (Linux/Mac).
 
 ---
 
