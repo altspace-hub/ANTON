@@ -69,7 +69,7 @@
     "i18next-http-backend": "^3.0.2",
     "jsonwebtoken": "^9.0.3",
     "jszip": "^3.10.1",
-    "lucide-react": "^0.469.0",
+    "lucide-react": "^0.575.0",
     "mammoth": "^1.11.0",
     "mongodb": "^7.1.0",
     "mssql": "^12.2.0",
