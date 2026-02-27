@@ -126,8 +126,44 @@ export function createRegulatoryRadar(db: Database.Database) {
     return id;
   }
 
+  function updateSource(id: string, params: {
+    displayName?: string;
+    url?: string;
+    sourceType?: string;
+    areas?: string[];
+    keywords?: string[];
+    category?: string;
+    isActive?: boolean;
+  }) {
+    db.prepare(`
+      UPDATE radar_sources SET
+        display_name = COALESCE(?, display_name),
+        url = COALESCE(?, url),
+        source_type = COALESCE(?, source_type),
+        areas = COALESCE(?, areas),
+        keywords = COALESCE(?, keywords),
+        category = COALESCE(?, category),
+        is_active = COALESCE(?, is_active)
+      WHERE id = ?
+    `).run(
+      params.displayName ?? null,
+      params.url ?? null,
+      params.sourceType ?? null,
+      params.areas !== undefined ? JSON.stringify(params.areas) : null,
+      params.keywords !== undefined ? JSON.stringify(params.keywords) : null,
+      params.category ?? null,
+      params.isActive !== undefined ? (params.isActive ? 1 : 0) : null,
+      id,
+    );
+  }
+
+  function deleteSource(id: string) {
+    db.prepare('DELETE FROM radar_sources WHERE id = ?').run(id);
+  }
+
   return {
-    getSources, createSource, getItems, getRadarSummary,
+    getSources, createSource, updateSource, deleteSource,
+    getItems, getRadarSummary,
     updateItemStatus, scoreItem, ingestManualItem,
   };
 }

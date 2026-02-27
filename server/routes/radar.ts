@@ -51,6 +51,29 @@ export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher)
     }
   });
 
+  // PUT /api/radar/sources/:id — update source
+  router.put('/radar/sources/:id', (req, res) => {
+    try {
+      const { displayName, url, sourceType, areas, keywords, category, isActive } = req.body;
+      radar.updateSource(req.params.id, { displayName, url, sourceType, areas, keywords, category, isActive });
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[radar] source update error:', err);
+      res.status(500).json({ error: 'Failed to update source' });
+    }
+  });
+
+  // DELETE /api/radar/sources/:id — delete source
+  router.delete('/radar/sources/:id', (req, res) => {
+    try {
+      radar.deleteSource(req.params.id);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[radar] source delete error:', err);
+      res.status(500).json({ error: 'Failed to delete source' });
+    }
+  });
+
   // GET /api/radar/items — list items
   router.get('/radar/items', (req, res) => {
     try {

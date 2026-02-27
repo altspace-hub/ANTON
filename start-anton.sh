@@ -44,14 +44,21 @@ if [ ! -f "node_modules/.bin/tsx" ]; then
     fi
 fi
 
-# Build client if no dist folder exists
-if [ ! -d "dist/client" ]; then
-    echo "  Building ANTON — this only happens once..."
+# Build if dist is missing or git hash has changed since last build
+CURRENT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "no-git")
+STORED_HASH=$(cat dist/client/.build-hash 2>/dev/null || echo "")
+if [ ! -d "dist/client" ] || [ "$CURRENT_HASH" != "$STORED_HASH" ]; then
+    if [ -d "dist/client" ]; then
+        echo "  Code has changed — rebuilding ANTON..."
+    else
+        echo "  Building ANTON — this only happens once..."
+    fi
     pnpm run build
     if [ $? -ne 0 ]; then
         echo "  ERROR: Build failed."
         exit 1
     fi
+    echo "$CURRENT_HASH" > dist/client/.build-hash
 fi
 
 # Open browser after 5 seconds in the background

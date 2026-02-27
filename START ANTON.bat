@@ -46,15 +46,29 @@ if not exist "node_modules\.bin\tsx" (
     )
 )
 
-if not exist "dist\client" (
+for /f "delims=" %%H in ('git rev-parse HEAD 2^>nul') do set CURRENT_HASH=%%H
+set STORED_HASH=
+if exist "dist\client\.build-hash" set /p STORED_HASH=<dist\client\.build-hash
+
+if not exist "dist\client" goto REBUILD
+if not "%CURRENT_HASH%"=="%STORED_HASH%" goto REBUILD
+goto START
+
+:REBUILD
+if exist "dist\client" (
+    echo   Code has changed - rebuilding ANTON...
+) else (
     echo   Building ANTON - this only happens once...
-    call pnpm run build
-    if errorlevel 1 (
-        echo   ERROR: Build failed.
-        pause
-        exit /b 1
-    )
 )
+call pnpm run build
+if errorlevel 1 (
+    echo   ERROR: Build failed.
+    pause
+    exit /b 1
+)
+echo %CURRENT_HASH%> dist\client\.build-hash
+
+:START
 
 start /min "" cmd /c "timeout /t 5 /nobreak >nul && start http://localhost:3001"
 

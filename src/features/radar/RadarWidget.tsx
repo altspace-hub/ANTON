@@ -54,7 +54,7 @@ export default function RadarWidget() {
       <div className="rounded-xl border border-border bg-adv-card p-6">
         <div className="flex items-center gap-2 mb-4">
           <Radio className="h-5 w-5 text-adv-teal" />
-          <h2 className="text-sm font-semibold text-adv-white">Regulatory Radar</h2>
+          <h2 className="text-sm font-semibold text-adv-white">Horizon Radar</h2>
         </div>
         <p className="text-xs text-adv-gray-med">Loading...</p>
       </div>
@@ -69,7 +69,7 @@ export default function RadarWidget() {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="h-5 w-5 text-adv-teal" />
-          <h2 className="text-sm font-semibold text-adv-white">Regulatory Radar</h2>
+          <h2 className="text-sm font-semibold text-adv-white">Horizon Radar</h2>
           {highRelevanceCount > 0 && (
             <span className="rounded-full bg-adv-red/20 px-2 py-0.5 text-[10px] font-semibold text-adv-red">
               {highRelevanceCount} High

@@ -205,7 +205,6 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { sidebarCollapsed, toggleSidebar } = useSettingsStore();
   const { user: authUser, isTeamMode } = useAuthStore();
   const isAdmin = authUser?.role === 'admin' || !isTeamMode;
-  const [recentSessions, setRecentSessions] = useState<Session[]>([]);
   // Track which areas are expanded — FCP open by default
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set(['fcp']));
   const [profileName, setProfileName] = useState('');
@@ -263,9 +262,6 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       .then((list: CustomModuleData[]) => setCustomModules(list))
       .catch(() => {});
 
-    fetchSessions()
-      .then((sessions) => setRecentSessions(sessions.slice(0, 4)))
-      .catch(() => setRecentSessions([]));
     fetchProfile()
       .then((data) => {
         setProfileName((data.display_name as string) || (data.name as string) || '');
@@ -818,19 +814,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           {!sidebarCollapsed && t('nav.governance')}
         </NavLinkWithStar>
 
-        <NavLinkWithStar
-          to="/compare"
-          navId="compare"
-          title={sidebarCollapsed ? t('nav.compareAnton') : undefined}
-          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
-          isFavorite={favoriteNavItems.has('compare')}
-          isHidden={hiddenNavItems.has('compare')}
-          onToggleFavorite={toggleNavFavorite}
-          sidebarCollapsed={sidebarCollapsed}
-        >
-          <GitCompare className="h-4 w-4 shrink-0" />
-          {!sidebarCollapsed && t('nav.compare')}
-        </NavLinkWithStar>
+        {/* Compare removed from nav — covered in whitepaper */}
 
         <NavLinkWithStar
           to="/marketplace"
@@ -1222,38 +1206,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           );
         })()}
 
-        {/* ── Recent Sessions section (collapsed by default) ─── */}
-        {!sidebarCollapsed && (
-          <>
-            <button
-              onClick={() => toggleSection('recent')}
-              className="mb-1 mt-4 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray-med hover:bg-adv-card hover:text-adv-off-white transition-colors"
-            >
-              <span>{t('nav.recentSessions')}</span>
-              <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${sectionsExpanded.recent ? '' : '-rotate-90'}`} />
-            </button>
-            {sectionsExpanded.recent && (
-              recentSessions.length === 0 ? (
-                <div className="px-3 text-xs text-adv-gray-med italic">{t('nav.noRecentSessions')}</div>
-              ) : (
-                recentSessions.map((session) => {
-                  const mod = MODULES.find((m) => m.id === session.module_id);
-                  const Icon = mod ? (iconMap[mod.icon] || Clock) : Clock;
-                  return (
-                    <NavLink
-                      key={session.id}
-                      to={`/module/${session.module_id}`}
-                      className={({ isActive }) => linkClass(isActive)}
-                    >
-                      <Icon className="h-4 w-4 shrink-0 opacity-70" />
-                      <span className="truncate text-xs">{session.title}</span>
-                    </NavLink>
-                  );
-                })
-              )
-            )}
-          </>
-        )}
+        {/* Recent Sessions removed from nav — available on Dashboard and My Work */}
       </nav>
 
       {/* Profile mini-summary */}

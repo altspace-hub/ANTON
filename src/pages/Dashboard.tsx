@@ -522,7 +522,7 @@ export default function Dashboard() {
       {/* Morning Brief — Time Intelligence */}
       <MorningBrief />
 
-      {/* Regulatory Radar Widget */}
+      {/* Horizon Radar Widget */}
       <div className="mb-8">
         <RadarWidget />
       </div>

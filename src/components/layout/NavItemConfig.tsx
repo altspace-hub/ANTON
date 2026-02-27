@@ -59,7 +59,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'intelligence', label: 'Intelligence Dashboard', category: 'intelligence' },
   { id: 'patterns', label: 'Pattern Detection', category: 'intelligence' },
   { id: 'deadlines', label: 'Time Intelligence', category: 'intelligence' },
-  { id: 'radar', label: 'Regulatory Radar', category: 'intelligence' },
+  { id: 'radar', label: 'Horizon Radar', category: 'intelligence' },
 
   // Admin
   { id: 'analytics', label: 'Analytics', category: 'admin' },

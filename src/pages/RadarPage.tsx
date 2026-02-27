@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Plus, Search, Filter, ExternalLink, Check, X, AlertCircle, FileText, Gavel, BookOpen, MessageSquare, FileCheck, RefreshCw, Square, Settings, ChevronDown, ChevronUp, Shield, Users, Cpu, Landmark, AlertTriangle, TrendingUp, Layers } from 'lucide-react';
+import { Radio, Plus, Search, Filter, ExternalLink, Check, X, AlertCircle, FileText, Gavel, BookOpen, MessageSquare, FileCheck, RefreshCw, Square, Settings, ChevronDown, ChevronUp, Shield, Users, Cpu, Landmark, AlertTriangle, TrendingUp, Layers, Pencil, Trash2, Database } from 'lucide-react';
 
 interface RadarSource {
   id: string;
@@ -139,6 +139,8 @@ export default function RadarPage() {
   const [showScanBanner, setShowScanBanner] = useState(false);
   const [lastScanTime, setLastScanTime] = useState<string | null>(null);
   const [scanProgress, setScanProgress] = useState<{ currentSource: string | null; completed: number; total: number }>({ currentSource: null, completed: 0, total: 0 });
+  const [mainTab, setMainTab] = useState<'items' | 'sources'>('items');
+  const [editingSource, setEditingSource] = useState<RadarSource | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [radarSettings, setRadarSettings] = useState<RadarSettings>({ autoScanEnabled: false, autoScanIntervalHours: 24 });
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -154,7 +156,7 @@ export default function RadarPage() {
       const [summaryRes, itemsRes, sourcesRes] = await Promise.all([
         fetch('/api/radar/summary', { headers: getAuthHeader() }),
         fetch(`/api/radar/items?limit=100${itemCatParam}`, { headers: getAuthHeader() }),
-        fetch(`/api/radar/sources${catParam}`, { headers: getAuthHeader() }),
+        fetch(`/api/radar/sources?active=false`, { headers: getAuthHeader() }),
       ]);
       setSummary(await summaryRes.json() as RadarSummary);
       setItems(await itemsRes.json() as RadarItem[]);
@@ -332,13 +334,39 @@ export default function RadarPage() {
     return true;
   });
 
+  async function handleDeleteSource(id: string, name: string) {
+    if (!confirm(`Delete source "${name}"? This cannot be undone.`)) return;
+    try {
+      await fetch(`/api/radar/sources/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+      fetchData();
+    } catch (err) {
+      console.error('[radar] source delete error:', err);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Radio className="h-6 w-6 text-adv-teal" />
-          <h1 className="text-2xl font-bold text-adv-white">Radar</h1>
+          <h1 className="text-2xl font-bold text-adv-white">Horizon Radar</h1>
+          {/* Main tab switcher */}
+          <div className="ml-4 flex rounded-lg overflow-hidden border border-border">
+            <button
+              onClick={() => setMainTab('items')}
+              className={`px-3 py-1.5 text-sm transition-colors ${mainTab === 'items' ? 'bg-adv-teal text-adv-dark font-medium' : 'bg-adv-card text-adv-gray hover:text-adv-off-white'}`}
+            >
+              Items
+            </button>
+            <button
+              onClick={() => setMainTab('sources')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${mainTab === 'sources' ? 'bg-adv-teal text-adv-dark font-medium' : 'bg-adv-card text-adv-gray hover:text-adv-off-white'}`}
+            >
+              <Database className="h-3.5 w-3.5" />
+              Sources ({sources.length})
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -590,7 +618,7 @@ export default function RadarPage() {
       )}
 
       {/* Category Tabs */}
-      <div className="mb-3 flex items-center gap-1 overflow-x-auto pb-1">
+      {mainTab === 'items' && <div className="mb-3 flex items-center gap-1 overflow-x-auto pb-1">
         <button
           onClick={() => setCategoryFilter('all')}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
@@ -622,10 +650,10 @@ export default function RadarPage() {
             </button>
           );
         })}
-      </div>
+      </div>}
 
       {/* Filter Tabs */}
-      <div className="mb-4 flex items-center gap-4 border-b border-border pb-2">
+      {mainTab === 'items' && <div className="mb-4 flex items-center gap-4 border-b border-border pb-2">
         <button
           onClick={() => setFilterTab('all')}
           className={`px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -678,10 +706,10 @@ export default function RadarPage() {
             className="w-64 rounded-lg border border-border bg-adv-card py-1.5 pl-9 pr-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
           />
         </div>
-      </div>
+      </div>}
 
       {/* Stats Row */}
-      {summary && (
+      {mainTab === 'items' && summary && (
         <div className="mb-6 grid grid-cols-4 gap-4">
           <div className="rounded-xl border border-border bg-adv-card p-4">
             <p className="text-2xl font-semibold text-adv-white">{summary.newItems}</p>
@@ -702,13 +730,82 @@ export default function RadarPage() {
         </div>
       )}
 
+      {/* ── Sources Management Tab ─────────────────────────── */}
+      {mainTab === 'sources' && (
+        <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <h3 className="text-sm font-semibold text-adv-off-white">Monitored Sources ({sources.length})</h3>
+            <button
+              onClick={() => setShowAddSource(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-adv-teal bg-adv-teal-dim px-3 py-1.5 text-sm font-medium text-adv-teal transition-colors hover:bg-adv-teal-dim/80"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Source
+            </button>
+          </div>
+          {sources.length === 0 ? (
+            <div className="p-8 text-center text-sm text-adv-gray-med">No sources yet. Add a source to start monitoring.</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-adv-gray-med uppercase tracking-wider">
+                  <th className="px-4 py-2">Name</th>
+                  <th className="px-4 py-2">URL</th>
+                  <th className="px-4 py-2">Type</th>
+                  <th className="px-4 py-2">Category</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sources.map((s) => (
+                  <tr key={s.id} className="border-b border-border/50 hover:bg-adv-dark/30 transition-colors">
+                    <td className="px-4 py-3 font-medium text-adv-off-white">{s.display_name}</td>
+                    <td className="px-4 py-3 max-w-xs">
+                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="truncate block text-adv-teal hover:underline text-xs" title={s.url}>
+                        {s.url}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3 text-adv-gray text-xs">{s.source_type}</td>
+                    <td className="px-4 py-3 text-adv-gray text-xs capitalize">{s.category}</td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${s.is_active === 1 ? 'bg-adv-green/20 text-adv-green' : 'bg-adv-gray-med/20 text-adv-gray-med'}`}>
+                        {s.is_active === 1 ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setEditingSource(s)}
+                          className="rounded p-1.5 text-adv-gray hover:bg-adv-card hover:text-adv-teal transition-colors"
+                          title="Edit source"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSource(s.id, s.display_name)}
+                          className="rounded p-1.5 text-adv-gray hover:bg-adv-red/10 hover:text-adv-red transition-colors"
+                          title="Delete source"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
       {/* Item Cards */}
-      {filteredItems.length === 0 ? (
+      {mainTab === 'items' && (filteredItems.length === 0 ? (
         <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
           <p className="text-sm text-adv-gray-med">
             {searchQuery
               ? `No items match "${searchQuery}"`
-              : 'No regulatory items yet. Add sources to start monitoring, or add manual items.'}
+              : 'No items yet. Add sources and run a scan, or add manual items.'}
           </p>
         </div>
       ) : (
@@ -832,11 +929,12 @@ export default function RadarPage() {
             );
           })}
         </div>
-      )}
+      ))}
 
       {/* Modals */}
       {showAddSource && <AddSourceModal onClose={() => setShowAddSource(false)} onSuccess={fetchData} />}
-      {showAddItem && <AddItemModal sources={sources} onClose={() => setShowAddItem(false)} onSuccess={fetchData} />}
+      {editingSource && <EditSourceModal source={editingSource} onClose={() => setEditingSource(null)} onSuccess={fetchData} />}
+      {showAddItem && <AddItemModal sources={sources.filter(s => s.is_active === 1)} onClose={() => setShowAddItem(false)} onSuccess={fetchData} />}
     </div>
   );
 }
@@ -979,6 +1077,115 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
               className="rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-50"
             >
               {loading ? 'Adding...' : 'Add Source'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit Source Modal ────────────────────────────────────────────
+
+function EditSourceModal({ source, onClose, onSuccess }: { source: RadarSource; onClose: () => void; onSuccess: () => void }) {
+  const [displayName, setDisplayName] = useState(source.display_name);
+  const [url, setUrl] = useState(source.url);
+  const [sourceType, setSourceType] = useState(source.source_type);
+  const [category, setCategory] = useState(source.category);
+  const [keywords, setKeywords] = useState(() => {
+    try { return (JSON.parse(source.keywords) as string[]).join(', '); } catch { return source.keywords; }
+  });
+  const [areas, setAreas] = useState(() => {
+    try { return (JSON.parse(source.areas) as string[]).join(', '); } catch { return source.areas; }
+  });
+  const [isActive, setIsActive] = useState(source.is_active === 1);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await fetch(`/api/radar/sources/${source.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({
+          displayName,
+          url,
+          sourceType,
+          category,
+          keywords: keywords.split(',').map((k) => k.trim()).filter(Boolean),
+          areas: areas.split(',').map((a) => a.trim()).filter(Boolean),
+          isActive,
+        }),
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error('[radar] source update error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-xl border border-border bg-adv-card p-6" onClick={(e) => e.stopPropagation()}>
+        <h2 className="mb-4 text-lg font-semibold text-adv-white">Edit Source</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm text-adv-gray">Display Name</label>
+            <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-adv-gray">URL</label>
+            <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} required
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm text-adv-gray">Source Type</label>
+              <select value={sourceType} onChange={(e) => setSourceType(e.target.value)}
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                <option value="web_page">Web Page</option>
+                <option value="rss">RSS Feed</option>
+                <option value="eur_lex">EUR-Lex</option>
+                <option value="api">API</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm text-adv-gray">Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                {Object.entries(RADAR_CATEGORIES).map(([key, cat]) => (
+                  <option key={key} value={key}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-adv-gray">Keywords (comma-separated)</label>
+            <input type="text" value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="AML, sanctions, DORA"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-adv-gray">Areas (comma-separated)</label>
+            <input type="text" value={areas} onChange={(e) => setAreas(e.target.value)} placeholder="fcp, compliance"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+          </div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <button type="button" onClick={() => setIsActive((v) => !v)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isActive ? 'bg-adv-teal' : 'bg-adv-gray-med/40'}`}>
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isActive ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+            <span className="text-sm text-adv-gray">{isActive ? 'Active' : 'Inactive'}</span>
+          </label>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose}
+              className="rounded-lg border border-border px-4 py-2 text-sm text-adv-gray transition-colors hover:bg-adv-dark-2">Cancel</button>
+            <button type="submit" disabled={loading}
+              className="rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-50">
+              {loading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
