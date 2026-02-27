@@ -484,7 +484,7 @@ For questions or issues:
 1. Check this documentation
 2. Review API error messages (detailed logs in console)
 3. Test with `/api/collections/health/check`
-4. Contact: daniel@advisense.fcp (internal only)
+4. Contact: daniel@futurechain.com (internal only)
 
 ---
 

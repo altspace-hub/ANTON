@@ -83,7 +83,7 @@ Added the following npm scripts:
 - Groups patch and minor updates
 - Auto-creates PRs for security updates
 - Maximum 5 open PRs at a time
-- Assigns to advisense-team
+- Assigns to altspace-hub
 
 **File**: `renovate.json` (alternative)
 - Weekly scans before 3am Monday

@@ -166,7 +166,7 @@ function AssignModal({
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
               className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
-              placeholder="e.g. jonas@advisense.com"
+              placeholder="e.g. jonas@example.com"
             />
           </div>
           <div>

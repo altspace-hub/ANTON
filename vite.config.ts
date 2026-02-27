@@ -22,7 +22,7 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: '/advisense-logo.svg',
+            src: '/anton-logo.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any maskable',

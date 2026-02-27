@@ -17,7 +17,7 @@ Local development runs two processes: the Vite dev server (frontend with HMR) an
 ### Setup
 
 ```bash
-git clone https://github.com/advisense/openexpert.git
+git clone https://github.com/altspace-hub/ANTON.git
 cd openexpert
 
 # Install dependencies
@@ -89,7 +89,7 @@ Docker is the simplest way to run openEXPERT on any machine without installing N
 ### Quick start
 
 ```bash
-git clone https://github.com/advisense/openexpert.git
+git clone https://github.com/altspace-hub/ANTON.git
 cd openexpert
 
 # Set your API key

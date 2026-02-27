@@ -142,7 +142,7 @@ The area appears in the API (`GET /api/areas`) immediately.
 
 ## Security
 
-[![Security Audit](https://github.com/advisense/fcp-workbench/actions/workflows/security.yml/badge.svg)](https://github.com/advisense/fcp-workbench/actions/workflows/security.yml)
+[![Security Audit](https://github.com/altspace-hub/ANTON/actions/workflows/security.yml/badge.svg)](https://github.com/altspace-hub/ANTON/actions/workflows/security.yml)
 
 - CORS restricted to localhost by default
 - Security headers via `helmet` (CSP, X-Frame-Options, etc.)

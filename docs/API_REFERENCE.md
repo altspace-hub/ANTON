@@ -77,7 +77,7 @@ Register a new user account. Only functional when `DEPLOYMENT_MODE=team`.
 {
   "username": "daniel.bardun",
   "password": "correcthorsebatterystaple",
-  "email": "daniel@advisense.com"
+  "email": "daniel@example.com"
 }
 ```
 
@@ -91,7 +91,7 @@ Register a new user account. Only functional when `DEPLOYMENT_MODE=team`.
 
 ```json
 {
-  "user": { "id": "uuid", "username": "daniel.bardun", "email": "daniel@advisense.com", "role": "user" }
+  "user": { "id": "uuid", "username": "daniel.bardun", "email": "daniel@example.com", "role": "user" }
 }
 ```
 
@@ -139,7 +139,7 @@ Returns the profile of the authenticated user.
 {
   "id": "uuid",
   "username": "daniel.bardun",
-  "email": "daniel@advisense.com",
+  "email": "daniel@example.com",
   "role": "user",
   "createdAt": "2025-10-01T09:00:00Z"
 }
@@ -154,7 +154,7 @@ Sends a password reset link to the registered email address.
 **Request body:**
 
 ```json
-{ "email": "daniel@advisense.com" }
+{ "email": "daniel@example.com" }
 ```
 
 **Response `200`:** Always returns success to prevent user enumeration.

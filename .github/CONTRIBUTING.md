@@ -24,7 +24,7 @@ The platform is built around **areas** (broad domains like FCP, Legal, Cyber) an
 ### Clone and install
 
 ```bash
-git clone https://github.com/advisense/openexpert.git
+git clone https://github.com/altspace-hub/ANTON.git
 cd openexpert
 pnpm install
 ```

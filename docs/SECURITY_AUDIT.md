@@ -190,7 +190,7 @@ Monitor these metrics:
 ## Contact
 
 For security concerns:
-- Email: security@advisense.com
+- Email: security@futurechain.com
 - Internal: #security Slack channel
 - Emergency: On-call security team
 

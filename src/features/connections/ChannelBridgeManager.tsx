@@ -411,7 +411,7 @@ export function ChannelBridgeManager() {
         </div>
         <div className="pt-1">
           <a
-            href="https://github.com/advisense/fcp-workbench/tree/main/reference-bots/whatsapp-bot"
+            href="https://github.com/altspace-hub/ANTON/tree/main/reference-bots/whatsapp-bot"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-adv-teal hover:text-adv-teal-dark transition-colors"

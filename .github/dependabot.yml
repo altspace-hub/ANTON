@@ -7,7 +7,7 @@ updates:
       day: "monday"
     open-pull-requests-limit: 5
     reviewers:
-      - "advisense-team"
+      - "altspace-hub"
     labels:
       - "dependencies"
     versioning-strategy: increase-if-necessary

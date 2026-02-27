@@ -1,13 +1,13 @@
-# CLAUDE.md — Advisense FCP Compliance AI Workbench
+# CLAUDE.md — ANTON AI Workbench
 
 ## PROJECT IDENTITY
 
-**Name:** Advisense FCP Workbench  
+**Name:** ANTON FCP Workbench  
 **Internal codename:** `fcp-workbench`  
 **Purpose:** A modular, AI-powered local web application that enables Financial Crime Prevention (FCP) consultants — including non-technical compliance officers, lawyers, and senior advisors — to leverage Claude's full capabilities through a visual, guided interface. No command-line knowledge required. Every Claude API feature is exposed as a simple toggle, click, or slider.
 
-**Who built this:** Advisense FCP team (Daniel Bardun, Jonas Karlsson, Max Krackhardt, Björn Heir, Sofia Stenius-Linna, Petra Andrésdottir)  
-**Who uses this:** Advisense consultants working in AML/CFT, sanctions, compliance, and regulatory implementation for Nordic and European financial institutions.
+**Who built this:** Daniel Bardun & Futurechain team (Daniel Bardun, Jonas Karlsson, Max Krackhardt, Björn Heir, Sofia Stenius-Linna, Petra Andrésdottir)  
+**Who uses this:** FCP consultants working in AML/CFT, sanctions, compliance, and regulatory implementation for Nordic and European financial institutions.
 
 **Deployment:** Local — runs on consultant laptops via `localhost`. No cloud deployment. Documents stay on the machine. Only Claude API calls leave the network.
 
@@ -23,7 +23,7 @@
 - **UI library:** Tailwind CSS + shadcn/ui components (for professional, accessible UI)
 - **State management:** Zustand (lightweight, simple)
 - **Routing:** React Router v6
-- **Icons:** Lucide React (matches Advisense clean aesthetic)
+- **Icons:** Lucide React (matches ANTON clean aesthetic)
 - **Markdown rendering:** `react-markdown` + `remark-gfm` for tables, `rehype-highlight` for code
 
 ### Backend / API Layer
@@ -38,7 +38,7 @@
 - **Document generation (export):**
   - `docx` npm package for .docx creation
   - `exceljs` for .xlsx creation with formatting, formulas, conditional formatting
-  - `puppeteer` for Markdown → HTML → PDF with Advisense branding
+  - `puppeteer` for Markdown → HTML → PDF with ANTON branding
   - `markdown-it` for Markdown → HTML conversion
 
 ### Storage (All Local)
@@ -81,7 +81,7 @@ fcp-workbench/
 │   │   ├── folder-indexer.ts          # Index folder contents, watch for changes
 │   │   ├── prompt-builder.ts          # Assembles final prompt from all sources
 │   │   ├── output-formatter.ts        # Routes output to correct format/template
-│   │   ├── export-docx.ts             # Markdown → DOCX with Advisense styling
+│   │   ├── export-docx.ts             # Markdown → DOCX with ANTON styling
 │   │   ├── export-xlsx.ts             # Structured data → Excel with scoring
 │   │   ├── export-pdf.ts              # Markdown → PDF via Puppeteer
 │   │   └── session-store.ts           # SQLite session CRUD
@@ -158,10 +158,10 @@ fcp-workbench/
 │   │   └── output-format-definitions.ts   # All output format configs
 │   │
 │   └── theme/
-│       └── advisense.ts
+│       └── colors.ts
 │
 ├── public/
-│   └── advisense-logo.svg
+│   └── anton-logo.svg
 │
 ├── uploads/                           # User uploaded files (gitignored)
 ├── outputs/                           # Generated exports (gitignored)
@@ -172,11 +172,11 @@ fcp-workbench/
 
 ## ADVISENSE DESIGN SYSTEM
 
-The application must feel professional, calm, and trustworthy — matching the Advisense brand. Used by senior compliance professionals, lawyers, and board advisors aged 35-65. Not a startup toy.
+The application must feel professional, calm, and trustworthy — matching the ANTON brand. Used by senior compliance professionals, lawyers, and board advisors aged 35-65. Not a startup toy.
 
 ### Color Palette
 ```typescript
-const advisenseTheme = {
+const antonTheme = {
   colors: {
     'adv-dark':      '#0B1426',   // Main background
     'adv-dark-2':    '#0F1B2D',   // Secondary background
@@ -201,7 +201,7 @@ const advisenseTheme = {
 ```
 
 ### UI Design Rules
-1. **Dark theme by default** — Advisense brand. Optional light mode toggle.
+1. **Dark theme by default** — ANTON brand. Optional light mode toggle.
 2. **Card-based design** — modules, panels, outputs use cards with subtle `shadow-lg`.
 3. **Teal = action** — all interactive elements: buttons, active tabs, progress, links.
 4. **Large readable text** — minimum 14px body. Users are 35-65 years old.
@@ -286,7 +286,7 @@ interface KnowledgeSourceConfig {
 │ │   Point to folders on your computer containing regulation  ││
 │ │   texts, client documents, or reference materials.         ││
 │ │                                                            ││
-│ │   📁 /Users/daniel/Advisense/Regulations/AMLR       [✕]   ││
+│ │   📁 /Users/daniel/ANTON/Regulations/AMLR       [✕]   ││
 │ │      12 files · 145,000 words · .pdf .docx                 ││
 │ │   📁 /Users/daniel/Clients/Nordea/AML-Docs          [✕]   ││
 │ │      8 files · 62,000 words · .pdf .docx .xlsx             ││
@@ -714,9 +714,9 @@ Each module has a carefully crafted system prompt in `server/prompts/[module].md
 | Format | Library | Features |
 |---|---|---|
 | **.md** | Native | Default. Source of truth. Copy/download. |
-| **.docx** | `docx` npm | Advisense header/footer, heading hierarchy, tables, page numbers, ToC |
+| **.docx** | `docx` npm | ANTON header/footer, heading hierarchy, tables, page numbers, ToC |
 | **.xlsx** | `exceljs` | Conditional formatting (🟢🟡🟠🔴), auto-filters, freeze panes, formulas, charts |
-| **.pdf** | `puppeteer` | Advisense branding, professional typography, page numbers, ToC |
+| **.pdf** | `puppeteer` | ANTON branding, professional typography, page numbers, ToC |
 
 ---
 
@@ -759,7 +759,7 @@ pnpm run build && pnpm run start  # Production: http://localhost:3001
 ## IMPLEMENTATION ORDER
 
 ### Phase 1: Foundation (Day 1-2)
-Project scaffolding, Advisense theme, Express + Claude API proxy, layout shell, dashboard
+Project scaffolding, ANTON theme, Express + Claude API proxy, layout shell, dashboard
 
 ### Phase 2: Core Engine (Day 2-4)
 Claude client (adaptive thinking, effort, streaming, web search), ThinkingControls, CreativitySlider, ModelSelector, PromptEditor, ConversationThread, OutputPanel with Markdown
@@ -801,4 +801,4 @@ Regulatory Comparison, Compliance Calendar, Interview Prep, Peer Review, Client 
 ---
 
 > "Start with the problem, not the solution. No magic bullets. No silver boxes.
-> Just the right tools, the right people, and the right plan." — Advisense FCP
+> Just the right tools, the right people, and the right plan." — Futurechain FCP
