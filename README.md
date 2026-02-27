@@ -8,12 +8,29 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 ### Option A — Windows launcher (easiest)
 
-**Requirements:** Node.js 20+, pnpm — no terminal knowledge needed.
+**One-time setup (do this once on each new computer):**
 
-1. Copy `.env.example` to `.env` and add your `ANTHROPIC_API_KEY`
-2. Run `pnpm install` and `pnpm run db:init` once (first time only)
-3. Double-click **`START ANTON.bat`**
-4. ANTON opens automatically at [http://localhost:3001](http://localhost:3001)
+1. Install **Node.js** — download the LTS installer from [nodejs.org](https://nodejs.org) and run it
+2. Open a terminal and install pnpm:
+   ```bash
+   npm install -g pnpm
+   ```
+3. Clone the repo and enter the folder:
+   ```bash
+   git clone https://github.com/altspace-hub/ANTON.git
+   cd ANTON
+   ```
+4. Copy `.env.example` to `.env` and add your `ANTHROPIC_API_KEY`
+5. Install dependencies and set up the database:
+   ```bash
+   pnpm install
+   pnpm run db:init
+   ```
+
+**Every time you want to run ANTON:**
+
+6. Double-click **`START ANTON.bat`**
+7. ANTON opens automatically at [http://localhost:3001](http://localhost:3001)
 
 To stop: close the terminal window that opened.
 
