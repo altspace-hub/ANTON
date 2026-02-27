@@ -305,7 +305,7 @@ export async function generateXlsx(
 ): Promise<Buffer> {
   const style = resolveXlsxStyle(brandConfig);
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = metadata.author || 'openEXPERT by ANTON';
+  workbook.creator = metadata.author || 'ANTON by openEXPERT';
   workbook.created = new Date();
   workbook.title = metadata.title || 'openEXPERT Output';
 

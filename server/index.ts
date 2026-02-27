@@ -344,7 +344,7 @@ app.get('*', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`openEXPERT by ANTON — server running on http://localhost:${PORT}`);
+  console.log(`ANTON by openEXPERT — server running on http://localhost:${PORT}`);
   console.log(`Claude API key configured: ${!!process.env.ANTHROPIC_API_KEY}`);
 
   // Start background dataset cleanup (runs every hour)

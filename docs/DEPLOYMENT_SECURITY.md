@@ -1,6 +1,6 @@
 # Production Deployment Security Guide
 
-**Project:** openEXPERT by ANTON (FCP Workbench)
+**Project:** ANTON by openEXPERT (FCP Workbench)
 **Target Audience:** DevOps, System Administrators, Security Teams
 **Last Updated:** 2026-02-19
 
@@ -268,7 +268,7 @@ sudo nano /etc/systemd/system/openexpert.service
 **Service Configuration:**
 ```ini
 [Unit]
-Description=openEXPERT by ANTON
+Description=ANTON by openEXPERT
 After=network.target
 
 [Service]

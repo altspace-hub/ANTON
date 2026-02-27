@@ -518,5 +518,5 @@ curl -X PUT http://localhost:3001/api/patterns/pat_123/status \
 
 ---
 
-**Built for openEXPERT by ANTON**
+**Built for ANTON by openEXPERT**
 Cross-Workflow Intelligence Layer 4: Pattern Detection Engine

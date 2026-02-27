@@ -1,4 +1,4 @@
-# MISTRAL.md — openEXPERT by ANTON
+# MISTRAL.md — ANTON by openEXPERT
 
 Context for Mistral Codestral and Le Chat. Kept short for efficient context use.
 
@@ -6,7 +6,7 @@ Context for Mistral Codestral and Le Chat. Kept short for efficient context use.
 
 ## Project
 
-**openEXPERT by ANTON** is a local-first AI expert workspace for 55+ professional domains.
+**ANTON by openEXPERT** is a local-first AI expert workspace for 55+ professional domains.
 React 18 + TypeScript frontend (Vite 6). Express 4 + Node 20 + SQLite backend. Anthropic Claude
 is the primary LLM; OpenAI, Gemini, Mistral, and Ollama are supported via adapter modules.
 Documents stay on-machine — only LLM API calls cross the network.

@@ -1,4 +1,4 @@
-# openEXPERT by ANTON — REST API Reference
+# ANTON by openEXPERT — REST API Reference
 
 > **Version:** Current
 > **Base URL:** `http://localhost:3001/api`
@@ -1267,4 +1267,4 @@ curl -X POST http://localhost:3001/api/export/docx \
 
 ---
 
-*This document covers all REST endpoints implemented in the openEXPERT by ANTON Express server. For SSE streaming details, see the Claude client implementation in `server/services/claude-client.ts`. For output format definitions, see `src/lib/output-format-definitions.ts`.*
+*This document covers all REST endpoints implemented in the ANTON by openEXPERT Express server. For SSE streaming details, see the Claude client implementation in `server/services/claude-client.ts`. For output format definitions, see `src/lib/output-format-definitions.ts`.*

@@ -281,4 +281,4 @@ Walk chunks and track markdown headings (`# ... ## ...`). Tag each chunk with cu
 
 ## License
 
-Part of openEXPERT by ANTON platform. Internal use only.
+Part of ANTON by openEXPERT platform. Internal use only.

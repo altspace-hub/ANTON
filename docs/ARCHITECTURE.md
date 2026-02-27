@@ -1,8 +1,8 @@
-# openEXPERT by ANTON — System Architecture
+# ANTON by openEXPERT — System Architecture
 
 > Developer-facing system design document. Describes the request flow, layer
 > responsibilities, extension points, database schema, and environment
-> configuration for the openEXPERT by ANTON platform.
+> configuration for the ANTON by openEXPERT platform.
 
 ---
 

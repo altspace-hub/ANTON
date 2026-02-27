@@ -1,4 +1,4 @@
-# openEXPERT by ANTON
+# ANTON by openEXPERT
 
 AI-powered expert workspace for professionals. Combines Claude's full capabilities with a visual, guided interface — modular knowledge sources, structured output formats, and area-specific expertise. No command-line knowledge required.
 
@@ -190,4 +190,4 @@ pnpm run build        # Build for production
 
 ---
 
-*openEXPERT by ANTON — built by FutureChain AB*
+*ANTON by openEXPERT — built by FutureChain AB*

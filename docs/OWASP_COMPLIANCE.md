@@ -1,6 +1,6 @@
 # OWASP Top 10 2021 Security Compliance
 
-**Project:** openEXPERT by ANTON (FCP Workbench)
+**Project:** ANTON by openEXPERT (FCP Workbench)
 **Last Audited:** 2026-02-19
 **Compliance Status:** 9/10 Categories Fully Implemented
 

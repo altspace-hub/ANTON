@@ -1,4 +1,4 @@
-# Developer Guide — openEXPERT by ANTON
+# Developer Guide — ANTON by openEXPERT
 
 Welcome to openEXPERT. This guide gets you from zero to running code in under ten minutes,
 then walks through the conventions you need to contribute confidently.
@@ -364,6 +364,6 @@ No ticket numbers in the subject line — put them in the body or footer.
 
 ---
 
-> openEXPERT by ANTON is built to make expert knowledge accessible.
+> ANTON by openEXPERT is built to make expert knowledge accessible.
 > Good documentation is part of that mission — if something in this guide is unclear,
 > a PR to improve it is always welcome.

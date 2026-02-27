@@ -1,8 +1,8 @@
-# Copilot Instructions — openEXPERT by ANTON
+# Copilot Instructions — ANTON by openEXPERT
 
 ## Project Context
 
-openEXPERT by ANTON is an AI-powered expert workspace for 55+ professional domains. The stack
+ANTON by openEXPERT is an AI-powered expert workspace for 55+ professional domains. The stack
 is React 18 + TypeScript 5.7 (strict) on the frontend, built with Vite 6, and styled with
 Tailwind CSS 4. The backend is Express 4 + Node 20 with a local SQLite database
 (better-sqlite3 11). Anthropic Claude (`claude-opus-4-6`) is the primary LLM; OpenAI, Gemini,

@@ -1,4 +1,4 @@
-# AGENTS.md — openEXPERT by ANTON
+# AGENTS.md — ANTON by openEXPERT
 
 Universal AI assistant context file. Read by Copilot, Cursor, Windsurf, Claude Code, and any
 tool that reads `AGENTS.md`. This file is the authoritative reference for AI coding assistants
@@ -8,7 +8,7 @@ working in this repository.
 
 ## Project Identity
 
-**Name:** openEXPERT by ANTON
+**Name:** ANTON by openEXPERT
 **Purpose:** AI-powered expert workspace for 55+ professional domains. Enables consultants,
 lawyers, compliance officers, analysts, and domain experts to leverage frontier LLMs through a
 structured, guided interface — without command-line knowledge.

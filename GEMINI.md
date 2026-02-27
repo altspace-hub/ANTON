@@ -1,4 +1,4 @@
-# GEMINI.md — openEXPERT by ANTON
+# GEMINI.md — ANTON by openEXPERT
 
 Context file for Gemini Code Assist and Vertex AI Code Assist. This file provides architecture,
 style, and security context for AI-assisted development in this repository.
@@ -7,7 +7,7 @@ style, and security context for AI-assisted development in this repository.
 
 ## Project Overview
 
-**openEXPERT by ANTON** is an AI-powered expert workspace supporting 55+ professional domains.
+**ANTON by openEXPERT** is an AI-powered expert workspace supporting 55+ professional domains.
 It is a local-first web application: React 18 + TypeScript 5.7 (Vite 6) on the frontend;
 Express 4 + Node 20 + SQLite (better-sqlite3 11) on the backend. Anthropic Claude
 (`claude-opus-4-6`) is the primary LLM. OpenAI, Gemini, Mistral, and Ollama are supported via

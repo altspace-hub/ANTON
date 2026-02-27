@@ -14,7 +14,7 @@ export default defineConfig({
         enabled: false, // Never register SW in dev — prevents stale cache breaking hot-reload
       },
       manifest: {
-        name: 'openEXPERT by ANTON',
+        name: 'ANTON by openEXPERT',
         short_name: 'openEXPERT',
         description: 'AI-powered expert assistant for compliance, legal, HR and more',
         theme_color: '#0B1426',

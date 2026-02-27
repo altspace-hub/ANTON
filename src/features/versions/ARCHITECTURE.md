@@ -349,4 +349,4 @@ Store parent_version_id to create version trees (not just linear history).
 
 **Built**: 2026-02-19
 **By**: Claude Sonnet 4.5
-**For**: openEXPERT by ANTON
+**For**: ANTON by openEXPERT
