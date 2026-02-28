@@ -11,6 +11,7 @@ import { getRecommendedExportFormats } from '@/lib/output-format-definitions';
 import ThinkingControls from '@/components/shared/ThinkingControls';
 import WritingStylePanel from '@/components/shared/WritingStylePanel';
 import MultiAgentPanel from '@/components/shared/MultiAgentPanel';
+import DeliberationPanel from '@/components/shared/DeliberationPanel';
 import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
 import { PrecisionSelector } from '@/components/shared/PrecisionSelector';
 import ModelSelector from '@/components/shared/ModelSelector';
@@ -40,7 +41,7 @@ import EngagementProposal from '@/components/modules/EngagementProposal';
 import EngagementExecution from '@/components/modules/EngagementExecution';
 import ManagementPresentation from '@/components/modules/ManagementPresentation';
 import ModelValidation from '@/components/modules/ModelValidation';
-import { Play, Square, Send, ChevronDown, ChevronRight, Coins, ShieldCheck, Check, X, Mic, MicOff } from 'lucide-react';
+import { Play, Square, Send, ChevronDown, ChevronRight, Coins, ShieldCheck, Check, X, Mic, MicOff, Layers, Wrench } from 'lucide-react';
 import SmartModelBanner from '@/components/shared/SmartModelBanner';
 import { MODELS } from '@/lib/constants';
 import { fetchModulePrompt, fetchModuleConfig, fetchSession, fetchCustomModule } from '@/lib/api';
@@ -74,6 +75,10 @@ export default function ModulePage() {
   const module = MODULES.find((m) => m.id === moduleId);
   const isCustomModule = moduleId?.startsWith('custom-') ?? false;
   const [customModuleLabel, setCustomModuleLabel] = useState<string | null>(null);
+  // null = not yet checked (or not applicable), true = exists via API, false = not found
+  const [isDynamicModule, setIsDynamicModule] = useState<boolean | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [dynamicCfg, setDynamicCfg] = useState<Record<string, any> | null>(null);
 
   const {
     sessionId,
@@ -86,11 +91,12 @@ export default function ModulePage() {
     setSelectedOutputFormats, setKnowledgeSources, setModuleInputs, clearSession,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, setStructureReference,
     setReferenceOutput,
-    setUploadedFileIds, setAreaId, setGuidedInputFields, setTransparencyLevel,
+    areaId, setUploadedFileIds, setAreaId, setGuidedInputFields, setTransparencyLevel,
     setWritingTone, setEmojiEnabled, setNativeReasoningEnabled, restoreSession,
     truncateMessagesAt,
     audience, channel, outputLanguage,
     setAudience, setChannel, setOutputLanguage, setSeed,
+    deliberationEnabled, setDeliberationEnabled,
   } = useSessionStore();
 
   const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens } = useClaude();
@@ -109,6 +115,10 @@ export default function ModulePage() {
   const [reviewUpdating, setReviewUpdating] = useState(false);
   const [suggestedSkillsDismissed, setSuggestedSkillsDismissed] = useState(false);
   const [suggestedLibraryEntries, setSuggestedLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
+  const [myWayActive, setMyWayActive] = useState(false);
+  const [learnOffered, setLearnOffered] = useState(false);
+  const [learnSaving, setLearnSaving] = useState(false);
+  const [learnDone, setLearnDone] = useState(false);
 
   // Sync completed upload IDs into session store so Claude receives the files
   useEffect(() => {
@@ -116,7 +126,7 @@ export default function ModulePage() {
     setUploadedFileIds(completedIds);
   }, [files, setUploadedFileIds]);
 
-  // Auto-save output version when streaming completes
+  // Auto-save output version when streaming completes + offer learning loop for Trades modules
   const prevIsStreamingRef = useRef<boolean>(false);
   useEffect(() => {
     const wasStreaming = prevIsStreamingRef.current;
@@ -134,6 +144,11 @@ export default function ModulePage() {
             label: `Run at ${new Date().toLocaleTimeString()}`,
           }),
         }).catch(() => {}); // fire-and-forget, don't block UI
+      }
+      // Feature C: offer learning loop for Trades modules with a process type
+      if (content && dynamicCfg?.myWayProcessType) {
+        setLearnOffered(true);
+        setLearnDone(false);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -237,9 +252,42 @@ export default function ModulePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleId, isCustomModule]);
 
+  // For modules NOT in the hardcoded MODULES list (e.g. Trades area modules discovered
+  // dynamically from server/areas/), check the API to confirm existence and load config.
+  useEffect(() => {
+    if (!moduleId || module || isCustomModule) {
+      setIsDynamicModule(null);
+      setDynamicCfg(null);
+      return;
+    }
+    setIsDynamicModule(null);
+    fetchModuleConfig(moduleId)
+      .then((cfg) => {
+        if (cfg) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setDynamicCfg(cfg as Record<string, any>);
+          setIsDynamicModule(true);
+        } else {
+          setIsDynamicModule(false);
+        }
+      })
+      .catch(() => setIsDynamicModule(false));
+  }, [moduleId, module, isCustomModule]);
+
+  // Feature B: Check "My Way" setup status for Trades and PE/VC modules
+  useEffect(() => {
+    if (!dynamicCfg?.myWayProcessType) { setMyWayActive(false); return; }
+    const isICMemo = dynamicCfg.myWayProcessType === 'ic-memo';
+    const statusEndpoint = isICMemo ? '/api/pe-vc/setup-status' : '/api/trades/setup-status';
+    fetch(statusEndpoint, { headers: getAuthHeader() })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { hasIdentity?: boolean } | null) => setMyWayActive(!!data?.hasIdentity))
+      .catch(() => {});
+  }, [dynamicCfg]);
+
   // Initialize module — runs when moduleId or sessionParam changes
   useEffect(() => {
-    if (!module || !moduleId) return;
+    if ((!module && isDynamicModule !== true) || !moduleId) return;
 
     clearSession();
     setModule(moduleId);
@@ -296,10 +344,6 @@ export default function ModulePage() {
       setReviewedBy(null);
       setReviewedAt(null);
       // ── Fresh Module Init — apply defaults ────────────────
-      setThinking(module.defaults.thinking);
-      setCreativity(module.defaults.creativity);
-      setSelectedOutputFormats(module.defaults.outputFormats);
-
       const defaultKS: KnowledgeSourceConfig = {
         modes: {
           claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
@@ -308,28 +352,49 @@ export default function ModulePage() {
           combinedMode: { enabled: false, priority: 'merged', instructions: '' },
         },
       };
-      if (module.defaults.knowledgeSources.claudeKnowledge) {
-        Object.assign(defaultKS.modes.claudeKnowledge, module.defaults.knowledgeSources.claudeKnowledge);
-      }
-      if (module.defaults.knowledgeSources.onlineReference) {
-        Object.assign(defaultKS.modes.onlineReference, module.defaults.knowledgeSources.onlineReference);
-      }
-      if (module.defaults.knowledgeSources.localFolder) {
-        Object.assign(defaultKS.modes.localFolder, module.defaults.knowledgeSources.localFolder);
-      }
-      setKnowledgeSources(defaultKS);
 
-      fetchModuleConfig(moduleId).then((cfg) => {
-        if (!cfg) return;
-        if (cfg.areaId) setAreaId(cfg.areaId);
-        if (cfg.guidedInputs) setGuidedInputFields(cfg.guidedInputs);
-        if (typeof cfg.defaults?.transparencyLevel === 'number') {
-          setTransparencyLevel(cfg.defaults.transparencyLevel as 0 | 1 | 2);
+      if (module) {
+        // Hardcoded module — use constants defaults directly
+        setThinking(module.defaults.thinking);
+        setCreativity(module.defaults.creativity);
+        setSelectedOutputFormats(module.defaults.outputFormats);
+        if (module.defaults.knowledgeSources.claudeKnowledge) {
+          Object.assign(defaultKS.modes.claudeKnowledge, module.defaults.knowledgeSources.claudeKnowledge);
         }
-      });
+        if (module.defaults.knowledgeSources.onlineReference) {
+          Object.assign(defaultKS.modes.onlineReference, module.defaults.knowledgeSources.onlineReference);
+        }
+        if (module.defaults.knowledgeSources.localFolder) {
+          Object.assign(defaultKS.modes.localFolder, module.defaults.knowledgeSources.localFolder);
+        }
+        fetchModuleConfig(moduleId).then((cfg) => {
+          if (!cfg) return;
+          if (cfg.areaId) setAreaId(cfg.areaId);
+          if (cfg.guidedInputs) setGuidedInputFields(cfg.guidedInputs);
+          if (typeof cfg.defaults?.transparencyLevel === 'number') {
+            setTransparencyLevel(cfg.defaults.transparencyLevel as 0 | 1 | 2);
+          }
+        });
+      } else if (dynamicCfg) {
+        // API-discovered module (e.g. Trades area) — use defaults from server module.json
+        const defs = dynamicCfg.defaults ?? {};
+        if (defs.thinking) setThinking(defs.thinking);
+        if (defs.creativity) setCreativity(defs.creativity);
+        if (Array.isArray(defs.outputFormats)) setSelectedOutputFormats(defs.outputFormats);
+        if (dynamicCfg.areaId) setAreaId(dynamicCfg.areaId);
+        if (dynamicCfg.guidedInputs) setGuidedInputFields(dynamicCfg.guidedInputs);
+        if (typeof defs.transparencyLevel === 'number') {
+          setTransparencyLevel(defs.transparencyLevel as 0 | 1 | 2);
+        }
+        if (defs.knowledgeSources?.claudeKnowledge) {
+          Object.assign(defaultKS.modes.claudeKnowledge, defs.knowledgeSources.claudeKnowledge);
+        }
+      }
+
+      setKnowledgeSources(defaultKS);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moduleId, sessionParam]);
+  }, [moduleId, sessionParam, isDynamicModule]);
 
   // ── Redirect coding modules to their dedicated pages ─────────────────
   const codingRouteMap: Record<string, string> = {
@@ -347,7 +412,17 @@ export default function ModulePage() {
     return <Navigate to={target} replace />;
   }
 
-  if (!module && !isCustomModule) {
+  // API-discovered module still loading
+  if (!module && !isCustomModule && isDynamicModule === null) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="text-adv-gray text-sm">Loading...</span>
+      </div>
+    );
+  }
+
+  // Not found in hardcoded list and not found via API
+  if (!module && !isCustomModule && isDynamicModule === false) {
     return (
       <div className="flex h-full items-center justify-center">
         <p className="text-adv-gray-med">{t('module.moduleNotFound')}</p>
@@ -362,6 +437,8 @@ export default function ModulePage() {
 
   const handleRun = () => {
     if (userInput.trim()) {
+      setLearnOffered(false);
+      setLearnDone(false);
       runMessage(userInput.trim());
       setUserInput('');
     }
@@ -370,6 +447,73 @@ export default function ModulePage() {
   const handleEditMessage = (msg: Message) => {
     truncateMessagesAt(msg.id);
     setUserInput(msg.content);
+  };
+
+  // Feature C: Learn from output — extract template pattern and update default
+  const handleLearnFromOutput = async () => {
+    if (!outputContent || !dynamicCfg?.myWayProcessType) return;
+    const processType = dynamicCfg.myWayProcessType as string;
+    const isICMemo = processType === 'ic-memo';
+    setLearnSaving(true);
+    try {
+      if (isICMemo) {
+        // PE/VC IC memo learning — extract structure and save as default template
+        const extractRes = await fetch('/api/pe-vc/templates/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({ text: outputContent, memoType: 'full-ic-memo' }),
+        });
+        if (!extractRes.ok) throw new Error('Extract failed');
+        const extracted = await extractRes.json() as Record<string, unknown>;
+        const sections = (extracted.sections as Array<{ description?: string; label?: string }> | undefined) || [];
+        const templateContent = sections.map((s) => `### ${s.label || ''}\n${s.description || ''}`).join('\n\n');
+        await fetch('/api/pe-vc/templates/new', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({
+            name: 'My IC Memo template',
+            memoType: 'full-ic-memo',
+            templateContent,
+            sectionOrder: extracted.sectionOrder || [],
+            styleNotes: JSON.stringify(extracted.style || {}),
+            isDefault: true,
+          }),
+        });
+      } else {
+        // Trades document learning
+        const docTypeMap: Record<string, string> = {
+          invoicing: 'invoice',
+          quoting: 'quote',
+          communicating: 'message',
+        };
+        const docType = docTypeMap[processType] ?? processType;
+        const extractRes = await fetch('/api/trades/templates/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({ text: outputContent, documentType: docType }),
+        });
+        if (!extractRes.ok) throw new Error('Extract failed');
+        const extracted = await extractRes.json() as Record<string, unknown>;
+        await fetch(`/api/trades/templates/default-${docType}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({
+            documentType: docType,
+            name: `My ${docType} template`,
+            templateData: extracted,
+            isDefault: true,
+            sourceExamples: [{ rawText: outputContent.slice(0, 2000), extractedAt: new Date().toISOString() }],
+          }),
+        });
+      }
+      setLearnOffered(false);
+      setLearnDone(true);
+    } catch {
+      // non-fatal — just dismiss
+      setLearnOffered(false);
+    } finally {
+      setLearnSaving(false);
+    }
   };
 
   const handleReframe = () => {
@@ -434,12 +578,20 @@ export default function ModulePage() {
         <div className="space-y-5">
           {/* Module Header */}
           <div>
-            <h1 className="text-xl font-bold text-adv-white">{module?.label ?? customModuleLabel ?? moduleId}</h1>
-            {module?.description && <p className="mt-1 text-xs text-adv-gray">{module.description}</p>}
+            <h1 className="text-xl font-bold text-adv-white">{module?.label ?? customModuleLabel ?? dynamicCfg?.label ?? moduleId}</h1>
+            {(module?.description || dynamicCfg?.description) && <p className="mt-1 text-xs text-adv-gray">{module?.description ?? dynamicCfg?.description}</p>}
             {isCustomModule && !module && (
               <span className="mt-1 inline-block rounded-full bg-adv-teal/10 border border-adv-teal/20 px-2 py-0.5 text-[10px] text-adv-teal">
                 {t('module.customModule')}
               </span>
+            )}
+            {myWayActive && (
+              <a
+                href={typeof dynamicCfg?.myWayHubPath === 'string' ? dynamicCfg.myWayHubPath : '/trades'}
+                className="mt-1 inline-flex items-center gap-1 text-[10px] text-adv-gold hover:underline"
+              >
+                <Wrench size={10} /> My way active
+              </a>
             )}
           </div>
 
@@ -463,6 +615,33 @@ export default function ModulePage() {
 
           {/* Multi-Agent Mode */}
           <MultiAgentPanel />
+
+          {/* Multi-Model Deliberation */}
+          <div className="rounded-xl border border-border bg-adv-card p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="h-5 w-5 text-adv-teal" />
+                <h3 className="text-sm font-semibold text-adv-off-white">Deliberation Mode</h3>
+              </div>
+              <button
+                onClick={() => setDeliberationEnabled(!deliberationEnabled)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  deliberationEnabled ? 'bg-adv-teal' : 'bg-adv-gray-med/30'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    deliberationEnabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            {deliberationEnabled && (
+              <p className="mt-2 text-xs text-adv-gold">
+                Opus + Sonnet + Haiku analyse in parallel · ~3× cost · Agreement-scored synthesis
+              </p>
+            )}
+          </div>
 
           {/* Session Toggles: Writing Tone, Emoji, Structured Reasoning, Transparency */}
           <SessionTogglesPanel
@@ -755,8 +934,29 @@ export default function ModulePage() {
 
         {/* Scrollable output area — everything flows naturally */}
         <div className="flex-1 overflow-auto space-y-3">
-          {/* Conversation */}
-          <div className="rounded-xl border border-border bg-adv-card p-5">
+          {/* Deliberation Panel (replaces conversation thread when enabled) */}
+          {deliberationEnabled && (
+            <DeliberationPanel
+              config={{
+                moduleId: moduleId,
+                areaId: areaId ?? undefined,
+                systemPrompt,
+                creativity,
+                thinking,
+                transparencyLevel,
+                writingTone,
+                userMessage: userInput.trim() || 'Please analyse this based on the module context.',
+                knowledgeSources,
+                sessionId: sessionId ?? undefined,
+              }}
+              onNewDeliberation={() => {
+                /* reset state so user can trigger another run */
+              }}
+            />
+          )}
+
+          {/* Conversation (shown when deliberation mode is off) */}
+          {!deliberationEnabled && <div className="rounded-xl border border-border bg-adv-card p-5">
             {messages.length === 0 && !isStreaming ? (
               <div className="flex min-h-[200px] items-center justify-center">
                 <div className="text-center">
@@ -774,7 +974,7 @@ export default function ModulePage() {
                 moduleId={moduleId}
               />
             )}
-          </div>
+          </div>}
 
           {/* Export */}
           {outputContent && !isStreaming && (
@@ -810,6 +1010,28 @@ export default function ModulePage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Feature C: Learning loop — offer to update template from output */}
+        {learnOffered && dynamicCfg?.myWayProcessType && !isStreaming && (
+          <div className="flex items-center gap-2 rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-3 py-2 text-xs">
+            <span className="text-adv-gold">Update your template from this output?</span>
+            <button
+              onClick={handleLearnFromOutput}
+              disabled={learnSaving}
+              className="rounded bg-adv-gold px-2 py-0.5 text-xs font-medium text-adv-dark hover:bg-amber-400 disabled:opacity-50 transition-colors"
+            >
+              {learnSaving ? 'Saving…' : 'Yes, learn from this'}
+            </button>
+            <button onClick={() => setLearnOffered(false)} className="text-adv-gray-med hover:text-adv-off-white transition-colors">
+              Dismiss
+            </button>
+          </div>
+        )}
+        {learnDone && !learnOffered && (
+          <div className="flex items-center gap-1.5 rounded-lg border border-adv-green/30 bg-adv-green/5 px-3 py-2 text-xs text-adv-green">
+            <Check className="h-3 w-3" /> Template updated
+          </div>
         )}
 
         {/* Human Review Status */}

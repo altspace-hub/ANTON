@@ -1,0 +1,86 @@
+{
+  "formatVersion": "1.0",
+  "id": "valuation-framework",
+  "label": "Valuation Framework",
+  "shortLabel": "Valuation",
+  "icon": "Scale",
+  "description": "Structure and execute valuation analysis using appropriate methodologies for stage and type. Triangulates DCF, comparables, precedent transactions, and LBO analysis.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Accuracy is critical. Opus 4.6 default for valuation work."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "maturity-assessment"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Valuation multiples, comparable transactions, public company benchmarks"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "valuation_context",
+      "type": "select",
+      "label": "What's the valuation for?",
+      "required": true,
+      "options": [
+        { "value": "new-investment", "label": "New investment (what should we pay?)" },
+        { "value": "portfolio-mark", "label": "Portfolio mark-to-market (quarterly valuation)" },
+        { "value": "exit-prep", "label": "Exit preparation (what's it worth now?)" },
+        { "value": "fundraising-nav", "label": "Fundraising (fund NAV for LP reporting)" },
+        { "value": "secondary", "label": "Secondary transaction" }
+      ]
+    },
+    {
+      "id": "methodology",
+      "type": "select",
+      "label": "Preferred methodology",
+      "required": true,
+      "options": [
+        { "value": "public-comps", "label": "Comparable public companies" },
+        { "value": "precedent-transactions", "label": "Precedent transactions" },
+        { "value": "dcf", "label": "DCF (discounted cash flow)" },
+        { "value": "lbo", "label": "LBO analysis (PE)" },
+        { "value": "revenue-multiple", "label": "Revenue multiple (VC)" },
+        { "value": "scorecard", "label": "Scorecard method (early VC)" },
+        { "value": "recommend", "label": "Let ANTON recommend based on stage" }
+      ]
+    },
+    {
+      "id": "company_stage",
+      "type": "select",
+      "label": "Company stage",
+      "required": true,
+      "options": [
+        { "value": "pre-revenue", "label": "Pre-revenue" },
+        { "value": "early-revenue", "label": "Early revenue (<$1M ARR)" },
+        { "value": "growth", "label": "Growth ($1–10M ARR)" },
+        { "value": "scale", "label": "Scale ($10–50M ARR)" },
+        { "value": "mature", "label": "Mature ($50M+ revenue)" },
+        { "value": "profitable", "label": "Profitable / Cash-generating" }
+      ]
+    },
+    {
+      "id": "financial_data",
+      "type": "textarea",
+      "label": "Key financial data (revenue, growth, margins, EBITDA)",
+      "placeholder": "ARR: €8M | Growth: 65% YoY | Gross margin: 72% | EBITDA: -€2M | Ask: €40M pre-money",
+      "required": true
+    },
+    {
+      "id": "comparable_guidance",
+      "type": "textarea",
+      "label": "Comparable companies or transactions you're aware of",
+      "placeholder": "Salesforce, HubSpot, or recent Nordic SaaS acquisitions...",
+      "required": false
+    }
+  ],
+  "tags": ["pe-vc", "valuation", "dcf", "lbo", "comparables", "multiples", "investment-decision"]
+}

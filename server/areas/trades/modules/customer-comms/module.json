@@ -1,0 +1,83 @@
+{
+  "formatVersion": "1.0",
+  "id": "customer-comms",
+  "label": "Customer Message Writer",
+  "shortLabel": "Customer Msg",
+  "icon": "MessageSquare",
+  "description": "Write a quick message to your customer — confirmation, delay notice, follow-up, or anything else. Sounds like you, not like a robot.",
+  "color": "adv-gold",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Haiku is ideal for short messages. Fast and natural-sounding."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "balanced",
+    "outputFormats": [],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Customer communication for tradespeople — booking confirmations, delay notices, follow-ups, complaints"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "message_type",
+      "type": "select",
+      "label": "What kind of message?",
+      "required": true,
+      "options": [
+        { "value": "confirmation", "label": "Booking confirmation" },
+        { "value": "delay", "label": "Delay or rescheduling" },
+        { "value": "quote-followup", "label": "Following up on a quote" },
+        { "value": "completed", "label": "Job completed — send invoice" },
+        { "value": "complaint-response", "label": "Responding to a complaint" },
+        { "value": "payment-reminder", "label": "Payment reminder" },
+        { "value": "other", "label": "Something else" }
+      ]
+    },
+    {
+      "id": "customer_name",
+      "type": "text",
+      "label": "Customer first name",
+      "placeholder": "Lars",
+      "required": false
+    },
+    {
+      "id": "key_info",
+      "type": "textarea",
+      "label": "What do you need to say? (bullet points are fine)",
+      "placeholder": "Coming Thursday instead of Wednesday. Pipe I needed was out of stock. Have it now.",
+      "required": true
+    },
+    {
+      "id": "channel",
+      "type": "select",
+      "label": "How will you send this?",
+      "required": false,
+      "options": [
+        { "value": "sms", "label": "SMS / text message" },
+        { "value": "email", "label": "Email" },
+        { "value": "whatsapp", "label": "WhatsApp / messaging app" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor"],
+  "myWayProcessType": "communicating",
+  "tags": [
+    "trades",
+    "customer-message",
+    "sms",
+    "email",
+    "whatsapp",
+    "communication",
+    "delay",
+    "booking-confirmation",
+    "payment-reminder"
+  ]
+}

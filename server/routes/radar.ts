@@ -183,15 +183,16 @@ Return ONLY valid JSON (no markdown, no extra text):
 
   // ── Scan endpoints ────────────────────────────────────────────
 
-  // POST /api/radar/scan — full scan of all active sources
-  router.post('/radar/scan', async (_req, res) => {
+  // POST /api/radar/scan — scan active sources; optional body { category } limits to that category
+  router.post('/radar/scan', async (req, res) => {
     if (!fetcher) {
       return res.status(503).json({ error: 'Radar fetcher not initialized (missing API key?)' });
     }
     try {
+      const category = (req.body as { category?: string } | undefined)?.category || undefined;
       // Return immediately, scan runs in background
-      res.json({ started: true });
-      fetcher.scanAllSources().catch((err: unknown) => {
+      res.json({ started: true, category: category ?? 'all' });
+      fetcher.scanAllSources(category).catch((err: unknown) => {
         console.error('[radar] background scan error:', err);
       });
     } catch (err) {
@@ -243,6 +244,7 @@ Return ONLY valid JSON (no markdown, no extra text):
         autoScanEnabled: settings['auto_scan_enabled'] === '1',
         autoScanIntervalHours: parseInt(settings['auto_scan_interval_hours'] || '24', 10),
         autoScanCron: settings['auto_scan_cron'] || '',
+        pevcScoringCriteria: settings['pevc_scoring_criteria'] || '',
       });
     } catch (err) {
       console.error('[radar] settings read error:', err);
@@ -253,7 +255,7 @@ Return ONLY valid JSON (no markdown, no extra text):
   // PUT /api/radar/settings — update auto-scan settings
   router.put('/radar/settings', (req, res) => {
     try {
-      const { autoScanEnabled, autoScanIntervalHours, autoScanCron } = req.body as { autoScanEnabled?: boolean; autoScanIntervalHours?: number; autoScanCron?: string };
+      const { autoScanEnabled, autoScanIntervalHours, autoScanCron, pevcScoringCriteria } = req.body as { autoScanEnabled?: boolean; autoScanIntervalHours?: number; autoScanCron?: string; pevcScoringCriteria?: string };
       const updateStmt = db.prepare('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))');
 
       if (autoScanEnabled !== undefined) {
@@ -267,6 +269,9 @@ Return ONLY valid JSON (no markdown, no extra text):
           return res.status(400).json({ error: 'Invalid cron expression' });
         }
         updateStmt.run('auto_scan_cron', autoScanCron || '');
+      }
+      if (pevcScoringCriteria !== undefined) {
+        updateStmt.run('pevc_scoring_criteria', pevcScoringCriteria.trim());
       }
 
       // Apply schedule changes to the fetcher

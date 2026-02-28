@@ -2,6 +2,7 @@ import { Router } from 'express';
 import path from 'path';
 import type Database from 'better-sqlite3';
 import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
+import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
@@ -264,6 +265,140 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         ? [...new Set([...selectedSkills, ...autoAttachIds])]
         : autoAttachIds.length > 0 ? autoAttachIds : undefined;
 
+      // PE/VC "My Way of Working" — inject fund identity + IC memo template for ic-memo module
+      let businessContext: string | null = null;
+      if (moduleId === 'ic-memo') {
+        try {
+          const identityRow = db.prepare("SELECT * FROM fund_identity WHERE id = 'default'").get() as Record<string, string | null> | undefined;
+          if (identityRow) {
+            const contextParts: string[] = ['## YOUR FIRM\'S CONTEXT (MY WAY OF WORKING)'];
+            contextParts.push(
+              `Fund: ${identityRow.fund_name || '(not set)'} (${identityRow.fund_type || 'fund type not set'})\n` +
+              `Geography: ${identityRow.geography_focus || '(not set)'}\n` +
+              `Sectors: ${identityRow.sector_focus || '(not set)'}\n` +
+              `Typical check size: ${identityRow.typical_check_size || '(not set)'}\n` +
+              `Partner: ${identityRow.partner_name || '(not set)'}\n` +
+              `Currency: ${identityRow.currency || 'EUR'}\n` +
+              `Investment style: ${identityRow.investment_style_notes || '(not set)'}`
+            );
+
+            // Look up the default IC memo template
+            const tmplRow = db.prepare(
+              "SELECT template_content, section_order, style_notes FROM ic_memo_templates WHERE is_default = 1 ORDER BY updated_at DESC LIMIT 1"
+            ).get() as { template_content: string; section_order: string; style_notes: string } | undefined;
+
+            if (tmplRow?.template_content) {
+              let sectionOrder: string[] = [];
+              try { sectionOrder = JSON.parse(tmplRow.section_order); } catch { /* keep empty */ }
+              contextParts.push(
+                `## YOUR IC MEMO FORMAT (MY WAY OF WORKING)\n` +
+                `The user's IC memos follow this EXACT structure. Replicate it precisely:\n\n` +
+                tmplRow.template_content +
+                (sectionOrder.length ? `\n\nSection order: ${sectionOrder.join(' → ')}` : '') +
+                (tmplRow.style_notes ? `\n\nStyle notes: ${tmplRow.style_notes}` : '')
+              );
+              contextParts.push(
+                `## CRITICAL INSTRUCTION\nThis IC memo must follow the user's established format exactly. ` +
+                `Match their section headings, level of detail per section, writing style, and recommendation framing. ` +
+                `The user must not be able to tell whether they or ANTON wrote this memo.`
+              );
+            }
+
+            businessContext = contextParts.join('\n\n');
+          }
+        } catch (pevcErr) {
+          console.warn('[pe-vc] Failed to load IC memo context (non-fatal):', pevcErr);
+        }
+      }
+
+      // Trades "My Way of Working" — fetch business identity + matching template/pattern
+      if (!businessContext && areaId === 'trades') {
+        try {
+          const identityRow = db.prepare("SELECT profile_data FROM business_identity WHERE id = 'default'").get() as { profile_data: string } | undefined;
+          if (identityRow) {
+            const profile = JSON.parse(identityRow.profile_data);
+
+            // Look up the module config to find myWayProcessType
+            let processType: string | null = null;
+            if (moduleId) {
+              try {
+                const { getModule } = await import('../services/module-loader.js');
+                const modConfig = await getModule(moduleId);
+                processType = (modConfig as any)?.myWayProcessType || null;
+              } catch { /* non-fatal */ }
+            }
+
+            const docTypeMap: Record<string, string> = {
+              invoicing: 'invoice',
+              quoting: 'quote',
+              communicating: 'message',
+            };
+            const docType = processType ? docTypeMap[processType] || processType : null;
+
+            let templateData: unknown = null;
+            if (docType) {
+              const tmplRow = db.prepare("SELECT template_data FROM document_templates WHERE document_type = ? AND is_default = 1 LIMIT 1").get(docType) as
+                | { template_data: string }
+                | undefined;
+              if (tmplRow) {
+                try { templateData = JSON.parse(tmplRow.template_data); } catch { /* ignore */ }
+              }
+            }
+
+            let patternData: unknown = null;
+            if (processType) {
+              const ptnRow = db.prepare("SELECT pattern_data FROM process_patterns WHERE process_type = ? ORDER BY updated_at DESC LIMIT 1").get(processType) as
+                | { pattern_data: string }
+                | undefined;
+              if (ptnRow) {
+                try { patternData = JSON.parse(ptnRow.pattern_data); } catch { /* ignore */ }
+              }
+            }
+
+            const contextParts: string[] = ['## MY WAY OF WORKING — BUSINESS IDENTITY'];
+            contextParts.push(
+              `Business: ${profile.businessName || '(not set)'}\n` +
+              `Owner: ${profile.ownerName || ''}\n` +
+              `Trade: ${profile.tradeType || ''}\n` +
+              `Hourly rate: ${profile.hourlyRate ? `${profile.hourlyRate} ${profile.currency || 'SEK'}` : '(not set)'}\n` +
+              `Travel rate: ${profile.travelRate ? `${profile.travelRate} ${profile.currency || 'SEK'}/hour` : '(none)'}\n` +
+              `Payment: ${profile.preferredPaymentMethods?.map((p: any) => p.details).join(', ') || '(not set)'}\n` +
+              `Payment terms: ${profile.defaultPaymentTerms ? `${profile.defaultPaymentTerms} days` : '(not set)'}\n` +
+              `VAT registered: ${profile.vatRegistered ? 'Yes' : 'No'}\n` +
+              `Country: ${profile.country || 'SE'}\n` +
+              `Invoice numbering: ${profile.invoiceNumberFormat || '(not set)'}\n` +
+              `Invoice prefix: ${profile.invoicePrefix || ''}\n` +
+              `Certifications: ${profile.certifications?.join(', ') || 'none'}\n` +
+              `Late payment text: ${profile.latePaymentText || '(default)'}`
+            );
+
+            if (templateData) {
+              contextParts.push(
+                `## MY INVOICE/DOCUMENT TEMPLATE\n` +
+                `The user's documents follow this EXACT structure and vocabulary. USE THIS, do not deviate:\n` +
+                JSON.stringify(templateData, null, 2)
+              );
+            }
+
+            if (patternData) {
+              contextParts.push(
+                `## MY PROCESS PATTERN\n` +
+                `When creating ${processType} documents, apply these rules and inputs:\n` +
+                JSON.stringify(patternData, null, 2)
+              );
+            }
+
+            contextParts.push(
+              `## CRITICAL INSTRUCTION\nGenerate output that matches the user's business identity EXACTLY. Use their vocabulary, their document structure, their rates, their payment terms. The user must not be able to tell whether they or ANTON created this document.`
+            );
+
+            businessContext = contextParts.join('\n\n');
+          }
+        } catch (bizErr) {
+          console.warn('[trades] Failed to load business context (non-fatal):', bizErr);
+        }
+      }
+
       // Compose the full system prompt through the layered PromptComposer (async).
       // For Anthropic models that support prompt caching (Opus 4.6, Sonnet 4.5) we use
       // the split variant so the stable static layers (Foundation + Area Context + Module
@@ -293,6 +428,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         knowledgeSystemAdditions: resolved.systemPromptAdditions,
         knowledgeContextDocuments: resolved.contextDocuments,
         userProfile: userProfile || null,
+        businessContext: businessContext || null,
       } as const;
 
       // Use the split composer for Anthropic models (supports caching); plain for others.
@@ -939,6 +1075,136 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
     }
   });
 
+  // POST /api/claude/deliberate — Multi-Model Deliberation Protocol
+  // Fans the same prompt to Opus + Sonnet + Haiku in parallel, scores agreement,
+  // and streams an Opus-synthesised confidence-weighted response.
+  router.post('/claude/deliberate', checkBudget, async (req, res) => {
+    try {
+      if (!isApiKeyConfigured()) {
+        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+        return;
+      }
+
+      const {
+        moduleId,
+        areaId,
+        systemPrompt,
+        outputInstruction,
+        creativity,
+        thinking,
+        transparencyLevel,
+        userMessage,
+        knowledgeSources,
+        sessionId,
+      } = req.body;
+
+      if (!userMessage || typeof userMessage !== 'string' || !userMessage.trim()) {
+        res.status(400).json({ error: 'userMessage is required' });
+        return;
+      }
+
+      // Resolve knowledge sources (same as regular message route)
+      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
+      const uploadedFilePaths = uploadedFileIds
+        .map((id: string) => path.join(path.resolve(process.env.UPLOAD_DIR || './uploads'), id))
+        .filter((p: string) => p.startsWith(path.resolve(process.env.UPLOAD_DIR || './uploads')));
+
+      const resolved = knowledgeSources
+        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
+        : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
+
+      // User profile for personalisation
+      const userProfile = db
+        .prepare('SELECT * FROM user_profiles WHERE id = ?')
+        .get('default') as Record<string, string | null> | undefined;
+
+      // Compose system prompt (full, non-cached — all 3 panelists share same base)
+      const composedPrompt = await composeSystemPrompt({
+        moduleId,
+        areaId,
+        systemPromptOverride: systemPrompt,
+        creativity: creativity || 'balanced',
+        thinking: thinking || 'think_hard',
+        outputInstruction,
+        plainTextMode: false,
+        transparencyLevel: ([0, 1, 2] as number[]).includes(transparencyLevel) ? (transparencyLevel as 0 | 1 | 2) : 0,
+        writingTone: req.body.writingTone || 'professional',
+        emojiEnabled: false,
+        knowledgeSystemAdditions: resolved.systemPromptAdditions,
+        knowledgeContextDocuments: resolved.contextDocuments,
+        userProfile: userProfile || null,
+      });
+
+      // Set up SSE
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      });
+      const send = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+
+      send({ type: 'deliberation_start', panelists: DEFAULT_PANELISTS.map((p) => ({ model: p.model, role: p.role, description: p.description })) });
+
+      // Track individual panelist opinions for final event
+      const opinions: Array<{ model: string; role: string; description: string; response: string; executionMs: number }> = [];
+
+      const meta = await runDeliberation(
+        composedPrompt,
+        userMessage,
+        DEFAULT_PANELISTS,
+        // onModelStart
+        (model, role) => send({ type: 'model_start', model, role }),
+        // onModelComplete
+        (opinion) => {
+          opinions.push(opinion);
+          send({
+            type: 'model_complete',
+            model: opinion.model,
+            role: opinion.role,
+            description: opinion.description,
+            executionMs: opinion.executionMs,
+            responsePreview: opinion.response.slice(0, 300),
+          });
+        },
+        // onSynthesisChunk
+        (chunk) => send({ type: 'text_delta', content: chunk }),
+      );
+
+      send({
+        type: 'deliberation_complete',
+        ...meta,
+        opinions: opinions.map((o) => ({ model: o.model, role: o.role, description: o.description, response: o.response, executionMs: o.executionMs })),
+      });
+
+      // Persist synthesis to session if sessionId provided
+      if (sessionId) {
+        try {
+          const synthesisText = opinions.length > 0
+            ? `[Deliberation — ${meta.confidence} confidence, ${meta.agreementLevel} agreement]\n\n${userMessage}`
+            : userMessage;
+          db.prepare(
+            `INSERT OR IGNORE INTO messages (id, session_id, role, content, created_at)
+             VALUES (?, ?, 'user', ?, ?)`
+          ).run(crypto.randomUUID(), sessionId, synthesisText, new Date().toISOString());
+        } catch { /* non-fatal */ }
+      }
+
+      res.write('data: [DONE]\n\n');
+      res.end();
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (!res.headersSent) {
+        res.status(500).json({ error: message });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: 'error', message })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+      }
+    }
+  });
+
   // POST /api/claude/verify-citations — WP-32 Citation Verification Layer
   router.post('/claude/verify-citations', async (req, res) => {
     try {
@@ -956,6 +1222,49 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
 
       const citations = await verifyCitations(text);
       res.json({ citations });
+    } catch (error) {
+      res.status(500).json({ error: safeError(error) });
+    }
+  });
+
+  // POST /api/modules/smart-search — AI-powered natural-language module finder
+  router.post('/modules/smart-search', async (req, res) => {
+    if (!isApiKeyConfigured()) {
+      res.status(503).json({ error: 'API key not configured' });
+      return;
+    }
+
+    const { query, modules } = req.body as {
+      query?: string;
+      modules?: Array<{ id: string; label: string; description: string }>;
+    };
+
+    if (!query?.trim() || !Array.isArray(modules) || modules.length === 0) {
+      res.status(400).json({ error: 'query and modules are required' });
+      return;
+    }
+
+    try {
+      const client = getClient();
+      const moduleList = modules
+        .slice(0, 120)
+        .map(m => `- ${m.id}: ${m.label} — ${m.description}`)
+        .join('\n');
+
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY a valid JSON array — no prose, no markdown fences, nothing else.`,
+        messages: [{
+          role: 'user',
+          content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as a JSON array:\n[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]`,
+        }],
+      });
+
+      const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '[]';
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      res.json(matches.slice(0, 3));
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
     }

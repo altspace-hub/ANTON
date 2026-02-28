@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "portfolio-monitoring",
+  "label": "Portfolio Monitoring Dashboard",
+  "shortLabel": "Portfolio Monitor",
+  "icon": "LayoutDashboard",
+  "description": "Track portfolio company performance, generate board pack summaries from raw data, and flag concerns early. Cost-effective with Sonnet for regular monthly use.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Sonnet is fast and cost-effective for regular monitoring. Use Opus for complex portfolio situations."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Portfolio monitoring frameworks, KPI benchmarks, early warning signals"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "monitoring_task",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        { "value": "monthly-update", "label": "Monthly/quarterly update analysis (paste company's numbers)" },
+        { "value": "board-prep", "label": "Board meeting preparation" },
+        { "value": "portfolio-summary", "label": "Portfolio-wide performance summary" },
+        { "value": "early-warning", "label": "Early warning flag review" },
+        { "value": "follow-on", "label": "Follow-on investment assessment" },
+        { "value": "benchmark", "label": "Benchmark against comparable companies" }
+      ]
+    },
+    {
+      "id": "company_name",
+      "type": "text",
+      "label": "Portfolio company",
+      "placeholder": "Company name",
+      "required": true
+    },
+    {
+      "id": "metrics_data",
+      "type": "textarea",
+      "label": "Latest metrics (paste from report or email)",
+      "placeholder": "ARR: €4.2M (+12% vs last month)\nGross margin: 71%\nBurn: €280K\nHeadcount: 42\nNew customers: 3\nChurn: 1 customer",
+      "required": true
+    },
+    {
+      "id": "previous_metrics",
+      "type": "textarea",
+      "label": "Previous period metrics (for comparison)",
+      "placeholder": "ARR: €3.75M | GM: 69% | Burn: €310K | HC: 39",
+      "required": false
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Any specific concerns?",
+      "placeholder": "e.g., Burn rate increasing, key hire left, sales pipeline thinning",
+      "required": false
+    }
+  ],
+  "tags": ["pe-vc", "portfolio", "monitoring", "board-pack", "kpi", "early-warning"]
+}

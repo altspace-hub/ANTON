@@ -1,0 +1,17 @@
+{
+  "formatVersion": "1.0",
+  "id": "pe-vc",
+  "name": "Private Equity & Venture Capital",
+  "shortName": "PE/VC",
+  "description": "AI-powered tools for the complete investment lifecycle — from deal sourcing and screening through diligence, valuation, IC memos, portfolio management, and exit. Serves VC associates, PE deal teams, fund-of-funds, and corporate venture groups.",
+  "icon": "TrendingUp",
+  "color": "adv-blue",
+  "cluster": "finance",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Investment decisions demand maximum accuracy. Opus 4.6 default for analytical modules; Sonnet for high-volume screening and monitoring."
+  },
+  "myWayEnabled": true
+}

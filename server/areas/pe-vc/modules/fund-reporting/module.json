@@ -1,0 +1,72 @@
+{
+  "formatVersion": "1.0",
+  "id": "fund-reporting",
+  "label": "Fund Performance & LP Reporting",
+  "shortLabel": "Fund Reporting",
+  "icon": "PieChart",
+  "description": "Generate LP reports, calculate fund metrics, and prepare annual meeting materials. Turns portfolio data into professional investor communications.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Sonnet for regular reporting; Opus for complex fund analysis or fundraising materials."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Fund performance metrics, IRR/TVPI/DPI calculations, LP reporting standards"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "report_type",
+      "type": "select",
+      "label": "What report do you need?",
+      "required": true,
+      "options": [
+        { "value": "quarterly-lp", "label": "Quarterly LP letter / update" },
+        { "value": "annual-report", "label": "Annual fund report" },
+        { "value": "fundraising-deck", "label": "Fundraising presentation (new fund)" },
+        { "value": "agm-materials", "label": "AGM materials" },
+        { "value": "portfolio-summary", "label": "Portfolio company summary for LPs" },
+        { "value": "performance-analysis", "label": "Fund performance analysis (IRR, TVPI, DPI)" }
+      ]
+    },
+    {
+      "id": "fund_info",
+      "type": "textarea",
+      "label": "Fund details (name, vintage, size, strategy, number of investments)",
+      "placeholder": "Nordic Growth Fund III — Vintage 2021 — €150M — B2B SaaS and vertical software — 12 portfolio companies",
+      "required": true
+    },
+    {
+      "id": "period",
+      "type": "text",
+      "label": "Reporting period",
+      "placeholder": "e.g., Q4 2025, FY 2025",
+      "required": true
+    },
+    {
+      "id": "performance_data",
+      "type": "textarea",
+      "label": "Key fund metrics (NAV, invested, distributed, unrealised)",
+      "placeholder": "Capital called: €85M | Invested: €78M | Distributed: €12M | Unrealised NAV: €142M | TVPI: 1.81x | DPI: 0.14x | IRR: 22%",
+      "required": false
+    },
+    {
+      "id": "highlights",
+      "type": "textarea",
+      "label": "Key highlights / lowlights to cover",
+      "placeholder": "Highlights: Company X completed Series C at 3x our entry. Company Y won €5M enterprise contract.\nLowlights: Company Z is struggling — burn rate increased, reducing our NAV mark.",
+      "required": false
+    }
+  ],
+  "tags": ["pe-vc", "lp-reporting", "fund-performance", "irr", "tvpi", "dpi", "agm", "quarterly-update"]
+}

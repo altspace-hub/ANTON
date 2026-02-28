@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.0",
+  "id": "audience-testing",
+  "label": "Audience & Focus Group Simulator",
+  "shortLabel": "Audience Test",
+  "icon": "Users",
+  "description": "Simulate structured audience reactions to creative content by testing against configurable reader/viewer personas — emotional impact, engagement, cultural resonance, and marketability.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "gap-scoring-matrix"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Audience psychology, reader response theory, market demographics, genre readership, emotional engagement patterns, focus group methodology"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "content_type",
+      "label": "Content Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "script-excerpt", "label": "Script / Screenplay excerpt" },
+        { "value": "chapter", "label": "Novel chapter" },
+        { "value": "synopsis", "label": "Synopsis / Summary" },
+        { "value": "logline", "label": "Logline / Pitch" },
+        { "value": "trailer-description", "label": "Trailer / Teaser description" },
+        { "value": "opening-pages", "label": "Opening pages / First act" },
+        { "value": "game-narrative", "label": "Game narrative / Interactive story" }
+      ]
+    },
+    {
+      "id": "primary_audience",
+      "label": "Primary Target Audience",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Describe your target audience: age range, gender, interests, media habits, cultural background, sophistication level, e.g. 'Women 25-45, literary fiction readers, enjoy character-driven drama, Scandinavian crime fans'..."
+    },
+    {
+      "id": "additional_audiences",
+      "label": "Additional Audience Segments to Test",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "List other audience segments you want reaction from, e.g. 'Young adult (16-24)', 'Non-English-speaking markets', 'Genre newcomers'..."
+    },
+    {
+      "id": "test_focus",
+      "label": "Test Focus",
+      "type": "chips",
+      "required": true,
+      "options": [
+        { "value": "emotional-impact", "label": "Emotional impact" },
+        { "value": "comprehension", "label": "Comprehension & clarity" },
+        { "value": "engagement", "label": "Engagement & pacing" },
+        { "value": "cultural-resonance", "label": "Cultural resonance" },
+        { "value": "marketability", "label": "Marketability & hook" },
+        { "value": "character-appeal", "label": "Character appeal" },
+        { "value": "authenticity", "label": "Authenticity & credibility" }
+      ]
+    },
+    {
+      "id": "content",
+      "label": "Content to Test",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Paste the creative content to be tested..."
+    },
+    {
+      "id": "comparison_context",
+      "label": "Competitive Context (optional)",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Name comparable titles in your genre — helps calibrate the simulated reactions against market expectations..."
+    }
+  ],
+  "recommendedPersonas": ["market-researcher", "literary-agent", "producer"],
+  "tags": ["audience-testing", "focus-group", "market-research", "reader-response", "audience-analysis", "creative-market"]
+}

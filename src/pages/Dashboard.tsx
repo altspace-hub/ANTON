@@ -33,6 +33,7 @@ import { MODULES, MODELS, AREAS } from '@/lib/constants';
 import MorningBrief from '@/features/time-intelligence/MorningBrief';
 import TeamWorkloadView from '@/features/workflows/TeamWorkloadView';
 import RadarWidget from '@/features/radar/RadarWidget';
+import SmartModuleSearch from '@/components/shared/SmartModuleSearch';
 import { STARTER_PACKS } from '@/lib/starter-packs';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { fetchSessions, fetchSessionStats, deleteSession, updateSessionTitle, fetchCommunityModules, fetchProfile, type CustomModuleData } from '@/lib/api';
@@ -540,111 +541,8 @@ export default function Dashboard() {
         </div>
       </details>
 
-      {/* Starter Packs */}
-      <div className="mb-8">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-adv-teal" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">{t('dashboard.starterPacks')}</span>
-            <span className="text-xs text-adv-gray-med">{STARTER_PACKS.length}</span>
-            {hasProfile && (
-              <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] font-medium text-adv-teal">
-                {t('dashboard.personalised')}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {!hasProfile && (
-              <span className="text-[11px] text-adv-gray-med italic">
-                {t('dashboard.completeProfileToPersonalise')} <Link to="/settings" className="text-adv-teal hover:underline">{t('dashboard.profileLink')}</Link> {t('dashboard.toPersonalise')}
-              </span>
-            )}
-            <button
-              onClick={toggleStarterPacks}
-              className="text-xs text-adv-gray hover:text-adv-teal transition-colors"
-            >
-              {starterPacksHidden ? t('dashboard.show') : t('dashboard.hide')}
-            </button>
-          </div>
-        </div>
-        {!starterPacksHidden && (
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-adv-card">
-            {rankedPacks.map((pack) => {
-              const packScore = scorePackForProfile(pack);
-              const isRecommended = hasProfile && packScore > 0;
-              const PackIcon = iconMap[pack.icon];
-              const borderColorClass = {
-                'adv-teal':  'border-t-adv-teal',
-                'adv-blue':  'border-t-adv-blue',
-                'adv-gold':  'border-t-adv-gold',
-                'adv-green': 'border-t-adv-green',
-                'adv-red':   'border-t-adv-red',
-              }[pack.color] ?? 'border-t-adv-teal';
-              const iconColorClass = {
-                'adv-teal':  'bg-adv-teal/10 text-adv-teal',
-                'adv-blue':  'bg-adv-blue/10 text-adv-blue',
-                'adv-gold':  'bg-adv-gold/10 text-adv-gold',
-                'adv-green': 'bg-adv-green/10 text-adv-green',
-                'adv-red':   'bg-adv-red/10 text-adv-red',
-              }[pack.color] ?? 'bg-adv-teal/10 text-adv-teal';
-              const textColorClass = {
-                'adv-teal':  'text-adv-teal',
-                'adv-blue':  'text-adv-blue',
-                'adv-gold':  'text-adv-gold',
-                'adv-green': 'text-adv-green',
-                'adv-red':   'text-adv-red',
-              }[pack.color] ?? 'text-adv-teal';
-              return (
-                <div
-                  key={pack.id}
-                  className={`group flex shrink-0 flex-col rounded-xl border bg-adv-card border-t-2 ${borderColorClass} p-4 transition-all hover:shadow-lg ${isRecommended ? 'border-adv-teal/40' : 'border-border'}`}
-                  style={{ width: '280px', minHeight: '160px' }}
-                >
-                  {isRecommended && (
-                    <div className="mb-2 flex items-center gap-1">
-                      <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] font-semibold text-adv-teal">
-                        ★ {t('dashboard.forYou')}
-                      </span>
-                    </div>
-                  )}
-                  <div className="mb-3 flex items-start gap-3">
-                    {PackIcon && (
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconColorClass}`}>
-                        <PackIcon className="h-4 w-4" />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-adv-off-white">{pack.name}</p>
-                      <span className="mt-0.5 inline-block rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">
-                        {pack.targetUser}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="mb-3 line-clamp-2 flex-1 text-xs leading-relaxed text-adv-gray">
-                    {pack.description}
-                  </p>
-                  <div className="mb-3 flex flex-wrap gap-1">
-                    {pack.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] font-medium text-adv-teal"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <Link
-                    to={`/module/${pack.highlightModuleId}`}
-                    className={`inline-flex items-center gap-1 text-xs font-medium ${textColorClass} hover:underline`}
-                  >
-                    {t('dashboard.getStarted')} <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {/* AI-powered module finder — replaces static Starter Packs */}
+      <SmartModuleSearch />
 
       {/* Favourites row — only shown when at least one module is starred */}
       {favoriteModules.length > 0 && (

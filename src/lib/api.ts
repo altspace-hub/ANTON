@@ -1,4 +1,4 @@
-import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection } from './types';
+import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent } from './types';
 
 const API_BASE = '/api';
 
@@ -687,6 +687,71 @@ export async function exportReviewPanelAnton(params: {
   });
   if (!res.ok) throw new Error('Failed to export review panel');
   return res.blob();
+}
+
+// ── Multi-Model Deliberation ─────────────────────────────────
+
+export interface DeliberationConfig {
+  moduleId?: string;
+  areaId?: string;
+  systemPrompt?: string;
+  outputInstruction?: string;
+  creativity?: string;
+  thinking?: string;
+  transparencyLevel?: number;
+  writingTone?: string;
+  userMessage: string;
+  knowledgeSources?: unknown;
+  uploadedFileIds?: string[];
+  sessionId?: string;
+}
+
+export async function* streamDeliberation(
+  config: DeliberationConfig,
+  signal?: AbortSignal
+): AsyncGenerator<DeliberationEvent> {
+  const res = await fetchWithAuth(`${API_BASE}/claude/deliberate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+    signal,
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    yield { type: 'error', message: error };
+    return;
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) {
+    yield { type: 'error', message: 'No response body' };
+    return;
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') return;
+          try {
+            yield JSON.parse(data) as DeliberationEvent;
+          } catch { /* skip malformed */ }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 /** Download a Trust Certificate PDF for the given session */

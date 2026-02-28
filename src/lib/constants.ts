@@ -8,6 +8,7 @@ import { PHASE4_PROFESSIONAL_MODULES } from './area-patches/phase4-professional-
 import { PHASE4_GLOBAL_SOUTH_MODULES } from './area-patches/phase4-global-south-patch';
 import { PHASE4_BOP_MODULES } from './area-patches/phase4-bop-patch';
 import { CODING_MODULES } from './area-patches/coding-patch';
+import { PE_VC_MODULES } from './area-patches/pe-vc-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -2035,6 +2036,150 @@ export const MODULES: ModuleDefinition[] = [
       },
     },
   },
+  {
+    id: 'hospital-operations',
+    label: 'Hospital Operations Optimisation',
+    shortLabel: 'Hospital Operations',
+    icon: 'Building2',
+    description: 'Operational efficiency assessment for hospitals and healthcare facilities covering patient flow, bed management, OR utilisation, ED throughput, and workforce planning.',
+    color: 'adv-teal',
+    defaults: {
+      thinking: 'think',
+      creativity: 'balanced',
+      outputFormats: ['detailed-findings', 'impact-assessment', 'action-plan'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'Lean in healthcare, Theory of Constraints, bed management, OR utilisation, ED throughput, workforce planning' },
+      },
+    },
+  },
+  {
+    id: 'medical-device-compliance',
+    label: 'Medical Device Regulatory Compliance',
+    shortLabel: 'Medical Devices',
+    icon: 'Stethoscope',
+    description: 'Navigate medical device regulatory compliance globally — EU MDR/IVDR, FDA 510(k)/PMA, risk classification, technical documentation, Post-Market Surveillance, ISO 13485.',
+    color: 'adv-teal',
+    defaults: {
+      thinking: 'think_hard',
+      creativity: 'strict',
+      outputFormats: ['gap-scoring-matrix', 'action-plan', 'detailed-findings'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'EU MDR 2017/745, IVDR 2017/746, FDA 510(k), PMA, ISO 13485, risk classification, technical documentation, Post-Market Surveillance, SaMD' },
+      },
+    },
+  },
+  {
+    id: 'patient-safety-quality',
+    label: 'Patient Safety & Quality Assessment',
+    shortLabel: 'Patient Safety',
+    icon: 'ShieldCheck',
+    description: 'Assess patient safety programmes, clinical quality indicators, serious adverse event processes, root cause analysis, and accreditation readiness — JCI, ISO 15189, CQC.',
+    color: 'adv-teal',
+    defaults: {
+      thinking: 'think_hard',
+      creativity: 'strict',
+      outputFormats: ['gap-scoring-matrix', 'detailed-findings', 'action-plan'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'WHO patient safety goals, JCI International Patient Safety Goals, RCA methodology, FMEA in healthcare, Just Culture, clinical quality indicators, accreditation standards' },
+      },
+    },
+  },
+  {
+    id: 'pharma-market-access',
+    label: 'Pharmaceutical Market Access Strategy',
+    shortLabel: 'Market Access',
+    icon: 'TrendingUp',
+    description: 'Develop market access strategies for pharmaceutical and biotech products — HTA submissions, reimbursement negotiations, pricing strategy, HEOR evidence generation, payer engagement.',
+    color: 'adv-teal',
+    defaults: {
+      thinking: 'investigate',
+      creativity: 'balanced',
+      outputFormats: ['executive-summary', 'decision-memo', 'action-plan'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'HTA methodologies, NICE cost-effectiveness, G-BA benefit assessment, HAS SMR/ASMR, HEOR evidence, managed entry agreements, payer landscape, international reference pricing' },
+      },
+    },
+  },
+  {
+    id: 'healthcare-regulatory-submission',
+    label: 'Healthcare Regulatory Submission Guide',
+    shortLabel: 'Regulatory Submission',
+    icon: 'FileCheck',
+    description: 'Prepare and manage regulatory submissions to health authorities — EMA, FDA, MHRA. Covers CTD format, scientific advice, marketing authorisation, and variation applications.',
+    color: 'adv-teal',
+    defaults: {
+      thinking: 'think_hard',
+      creativity: 'strict',
+      outputFormats: ['action-plan', 'detailed-findings'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'CTD format, EMA CHMP procedures, FDA review pathways, marketing authorisation requirements, variation applications, regulatory timelines' },
+      },
+    },
+  },
+  {
+    id: 'clinical-documentation-assistant',
+    label: 'Clinical Documentation Assistant',
+    shortLabel: 'Clinical Docs',
+    icon: 'ClipboardPen',
+    description: 'Draft discharge summaries, referral letters, outpatient letters, and clinical notes to professional standards — saving clinicians administrative time while maintaining medico-legal accuracy.',
+    color: 'adv-red',
+    defaults: {
+      thinking: 'think',
+      creativity: 'strict',
+      outputFormats: ['policy-document'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Clinical documentation standards, SBAR, SOAP notes, NHS discharge summary requirements, referral letter etiquette, medico-legal documentation' },
+      },
+    },
+  },
+  {
+    id: 'medical-evidence-synthesiser',
+    label: 'Medical Evidence Synthesiser',
+    shortLabel: 'Evidence Synthesis',
+    icon: 'Microscope',
+    description: 'Synthesise medical evidence using PICO, GRADE, and Oxford CEBM frameworks. Critically appraises study quality, grades evidence strength, and translates research into actionable clinical guidance.',
+    color: 'adv-red',
+    defaults: {
+      thinking: 'investigate',
+      creativity: 'strict',
+      outputFormats: ['detailed-findings', 'executive-summary'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'Clinical evidence, systematic reviews, RCTs, GRADE methodology, critical appraisal, NNT/NNH, Cochrane methodology, medical literature' },
+      },
+    },
+  },
+  {
+    id: 'practice-management-optimizer',
+    label: 'Practice Management & Admin Optimizer',
+    shortLabel: 'Practice Management',
+    icon: 'CalendarClock',
+    description: 'Optimise healthcare practice workflows — scheduling, referrals, QOF recall, patient communications, staff rotas, CQC preparation. Specific, actionable guidance for primary and specialist care.',
+    color: 'adv-red',
+    defaults: {
+      thinking: 'think',
+      creativity: 'balanced',
+      outputFormats: ['action-plan', 'policy-document'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Primary care management, QOF framework, e-RS referral pathways, scheduling optimisation, EMIS/SystmOne workflows, CQC inspection criteria, PCN requirements' },
+      },
+    },
+  },
+  {
+    id: 'patient-education-material-creator',
+    label: 'Patient Education Material Creator',
+    shortLabel: 'Patient Education',
+    icon: 'BookOpen',
+    description: 'Create clinically accurate, readable patient education materials — condition guides, discharge instructions, self-management plans — at precisely the right reading level using health literacy and behaviour change principles.',
+    color: 'adv-red',
+    defaults: {
+      thinking: 'think',
+      creativity: 'balanced',
+      outputFormats: ['training-material'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'Health literacy standards, plain language guidelines, NICE patient information standards, behaviour change models, condition-specific clinical information' },
+      },
+    },
+  },
 
   // ── Manufacturing & Operations ───────────────────────────────
   {
@@ -2382,6 +2527,16 @@ export const MODULES: ModuleDefinition[] = [
   { id: 'visual-identity', label: 'Visual Identity Guidelines', shortLabel: 'Visual Identity', icon: 'Layout', description: 'Develop brand visual identity guidelines covering logo usage, colour palette, typography, and brand application rules.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['policy-document'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
   { id: 'campaign-design', label: 'Campaign Design Planner', shortLabel: 'Campaign Design', icon: 'Send', description: 'Plan integrated marketing campaigns with objectives, target segments, channel strategy, and measurement framework.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'creative', outputFormats: ['project-plan'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
 
+  // ── Creative & Entertainment Production ─────────────────────
+  { id: 'script-development', label: 'Script & Screenplay Development', shortLabel: 'Script Dev', icon: 'Film', description: 'Develop screenplays, stage plays, teleplays, and game narratives with proper craft structure — beat sheets, character arcs, genre conventions, and professional formatting.', color: 'adv-teal', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Screenwriting craft, dramatic structure, genre conventions' } } } },
+  { id: 'literary-translation', label: 'Literary & Dramatic Translation', shortLabel: 'Translation', icon: 'Languages', description: 'Translate creative works with cultural adaptation, register matching, and idiomatic equivalence — novels, plays, screenplays, song lyrics, and game dialogue.', color: 'adv-blue', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Literary translation theory, cultural adaptation, register matching' } } } },
+  { id: 'world-building', label: 'World-Building & Setting Engine', shortLabel: 'World-Building', icon: 'Globe', description: 'Create and maintain consistent fictional universes — geography, history, culture, politics, magic/technology systems, and timelines — with built-in consistency checking.', color: 'adv-teal', defaults: { thinking: 'investigate', creativity: 'creative', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'World-building methodology, fantasy and sci-fi conventions, cultural anthropology' } } } },
+  { id: 'editorial-review', label: 'Editorial & Proofreading Suite', shortLabel: 'Editorial', icon: 'PenLine', description: 'Professional multi-pass editorial review — developmental editing, line editing, copy editing, proofreading, and sensitivity reading.', color: 'adv-teal', defaults: { thinking: 'think_hard', creativity: 'strict', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Editorial standards, publishing conventions, style guides' } } } },
+  { id: 'audience-testing', label: 'Audience & Focus Group Simulator', shortLabel: 'Audience Test', icon: 'Users', description: 'Simulate structured audience reactions to creative content by testing against configurable reader/viewer personas — emotional impact, engagement, and marketability.', color: 'adv-blue', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['detailed-findings', 'gap-scoring-matrix'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Audience psychology, reader response theory, market demographics' } } } },
+  { id: 'story-collaboration', label: 'Story Collaboration & Continuity', shortLabel: 'Continuity', icon: 'GitBranch', description: 'Manage multi-author storylines, character handoffs, continuity tracking, and narrative coordination for TV writers\' rooms, novel series, and shared universes.', color: 'adv-gold', defaults: { thinking: 'think', creativity: 'balanced', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Series bible methodology, continuity management, character arc tracking' } } } },
+  { id: 'pre-publication', label: 'Pre-Publication Readiness Check', shortLabel: 'Pre-Publication', icon: 'Send', description: 'Assess manuscript or script readiness for submission — simulates the evaluation an agent, script reader, or publisher would perform.', color: 'adv-green', defaults: { thinking: 'investigate', creativity: 'strict', outputFormats: ['detailed-findings', 'gap-scoring-matrix'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'Literary agency submission standards, publisher guidelines, festival criteria, market categories' } } } },
+  { id: 'market-reach', label: 'Market Reach & Audience Analysis', shortLabel: 'Market Reach', icon: 'TrendingUp', description: 'Analyse market potential, audience demographics, distribution strategy, and competitive landscape for creative works across publishing, film, theatre, and digital channels.', color: 'adv-gold', defaults: { thinking: 'think_hard', creativity: 'strict', outputFormats: ['detailed-findings', 'executive-summary'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'Creative industry market data, publishing trends, film distribution, audience demographics' } } } },
+
   // ── Software Engineering ─────────────────────────────────────
   { id: 'code-review', label: 'Code Review Assistant', shortLabel: 'Code Review', icon: 'GitBranch', description: 'Conduct thorough code reviews identifying security vulnerabilities, performance issues, and best practice deviations.', color: 'adv-teal', defaults: { thinking: 'think_hard', creativity: 'strict', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
   { id: 'architecture-review', label: 'Architecture Review', shortLabel: 'Architecture', icon: 'Network', description: 'Assess system architecture against quality attributes: scalability, resilience, security, and maintainability.', color: 'adv-teal', defaults: { thinking: 'investigate', creativity: 'balanced', outputFormats: ['detailed-findings', 'decision-memo'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
@@ -2641,6 +2796,17 @@ export const AREAS = [
     moduleIds: ['brand-strategy', 'content-strategy', 'copywriting', 'visual-identity', 'campaign-design'],
   },
   {
+    id: 'creative-production',
+    label: 'Creative & Entertainment Production',
+    shortLabel: 'Creative',
+    icon: 'Clapperboard',
+    color: 'adv-teal',
+    moduleIds: [
+      'script-development', 'literary-translation', 'world-building', 'editorial-review',
+      'audience-testing', 'story-collaboration', 'pre-publication', 'market-reach',
+    ],
+  },
+  {
     id: 'software-eng',
     label: 'Software Engineering',
     shortLabel: 'Software Eng',
@@ -2706,6 +2872,9 @@ export const AREAS = [
     color: 'adv-red',
     moduleIds: [
       'clinical-protocol', 'regulatory-pathway', 'patient-comms', 'healthcare-gdpr', 'research-ethics',
+      'hospital-operations', 'medical-device-compliance', 'patient-safety-quality', 'pharma-market-access',
+      'healthcare-regulatory-submission', 'clinical-documentation-assistant', 'medical-evidence-synthesiser',
+      'practice-management-optimizer', 'patient-education-material-creator',
     ],
   },
   {
@@ -3034,6 +3203,31 @@ export const AREAS = [
       'breeding-herd-management', 'livestock-market-timing', 'dairy-production-optimizer',
     ],
   },
+  {
+    id: 'trades',
+    label: 'Trades & Service Workers',
+    shortLabel: 'Trades',
+    icon: 'Wrench',
+    color: 'adv-gold',
+    moduleIds: [
+      'invoice-generator', 'job-quote-builder', 'customer-comms',
+      'tax-rot-rut-guide', 'material-order-list',
+    ],
+  },
+  // ── Area 34: Private Equity & Venture Capital ─────────────────────────────
+  {
+    id: 'pe-vc',
+    label: 'Private Equity & Venture Capital',
+    shortLabel: 'PE/VC',
+    icon: 'TrendingUp',
+    color: 'adv-blue',
+    moduleIds: [
+      'deal-screening', 'market-intelligence', 'due-diligence',
+      'financial-analysis', 'valuation-framework', 'ic-memo',
+      'portfolio-monitoring', 'value-creation', 'exit-planning',
+      'fund-reporting', 'deal-structure', 'team-assessment',
+    ],
+  },
 ] as const;
 
 export const MODELS: ModelInfo[] = [
@@ -3254,6 +3448,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...PHASE4_GLOBAL_SOUTH_MODULES,
     ...PHASE4_BOP_MODULES,
     ...CODING_MODULES,
+    ...PE_VC_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {

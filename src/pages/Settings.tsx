@@ -75,6 +75,7 @@ const BASE_TABS = [
   { id: 'general', labelKey: 'settings.general' },
   { id: 'navigation', labelKey: 'settings.navigation' },
   { id: 'knowledge', labelKey: 'settings.knowledge' },
+  { id: 'my-way', labelKey: 'settings.myWay' },
 ] as const;
 
 type BaseTabId = (typeof BASE_TABS)[number]['id'];
@@ -615,6 +616,9 @@ export default function Settings() {
           <KnowledgeLibraryManager />
         </div>
       )}
+
+      {/* My Way of Working tab */}
+      {activeTab === 'my-way' && <MyWaySettingsContent />}
 
       {/* Team tab — admin only, team mode only */}
       {activeTab === 'team' && isAdmin && (
@@ -1926,6 +1930,285 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
       </div>
 
       </>}
+    </div>
+  );
+}
+
+// ── My Way of Working Settings Content ────────────────────────────────────
+
+interface MWIdentity {
+  businessName?: string; ownerName?: string; tradeType?: string; country?: string;
+  hourlyRate?: number; travelRate?: number; defaultPaymentTerms?: number;
+  vatRegistered?: boolean; vatNumber?: string; phone?: string; email?: string; address?: string;
+  invoicePrefix?: string; latePaymentText?: string;
+  preferredPaymentMethods?: Array<{ type: string; details: string }>;
+}
+
+interface MWTemplate {
+  id: string; document_type: string; name: string; isDefault: boolean; created_at: string;
+}
+
+interface MWPattern {
+  id: string; process_type: string; name: string; pattern_data: Record<string, string>; created_at: string;
+}
+
+function MyWaySettingsContent() {
+  const getToken = () => localStorage.getItem('openexpert-token') || '';
+  const authHeaders = () => {
+    const t = getToken();
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  };
+
+  const [identity, setIdentity] = useState<MWIdentity>({});
+  const [identityLoading, setIdentityLoading] = useState(true);
+  const [identitySaving, setIdentitySaving] = useState(false);
+  const [identitySaved, setIdentitySaved] = useState(false);
+
+  const [templates, setTemplates] = useState<MWTemplate[]>([]);
+  const [patterns, setPatterns] = useState<MWPattern[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
+  useEffect(() => {
+    setIdentityLoading(true);
+    fetch('/api/trades/identity', { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { profile?: MWIdentity } | null) => { if (d?.profile) setIdentity(d.profile); })
+      .catch(() => {})
+      .finally(() => setIdentityLoading(false));
+
+    setDataLoading(true);
+    Promise.all([
+      fetch('/api/trades/templates', { headers: authHeaders() }).then(r => r.ok ? r.json() : []),
+      fetch('/api/trades/patterns', { headers: authHeaders() }).then(r => r.ok ? r.json() : []),
+    ])
+      .then(([tmpl, ptrn]: [MWTemplate[], MWPattern[]]) => {
+        setTemplates(tmpl);
+        setPatterns(ptrn);
+      })
+      .catch(() => {})
+      .finally(() => setDataLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function saveIdentity() {
+    setIdentitySaving(true);
+    try {
+      await fetch('/api/trades/identity', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(identity),
+      });
+      setIdentitySaved(true);
+      setTimeout(() => setIdentitySaved(false), 1500);
+    } catch { /* non-fatal */ }
+    finally { setIdentitySaving(false); }
+  }
+
+  async function deleteTemplate(id: string) {
+    if (!confirm('Delete this template?')) return;
+    await fetch(`/api/trades/templates/${id}`, { method: 'DELETE', headers: authHeaders() });
+    setTemplates(prev => prev.filter(t => t.id !== id));
+  }
+
+  async function setDefaultTemplate(id: string) {
+    await fetch(`/api/trades/templates/${id}/set-default`, { method: 'POST', headers: authHeaders() });
+    setTemplates(prev => prev.map(t => ({ ...t, isDefault: t.id === id })));
+  }
+
+  async function deletePattern(id: string) {
+    if (!confirm('Delete this pattern?')) return;
+    await fetch(`/api/trades/patterns/${id}`, { method: 'DELETE', headers: authHeaders() });
+    setPatterns(prev => prev.filter(p => p.id !== id));
+  }
+
+  function identityField(key: keyof MWIdentity, label: string, placeholder: string, type = 'text') {
+    return (
+      <div>
+        <label className="mb-1 block text-xs font-medium text-adv-gray">{label}</label>
+        <input
+          type={type}
+          value={(identity[key] as string | number) || ''}
+          onChange={e => setIdentity(prev => ({
+            ...prev,
+            [key]: type === 'number' ? (e.target.value ? Number(e.target.value) : undefined) : e.target.value,
+          }))}
+          placeholder={placeholder}
+          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Business Identity */}
+      <div className="rounded-xl border border-border bg-adv-card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-adv-white">Business Identity</h2>
+            <p className="mt-0.5 text-xs text-adv-gray">Your business details used in every Trades module output.</p>
+          </div>
+          {identitySaved && (
+            <span className="flex items-center gap-1 text-xs text-adv-green">
+              <Check className="h-3 w-3" /> Saved
+            </span>
+          )}
+        </div>
+
+        {identityLoading ? (
+          <p className="text-xs text-adv-gray-med">Loading…</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {identityField('businessName', 'Business name', 'Erik Lindström VVS')}
+              {identityField('ownerName', 'Your name', 'Erik Lindström')}
+              {identityField('tradeType', 'Your trade', 'Plumbing / VVS')}
+              {identityField('country', 'Country', 'SE')}
+              {identityField('hourlyRate', 'Hourly rate', '650', 'number')}
+              {identityField('travelRate', 'Travel rate (per hour)', '450', 'number')}
+              {identityField('defaultPaymentTerms', 'Payment terms (days)', '20', 'number')}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-adv-gray">VAT registered?</label>
+                <select
+                  value={identity.vatRegistered ? 'yes' : 'no'}
+                  onChange={e => setIdentity(prev => ({ ...prev, vatRegistered: e.target.value === 'yes' }))}
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                >
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              {identityField('invoicePrefix', 'Invoice prefix', 'E-')}
+              {identityField('phone', 'Phone', '070-123 45 67')}
+              {identityField('email', 'Email', 'erik@lindstromvvs.se')}
+              <div className="sm:col-span-2">
+                {identityField('address', 'Business address', 'Kungsgatan 12, Stockholm')}
+              </div>
+              <div className="sm:col-span-2">
+                {identityField('latePaymentText', 'Late payment text', 'Vid försenad betalning tillkommer dröjsmålsränta…')}
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-adv-gray">Payment details</label>
+                <input
+                  type="text"
+                  value={identity.preferredPaymentMethods?.[0]?.details || ''}
+                  onChange={e => setIdentity(prev => ({
+                    ...prev,
+                    preferredPaymentMethods: [{ type: 'bankgiro', details: e.target.value }],
+                  }))}
+                  placeholder="Bankgiro: 123-4567"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={saveIdentity}
+                disabled={identitySaving || !identity.businessName}
+                className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 transition-colors"
+              >
+                {identitySaving ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                Save changes
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Document Templates */}
+      <div className="rounded-xl border border-border bg-adv-card p-6">
+        <h2 className="mb-1 text-sm font-semibold text-adv-white">Document Templates</h2>
+        <p className="mb-4 text-xs text-adv-gray">Learned templates that shape invoice, quote, and message outputs.</p>
+        {dataLoading ? (
+          <p className="text-xs text-adv-gray-med">Loading…</p>
+        ) : templates.length === 0 ? (
+          <p className="text-xs text-adv-gray-med">No templates yet — complete the Trades setup wizard to add one.</p>
+        ) : (
+          <div className="space-y-2">
+            {templates.map(tmpl => (
+              <div key={tmpl.id} className="flex items-center justify-between rounded-lg border border-border bg-adv-dark px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-[10px] font-medium text-adv-gold uppercase">
+                    {tmpl.document_type}
+                  </span>
+                  <span className="text-sm text-adv-off-white">{tmpl.name}</span>
+                  {tmpl.isDefault && (
+                    <span className="rounded-full bg-adv-green/10 px-2 py-0.5 text-[10px] font-medium text-adv-green">
+                      Default
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {!tmpl.isDefault && (
+                    <button
+                      onClick={() => setDefaultTemplate(tmpl.id)}
+                      className="rounded px-2 py-0.5 text-xs text-adv-teal hover:bg-adv-teal/10 transition-colors"
+                    >
+                      Set default
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteTemplate(tmpl.id)}
+                    className="rounded p-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                    title="Delete template"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="mt-3 text-xs text-adv-gray-med">
+          To add a new template, go to <a href="/trades" className="text-adv-teal hover:underline">Trades hub</a> and use the setup wizard.
+        </p>
+      </div>
+
+      {/* Process Patterns */}
+      <div className="rounded-xl border border-border bg-adv-card p-6">
+        <h2 className="mb-1 text-sm font-semibold text-adv-white">Process Patterns</h2>
+        <p className="mb-4 text-xs text-adv-gray">Saved work style preferences used when generating Trades outputs.</p>
+        {dataLoading ? (
+          <p className="text-xs text-adv-gray-med">Loading…</p>
+        ) : patterns.length === 0 ? (
+          <p className="text-xs text-adv-gray-med">No patterns yet — complete Step 3 of the Trades setup wizard.</p>
+        ) : (
+          <div className="space-y-2">
+            {patterns.map(ptrn => {
+              const pd = ptrn.pattern_data || {};
+              return (
+                <div key={ptrn.id} className="rounded-lg border border-border bg-adv-dark px-3 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-[10px] font-medium text-adv-gold uppercase">
+                        {ptrn.process_type}
+                      </span>
+                      <span className="text-sm text-adv-off-white">{ptrn.name}</span>
+                    </div>
+                    <button
+                      onClick={() => deletePattern(ptrn.id)}
+                      className="rounded p-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                      title="Delete pattern"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {Object.keys(pd).length > 0 && (
+                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                      {Object.entries(pd).filter(([, v]) => v).map(([k, v]) => (
+                        <div key={k} className="flex items-baseline gap-1">
+                          <span className="text-[10px] text-adv-gray-med capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
+                          <span className="text-[10px] text-adv-off-white">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

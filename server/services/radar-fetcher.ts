@@ -46,7 +46,7 @@ export interface ScanResult {
   completedAt: string;
 }
 
-// ── Item type classifier ─────────────────────────────────────────
+// ── Item type classifiers ─────────────────────────────────────────
 
 const TYPE_KEYWORDS: Record<string, string[]> = {
   consultation: ['consultation', 'public comment', 'call for evidence', 'discussion paper', 'call for advice'],
@@ -57,8 +57,29 @@ const TYPE_KEYWORDS: Record<string, string[]> = {
   speech: ['speech', 'keynote', 'remarks', 'address', 'interview'],
 };
 
-function classifyItemType(title: string, summary: string): string {
+const PEVC_TYPE_KEYWORDS: Record<string, string[]> = {
+  funding_round: ['funding round', 'series a', 'series b', 'series c', 'series d', 'seed round', 'pre-seed', 'raised $', 'raised €', 'raised £', 'raises $', 'raises €', 'venture round', 'capital raise', 'crowdfunding', 'oversubscribed round'],
+  exit_event: ['ipo', 'acquisition', 'acqui-hire', 'merger', 'going public', 'spac', 'trade sale', 'secondary sale', 'buyout exit', 'strategic acquisition', 'listed on'],
+  patent: ['patent', 'intellectual property', 'ip filing', 'trademark', 'patent granted', 'patent filed'],
+  research_paper: ['arxiv', 'preprint', 'peer-reviewed', 'academic paper', 'research paper', 'white paper', 'university research', 'journal of', 'published in'],
+  technology: ['artificial intelligence', 'machine learning', 'deep learning', 'blockchain', 'quantum', 'robotics', 'biotech', 'cleantech', 'fintech', 'edtech', 'healthtech', 'proptech', 'saas platform', 'open source'],
+  company_signal: ['launches', 'product launch', 'partnership', 'strategic partnership', 'signed contract', 'expands to', 'opens office', 'new customer', 'new hire', 'appoints ceo', 'appoints cto', 'revenue milestone', 'reaches profitability'],
+  macro_trend: ['market size', 'industry forecast', 'sector growth', 'market forecast', 'total addressable market', 'gdp impact', 'macroeconomic', 'global market', 'emerging market', 'industry report'],
+  sector: ['sector overview', 'vertical', 'industry segment', 'market segment', 'sub-sector'],
+};
+
+function classifyItemType(title: string, summary: string, category?: string): string {
   const text = `${title} ${summary}`.toLowerCase();
+
+  // Use PE/VC classification for pe-vc category sources
+  if (category === 'pe-vc') {
+    for (const [type, keywords] of Object.entries(PEVC_TYPE_KEYWORDS)) {
+      if (keywords.some((kw) => text.includes(kw))) return type;
+    }
+    return 'company_signal'; // default for pe-vc items
+  }
+
+  // Standard regulatory classification
   for (const [type, keywords] of Object.entries(TYPE_KEYWORDS)) {
     if (keywords.some((kw) => text.includes(kw))) return type;
   }
@@ -142,8 +163,8 @@ export function createRadarFetcher(db: Database.Database, anthropic: Anthropic) 
         summary,
         url: entry.link || null,
         published_at: publishedAt,
-        item_type: classifyItemType(title, summary),
-        category: (source as RadarSource).category || inferredCategory || 'regulatory',
+        item_type: classifyItemType(title, summary, source.category),
+        category: source.category || inferredCategory || 'regulatory',
         subcategory,
       });
     }
@@ -158,6 +179,14 @@ export function createRadarFetcher(db: Database.Database, anthropic: Anthropic) 
     const areas = safeJsonParse(source.areas, []) as string[];
     const focusDescription = [...keywords, ...areas].filter(Boolean).join(', ') || 'regulatory developments';
 
+    const isPevc = source.category === 'pe-vc';
+    const itemTypeOptions = isPevc
+      ? '"technology", "sector", "company_signal", "funding_round", "exit_event", "macro_trend", "patent", "research_paper"'
+      : '"consultation", "regulation", "guideline", "enforcement", "report", "publication", "speech"';
+    const searchInstruction = isPevc
+      ? `Find startup/company news, funding rounds, technology breakthroughs, market signals, and investment-relevant items published in the last 30 days.`
+      : `Find regulatory publications, consultations, guidelines, and enforcement actions published in the last 30 days.`;
+
     try {
       const message = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
@@ -166,20 +195,22 @@ export function createRadarFetcher(db: Database.Database, anthropic: Anthropic) 
         messages: [
           {
             role: 'user',
-            content: `Search for the latest publications and news from "${source.display_name}" (${source.url}).
+            content: `Search for the latest news and publications from "${source.display_name}" (${source.url}).
 
 Category: ${source.category || 'regulatory'}
 Focus areas: ${focusDescription}
 
-Find items published in the last 30 days. For each item found, extract:
+${searchInstruction}
+
+For each item found, extract:
 - title: the publication/document title
 - summary: 1-2 sentence description
 - url: direct link to the item
 - published_at: ISO 8601 date if available (or null)
-- item_type: one of "consultation", "regulation", "guideline", "enforcement", "report", "publication", "speech"
+- item_type: one of ${itemTypeOptions}
 
 Return ONLY a valid JSON array. No markdown, no explanation. Example:
-[{"title":"...","summary":"...","url":"...","published_at":"2026-02-01","item_type":"regulation"}]
+[{"title":"...","summary":"...","url":"...","published_at":"2026-02-01","item_type":"${isPevc ? 'funding_round' : 'regulation'}"}]
 
 If you find nothing relevant, return: []`,
           },
@@ -214,9 +245,12 @@ If you find nothing relevant, return: []`,
             summary: (item.summary || '').trim().slice(0, 2000),
             url: item.url || null,
             published_at: item.published_at ? new Date(item.published_at).toISOString() : null,
-            item_type: item.item_type && Object.keys(TYPE_KEYWORDS).includes(item.item_type)
+            item_type: item.item_type && (
+              Object.keys(TYPE_KEYWORDS).includes(item.item_type) ||
+              Object.keys(PEVC_TYPE_KEYWORDS).includes(item.item_type)
+            )
               ? item.item_type
-              : classifyItemType(item.title, item.summary || ''),
+              : classifyItemType(item.title, item.summary || '', source.category),
             category: source.category || inferredCategory || 'regulatory',
             subcategory,
           };
@@ -264,11 +298,17 @@ If you find nothing relevant, return: []`,
 
     if (unscoredItems.length === 0) return 0;
 
+    // Read custom PE/VC scoring criteria once (empty string = use built-in default)
+    const customCriteriaRow = db.prepare("SELECT value FROM radar_settings WHERE key = 'pevc_scoring_criteria'").get() as { value: string } | undefined;
+    const customPevcCriteria = customCriteriaRow?.value?.trim() || null;
+
     let scored = 0;
     for (const item of unscoredItems) {
       try {
-        const categoryPrompt = CATEGORY_SCORE_PROMPTS[(item.category || 'regulatory') as RadarCategory]
-          || CATEGORY_SCORE_PROMPTS.regulatory;
+        const categoryPrompt = (item.category === 'pe-vc' && customPevcCriteria)
+          ? customPevcCriteria
+          : (CATEGORY_SCORE_PROMPTS[(item.category || 'regulatory') as RadarCategory | 'pe-vc']
+              || CATEGORY_SCORE_PROMPTS.regulatory);
         const prompt = `${categoryPrompt}
 
 Title: ${item.title}
@@ -346,7 +386,7 @@ Return ONLY valid JSON (no markdown):
 
   // ── Scan all active sources ──────────────────────────────────
 
-  async function scanAllSources(): Promise<ScanResult> {
+  async function scanAllSources(category?: string): Promise<ScanResult> {
     if (scanInProgress) {
       return {
         sourcesScanned: 0,
@@ -367,9 +407,9 @@ Return ONLY valid JSON (no markdown):
     let totalNewItems = 0;
 
     try {
-      const activeSources = db
-        .prepare('SELECT * FROM radar_sources WHERE is_active = 1')
-        .all() as RadarSource[];
+      const activeSources = category
+        ? db.prepare('SELECT * FROM radar_sources WHERE is_active = 1 AND category = ?').all(category) as RadarSource[]
+        : db.prepare('SELECT * FROM radar_sources WHERE is_active = 1').all() as RadarSource[];
 
       sourcesTotal = activeSources.length;
 

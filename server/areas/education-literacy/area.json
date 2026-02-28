@@ -7,6 +7,7 @@
   "icon": "GraduationCap",
   "color": "adv-teal",
   "cluster": "community",
+  "tags": ["ngo", "social-impact"],
   "modelTier": {
     "recommended": "haiku",
     "minimum": "ollama-local",

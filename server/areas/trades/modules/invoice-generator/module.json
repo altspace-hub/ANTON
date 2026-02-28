@@ -1,0 +1,110 @@
+{
+  "formatVersion": "1.0",
+  "id": "invoice-generator",
+  "label": "Invoice Generator",
+  "shortLabel": "Invoice",
+  "icon": "FileText",
+  "description": "Generate a professional invoice in seconds. If you've set up My Way of Working, it will look exactly like your invoices always look.",
+  "color": "adv-gold",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Haiku is fast and cost-effective for invoice generation."
+  },
+  "defaults": {
+    "thinking": "quick",
+    "creativity": "strict",
+    "outputFormats": [],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Invoice formatting, VAT rules, ROT/RUT deductions, payment terms for tradespeople"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "customer_name",
+      "type": "text",
+      "label": "Customer name",
+      "placeholder": "Lars Svensson",
+      "required": true
+    },
+    {
+      "id": "customer_address",
+      "type": "text",
+      "label": "Customer address",
+      "placeholder": "Björkvägen 7, 171 54 Solna",
+      "required": false
+    },
+    {
+      "id": "job_description",
+      "type": "textarea",
+      "label": "What did you do?",
+      "placeholder": "Bathroom renovation — replaced pipes, installed new shower and toilet",
+      "required": true
+    },
+    {
+      "id": "hours_worked",
+      "type": "number",
+      "label": "Hours worked",
+      "placeholder": "16",
+      "required": true
+    },
+    {
+      "id": "materials_cost",
+      "type": "number",
+      "label": "Materials cost (enter 0 if none)",
+      "placeholder": "8400",
+      "required": true
+    },
+    {
+      "id": "travel_time",
+      "type": "text",
+      "label": "Travel time (hours, or 'none')",
+      "placeholder": "1.5",
+      "required": false
+    },
+    {
+      "id": "customer_type",
+      "type": "select",
+      "label": "Private person or company?",
+      "required": true,
+      "options": [
+        { "value": "private", "label": "Private person" },
+        { "value": "company", "label": "Company / business" }
+      ]
+    },
+    {
+      "id": "rot_rut",
+      "type": "select",
+      "label": "ROT or RUT deduction? (Sweden only)",
+      "required": false,
+      "options": [
+        { "value": "none", "label": "No deduction" },
+        { "value": "rot", "label": "ROT (plumbing, construction, renovation)" },
+        { "value": "rut", "label": "RUT (cleaning, gardening)" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor"],
+  "myWayProcessType": "invoicing",
+  "tags": [
+    "trades",
+    "invoice",
+    "faktura",
+    "billing",
+    "plumber",
+    "electrician",
+    "carpenter",
+    "rot",
+    "rut",
+    "vat",
+    "moms",
+    "sweden",
+    "uk"
+  ]
+}

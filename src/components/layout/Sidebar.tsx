@@ -26,7 +26,7 @@ import {
   Megaphone, Newspaper, Mic, Link, Star, Palette, Code, Heart, Factory, Wallet, Map,
   Package, Terminal,
   // Expansion area icons (Phase 4)
-  Landmark, Smartphone, Sprout, ShoppingBag, HardHat, PiggyBank, Bird, ChefHat,
+  Landmark, Smartphone, Sprout, ShoppingBag, HardHat, PiggyBank, Bird, ChefHat, Wrench,
   // Feature pages
   ScanText,
   Brain,
@@ -120,6 +120,12 @@ const AREA_COLORS: Record<string, { dot: string; text: string; active: string }>
   'mobile-money':         { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
   microfinance:           { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
   government:             { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
+  // NGO & Social Impact hub
+  ngo:                    { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
+  // Trades & Service Workers hub
+  trades:                 { dot: 'bg-adv-gold',    text: 'text-adv-gold',    active: 'bg-adv-gold/10 text-adv-gold' },
+  // PE/VC hub
+  'pe-vc':                { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
   // Phase 4: Bottom-of-Pyramid (BoP)
   'government-services':  { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
   'smallholder-farming':  { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
@@ -545,6 +551,62 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <Presentation className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.presentations')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/ngo"
+          navId="ngo"
+          title={sidebarCollapsed ? t('nav.ngo', 'NGO & Social Impact') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('ngo')}
+          isHidden={hiddenNavItems.has('ngo')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Globe className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.ngo', 'NGO & Social Impact')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/trades"
+          navId="trades"
+          title={sidebarCollapsed ? t('nav.trades', 'Trades & Service Workers') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('trades')}
+          isHidden={hiddenNavItems.has('trades')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Wrench className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.trades', 'Trades & Service Workers')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/pe-vc"
+          navId="pe-vc"
+          title={sidebarCollapsed ? t('nav.peVc', 'PE/VC') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('pe-vc')}
+          isHidden={hiddenNavItems.has('pe-vc')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <TrendingUp className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.peVc', 'PE/VC')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/innovation-radar"
+          navId="innovation-radar"
+          title={sidebarCollapsed ? t('nav.innovationRadar', 'Innovation Radar') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('innovation-radar')}
+          isHidden={hiddenNavItems.has('innovation-radar')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Radar className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.innovationRadar', 'Innovation Radar')}
         </NavLinkWithStar>
 
         <NavLinkWithStar

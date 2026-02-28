@@ -1,0 +1,94 @@
+{
+  "formatVersion": "1.0",
+  "id": "deal-screening",
+  "label": "Deal Screening & First Look",
+  "shortLabel": "Deal Screen",
+  "icon": "Filter",
+  "description": "Rapid initial assessment of an investment opportunity — should we spend more time on this? Produces a structured first-look memo in minutes, not hours.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "sonnet",
+    "minimum": "haiku",
+    "professional": "opus",
+    "notes": "Sonnet is fast and cost-effective for high-volume screening. Switch to Opus for complex opportunities."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Investment screening frameworks, market comparables, sector knowledge"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "investment_style",
+      "type": "select",
+      "label": "Your investment focus",
+      "required": true,
+      "options": [
+        { "value": "vc-early", "label": "VC Early Stage (Pre-seed to Series A)" },
+        { "value": "vc-growth", "label": "VC Growth (Series B+)" },
+        { "value": "pe-growth", "label": "PE Growth Equity" },
+        { "value": "pe-buyout", "label": "PE Buyout" },
+        { "value": "pe-turnaround", "label": "PE Turnaround / Special Situations" },
+        { "value": "corp-venture", "label": "Corporate Venture / Strategic" },
+        { "value": "fof", "label": "Fund-of-Funds" }
+      ]
+    },
+    {
+      "id": "deal_source",
+      "type": "select",
+      "label": "How did this deal come in?",
+      "required": false,
+      "options": [
+        { "value": "deck", "label": "Pitch deck received" },
+        { "value": "intro", "label": "Warm intro / referral" },
+        { "value": "outbound", "label": "Outbound (we found them)" },
+        { "value": "broker", "label": "Broker / advisor" },
+        { "value": "portfolio", "label": "Portfolio company connection" },
+        { "value": "conference", "label": "Conference / event" }
+      ]
+    },
+    {
+      "id": "company_info",
+      "type": "textarea",
+      "label": "What do you know about the company?",
+      "placeholder": "Paste deck summary, company description, URL, or forwarded email",
+      "required": true
+    },
+    {
+      "id": "sector_focus",
+      "type": "text",
+      "label": "Your sector focus (if any)",
+      "placeholder": "e.g., B2B SaaS, Fintech, Climate, Healthcare",
+      "required": false
+    },
+    {
+      "id": "stage_focus",
+      "type": "select",
+      "label": "Your typical check size",
+      "required": false,
+      "options": [
+        { "value": "sub-500k", "label": "<$500K" },
+        { "value": "500k-2m", "label": "$500K–$2M" },
+        { "value": "2m-10m", "label": "$2M–$10M" },
+        { "value": "10m-50m", "label": "$10M–$50M" },
+        { "value": "50m-200m", "label": "$50M–$200M" },
+        { "value": "200m-plus", "label": "$200M+" }
+      ]
+    },
+    {
+      "id": "geography_focus",
+      "type": "text",
+      "label": "Geographic focus",
+      "placeholder": "e.g., Nordics, Europe, Global",
+      "required": false
+    }
+  ],
+  "tags": ["pe-vc", "deal-flow", "screening", "first-look", "venture", "private-equity"]
+}

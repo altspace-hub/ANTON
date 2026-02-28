@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.0",
+  "id": "editorial-review",
+  "label": "Editorial & Proofreading Suite",
+  "shortLabel": "Editorial",
+  "icon": "PenLine",
+  "description": "Professional multi-pass editorial review — from developmental editing (structure, pacing, character arcs) through line editing, copy editing, and proofreading.",
+  "color": "adv-off-white",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Editorial standards, publishing conventions, manuscript formatting, style guides (Chicago, AP, Oxford), narrative structure, prose style"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "edit_type",
+      "label": "Type of Edit",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "developmental", "label": "Developmental Edit — structure, pacing, arcs, plot" },
+        { "value": "line", "label": "Line Edit — prose style, voice, rhythm, clarity" },
+        { "value": "copy", "label": "Copy Edit — grammar, consistency, fact-checking" },
+        { "value": "proofread", "label": "Proofread — typos, formatting, final polish" },
+        { "value": "sensitivity", "label": "Sensitivity Read — representation, cultural accuracy" },
+        { "value": "full", "label": "Full Edit — all passes in sequence" }
+      ]
+    },
+    {
+      "id": "work_type",
+      "label": "Work Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "novel", "label": "Novel" },
+        { "value": "short-story", "label": "Short Story" },
+        { "value": "play", "label": "Stage Play" },
+        { "value": "screenplay", "label": "Screenplay" },
+        { "value": "non-fiction", "label": "Non-fiction / Memoir" },
+        { "value": "poetry", "label": "Poetry Collection" },
+        { "value": "picture-book", "label": "Picture Book / Children's" },
+        { "value": "essay", "label": "Essay / Long-form journalism" }
+      ]
+    },
+    {
+      "id": "style_guide",
+      "label": "Style Guide",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "chicago", "label": "Chicago Manual of Style" },
+        { "value": "ap", "label": "AP Style" },
+        { "value": "oxford", "label": "Oxford Style" },
+        { "value": "house", "label": "House style (describe in notes below)" },
+        { "value": "none", "label": "No specific style guide" }
+      ]
+    },
+    {
+      "id": "sensitivity_areas",
+      "label": "Sensitivity Areas (for Sensitivity Read)",
+      "type": "chips",
+      "required": false,
+      "options": [
+        { "value": "cultural", "label": "Cultural representation" },
+        { "value": "gender", "label": "Gender & sexuality" },
+        { "value": "disability", "label": "Disability & neurodivergence" },
+        { "value": "race", "label": "Race & ethnicity" },
+        { "value": "religion", "label": "Religion & belief" },
+        { "value": "age", "label": "Age & ageism" },
+        { "value": "class", "label": "Class & socioeconomic" },
+        { "value": "mental-health", "label": "Mental health portrayal" }
+      ]
+    },
+    {
+      "id": "voice_notes",
+      "label": "Author's Voice Notes",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Describe the author's distinctive voice elements to preserve, e.g. 'deliberate sentence fragments for rhythm', 'non-standard punctuation is intentional', 'US English throughout'..."
+    },
+    {
+      "id": "manuscript",
+      "label": "Manuscript / Text to Edit",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Paste the text to be edited..."
+    }
+  ],
+  "recommendedPersonas": ["editor", "proofreader", "literary-agent"],
+  "tags": ["editing", "editorial", "proofreading", "copy-editing", "developmental-editing", "sensitivity-reading", "manuscript", "publishing"]
+}

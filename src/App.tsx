@@ -81,6 +81,16 @@ const AlignmentReviewerPage = lazy(() => import('./pages/AlignmentReviewerPage')
 const EngagementListPage = lazy(() => import('./pages/EngagementListPage'));
 const EngagementWorkspacePage = lazy(() => import('./pages/EngagementWorkspacePage'));
 
+// NGO & Social Impact Hub
+const NGOHubPage = lazy(() => import('./pages/NGOHubPage'));
+
+// Trades & Service Workers Hub
+const TradesHubPage = lazy(() => import('./pages/TradesHubPage'));
+
+// PE/VC Hub + Innovation Radar
+const PEVCHubPage = lazy(() => import('./pages/PEVCHubPage'));
+const InnovationRadarPage = lazy(() => import('./pages/InnovationRadarPage'));
+
 export default function App() {
   const { i18n } = useTranslation();
   const { user, isLoading, isTeamMode, checkAuth, setIsTeamMode } = useAuthStore();
@@ -247,6 +257,13 @@ export default function App() {
           {/* Engagement Task */}
           <Route path="/engagements" element={<EngagementListPage />} />
           <Route path="/engagements/:id" element={<EngagementWorkspacePage />} />
+          {/* NGO & Social Impact Hub */}
+          <Route path="/ngo" element={<NGOHubPage />} />
+          {/* Trades & Service Workers Hub */}
+          <Route path="/trades" element={<TradesHubPage />} />
+          {/* PE/VC Hub + Innovation Radar */}
+          <Route path="/pe-vc" element={<PEVCHubPage />} />
+          <Route path="/innovation-radar" element={<InnovationRadarPage />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>

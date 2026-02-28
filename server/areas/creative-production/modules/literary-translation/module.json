@@ -1,0 +1,106 @@
+{
+  "formatVersion": "1.0",
+  "id": "literary-translation",
+  "label": "Literary & Dramatic Translation",
+  "shortLabel": "Translation",
+  "icon": "Languages",
+  "description": "Translate creative works with cultural adaptation, register matching, and idiomatic equivalence — from novels and plays to screenplays, song lyrics, and game dialogue.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Literary translation theory, cultural adaptation, register matching, idiomatic equivalence, translation studies"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "source_language",
+      "label": "Source Language",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. Swedish, French, Japanese"
+    },
+    {
+      "id": "target_language",
+      "label": "Target Language",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. English (UK), German, Spanish (Latin American)"
+    },
+    {
+      "id": "work_type",
+      "label": "Work Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "novel", "label": "Novel / Prose Fiction" },
+        { "value": "play", "label": "Stage Play" },
+        { "value": "screenplay", "label": "Screenplay" },
+        { "value": "poetry", "label": "Poetry" },
+        { "value": "song-lyrics", "label": "Song Lyrics" },
+        { "value": "game-dialogue", "label": "Game Dialogue / Interactive" },
+        { "value": "subtitles", "label": "Subtitles / SDH" },
+        { "value": "picture-book", "label": "Picture Book / Children's" },
+        { "value": "short-story", "label": "Short Story" }
+      ]
+    },
+    {
+      "id": "philosophy",
+      "label": "Translation Approach",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "faithful", "label": "Faithful / Literal — preserve original structure closely" },
+        { "value": "balanced", "label": "Balanced — equivalence in meaning and feel" },
+        { "value": "adaptive", "label": "Free / Adaptive — prioritise natural target-language expression" }
+      ]
+    },
+    {
+      "id": "cultural_adaptation",
+      "label": "Cultural Adaptation Level",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "minimal", "label": "Minimal — keep cultural references intact" },
+        { "value": "moderate", "label": "Moderate — explain or lightly adapt unfamiliar references" },
+        { "value": "full", "label": "Full localisation — replace with culturally equivalent references" }
+      ]
+    },
+    {
+      "id": "register",
+      "label": "Register / Voice",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "formal", "label": "Formal / Literary" },
+        { "value": "informal", "label": "Informal / Colloquial" },
+        { "value": "mixed", "label": "Mixed (varies by character/scene)" },
+        { "value": "period", "label": "Period-specific / Archaic" },
+        { "value": "dialect", "label": "Dialect / Regional" }
+      ]
+    },
+    {
+      "id": "source_text",
+      "label": "Source Text",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Paste the passage or document to translate..."
+    },
+    {
+      "id": "context_notes",
+      "label": "Context & Notes",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Author's intentions, glossary of character names/places, previous translation decisions, style guide..."
+    }
+  ],
+  "recommendedPersonas": ["translator", "editor", "dramaturg"],
+  "tags": ["translation", "literary-translation", "localisation", "adaptation", "cultural-adaptation", "subtitles", "multilingual"]
+}

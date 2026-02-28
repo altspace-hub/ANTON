@@ -1,0 +1,74 @@
+{
+  "formatVersion": "1.0",
+  "id": "value-creation",
+  "label": "Value Creation Planner",
+  "shortLabel": "Value Creation",
+  "icon": "Rocket",
+  "description": "Develop and track value creation plans — from 100-day plans to exit-ready transformation playbooks. Covers revenue growth, margin improvement, digital transformation, and add-on acquisitions.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Opus 4.6 for strategic value creation planning."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["action-plan", "project-plan"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Value creation frameworks, operational improvement, 100-day plans, PE playbooks"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "planning_phase",
+      "type": "select",
+      "label": "Where are you in the value creation cycle?",
+      "required": true,
+      "options": [
+        { "value": "pre-close", "label": "Pre-close: Building the 100-day plan" },
+        { "value": "first-100", "label": "First 100 days: Executing quick wins" },
+        { "value": "ongoing", "label": "Ongoing: Reviewing and updating value creation plan" },
+        { "value": "exit-prep", "label": "Preparing for exit: Demonstrating value created" },
+        { "value": "add-on", "label": "Add-on acquisition: Evaluating bolt-on targets" }
+      ]
+    },
+    {
+      "id": "company_description",
+      "type": "textarea",
+      "label": "Portfolio company description",
+      "placeholder": "What they do, their sector, current size, main products/services, key challenges",
+      "required": true
+    },
+    {
+      "id": "value_levers",
+      "type": "select",
+      "label": "Which value levers are you exploring?",
+      "required": true,
+      "options": [
+        { "value": "revenue-growth", "label": "Revenue growth (new products, markets, channels)" },
+        { "value": "margin-improvement", "label": "Margin improvement (cost reduction, pricing, efficiency)" },
+        { "value": "working-capital", "label": "Working capital optimization" },
+        { "value": "management-upgrade", "label": "Management team upgrade" },
+        { "value": "digital-transformation", "label": "Technology / digital transformation" },
+        { "value": "add-on", "label": "Add-on acquisitions (buy-and-build)" },
+        { "value": "geographic-expansion", "label": "Geographic expansion" },
+        { "value": "esg", "label": "ESG improvement" },
+        { "value": "governance", "label": "Governance and reporting improvement" }
+      ]
+    },
+    {
+      "id": "current_performance",
+      "type": "textarea",
+      "label": "Current key metrics (revenue, EBITDA, margins, growth)",
+      "placeholder": "Revenue: €20M | EBITDA: €3M (15%) | Growth: 8% | Headcount: 120",
+      "required": false
+    }
+  ],
+  "tags": ["pe-vc", "value-creation", "100-day-plan", "portfolio", "operational-improvement", "pe-playbook"]
+}

@@ -1,0 +1,108 @@
+{
+  "formatVersion": "1.0",
+  "id": "practice-management-optimizer",
+  "label": "Practice Management & Admin Optimizer",
+  "shortLabel": "Practice Management",
+  "icon": "CalendarClock",
+  "description": "Optimise the administrative and operational workflows of healthcare practices — GP surgeries, specialist clinics, dental practices, physiotherapy centres. Covers scheduling, referral pathways, patient communications, QOF/recall systems, staff rotas, and template creation. Reduces admin burden so clinical teams can focus on care.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "action-plan",
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Primary care management, QOF framework, e-RS referral pathways, appointment scheduling optimisation, EMIS/SystmOne workflows, CQC inspection criteria, PCN requirements, patient communication standards"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "setting",
+      "label": "Practice Setting",
+      "type": "select",
+      "options": [
+        { "value": "gp-surgery", "label": "GP Surgery / Primary Care" },
+        { "value": "specialist-clinic", "label": "Specialist Outpatient Clinic" },
+        { "value": "dental", "label": "Dental Practice" },
+        { "value": "physiotherapy", "label": "Physiotherapy / Allied Health" },
+        { "value": "pharmacy", "label": "Community Pharmacy" },
+        { "value": "mental-health", "label": "Mental Health / IAPT Service" },
+        { "value": "private-clinic", "label": "Private Healthcare Clinic" }
+      ],
+      "required": true
+    },
+    {
+      "id": "task",
+      "label": "What Do You Need Help With?",
+      "type": "select",
+      "options": [
+        { "value": "appointment-scheduling", "label": "Appointment Scheduling & Demand Management" },
+        { "value": "referral-pathways", "label": "Referral Pathways & e-RS Optimisation" },
+        { "value": "patient-recall", "label": "Patient Recall & QOF Achievement" },
+        { "value": "templates", "label": "Letter / Communication Templates" },
+        { "value": "staff-rota", "label": "Staff Rota & Skill-Mix Planning" },
+        { "value": "workflow-improvement", "label": "Admin Workflow Improvement" },
+        { "value": "patient-communications", "label": "Patient Communication Strategy (SMS/letter/phone)" },
+        { "value": "cqc-preparation", "label": "CQC Inspection Preparation" },
+        { "value": "dna-reduction", "label": "Did Not Attend (DNA) Reduction" },
+        { "value": "digital-transformation", "label": "Digital Transformation / System Migration" }
+      ],
+      "required": true
+    },
+    {
+      "id": "practice_size",
+      "label": "Practice / Service Size",
+      "type": "select",
+      "options": [
+        { "value": "small", "label": "Small (1-2 clinicians / <3,000 patients)" },
+        { "value": "medium", "label": "Medium (3-8 clinicians / 3,000-10,000 patients)" },
+        { "value": "large", "label": "Large (9+ clinicians / 10,000+ patients)" },
+        { "value": "pcn", "label": "PCN / Collaborative / Federation" }
+      ],
+      "required": false
+    },
+    {
+      "id": "current_problem",
+      "label": "Describe the Problem or Goal",
+      "type": "textarea",
+      "placeholder": "Describe the specific challenge, inefficiency, or goal. Include any relevant data: DNA rates, appointment availability, QOF achievement, patient complaints, staff feedback, etc.",
+      "required": true
+    },
+    {
+      "id": "systems",
+      "label": "Clinical Systems in Use",
+      "type": "text",
+      "placeholder": "e.g. EMIS Web, SystmOne, ADASTRA, AccuRx, Docman, iPlato — helps tailor workflow advice",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "practice-manager",
+    "operations-manager",
+    "clinical-director",
+    "admin-lead"
+  ],
+  "tags": [
+    "healthcare",
+    "practice-management",
+    "primary-care",
+    "scheduling",
+    "qof",
+    "referrals",
+    "admin",
+    "cqc",
+    "workflows"
+  ]
+}

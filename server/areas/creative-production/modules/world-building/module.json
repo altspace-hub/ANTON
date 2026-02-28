@@ -1,0 +1,103 @@
+{
+  "formatVersion": "1.0",
+  "id": "world-building",
+  "label": "World-Building & Setting Engine",
+  "shortLabel": "World-Building",
+  "icon": "Globe",
+  "description": "Create and maintain consistent fictional universes — geography, history, culture, politics, magic/technology systems, and timelines — with built-in consistency checking.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "creative",
+    "outputFormats": ["detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "World-building methodology, fantasy/sci-fi genre conventions, cultural anthropology, historical geography, economic systems, political structures"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "label": "What do you need?",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "create-world", "label": "Create a new world from scratch" },
+        { "value": "expand-world", "label": "Expand or develop an existing world" },
+        { "value": "consistency-check", "label": "Check a passage for world inconsistencies" },
+        { "value": "create-timeline", "label": "Build a history / timeline" },
+        { "value": "character-registry", "label": "Create a character / species registry" },
+        { "value": "magic-system", "label": "Design a magic / technology system" },
+        { "value": "location-detail", "label": "Detail a specific location or region" }
+      ]
+    },
+    {
+      "id": "world_type",
+      "label": "World Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "fantasy", "label": "Fantasy (secondary world)" },
+        { "value": "sci-fi", "label": "Science Fiction" },
+        { "value": "historical", "label": "Historical / Period" },
+        { "value": "contemporary-alt", "label": "Contemporary Alternate (our world, changed)" },
+        { "value": "horror", "label": "Horror / Gothic" },
+        { "value": "hybrid", "label": "Hybrid / Genre-blending" }
+      ]
+    },
+    {
+      "id": "scope",
+      "label": "Scale / Scope",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "single-location", "label": "Single location (a town, a house, a ship)" },
+        { "value": "region", "label": "A region or country" },
+        { "value": "planet", "label": "A full world / planet" },
+        { "value": "multi-world", "label": "Multiple worlds / universe" }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "label": "Focus Areas",
+      "type": "chips",
+      "required": false,
+      "options": [
+        { "value": "geography", "label": "Geography & Climate" },
+        { "value": "politics", "label": "Politics & Power" },
+        { "value": "economy", "label": "Economy & Trade" },
+        { "value": "religion", "label": "Religion & Belief" },
+        { "value": "magic-tech", "label": "Magic / Technology" },
+        { "value": "languages", "label": "Languages & Names" },
+        { "value": "history", "label": "History & Mythology" },
+        { "value": "social", "label": "Social Structure & Culture" },
+        { "value": "species", "label": "Species / Peoples" },
+        { "value": "flora-fauna", "label": "Flora & Fauna" }
+      ]
+    },
+    {
+      "id": "existing_material",
+      "label": "Existing World Notes / Draft",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Paste existing world bible, draft chapters, character notes, maps description, or anything already established..."
+    },
+    {
+      "id": "consistency_priority",
+      "label": "Priority",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "internal-logic", "label": "Internal logic — everything must make sense systematically" },
+        { "value": "narrative", "label": "Narrative convenience — story needs come first" },
+        { "value": "balanced", "label": "Balanced — logical but flexible" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["worldbuilder", "novelist", "game-designer"],
+  "tags": ["world-building", "worldbuilding", "fantasy", "sci-fi", "fiction", "universe", "consistency", "lore", "mythology", "narrative-design"]
+}

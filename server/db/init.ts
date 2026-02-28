@@ -789,7 +789,10 @@ export function initDatabase(): Database.Database {
     url TEXT,
     published_at DATETIME,
     fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    item_type TEXT DEFAULT 'publication' CHECK(item_type IN ('consultation','regulation','guideline','enforcement','speech','report','publication')),
+    item_type TEXT DEFAULT 'publication' CHECK(item_type IN (
+      'consultation','regulation','guideline','enforcement','speech','report','publication',
+      'technology','sector','company_signal','funding_round','exit_event','macro_trend','patent','research_paper'
+    )),
     status TEXT DEFAULT 'new' CHECK(status IN ('new','reviewed','actioned','dismissed','archived')),
     relevance_score REAL DEFAULT 0.5,
     urgency_score REAL DEFAULT 0.5,
@@ -799,6 +802,8 @@ export function initDatabase(): Database.Database {
     ai_scored INTEGER DEFAULT 0,
     dismissed_by TEXT,
     dismissed_at DATETIME,
+    category TEXT DEFAULT 'regulatory',
+    subcategory TEXT DEFAULT NULL,
     FOREIGN KEY (source_id) REFERENCES radar_sources(id) ON DELETE CASCADE,
     UNIQUE(source_id, external_id)
   )`);
@@ -877,6 +882,70 @@ export function initDatabase(): Database.Database {
   }
   db.exec('CREATE INDEX IF NOT EXISTS idx_radar_items_category ON radar_items(category)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_radar_sources_category ON radar_sources(category)');
+
+  // ── Radar: expand item_type CHECK constraint to include PE/VC types ────────
+  // SQLite can't alter CHECK constraints, so we recreate the table once via a migration flag.
+  const peVcTypeMig = db.prepare("SELECT value FROM radar_settings WHERE key = 'migration_pevc_item_types'").get() as { value: string } | undefined;
+  if (!peVcTypeMig) {
+    try {
+      db.exec('PRAGMA foreign_keys=off');
+      db.exec(`
+        CREATE TABLE radar_items_new (
+          id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+          source_id TEXT NOT NULL,
+          external_id TEXT,
+          title TEXT NOT NULL,
+          summary TEXT,
+          full_text TEXT,
+          url TEXT,
+          published_at DATETIME,
+          fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          item_type TEXT DEFAULT 'publication' CHECK(item_type IN (
+            'consultation','regulation','guideline','enforcement','speech','report','publication',
+            'technology','sector','company_signal','funding_round','exit_event','macro_trend','patent','research_paper'
+          )),
+          status TEXT DEFAULT 'new' CHECK(status IN ('new','reviewed','actioned','dismissed','archived')),
+          relevance_score REAL DEFAULT 0.5,
+          urgency_score REAL DEFAULT 0.5,
+          impact_areas JSON DEFAULT '[]',
+          tags JSON DEFAULT '[]',
+          ai_summary TEXT,
+          ai_scored INTEGER DEFAULT 0,
+          dismissed_by TEXT,
+          dismissed_at DATETIME,
+          category TEXT DEFAULT 'regulatory',
+          subcategory TEXT DEFAULT NULL,
+          FOREIGN KEY (source_id) REFERENCES radar_sources(id) ON DELETE CASCADE,
+          UNIQUE(source_id, external_id)
+        )
+      `);
+      db.exec(`
+        INSERT INTO radar_items_new
+          (id, source_id, external_id, title, summary, full_text, url, published_at,
+           fetched_at, item_type, status, relevance_score, urgency_score, impact_areas,
+           tags, ai_summary, ai_scored, dismissed_by, dismissed_at,
+           category, subcategory)
+        SELECT
+          id, source_id, external_id, title, summary, full_text, url, published_at,
+          fetched_at, item_type, status, relevance_score, urgency_score, impact_areas,
+          tags, ai_summary, ai_scored, dismissed_by, dismissed_at,
+          COALESCE(category, 'regulatory'), subcategory
+        FROM radar_items
+      `);
+      db.exec('DROP TABLE radar_items');
+      db.exec('ALTER TABLE radar_items_new RENAME TO radar_items');
+      db.exec('PRAGMA foreign_keys=on');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_radar_items_source ON radar_items(source_id, fetched_at DESC)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_radar_items_status ON radar_items(status, relevance_score DESC)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_radar_items_published ON radar_items(published_at DESC)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_radar_items_category ON radar_items(category)');
+      db.prepare("INSERT OR REPLACE INTO radar_settings (key, value) VALUES ('migration_pevc_item_types', '1')").run();
+      console.log('[db] Migration complete: radar_items item_type constraint expanded for PE/VC types');
+    } catch (err) {
+      db.exec('PRAGMA foreign_keys=on');
+      console.error('[db] radar_items migration error (non-fatal):', err);
+    }
+  }
 
   // ── Project Files table ───────────────────────────────────────────────────
   db.exec(`CREATE TABLE IF NOT EXISTS project_files (
@@ -2062,6 +2131,100 @@ export function initDatabase(): Database.Database {
     } catch (migErr) {
       console.error('[db] connections v3 migration error (non-fatal):', migErr);
     }
+  }
+
+  // ── Trades / My Way of Working tables ────────────────────────────────────
+  db.exec(`CREATE TABLE IF NOT EXISTS business_identity (
+    id TEXT PRIMARY KEY DEFAULT 'default',
+    profile_data JSON NOT NULL DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.exec(`CREATE TABLE IF NOT EXISTS document_templates (
+    id TEXT PRIMARY KEY,
+    document_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    template_data JSON NOT NULL DEFAULT '{}',
+    is_default INTEGER DEFAULT 0,
+    source_examples JSON DEFAULT '[]',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_doc_templates_type ON document_templates(document_type, is_default)`);
+
+  db.exec(`CREATE TABLE IF NOT EXISTS process_patterns (
+    id TEXT PRIMARY KEY,
+    process_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    pattern_data JSON NOT NULL DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_process_patterns_type ON process_patterns(process_type)`);
+
+  db.exec(`CREATE TABLE IF NOT EXISTS pattern_learning_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL,
+    source_ref TEXT,
+    patterns_extracted JSON DEFAULT '{}',
+    user_confirmed INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // ── PE/VC: fund_identity + ic_memo_templates tables ────────────────────────
+  db.exec(`CREATE TABLE IF NOT EXISTS fund_identity (
+    id TEXT PRIMARY KEY DEFAULT 'default',
+    fund_name TEXT,
+    fund_type TEXT,
+    geography_focus TEXT,
+    sector_focus TEXT,
+    typical_check_size TEXT,
+    investment_style_notes TEXT,
+    partner_name TEXT,
+    firm_website TEXT,
+    currency TEXT DEFAULT 'EUR',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.exec(`CREATE TABLE IF NOT EXISTS ic_memo_templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    memo_type TEXT NOT NULL,
+    template_content TEXT NOT NULL,
+    section_order TEXT,
+    style_notes TEXT,
+    is_default INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ic_templates_type ON ic_memo_templates(memo_type, is_default)`);
+
+  // Seed PE/VC Innovation Radar sources (only if category column exists)
+  const radarSrcColsCheck = db.prepare("PRAGMA table_info(radar_sources)").all() as Array<{ name: string }>;
+  if (radarSrcColsCheck.some(c => c.name === 'category')) {
+    db.prepare("INSERT OR IGNORE INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+      'src_techcrunch', 'TechCrunch', 'https://techcrunch.com/feed/', 'rss', 12, '["pe-vc","startups"]', '["funding","startup","Series A","Series B","acquisition","IPO"]', 'pe-vc'
+    );
+    db.prepare("INSERT OR IGNORE INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+      'src_arxiv_cs', 'arXiv (CS/AI)', 'https://arxiv.org/rss/cs.AI', 'rss', 24, '["pe-vc","data-analytics"]', '["AI","machine learning","LLM","deep learning","breakthrough"]', 'pe-vc'
+    );
+    db.prepare("INSERT OR IGNORE INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+      'src_sec_edgar', 'SEC EDGAR (Filings)', 'https://efts.sec.gov/LATEST/search-index?q=%22S-1%22&dateRange=custom&startdt=2024-01-01&forms=S-1,F-1', 'web_page', 24, '["pe-vc","investment"]', '["S-1","F-1","IPO","prospectus","public offering"]', 'pe-vc'
+    );
+    db.prepare("INSERT OR IGNORE INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+      'src_hackernews', 'Hacker News', 'https://news.ycombinator.com/rss', 'rss', 6, '["pe-vc","software-eng"]', '["funding","launch","acquired","raised","Series","YC"]', 'pe-vc'
+    );
+    db.prepare("INSERT OR IGNORE INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+      'src_eu_ai_act', 'EU AI Act Tracker', 'https://www.europarl.europa.eu/topics/en/article/20230601STO93804/eu-ai-act-first-regulation-on-artificial-intelligence', 'web_page', 168, '["pe-vc","legal","fcp"]', '["AI Act","AI regulation","GPAI","artificial intelligence regulation"]', 'pe-vc'
+    );
+    db.prepare("INSERT OR IGNORE INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+      'src_crunchbase_news', 'Crunchbase News', 'https://news.crunchbase.com/feed/', 'rss', 12, '["pe-vc"]', '["funding","investment","venture","Series","unicorn","acquisition","exit"]', 'pe-vc'
+    );
+    db.prepare("INSERT OR IGNORE INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(
+      'src_the_information', 'The Information', 'https://www.theinformation.com', 'web_page', 24, '["pe-vc","startups"]', '["startup","venture","funding","IPO","tech","enterprise"]', 'pe-vc'
+    );
   }
 
   console.log(`Database initialized at ${DB_PATH}`);

@@ -1,0 +1,102 @@
+{
+  "formatVersion": "1.0",
+  "id": "medical-evidence-synthesiser",
+  "label": "Medical Evidence Synthesiser",
+  "shortLabel": "Evidence Synthesis",
+  "icon": "Microscope",
+  "description": "Synthesise medical evidence using rigorous frameworks — PICO, GRADE, Oxford CEBM. Critically appraises study quality, summarises findings across literature, grades evidence strength, and translates research into actionable clinical guidance. For clinicians, researchers, and guideline developers.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "transparencyLevel": 2,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Clinical evidence, systematic reviews, RCTs, GRADE methodology, critical appraisal frameworks, NNT/NNH, Cochrane methodology, medical literature"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "clinical_question",
+      "label": "Clinical Question",
+      "type": "textarea",
+      "placeholder": "State your clinical question clearly. You can use free text or PICO format:\nP (Population): Who is the patient / condition?\nI (Intervention): What treatment or exposure?\nC (Comparison): Compared to what?\nO (Outcome): What outcome matters?",
+      "required": true
+    },
+    {
+      "id": "task_type",
+      "label": "Task Type",
+      "type": "select",
+      "options": [
+        { "value": "evidence-review", "label": "Evidence Review — summarise existing evidence" },
+        { "value": "critical-appraisal", "label": "Critical Appraisal — evaluate a specific study" },
+        { "value": "guideline-summary", "label": "Guideline Summary — synthesise recommendations" },
+        { "value": "meta-analysis-interpret", "label": "Meta-Analysis Interpretation — explain pooled data" },
+        { "value": "clinical-question-answer", "label": "Clinical Question Answer — rapid evidence-based answer" }
+      ],
+      "required": true
+    },
+    {
+      "id": "evidence_type",
+      "label": "Preferred Evidence Type",
+      "type": "chips",
+      "options": [
+        { "value": "systematic-reviews", "label": "Systematic Reviews / Meta-Analyses" },
+        { "value": "rcts", "label": "Randomised Controlled Trials" },
+        { "value": "cohort-studies", "label": "Cohort Studies" },
+        { "value": "guidelines", "label": "Clinical Guidelines (NICE, WHO, AHA, etc.)" },
+        { "value": "case-series", "label": "Case Series / Expert Opinion" }
+      ],
+      "required": false
+    },
+    {
+      "id": "grading_framework",
+      "label": "Evidence Grading Framework",
+      "type": "select",
+      "options": [
+        { "value": "grade", "label": "GRADE (most widely used)" },
+        { "value": "oxford-cebm", "label": "Oxford CEBM Levels of Evidence" },
+        { "value": "sign", "label": "SIGN Grading" },
+        { "value": "none", "label": "No formal grading — just summarise" }
+      ],
+      "required": false
+    },
+    {
+      "id": "clinical_setting",
+      "label": "Clinical Setting / Specialty",
+      "type": "text",
+      "placeholder": "e.g. UK secondary care cardiology, US primary care, low-resource setting",
+      "required": false
+    },
+    {
+      "id": "provided_literature",
+      "label": "Literature to Synthesise (optional)",
+      "type": "textarea",
+      "placeholder": "Paste abstracts, study summaries, or key findings you want synthesised. Or leave blank to use Claude's knowledge base.",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "clinician",
+    "clinical-researcher",
+    "guideline-developer",
+    "medical-educator"
+  ],
+  "tags": [
+    "healthcare",
+    "evidence-based-medicine",
+    "pico",
+    "grade",
+    "critical-appraisal",
+    "systematic-review",
+    "literature-review",
+    "clinical-research"
+  ]
+}

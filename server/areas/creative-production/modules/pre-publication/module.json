@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "pre-publication",
+  "label": "Pre-Publication Readiness Check",
+  "shortLabel": "Pre-Publication",
+  "icon": "Send",
+  "description": "Assess manuscript or script readiness for submission — simulates the evaluation an agent, script reader, or publisher would perform before any material goes out into the world.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "gap-scoring-matrix"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Literary agency submission requirements, publisher guidelines, film festival submission criteria, market categories, current publishing trends, comparable titles"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "submission_target",
+      "label": "Submission Target",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "literary-agent", "label": "Literary Agent" },
+        { "value": "publisher", "label": "Publisher (direct)" },
+        { "value": "film-festival", "label": "Film Festival" },
+        { "value": "production-company", "label": "Production Company / Studio" },
+        { "value": "self-publication", "label": "Self-Publication / Indie" },
+        { "value": "game-studio", "label": "Game Studio / Interactive" },
+        { "value": "theatre", "label": "Theatre Company / Venue" }
+      ]
+    },
+    {
+      "id": "genre_market",
+      "label": "Genre & Target Market",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. 'Literary fiction, adult, UK market' or 'YA fantasy, international' or 'Arthouse crime thriller, European festival circuit'"
+    },
+    {
+      "id": "word_count",
+      "label": "Word Count / Running Time",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. '82,000 words' or '94-minute screenplay' or '90-minute stage play'"
+    },
+    {
+      "id": "submission_requirements",
+      "label": "Submission Requirements",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Word count limits, formatting rules, genre guidelines, synopsis length, first-pages requirement, any specific submission instructions..."
+    },
+    {
+      "id": "manuscript_excerpt",
+      "label": "Manuscript / First Pages",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Paste your opening pages, synopsis, or the material you are submitting for assessment..."
+    },
+    {
+      "id": "comp_titles",
+      "label": "Comparable Titles",
+      "type": "text",
+      "required": false,
+      "placeholder": "List 2-4 published works your project is comparable to — helps calibrate the market readiness assessment"
+    }
+  ],
+  "recommendedPersonas": ["literary-agent", "script-reader", "acquisitions-editor"],
+  "tags": ["submission", "publication", "literary-agent", "query-letter", "synopsis", "market-readiness", "film-festival", "publishing"]
+}

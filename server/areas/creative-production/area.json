@@ -1,0 +1,10 @@
+{
+  "formatVersion": "1.0",
+  "id": "creative-production",
+  "name": "Creative & Entertainment Production",
+  "shortName": "Creative",
+  "description": "Professional workflows for writers, playwrights, screenwriters, translators, editors, and producers — from concept through publication and distribution.",
+  "icon": "Clapperboard",
+  "color": "adv-teal",
+  "cluster": "general"
+}

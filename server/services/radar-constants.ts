@@ -63,7 +63,7 @@ export const SUBCATEGORY_KEYWORDS: Record<string, { keywords: string[]; category
 };
 
 // Score prompt templates per category
-export const CATEGORY_SCORE_PROMPTS: Record<RadarCategory, string> = {
+export const CATEGORY_SCORE_PROMPTS: Record<RadarCategory | 'pe-vc', string> = {
   regulatory: 'Score this regulatory item for relevance to financial crime prevention (AML/CFT), sanctions compliance, and prudential regulation.',
   competitors: 'Score this item for competitive intelligence value. Consider market positioning, service overlap, and strategic threat/opportunity.',
   products: 'Score this product/technology item for relevance to compliance technology, regtech, and financial services operations.',
@@ -71,4 +71,5 @@ export const CATEGORY_SCORE_PROMPTS: Record<RadarCategory, string> = {
   threats: 'Score this threat/scam item for risk to financial services clients. Consider impact severity, likelihood, and mitigation urgency.',
   trends: 'Score this industry trend for strategic relevance. Consider business impact, client implications, and advisory opportunity.',
   misc: 'Score this item for general relevance to financial services advisory and compliance consulting.',
+  'pe-vc': 'Score this item for relevance to a private equity or venture capital investor. High relevance: funding rounds in target sectors, technology breakthroughs enabling new business models, exit events (IPOs/acquisitions) signalling market maturity, macro trends shifting sector valuations, or competitive moves by portfolio-adjacent companies. Low relevance: unrelated regulatory filings, routine press releases, or items with no investment signal.',
 };

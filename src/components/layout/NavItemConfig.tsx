@@ -32,6 +32,9 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'council', label: 'AI Council', category: 'interaction' },
 
   // Tools
+  { id: 'ngo', label: 'NGO & Social Impact', category: 'tools' },
+  { id: 'trades', label: 'Trades & Service Workers', category: 'tools' },
+  { id: 'pe-vc', label: 'PE/VC Hub', category: 'tools' },
   { id: 'coding', label: 'Coding', category: 'tools' },
   { id: 'my-work', label: 'My Work', category: 'tools' },
   { id: 'workflows', label: 'Workflows', category: 'tools' },
@@ -60,6 +63,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'patterns', label: 'Pattern Detection', category: 'intelligence' },
   { id: 'deadlines', label: 'Time Intelligence', category: 'intelligence' },
   { id: 'radar', label: 'Horizon Radar', category: 'intelligence' },
+  { id: 'innovation-radar', label: 'Innovation Radar', category: 'intelligence' },
 
   // Admin
   { id: 'analytics', label: 'Analytics', category: 'admin' },

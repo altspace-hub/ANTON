@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.0",
+  "id": "due-diligence",
+  "label": "Due Diligence Workbench",
+  "shortLabel": "Due Diligence",
+  "icon": "SearchCheck",
+  "description": "Structure and accelerate due diligence — from request lists to findings synthesis. Upload data room documents for analysis, gap identification, and risk flagging.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Opus 4.6 for deep diligence analysis. Accuracy critical — this informs investment decisions."
+  },
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "action-plan", "gap-scoring-matrix"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Due diligence frameworks, financial analysis, regulatory requirements"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "diligence_phase",
+      "type": "select",
+      "label": "What phase are you in?",
+      "required": true,
+      "options": [
+        { "value": "planning", "label": "Planning (need a diligence request list)" },
+        { "value": "commercial", "label": "Commercial DD (market, customers, competition)" },
+        { "value": "financial", "label": "Financial DD (analysing financials uploaded)" },
+        { "value": "operational", "label": "Operational DD (processes, team, technology)" },
+        { "value": "legal", "label": "Legal DD (contracts, IP, regulatory)" },
+        { "value": "esg", "label": "ESG DD (environmental, social, governance)" },
+        { "value": "synthesis", "label": "Findings synthesis (pulling it all together)" },
+        { "value": "red-flag", "label": "Red flag check (quick risk scan)" }
+      ]
+    },
+    {
+      "id": "investment_style",
+      "type": "select",
+      "label": "Investment type",
+      "required": true,
+      "options": [
+        { "value": "vc-early", "label": "VC Early Stage" },
+        { "value": "vc-growth", "label": "VC Growth" },
+        { "value": "pe-growth", "label": "PE Growth" },
+        { "value": "pe-buyout", "label": "PE Buyout" },
+        { "value": "pe-turnaround", "label": "PE Turnaround" }
+      ]
+    },
+    {
+      "id": "company_description",
+      "type": "textarea",
+      "label": "Target company description",
+      "placeholder": "What does the company do, what stage, what sector?",
+      "required": true
+    },
+    {
+      "id": "deal_size",
+      "type": "text",
+      "label": "Approximate deal size",
+      "placeholder": "e.g., €15M Series B, $200M buyout",
+      "required": false
+    },
+    {
+      "id": "key_concerns",
+      "type": "textarea",
+      "label": "Any specific concerns to investigate?",
+      "placeholder": "e.g., Customer concentration, founder vesting, regulatory risk",
+      "required": false
+    }
+  ],
+  "tags": ["pe-vc", "due-diligence", "data-room", "investment-analysis", "risk", "findings"]
+}

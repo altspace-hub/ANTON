@@ -1,0 +1,75 @@
+{
+  "formatVersion": "1.0",
+  "id": "story-collaboration",
+  "label": "Story Collaboration & Continuity",
+  "shortLabel": "Continuity",
+  "icon": "GitBranch",
+  "description": "Manage multi-author storylines, character handoffs, continuity tracking, and narrative coordination for TV writers' rooms, novel series, shared universes, and game narrative teams.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Writers' room methodology, series bible construction, continuity management, character arc tracking, narrative consistency"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "task",
+      "label": "Task",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "continuity-check", "label": "Check continuity in submitted material" },
+        { "value": "character-arc-timeline", "label": "Build a character arc timeline" },
+        { "value": "series-bible", "label": "Create / update a series bible" },
+        { "value": "handoff-briefing", "label": "Generate a handoff briefing for the next writer" },
+        { "value": "voice-consistency", "label": "Voice consistency check across contributors" },
+        { "value": "conflict-log", "label": "Generate a continuity conflict log" }
+      ]
+    },
+    {
+      "id": "project_type",
+      "label": "Project Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "tv-series", "label": "TV Series" },
+        { "value": "novel-series", "label": "Novel Series" },
+        { "value": "comic-series", "label": "Comic Book / Graphic Novel Series" },
+        { "value": "shared-universe", "label": "Shared Universe (multi-author)" },
+        { "value": "anthology", "label": "Anthology (linked stories)" },
+        { "value": "game", "label": "Game / Interactive Narrative" }
+      ]
+    },
+    {
+      "id": "current_position",
+      "label": "Current Episode / Chapter",
+      "type": "text",
+      "required": false,
+      "placeholder": "e.g. 'Season 2, Episode 4' or 'Chapter 17'"
+    },
+    {
+      "id": "series_bible",
+      "label": "Series Bible / Canon",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Paste your existing series bible, character sheets, or established canon. The more detail here, the more accurate the continuity check..."
+    },
+    {
+      "id": "new_material",
+      "label": "New Material to Check",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Paste the new script, chapter, or material to check for continuity conflicts..."
+    }
+  ],
+  "recommendedPersonas": ["showrunner", "series-editor", "continuity-editor"],
+  "tags": ["continuity", "series-bible", "writers-room", "collaboration", "character-arcs", "handoff", "shared-universe", "narrative-consistency"]
+}

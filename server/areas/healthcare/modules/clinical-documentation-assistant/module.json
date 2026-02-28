@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "clinical-documentation-assistant",
+  "label": "Clinical Documentation Assistant",
+  "shortLabel": "Clinical Docs",
+  "icon": "ClipboardPen",
+  "description": "Draft high-quality clinical documents — discharge summaries, referral letters, outpatient letters, clinical notes — to professional standards. Adapts to specialty, setting, and local documentation requirements. Saves clinicians significant administrative time while maintaining medico-legal accuracy.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "strict",
+    "outputFormats": [
+      "policy-document"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Clinical documentation standards, SBAR framework, SOAP notes, NHS discharge summary requirements, referral letter etiquette, medico-legal documentation, specialty-specific formats"
+      },
+      "localFolder": {
+        "enabled": false,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "document_type",
+      "label": "Document Type",
+      "type": "select",
+      "options": [
+        { "value": "discharge-summary", "label": "Discharge Summary" },
+        { "value": "referral-letter", "label": "Referral Letter" },
+        { "value": "outpatient-letter", "label": "Outpatient / Clinic Letter" },
+        { "value": "clinical-note", "label": "Clinical Note (SOAP/SBAR)" },
+        { "value": "handover-note", "label": "Clinical Handover Note" },
+        { "value": "sick-note", "label": "Fit Note / Sick Note Justification" },
+        { "value": "ward-round-note", "label": "Ward Round Note" },
+        { "value": "procedure-note", "label": "Procedure / Operation Note" }
+      ],
+      "required": true
+    },
+    {
+      "id": "specialty",
+      "label": "Clinical Specialty",
+      "type": "select",
+      "options": [
+        { "value": "general-medicine", "label": "General Medicine" },
+        { "value": "general-surgery", "label": "General Surgery" },
+        { "value": "emergency-medicine", "label": "Emergency Medicine" },
+        { "value": "cardiology", "label": "Cardiology" },
+        { "value": "respiratory", "label": "Respiratory / Pulmonology" },
+        { "value": "gastroenterology", "label": "Gastroenterology" },
+        { "value": "neurology", "label": "Neurology" },
+        { "value": "orthopaedics", "label": "Orthopaedics" },
+        { "value": "psychiatry", "label": "Psychiatry / Mental Health" },
+        { "value": "oncology", "label": "Oncology" },
+        { "value": "paediatrics", "label": "Paediatrics" },
+        { "value": "obstetrics-gynaecology", "label": "Obstetrics & Gynaecology" },
+        { "value": "primary-care", "label": "Primary Care / General Practice" },
+        { "value": "other", "label": "Other Specialty" }
+      ],
+      "required": true
+    },
+    {
+      "id": "recipient",
+      "label": "Document Recipient",
+      "type": "select",
+      "options": [
+        { "value": "gp", "label": "General Practitioner" },
+        { "value": "specialist", "label": "Specialist Consultant" },
+        { "value": "patient", "label": "Patient (copy letter)" },
+        { "value": "team", "label": "Clinical Team (internal)" },
+        { "value": "social-care", "label": "Social Care / Community Services" },
+        { "value": "employer", "label": "Employer / Insurance (fit note)" }
+      ],
+      "required": true
+    },
+    {
+      "id": "clinical_context",
+      "label": "Clinical Details",
+      "type": "textarea",
+      "placeholder": "Paste your clinical notes, bullet points, or key facts. Include: presenting complaint, relevant history, examination findings, investigations, diagnosis, management, follow-up plan. The richer your input, the better the output.",
+      "required": true
+    },
+    {
+      "id": "patient_demographics",
+      "label": "Patient Demographics (optional)",
+      "type": "text",
+      "placeholder": "e.g. 67-year-old female, type 2 diabetic, hypertensive — no identifiable information needed",
+      "required": false
+    },
+    {
+      "id": "tone_notes",
+      "label": "Tone / Format Notes",
+      "type": "text",
+      "placeholder": "e.g. Concise — max 1 page. Include medications table. Use SBAR format.",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "clinician",
+    "junior-doctor",
+    "specialist-nurse",
+    "clinical-admin"
+  ],
+  "tags": [
+    "healthcare",
+    "clinical-documentation",
+    "discharge-summary",
+    "referral",
+    "admin-reduction",
+    "sbar",
+    "soap"
+  ]
+}

@@ -7,6 +7,7 @@
   "icon": "CreditCard",
   "color": "adv-teal",
   "cluster": "inclusion",
+  "tags": ["ngo", "social-impact"],
   "modelTier": {
     "recommended": "haiku",
     "minimum": "ollama-local",

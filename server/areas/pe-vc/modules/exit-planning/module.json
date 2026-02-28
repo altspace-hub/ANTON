@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.0",
+  "id": "exit-planning",
+  "label": "Exit Planning & Preparation",
+  "shortLabel": "Exit Planning",
+  "icon": "DoorOpen",
+  "description": "Plan and prepare for portfolio company exits — timing, positioning, buyer universe, process management, and materials preparation. Best exits are planned 12-18 months ahead.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Opus 4.6 for exit strategy and preparation."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["action-plan", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "M&A market conditions, exit processes, buyer universe, CIM structures"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "exit_phase",
+      "type": "select",
+      "label": "Where are you in the exit process?",
+      "required": true,
+      "options": [
+        { "value": "early-planning", "label": "Early planning (12–18 months out)" },
+        { "value": "preparation", "label": "Preparation (6–12 months out)" },
+        { "value": "active-process", "label": "Active process (preparing materials)" },
+        { "value": "running-process", "label": "Running the process (managing buyers)" },
+        { "value": "post-loi", "label": "Post-LOI / pre-close" }
+      ]
+    },
+    {
+      "id": "exit_route",
+      "type": "select",
+      "label": "Expected exit route",
+      "required": true,
+      "options": [
+        { "value": "trade-sale", "label": "Trade sale (strategic buyer)" },
+        { "value": "secondary-buyout", "label": "Secondary buyout (PE to PE)" },
+        { "value": "ipo", "label": "IPO" },
+        { "value": "mbo", "label": "Management buyout" },
+        { "value": "exploring", "label": "Not sure yet — exploring options" }
+      ]
+    },
+    {
+      "id": "company_description",
+      "type": "textarea",
+      "label": "Company overview and current performance",
+      "placeholder": "What they do, revenue, EBITDA, growth, market position, key assets",
+      "required": true
+    },
+    {
+      "id": "investment_summary",
+      "type": "textarea",
+      "label": "Our investment (entry date, entry valuation, total invested)",
+      "placeholder": "Invested: €12M in Jan 2022 at €40M valuation. Total invested including follow-on: €15M.",
+      "required": false
+    },
+    {
+      "id": "exit_task",
+      "type": "select",
+      "label": "What specifically do you need?",
+      "required": true,
+      "options": [
+        { "value": "readiness-assessment", "label": "Exit readiness assessment" },
+        { "value": "vendor-dd-prep", "label": "Vendor due diligence preparation" },
+        { "value": "cim-draft", "label": "Information memorandum / CIM draft" },
+        { "value": "mgmt-presentation", "label": "Management presentation preparation" },
+        { "value": "buyer-universe", "label": "Buyer universe identification" },
+        { "value": "return-analysis", "label": "Return analysis at different exit valuations" }
+      ]
+    }
+  ],
+  "tags": ["pe-vc", "exit", "m&a", "cim", "ipo", "secondary", "return-analysis"]
+}

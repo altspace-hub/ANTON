@@ -293,6 +293,39 @@ export interface ClaudeRunConfig {
   seed?: number;
 }
 
+// ── Multi-Model Deliberation ────────────────────────────────
+
+export type DeliberationAgreementLevel = 'unanimous' | 'majority' | 'split';
+export type DeliberationConfidence = 'high' | 'medium' | 'low';
+
+export interface DeliberationPanelist {
+  model: string;
+  role: string;
+  description: string;
+}
+
+export interface DeliberationOpinion extends DeliberationPanelist {
+  response: string;
+  executionMs: number;
+}
+
+export interface DeliberationMeta {
+  agreementLevel: DeliberationAgreementLevel;
+  agreementScore: number;
+  disagreements: Array<{ topic: string; positions: Record<string, string> }>;
+  redFlags: string[];
+  confidence: DeliberationConfidence;
+  opinions: DeliberationOpinion[];
+}
+
+export type DeliberationEvent =
+  | { type: 'deliberation_start'; panelists: DeliberationPanelist[] }
+  | { type: 'model_start'; model: string; role: string }
+  | { type: 'model_complete'; model: string; role: string; description: string; executionMs: number; responsePreview: string }
+  | { type: 'text_delta'; content: string }
+  | { type: 'deliberation_complete' } & DeliberationMeta
+  | { type: 'error'; message: string };
+
 // ── Health ──────────────────────────────────────────────────
 
 export interface HealthStatus {

@@ -287,6 +287,49 @@ const AREA_FALLBACK_MAP: Record<string, ModuleSuggestion[]> = {
       reason: 'Document risk appetite statements and frameworks.',
     },
   ],
+  // NGO & Social Impact areas
+  'community-health': [
+    { moduleId: 'health-education', label: 'Health Education', reason: 'Create community health literacy materials to follow up on assessments.' },
+    { moduleId: 'mental-health-support', label: 'Mental Health Support', reason: 'Address mental health needs identified during health assessments.' },
+  ],
+  'smallholder-farming': [
+    { moduleId: 'crop-planning-advisor', label: 'Crop Planning', reason: 'Turn soil and water assessment findings into a seasonal crop plan.' },
+    { moduleId: 'market-access-advisor', label: 'Market Access', reason: 'Connect improved yields to market and income opportunities.' },
+  ],
+  'livestock-poultry': [
+    { moduleId: 'crop-planning-advisor', label: 'Crop Planning', reason: 'Integrate fodder crops into the farm plan for feed security.' },
+    { moduleId: 'market-access-advisor', label: 'Market Access', reason: 'Find buyers for livestock products and improve pricing.' },
+  ],
+  'land-rights': [
+    { moduleId: 'workers-rights-advisor', label: 'Workers\' Rights', reason: 'Combine land and labour rights support for agricultural workers.' },
+    { moduleId: 'dispute-resolution-guide', label: 'Dispute Resolution', reason: 'Escalate unresolved land disputes through formal channels.' },
+  ],
+  'workers-rights': [
+    { moduleId: 'land-rights-advisor', label: 'Land Rights', reason: 'Address land tenure issues faced by agricultural and rural workers.' },
+    { moduleId: 'micro-business-advisor', label: 'Micro-Business', reason: 'Support transitions from informal employment to self-employment.' },
+  ],
+  'education-literacy': [
+    { moduleId: 'digital-literacy-guide', label: 'Digital Literacy', reason: 'Build on literacy foundations with digital skills training.' },
+    { moduleId: 'micro-business-advisor', label: 'Micro-Business', reason: 'Apply literacy and numeracy skills to starting or growing a business.' },
+  ],
+  'micro-business': [
+    { moduleId: 'credit-navigator', label: 'Credit Navigator', reason: 'Find appropriate finance to start or grow the micro-business.' },
+    { moduleId: 'market-access-advisor', label: 'Market Access', reason: 'Connect the business to customers and supply chains.' },
+  ],
+  'credit-navigator': [
+    { moduleId: 'micro-business-advisor', label: 'Micro-Business', reason: 'Apply financing to business start-up or growth planning.' },
+    { moduleId: 'financial-literacy', label: 'Financial Literacy', reason: 'Build the financial skills needed to manage credit responsibly.' },
+  ],
+  microfinance: [
+    { moduleId: 'credit-navigator', label: 'Credit Navigator', reason: 'Help clients navigate loan options and understand their rights.' },
+    { moduleId: 'micro-business-advisor', label: 'Micro-Business', reason: 'Support client micro-enterprise development alongside financing.' },
+  ],
+  // Trades & Service Workers
+  trades: [
+    { moduleId: 'invoice-generator', label: 'Invoice Generator', reason: 'Generate a professional invoice for the completed job.' },
+    { moduleId: 'job-quote-builder', label: 'Job Quote Builder', reason: 'Write a professional quote for an upcoming job.' },
+    { moduleId: 'customer-comms', label: 'Customer Message', reason: 'Write a quick message to your customer.' },
+  ],
 };
 
 /**

@@ -45,6 +45,7 @@ interface SessionState {
   multiAgentEnabled: boolean;
   multiAgentTeam: 'compliance' | 'strategic' | 'quality';
   multiAgentStyle: 'parallel' | 'debate' | 'consensus';
+  deliberationEnabled: boolean;
   knowledgeSources: KnowledgeSourceConfig;
   moduleInputs: Record<string, unknown>;
   uploadedFileIds: string[];
@@ -89,6 +90,7 @@ interface SessionState {
   setMultiAgentEnabled: (enabled: boolean) => void;
   setMultiAgentTeam: (team: 'compliance' | 'strategic' | 'quality') => void;
   setMultiAgentStyle: (style: 'parallel' | 'debate' | 'consensus') => void;
+  setDeliberationEnabled: (enabled: boolean) => void;
   setKnowledgeSources: (config: KnowledgeSourceConfig) => void;
   setModuleInputs: (inputs: Record<string, unknown>) => void;
   setUploadedFileIds: (ids: string[]) => void;
@@ -168,6 +170,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   multiAgentEnabled: false,
   multiAgentTeam: 'compliance',
   multiAgentStyle: 'parallel',
+  deliberationEnabled: false,
   knowledgeSources: defaultKnowledgeSources,
   moduleInputs: {},
   uploadedFileIds: [],
@@ -209,6 +212,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   setMultiAgentEnabled: (enabled) => set({ multiAgentEnabled: enabled }),
   setMultiAgentTeam: (team) => set({ multiAgentTeam: team }),
   setMultiAgentStyle: (style) => set({ multiAgentStyle: style }),
+  setDeliberationEnabled: (enabled) => set({ deliberationEnabled: enabled }),
   setKnowledgeSources: (config) => set({ knowledgeSources: config }),
   setModuleInputs: (inputs) => set({ moduleInputs: inputs }),
   setUploadedFileIds: (ids) => set({ uploadedFileIds: ids }),

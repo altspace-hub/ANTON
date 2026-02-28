@@ -1,0 +1,76 @@
+{
+  "formatVersion": "1.0",
+  "id": "material-order-list",
+  "label": "Material Order List",
+  "shortLabel": "Materials",
+  "icon": "ShoppingCart",
+  "description": "Get a complete list of materials needed for a job. Includes approximate quantities and suggested suppliers.",
+  "color": "adv-gold",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Fast, practical lists work well with Haiku."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Construction materials, plumbing supplies, electrical materials, typical quantities for common trade jobs"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "trade_type",
+      "type": "select",
+      "label": "Your trade",
+      "required": true,
+      "options": [
+        { "value": "plumbing", "label": "Plumbing / VVS" },
+        { "value": "electrical", "label": "Electrical / El" },
+        { "value": "carpentry", "label": "Carpentry / Snickeri" },
+        { "value": "painting", "label": "Painting / Målning" },
+        { "value": "tiling", "label": "Tiling / Kakling" },
+        { "value": "cleaning", "label": "Cleaning / Städning" },
+        { "value": "landscaping", "label": "Landscaping / Trädgård" },
+        { "value": "other", "label": "Other" }
+      ]
+    },
+    {
+      "id": "job_description",
+      "type": "textarea",
+      "label": "Describe the job",
+      "placeholder": "Replace bathroom floor tiles, approx 8 sqm. Remove old tiles, lay new ones.",
+      "required": true
+    },
+    {
+      "id": "country",
+      "type": "select",
+      "label": "Country (for supplier suggestions)",
+      "required": false,
+      "options": [
+        { "value": "se", "label": "Sweden" },
+        { "value": "uk", "label": "United Kingdom" },
+        { "value": "de", "label": "Germany" },
+        { "value": "other", "label": "Other" }
+      ]
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor"],
+  "tags": [
+    "trades",
+    "materials",
+    "order-list",
+    "supplies",
+    "plumbing",
+    "electrical",
+    "carpentry",
+    "quantities"
+  ]
+}

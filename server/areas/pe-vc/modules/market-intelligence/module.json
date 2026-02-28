@@ -1,0 +1,82 @@
+{
+  "formatVersion": "1.0",
+  "id": "market-intelligence",
+  "label": "Market & Competitive Intelligence",
+  "shortLabel": "Market Intel",
+  "icon": "Globe",
+  "description": "Deep market research — sizing, trends, competitive landscape mapping, and sector thesis development. Synthesises current data into investment-grade intelligence.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Opus 4.6 for deep market analysis. Enable web search for current data."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "regulatory-comparison"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Market sizing, competitive landscape, technology trends, sector analysis"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "research_type",
+      "type": "select",
+      "label": "What do you need?",
+      "required": true,
+      "options": [
+        { "value": "market-sizing", "label": "Market sizing (TAM/SAM/SOM)" },
+        { "value": "competitive-landscape", "label": "Competitive landscape map" },
+        { "value": "sector-thesis", "label": "Sector thesis / trend analysis" },
+        { "value": "company-deep-dive", "label": "Company deep dive (specific company)" },
+        { "value": "tech-assessment", "label": "Technology assessment (specific tech)" },
+        { "value": "geo-comparison", "label": "Geographic market comparison" }
+      ]
+    },
+    {
+      "id": "sector",
+      "type": "text",
+      "label": "Sector / market",
+      "placeholder": "e.g., European embedded finance, Nordic proptech",
+      "required": true
+    },
+    {
+      "id": "specific_company",
+      "type": "text",
+      "label": "Specific company (if applicable)",
+      "placeholder": "Company name",
+      "required": false
+    },
+    {
+      "id": "investment_context",
+      "type": "select",
+      "label": "Investment context",
+      "required": true,
+      "options": [
+        { "value": "specific-deal", "label": "Evaluating a specific deal" },
+        { "value": "sector-thesis", "label": "Building sector thesis" },
+        { "value": "portfolio-review", "label": "Portfolio company strategic review" },
+        { "value": "lp-reporting", "label": "Fundraising / LP reporting" },
+        { "value": "general", "label": "General intelligence" }
+      ]
+    },
+    {
+      "id": "depth",
+      "type": "select",
+      "label": "Depth needed",
+      "required": true,
+      "options": [
+        { "value": "quick", "label": "Quick overview (1–2 pages)" },
+        { "value": "standard", "label": "Standard analysis (3–5 pages)" },
+        { "value": "deep", "label": "Deep dive (10+ pages)" }
+      ]
+    }
+  ],
+  "tags": ["pe-vc", "market-research", "competitive-intelligence", "sector-analysis", "tam", "landscape"]
+}

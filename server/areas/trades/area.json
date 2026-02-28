@@ -1,0 +1,17 @@
+{
+  "formatVersion": "1.0",
+  "id": "trades",
+  "name": "Trades & Service Workers",
+  "shortName": "Trades",
+  "description": "Practical AI tools for plumbers, electricians, carpenters, cleaners, painters, and all service tradespeople. Invoicing, quoting, customer communication, tax deductions, and business admin — done your way.",
+  "icon": "Wrench",
+  "color": "adv-gold",
+  "cluster": "micro-business",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Fast, practical outputs. Haiku is perfect for invoices, quotes, and short messages."
+  },
+  "myWayEnabled": true
+}

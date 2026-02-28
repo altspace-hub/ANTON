@@ -1,0 +1,71 @@
+{
+  "formatVersion": "1.0",
+  "id": "team-assessment",
+  "label": "Founder & Management Assessment",
+  "shortLabel": "Team Assessment",
+  "icon": "Users",
+  "description": "Structured assessment of founders (VC) and management teams (PE). Synthesises interview notes, reference checks, and background research into a clear people assessment.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Opus 4.6 for nuanced people assessment. Requires careful judgment."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["detailed-findings", "decision-memo"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Founder assessment frameworks, management assessment, reference check synthesis, leadership evaluation"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "assessment_type",
+      "type": "select",
+      "label": "What are you assessing?",
+      "required": true,
+      "options": [
+        { "value": "founder-vc", "label": "Founder assessment (VC — will this person build a big company?)" },
+        { "value": "management-pe", "label": "Management team assessment (PE — can this team execute the value creation plan?)" },
+        { "value": "ceo-search", "label": "CEO search / leadership gap analysis" },
+        { "value": "reference-synthesis", "label": "Reference check synthesis (compile reference notes into themes)" },
+        { "value": "board-review", "label": "Board composition review" }
+      ]
+    },
+    {
+      "id": "person_info",
+      "type": "textarea",
+      "label": "Who are you assessing? (name, role, background)",
+      "placeholder": "Name: Anna Lindqvist, CEO\nBackground: Previously VP Sales at Klarna (2015-2020), Co-founded GrowthCo (acquired 2022, €8M sale), Computer Science, KTH",
+      "required": true
+    },
+    {
+      "id": "interview_notes",
+      "type": "textarea",
+      "label": "Your notes from meetings / interviews",
+      "placeholder": "From first meeting: Clear product vision, strong domain expertise. Talked a lot about technology but less about go-to-market. Seemed uncomfortable when asked about competition. Second meeting: More prepared, good strategic thinking, asked great questions about our value-add...",
+      "required": false
+    },
+    {
+      "id": "reference_notes",
+      "type": "textarea",
+      "label": "Notes from reference calls",
+      "placeholder": "Ref 1 (Former colleague at Klarna): 'Best product person I've worked with. Can be impatient with process. Drives results.'\nRef 2 (Customer): 'Responsive, knows the product deeply, was slow to escalate issues...'",
+      "required": false
+    },
+    {
+      "id": "concerns",
+      "type": "textarea",
+      "label": "Any specific concerns or areas to probe?",
+      "placeholder": "e.g., First-time CEO, limited fundraising experience, we've heard mixed signals about management style",
+      "required": false
+    }
+  ],
+  "tags": ["pe-vc", "founder-assessment", "management-team", "reference-checks", "people", "leadership"]
+}

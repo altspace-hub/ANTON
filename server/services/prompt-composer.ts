@@ -106,6 +106,8 @@ export interface PromptComposerConfig {
   knowledgeContextDocuments?: string;
   /** WP-11: This Is Me — user profile for Layer 0 personalisation */
   userProfile?: UserProfileData | null;
+  /** Trades: My Way of Working — business identity, template, and process pattern enrichment */
+  businessContext?: string | null;
 }
 
 // ── Main Compose Function ──────────────────────────────────
@@ -365,6 +367,11 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
     parts.push(getPlanningInstruction());
   }
 
+  // Layer 7.5: Trades "My Way of Working" — Business Identity, Template, Process Pattern
+  if (config.businessContext?.trim()) {
+    parts.push(config.businessContext.trim());
+  }
+
   // Layer 8: Knowledge Source System additions
   if (config.knowledgeSystemAdditions?.trim()) {
     parts.push(config.knowledgeSystemAdditions.trim());
@@ -577,6 +584,11 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
   // Planning instruction
   if (config.thinking === 'plan_first') {
     dynamicParts.push(getPlanningInstruction());
+  }
+
+  // Layer 7.5: Trades "My Way of Working" enrichment
+  if (config.businessContext?.trim()) {
+    dynamicParts.push(config.businessContext.trim());
   }
 
   // Layer 8: Knowledge System additions

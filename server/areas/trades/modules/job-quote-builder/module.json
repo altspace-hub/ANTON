@@ -1,0 +1,99 @@
+{
+  "formatVersion": "1.0",
+  "id": "job-quote-builder",
+  "label": "Job Quote Builder",
+  "shortLabel": "Quote",
+  "icon": "ClipboardList",
+  "description": "Write a professional quote for a customer. Include what's covered, what's not, your price, and how long the offer stands.",
+  "color": "adv-gold",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Haiku is fast and practical for quote generation."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Trade quotes, pricing, scope of work, exclusions, payment terms for service businesses"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "customer_name",
+      "type": "text",
+      "label": "Customer name",
+      "placeholder": "Anna Bergström",
+      "required": true
+    },
+    {
+      "id": "job_description",
+      "type": "textarea",
+      "label": "What needs to be done?",
+      "placeholder": "Replace kitchen faucet and fix leaking pipe under sink",
+      "required": true
+    },
+    {
+      "id": "job_size",
+      "type": "select",
+      "label": "How big is the job?",
+      "required": true,
+      "options": [
+        { "value": "small", "label": "Small (half day or less)" },
+        { "value": "medium", "label": "Medium (1-2 days)" },
+        { "value": "large", "label": "Large (3-5 days)" },
+        { "value": "project", "label": "Big project (1 week or more)" }
+      ]
+    },
+    {
+      "id": "pricing_type",
+      "type": "select",
+      "label": "Fixed price or estimate?",
+      "required": true,
+      "options": [
+        { "value": "fixed", "label": "Fixed price" },
+        { "value": "estimate", "label": "Estimate (final may vary)" },
+        { "value": "hourly", "label": "Hourly rate + materials" }
+      ]
+    },
+    {
+      "id": "visited_site",
+      "type": "select",
+      "label": "Have you seen the job?",
+      "required": false,
+      "options": [
+        { "value": "yes", "label": "Yes, I visited the site" },
+        { "value": "photos", "label": "Yes, I've seen photos" },
+        { "value": "description", "label": "No, based on description only" }
+      ]
+    },
+    {
+      "id": "special_notes",
+      "type": "textarea",
+      "label": "Any special conditions or exclusions?",
+      "placeholder": "Price does not include any hidden water damage found during work",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor"],
+  "myWayProcessType": "quoting",
+  "tags": [
+    "trades",
+    "quote",
+    "offert",
+    "estimate",
+    "scope-of-work",
+    "plumber",
+    "electrician",
+    "carpenter",
+    "sweden",
+    "uk"
+  ]
+}

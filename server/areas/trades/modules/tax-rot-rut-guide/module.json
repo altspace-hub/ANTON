@@ -1,0 +1,63 @@
+{
+  "formatVersion": "1.0",
+  "id": "tax-rot-rut-guide",
+  "label": "ROT & RUT Tax Guide",
+  "shortLabel": "ROT/RUT",
+  "icon": "Receipt",
+  "description": "Understand and apply ROT and RUT deductions correctly. Never miss a deduction your customer is entitled to.",
+  "color": "adv-gold",
+  "modelTier": {
+    "recommended": "haiku",
+    "minimum": "ollama-local",
+    "professional": "sonnet",
+    "notes": "Haiku handles FAQ-style questions well."
+  },
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": ["quick-briefing"],
+    "transparencyLevel": 0,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Swedish ROT-avdrag and RUT-avdrag rules, Skatteverket requirements, eligible work categories, limits, how to claim"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "question_type",
+      "type": "select",
+      "label": "What do you need to know?",
+      "required": true,
+      "options": [
+        { "value": "eligible", "label": "Does my work qualify for ROT or RUT?" },
+        { "value": "calculate", "label": "Calculate the deduction for a job" },
+        { "value": "claim", "label": "How do I claim from Skatteverket?" },
+        { "value": "limits", "label": "What are the annual limits?" },
+        { "value": "company-customer", "label": "My customer is a company — can they still get the deduction?" },
+        { "value": "foreign-customer", "label": "My customer is not Swedish — what happens?" }
+      ]
+    },
+    {
+      "id": "work_description",
+      "type": "textarea",
+      "label": "What work did you do? (for eligibility check)",
+      "placeholder": "Replaced kitchen pipes and installed a new dishwasher",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": ["small-business-mentor"],
+  "tags": [
+    "trades",
+    "rot",
+    "rut",
+    "tax",
+    "skatteverket",
+    "deduction",
+    "sweden",
+    "rotavdrag",
+    "rutavdrag"
+  ]
+}

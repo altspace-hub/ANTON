@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "patient-education-material-creator",
+  "label": "Patient Education Material Creator",
+  "shortLabel": "Patient Education",
+  "icon": "BookOpen",
+  "description": "Create clinically accurate, readable, and culturally appropriate patient education materials — condition guides, post-procedure instructions, self-management plans, healthy living resources — at precisely the right reading level for your target audience. Applies health literacy principles, plain language guidelines, and behaviour change frameworks.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "think",
+    "creativity": "balanced",
+    "outputFormats": [
+      "training-material"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Health literacy standards, plain language guidelines, NICE patient information standards, NHS identity standards, health education, behaviour change models (COM-B), condition-specific clinical information"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "material_type",
+      "label": "Material Type",
+      "type": "select",
+      "options": [
+        { "value": "condition-guide", "label": "Condition / Diagnosis Guide" },
+        { "value": "procedure-instructions", "label": "Pre / Post-Procedure Instructions" },
+        { "value": "medication-guide", "label": "Medication Information Guide" },
+        { "value": "self-management-plan", "label": "Self-Management Plan" },
+        { "value": "lifestyle-guide", "label": "Lifestyle / Healthy Living Guide" },
+        { "value": "discharge-instructions", "label": "Discharge Instructions" },
+        { "value": "screening-information", "label": "Screening / Prevention Information" },
+        { "value": "faq-sheet", "label": "FAQ Sheet" },
+        { "value": "caregiver-guide", "label": "Caregiver / Family Guide" }
+      ],
+      "required": true
+    },
+    {
+      "id": "clinical_topic",
+      "label": "Clinical Topic",
+      "type": "text",
+      "placeholder": "e.g. Type 2 diabetes management, hip replacement recovery, starting metformin, colonoscopy preparation",
+      "required": true
+    },
+    {
+      "id": "target_audience",
+      "label": "Target Audience",
+      "type": "select",
+      "options": [
+        { "value": "general-adult", "label": "General adult patients" },
+        { "value": "low-health-literacy", "label": "Patients with low health literacy" },
+        { "value": "elderly", "label": "Older adults / Elderly patients" },
+        { "value": "parents-caregivers", "label": "Parents / Caregivers" },
+        { "value": "adolescents", "label": "Children / Adolescents" },
+        { "value": "non-native-speakers", "label": "Patients for whom English is a second language" },
+        { "value": "highly-educated", "label": "Highly educated / Professional patients" }
+      ],
+      "required": true
+    },
+    {
+      "id": "reading_level",
+      "label": "Target Reading Level",
+      "type": "select",
+      "options": [
+        { "value": "simple", "label": "Simple — age 9-11 reading level (Flesch score 80+)" },
+        { "value": "standard", "label": "Standard — age 12-15 reading level (Flesch score 60-79)" },
+        { "value": "detailed", "label": "Detailed — educated adult (Flesch score 40-59)" }
+      ],
+      "required": true
+    },
+    {
+      "id": "format",
+      "label": "Output Format",
+      "type": "select",
+      "options": [
+        { "value": "leaflet", "label": "Printed Leaflet / Handout" },
+        { "value": "web-content", "label": "Website / Patient Portal Content" },
+        { "value": "video-script", "label": "Video Script" },
+        { "value": "poster", "label": "Poster / Infographic Text" },
+        { "value": "app-content", "label": "App / Digital Tool Content" },
+        { "value": "email", "label": "Patient Email / Letter" }
+      ],
+      "required": false
+    },
+    {
+      "id": "cultural_context",
+      "label": "Cultural / Language Context",
+      "type": "text",
+      "placeholder": "e.g. UK NHS context, Australian health system, culturally appropriate for South Asian communities — helps tailor examples and language",
+      "required": false
+    },
+    {
+      "id": "key_messages",
+      "label": "Key Messages to Include",
+      "type": "textarea",
+      "placeholder": "Any specific clinical points, warnings, or action steps the material must include. Leave blank to let Claude determine based on topic and audience.",
+      "required": false
+    }
+  ],
+  "recommendedPersonas": [
+    "health-educator",
+    "clinical-lead",
+    "patient-experience-manager",
+    "public-health-specialist"
+  ],
+  "tags": [
+    "healthcare",
+    "patient-education",
+    "health-literacy",
+    "plain-language",
+    "patient-information",
+    "behaviour-change",
+    "self-management"
+  ]
+}

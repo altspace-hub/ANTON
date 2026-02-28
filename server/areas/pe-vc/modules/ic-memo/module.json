@@ -1,0 +1,104 @@
+{
+  "formatVersion": "1.0",
+  "id": "ic-memo",
+  "label": "Investment Committee Memo",
+  "shortLabel": "IC Memo",
+  "icon": "FileText",
+  "description": "Generate structured IC memos that present the full investment case, risks, and recommendation. The most important document in any deal — now drafted in minutes, not weeks.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "opus",
+    "professional": "opus",
+    "notes": "Always use Opus 4.6. This is the most important document in any deal. Quality is non-negotiable."
+  },
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": ["policy-document", "executive-summary"],
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "IC memo structure, investment analysis, risk assessment frameworks"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    },
+    "myWayProcessType": "ic-memo",
+    "myWayHubPath": "/pe-vc"
+  },
+  "guidedInputs": [
+    {
+      "id": "memo_type",
+      "type": "select",
+      "label": "What kind of IC paper?",
+      "required": true,
+      "options": [
+        { "value": "full-ic-memo", "label": "Full IC memo (new investment recommendation)" },
+        { "value": "follow-on", "label": "Follow-on investment memo" },
+        { "value": "ic-update", "label": "IC update / progress report" },
+        { "value": "exit-rec", "label": "Exit recommendation memo" },
+        { "value": "preliminary", "label": "Preliminary IC teaser (seeking approval to proceed to diligence)" }
+      ]
+    },
+    {
+      "id": "recommendation",
+      "type": "select",
+      "label": "Your recommendation",
+      "required": true,
+      "options": [
+        { "value": "invest-strong", "label": "Invest (strong conviction)" },
+        { "value": "invest-conditions", "label": "Invest (with conditions)" },
+        { "value": "further-diligence", "label": "Further diligence needed" },
+        { "value": "pass", "label": "Pass" },
+        { "value": "balanced", "label": "Presenting both sides — IC to decide" }
+      ]
+    },
+    {
+      "id": "deal_summary",
+      "type": "textarea",
+      "label": "Deal summary (company, what they do, stage, amount, valuation)",
+      "placeholder": "Acme AI — B2B SaaS, predictive analytics for logistics. Series B, raising €15M at €60M pre-money (7.5x NTM Revenue). We are leading.",
+      "required": true
+    },
+    {
+      "id": "key_strengths",
+      "type": "textarea",
+      "label": "Why should we invest? (top 3-5 reasons)",
+      "placeholder": "1. Market leader in underserved vertical\n2. NRR of 132%, best-in-class retention\n3. Founder has domain expertise and has exited once before",
+      "required": true
+    },
+    {
+      "id": "key_risks",
+      "type": "textarea",
+      "label": "Key risks and concerns (top 3-5)",
+      "placeholder": "1. Customer concentration: top 3 customers = 45% of ARR\n2. Valuation aggressive vs. public comps\n3. Sales cycle elongating in current macro",
+      "required": true
+    },
+    {
+      "id": "financials_summary",
+      "type": "textarea",
+      "label": "Key financial metrics",
+      "placeholder": "ARR: €6M | Growth: 85% | GM: 74% | NRR: 132% | Burn: €350K/month | Runway: 18 months post-round",
+      "required": false
+    },
+    {
+      "id": "investment_style",
+      "type": "select",
+      "label": "Fund type",
+      "required": true,
+      "options": [
+        { "value": "vc-early", "label": "VC Early" },
+        { "value": "vc-growth", "label": "VC Growth" },
+        { "value": "pe-growth", "label": "PE Growth" },
+        { "value": "pe-buyout", "label": "PE Buyout" },
+        { "value": "pe-turnaround", "label": "PE Turnaround" }
+      ]
+    }
+  ],
+  "tags": ["pe-vc", "ic-memo", "investment-committee", "deal-analysis", "recommendation", "my-way"]
+}

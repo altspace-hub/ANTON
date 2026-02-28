@@ -1,0 +1,92 @@
+{
+  "formatVersion": "1.0",
+  "id": "market-reach",
+  "label": "Market Reach & Audience Analysis",
+  "shortLabel": "Market Reach",
+  "icon": "TrendingUp",
+  "description": "Analyse market potential, audience demographics, distribution strategy, and competitive landscape for creative works across publishing, film, theatre, and digital channels.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["detailed-findings", "executive-summary"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Creative industry market data, publishing industry trends, film distribution, streaming markets, audience demographics, rights and licensing"
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "work_type",
+      "label": "Work Type & Genre",
+      "type": "text",
+      "required": true,
+      "placeholder": "e.g. 'Literary fiction novel' or 'Feature screenplay, psychological thriller' or 'Stage musical, family audience'"
+    },
+    {
+      "id": "target_markets",
+      "label": "Target Markets",
+      "type": "chips",
+      "required": true,
+      "options": [
+        { "value": "uk", "label": "UK" },
+        { "value": "us", "label": "US" },
+        { "value": "nordic", "label": "Nordic / Scandinavia" },
+        { "value": "europe", "label": "Europe (broad)" },
+        { "value": "germany", "label": "Germany / DACH" },
+        { "value": "france", "label": "France / Francophone" },
+        { "value": "latin-america", "label": "Latin America" },
+        { "value": "asia-pacific", "label": "Asia Pacific" },
+        { "value": "global", "label": "Global / All markets" }
+      ]
+    },
+    {
+      "id": "distribution",
+      "label": "Distribution Route",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "value": "traditional-publishing", "label": "Traditional publishing" },
+        { "value": "self-publishing", "label": "Self-publishing / Indie" },
+        { "value": "streaming", "label": "Streaming (Netflix, Disney+, etc.)" },
+        { "value": "theatrical", "label": "Theatrical release" },
+        { "value": "festival-circuit", "label": "Festival circuit (arthouse / indie)" },
+        { "value": "digital-first", "label": "Digital-first (ebook, VOD, etc.)" },
+        { "value": "theatre", "label": "Theatre / Stage production" },
+        { "value": "games", "label": "Games / Interactive platforms" }
+      ]
+    },
+    {
+      "id": "budget_tier",
+      "label": "Budget Tier",
+      "type": "select",
+      "required": false,
+      "options": [
+        { "value": "micro", "label": "Micro / Bootstrap" },
+        { "value": "indie", "label": "Indie / Low-budget" },
+        { "value": "mid-range", "label": "Mid-range" },
+        { "value": "studio", "label": "Studio / Major publisher" }
+      ]
+    },
+    {
+      "id": "comp_titles",
+      "label": "Comparable Works",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "List 3-5 comparable works — their release year, distributor, and rough commercial performance if known. This is the most important input for accurate market analysis."
+    },
+    {
+      "id": "brief",
+      "label": "Work Description",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Describe the work: logline or synopsis, themes, key selling points, unique elements, intended audience..."
+    }
+  ],
+  "recommendedPersonas": ["literary-agent", "producer", "rights-manager"],
+  "tags": ["market-analysis", "distribution", "audience-analysis", "publishing-market", "film-market", "rights", "licensing", "commercial-strategy"]
+}
