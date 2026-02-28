@@ -33,10 +33,10 @@
       "label": "Institution Type",
       "type": "select",
       "options": [
-        "Full Islamic Bank",
-        "Islamic Window",
-        "Takaful",
-        "Investment Fund"
+        { "value": "full-islamic-bank", "label": "Full Islamic Bank" },
+        { "value": "islamic-window", "label": "Islamic Window" },
+        { "value": "takaful", "label": "Takaful" },
+        { "value": "investment-fund", "label": "Investment Fund" }
       ],
       "required": true
     },
@@ -45,14 +45,14 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Saudi Arabia (SAMA)",
-        "UAE (CBUAE/DFSA)",
-        "Malaysia (BNM)",
-        "Pakistan (SBP)",
-        "Bahrain (CBB)",
-        "Kuwait (CBK)",
-        "Indonesia (OJK)",
-        "Other"
+        { "value": "saudi-arabia", "label": "Saudi Arabia (SAMA)" },
+        { "value": "uae", "label": "UAE (CBUAE/DFSA)" },
+        { "value": "malaysia", "label": "Malaysia (BNM)" },
+        { "value": "pakistan", "label": "Pakistan (SBP)" },
+        { "value": "bahrain", "label": "Bahrain (CBB)" },
+        { "value": "kuwait", "label": "Kuwait (CBK)" },
+        { "value": "indonesia", "label": "Indonesia (OJK)" },
+        { "value": "other", "label": "Other" }
       ],
       "required": true
     },
@@ -61,10 +61,10 @@
       "label": "Current Status",
       "type": "select",
       "options": [
-        "Establishing new board",
-        "Reviewing existing",
-        "Regulatory requirement",
-        "Best practice upgrade"
+        { "value": "establishing-new", "label": "Establishing new board" },
+        { "value": "reviewing-existing", "label": "Reviewing existing" },
+        { "value": "regulatory-requirement", "label": "Regulatory requirement" },
+        { "value": "best-practice", "label": "Best practice upgrade" }
       ],
       "required": true
     }

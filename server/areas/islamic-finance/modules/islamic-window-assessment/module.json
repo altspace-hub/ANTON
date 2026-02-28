@@ -33,10 +33,10 @@
       "label": "Bank Type",
       "type": "select",
       "options": [
-        "Commercial Bank",
-        "Investment Bank",
-        "Foreign Bank Branch",
-        "NBFI"
+        { "value": "commercial-bank", "label": "Commercial Bank" },
+        { "value": "investment-bank", "label": "Investment Bank" },
+        { "value": "foreign-branch", "label": "Foreign Bank Branch" },
+        { "value": "nbfi", "label": "NBFI" }
       ],
       "required": true
     },
@@ -45,11 +45,11 @@
       "label": "Products Offered",
       "type": "chips",
       "options": [
-        "Murabaha",
-        "Ijara",
-        "Wakala Deposits",
-        "Islamic Trade Finance",
-        "Sukuk"
+        { "value": "murabaha", "label": "Murabaha" },
+        { "value": "ijara", "label": "Ijara" },
+        { "value": "wakala-deposits", "label": "Wakala Deposits" },
+        { "value": "islamic-trade-finance", "label": "Islamic Trade Finance" },
+        { "value": "sukuk", "label": "Sukuk" }
       ],
       "required": false
     },

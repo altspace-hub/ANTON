@@ -33,10 +33,10 @@
       "label": "Entity Type",
       "type": "select",
       "options": [
-        "Islamic Bank",
-        "Corporate",
-        "Investment Fund",
-        "Family Waqf"
+        { "value": "islamic-bank", "label": "Islamic Bank" },
+        { "value": "corporate", "label": "Corporate" },
+        { "value": "investment-fund", "label": "Investment Fund" },
+        { "value": "family-waqf", "label": "Family Waqf" }
       ],
       "required": true
     },
@@ -45,14 +45,14 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Saudi Arabia",
-        "Pakistan",
-        "Malaysia",
-        "UAE",
-        "Kuwait",
-        "Bahrain",
-        "Indonesia",
-        "Other"
+        { "value": "saudi-arabia", "label": "Saudi Arabia" },
+        { "value": "pakistan", "label": "Pakistan" },
+        { "value": "malaysia", "label": "Malaysia" },
+        { "value": "uae", "label": "UAE" },
+        { "value": "kuwait", "label": "Kuwait" },
+        { "value": "bahrain", "label": "Bahrain" },
+        { "value": "indonesia", "label": "Indonesia" },
+        { "value": "other", "label": "Other" }
       ],
       "required": true
     },
@@ -61,11 +61,11 @@
       "label": "Assets in Scope",
       "type": "chips",
       "options": [
-        "Cash",
-        "Investments",
-        "Receivables",
-        "Inventory",
-        "Fixed Assets"
+        { "value": "cash", "label": "Cash" },
+        { "value": "investments", "label": "Investments" },
+        { "value": "receivables", "label": "Receivables" },
+        { "value": "inventory", "label": "Inventory" },
+        { "value": "fixed-assets", "label": "Fixed Assets" }
       ],
       "required": false
     }

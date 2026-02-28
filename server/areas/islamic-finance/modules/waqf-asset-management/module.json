@@ -33,11 +33,11 @@
       "label": "Asset Types",
       "type": "chips",
       "options": [
-        "Real Estate",
-        "Cash",
-        "Investments",
-        "Agricultural Land",
-        "Mix"
+        { "value": "real-estate", "label": "Real Estate" },
+        { "value": "cash", "label": "Cash" },
+        { "value": "investments", "label": "Investments" },
+        { "value": "agricultural-land", "label": "Agricultural Land" },
+        { "value": "mix", "label": "Mix" }
       ],
       "required": false
     },
@@ -46,11 +46,11 @@
       "label": "Waqf Purpose",
       "type": "select",
       "options": [
-        "Charitable",
-        "Family (ahli)",
-        "Mixed",
-        "Educational",
-        "Healthcare"
+        { "value": "charitable", "label": "Charitable" },
+        { "value": "family-ahli", "label": "Family (ahli)" },
+        { "value": "mixed", "label": "Mixed" },
+        { "value": "educational", "label": "Educational" },
+        { "value": "healthcare", "label": "Healthcare" }
       ],
       "required": true
     },
@@ -59,14 +59,14 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Saudi Arabia",
-        "UAE",
-        "Malaysia",
-        "Kuwait",
-        "Indonesia",
-        "Egypt",
-        "Turkey",
-        "Other"
+        { "value": "saudi-arabia", "label": "Saudi Arabia" },
+        { "value": "uae", "label": "UAE" },
+        { "value": "malaysia", "label": "Malaysia" },
+        { "value": "kuwait", "label": "Kuwait" },
+        { "value": "indonesia", "label": "Indonesia" },
+        { "value": "egypt", "label": "Egypt" },
+        { "value": "turkey", "label": "Turkey" },
+        { "value": "other", "label": "Other" }
       ],
       "required": true
     }

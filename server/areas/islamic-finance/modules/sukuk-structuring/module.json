@@ -33,14 +33,14 @@
       "label": "Sukuk Structure Type",
       "type": "select",
       "options": [
-        "Ijara Sukuk",
-        "Musharakah Sukuk",
-        "Mudarabah Sukuk",
-        "Murabaha Sukuk",
-        "Wakala Sukuk",
-        "Istisna Sukuk",
-        "Diminishing Musharakah Sukuk",
-        "Hybrid"
+        { "value": "ijara-sukuk", "label": "Ijara Sukuk" },
+        { "value": "musharakah-sukuk", "label": "Musharakah Sukuk" },
+        { "value": "mudarabah-sukuk", "label": "Mudarabah Sukuk" },
+        { "value": "murabaha-sukuk", "label": "Murabaha Sukuk" },
+        { "value": "wakala-sukuk", "label": "Wakala Sukuk" },
+        { "value": "istisna-sukuk", "label": "Istisna Sukuk" },
+        { "value": "diminishing-musharakah-sukuk", "label": "Diminishing Musharakah Sukuk" },
+        { "value": "hybrid", "label": "Hybrid" }
       ],
       "required": true
     },
@@ -56,10 +56,10 @@
       "label": "Tenor",
       "type": "select",
       "options": [
-        "Short-term (<1 year)",
-        "Medium (1–5 years)",
-        "Long (5–10 years)",
-        "Very long (10+ years)"
+        { "value": "short-term", "label": "Short-term (<1 year)" },
+        { "value": "medium", "label": "Medium (1–5 years)" },
+        { "value": "long", "label": "Long (5–10 years)" },
+        { "value": "very-long", "label": "Very long (10+ years)" }
       ],
       "required": true
     },

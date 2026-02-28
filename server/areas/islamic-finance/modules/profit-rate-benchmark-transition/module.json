@@ -33,11 +33,11 @@
       "label": "Affected Product Types",
       "type": "chips",
       "options": [
-        "Murabaha",
-        "Ijara",
-        "Musharakah",
-        "Sukuk",
-        "All"
+        { "value": "murabaha", "label": "Murabaha" },
+        { "value": "ijara", "label": "Ijara" },
+        { "value": "musharakah", "label": "Musharakah" },
+        { "value": "sukuk", "label": "Sukuk" },
+        { "value": "all", "label": "All" }
       ],
       "required": false
     },
@@ -46,14 +46,14 @@
       "label": "Current Benchmark Reference",
       "type": "select",
       "options": [
-        "LIBOR",
-        "SAIBOR",
-        "KLIBOR",
-        "EIBOR",
-        "KIBOR",
-        "EURIBOR",
-        "BBSW",
-        "Other IBOR"
+        { "value": "libor", "label": "LIBOR" },
+        { "value": "saibor", "label": "SAIBOR" },
+        { "value": "klibor", "label": "KLIBOR" },
+        { "value": "eibor", "label": "EIBOR" },
+        { "value": "kibor", "label": "KIBOR" },
+        { "value": "euribor", "label": "EURIBOR" },
+        { "value": "bbsw", "label": "BBSW" },
+        { "value": "other-ibor", "label": "Other IBOR" }
       ],
       "required": true
     },

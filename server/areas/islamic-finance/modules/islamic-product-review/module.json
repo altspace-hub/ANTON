@@ -33,18 +33,18 @@
       "label": "Product Type",
       "type": "select",
       "options": [
-        "Murabaha",
-        "Ijara",
-        "Musharakah",
-        "Diminishing Musharakah",
-        "Mudarabah",
-        "Tawarruq",
-        "Wakala",
-        "Istisna",
-        "Salam",
-        "Qard",
-        "Hawalah",
-        "Kafalah"
+        { "value": "murabaha", "label": "Murabaha" },
+        { "value": "ijara", "label": "Ijara" },
+        { "value": "musharakah", "label": "Musharakah" },
+        { "value": "diminishing-musharakah", "label": "Diminishing Musharakah" },
+        { "value": "mudarabah", "label": "Mudarabah" },
+        { "value": "tawarruq", "label": "Tawarruq" },
+        { "value": "wakala", "label": "Wakala" },
+        { "value": "istisna", "label": "Istisna" },
+        { "value": "salam", "label": "Salam" },
+        { "value": "qard", "label": "Qard" },
+        { "value": "hawalah", "label": "Hawalah" },
+        { "value": "kafalah", "label": "Kafalah" }
       ],
       "required": true
     },
@@ -53,9 +53,9 @@
       "label": "Review Stage",
       "type": "select",
       "options": [
-        "New Product",
-        "Existing Product Review",
-        "Product Modification"
+        { "value": "new-product", "label": "New Product" },
+        { "value": "existing-review", "label": "Existing Product Review" },
+        { "value": "modification", "label": "Product Modification" }
       ],
       "required": true
     },
