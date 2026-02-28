@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Civil registration processes by country: birth certificates, national IDs, passports, voter registration, marriage certificates — Kenya, Nigeria, Ghana, Tanzania, Uganda, Ethiopia, South Africa, India, Bangladesh, Pakistan, Philippines. Required documents, official fees, processing times, late registration procedures." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Civil registration processes by country: birth certificates, national IDs, passports, voter registration, marriage certificates — Kenya, Nigeria, Ghana, Tanzania, Uganda, Ethiopia, South Africa, India, Bangladesh, Pakistan, Philippines. Required documents, official fees, processing times, late registration procedures."
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -48,11 +90,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "birth-certificate", "label": "Birth certificate" },
-        { "value": "national-id", "label": "National ID" },
-        { "value": "passport", "label": "Passport" },
-        { "value": "voter-registration", "label": "Voter registration" },
-        { "value": "marriage-certificate", "label": "Marriage certificate" }
+        {
+          "value": "birth-certificate",
+          "label": "Birth certificate"
+        },
+        {
+          "value": "national-id",
+          "label": "National ID"
+        },
+        {
+          "value": "passport",
+          "label": "Passport"
+        },
+        {
+          "value": "voter-registration",
+          "label": "Voter registration"
+        },
+        {
+          "value": "marriage-certificate",
+          "label": "Marriage certificate"
+        }
       ]
     },
     {
@@ -61,14 +118,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "first-time", "label": "First time applying" },
-        { "value": "lost-damaged", "label": "Lost or damaged document" },
-        { "value": "childs-document", "label": "Child's documents" },
-        { "value": "late-registration", "label": "Adult late registration" },
-        { "value": "correction", "label": "Correction needed" }
+        {
+          "value": "first-time",
+          "label": "First time applying"
+        },
+        {
+          "value": "lost-damaged",
+          "label": "Lost or damaged document"
+        },
+        {
+          "value": "childs-document",
+          "label": "Child's documents"
+        },
+        {
+          "value": "late-registration",
+          "label": "Adult late registration"
+        },
+        {
+          "value": "correction",
+          "label": "Correction needed"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
-  "tags": ["identity", "documents", "birth-certificate", "national-id", "passport", "civil-registration", "bop", "rights", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "identity",
+    "documents",
+    "birth-certificate",
+    "national-id",
+    "passport",
+    "civil-registration",
+    "bop",
+    "rights",
+    "africa",
+    "south-asia"
+  ]
 }

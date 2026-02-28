@@ -133,7 +133,9 @@
       "placeholder": "IT limitations, data access restrictions, regulatory expectations (ECB/FSA requirements for continuous monitoring), budget constraints, timeline..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "auditor"
+  ],
   "tags": [
     "audit",
     "continuous",

@@ -35,14 +35,38 @@
       "label": "Type of tax authority action",
       "required": true,
       "options": [
-        { "value": "idr", "label": "Information Document Request (IDR)" },
-        { "value": "formal_audit", "label": "Formal tax audit / examination" },
-        { "value": "tp_challenge", "label": "Transfer pricing challenge / proposed adjustment" },
-        { "value": "formal_assessment", "label": "Formal assessment / notice of deficiency" },
-        { "value": "settlement_negotiation", "label": "Settlement / closing agreement negotiation" },
-        { "value": "map", "label": "Mutual Agreement Procedure (MAP)" },
-        { "value": "apa", "label": "Advance Pricing Agreement (APA) application" },
-        { "value": "penalty_mitigation", "label": "Penalty mitigation / abatement request" }
+        {
+          "value": "idr",
+          "label": "Information Document Request (IDR)"
+        },
+        {
+          "value": "formal_audit",
+          "label": "Formal tax audit / examination"
+        },
+        {
+          "value": "tp_challenge",
+          "label": "Transfer pricing challenge / proposed adjustment"
+        },
+        {
+          "value": "formal_assessment",
+          "label": "Formal assessment / notice of deficiency"
+        },
+        {
+          "value": "settlement_negotiation",
+          "label": "Settlement / closing agreement negotiation"
+        },
+        {
+          "value": "map",
+          "label": "Mutual Agreement Procedure (MAP)"
+        },
+        {
+          "value": "apa",
+          "label": "Advance Pricing Agreement (APA) application"
+        },
+        {
+          "value": "penalty_mitigation",
+          "label": "Penalty mitigation / abatement request"
+        }
       ]
     },
     {
@@ -63,14 +87,38 @@
       "type": "multi-select",
       "label": "Issues raised by the tax authority",
       "options": [
-        { "value": "tp_pricing", "label": "Transfer pricing — arm's length pricing" },
-        { "value": "tp_documentation", "label": "Transfer pricing — documentation adequacy" },
-        { "value": "pe_existence", "label": "Permanent establishment existence" },
-        { "value": "beneficial_ownership", "label": "Beneficial ownership / treaty access" },
-        { "value": "deductibility", "label": "Deductibility of payments (interest, royalties, fees)" },
-        { "value": "substance", "label": "Economic substance / anti-avoidance" },
-        { "value": "classification", "label": "Income classification / characterisation" },
-        { "value": "valuation", "label": "Asset / IP valuation" }
+        {
+          "value": "tp_pricing",
+          "label": "Transfer pricing — arm's length pricing"
+        },
+        {
+          "value": "tp_documentation",
+          "label": "Transfer pricing — documentation adequacy"
+        },
+        {
+          "value": "pe_existence",
+          "label": "Permanent establishment existence"
+        },
+        {
+          "value": "beneficial_ownership",
+          "label": "Beneficial ownership / treaty access"
+        },
+        {
+          "value": "deductibility",
+          "label": "Deductibility of payments (interest, royalties, fees)"
+        },
+        {
+          "value": "substance",
+          "label": "Economic substance / anti-avoidance"
+        },
+        {
+          "value": "classification",
+          "label": "Income classification / characterisation"
+        },
+        {
+          "value": "valuation",
+          "label": "Asset / IP valuation"
+        }
       ]
     },
     {
@@ -85,10 +133,22 @@
       "type": "select",
       "label": "Desired outcome",
       "options": [
-        { "value": "full_defence", "label": "Full defence — challenge all adjustments" },
-        { "value": "partial_settlement", "label": "Partial settlement — accept some, contest others" },
-        { "value": "commercial_settlement", "label": "Commercial settlement — minimise penalties and interest" },
-        { "value": "map_referral", "label": "Refer to MAP / bilateral resolution" }
+        {
+          "value": "full_defence",
+          "label": "Full defence — challenge all adjustments"
+        },
+        {
+          "value": "partial_settlement",
+          "label": "Partial settlement — accept some, contest others"
+        },
+        {
+          "value": "commercial_settlement",
+          "label": "Commercial settlement — minimise penalties and interest"
+        },
+        {
+          "value": "map_referral",
+          "label": "Refer to MAP / bilateral resolution"
+        }
       ]
     }
   ],

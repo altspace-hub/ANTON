@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "quick",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,10 +78,22 @@
       "label": "How much do you want to borrow?",
       "required": true,
       "options": [
-        { "value": "under-100", "label": "Under $100" },
-        { "value": "100-500", "label": "$100 to $500" },
-        { "value": "500-2000", "label": "$500 to $2,000" },
-        { "value": "over-2000", "label": "Over $2,000" }
+        {
+          "value": "under-100",
+          "label": "Under $100"
+        },
+        {
+          "value": "100-500",
+          "label": "$100 to $500"
+        },
+        {
+          "value": "500-2000",
+          "label": "$500 to $2,000"
+        },
+        {
+          "value": "over-2000",
+          "label": "Over $2,000"
+        }
       ]
     },
     {
@@ -61,11 +102,26 @@
       "label": "What is the loan for?",
       "required": true,
       "options": [
-        { "value": "business", "label": "Business investment" },
-        { "value": "emergency", "label": "Emergency" },
-        { "value": "school-fees", "label": "School fees" },
-        { "value": "asset-purchase", "label": "Asset purchase" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "business",
+          "label": "Business investment"
+        },
+        {
+          "value": "emergency",
+          "label": "Emergency"
+        },
+        {
+          "value": "school-fees",
+          "label": "School fees"
+        },
+        {
+          "value": "asset-purchase",
+          "label": "Asset purchase"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -74,17 +130,40 @@
       "label": "Which options are available to you? (select all that apply)",
       "required": false,
       "options": [
-        { "value": "mobile-app", "label": "Mobile app loan" },
-        { "value": "mfi", "label": "Microfinance institution (MFI)" },
-        { "value": "sacco", "label": "SACCO or cooperative" },
-        { "value": "bank", "label": "Bank" },
-        { "value": "moneylender", "label": "Moneylender" },
-        { "value": "family", "label": "Family or friend" },
-        { "value": "employer", "label": "Employer advance" }
+        {
+          "value": "mobile-app",
+          "label": "Mobile app loan"
+        },
+        {
+          "value": "mfi",
+          "label": "Microfinance institution (MFI)"
+        },
+        {
+          "value": "sacco",
+          "label": "SACCO or cooperative"
+        },
+        {
+          "value": "bank",
+          "label": "Bank"
+        },
+        {
+          "value": "moneylender",
+          "label": "Moneylender"
+        },
+        {
+          "value": "family",
+          "label": "Family or friend"
+        },
+        {
+          "value": "employer",
+          "label": "Employer advance"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

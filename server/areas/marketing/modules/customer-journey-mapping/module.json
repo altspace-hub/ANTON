@@ -35,12 +35,30 @@
       "label": "Journey scope",
       "required": true,
       "options": [
-        { "value": "full_lifecycle", "label": "Full customer lifecycle — awareness to advocacy" },
-        { "value": "acquisition_only", "label": "Acquisition journey — awareness to first purchase" },
-        { "value": "onboarding", "label": "Onboarding journey — first purchase to active user" },
-        { "value": "retention_loyalty", "label": "Retention & loyalty journey" },
-        { "value": "reactivation", "label": "Lapsed customer reactivation journey" },
-        { "value": "specific_touchpoint", "label": "Specific touchpoint or process deep-dive" }
+        {
+          "value": "full_lifecycle",
+          "label": "Full customer lifecycle — awareness to advocacy"
+        },
+        {
+          "value": "acquisition_only",
+          "label": "Acquisition journey — awareness to first purchase"
+        },
+        {
+          "value": "onboarding",
+          "label": "Onboarding journey — first purchase to active user"
+        },
+        {
+          "value": "retention_loyalty",
+          "label": "Retention & loyalty journey"
+        },
+        {
+          "value": "reactivation",
+          "label": "Lapsed customer reactivation journey"
+        },
+        {
+          "value": "specific_touchpoint",
+          "label": "Specific touchpoint or process deep-dive"
+        }
       ]
     },
     {
@@ -56,18 +74,54 @@
       "label": "Key touchpoints in the journey",
       "description": "Which channels and touchpoints are part of this customer's experience?",
       "options": [
-        { "value": "organic_search", "label": "Organic search" },
-        { "value": "paid_advertising", "label": "Paid advertising" },
-        { "value": "social_media", "label": "Social media" },
-        { "value": "website", "label": "Website / landing pages" },
-        { "value": "email", "label": "Email communications" },
-        { "value": "sales_outreach", "label": "Sales team outreach" },
-        { "value": "demo_trial", "label": "Demo / free trial" },
-        { "value": "onboarding_flow", "label": "In-product onboarding" },
-        { "value": "customer_support", "label": "Customer support / service" },
-        { "value": "community", "label": "Community / events" },
-        { "value": "in_store", "label": "Physical / in-store" },
-        { "value": "partner_channel", "label": "Partner / reseller" }
+        {
+          "value": "organic_search",
+          "label": "Organic search"
+        },
+        {
+          "value": "paid_advertising",
+          "label": "Paid advertising"
+        },
+        {
+          "value": "social_media",
+          "label": "Social media"
+        },
+        {
+          "value": "website",
+          "label": "Website / landing pages"
+        },
+        {
+          "value": "email",
+          "label": "Email communications"
+        },
+        {
+          "value": "sales_outreach",
+          "label": "Sales team outreach"
+        },
+        {
+          "value": "demo_trial",
+          "label": "Demo / free trial"
+        },
+        {
+          "value": "onboarding_flow",
+          "label": "In-product onboarding"
+        },
+        {
+          "value": "customer_support",
+          "label": "Customer support / service"
+        },
+        {
+          "value": "community",
+          "label": "Community / events"
+        },
+        {
+          "value": "in_store",
+          "label": "Physical / in-store"
+        },
+        {
+          "value": "partner_channel",
+          "label": "Partner / reseller"
+        }
       ]
     },
     {
@@ -83,19 +137,40 @@
       "label": "Customer insight data available",
       "description": "What data or research do you have to inform the journey map?",
       "options": [
-        { "value": "analytics_data", "label": "Web / app analytics data" },
-        { "value": "customer_interviews", "label": "Customer interviews / VoC research" },
-        { "value": "survey_data", "label": "Survey responses / NPS data" },
-        { "value": "support_tickets", "label": "Support ticket data" },
-        { "value": "sales_call_insights", "label": "Sales call recordings / notes" },
-        { "value": "churn_analysis", "label": "Churn / cancellation analysis" },
-        { "value": "no_data", "label": "No structured data — using assumptions" }
+        {
+          "value": "analytics_data",
+          "label": "Web / app analytics data"
+        },
+        {
+          "value": "customer_interviews",
+          "label": "Customer interviews / VoC research"
+        },
+        {
+          "value": "survey_data",
+          "label": "Survey responses / NPS data"
+        },
+        {
+          "value": "support_tickets",
+          "label": "Support ticket data"
+        },
+        {
+          "value": "sales_call_insights",
+          "label": "Sales call recordings / notes"
+        },
+        {
+          "value": "churn_analysis",
+          "label": "Churn / cancellation analysis"
+        },
+        {
+          "value": "no_data",
+          "label": "No structured data — using assumptions"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "customer-journey",

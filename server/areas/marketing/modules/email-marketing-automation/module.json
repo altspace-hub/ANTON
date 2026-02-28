@@ -35,13 +35,34 @@
       "label": "Primary task",
       "required": true,
       "options": [
-        { "value": "programme_strategy", "label": "Full email programme strategy" },
-        { "value": "automation_flows", "label": "Automation flows / lifecycle campaigns" },
-        { "value": "segmentation", "label": "Segmentation strategy" },
-        { "value": "deliverability_audit", "label": "Deliverability audit and improvement" },
-        { "value": "broadcast_campaign", "label": "Broadcast campaign planning" },
-        { "value": "re_engagement", "label": "Re-engagement / win-back campaign" },
-        { "value": "platform_migration", "label": "Platform migration planning" }
+        {
+          "value": "programme_strategy",
+          "label": "Full email programme strategy"
+        },
+        {
+          "value": "automation_flows",
+          "label": "Automation flows / lifecycle campaigns"
+        },
+        {
+          "value": "segmentation",
+          "label": "Segmentation strategy"
+        },
+        {
+          "value": "deliverability_audit",
+          "label": "Deliverability audit and improvement"
+        },
+        {
+          "value": "broadcast_campaign",
+          "label": "Broadcast campaign planning"
+        },
+        {
+          "value": "re_engagement",
+          "label": "Re-engagement / win-back campaign"
+        },
+        {
+          "value": "platform_migration",
+          "label": "Platform migration planning"
+        }
       ]
     },
     {
@@ -49,15 +70,42 @@
       "type": "select",
       "label": "Email platform (or planned platform)",
       "options": [
-        { "value": "klaviyo", "label": "Klaviyo" },
-        { "value": "hubspot", "label": "HubSpot" },
-        { "value": "mailchimp", "label": "Mailchimp" },
-        { "value": "activecampaign", "label": "ActiveCampaign" },
-        { "value": "salesforce_mc", "label": "Salesforce Marketing Cloud" },
-        { "value": "braze", "label": "Braze" },
-        { "value": "customer_io", "label": "Customer.io" },
-        { "value": "sendgrid", "label": "SendGrid" },
-        { "value": "other_unknown", "label": "Other / not yet decided" }
+        {
+          "value": "klaviyo",
+          "label": "Klaviyo"
+        },
+        {
+          "value": "hubspot",
+          "label": "HubSpot"
+        },
+        {
+          "value": "mailchimp",
+          "label": "Mailchimp"
+        },
+        {
+          "value": "activecampaign",
+          "label": "ActiveCampaign"
+        },
+        {
+          "value": "salesforce_mc",
+          "label": "Salesforce Marketing Cloud"
+        },
+        {
+          "value": "braze",
+          "label": "Braze"
+        },
+        {
+          "value": "customer_io",
+          "label": "Customer.io"
+        },
+        {
+          "value": "sendgrid",
+          "label": "SendGrid"
+        },
+        {
+          "value": "other_unknown",
+          "label": "Other / not yet decided"
+        }
       ]
     },
     {
@@ -65,10 +113,22 @@
       "type": "select",
       "label": "Primary audience type",
       "options": [
-        { "value": "b2c_consumers", "label": "B2C — consumers / end users" },
-        { "value": "b2b_leads", "label": "B2B — leads and prospects" },
-        { "value": "b2b_customers", "label": "B2B — existing customers" },
-        { "value": "mixed", "label": "Mixed B2B and B2C" }
+        {
+          "value": "b2c_consumers",
+          "label": "B2C — consumers / end users"
+        },
+        {
+          "value": "b2b_leads",
+          "label": "B2B — leads and prospects"
+        },
+        {
+          "value": "b2b_customers",
+          "label": "B2B — existing customers"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed B2B and B2C"
+        }
       ]
     },
     {
@@ -76,10 +136,22 @@
       "type": "select",
       "label": "Email list size (approximate)",
       "options": [
-        { "value": "under_5k", "label": "Under 5,000 contacts" },
-        { "value": "5k_50k", "label": "5,000 – 50,000 contacts" },
-        { "value": "50k_500k", "label": "50,000 – 500,000 contacts" },
-        { "value": "over_500k", "label": "Over 500,000 contacts" }
+        {
+          "value": "under_5k",
+          "label": "Under 5,000 contacts"
+        },
+        {
+          "value": "5k_50k",
+          "label": "5,000 – 50,000 contacts"
+        },
+        {
+          "value": "50k_500k",
+          "label": "50,000 – 500,000 contacts"
+        },
+        {
+          "value": "over_500k",
+          "label": "Over 500,000 contacts"
+        }
       ]
     },
     {
@@ -94,18 +166,36 @@
       "type": "chips",
       "label": "Compliance requirements",
       "options": [
-        { "value": "gdpr", "label": "GDPR (EU/EEA)" },
-        { "value": "casl", "label": "CASL (Canada)" },
-        { "value": "can_spam", "label": "CAN-SPAM (USA)" },
-        { "value": "pecr", "label": "PECR (UK)" },
-        { "value": "double_optin_required", "label": "Double opt-in required" },
-        { "value": "b2b_soft_optin", "label": "B2B soft opt-in rules apply" }
+        {
+          "value": "gdpr",
+          "label": "GDPR (EU/EEA)"
+        },
+        {
+          "value": "casl",
+          "label": "CASL (Canada)"
+        },
+        {
+          "value": "can_spam",
+          "label": "CAN-SPAM (USA)"
+        },
+        {
+          "value": "pecr",
+          "label": "PECR (UK)"
+        },
+        {
+          "value": "double_optin_required",
+          "label": "Double opt-in required"
+        },
+        {
+          "value": "b2b_soft_optin",
+          "label": "B2B soft opt-in rules apply"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "email-marketing",

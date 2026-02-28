@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Crop pest and disease identification, symptoms, affordable treatments, prevention strategies for smallholder farming in developing regions" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Crop pest and disease identification, symptoms, affordable treatments, prevention strategies for smallholder farming in developing regions"
+      }
     }
   },
   "guidedInputs": [
@@ -28,14 +34,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "maize", "label": "Maize or corn" },
-        { "value": "beans", "label": "Beans" },
-        { "value": "cassava", "label": "Cassava" },
-        { "value": "rice", "label": "Rice" },
-        { "value": "tomatoes", "label": "Tomatoes" },
-        { "value": "vegetables", "label": "Vegetables" },
-        { "value": "banana-plantain", "label": "Banana or plantain" },
-        { "value": "other", "label": "Other crop" }
+        {
+          "value": "maize",
+          "label": "Maize or corn"
+        },
+        {
+          "value": "beans",
+          "label": "Beans"
+        },
+        {
+          "value": "cassava",
+          "label": "Cassava"
+        },
+        {
+          "value": "rice",
+          "label": "Rice"
+        },
+        {
+          "value": "tomatoes",
+          "label": "Tomatoes"
+        },
+        {
+          "value": "vegetables",
+          "label": "Vegetables"
+        },
+        {
+          "value": "banana-plantain",
+          "label": "Banana or plantain"
+        },
+        {
+          "value": "other",
+          "label": "Other crop"
+        }
       ]
     },
     {
@@ -44,14 +74,38 @@
       "type": "chips",
       "required": true,
       "options": [
-        { "value": "yellow-leaves", "label": "Yellow leaves" },
-        { "value": "brown-spots", "label": "Brown spots" },
-        { "value": "holes-in-leaves", "label": "Holes in leaves" },
-        { "value": "wilting", "label": "Wilting (drooping)" },
-        { "value": "stunted-growth", "label": "Stunted growth" },
-        { "value": "white-powder", "label": "White powder on leaves" },
-        { "value": "rotting-stems", "label": "Rotting stems" },
-        { "value": "insects-visible", "label": "Insects visible" }
+        {
+          "value": "yellow-leaves",
+          "label": "Yellow leaves"
+        },
+        {
+          "value": "brown-spots",
+          "label": "Brown spots"
+        },
+        {
+          "value": "holes-in-leaves",
+          "label": "Holes in leaves"
+        },
+        {
+          "value": "wilting",
+          "label": "Wilting (drooping)"
+        },
+        {
+          "value": "stunted-growth",
+          "label": "Stunted growth"
+        },
+        {
+          "value": "white-powder",
+          "label": "White powder on leaves"
+        },
+        {
+          "value": "rotting-stems",
+          "label": "Rotting stems"
+        },
+        {
+          "value": "insects-visible",
+          "label": "Insects visible"
+        }
       ]
     },
     {
@@ -60,12 +114,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "east-africa", "label": "East Africa" },
-        { "value": "west-africa", "label": "West Africa" },
-        { "value": "southern-africa", "label": "Southern Africa" },
-        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
-        { "value": "southeast-asia", "label": "Southeast Asia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southern-africa",
+          "label": "Southern Africa"
+        },
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Bangladesh)"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -74,10 +146,22 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "1-2-days", "label": "Just started (1–2 days)" },
-        { "value": "this-week", "label": "This week" },
-        { "value": "2-3-weeks", "label": "2–3 weeks ago" },
-        { "value": "over-a-month", "label": "Over a month" }
+        {
+          "value": "1-2-days",
+          "label": "Just started (1–2 days)"
+        },
+        {
+          "value": "this-week",
+          "label": "This week"
+        },
+        {
+          "value": "2-3-weeks",
+          "label": "2–3 weeks ago"
+        },
+        {
+          "value": "over-a-month",
+          "label": "Over a month"
+        }
       ]
     },
     {
@@ -86,12 +170,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "identify", "label": "Identify the problem" },
-        { "value": "treatment", "label": "Treatment options" },
-        { "value": "prevention", "label": "Prevention for next season" }
+        {
+          "value": "identify",
+          "label": "Identify the problem"
+        },
+        {
+          "value": "treatment",
+          "label": "Treatment options"
+        },
+        {
+          "value": "prevention",
+          "label": "Prevention for next season"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["pest-control", "disease-identification", "fall-armyworm", "late-blight", "cassava-mosaic", "crop-protection", "smallholder", "affordable-treatment", "natural-pesticide"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "pest-control",
+    "disease-identification",
+    "fall-armyworm",
+    "late-blight",
+    "cassava-mosaic",
+    "crop-protection",
+    "smallholder",
+    "affordable-treatment",
+    "natural-pesticide"
+  ]
 }

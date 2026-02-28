@@ -36,10 +36,22 @@
       "type": "select",
       "label": "Length of relationship",
       "options": [
-        { "value": "new", "label": "Under 6 months (new customer)" },
-        { "value": "growing", "label": "6-18 months (developing)" },
-        { "value": "established", "label": "18 months - 3 years (established)" },
-        { "value": "long_term", "label": "3+ years (long-term)" }
+        {
+          "value": "new",
+          "label": "Under 6 months (new customer)"
+        },
+        {
+          "value": "growing",
+          "label": "6-18 months (developing)"
+        },
+        {
+          "value": "established",
+          "label": "18 months - 3 years (established)"
+        },
+        {
+          "value": "long_term",
+          "label": "3+ years (long-term)"
+        }
       ]
     },
     {
@@ -62,7 +74,10 @@
       "placeholder": "e.g., Had a major support incident last month, New CTO joined 3 months ago and is reviewing all vendors, Just completed a successful project delivery, Missed their last QBR, Mentioned competitor during last call"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "customer-success",
     "retention",

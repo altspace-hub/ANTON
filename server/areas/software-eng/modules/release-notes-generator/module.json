@@ -43,11 +43,26 @@
       "type": "select",
       "label": "Release type",
       "options": [
-        { "value": "major", "label": "Major release (breaking changes or major new features)" },
-        { "value": "minor", "label": "Minor release (new features, backward compatible)" },
-        { "value": "patch", "label": "Patch release (bug fixes, performance improvements)" },
-        { "value": "hotfix", "label": "Hotfix (urgent production issue fix)" },
-        { "value": "sprint", "label": "Sprint release (regular sprint delivery)" }
+        {
+          "value": "major",
+          "label": "Major release (breaking changes or major new features)"
+        },
+        {
+          "value": "minor",
+          "label": "Minor release (new features, backward compatible)"
+        },
+        {
+          "value": "patch",
+          "label": "Patch release (bug fixes, performance improvements)"
+        },
+        {
+          "value": "hotfix",
+          "label": "Hotfix (urgent production issue fix)"
+        },
+        {
+          "value": "sprint",
+          "label": "Sprint release (regular sprint delivery)"
+        }
       ]
     },
     {
@@ -62,11 +77,26 @@
       "type": "multi-select",
       "label": "Audiences to produce release notes for",
       "options": [
-        { "value": "end_users", "label": "End users (non-technical)" },
-        { "value": "developers", "label": "External developers / API consumers" },
-        { "value": "internal_tech", "label": "Internal engineering team" },
-        { "value": "stakeholders", "label": "Business stakeholders" },
-        { "value": "changelog", "label": "Public changelog entry" }
+        {
+          "value": "end_users",
+          "label": "End users (non-technical)"
+        },
+        {
+          "value": "developers",
+          "label": "External developers / API consumers"
+        },
+        {
+          "value": "internal_tech",
+          "label": "Internal engineering team"
+        },
+        {
+          "value": "stakeholders",
+          "label": "Business stakeholders"
+        },
+        {
+          "value": "changelog",
+          "label": "Public changelog entry"
+        }
       ]
     },
     {
@@ -76,7 +106,9 @@
       "placeholder": "e.g., This release completes the migration to the new auth system. The previous API version is now deprecated. Known issue: file upload limited to 10MB in this version."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "release-notes",
     "changelog",

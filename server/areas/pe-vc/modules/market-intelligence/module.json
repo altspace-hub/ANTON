@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "regulatory-comparison"],
+    "outputFormats": [
+      "detailed-findings",
+      "regulatory-comparison"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -31,12 +34,30 @@
       "label": "What do you need?",
       "required": true,
       "options": [
-        { "value": "market-sizing", "label": "Market sizing (TAM/SAM/SOM)" },
-        { "value": "competitive-landscape", "label": "Competitive landscape map" },
-        { "value": "sector-thesis", "label": "Sector thesis / trend analysis" },
-        { "value": "company-deep-dive", "label": "Company deep dive (specific company)" },
-        { "value": "tech-assessment", "label": "Technology assessment (specific tech)" },
-        { "value": "geo-comparison", "label": "Geographic market comparison" }
+        {
+          "value": "market-sizing",
+          "label": "Market sizing (TAM/SAM/SOM)"
+        },
+        {
+          "value": "competitive-landscape",
+          "label": "Competitive landscape map"
+        },
+        {
+          "value": "sector-thesis",
+          "label": "Sector thesis / trend analysis"
+        },
+        {
+          "value": "company-deep-dive",
+          "label": "Company deep dive (specific company)"
+        },
+        {
+          "value": "tech-assessment",
+          "label": "Technology assessment (specific tech)"
+        },
+        {
+          "value": "geo-comparison",
+          "label": "Geographic market comparison"
+        }
       ]
     },
     {
@@ -59,11 +80,26 @@
       "label": "Investment context",
       "required": true,
       "options": [
-        { "value": "specific-deal", "label": "Evaluating a specific deal" },
-        { "value": "sector-thesis", "label": "Building sector thesis" },
-        { "value": "portfolio-review", "label": "Portfolio company strategic review" },
-        { "value": "lp-reporting", "label": "Fundraising / LP reporting" },
-        { "value": "general", "label": "General intelligence" }
+        {
+          "value": "specific-deal",
+          "label": "Evaluating a specific deal"
+        },
+        {
+          "value": "sector-thesis",
+          "label": "Building sector thesis"
+        },
+        {
+          "value": "portfolio-review",
+          "label": "Portfolio company strategic review"
+        },
+        {
+          "value": "lp-reporting",
+          "label": "Fundraising / LP reporting"
+        },
+        {
+          "value": "general",
+          "label": "General intelligence"
+        }
       ]
     },
     {
@@ -72,11 +108,30 @@
       "label": "Depth needed",
       "required": true,
       "options": [
-        { "value": "quick", "label": "Quick overview (1–2 pages)" },
-        { "value": "standard", "label": "Standard analysis (3–5 pages)" },
-        { "value": "deep", "label": "Deep dive (10+ pages)" }
+        {
+          "value": "quick",
+          "label": "Quick overview (1–2 pages)"
+        },
+        {
+          "value": "standard",
+          "label": "Standard analysis (3–5 pages)"
+        },
+        {
+          "value": "deep",
+          "label": "Deep dive (10+ pages)"
+        }
       ]
     }
   ],
-  "tags": ["pe-vc", "market-research", "competitive-intelligence", "sector-analysis", "tam", "landscape"]
+  "tags": [
+    "pe-vc",
+    "market-research",
+    "competitive-intelligence",
+    "sector-analysis",
+    "tam",
+    "landscape"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

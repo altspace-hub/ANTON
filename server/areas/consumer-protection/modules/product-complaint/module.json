@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Consumer product complaint rights by country: implied warranty, refund and replacement rules, consumer protection authorities (FCCCPA Nigeria, Consumer Federation Kenya, NCC South Africa, Consumer Affairs India), small claims courts, time limits for complaints." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Consumer product complaint rights by country: implied warranty, refund and replacement rules, consumer protection authorities (FCCCPA Nigeria, Consumer Federation Kenya, NCC South Africa, Consumer Affairs India), small claims courts, time limits for complaints."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "supermarket-chain", "label": "Large supermarket or chain store" },
-        { "value": "small-shop", "label": "Small local shop" },
-        { "value": "online-platform", "label": "Online platform (Jumia, Amazon, Flipkart, Shopee)" },
-        { "value": "market-stall", "label": "Market stall or street vendor" },
-        { "value": "manufacturer", "label": "Directly from the manufacturer" }
+        {
+          "value": "supermarket-chain",
+          "label": "Large supermarket or chain store"
+        },
+        {
+          "value": "small-shop",
+          "label": "Small local shop"
+        },
+        {
+          "value": "online-platform",
+          "label": "Online platform (Jumia, Amazon, Flipkart, Shopee)"
+        },
+        {
+          "value": "market-stall",
+          "label": "Market stall or street vendor"
+        },
+        {
+          "value": "manufacturer",
+          "label": "Directly from the manufacturer"
+        }
       ]
     },
     {
@@ -59,11 +110,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "electronics", "label": "Electronics (phone, appliance)" },
-        { "value": "food-expired", "label": "Food or expired goods" },
-        { "value": "clothes-shoes", "label": "Clothes or shoes" },
-        { "value": "medicine", "label": "Medicine or health product" },
-        { "value": "other", "label": "Other product" }
+        {
+          "value": "electronics",
+          "label": "Electronics (phone, appliance)"
+        },
+        {
+          "value": "food-expired",
+          "label": "Food or expired goods"
+        },
+        {
+          "value": "clothes-shoes",
+          "label": "Clothes or shoes"
+        },
+        {
+          "value": "medicine",
+          "label": "Medicine or health product"
+        },
+        {
+          "value": "other",
+          "label": "Other product"
+        }
       ]
     },
     {
@@ -72,13 +138,37 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "same-day", "label": "Same day" },
-        { "value": "within-week", "label": "Within the past week" },
-        { "value": "within-month", "label": "Within the past month" },
-        { "value": "over-month", "label": "More than a month ago" }
+        {
+          "value": "same-day",
+          "label": "Same day"
+        },
+        {
+          "value": "within-week",
+          "label": "Within the past week"
+        },
+        {
+          "value": "within-month",
+          "label": "Within the past month"
+        },
+        {
+          "value": "over-month",
+          "label": "More than a month ago"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
-  "tags": ["consumer-protection", "bop", "rights", "product-defect", "refund", "warranty", "complaint", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate"
+  ],
+  "tags": [
+    "consumer-protection",
+    "bop",
+    "rights",
+    "product-defect",
+    "refund",
+    "warranty",
+    "complaint",
+    "africa",
+    "south-asia"
+  ]
 }

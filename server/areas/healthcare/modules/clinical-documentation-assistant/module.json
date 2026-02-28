@@ -32,14 +32,38 @@
       "label": "Document Type",
       "type": "select",
       "options": [
-        { "value": "discharge-summary", "label": "Discharge Summary" },
-        { "value": "referral-letter", "label": "Referral Letter" },
-        { "value": "outpatient-letter", "label": "Outpatient / Clinic Letter" },
-        { "value": "clinical-note", "label": "Clinical Note (SOAP/SBAR)" },
-        { "value": "handover-note", "label": "Clinical Handover Note" },
-        { "value": "sick-note", "label": "Fit Note / Sick Note Justification" },
-        { "value": "ward-round-note", "label": "Ward Round Note" },
-        { "value": "procedure-note", "label": "Procedure / Operation Note" }
+        {
+          "value": "discharge-summary",
+          "label": "Discharge Summary"
+        },
+        {
+          "value": "referral-letter",
+          "label": "Referral Letter"
+        },
+        {
+          "value": "outpatient-letter",
+          "label": "Outpatient / Clinic Letter"
+        },
+        {
+          "value": "clinical-note",
+          "label": "Clinical Note (SOAP/SBAR)"
+        },
+        {
+          "value": "handover-note",
+          "label": "Clinical Handover Note"
+        },
+        {
+          "value": "sick-note",
+          "label": "Fit Note / Sick Note Justification"
+        },
+        {
+          "value": "ward-round-note",
+          "label": "Ward Round Note"
+        },
+        {
+          "value": "procedure-note",
+          "label": "Procedure / Operation Note"
+        }
       ],
       "required": true
     },
@@ -48,20 +72,62 @@
       "label": "Clinical Specialty",
       "type": "select",
       "options": [
-        { "value": "general-medicine", "label": "General Medicine" },
-        { "value": "general-surgery", "label": "General Surgery" },
-        { "value": "emergency-medicine", "label": "Emergency Medicine" },
-        { "value": "cardiology", "label": "Cardiology" },
-        { "value": "respiratory", "label": "Respiratory / Pulmonology" },
-        { "value": "gastroenterology", "label": "Gastroenterology" },
-        { "value": "neurology", "label": "Neurology" },
-        { "value": "orthopaedics", "label": "Orthopaedics" },
-        { "value": "psychiatry", "label": "Psychiatry / Mental Health" },
-        { "value": "oncology", "label": "Oncology" },
-        { "value": "paediatrics", "label": "Paediatrics" },
-        { "value": "obstetrics-gynaecology", "label": "Obstetrics & Gynaecology" },
-        { "value": "primary-care", "label": "Primary Care / General Practice" },
-        { "value": "other", "label": "Other Specialty" }
+        {
+          "value": "general-medicine",
+          "label": "General Medicine"
+        },
+        {
+          "value": "general-surgery",
+          "label": "General Surgery"
+        },
+        {
+          "value": "emergency-medicine",
+          "label": "Emergency Medicine"
+        },
+        {
+          "value": "cardiology",
+          "label": "Cardiology"
+        },
+        {
+          "value": "respiratory",
+          "label": "Respiratory / Pulmonology"
+        },
+        {
+          "value": "gastroenterology",
+          "label": "Gastroenterology"
+        },
+        {
+          "value": "neurology",
+          "label": "Neurology"
+        },
+        {
+          "value": "orthopaedics",
+          "label": "Orthopaedics"
+        },
+        {
+          "value": "psychiatry",
+          "label": "Psychiatry / Mental Health"
+        },
+        {
+          "value": "oncology",
+          "label": "Oncology"
+        },
+        {
+          "value": "paediatrics",
+          "label": "Paediatrics"
+        },
+        {
+          "value": "obstetrics-gynaecology",
+          "label": "Obstetrics & Gynaecology"
+        },
+        {
+          "value": "primary-care",
+          "label": "Primary Care / General Practice"
+        },
+        {
+          "value": "other",
+          "label": "Other Specialty"
+        }
       ],
       "required": true
     },
@@ -70,12 +136,30 @@
       "label": "Document Recipient",
       "type": "select",
       "options": [
-        { "value": "gp", "label": "General Practitioner" },
-        { "value": "specialist", "label": "Specialist Consultant" },
-        { "value": "patient", "label": "Patient (copy letter)" },
-        { "value": "team", "label": "Clinical Team (internal)" },
-        { "value": "social-care", "label": "Social Care / Community Services" },
-        { "value": "employer", "label": "Employer / Insurance (fit note)" }
+        {
+          "value": "gp",
+          "label": "General Practitioner"
+        },
+        {
+          "value": "specialist",
+          "label": "Specialist Consultant"
+        },
+        {
+          "value": "patient",
+          "label": "Patient (copy letter)"
+        },
+        {
+          "value": "team",
+          "label": "Clinical Team (internal)"
+        },
+        {
+          "value": "social-care",
+          "label": "Social Care / Community Services"
+        },
+        {
+          "value": "employer",
+          "label": "Employer / Insurance (fit note)"
+        }
       ],
       "required": true
     },
@@ -102,10 +186,7 @@
     }
   ],
   "recommendedPersonas": [
-    "clinician",
-    "junior-doctor",
-    "specialist-nurse",
-    "clinical-admin"
+    "clinical-professional"
   ],
   "tags": [
     "healthcare",

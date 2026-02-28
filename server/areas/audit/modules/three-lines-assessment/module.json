@@ -104,7 +104,9 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "auditor"
+  ],
   "tags": [
     "audit",
     "governance",

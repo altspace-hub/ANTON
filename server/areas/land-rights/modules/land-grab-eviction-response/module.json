@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Forced eviction response: documentation steps, legal notice requirements, FPIC rights, UN Basic Principles on Business and Human Rights, land rights NGOs by country, emergency legal hotlines, proof of occupancy strategies." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Forced eviction response: documentation steps, legal notice requirements, FPIC rights, UN Basic Principles on Business and Human Rights, land rights NGOs by country, emergency legal hotlines, proof of occupancy strategies."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,12 +82,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "government", "label": "Government" },
-        { "value": "company", "label": "Large company or corporation" },
-        { "value": "neighbour", "label": "Neighbouring landowner" },
-        { "value": "clan-community", "label": "Clan or community members" },
-        { "value": "armed-group", "label": "Armed group" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "government",
+          "label": "Government"
+        },
+        {
+          "value": "company",
+          "label": "Large company or corporation"
+        },
+        {
+          "value": "neighbour",
+          "label": "Neighbouring landowner"
+        },
+        {
+          "value": "clan-community",
+          "label": "Clan or community members"
+        },
+        {
+          "value": "armed-group",
+          "label": "Armed group"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -60,10 +114,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "imminent", "label": "Imminent eviction — hours or days away" },
-        { "value": "notice-received", "label": "Received a notice or warning" },
-        { "value": "ongoing-dispute", "label": "Ongoing dispute, not immediate" },
-        { "value": "planning-ahead", "label": "Planning ahead — want to be prepared" }
+        {
+          "value": "imminent",
+          "label": "Imminent eviction — hours or days away"
+        },
+        {
+          "value": "notice-received",
+          "label": "Received a notice or warning"
+        },
+        {
+          "value": "ongoing-dispute",
+          "label": "Ongoing dispute, not immediate"
+        },
+        {
+          "value": "planning-ahead",
+          "label": "Planning ahead — want to be prepared"
+        }
       ]
     },
     {
@@ -72,13 +138,38 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "have-title", "label": "Have a title deed" },
-        { "value": "occupancy-records", "label": "Have occupancy records only" },
-        { "value": "no-documents", "label": "No formal documents" },
-        { "value": "unknown", "label": "Not sure what I have" }
+        {
+          "value": "have-title",
+          "label": "Have a title deed"
+        },
+        {
+          "value": "occupancy-records",
+          "label": "Have occupancy records only"
+        },
+        {
+          "value": "no-documents",
+          "label": "No formal documents"
+        },
+        {
+          "value": "unknown",
+          "label": "Not sure what I have"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
-  "tags": ["land-rights", "bop", "rights", "forced-eviction", "land-grab", "emergency", "fpic", "documentation", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "land-rights-paralegal"
+  ],
+  "tags": [
+    "land-rights",
+    "bop",
+    "rights",
+    "forced-eviction",
+    "land-grab",
+    "emergency",
+    "fpic",
+    "documentation",
+    "africa",
+    "south-asia"
+  ]
 }

@@ -36,17 +36,50 @@
       "description": "Which country's licence are you seeking or advising on?",
       "required": true,
       "options": [
-        { "value": "ke", "label": "Kenya" },
-        { "value": "ng", "label": "Nigeria" },
-        { "value": "gh", "label": "Ghana" },
-        { "value": "tz", "label": "Tanzania" },
-        { "value": "bd", "label": "Bangladesh" },
-        { "value": "ph", "label": "Philippines" },
-        { "value": "sg", "label": "Singapore" },
-        { "value": "my", "label": "Malaysia" },
-        { "value": "eu", "label": "EU (EMD2)" },
-        { "value": "uk", "label": "UK (FCA)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "ke",
+          "label": "Kenya"
+        },
+        {
+          "value": "ng",
+          "label": "Nigeria"
+        },
+        {
+          "value": "gh",
+          "label": "Ghana"
+        },
+        {
+          "value": "tz",
+          "label": "Tanzania"
+        },
+        {
+          "value": "bd",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "ph",
+          "label": "Philippines"
+        },
+        {
+          "value": "sg",
+          "label": "Singapore"
+        },
+        {
+          "value": "my",
+          "label": "Malaysia"
+        },
+        {
+          "value": "eu",
+          "label": "EU (EMD2)"
+        },
+        {
+          "value": "uk",
+          "label": "UK (FCA)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -56,10 +89,22 @@
       "description": "What is the proposed operational structure of the applicant?",
       "required": true,
       "options": [
-        { "value": "mno-led", "label": "MNO-led" },
-        { "value": "bank-subsidiary", "label": "Bank-subsidiary" },
-        { "value": "independent-fintech", "label": "Independent fintech" },
-        { "value": "agent-network", "label": "Agent network" }
+        {
+          "value": "mno-led",
+          "label": "MNO-led"
+        },
+        {
+          "value": "bank-subsidiary",
+          "label": "Bank-subsidiary"
+        },
+        {
+          "value": "independent-fintech",
+          "label": "Independent fintech"
+        },
+        {
+          "value": "agent-network",
+          "label": "Agent network"
+        }
       ]
     },
     {
@@ -69,10 +114,22 @@
       "description": "Indicative capital available to meet regulatory minimum requirements.",
       "required": true,
       "options": [
-        { "value": "under-1m", "label": "<$1M" },
-        { "value": "1m-5m", "label": "$1M–$5M" },
-        { "value": "5m-20m", "label": "$5M–$20M" },
-        { "value": "over-20m", "label": ">$20M" }
+        {
+          "value": "under-1m",
+          "label": "<$1M"
+        },
+        {
+          "value": "1m-5m",
+          "label": "$1M–$5M"
+        },
+        {
+          "value": "5m-20m",
+          "label": "$5M–$20M"
+        },
+        {
+          "value": "over-20m",
+          "label": ">$20M"
+        }
       ]
     },
     {
@@ -82,16 +139,28 @@
       "description": "When does the applicant need the licence?",
       "required": true,
       "options": [
-        { "value": "asap", "label": "ASAP" },
-        { "value": "3-6-months", "label": "3–6 months" },
-        { "value": "6-12-months", "label": "6–12 months" },
-        { "value": "planning-stage", "label": "Planning stage" }
+        {
+          "value": "asap",
+          "label": "ASAP"
+        },
+        {
+          "value": "3-6-months",
+          "label": "3–6 months"
+        },
+        {
+          "value": "6-12-months",
+          "label": "6–12 months"
+        },
+        {
+          "value": "planning-stage",
+          "label": "Planning stage"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "mobile-money-compliance",
-    "fcp-expert"
+    "mobile-money-agent-trainer",
+    "mobile-money-compliance"
   ],
   "recommendedSkills": [
     "skill-gsma-mobile-money-aml",

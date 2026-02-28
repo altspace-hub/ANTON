@@ -125,7 +125,9 @@
       "placeholder": "e.g., Product requirements document is available (upload it), we have an existing notification table that needs to be preserved, must support 100k daily active users"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "software",
     "specification",

@@ -83,7 +83,9 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "compensation",

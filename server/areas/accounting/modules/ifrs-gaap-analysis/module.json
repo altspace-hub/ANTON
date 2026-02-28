@@ -144,7 +144,10 @@
       "placeholder": "e.g., We are entering a sale-leaseback transaction and need to determine the correct IFRS 16 treatment. The property has a fair value of EUR 50M and we are leasing back for 10 of its 30-year useful life."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "ifrs",

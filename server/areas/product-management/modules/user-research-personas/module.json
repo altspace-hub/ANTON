@@ -34,10 +34,22 @@
       "label": "Research type",
       "required": true,
       "options": [
-        { "value": "generative", "label": "Generative (discovery)" },
-        { "value": "evaluative", "label": "Evaluative (testing)" },
-        { "value": "continuous", "label": "Continuous (ongoing)" },
-        { "value": "jtbd_interviews", "label": "Jobs-to-Be-Done interviews" }
+        {
+          "value": "generative",
+          "label": "Generative (discovery)"
+        },
+        {
+          "value": "evaluative",
+          "label": "Evaluative (testing)"
+        },
+        {
+          "value": "continuous",
+          "label": "Continuous (ongoing)"
+        },
+        {
+          "value": "jtbd_interviews",
+          "label": "Jobs-to-Be-Done interviews"
+        }
       ]
     },
     {
@@ -45,9 +57,18 @@
       "type": "select",
       "label": "Product stage",
       "options": [
-        { "value": "pre_product", "label": "Pre-product" },
-        { "value": "early_product", "label": "Early product" },
-        { "value": "established", "label": "Established product" }
+        {
+          "value": "pre_product",
+          "label": "Pre-product"
+        },
+        {
+          "value": "early_product",
+          "label": "Early product"
+        },
+        {
+          "value": "established",
+          "label": "Established product"
+        }
       ]
     },
     {
@@ -55,9 +76,18 @@
       "type": "select",
       "label": "User access",
       "options": [
-        { "value": "easy", "label": "Easy (existing users)" },
-        { "value": "hard", "label": "Hard (haven't built yet)" },
-        { "value": "mixed", "label": "Mixed" }
+        {
+          "value": "easy",
+          "label": "Easy (existing users)"
+        },
+        {
+          "value": "hard",
+          "label": "Hard (haven't built yet)"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed"
+        }
       ]
     },
     {
@@ -68,7 +98,8 @@
     }
   ],
   "recommendedPersonas": [
-    "policy-analyst"
+    "strategy-expert",
+    "tech-expert"
   ],
   "tags": [
     "user-research",

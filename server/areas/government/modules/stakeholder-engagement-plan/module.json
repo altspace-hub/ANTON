@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["project-plan", "action-plan"],
+    "outputFormats": [
+      "project-plan",
+      "action-plan"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -37,13 +40,34 @@
       "type": "chips",
       "required": true,
       "options": [
-        { "value": "public", "label": "General public" },
-        { "value": "business", "label": "Business / industry" },
-        { "value": "civil-society", "label": "Civil society / NGOs" },
-        { "value": "experts", "label": "Technical experts" },
-        { "value": "media", "label": "Media" },
-        { "value": "international", "label": "International bodies" },
-        { "value": "vulnerable-groups", "label": "Vulnerable groups" }
+        {
+          "value": "public",
+          "label": "General public"
+        },
+        {
+          "value": "business",
+          "label": "Business / industry"
+        },
+        {
+          "value": "civil-society",
+          "label": "Civil society / NGOs"
+        },
+        {
+          "value": "experts",
+          "label": "Technical experts"
+        },
+        {
+          "value": "media",
+          "label": "Media"
+        },
+        {
+          "value": "international",
+          "label": "International bodies"
+        },
+        {
+          "value": "vulnerable-groups",
+          "label": "Vulnerable groups"
+        }
       ]
     },
     {
@@ -52,9 +76,18 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "short", "label": "Short (weeks)" },
-        { "value": "medium", "label": "Medium (months)" },
-        { "value": "long", "label": "Long (years)" }
+        {
+          "value": "short",
+          "label": "Short (weeks)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (months)"
+        },
+        {
+          "value": "long",
+          "label": "Long (years)"
+        }
       ]
     },
     {
@@ -63,14 +96,40 @@
       "type": "chips",
       "required": false,
       "options": [
-        { "value": "online", "label": "Online / digital" },
-        { "value": "face-to-face", "label": "Face-to-face" },
-        { "value": "written-consultation", "label": "Written consultation" },
-        { "value": "deliberative-panels", "label": "Deliberative panels" },
-        { "value": "representative-forums", "label": "Representative forums" }
+        {
+          "value": "online",
+          "label": "Online / digital"
+        },
+        {
+          "value": "face-to-face",
+          "label": "Face-to-face"
+        },
+        {
+          "value": "written-consultation",
+          "label": "Written consultation"
+        },
+        {
+          "value": "deliberative-panels",
+          "label": "Deliberative panels"
+        },
+        {
+          "value": "representative-forums",
+          "label": "Representative forums"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["policy-analyst", "legal-expert"],
-  "tags": ["stakeholder-engagement", "consultation", "participation", "deliberative-democracy", "power-interest", "citizens-assembly", "government", "public-administration"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "stakeholder-engagement",
+    "consultation",
+    "participation",
+    "deliberative-democracy",
+    "power-interest",
+    "citizens-assembly",
+    "government",
+    "public-administration"
+  ]
 }

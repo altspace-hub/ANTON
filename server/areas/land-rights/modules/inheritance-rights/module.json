@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Inheritance law by country: statutory civil law, Islamic inheritance (Quranic shares), customary law (patrilineal/matrilineal), writing a will, widow protection, daughters' rights, conflict between legal systems in Africa and South Asia." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Inheritance law by country: statutory civil law, Islamic inheritance (Quranic shares), customary law (patrilineal/matrilineal), writing a will, widow protection, daughters' rights, conflict between legal systems in Africa and South Asia."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "statutory", "label": "Statutory / civil law" },
-        { "value": "islamic", "label": "Islamic (Sharia inheritance)" },
-        { "value": "customary", "label": "Customary (tribal / traditional)" },
-        { "value": "mixed", "label": "Mixed — not sure which applies" },
-        { "value": "unsure", "label": "Not sure" }
+        {
+          "value": "statutory",
+          "label": "Statutory / civil law"
+        },
+        {
+          "value": "islamic",
+          "label": "Islamic (Sharia inheritance)"
+        },
+        {
+          "value": "customary",
+          "label": "Customary (tribal / traditional)"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed — not sure which applies"
+        },
+        {
+          "value": "unsure",
+          "label": "Not sure"
+        }
       ]
     },
     {
@@ -59,14 +110,43 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "spouse-died", "label": "Spouse died" },
-        { "value": "parent-died", "label": "Parent died" },
-        { "value": "writing-will", "label": "Writing a will" },
-        { "value": "excluded", "label": "Being excluded from inheritance" },
-        { "value": "womens-rights", "label": "Women's rights concern" }
+        {
+          "value": "spouse-died",
+          "label": "Spouse died"
+        },
+        {
+          "value": "parent-died",
+          "label": "Parent died"
+        },
+        {
+          "value": "writing-will",
+          "label": "Writing a will"
+        },
+        {
+          "value": "excluded",
+          "label": "Being excluded from inheritance"
+        },
+        {
+          "value": "womens-rights",
+          "label": "Women's rights concern"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
-  "tags": ["land-rights", "bop", "rights", "inheritance", "islamic-law", "customary-law", "widows", "womens-rights", "will", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "land-rights-paralegal"
+  ],
+  "tags": [
+    "land-rights",
+    "bop",
+    "rights",
+    "inheritance",
+    "islamic-law",
+    "customary-law",
+    "widows",
+    "womens-rights",
+    "will",
+    "africa",
+    "south-asia"
+  ]
 }

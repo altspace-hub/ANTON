@@ -6,7 +6,14 @@
   "icon": "BarChart2",
   "description": "Develop content strategies for publications, brands, and organisations: audience analysis, content pillars, editorial calendars, channel strategies, and measurement frameworks.",
   "color": "adv-teal",
-  "tags": ["content-strategy", "editorial", "audience", "brand-journalism", "measurement", "SEO"],
+  "tags": [
+    "content-strategy",
+    "editorial",
+    "audience",
+    "brand-journalism",
+    "measurement",
+    "SEO"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "haiku",
@@ -16,9 +23,14 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["project-plan", "executive-summary"]
+    "outputFormats": [
+      "project-plan",
+      "executive-summary"
+    ]
   },
-  "recommendedPersonas": ["features-editor"],
+  "recommendedPersonas": [
+    "general-assistant"
+  ],
   "guidedInputs": [
     {
       "id": "organisation_context",
@@ -41,15 +53,39 @@
       "label": "Content Goals",
       "description": "What should this content strategy achieve?",
       "options": [
-        {"value": "thought_leadership", "label": "Establish thought leadership"},
-        {"value": "lead_generation", "label": "Generate inbound leads"},
-        {"value": "audience_growth", "label": "Grow audience / subscribers"},
-        {"value": "retention", "label": "Retain existing customers"},
-        {"value": "seo_traffic", "label": "Drive SEO / organic traffic"},
-        {"value": "brand_awareness", "label": "Build brand awareness"},
-        {"value": "community", "label": "Build community / engagement"}
+        {
+          "value": "thought_leadership",
+          "label": "Establish thought leadership"
+        },
+        {
+          "value": "lead_generation",
+          "label": "Generate inbound leads"
+        },
+        {
+          "value": "audience_growth",
+          "label": "Grow audience / subscribers"
+        },
+        {
+          "value": "retention",
+          "label": "Retain existing customers"
+        },
+        {
+          "value": "seo_traffic",
+          "label": "Drive SEO / organic traffic"
+        },
+        {
+          "value": "brand_awareness",
+          "label": "Build brand awareness"
+        },
+        {
+          "value": "community",
+          "label": "Build community / engagement"
+        }
       ],
-      "defaultValue": ["thought_leadership", "lead_generation"]
+      "defaultValue": [
+        "thought_leadership",
+        "lead_generation"
+      ]
     },
     {
       "id": "channels",
@@ -57,16 +93,44 @@
       "label": "Content Channels",
       "description": "Which channels should the strategy cover?",
       "options": [
-        {"value": "blog", "label": "Blog / website"},
-        {"value": "newsletter", "label": "Email newsletter"},
-        {"value": "linkedin", "label": "LinkedIn"},
-        {"value": "twitter_x", "label": "X / Twitter"},
-        {"value": "podcast", "label": "Podcast"},
-        {"value": "video", "label": "Video / YouTube"},
-        {"value": "webinar", "label": "Webinars / events"},
-        {"value": "whitepaper", "label": "Reports / whitepapers"}
+        {
+          "value": "blog",
+          "label": "Blog / website"
+        },
+        {
+          "value": "newsletter",
+          "label": "Email newsletter"
+        },
+        {
+          "value": "linkedin",
+          "label": "LinkedIn"
+        },
+        {
+          "value": "twitter_x",
+          "label": "X / Twitter"
+        },
+        {
+          "value": "podcast",
+          "label": "Podcast"
+        },
+        {
+          "value": "video",
+          "label": "Video / YouTube"
+        },
+        {
+          "value": "webinar",
+          "label": "Webinars / events"
+        },
+        {
+          "value": "whitepaper",
+          "label": "Reports / whitepapers"
+        }
       ],
-      "defaultValue": ["blog", "newsletter", "linkedin"]
+      "defaultValue": [
+        "blog",
+        "newsletter",
+        "linkedin"
+      ]
     },
     {
       "id": "resources",

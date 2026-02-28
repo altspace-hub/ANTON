@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,11 +34,26 @@
       "label": "What kind of food business do you have?",
       "required": true,
       "options": [
-        { "value": "street-stall", "label": "Street food stall" },
-        { "value": "small-restaurant", "label": "Small restaurant" },
-        { "value": "catering", "label": "Catering" },
-        { "value": "home-based", "label": "Home-based food business" },
-        { "value": "market-vendor", "label": "Market food vendor" }
+        {
+          "value": "street-stall",
+          "label": "Street food stall"
+        },
+        {
+          "value": "small-restaurant",
+          "label": "Small restaurant"
+        },
+        {
+          "value": "catering",
+          "label": "Catering"
+        },
+        {
+          "value": "home-based",
+          "label": "Home-based food business"
+        },
+        {
+          "value": "market-vendor",
+          "label": "Market food vendor"
+        }
       ]
     },
     {
@@ -45,15 +62,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -62,14 +106,29 @@
       "label": "What kind of waste is your biggest problem?",
       "required": true,
       "options": [
-        { "value": "cooked-leftover", "label": "Cooked food left over at end of day" },
-        { "value": "ingredients-spoiling", "label": "Ingredients going bad before I use them" },
-        { "value": "inconsistent-portions", "label": "Inconsistent portions — some plates too big" },
-        { "value": "all", "label": "All of these" }
+        {
+          "value": "cooked-leftover",
+          "label": "Cooked food left over at end of day"
+        },
+        {
+          "value": "ingredients-spoiling",
+          "label": "Ingredients going bad before I use them"
+        },
+        {
+          "value": "inconsistent-portions",
+          "label": "Inconsistent portions — some plates too big"
+        },
+        {
+          "value": "all",
+          "label": "All of these"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "recommendedPersonas": [
+    "food-safety-inspector",
+    "small-business-mentor"
+  ],
   "tags": [
     "bop",
     "food-business",

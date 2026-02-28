@@ -46,10 +46,22 @@
       "label": "How big is the job?",
       "required": true,
       "options": [
-        { "value": "small", "label": "Small (half day or less)" },
-        { "value": "medium", "label": "Medium (1-2 days)" },
-        { "value": "large", "label": "Large (3-5 days)" },
-        { "value": "project", "label": "Big project (1 week or more)" }
+        {
+          "value": "small",
+          "label": "Small (half day or less)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (1-2 days)"
+        },
+        {
+          "value": "large",
+          "label": "Large (3-5 days)"
+        },
+        {
+          "value": "project",
+          "label": "Big project (1 week or more)"
+        }
       ]
     },
     {
@@ -58,9 +70,18 @@
       "label": "Fixed price or estimate?",
       "required": true,
       "options": [
-        { "value": "fixed", "label": "Fixed price" },
-        { "value": "estimate", "label": "Estimate (final may vary)" },
-        { "value": "hourly", "label": "Hourly rate + materials" }
+        {
+          "value": "fixed",
+          "label": "Fixed price"
+        },
+        {
+          "value": "estimate",
+          "label": "Estimate (final may vary)"
+        },
+        {
+          "value": "hourly",
+          "label": "Hourly rate + materials"
+        }
       ]
     },
     {
@@ -69,9 +90,18 @@
       "label": "Have you seen the job?",
       "required": false,
       "options": [
-        { "value": "yes", "label": "Yes, I visited the site" },
-        { "value": "photos", "label": "Yes, I've seen photos" },
-        { "value": "description", "label": "No, based on description only" }
+        {
+          "value": "yes",
+          "label": "Yes, I visited the site"
+        },
+        {
+          "value": "photos",
+          "label": "Yes, I've seen photos"
+        },
+        {
+          "value": "description",
+          "label": "No, based on description only"
+        }
       ]
     },
     {
@@ -82,7 +112,9 @@
       "required": false
     }
   ],
-  "recommendedPersonas": ["small-business-mentor"],
+  "recommendedPersonas": [
+    "trades-expert"
+  ],
   "myWayProcessType": "quoting",
   "tags": [
     "trades",

@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "decision-memo"],
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -31,12 +34,30 @@
       "label": "What do you need?",
       "required": true,
       "options": [
-        { "value": "analyse-term-sheet", "label": "Analyse a term sheet I received" },
-        { "value": "draft-term-sheet", "label": "Draft a term sheet (I'm the investor)" },
-        { "value": "compare-term-sheets", "label": "Compare two competing term sheets" },
-        { "value": "explain-terms", "label": "Explain specific terms and their implications" },
-        { "value": "model-returns", "label": "Model the impact of terms on returns" },
-        { "value": "negotiate", "label": "Negotiate — suggest counter-proposals" }
+        {
+          "value": "analyse-term-sheet",
+          "label": "Analyse a term sheet I received"
+        },
+        {
+          "value": "draft-term-sheet",
+          "label": "Draft a term sheet (I'm the investor)"
+        },
+        {
+          "value": "compare-term-sheets",
+          "label": "Compare two competing term sheets"
+        },
+        {
+          "value": "explain-terms",
+          "label": "Explain specific terms and their implications"
+        },
+        {
+          "value": "model-returns",
+          "label": "Model the impact of terms on returns"
+        },
+        {
+          "value": "negotiate",
+          "label": "Negotiate — suggest counter-proposals"
+        }
       ]
     },
     {
@@ -45,12 +66,30 @@
       "label": "Deal type",
       "required": true,
       "options": [
-        { "value": "vc-equity", "label": "VC equity round" },
-        { "value": "convertible", "label": "Convertible note / SAFE" },
-        { "value": "growth-equity", "label": "Growth equity" },
-        { "value": "pe-buyout", "label": "PE majority buyout" },
-        { "value": "pe-minority", "label": "PE minority investment" },
-        { "value": "secondary", "label": "Secondary transaction" }
+        {
+          "value": "vc-equity",
+          "label": "VC equity round"
+        },
+        {
+          "value": "convertible",
+          "label": "Convertible note / SAFE"
+        },
+        {
+          "value": "growth-equity",
+          "label": "Growth equity"
+        },
+        {
+          "value": "pe-buyout",
+          "label": "PE majority buyout"
+        },
+        {
+          "value": "pe-minority",
+          "label": "PE minority investment"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary transaction"
+        }
       ]
     },
     {
@@ -66,11 +105,30 @@
       "label": "Your role",
       "required": true,
       "options": [
-        { "value": "investor", "label": "Investor (buying)" },
-        { "value": "company", "label": "Company / founder (selling)" },
-        { "value": "advisor", "label": "Advisor / co-investor" }
+        {
+          "value": "investor",
+          "label": "Investor (buying)"
+        },
+        {
+          "value": "company",
+          "label": "Company / founder (selling)"
+        },
+        {
+          "value": "advisor",
+          "label": "Advisor / co-investor"
+        }
       ]
     }
   ],
-  "tags": ["pe-vc", "term-sheet", "deal-structure", "liquidation-preference", "anti-dilution", "negotiation"]
+  "tags": [
+    "pe-vc",
+    "term-sheet",
+    "deal-structure",
+    "liquidation-preference",
+    "anti-dilution",
+    "negotiation"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

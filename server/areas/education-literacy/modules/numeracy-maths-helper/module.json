@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Adult numeracy, functional maths, market maths, financial literacy maths, mental arithmetic for business" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Adult numeracy, functional maths, market maths, financial literacy maths, mental arithmetic for business"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "basic-counting", "label": "Basic counting" },
-        { "value": "addition-subtraction", "label": "Addition and subtraction" },
-        { "value": "multiplication-division", "label": "Multiplication and division" },
-        { "value": "fractions-percentages", "label": "Fractions and percentages" },
-        { "value": "business-maths", "label": "Business maths (profit, loss, interest)" },
-        { "value": "all", "label": "All of these" }
+        {
+          "value": "basic-counting",
+          "label": "Basic counting"
+        },
+        {
+          "value": "addition-subtraction",
+          "label": "Addition and subtraction"
+        },
+        {
+          "value": "multiplication-division",
+          "label": "Multiplication and division"
+        },
+        {
+          "value": "fractions-percentages",
+          "label": "Fractions and percentages"
+        },
+        {
+          "value": "business-maths",
+          "label": "Business maths (profit, loss, interest)"
+        },
+        {
+          "value": "all",
+          "label": "All of these"
+        }
       ]
     },
     {
@@ -42,11 +66,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "business-buying-selling", "label": "Business (buying and selling)" },
-        { "value": "personal-finance", "label": "Personal finance" },
-        { "value": "daily-life", "label": "Daily life" },
-        { "value": "help-child-homework", "label": "Help with my child's homework" },
-        { "value": "exams", "label": "Exams" }
+        {
+          "value": "business-buying-selling",
+          "label": "Business (buying and selling)"
+        },
+        {
+          "value": "personal-finance",
+          "label": "Personal finance"
+        },
+        {
+          "value": "daily-life",
+          "label": "Daily life"
+        },
+        {
+          "value": "help-child-homework",
+          "label": "Help with my child's homework"
+        },
+        {
+          "value": "exams",
+          "label": "Exams"
+        }
       ]
     },
     {
@@ -55,15 +94,43 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "english", "label": "English" },
-        { "value": "swahili", "label": "Swahili" },
-        { "value": "hausa", "label": "Hausa" },
-        { "value": "hindi", "label": "Hindi" },
-        { "value": "bengali", "label": "Bengali" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "english",
+          "label": "English"
+        },
+        {
+          "value": "swahili",
+          "label": "Swahili"
+        },
+        {
+          "value": "hausa",
+          "label": "Hausa"
+        },
+        {
+          "value": "hindi",
+          "label": "Hindi"
+        },
+        {
+          "value": "bengali",
+          "label": "Bengali"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
-  "tags": ["numeracy", "maths", "arithmetic", "percentages", "business-maths", "adult-learning", "financial-literacy"]
+  "recommendedPersonas": [
+    "education-expert"
+  ],
+  "tags": [
+    "numeracy",
+    "maths",
+    "arithmetic",
+    "percentages",
+    "business-maths",
+    "adult-learning",
+    "financial-literacy"
+  ]
 }

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Corruption reporting channels by country: anti-corruption hotlines, anonymous online reporting, NGO intermediaries (Transparency International chapters), whistle-blower protection laws, evidence documentation guidance, media as last resort, international reporting for aid fraud (Global Fund, World Bank Integrity hotline)." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Corruption reporting channels by country: anti-corruption hotlines, anonymous online reporting, NGO intermediaries (Transparency International chapters), whistle-blower protection laws, evidence documentation guidance, media as last resort, international reporting for aid fraud (Global Fund, World Bank Integrity hotline)."
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -48,13 +90,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "bribe-demanded", "label": "Bribe demanded" },
-        { "value": "public-funds-stolen", "label": "Public funds stolen" },
-        { "value": "tender-fraud", "label": "Tender / procurement fraud" },
-        { "value": "police-extortion", "label": "Police extortion" },
-        { "value": "land-fraud", "label": "Land fraud" },
-        { "value": "election-fraud", "label": "Election fraud" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "bribe-demanded",
+          "label": "Bribe demanded"
+        },
+        {
+          "value": "public-funds-stolen",
+          "label": "Public funds stolen"
+        },
+        {
+          "value": "tender-fraud",
+          "label": "Tender / procurement fraud"
+        },
+        {
+          "value": "police-extortion",
+          "label": "Police extortion"
+        },
+        {
+          "value": "land-fraud",
+          "label": "Land fraud"
+        },
+        {
+          "value": "election-fraud",
+          "label": "Election fraud"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -63,13 +126,37 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "fear-retaliation", "label": "I fear retaliation" },
-        { "value": "powerful-person", "label": "The person is powerful / senior" },
-        { "value": "multiple-officials", "label": "Multiple officials involved" },
-        { "value": "want-anonymous", "label": "I want to remain anonymous" }
+        {
+          "value": "fear-retaliation",
+          "label": "I fear retaliation"
+        },
+        {
+          "value": "powerful-person",
+          "label": "The person is powerful / senior"
+        },
+        {
+          "value": "multiple-officials",
+          "label": "Multiple officials involved"
+        },
+        {
+          "value": "want-anonymous",
+          "label": "I want to remain anonymous"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
-  "tags": ["corruption", "bribery", "reporting", "whistleblower", "anti-corruption", "rights", "bop", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "corruption",
+    "bribery",
+    "reporting",
+    "whistleblower",
+    "anti-corruption",
+    "rights",
+    "bop",
+    "africa",
+    "south-asia"
+  ]
 }

@@ -123,7 +123,9 @@
       "placeholder": "Describe the course topic, learning objectives, estimated duration, any existing content to incorporate, and technical constraints."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "education-expert"
+  ],
   "tags": [
     "e-learning",
     "course-design",

@@ -6,7 +6,13 @@
   "icon": "Search",
   "description": "Design a rigorous user research methodology: select methods, write discussion guides, define participant criteria, and plan analysis.",
   "color": "adv-teal",
-  "tags": ["ux", "research", "interviews", "usability", "methodology"],
+  "tags": [
+    "ux",
+    "research",
+    "interviews",
+    "usability",
+    "methodology"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "haiku",
@@ -16,9 +22,15 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "project-plan"]
+    "outputFormats": [
+      "detailed-findings",
+      "project-plan"
+    ]
   },
-  "recommendedPersonas": ["ux-researcher", "ux-director"],
+  "recommendedPersonas": [
+    "creative-director",
+    "strategy-expert"
+  ],
   "guidedInputs": [
     {
       "id": "research_goals",
@@ -49,10 +61,22 @@
       "label": "Timeline",
       "description": "How much time is available for the research?",
       "options": [
-        {"value": "1-2 weeks", "label": "1–2 weeks (lean/guerrilla)"},
-        {"value": "3-4 weeks", "label": "3–4 weeks (standard)"},
-        {"value": "6-8 weeks", "label": "6–8 weeks (thorough)"},
-        {"value": "3+ months", "label": "3+ months (longitudinal)"}
+        {
+          "value": "1-2 weeks",
+          "label": "1–2 weeks (lean/guerrilla)"
+        },
+        {
+          "value": "3-4 weeks",
+          "label": "3–4 weeks (standard)"
+        },
+        {
+          "value": "6-8 weeks",
+          "label": "6–8 weeks (thorough)"
+        },
+        {
+          "value": "3+ months",
+          "label": "3+ months (longitudinal)"
+        }
       ],
       "defaultValue": "3-4 weeks"
     },

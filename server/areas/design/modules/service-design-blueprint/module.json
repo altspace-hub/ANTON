@@ -6,7 +6,13 @@
   "icon": "Map",
   "description": "Map the end-to-end service experience across all channels and touchpoints. Align front-stage interactions with back-stage processes, systems, and support structures.",
   "color": "adv-teal",
-  "tags": ["service-design", "blueprint", "customer-journey", "touchpoints", "process-mapping"],
+  "tags": [
+    "service-design",
+    "blueprint",
+    "customer-journey",
+    "touchpoints",
+    "process-mapping"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "sonnet",
@@ -16,9 +22,15 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "project-plan"]
+    "outputFormats": [
+      "detailed-findings",
+      "project-plan"
+    ]
   },
-  "recommendedPersonas": ["service-designer", "ux-director"],
+  "recommendedPersonas": [
+    "creative-director",
+    "strategy-expert"
+  ],
   "guidedInputs": [
     {
       "id": "service_description",
@@ -41,16 +53,43 @@
       "label": "Service Channels / Touchpoints",
       "description": "Which channels are involved in this service?",
       "options": [
-        {"value": "website", "label": "Website / Web app"},
-        {"value": "mobile_app", "label": "Mobile app"},
-        {"value": "in_person", "label": "In-person / Branch / Store"},
-        {"value": "phone", "label": "Phone / Call centre"},
-        {"value": "email", "label": "Email"},
-        {"value": "chatbot", "label": "Chatbot / Live chat"},
-        {"value": "post", "label": "Physical mail"},
-        {"value": "third_party", "label": "Third-party / Partner"}
+        {
+          "value": "website",
+          "label": "Website / Web app"
+        },
+        {
+          "value": "mobile_app",
+          "label": "Mobile app"
+        },
+        {
+          "value": "in_person",
+          "label": "In-person / Branch / Store"
+        },
+        {
+          "value": "phone",
+          "label": "Phone / Call centre"
+        },
+        {
+          "value": "email",
+          "label": "Email"
+        },
+        {
+          "value": "chatbot",
+          "label": "Chatbot / Live chat"
+        },
+        {
+          "value": "post",
+          "label": "Physical mail"
+        },
+        {
+          "value": "third_party",
+          "label": "Third-party / Partner"
+        }
       ],
-      "defaultValue": ["website", "email"]
+      "defaultValue": [
+        "website",
+        "email"
+      ]
     },
     {
       "id": "blueprint_purpose",
@@ -58,10 +97,22 @@
       "label": "Blueprint Purpose",
       "description": "What is this blueprint for?",
       "options": [
-        {"value": "current_state", "label": "Document current state (as-is)"},
-        {"value": "future_state", "label": "Design future state (to-be)"},
-        {"value": "problem_analysis", "label": "Identify pain points and failure points"},
-        {"value": "redesign", "label": "Redesign a broken service"}
+        {
+          "value": "current_state",
+          "label": "Document current state (as-is)"
+        },
+        {
+          "value": "future_state",
+          "label": "Design future state (to-be)"
+        },
+        {
+          "value": "problem_analysis",
+          "label": "Identify pain points and failure points"
+        },
+        {
+          "value": "redesign",
+          "label": "Redesign a broken service"
+        }
       ],
       "defaultValue": "future_state"
     }

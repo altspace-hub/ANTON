@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Gig economy rights, employee vs contractor tests, platform accountability, algorithmic deactivation rights, accident compensation for gig workers" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Gig economy rights, employee vs contractor tests, platform accountability, algorithmic deactivation rights, accident compensation for gig workers"
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "uk", "label": "United Kingdom" },
-        { "value": "eu-country", "label": "EU country" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "eu-country",
+          "label": "EU country"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -48,11 +90,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "ride-hailing", "label": "Ride-hailing (Uber, Bolt, Grab, InDrive)" },
-        { "value": "food-delivery", "label": "Food delivery (Glovo, Jumia Food, Deliveroo, Zomato)" },
-        { "value": "domestic-services", "label": "Home / domestic services (Helpling, TaskRabbit)" },
-        { "value": "freelance-platform", "label": "Freelance platform (Upwork, Fiverr, Remotasks)" },
-        { "value": "other", "label": "Other platform" }
+        {
+          "value": "ride-hailing",
+          "label": "Ride-hailing (Uber, Bolt, Grab, InDrive)"
+        },
+        {
+          "value": "food-delivery",
+          "label": "Food delivery (Glovo, Jumia Food, Deliveroo, Zomato)"
+        },
+        {
+          "value": "domestic-services",
+          "label": "Home / domestic services (Helpling, TaskRabbit)"
+        },
+        {
+          "value": "freelance-platform",
+          "label": "Freelance platform (Upwork, Fiverr, Remotasks)"
+        },
+        {
+          "value": "other",
+          "label": "Other platform"
+        }
       ]
     },
     {
@@ -61,14 +118,43 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "low-earnings", "label": "Low earnings or hidden deductions" },
-        { "value": "account-deactivated", "label": "My account was deactivated (I was 'fired' by the app)" },
-        { "value": "accident", "label": "I had an accident while working" },
-        { "value": "dispute-platform", "label": "Dispute with the platform" },
-        { "value": "general-rights", "label": "I want to know my rights generally" }
+        {
+          "value": "low-earnings",
+          "label": "Low earnings or hidden deductions"
+        },
+        {
+          "value": "account-deactivated",
+          "label": "My account was deactivated (I was 'fired' by the app)"
+        },
+        {
+          "value": "accident",
+          "label": "I had an accident while working"
+        },
+        {
+          "value": "dispute-platform",
+          "label": "Dispute with the platform"
+        },
+        {
+          "value": "general-rights",
+          "label": "I want to know my rights generally"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
-  "tags": ["workers-rights", "bop", "informal-economy", "gig-economy", "platform-work", "independent-contractor", "uber", "delivery-workers", "algorithmic-management", "deactivation"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid"
+  ],
+  "tags": [
+    "workers-rights",
+    "bop",
+    "informal-economy",
+    "gig-economy",
+    "platform-work",
+    "independent-contractor",
+    "uber",
+    "delivery-workers",
+    "algorithmic-management",
+    "deactivation"
+  ]
 }

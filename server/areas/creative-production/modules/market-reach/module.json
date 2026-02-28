@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "executive-summary"],
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -33,15 +36,42 @@
       "type": "chips",
       "required": true,
       "options": [
-        { "value": "uk", "label": "UK" },
-        { "value": "us", "label": "US" },
-        { "value": "nordic", "label": "Nordic / Scandinavia" },
-        { "value": "europe", "label": "Europe (broad)" },
-        { "value": "germany", "label": "Germany / DACH" },
-        { "value": "france", "label": "France / Francophone" },
-        { "value": "latin-america", "label": "Latin America" },
-        { "value": "asia-pacific", "label": "Asia Pacific" },
-        { "value": "global", "label": "Global / All markets" }
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "us",
+          "label": "US"
+        },
+        {
+          "value": "nordic",
+          "label": "Nordic / Scandinavia"
+        },
+        {
+          "value": "europe",
+          "label": "Europe (broad)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany / DACH"
+        },
+        {
+          "value": "france",
+          "label": "France / Francophone"
+        },
+        {
+          "value": "latin-america",
+          "label": "Latin America"
+        },
+        {
+          "value": "asia-pacific",
+          "label": "Asia Pacific"
+        },
+        {
+          "value": "global",
+          "label": "Global / All markets"
+        }
       ]
     },
     {
@@ -50,14 +80,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "traditional-publishing", "label": "Traditional publishing" },
-        { "value": "self-publishing", "label": "Self-publishing / Indie" },
-        { "value": "streaming", "label": "Streaming (Netflix, Disney+, etc.)" },
-        { "value": "theatrical", "label": "Theatrical release" },
-        { "value": "festival-circuit", "label": "Festival circuit (arthouse / indie)" },
-        { "value": "digital-first", "label": "Digital-first (ebook, VOD, etc.)" },
-        { "value": "theatre", "label": "Theatre / Stage production" },
-        { "value": "games", "label": "Games / Interactive platforms" }
+        {
+          "value": "traditional-publishing",
+          "label": "Traditional publishing"
+        },
+        {
+          "value": "self-publishing",
+          "label": "Self-publishing / Indie"
+        },
+        {
+          "value": "streaming",
+          "label": "Streaming (Netflix, Disney+, etc.)"
+        },
+        {
+          "value": "theatrical",
+          "label": "Theatrical release"
+        },
+        {
+          "value": "festival-circuit",
+          "label": "Festival circuit (arthouse / indie)"
+        },
+        {
+          "value": "digital-first",
+          "label": "Digital-first (ebook, VOD, etc.)"
+        },
+        {
+          "value": "theatre",
+          "label": "Theatre / Stage production"
+        },
+        {
+          "value": "games",
+          "label": "Games / Interactive platforms"
+        }
       ]
     },
     {
@@ -66,10 +120,22 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "micro", "label": "Micro / Bootstrap" },
-        { "value": "indie", "label": "Indie / Low-budget" },
-        { "value": "mid-range", "label": "Mid-range" },
-        { "value": "studio", "label": "Studio / Major publisher" }
+        {
+          "value": "micro",
+          "label": "Micro / Bootstrap"
+        },
+        {
+          "value": "indie",
+          "label": "Indie / Low-budget"
+        },
+        {
+          "value": "mid-range",
+          "label": "Mid-range"
+        },
+        {
+          "value": "studio",
+          "label": "Studio / Major publisher"
+        }
       ]
     },
     {
@@ -87,6 +153,17 @@
       "placeholder": "Describe the work: logline or synopsis, themes, key selling points, unique elements, intended audience..."
     }
   ],
-  "recommendedPersonas": ["literary-agent", "producer", "rights-manager"],
-  "tags": ["market-analysis", "distribution", "audience-analysis", "publishing-market", "film-market", "rights", "licensing", "commercial-strategy"]
+  "recommendedPersonas": [
+    "creative-director"
+  ],
+  "tags": [
+    "market-analysis",
+    "distribution",
+    "audience-analysis",
+    "publishing-market",
+    "film-market",
+    "rights",
+    "licensing",
+    "commercial-strategy"
+  ]
 }

@@ -209,7 +209,9 @@
       "placeholder": "e.g., Policy must address specific issues raised by employees, company is going through a merger, need to align with parent company global policy framework"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "policy",

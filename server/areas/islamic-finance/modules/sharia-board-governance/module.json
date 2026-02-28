@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["policy-document", "detailed-findings"],
+    "outputFormats": [
+      "policy-document",
+      "detailed-findings"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,25 +32,55 @@
       "id": "institution_type",
       "label": "Institution Type",
       "type": "select",
-      "options": ["Full Islamic Bank", "Islamic Window", "Takaful", "Investment Fund"],
+      "options": [
+        "Full Islamic Bank",
+        "Islamic Window",
+        "Takaful",
+        "Investment Fund"
+      ],
       "required": true
     },
     {
       "id": "jurisdiction",
       "label": "Jurisdiction",
       "type": "select",
-      "options": ["Saudi Arabia (SAMA)", "UAE (CBUAE/DFSA)", "Malaysia (BNM)", "Pakistan (SBP)", "Other"],
+      "options": [
+        "Saudi Arabia (SAMA)",
+        "UAE (CBUAE/DFSA)",
+        "Malaysia (BNM)",
+        "Pakistan (SBP)",
+        "Other"
+      ],
       "required": true
     },
     {
       "id": "current_status",
       "label": "Current Status",
       "type": "select",
-      "options": ["Establishing new board", "Reviewing existing", "Regulatory requirement", "Best practice upgrade"],
+      "options": [
+        "Establishing new board",
+        "Reviewing existing",
+        "Regulatory requirement",
+        "Best practice upgrade"
+      ],
       "required": true
     }
   ],
-  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer"],
-  "recommendedSkills": ["skill-ifsb-standards", "skill-aaoifi-standards"],
-  "tags": ["sharia-governance", "ssb", "ifsb-10", "board-governance", "fatwas", "sharia-audit", "terms-of-reference"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-ifsb-standards",
+    "skill-aaoifi-standards"
+  ],
+  "tags": [
+    "sharia-governance",
+    "ssb",
+    "ifsb-10",
+    "board-governance",
+    "fatwas",
+    "sharia-audit",
+    "terms-of-reference"
+  ]
 }

@@ -44,17 +44,50 @@
       "description": "Which transaction monitoring rule or scenario generated this alert?",
       "required": true,
       "options": [
-        { "value": "structuring", "label": "Structuring / Smurfing" },
-        { "value": "high_velocity", "label": "High Velocity / Rapid Movement" },
-        { "value": "unusual_geography", "label": "Unusual Geography / High-Risk Country" },
-        { "value": "dormant_account", "label": "Dormant Account Reactivation" },
-        { "value": "cash_intensive", "label": "Cash-Intensive Activity" },
-        { "value": "round_amounts", "label": "Round Amount Transactions" },
-        { "value": "peer_outlier", "label": "Peer Group Outlier" },
-        { "value": "adverse_media", "label": "Adverse Media / Name Match" },
-        { "value": "pep_transaction", "label": "PEP-Related Transaction" },
-        { "value": "sanctions_proximity", "label": "Sanctions Proximity" },
-        { "value": "other", "label": "Other / Manual Escalation" }
+        {
+          "value": "structuring",
+          "label": "Structuring / Smurfing"
+        },
+        {
+          "value": "high_velocity",
+          "label": "High Velocity / Rapid Movement"
+        },
+        {
+          "value": "unusual_geography",
+          "label": "Unusual Geography / High-Risk Country"
+        },
+        {
+          "value": "dormant_account",
+          "label": "Dormant Account Reactivation"
+        },
+        {
+          "value": "cash_intensive",
+          "label": "Cash-Intensive Activity"
+        },
+        {
+          "value": "round_amounts",
+          "label": "Round Amount Transactions"
+        },
+        {
+          "value": "peer_outlier",
+          "label": "Peer Group Outlier"
+        },
+        {
+          "value": "adverse_media",
+          "label": "Adverse Media / Name Match"
+        },
+        {
+          "value": "pep_transaction",
+          "label": "PEP-Related Transaction"
+        },
+        {
+          "value": "sanctions_proximity",
+          "label": "Sanctions Proximity"
+        },
+        {
+          "value": "other",
+          "label": "Other / Manual Escalation"
+        }
       ]
     },
     {
@@ -64,13 +97,34 @@
       "description": "What is the customer's segment or risk classification?",
       "required": true,
       "options": [
-        { "value": "retail_standard", "label": "Retail — Standard Risk" },
-        { "value": "retail_high", "label": "Retail — High Risk" },
-        { "value": "sme", "label": "SME / Business" },
-        { "value": "corporate", "label": "Corporate" },
-        { "value": "pep", "label": "PEP / PEP-Related" },
-        { "value": "correspondent", "label": "Correspondent Banking" },
-        { "value": "crypto_related", "label": "Crypto / VASP Related" }
+        {
+          "value": "retail_standard",
+          "label": "Retail — Standard Risk"
+        },
+        {
+          "value": "retail_high",
+          "label": "Retail — High Risk"
+        },
+        {
+          "value": "sme",
+          "label": "SME / Business"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate"
+        },
+        {
+          "value": "pep",
+          "label": "PEP / PEP-Related"
+        },
+        {
+          "value": "correspondent",
+          "label": "Correspondent Banking"
+        },
+        {
+          "value": "crypto_related",
+          "label": "Crypto / VASP Related"
+        }
       ]
     },
     {
@@ -97,8 +151,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "fsa-regulator"
+    "fcp-expert"
   ],
   "tags": [
     "transaction-monitoring",

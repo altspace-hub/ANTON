@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,13 +34,34 @@
       "label": "What security or collateral is the lender asking for?",
       "required": true,
       "options": [
-        { "value": "land-house", "label": "Land or house" },
-        { "value": "household-items", "label": "Household items or furniture" },
-        { "value": "business-equipment", "label": "Business equipment or tools" },
-        { "value": "vehicle", "label": "Vehicle or motorbike" },
-        { "value": "guarantor", "label": "A guarantor (someone to co-sign)" },
-        { "value": "none", "label": "No collateral (unsecured)" },
-        { "value": "group-guarantee", "label": "Group guarantee" }
+        {
+          "value": "land-house",
+          "label": "Land or house"
+        },
+        {
+          "value": "household-items",
+          "label": "Household items or furniture"
+        },
+        {
+          "value": "business-equipment",
+          "label": "Business equipment or tools"
+        },
+        {
+          "value": "vehicle",
+          "label": "Vehicle or motorbike"
+        },
+        {
+          "value": "guarantor",
+          "label": "A guarantor (someone to co-sign)"
+        },
+        {
+          "value": "none",
+          "label": "No collateral (unsecured)"
+        },
+        {
+          "value": "group-guarantee",
+          "label": "Group guarantee"
+        }
       ]
     },
     {
@@ -47,10 +70,22 @@
       "label": "How much are you borrowing?",
       "required": true,
       "options": [
-        { "value": "under-100", "label": "Under $100" },
-        { "value": "100-500", "label": "$100 to $500" },
-        { "value": "500-2000", "label": "$500 to $2,000" },
-        { "value": "over-2000", "label": "Over $2,000" }
+        {
+          "value": "under-100",
+          "label": "Under $100"
+        },
+        {
+          "value": "100-500",
+          "label": "$100 to $500"
+        },
+        {
+          "value": "500-2000",
+          "label": "$500 to $2,000"
+        },
+        {
+          "value": "over-2000",
+          "label": "Over $2,000"
+        }
       ]
     },
     {
@@ -59,14 +94,28 @@
       "label": "What is your main concern?",
       "required": true,
       "options": [
-        { "value": "understand-signing", "label": "I want to understand what I am signing" },
-        { "value": "worried-repay", "label": "I am worried I cannot repay" },
-        { "value": "too-much-collateral", "label": "The lender is asking for too much collateral" },
-        { "value": "taken-unfairly", "label": "Collateral was taken from me unfairly" }
+        {
+          "value": "understand-signing",
+          "label": "I want to understand what I am signing"
+        },
+        {
+          "value": "worried-repay",
+          "label": "I am worried I cannot repay"
+        },
+        {
+          "value": "too-much-collateral",
+          "label": "The lender is asking for too much collateral"
+        },
+        {
+          "value": "taken-unfairly",
+          "label": "Collateral was taken from me unfairly"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

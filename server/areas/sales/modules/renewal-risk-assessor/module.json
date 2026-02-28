@@ -48,9 +48,18 @@
       "type": "select",
       "label": "Current contract term",
       "options": [
-        { "value": "monthly", "label": "Monthly" },
-        { "value": "annual", "label": "Annual" },
-        { "value": "multi_year", "label": "Multi-year" }
+        {
+          "value": "monthly",
+          "label": "Monthly"
+        },
+        {
+          "value": "annual",
+          "label": "Annual"
+        },
+        {
+          "value": "multi_year",
+          "label": "Multi-year"
+        }
       ]
     },
     {
@@ -73,7 +82,10 @@
       "placeholder": "Is there an opportunity to expand scope, add services, or increase contract value at this renewal?"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "renewal",
     "retention",

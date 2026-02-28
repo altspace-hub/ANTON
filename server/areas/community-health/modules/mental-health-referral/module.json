@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "mhGAP guidelines, mental health in low-resource settings, community mental health, crisis referral, destigmatisation" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "mhGAP guidelines, mental health in low-resource settings, community mental health, crisis referral, destigmatisation"
+      }
     }
   },
   "guidedInputs": [
@@ -28,15 +34,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -45,13 +78,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "depression-sadness", "label": "Sadness or not enjoying things (depression)" },
-        { "value": "anxiety-worry", "label": "Worry or panic attacks (anxiety)" },
-        { "value": "psychosis", "label": "Hearing or seeing things others do not" },
-        { "value": "alcohol-substance", "label": "Alcohol or substance problem" },
-        { "value": "trauma-violence", "label": "After violence or trauma" },
-        { "value": "grief-bereavement", "label": "Grief or bereavement" },
-        { "value": "helping-someone-else", "label": "Helping someone else" }
+        {
+          "value": "depression-sadness",
+          "label": "Sadness or not enjoying things (depression)"
+        },
+        {
+          "value": "anxiety-worry",
+          "label": "Worry or panic attacks (anxiety)"
+        },
+        {
+          "value": "psychosis",
+          "label": "Hearing or seeing things others do not"
+        },
+        {
+          "value": "alcohol-substance",
+          "label": "Alcohol or substance problem"
+        },
+        {
+          "value": "trauma-violence",
+          "label": "After violence or trauma"
+        },
+        {
+          "value": "grief-bereavement",
+          "label": "Grief or bereavement"
+        },
+        {
+          "value": "helping-someone-else",
+          "label": "Helping someone else"
+        }
       ]
     },
     {
@@ -60,13 +114,38 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "just-started", "label": "Just started" },
-        { "value": "few-weeks", "label": "A few weeks" },
-        { "value": "several-months", "label": "Several months" },
-        { "value": "long-time", "label": "A long time" }
+        {
+          "value": "just-started",
+          "label": "Just started"
+        },
+        {
+          "value": "few-weeks",
+          "label": "A few weeks"
+        },
+        {
+          "value": "several-months",
+          "label": "Several months"
+        },
+        {
+          "value": "long-time",
+          "label": "A long time"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
-  "tags": ["mental-health", "depression", "anxiety", "trauma", "mhGAP", "crisis", "referral", "destigmatisation", "community-support"]
+  "recommendedPersonas": [
+    "community-health-worker",
+    "nutrition-health-educator"
+  ],
+  "tags": [
+    "mental-health",
+    "depression",
+    "anxiety",
+    "trauma",
+    "mhGAP",
+    "crisis",
+    "referral",
+    "destigmatisation",
+    "community-support"
+  ]
 }

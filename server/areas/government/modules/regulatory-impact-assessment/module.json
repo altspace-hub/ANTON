@@ -9,7 +9,11 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "impact-assessment", "decision-memo"],
+    "outputFormats": [
+      "detailed-findings",
+      "impact-assessment",
+      "decision-memo"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -30,10 +34,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "new-regulation", "label": "New regulation" },
-        { "value": "amendment", "label": "Amendment to existing regulation" },
-        { "value": "deregulation", "label": "Deregulation / removal" },
-        { "value": "consolidation", "label": "Consolidation / simplification" }
+        {
+          "value": "new-regulation",
+          "label": "New regulation"
+        },
+        {
+          "value": "amendment",
+          "label": "Amendment to existing regulation"
+        },
+        {
+          "value": "deregulation",
+          "label": "Deregulation / removal"
+        },
+        {
+          "value": "consolidation",
+          "label": "Consolidation / simplification"
+        }
       ]
     },
     {
@@ -49,11 +65,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "full-ria", "label": "Full RIA" },
-        { "value": "sme-impact-test", "label": "SME Impact Test" },
-        { "value": "sbia", "label": "SBIA (Small Business Impact Assessment)" },
-        { "value": "summary-ria", "label": "Summary RIA / rapid assessment" },
-        { "value": "help-me-choose", "label": "Help me choose the right methodology" }
+        {
+          "value": "full-ria",
+          "label": "Full RIA"
+        },
+        {
+          "value": "sme-impact-test",
+          "label": "SME Impact Test"
+        },
+        {
+          "value": "sbia",
+          "label": "SBIA (Small Business Impact Assessment)"
+        },
+        {
+          "value": "summary-ria",
+          "label": "Summary RIA / rapid assessment"
+        },
+        {
+          "value": "help-me-choose",
+          "label": "Help me choose the right methodology"
+        }
       ]
     },
     {
@@ -62,15 +93,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "eu", "label": "EU" },
-        { "value": "uk", "label": "UK" },
-        { "value": "usa", "label": "USA" },
-        { "value": "oecd-country", "label": "OECD country (other)" },
-        { "value": "developing-country", "label": "Developing country" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "usa",
+          "label": "USA"
+        },
+        {
+          "value": "oecd-country",
+          "label": "OECD country (other)"
+        },
+        {
+          "value": "developing-country",
+          "label": "Developing country"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["policy-analyst", "legal-expert"],
-  "tags": ["regulatory-impact", "RIA", "compliance-costs", "SME", "better-regulation", "OECD", "EU", "UK", "government", "public-administration"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "regulatory-impact",
+    "RIA",
+    "compliance-costs",
+    "SME",
+    "better-regulation",
+    "OECD",
+    "EU",
+    "UK",
+    "government",
+    "public-administration"
+  ]
 }

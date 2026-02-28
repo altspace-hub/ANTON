@@ -110,7 +110,10 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "cco"
+  ],
   "tags": [
     "banking",
     "regulatory-reporting",

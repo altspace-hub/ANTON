@@ -42,11 +42,26 @@
       "label": "Company type",
       "required": true,
       "options": [
-        { "value": "trading", "label": "Trading / manufacturing company" },
-        { "value": "services", "label": "Professional services / consulting" },
-        { "value": "financial_services", "label": "Financial services" },
-        { "value": "holding", "label": "Holding / investment company" },
-        { "value": "group_consolidation", "label": "Group consolidation" }
+        {
+          "value": "trading",
+          "label": "Trading / manufacturing company"
+        },
+        {
+          "value": "services",
+          "label": "Professional services / consulting"
+        },
+        {
+          "value": "financial_services",
+          "label": "Financial services"
+        },
+        {
+          "value": "holding",
+          "label": "Holding / investment company"
+        },
+        {
+          "value": "group_consolidation",
+          "label": "Group consolidation"
+        }
       ]
     },
     {
@@ -54,10 +69,22 @@
       "type": "select",
       "label": "Accounting standard",
       "options": [
-        { "value": "ifrs", "label": "IFRS" },
-        { "value": "k3", "label": "Swedish K3 (ÅRL/K3)" },
-        { "value": "k2", "label": "Swedish K2 (simplified)" },
-        { "value": "us_gaap", "label": "US GAAP" }
+        {
+          "value": "ifrs",
+          "label": "IFRS"
+        },
+        {
+          "value": "k3",
+          "label": "Swedish K3 (ÅRL/K3)"
+        },
+        {
+          "value": "k2",
+          "label": "Swedish K2 (simplified)"
+        },
+        {
+          "value": "us_gaap",
+          "label": "US GAAP"
+        }
       ]
     },
     {
@@ -79,7 +106,10 @@
       "placeholder": "e.g. 5 working days after month-end — 7 February 2025"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "month-end",

@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "What type of craft do you make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,16 +78,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "indonesia", "label": "Indonesia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -67,12 +126,30 @@
       "label": "Which certification are you interested in?",
       "required": true,
       "options": [
-        { "value": "wfto", "label": "World Fair Trade Organization (WFTO)" },
-        { "value": "fairtrade-international", "label": "Fairtrade International" },
-        { "value": "fair-trade-usa", "label": "Fair Trade USA" },
-        { "value": "sa8000", "label": "SA8000 (labour standards)" },
-        { "value": "dont-know", "label": "I don't know which — need guidance" },
-        { "value": "exploring", "label": "Just exploring options" }
+        {
+          "value": "wfto",
+          "label": "World Fair Trade Organization (WFTO)"
+        },
+        {
+          "value": "fairtrade-international",
+          "label": "Fairtrade International"
+        },
+        {
+          "value": "fair-trade-usa",
+          "label": "Fair Trade USA"
+        },
+        {
+          "value": "sa8000",
+          "label": "SA8000 (labour standards)"
+        },
+        {
+          "value": "dont-know",
+          "label": "I don't know which — need guidance"
+        },
+        {
+          "value": "exploring",
+          "label": "Just exploring options"
+        }
       ]
     },
     {
@@ -81,13 +158,25 @@
       "label": "Are you applying as an individual or group?",
       "required": true,
       "options": [
-        { "value": "individual", "label": "Individual artisan" },
-        { "value": "cooperative", "label": "Cooperative or artisan group" },
-        { "value": "social-enterprise", "label": "NGO or social enterprise" }
+        {
+          "value": "individual",
+          "label": "Individual artisan"
+        },
+        {
+          "value": "cooperative",
+          "label": "Cooperative or artisan group"
+        },
+        {
+          "value": "social-enterprise",
+          "label": "NGO or social enterprise"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

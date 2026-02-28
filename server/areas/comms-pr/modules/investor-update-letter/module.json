@@ -35,11 +35,26 @@
       "label": "Company stage",
       "required": true,
       "options": [
-        { "value": "startup_early", "label": "Startup — Seed / Series A" },
-        { "value": "startup_growth", "label": "Growth stage — Series B/C" },
-        { "value": "private_mature", "label": "Private company — mature / PE-backed" },
-        { "value": "listed", "label": "Listed company — shareholder letter" },
-        { "value": "family_office", "label": "Family/founder-owned" }
+        {
+          "value": "startup_early",
+          "label": "Startup — Seed / Series A"
+        },
+        {
+          "value": "startup_growth",
+          "label": "Growth stage — Series B/C"
+        },
+        {
+          "value": "private_mature",
+          "label": "Private company — mature / PE-backed"
+        },
+        {
+          "value": "listed",
+          "label": "Listed company — shareholder letter"
+        },
+        {
+          "value": "family_office",
+          "label": "Family/founder-owned"
+        }
       ]
     },
     {
@@ -82,7 +97,9 @@
       "placeholder": "Is there anything you are asking investors for? Introductions, board advice, specific support?\ne.g. Looking for warm introductions to CFOs at Nordic insurance companies. Seeking board input on Nordic vs. DACH expansion sequencing."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "communications",
     "investor-relations",

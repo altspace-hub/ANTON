@@ -6,7 +6,14 @@
   "icon": "Mic",
   "description": "Prepare rigorous interview frameworks: background research, question sets for news, profile, and investigative interviews, and tactics for difficult or evasive subjects.",
   "color": "adv-teal",
-  "tags": ["interview", "questions", "preparation", "sources", "accountability", "investigative"],
+  "tags": [
+    "interview",
+    "questions",
+    "preparation",
+    "sources",
+    "accountability",
+    "investigative"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "haiku",
@@ -16,9 +23,14 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["action-plan", "detailed-findings"]
+    "outputFormats": [
+      "action-plan",
+      "detailed-findings"
+    ]
   },
-  "recommendedPersonas": ["investigative-journalist", "features-editor"],
+  "recommendedPersonas": [
+    "general-assistant"
+  ],
   "guidedInputs": [
     {
       "id": "interview_subject",
@@ -42,12 +54,30 @@
       "label": "Interview Type",
       "description": "What type of interview is this?",
       "options": [
-        {"value": "accountability", "label": "Accountability / Right of reply"},
-        {"value": "profile", "label": "Profile / Character study"},
-        {"value": "expertise", "label": "Expert / Background"},
-        {"value": "news_reaction", "label": "News reaction / Response"},
-        {"value": "witness", "label": "Witness / Eyewitness"},
-        {"value": "whistleblower", "label": "Whistleblower / Source"}
+        {
+          "value": "accountability",
+          "label": "Accountability / Right of reply"
+        },
+        {
+          "value": "profile",
+          "label": "Profile / Character study"
+        },
+        {
+          "value": "expertise",
+          "label": "Expert / Background"
+        },
+        {
+          "value": "news_reaction",
+          "label": "News reaction / Response"
+        },
+        {
+          "value": "witness",
+          "label": "Witness / Eyewitness"
+        },
+        {
+          "value": "whistleblower",
+          "label": "Whistleblower / Source"
+        }
       ],
       "required": true
     },

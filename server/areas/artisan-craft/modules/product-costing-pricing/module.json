@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "What type of craft do you make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,16 +78,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "indonesia", "label": "Indonesia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -67,11 +126,26 @@
       "label": "Who do you currently sell to?",
       "required": true,
       "options": [
-        { "value": "local-market", "label": "Local market or community" },
-        { "value": "tourists", "label": "Tourists" },
-        { "value": "export", "label": "Export buyers" },
-        { "value": "online", "label": "Online" },
-        { "value": "multiple", "label": "Multiple markets" }
+        {
+          "value": "local-market",
+          "label": "Local market or community"
+        },
+        {
+          "value": "tourists",
+          "label": "Tourists"
+        },
+        {
+          "value": "export",
+          "label": "Export buyers"
+        },
+        {
+          "value": "online",
+          "label": "Online"
+        },
+        {
+          "value": "multiple",
+          "label": "Multiple markets"
+        }
       ]
     },
     {
@@ -80,14 +154,29 @@
       "label": "What is your main pricing challenge?",
       "required": true,
       "options": [
-        { "value": "dont-know-cost", "label": "I don't know my real cost" },
-        { "value": "being-undercut", "label": "Other sellers charge less than me" },
-        { "value": "time-not-paid", "label": "My time is not included in the price" },
-        { "value": "tourist-discounts", "label": "Tourists want big discounts" }
+        {
+          "value": "dont-know-cost",
+          "label": "I don't know my real cost"
+        },
+        {
+          "value": "being-undercut",
+          "label": "Other sellers charge less than me"
+        },
+        {
+          "value": "time-not-paid",
+          "label": "My time is not included in the price"
+        },
+        {
+          "value": "tourist-discounts",
+          "label": "Tourists want big discounts"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

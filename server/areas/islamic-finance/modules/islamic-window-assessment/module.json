@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "gap-scoring-matrix"],
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,14 +32,25 @@
       "id": "bank_type",
       "label": "Bank Type",
       "type": "select",
-      "options": ["Commercial Bank", "Investment Bank", "Foreign Bank Branch", "NBFI"],
+      "options": [
+        "Commercial Bank",
+        "Investment Bank",
+        "Foreign Bank Branch",
+        "NBFI"
+      ],
       "required": true
     },
     {
       "id": "product_range",
       "label": "Products Offered",
       "type": "chips",
-      "options": ["Murabaha", "Ijara", "Wakala Deposits", "Islamic Trade Finance", "Sukuk"],
+      "options": [
+        "Murabaha",
+        "Ijara",
+        "Wakala Deposits",
+        "Islamic Trade Finance",
+        "Sukuk"
+      ],
       "required": false
     },
     {
@@ -47,7 +61,21 @@
       "required": false
     }
   ],
-  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member", "fcp-expert"],
-  "recommendedSkills": ["skill-ifsb-standards", "skill-aaoifi-standards"],
-  "tags": ["islamic-window", "ring-fencing", "conventional-bank", "sharia-compliance", "dual-banking", "governance", "assessment"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-ifsb-standards",
+    "skill-aaoifi-standards"
+  ],
+  "tags": [
+    "islamic-window",
+    "ring-fencing",
+    "conventional-bank",
+    "sharia-compliance",
+    "dual-banking",
+    "governance",
+    "assessment"
+  ]
 }

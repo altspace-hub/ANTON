@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,11 +34,26 @@
       "label": "What type of food are you storing?",
       "required": true,
       "options": [
-        { "value": "cooked-food", "label": "Cooked food (ready meals)" },
-        { "value": "fresh-produce", "label": "Fresh vegetables or fruit" },
-        { "value": "meat-fish", "label": "Meat or fish" },
-        { "value": "grains-flour", "label": "Grains, flour, or dried goods" },
-        { "value": "sauces-condiments", "label": "Sauces, oils, or condiments" }
+        {
+          "value": "cooked-food",
+          "label": "Cooked food (ready meals)"
+        },
+        {
+          "value": "fresh-produce",
+          "label": "Fresh vegetables or fruit"
+        },
+        {
+          "value": "meat-fish",
+          "label": "Meat or fish"
+        },
+        {
+          "value": "grains-flour",
+          "label": "Grains, flour, or dried goods"
+        },
+        {
+          "value": "sauces-condiments",
+          "label": "Sauces, oils, or condiments"
+        }
       ]
     },
     {
@@ -45,10 +62,22 @@
       "label": "What storage equipment do you have?",
       "required": true,
       "options": [
-        { "value": "no-fridge", "label": "No refrigeration" },
-        { "value": "small-fridge", "label": "Small household fridge" },
-        { "value": "chest-freezer", "label": "Chest freezer" },
-        { "value": "traditional-only", "label": "Only traditional storage (clay pot, cool room)" }
+        {
+          "value": "no-fridge",
+          "label": "No refrigeration"
+        },
+        {
+          "value": "small-fridge",
+          "label": "Small household fridge"
+        },
+        {
+          "value": "chest-freezer",
+          "label": "Chest freezer"
+        },
+        {
+          "value": "traditional-only",
+          "label": "Only traditional storage (clay pot, cool room)"
+        }
       ]
     },
     {
@@ -57,14 +86,29 @@
       "label": "What is your climate like?",
       "required": true,
       "options": [
-        { "value": "hot-humid", "label": "Hot and humid (coastal, tropical)" },
-        { "value": "hot-dry", "label": "Hot and dry (arid, semi-arid)" },
-        { "value": "moderate", "label": "Moderate (highlands, temperate)" },
-        { "value": "varies", "label": "It varies by season" }
+        {
+          "value": "hot-humid",
+          "label": "Hot and humid (coastal, tropical)"
+        },
+        {
+          "value": "hot-dry",
+          "label": "Hot and dry (arid, semi-arid)"
+        },
+        {
+          "value": "moderate",
+          "label": "Moderate (highlands, temperate)"
+        },
+        {
+          "value": "varies",
+          "label": "It varies by season"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "recommendedPersonas": [
+    "food-safety-inspector",
+    "small-business-mentor"
+  ],
   "tags": [
     "bop",
     "food-business",

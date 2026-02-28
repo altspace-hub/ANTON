@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Tenant rights by country: eviction notice periods, deposit rules, landlord obligations, illegal self-help eviction, rent control laws, verbal tenancy agreements. Kenya, Nigeria, South Africa PIE Act, India Rent Control Acts, Ghana." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Tenant rights by country: eviction notice periods, deposit rules, landlord obligations, illegal self-help eviction, rent control laws, verbal tenancy agreements. Kenya, Nigeria, South Africa PIE Act, India Rent Control Acts, Ghana."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "written-lease", "label": "Formal written lease" },
-        { "value": "verbal-agreement", "label": "Verbal agreement only" },
-        { "value": "monthly-informal", "label": "Monthly informal arrangement" },
-        { "value": "informal-settlement", "label": "Slum or informal settlement" },
-        { "value": "employer-provided", "label": "Employer-provided housing" }
+        {
+          "value": "written-lease",
+          "label": "Formal written lease"
+        },
+        {
+          "value": "verbal-agreement",
+          "label": "Verbal agreement only"
+        },
+        {
+          "value": "monthly-informal",
+          "label": "Monthly informal arrangement"
+        },
+        {
+          "value": "informal-settlement",
+          "label": "Slum or informal settlement"
+        },
+        {
+          "value": "employer-provided",
+          "label": "Employer-provided housing"
+        }
       ]
     },
     {
@@ -59,15 +110,47 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "eviction-notice", "label": "Received an eviction notice" },
-        { "value": "rent-increase", "label": "Unreasonable rent increase" },
-        { "value": "no-repairs", "label": "Landlord refusing to do repairs" },
-        { "value": "deposit-not-returned", "label": "Deposit not returned" },
-        { "value": "landlord-harassment", "label": "Harassment by landlord" },
-        { "value": "general-rights", "label": "General rights information" }
+        {
+          "value": "eviction-notice",
+          "label": "Received an eviction notice"
+        },
+        {
+          "value": "rent-increase",
+          "label": "Unreasonable rent increase"
+        },
+        {
+          "value": "no-repairs",
+          "label": "Landlord refusing to do repairs"
+        },
+        {
+          "value": "deposit-not-returned",
+          "label": "Deposit not returned"
+        },
+        {
+          "value": "landlord-harassment",
+          "label": "Harassment by landlord"
+        },
+        {
+          "value": "general-rights",
+          "label": "General rights information"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
-  "tags": ["land-rights", "bop", "rights", "tenant-rights", "renting", "eviction", "deposit", "rent-control", "landlord", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "land-rights-paralegal"
+  ],
+  "tags": [
+    "land-rights",
+    "bop",
+    "rights",
+    "tenant-rights",
+    "renting",
+    "eviction",
+    "deposit",
+    "rent-control",
+    "landlord",
+    "africa",
+    "south-asia"
+  ]
 }

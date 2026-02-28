@@ -36,11 +36,26 @@
       "description": "Which social performance framework is the primary reference?",
       "required": true,
       "options": [
-        { "value": "spi4", "label": "SPI4 (CERISE)" },
-        { "value": "usspm", "label": "USSPM" },
-        { "value": "sptf", "label": "SPTF" },
-        { "value": "giirs", "label": "GIIRS" },
-        { "value": "custom", "label": "Custom" }
+        {
+          "value": "spi4",
+          "label": "SPI4 (CERISE)"
+        },
+        {
+          "value": "usspm",
+          "label": "USSPM"
+        },
+        {
+          "value": "sptf",
+          "label": "SPTF"
+        },
+        {
+          "value": "giirs",
+          "label": "GIIRS"
+        },
+        {
+          "value": "custom",
+          "label": "Custom"
+        }
       ]
     },
     {
@@ -49,12 +64,30 @@
       "label": "Social Performance Dimensions",
       "description": "Which dimensions are in scope for this assessment? Select all that apply.",
       "options": [
-        { "value": "client-protection", "label": "Client protection" },
-        { "value": "human-resources", "label": "Human resources" },
-        { "value": "social-goals", "label": "Social goals" },
-        { "value": "products", "label": "Products" },
-        { "value": "outreach", "label": "Outreach" },
-        { "value": "environmental", "label": "Environmental" }
+        {
+          "value": "client-protection",
+          "label": "Client protection"
+        },
+        {
+          "value": "human-resources",
+          "label": "Human resources"
+        },
+        {
+          "value": "social-goals",
+          "label": "Social goals"
+        },
+        {
+          "value": "products",
+          "label": "Products"
+        },
+        {
+          "value": "outreach",
+          "label": "Outreach"
+        },
+        {
+          "value": "environmental",
+          "label": "Environmental"
+        }
       ]
     },
     {
@@ -66,8 +99,8 @@
     }
   ],
   "recommendedPersonas": [
-    "microfinance-director",
-    "fcp-expert"
+    "microfinance-field-officer",
+    "microenterprise-credit-advisor"
   ],
   "recommendedSkills": [
     "jurisdiction-ke-cbk",

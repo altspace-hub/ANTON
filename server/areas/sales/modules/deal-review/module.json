@@ -89,7 +89,10 @@
       "placeholder": "e.g., Deal has been in negotiation for 6 weeks, client is not returning calls, I think they might be going with Deloitte, not sure who the real decision maker is"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "sales",
     "deal-review",

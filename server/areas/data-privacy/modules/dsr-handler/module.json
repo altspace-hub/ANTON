@@ -34,13 +34,34 @@
       "label": "Type of data subject request",
       "required": true,
       "options": [
-        { "value": "access_sar", "label": "Access (SAR)" },
-        { "value": "erasure", "label": "Erasure (right to be forgotten)" },
-        { "value": "rectification", "label": "Rectification" },
-        { "value": "portability", "label": "Portability" },
-        { "value": "restriction", "label": "Restriction" },
-        { "value": "objection", "label": "Objection" },
-        { "value": "automated_opt_out", "label": "Automated decision opt-out" }
+        {
+          "value": "access_sar",
+          "label": "Access (SAR)"
+        },
+        {
+          "value": "erasure",
+          "label": "Erasure (right to be forgotten)"
+        },
+        {
+          "value": "rectification",
+          "label": "Rectification"
+        },
+        {
+          "value": "portability",
+          "label": "Portability"
+        },
+        {
+          "value": "restriction",
+          "label": "Restriction"
+        },
+        {
+          "value": "objection",
+          "label": "Objection"
+        },
+        {
+          "value": "automated_opt_out",
+          "label": "Automated decision opt-out"
+        }
       ]
     },
     {
@@ -48,10 +69,22 @@
       "type": "select",
       "label": "Request complexity",
       "options": [
-        { "value": "straightforward", "label": "Straightforward" },
-        { "value": "complex", "label": "Complex (multiple systems)" },
-        { "value": "contentious", "label": "Contentious" },
-        { "value": "exemption", "label": "Potential exemption" }
+        {
+          "value": "straightforward",
+          "label": "Straightforward"
+        },
+        {
+          "value": "complex",
+          "label": "Complex (multiple systems)"
+        },
+        {
+          "value": "contentious",
+          "label": "Contentious"
+        },
+        {
+          "value": "exemption",
+          "label": "Potential exemption"
+        }
       ]
     },
     {
@@ -59,10 +92,22 @@
       "type": "select",
       "label": "Request volume (organisation-wide)",
       "options": [
-        { "value": "single", "label": "Single request" },
-        { "value": "low", "label": "<10/month" },
-        { "value": "medium", "label": "10–100/month" },
-        { "value": "high", "label": ">100/month" }
+        {
+          "value": "single",
+          "label": "Single request"
+        },
+        {
+          "value": "low",
+          "label": "<10/month"
+        },
+        {
+          "value": "medium",
+          "label": "10–100/month"
+        },
+        {
+          "value": "high",
+          "label": ">100/month"
+        }
       ]
     },
     {
@@ -73,8 +118,7 @@
     }
   ],
   "recommendedPersonas": [
-    "dpo",
-    "legal-expert"
+    "dpo"
   ],
   "tags": [
     "dsr",

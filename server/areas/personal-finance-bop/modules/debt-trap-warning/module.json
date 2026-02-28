@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,13 +34,34 @@
       "label": "What kind of loan is this?",
       "required": true,
       "options": [
-        { "value": "mobile-loan", "label": "Mobile loan (Tala, Branch, etc.)" },
-        { "value": "mfi-group", "label": "Microfinance institution group loan" },
-        { "value": "moneylender", "label": "Private moneylender" },
-        { "value": "bank-loan", "label": "Bank loan" },
-        { "value": "employer-advance", "label": "Employer salary advance" },
-        { "value": "family-friend", "label": "Family or friend" },
-        { "value": "savings-group", "label": "Savings group loan" }
+        {
+          "value": "mobile-loan",
+          "label": "Mobile loan (Tala, Branch, etc.)"
+        },
+        {
+          "value": "mfi-group",
+          "label": "Microfinance institution group loan"
+        },
+        {
+          "value": "moneylender",
+          "label": "Private moneylender"
+        },
+        {
+          "value": "bank-loan",
+          "label": "Bank loan"
+        },
+        {
+          "value": "employer-advance",
+          "label": "Employer salary advance"
+        },
+        {
+          "value": "family-friend",
+          "label": "Family or friend"
+        },
+        {
+          "value": "savings-group",
+          "label": "Savings group loan"
+        }
       ]
     },
     {
@@ -47,12 +70,30 @@
       "label": "Why do you need the loan?",
       "required": true,
       "options": [
-        { "value": "emergency", "label": "Emergency (medical, funeral)" },
-        { "value": "business", "label": "Business investment" },
-        { "value": "repay-loan", "label": "To repay another loan" },
-        { "value": "school-fees", "label": "School fees" },
-        { "value": "household", "label": "Household needs (food, rent)" },
-        { "value": "opportunity", "label": "A business opportunity" }
+        {
+          "value": "emergency",
+          "label": "Emergency (medical, funeral)"
+        },
+        {
+          "value": "business",
+          "label": "Business investment"
+        },
+        {
+          "value": "repay-loan",
+          "label": "To repay another loan"
+        },
+        {
+          "value": "school-fees",
+          "label": "School fees"
+        },
+        {
+          "value": "household",
+          "label": "Household needs (food, rent)"
+        },
+        {
+          "value": "opportunity",
+          "label": "A business opportunity"
+        }
       ]
     },
     {
@@ -68,13 +109,24 @@
       "label": "What is your income situation right now?",
       "required": true,
       "options": [
-        { "value": "regular", "label": "Regular income — same amount each month" },
-        { "value": "irregular", "label": "Irregular income — varies each month" },
-        { "value": "no-income", "label": "Currently no income" }
+        {
+          "value": "regular",
+          "label": "Regular income — same amount each month"
+        },
+        {
+          "value": "irregular",
+          "label": "Irregular income — varies each month"
+        },
+        {
+          "value": "no-income",
+          "label": "Currently no income"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

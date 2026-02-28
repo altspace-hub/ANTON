@@ -90,7 +90,9 @@
       "placeholder": "Describe the project, its objectives, target outcomes, budget range, and consortium partners if applicable."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
   "tags": [
     "grant",
     "funding",

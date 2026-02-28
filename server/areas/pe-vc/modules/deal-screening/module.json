@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "executive-summary"],
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -31,13 +34,34 @@
       "label": "Your investment focus",
       "required": true,
       "options": [
-        { "value": "vc-early", "label": "VC Early Stage (Pre-seed to Series A)" },
-        { "value": "vc-growth", "label": "VC Growth (Series B+)" },
-        { "value": "pe-growth", "label": "PE Growth Equity" },
-        { "value": "pe-buyout", "label": "PE Buyout" },
-        { "value": "pe-turnaround", "label": "PE Turnaround / Special Situations" },
-        { "value": "corp-venture", "label": "Corporate Venture / Strategic" },
-        { "value": "fof", "label": "Fund-of-Funds" }
+        {
+          "value": "vc-early",
+          "label": "VC Early Stage (Pre-seed to Series A)"
+        },
+        {
+          "value": "vc-growth",
+          "label": "VC Growth (Series B+)"
+        },
+        {
+          "value": "pe-growth",
+          "label": "PE Growth Equity"
+        },
+        {
+          "value": "pe-buyout",
+          "label": "PE Buyout"
+        },
+        {
+          "value": "pe-turnaround",
+          "label": "PE Turnaround / Special Situations"
+        },
+        {
+          "value": "corp-venture",
+          "label": "Corporate Venture / Strategic"
+        },
+        {
+          "value": "fof",
+          "label": "Fund-of-Funds"
+        }
       ]
     },
     {
@@ -46,12 +70,30 @@
       "label": "How did this deal come in?",
       "required": false,
       "options": [
-        { "value": "deck", "label": "Pitch deck received" },
-        { "value": "intro", "label": "Warm intro / referral" },
-        { "value": "outbound", "label": "Outbound (we found them)" },
-        { "value": "broker", "label": "Broker / advisor" },
-        { "value": "portfolio", "label": "Portfolio company connection" },
-        { "value": "conference", "label": "Conference / event" }
+        {
+          "value": "deck",
+          "label": "Pitch deck received"
+        },
+        {
+          "value": "intro",
+          "label": "Warm intro / referral"
+        },
+        {
+          "value": "outbound",
+          "label": "Outbound (we found them)"
+        },
+        {
+          "value": "broker",
+          "label": "Broker / advisor"
+        },
+        {
+          "value": "portfolio",
+          "label": "Portfolio company connection"
+        },
+        {
+          "value": "conference",
+          "label": "Conference / event"
+        }
       ]
     },
     {
@@ -74,12 +116,30 @@
       "label": "Your typical check size",
       "required": false,
       "options": [
-        { "value": "sub-500k", "label": "<$500K" },
-        { "value": "500k-2m", "label": "$500K–$2M" },
-        { "value": "2m-10m", "label": "$2M–$10M" },
-        { "value": "10m-50m", "label": "$10M–$50M" },
-        { "value": "50m-200m", "label": "$50M–$200M" },
-        { "value": "200m-plus", "label": "$200M+" }
+        {
+          "value": "sub-500k",
+          "label": "<$500K"
+        },
+        {
+          "value": "500k-2m",
+          "label": "$500K–$2M"
+        },
+        {
+          "value": "2m-10m",
+          "label": "$2M–$10M"
+        },
+        {
+          "value": "10m-50m",
+          "label": "$10M–$50M"
+        },
+        {
+          "value": "50m-200m",
+          "label": "$50M–$200M"
+        },
+        {
+          "value": "200m-plus",
+          "label": "$200M+"
+        }
       ]
     },
     {
@@ -90,5 +150,15 @@
       "required": false
     }
   ],
-  "tags": ["pe-vc", "deal-flow", "screening", "first-look", "venture", "private-equity"]
+  "tags": [
+    "pe-vc",
+    "deal-flow",
+    "screening",
+    "first-look",
+    "venture",
+    "private-equity"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

@@ -10,9 +10,15 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings"],
+    "outputFormats": [
+      "detailed-findings"
+    ],
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": true, "description": "" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      }
     }
   },
   "guidedInputs": [
@@ -27,10 +33,22 @@
       "type": "select",
       "label": "Deployment target",
       "options": [
-        { "value": "cloud", "label": "Cloud (AWS/GCP/Azure)" },
-        { "value": "on-premise", "label": "On-premise" },
-        { "value": "hybrid", "label": "Hybrid" },
-        { "value": "local", "label": "Local only" }
+        {
+          "value": "cloud",
+          "label": "Cloud (AWS/GCP/Azure)"
+        },
+        {
+          "value": "on-premise",
+          "label": "On-premise"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid"
+        },
+        {
+          "value": "local",
+          "label": "Local only"
+        }
       ]
     },
     {
@@ -40,5 +58,14 @@
       "placeholder": "e.g., 1000 concurrent users, 1M records, real-time updates..."
     }
   ],
-  "tags": ["coding", "architecture", "design", "professional", "expert-review"]
+  "tags": [
+    "coding",
+    "architecture",
+    "design",
+    "professional",
+    "expert-review"
+  ],
+  "recommendedPersonas": [
+    "tech-expert"
+  ]
 }

@@ -31,14 +31,38 @@
       "label": "Crisis type",
       "required": true,
       "options": [
-        { "value": "regulatory", "label": "Regulatory — supervisory action, fine, enforcement" },
-        { "value": "data_breach", "label": "Data breach / cybersecurity incident" },
-        { "value": "operational", "label": "Operational failure — major outage, service disruption" },
-        { "value": "financial", "label": "Financial — unexpected losses, fraud, restatement" },
-        { "value": "people", "label": "People — executive misconduct, whistleblower, discrimination" },
-        { "value": "product", "label": "Product — safety, quality, mis-selling allegation" },
-        { "value": "reputational", "label": "Reputational — media investigation, social media incident" },
-        { "value": "legal", "label": "Legal — significant litigation, regulatory investigation" }
+        {
+          "value": "regulatory",
+          "label": "Regulatory — supervisory action, fine, enforcement"
+        },
+        {
+          "value": "data_breach",
+          "label": "Data breach / cybersecurity incident"
+        },
+        {
+          "value": "operational",
+          "label": "Operational failure — major outage, service disruption"
+        },
+        {
+          "value": "financial",
+          "label": "Financial — unexpected losses, fraud, restatement"
+        },
+        {
+          "value": "people",
+          "label": "People — executive misconduct, whistleblower, discrimination"
+        },
+        {
+          "value": "product",
+          "label": "Product — safety, quality, mis-selling allegation"
+        },
+        {
+          "value": "reputational",
+          "label": "Reputational — media investigation, social media incident"
+        },
+        {
+          "value": "legal",
+          "label": "Legal — significant litigation, regulatory investigation"
+        }
       ]
     },
     {
@@ -53,10 +77,22 @@
       "type": "select",
       "label": "Current status of the incident",
       "options": [
-        { "value": "ongoing", "label": "Ongoing — incident not yet contained" },
-        { "value": "contained", "label": "Contained — immediate risk resolved, investigation ongoing" },
-        { "value": "resolved", "label": "Resolved — fully resolved, remediation in progress" },
-        { "value": "anticipated", "label": "Anticipated — preparing for expected disclosure" }
+        {
+          "value": "ongoing",
+          "label": "Ongoing — incident not yet contained"
+        },
+        {
+          "value": "contained",
+          "label": "Contained — immediate risk resolved, investigation ongoing"
+        },
+        {
+          "value": "resolved",
+          "label": "Resolved — fully resolved, remediation in progress"
+        },
+        {
+          "value": "anticipated",
+          "label": "Anticipated — preparing for expected disclosure"
+        }
       ]
     },
     {
@@ -64,10 +100,22 @@
       "type": "select",
       "label": "Media / public awareness",
       "options": [
-        { "value": "none", "label": "Not yet public / media unaware" },
-        { "value": "enquiry_received", "label": "Media enquiry received" },
-        { "value": "published", "label": "Already published / public" },
-        { "value": "social_media", "label": "Social media discussion already active" }
+        {
+          "value": "none",
+          "label": "Not yet public / media unaware"
+        },
+        {
+          "value": "enquiry_received",
+          "label": "Media enquiry received"
+        },
+        {
+          "value": "published",
+          "label": "Already published / public"
+        },
+        {
+          "value": "social_media",
+          "label": "Social media discussion already active"
+        }
       ]
     },
     {
@@ -89,7 +137,9 @@
       "placeholder": "List what is confirmed and factually certain — this forms the basis of all communications. Separate from speculation or unknown items."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "communications",
     "crisis",

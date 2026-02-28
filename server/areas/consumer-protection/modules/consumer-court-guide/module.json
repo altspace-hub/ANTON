@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Consumer courts and tribunals by country: Kenya Magistrate's Court, Nigeria Consumer Protection Tribunal, South Africa Small Claims Court and National Consumer Tribunal, India Consumer Disputes Redressal Commissions (district/state/national), Philippines Consumer Arbitration Office. Filing process, costs, timelines, self-representation, remedies available." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Consumer courts and tribunals by country: Kenya Magistrate's Court, Nigeria Consumer Protection Tribunal, South Africa Small Claims Court and National Consumer Tribunal, India Consumer Disputes Redressal Commissions (district/state/national), Philippines Consumer Arbitration Office. Filing process, costs, timelines, self-representation, remedies available."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,10 +82,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "under-50", "label": "Under $50 (or equivalent)" },
-        { "value": "50-to-500", "label": "$50 to $500" },
-        { "value": "500-to-5000", "label": "$500 to $5,000" },
-        { "value": "over-5000", "label": "Over $5,000" }
+        {
+          "value": "under-50",
+          "label": "Under $50 (or equivalent)"
+        },
+        {
+          "value": "50-to-500",
+          "label": "$50 to $500"
+        },
+        {
+          "value": "500-to-5000",
+          "label": "$500 to $5,000"
+        },
+        {
+          "value": "over-5000",
+          "label": "Over $5,000"
+        }
       ]
     },
     {
@@ -58,12 +106,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "product-defect", "label": "Product defect or quality" },
-        { "value": "service-failure", "label": "Service not delivered" },
-        { "value": "fraud", "label": "Fraud or scam" },
-        { "value": "mobile-money", "label": "Mobile money dispute" },
-        { "value": "utility", "label": "Utility billing" },
-        { "value": "financial-product", "label": "Financial product or loan" }
+        {
+          "value": "product-defect",
+          "label": "Product defect or quality"
+        },
+        {
+          "value": "service-failure",
+          "label": "Service not delivered"
+        },
+        {
+          "value": "fraud",
+          "label": "Fraud or scam"
+        },
+        {
+          "value": "mobile-money",
+          "label": "Mobile money dispute"
+        },
+        {
+          "value": "utility",
+          "label": "Utility billing"
+        },
+        {
+          "value": "financial-product",
+          "label": "Financial product or loan"
+        }
       ]
     },
     {
@@ -72,13 +138,38 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "tried-internal", "label": "Tried internal complaint with the company" },
-        { "value": "tried-regulator", "label": "Tried a regulatory complaint" },
-        { "value": "tried-both", "label": "Tried both — still not resolved" },
-        { "value": "neither", "label": "Neither yet" }
+        {
+          "value": "tried-internal",
+          "label": "Tried internal complaint with the company"
+        },
+        {
+          "value": "tried-regulator",
+          "label": "Tried a regulatory complaint"
+        },
+        {
+          "value": "tried-both",
+          "label": "Tried both — still not resolved"
+        },
+        {
+          "value": "neither",
+          "label": "Neither yet"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
-  "tags": ["consumer-protection", "bop", "rights", "consumer-court", "small-claims", "tribunal", "self-representation", "legal-remedies", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate"
+  ],
+  "tags": [
+    "consumer-protection",
+    "bop",
+    "rights",
+    "consumer-court",
+    "small-claims",
+    "tribunal",
+    "self-representation",
+    "legal-remedies",
+    "africa",
+    "south-asia"
+  ]
 }

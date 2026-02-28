@@ -35,14 +35,38 @@
       "label": "Organisation type",
       "required": true,
       "options": [
-        { "value": "bank", "label": "Bank / financial institution" },
-        { "value": "insurer", "label": "Insurance company" },
-        { "value": "asset_manager", "label": "Asset manager / fund manager" },
-        { "value": "manufacturing", "label": "Manufacturing" },
-        { "value": "services", "label": "Professional services" },
-        { "value": "retail", "label": "Retail / consumer" },
-        { "value": "real_estate", "label": "Real estate" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "bank",
+          "label": "Bank / financial institution"
+        },
+        {
+          "value": "insurer",
+          "label": "Insurance company"
+        },
+        {
+          "value": "asset_manager",
+          "label": "Asset manager / fund manager"
+        },
+        {
+          "value": "manufacturing",
+          "label": "Manufacturing"
+        },
+        {
+          "value": "services",
+          "label": "Professional services"
+        },
+        {
+          "value": "retail",
+          "label": "Retail / consumer"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real estate"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -56,10 +80,22 @@
       "type": "multi-select",
       "label": "Emissions scopes to address",
       "options": [
-        { "value": "scope1", "label": "Scope 1 — Direct emissions (own operations)" },
-        { "value": "scope2", "label": "Scope 2 — Indirect emissions (purchased energy)" },
-        { "value": "scope3", "label": "Scope 3 — Value chain emissions (all other indirect)" },
-        { "value": "financed", "label": "Financed emissions (for financial institutions)" }
+        {
+          "value": "scope1",
+          "label": "Scope 1 — Direct emissions (own operations)"
+        },
+        {
+          "value": "scope2",
+          "label": "Scope 2 — Indirect emissions (purchased energy)"
+        },
+        {
+          "value": "scope3",
+          "label": "Scope 3 — Value chain emissions (all other indirect)"
+        },
+        {
+          "value": "financed",
+          "label": "Financed emissions (for financial institutions)"
+        }
       ]
     },
     {
@@ -73,12 +109,30 @@
       "type": "select",
       "label": "Reporting framework to align with",
       "options": [
-        { "value": "ghg_protocol", "label": "GHG Protocol (primary)" },
-        { "value": "csrd", "label": "CSRD / ESRS E1" },
-        { "value": "tcfd", "label": "TCFD (climate risk & metrics)" },
-        { "value": "cdp", "label": "CDP (Carbon Disclosure Project)" },
-        { "value": "sbti", "label": "Science Based Targets initiative (SBTi)" },
-        { "value": "pcaf", "label": "PCAF (for financial institutions' financed emissions)" }
+        {
+          "value": "ghg_protocol",
+          "label": "GHG Protocol (primary)"
+        },
+        {
+          "value": "csrd",
+          "label": "CSRD / ESRS E1"
+        },
+        {
+          "value": "tcfd",
+          "label": "TCFD (climate risk & metrics)"
+        },
+        {
+          "value": "cdp",
+          "label": "CDP (Carbon Disclosure Project)"
+        },
+        {
+          "value": "sbti",
+          "label": "Science Based Targets initiative (SBTi)"
+        },
+        {
+          "value": "pcaf",
+          "label": "PCAF (for financial institutions' financed emissions)"
+        }
       ]
     },
     {
@@ -88,7 +142,9 @@
       "placeholder": "e.g., 2024, or 2023 for historical baseline"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "carbon",
     "ghg",

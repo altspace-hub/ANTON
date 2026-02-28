@@ -111,7 +111,10 @@
       "placeholder": "e.g., Must maintain 40% gross margin, key client expects 10% volume discount, procurement prefers fixed-fee over T&M, public sector clients have maximum rate caps"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "sales",
     "pricing",

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Poultry business setup: housing, chick sourcing, vaccination schedules, financial viability calculation, mortality budgeting, market options for small-scale poultry in Africa and South Asia" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Poultry business setup: housing, chick sourcing, vaccination schedules, financial viability calculation, mortality budgeting, market options for small-scale poultry in Africa and South Asia"
+      }
     }
   },
   "guidedInputs": [
@@ -28,11 +34,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "layers", "label": "Layers (eggs)" },
-        { "value": "broilers", "label": "Broilers (meat)" },
-        { "value": "indigenous", "label": "Indigenous / Local chickens" },
-        { "value": "ducks", "label": "Ducks" },
-        { "value": "turkeys", "label": "Turkeys" }
+        {
+          "value": "layers",
+          "label": "Layers (eggs)"
+        },
+        {
+          "value": "broilers",
+          "label": "Broilers (meat)"
+        },
+        {
+          "value": "indigenous",
+          "label": "Indigenous / Local chickens"
+        },
+        {
+          "value": "ducks",
+          "label": "Ducks"
+        },
+        {
+          "value": "turkeys",
+          "label": "Turkeys"
+        }
       ]
     },
     {
@@ -41,16 +62,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -59,9 +110,18 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "very-small", "label": "Very small (under $100)" },
-        { "value": "small", "label": "Small ($100–$500)" },
-        { "value": "medium", "label": "Medium ($500–$2,000)" }
+        {
+          "value": "very-small",
+          "label": "Very small (under $100)"
+        },
+        {
+          "value": "small",
+          "label": "Small ($100–$500)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium ($500–$2,000)"
+        }
       ]
     },
     {
@@ -70,12 +130,36 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "beginner", "label": "Complete beginner" },
-        { "value": "some", "label": "Have some poultry" },
-        { "value": "existing", "label": "Small existing flock" }
+        {
+          "value": "beginner",
+          "label": "Complete beginner"
+        },
+        {
+          "value": "some",
+          "label": "Have some poultry"
+        },
+        {
+          "value": "existing",
+          "label": "Small existing flock"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["poultry", "business", "chickens", "layers", "broilers", "eggs", "meat", "startup", "bop", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "poultry",
+    "business",
+    "chickens",
+    "layers",
+    "broilers",
+    "eggs",
+    "meat",
+    "startup",
+    "bop",
+    "africa",
+    "south-asia"
+  ]
 }

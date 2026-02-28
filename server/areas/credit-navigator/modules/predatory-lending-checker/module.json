@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,12 +34,30 @@
       "label": "What type of lender is this?",
       "required": true,
       "options": [
-        { "value": "mobile-app", "label": "Mobile application" },
-        { "value": "moneylender", "label": "Individual moneylender" },
-        { "value": "small-finance-company", "label": "Small finance company" },
-        { "value": "investment-scheme", "label": "'Investment' or loan scheme" },
-        { "value": "import-export-loan", "label": "Import/export or trade loan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "mobile-app",
+          "label": "Mobile application"
+        },
+        {
+          "value": "moneylender",
+          "label": "Individual moneylender"
+        },
+        {
+          "value": "small-finance-company",
+          "label": "Small finance company"
+        },
+        {
+          "value": "investment-scheme",
+          "label": "'Investment' or loan scheme"
+        },
+        {
+          "value": "import-export-loan",
+          "label": "Import/export or trade loan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,13 +66,34 @@
       "label": "Which of these have you noticed? (select all that apply)",
       "required": false,
       "options": [
-        { "value": "high-rate", "label": "Very high interest rate" },
-        { "value": "pressure-to-sign", "label": "Pressure to sign quickly" },
-        { "value": "unclear-cost", "label": "Not clear about total cost" },
-        { "value": "upfront-fee", "label": "They want an upfront fee before giving the loan" },
-        { "value": "excess-collateral", "label": "Want collateral worth much more than the loan" },
-        { "value": "no-contract", "label": "No written contract" },
-        { "value": "not-registered", "label": "Cannot prove they are registered" }
+        {
+          "value": "high-rate",
+          "label": "Very high interest rate"
+        },
+        {
+          "value": "pressure-to-sign",
+          "label": "Pressure to sign quickly"
+        },
+        {
+          "value": "unclear-cost",
+          "label": "Not clear about total cost"
+        },
+        {
+          "value": "upfront-fee",
+          "label": "They want an upfront fee before giving the loan"
+        },
+        {
+          "value": "excess-collateral",
+          "label": "Want collateral worth much more than the loan"
+        },
+        {
+          "value": "no-contract",
+          "label": "No written contract"
+        },
+        {
+          "value": "not-registered",
+          "label": "Cannot prove they are registered"
+        }
       ]
     },
     {
@@ -61,14 +102,28 @@
       "label": "How much is the loan for?",
       "required": false,
       "options": [
-        { "value": "under-100", "label": "Under $100" },
-        { "value": "100-500", "label": "$100 to $500" },
-        { "value": "500-2000", "label": "$500 to $2,000" },
-        { "value": "over-2000", "label": "Over $2,000" }
+        {
+          "value": "under-100",
+          "label": "Under $100"
+        },
+        {
+          "value": "100-500",
+          "label": "$100 to $500"
+        },
+        {
+          "value": "500-2000",
+          "label": "$500 to $2,000"
+        },
+        {
+          "value": "over-2000",
+          "label": "Over $2,000"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

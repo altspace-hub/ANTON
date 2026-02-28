@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["policy-document", "impact-assessment"],
+    "outputFormats": [
+      "policy-document",
+      "impact-assessment"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,25 +32,56 @@
       "id": "asset_type",
       "label": "Asset Types",
       "type": "chips",
-      "options": ["Real Estate", "Cash", "Investments", "Agricultural Land", "Mix"],
+      "options": [
+        "Real Estate",
+        "Cash",
+        "Investments",
+        "Agricultural Land",
+        "Mix"
+      ],
       "required": false
     },
     {
       "id": "waqf_purpose",
       "label": "Waqf Purpose",
       "type": "select",
-      "options": ["Charitable", "Family (ahli)", "Mixed", "Educational", "Healthcare"],
+      "options": [
+        "Charitable",
+        "Family (ahli)",
+        "Mixed",
+        "Educational",
+        "Healthcare"
+      ],
       "required": true
     },
     {
       "id": "jurisdiction",
       "label": "Jurisdiction",
       "type": "select",
-      "options": ["Saudi Arabia", "UAE", "Malaysia", "Kuwait", "Other"],
+      "options": [
+        "Saudi Arabia",
+        "UAE",
+        "Malaysia",
+        "Kuwait",
+        "Other"
+      ],
       "required": true
     }
   ],
-  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer"],
-  "recommendedSkills": ["skill-aaoifi-standards"],
-  "tags": ["waqf", "endowment", "islamic-real-estate", "beneficiary-management", "governance", "aaoifi", "charity"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards"
+  ],
+  "tags": [
+    "waqf",
+    "endowment",
+    "islamic-real-estate",
+    "beneficiary-management",
+    "governance",
+    "aaoifi",
+    "charity"
+  ]
 }

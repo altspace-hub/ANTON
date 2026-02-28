@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Voter registration and voting processes by country: Kenya IEBC, Nigeria INEC, Ghana Electoral Commission, South Africa IEC, India ECI, Philippines COMELEC. Registration requirements, polling day process, voter rights, illegal activities, complaint mechanisms." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Voter registration and voting processes by country: Kenya IEBC, Nigeria INEC, Ghana Electoral Commission, South Africa IEC, India ECI, Philippines COMELEC. Registration requirements, polling day process, voter rights, illegal activities, complaint mechanisms."
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -48,15 +90,45 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "want-to-register", "label": "I want to register to vote" },
-        { "value": "check-registered", "label": "Check if I am already registered" },
-        { "value": "lost-voter-card", "label": "I lost my voter card" },
-        { "value": "upcoming-election", "label": "Preparing for an upcoming election" },
-        { "value": "turned-away", "label": "I was turned away at the polling station" },
-        { "value": "rights-generally", "label": "Understand my voting rights" }
+        {
+          "value": "want-to-register",
+          "label": "I want to register to vote"
+        },
+        {
+          "value": "check-registered",
+          "label": "Check if I am already registered"
+        },
+        {
+          "value": "lost-voter-card",
+          "label": "I lost my voter card"
+        },
+        {
+          "value": "upcoming-election",
+          "label": "Preparing for an upcoming election"
+        },
+        {
+          "value": "turned-away",
+          "label": "I was turned away at the polling station"
+        },
+        {
+          "value": "rights-generally",
+          "label": "Understand my voting rights"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
-  "tags": ["voting", "elections", "voter-registration", "democracy", "rights", "bop", "africa", "south-asia", "philippines"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "voting",
+    "elections",
+    "voter-registration",
+    "democracy",
+    "rights",
+    "bop",
+    "africa",
+    "south-asia",
+    "philippines"
+  ]
 }

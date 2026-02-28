@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Animal disease symptoms, triage guidance, common livestock diseases by region and species, biosecurity, zoonotic disease warnings, vaccination schedules" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Animal disease symptoms, triage guidance, common livestock diseases by region and species, biosecurity, zoonotic disease warnings, vaccination schedules"
+      }
     }
   },
   "guidedInputs": [
@@ -28,13 +34,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cattle", "label": "Cattle / Cows" },
-        { "value": "goats", "label": "Goats" },
-        { "value": "sheep", "label": "Sheep" },
-        { "value": "pigs", "label": "Pigs" },
-        { "value": "chickens", "label": "Chickens / Poultry" },
-        { "value": "ducks", "label": "Ducks" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "cattle",
+          "label": "Cattle / Cows"
+        },
+        {
+          "value": "goats",
+          "label": "Goats"
+        },
+        {
+          "value": "sheep",
+          "label": "Sheep"
+        },
+        {
+          "value": "pigs",
+          "label": "Pigs"
+        },
+        {
+          "value": "chickens",
+          "label": "Chickens / Poultry"
+        },
+        {
+          "value": "ducks",
+          "label": "Ducks"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -43,16 +70,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,13 +118,34 @@
       "type": "chips",
       "required": true,
       "options": [
-        { "value": "not-eating", "label": "Not eating" },
-        { "value": "diarrhea", "label": "Diarrhea" },
-        { "value": "coughing", "label": "Coughing" },
-        { "value": "limping", "label": "Limping" },
-        { "value": "swollen", "label": "Swollen area" },
-        { "value": "skin-feathers", "label": "Skin / feathers problem" },
-        { "value": "sudden-death", "label": "Sudden death of others nearby" }
+        {
+          "value": "not-eating",
+          "label": "Not eating"
+        },
+        {
+          "value": "diarrhea",
+          "label": "Diarrhea"
+        },
+        {
+          "value": "coughing",
+          "label": "Coughing"
+        },
+        {
+          "value": "limping",
+          "label": "Limping"
+        },
+        {
+          "value": "swollen",
+          "label": "Swollen area"
+        },
+        {
+          "value": "skin-feathers",
+          "label": "Skin / feathers problem"
+        },
+        {
+          "value": "sudden-death",
+          "label": "Sudden death of others nearby"
+        }
       ]
     },
     {
@@ -76,13 +154,40 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "critical", "label": "Critical — multiple animals dying" },
-        { "value": "sick-1-2-days", "label": "Sick for 1–2 days" },
-        { "value": "sick-over-week", "label": "Sick for over a week" },
-        { "value": "checking", "label": "Just checking / prevention" }
+        {
+          "value": "critical",
+          "label": "Critical — multiple animals dying"
+        },
+        {
+          "value": "sick-1-2-days",
+          "label": "Sick for 1–2 days"
+        },
+        {
+          "value": "sick-over-week",
+          "label": "Sick for over a week"
+        },
+        {
+          "value": "checking",
+          "label": "Just checking / prevention"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["animal-health", "disease", "livestock", "poultry", "veterinary", "bop", "triage", "biosecurity", "zoonotic", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "animal-health",
+    "disease",
+    "livestock",
+    "poultry",
+    "veterinary",
+    "bop",
+    "triage",
+    "biosecurity",
+    "zoonotic",
+    "africa",
+    "south-asia"
+  ]
 }

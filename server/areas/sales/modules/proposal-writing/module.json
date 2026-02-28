@@ -87,7 +87,10 @@
       "placeholder": "e.g., Fixed fee EUR 350,000 for Phase 1+2, T&M for Phase 3 at blended rate EUR 2,200/day, payment terms: monthly invoicing 30 days"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "sales",
     "proposal",

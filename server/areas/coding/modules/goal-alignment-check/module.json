@@ -10,9 +10,15 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings"],
+    "outputFormats": [
+      "detailed-findings"
+    ],
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
     }
   },
   "guidedInputs": [
@@ -21,13 +27,37 @@
       "type": "multi-select",
       "label": "Focus areas",
       "options": [
-        { "value": "scope", "label": "Scope alignment" },
-        { "value": "quality", "label": "Quality standards" },
-        { "value": "timeline", "label": "Timeline tracking" },
-        { "value": "tech_debt", "label": "Technical debt" },
-        { "value": "risk", "label": "Risk assessment" }
+        {
+          "value": "scope",
+          "label": "Scope alignment"
+        },
+        {
+          "value": "quality",
+          "label": "Quality standards"
+        },
+        {
+          "value": "timeline",
+          "label": "Timeline tracking"
+        },
+        {
+          "value": "tech_debt",
+          "label": "Technical debt"
+        },
+        {
+          "value": "risk",
+          "label": "Risk assessment"
+        }
       ]
     }
   ],
-  "tags": ["coding", "governance", "alignment", "quality", "professional"]
+  "tags": [
+    "coding",
+    "governance",
+    "alignment",
+    "quality",
+    "professional"
+  ],
+  "recommendedPersonas": [
+    "tech-expert"
+  ]
 }

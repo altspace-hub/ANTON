@@ -6,7 +6,15 @@
   "icon": "PenTool",
   "description": "Structure and draft news articles, features, long-form investigations, and opinion pieces. Develop compelling leads, logical structures, and strong endings.",
   "color": "adv-teal",
-  "tags": ["writing", "article", "structure", "lede", "feature", "narrative", "draft"],
+  "tags": [
+    "writing",
+    "article",
+    "structure",
+    "lede",
+    "feature",
+    "narrative",
+    "draft"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "haiku",
@@ -16,9 +24,14 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["policy-document", "detailed-findings"]
+    "outputFormats": [
+      "policy-document",
+      "detailed-findings"
+    ]
   },
-  "recommendedPersonas": ["investigative-journalist", "features-editor"],
+  "recommendedPersonas": [
+    "general-assistant"
+  ],
   "guidedInputs": [
     {
       "id": "story_summary",
@@ -34,13 +47,34 @@
       "label": "Article Type",
       "description": "What type of article is this?",
       "options": [
-        {"value": "breaking_news", "label": "Breaking news (inverted pyramid)"},
-        {"value": "news_feature", "label": "News feature (context + analysis)"},
-        {"value": "long_form", "label": "Long-form / magazine feature"},
-        {"value": "investigation", "label": "Investigative piece"},
-        {"value": "opinion", "label": "Opinion / commentary"},
-        {"value": "explainer", "label": "Explainer / background"},
-        {"value": "profile", "label": "Profile / interview piece"}
+        {
+          "value": "breaking_news",
+          "label": "Breaking news (inverted pyramid)"
+        },
+        {
+          "value": "news_feature",
+          "label": "News feature (context + analysis)"
+        },
+        {
+          "value": "long_form",
+          "label": "Long-form / magazine feature"
+        },
+        {
+          "value": "investigation",
+          "label": "Investigative piece"
+        },
+        {
+          "value": "opinion",
+          "label": "Opinion / commentary"
+        },
+        {
+          "value": "explainer",
+          "label": "Explainer / background"
+        },
+        {
+          "value": "profile",
+          "label": "Profile / interview piece"
+        }
       ],
       "required": true
     },
@@ -64,11 +98,26 @@
       "label": "Target Length",
       "description": "Approximate target word count.",
       "options": [
-        {"value": "200-300", "label": "200–300 words (news brief)"},
-        {"value": "400-600", "label": "400–600 words (standard news)"},
-        {"value": "800-1200", "label": "800–1,200 words (feature)"},
-        {"value": "2000-4000", "label": "2,000–4,000 words (long-form)"},
-        {"value": "4000+", "label": "4,000+ words (investigation)"}
+        {
+          "value": "200-300",
+          "label": "200–300 words (news brief)"
+        },
+        {
+          "value": "400-600",
+          "label": "400–600 words (standard news)"
+        },
+        {
+          "value": "800-1200",
+          "label": "800–1,200 words (feature)"
+        },
+        {
+          "value": "2000-4000",
+          "label": "2,000–4,000 words (long-form)"
+        },
+        {
+          "value": "4000+",
+          "label": "4,000+ words (investigation)"
+        }
       ],
       "defaultValue": "400-600"
     }

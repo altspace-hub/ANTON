@@ -35,12 +35,30 @@
       "label": "Documentation to prepare",
       "required": true,
       "options": [
-        { "value": "master_file", "label": "Master File (OECD Chapter V, Annex I)" },
-        { "value": "local_file", "label": "Local File (OECD Chapter V, Annex II)" },
-        { "value": "cbcr", "label": "Country-by-Country Report (CbCR)" },
-        { "value": "tp_policy", "label": "Group Transfer Pricing Policy" },
-        { "value": "benchmarking_memo", "label": "Benchmarking / Comparability Analysis Memo" },
-        { "value": "full_package", "label": "Full Three-Tier Package (Master File + Local File)" }
+        {
+          "value": "master_file",
+          "label": "Master File (OECD Chapter V, Annex I)"
+        },
+        {
+          "value": "local_file",
+          "label": "Local File (OECD Chapter V, Annex II)"
+        },
+        {
+          "value": "cbcr",
+          "label": "Country-by-Country Report (CbCR)"
+        },
+        {
+          "value": "tp_policy",
+          "label": "Group Transfer Pricing Policy"
+        },
+        {
+          "value": "benchmarking_memo",
+          "label": "Benchmarking / Comparability Analysis Memo"
+        },
+        {
+          "value": "full_package",
+          "label": "Full Three-Tier Package (Master File + Local File)"
+        }
       ]
     },
     {
@@ -49,14 +67,38 @@
       "label": "Intercompany transaction types",
       "description": "Which intercompany transactions require documentation?",
       "options": [
-        { "value": "goods", "label": "Sale / purchase of goods" },
-        { "value": "services", "label": "Intragroup services" },
-        { "value": "ip_royalties", "label": "IP licensing / royalties" },
-        { "value": "financial_loans", "label": "Intragroup loans / financial transactions" },
-        { "value": "guarantees", "label": "Financial guarantees" },
-        { "value": "cost_sharing", "label": "Cost contribution / cost-sharing arrangements" },
-        { "value": "management_fees", "label": "Management fees / head office charges" },
-        { "value": "commissionnaire", "label": "Commissionnaire / limited risk arrangements" }
+        {
+          "value": "goods",
+          "label": "Sale / purchase of goods"
+        },
+        {
+          "value": "services",
+          "label": "Intragroup services"
+        },
+        {
+          "value": "ip_royalties",
+          "label": "IP licensing / royalties"
+        },
+        {
+          "value": "financial_loans",
+          "label": "Intragroup loans / financial transactions"
+        },
+        {
+          "value": "guarantees",
+          "label": "Financial guarantees"
+        },
+        {
+          "value": "cost_sharing",
+          "label": "Cost contribution / cost-sharing arrangements"
+        },
+        {
+          "value": "management_fees",
+          "label": "Management fees / head office charges"
+        },
+        {
+          "value": "commissionnaire",
+          "label": "Commissionnaire / limited risk arrangements"
+        }
       ]
     },
     {
@@ -64,12 +106,30 @@
       "type": "select",
       "label": "Primary TP method (if known)",
       "options": [
-        { "value": "cup", "label": "Comparable Uncontrolled Price (CUP)" },
-        { "value": "resale_price", "label": "Resale Price Method (RPM)" },
-        { "value": "cost_plus", "label": "Cost Plus Method (CPM)" },
-        { "value": "tnmm", "label": "Transactional Net Margin Method (TNMM)" },
-        { "value": "profit_split", "label": "Profit Split Method (PSM)" },
-        { "value": "not_determined", "label": "Not yet determined — advise on best method" }
+        {
+          "value": "cup",
+          "label": "Comparable Uncontrolled Price (CUP)"
+        },
+        {
+          "value": "resale_price",
+          "label": "Resale Price Method (RPM)"
+        },
+        {
+          "value": "cost_plus",
+          "label": "Cost Plus Method (CPM)"
+        },
+        {
+          "value": "tnmm",
+          "label": "Transactional Net Margin Method (TNMM)"
+        },
+        {
+          "value": "profit_split",
+          "label": "Profit Split Method (PSM)"
+        },
+        {
+          "value": "not_determined",
+          "label": "Not yet determined — advise on best method"
+        }
       ]
     },
     {
@@ -78,15 +138,42 @@
       "label": "Local entity jurisdiction",
       "required": true,
       "options": [
-        { "value": "se", "label": "Sweden" },
-        { "value": "no", "label": "Norway" },
-        { "value": "dk", "label": "Denmark" },
-        { "value": "fi", "label": "Finland" },
-        { "value": "de", "label": "Germany" },
-        { "value": "nl", "label": "Netherlands" },
-        { "value": "uk", "label": "United Kingdom" },
-        { "value": "us", "label": "United States" },
-        { "value": "other", "label": "Other (describe in context)" }
+        {
+          "value": "se",
+          "label": "Sweden"
+        },
+        {
+          "value": "no",
+          "label": "Norway"
+        },
+        {
+          "value": "dk",
+          "label": "Denmark"
+        },
+        {
+          "value": "fi",
+          "label": "Finland"
+        },
+        {
+          "value": "de",
+          "label": "Germany"
+        },
+        {
+          "value": "nl",
+          "label": "Netherlands"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "us",
+          "label": "United States"
+        },
+        {
+          "value": "other",
+          "label": "Other (describe in context)"
+        }
       ]
     },
     {
@@ -102,15 +189,24 @@
       "label": "Group consolidated revenue (prior year)",
       "description": "Required to determine CbCR filing threshold (EUR 750M).",
       "options": [
-        { "value": "below_750m_eur", "label": "Below EUR 750 million" },
-        { "value": "above_750m_eur", "label": "EUR 750 million or above (CbCR mandatory)" },
-        { "value": "unknown", "label": "Unknown / to be confirmed" }
+        {
+          "value": "below_750m_eur",
+          "label": "Below EUR 750 million"
+        },
+        {
+          "value": "above_750m_eur",
+          "label": "EUR 750 million or above (CbCR mandatory)"
+        },
+        {
+          "value": "unknown",
+          "label": "Unknown / to be confirmed"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "transfer-pricing-specialist",
-    "tax-director"
+    "tax-director",
+    "transfer-pricing-specialist"
   ],
   "modelTier": {
     "recommended": "opus",

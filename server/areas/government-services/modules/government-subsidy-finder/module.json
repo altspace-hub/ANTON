@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Government social protection programs by country: Kenya HSNP, Inua Jamii, NGAAF; Nigeria CCT, TraderMoni, FarmerMoni; Ghana LEAP; South Africa SASSA grants; India PM Kisan, Ujjwala, Jan Dhan, MGNREGA; Bangladesh social safety net; Philippines 4Ps, TUPAD. Eligibility, registration, anti-fraud warnings." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Government social protection programs by country: Kenya HSNP, Inua Jamii, NGAAF; Nigeria CCT, TraderMoni, FarmerMoni; Ghana LEAP; South Africa SASSA grants; India PM Kisan, Ujjwala, Jan Dhan, MGNREGA; Bangladesh social safety net; Philippines 4Ps, TUPAD. Eligibility, registration, anti-fraud warnings."
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -48,13 +90,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cash-transfer", "label": "Cash transfer" },
-        { "value": "food-support", "label": "Food support" },
-        { "value": "agricultural-input", "label": "Agricultural input (seeds, fertiliser)" },
-        { "value": "housing", "label": "Housing" },
-        { "value": "healthcare", "label": "Healthcare" },
-        { "value": "education", "label": "Education support" },
-        { "value": "all", "label": "All / Not sure" }
+        {
+          "value": "cash-transfer",
+          "label": "Cash transfer"
+        },
+        {
+          "value": "food-support",
+          "label": "Food support"
+        },
+        {
+          "value": "agricultural-input",
+          "label": "Agricultural input (seeds, fertiliser)"
+        },
+        {
+          "value": "housing",
+          "label": "Housing"
+        },
+        {
+          "value": "healthcare",
+          "label": "Healthcare"
+        },
+        {
+          "value": "education",
+          "label": "Education support"
+        },
+        {
+          "value": "all",
+          "label": "All / Not sure"
+        }
       ]
     },
     {
@@ -63,14 +126,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "single", "label": "Single person" },
-        { "value": "family-children", "label": "Family with children" },
-        { "value": "elderly", "label": "Elderly household" },
-        { "value": "disabled-member", "label": "Disabled household member" },
-        { "value": "female-headed", "label": "Female-headed household" }
+        {
+          "value": "single",
+          "label": "Single person"
+        },
+        {
+          "value": "family-children",
+          "label": "Family with children"
+        },
+        {
+          "value": "elderly",
+          "label": "Elderly household"
+        },
+        {
+          "value": "disabled-member",
+          "label": "Disabled household member"
+        },
+        {
+          "value": "female-headed",
+          "label": "Female-headed household"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
-  "tags": ["subsidies", "cash-transfer", "social-protection", "grants", "food-program", "bop", "rights", "africa", "south-asia", "philippines"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "subsidies",
+    "cash-transfer",
+    "social-protection",
+    "grants",
+    "food-program",
+    "bop",
+    "rights",
+    "africa",
+    "south-asia",
+    "philippines"
+  ]
 }

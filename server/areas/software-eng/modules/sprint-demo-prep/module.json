@@ -49,11 +49,26 @@
       "label": "Demo audience",
       "required": true,
       "options": [
-        { "value": "product_stakeholders", "label": "Product owner and business stakeholders" },
-        { "value": "executive", "label": "Executive / C-suite" },
-        { "value": "client", "label": "External client / customer" },
-        { "value": "technical", "label": "Technical team / engineers" },
-        { "value": "mixed", "label": "Mixed audience (technical and non-technical)" }
+        {
+          "value": "product_stakeholders",
+          "label": "Product owner and business stakeholders"
+        },
+        {
+          "value": "executive",
+          "label": "Executive / C-suite"
+        },
+        {
+          "value": "client",
+          "label": "External client / customer"
+        },
+        {
+          "value": "technical",
+          "label": "Technical team / engineers"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed audience (technical and non-technical)"
+        }
       ]
     },
     {
@@ -61,10 +76,22 @@
       "type": "select",
       "label": "Available demo time",
       "options": [
-        { "value": "15", "label": "15 minutes" },
-        { "value": "30", "label": "30 minutes" },
-        { "value": "45", "label": "45 minutes" },
-        { "value": "60", "label": "60 minutes" }
+        {
+          "value": "15",
+          "label": "15 minutes"
+        },
+        {
+          "value": "30",
+          "label": "30 minutes"
+        },
+        {
+          "value": "45",
+          "label": "45 minutes"
+        },
+        {
+          "value": "60",
+          "label": "60 minutes"
+        }
       ]
     },
     {
@@ -80,7 +107,9 @@
       "placeholder": "e.g., Mobile responsive layout not yet implemented, Export to PDF is slow on large datasets, Story US-107 moved to next sprint"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "agile",
     "sprint",

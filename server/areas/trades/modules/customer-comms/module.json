@@ -32,13 +32,34 @@
       "label": "What kind of message?",
       "required": true,
       "options": [
-        { "value": "confirmation", "label": "Booking confirmation" },
-        { "value": "delay", "label": "Delay or rescheduling" },
-        { "value": "quote-followup", "label": "Following up on a quote" },
-        { "value": "completed", "label": "Job completed — send invoice" },
-        { "value": "complaint-response", "label": "Responding to a complaint" },
-        { "value": "payment-reminder", "label": "Payment reminder" },
-        { "value": "other", "label": "Something else" }
+        {
+          "value": "confirmation",
+          "label": "Booking confirmation"
+        },
+        {
+          "value": "delay",
+          "label": "Delay or rescheduling"
+        },
+        {
+          "value": "quote-followup",
+          "label": "Following up on a quote"
+        },
+        {
+          "value": "completed",
+          "label": "Job completed — send invoice"
+        },
+        {
+          "value": "complaint-response",
+          "label": "Responding to a complaint"
+        },
+        {
+          "value": "payment-reminder",
+          "label": "Payment reminder"
+        },
+        {
+          "value": "other",
+          "label": "Something else"
+        }
       ]
     },
     {
@@ -61,13 +82,24 @@
       "label": "How will you send this?",
       "required": false,
       "options": [
-        { "value": "sms", "label": "SMS / text message" },
-        { "value": "email", "label": "Email" },
-        { "value": "whatsapp", "label": "WhatsApp / messaging app" }
+        {
+          "value": "sms",
+          "label": "SMS / text message"
+        },
+        {
+          "value": "email",
+          "label": "Email"
+        },
+        {
+          "value": "whatsapp",
+          "label": "WhatsApp / messaging app"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor"],
+  "recommendedPersonas": [
+    "trades-expert"
+  ],
   "myWayProcessType": "communicating",
   "tags": [
     "trades",

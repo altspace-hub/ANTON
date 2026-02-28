@@ -35,10 +35,22 @@
       "label": "SLA context",
       "required": true,
       "options": [
-        { "value": "internal", "label": "Internal SLA (between business units)" },
-        { "value": "vendor", "label": "Vendor / supplier SLA (we are the customer)" },
-        { "value": "client", "label": "Client SLA (we are the service provider)" },
-        { "value": "regulatory", "label": "Regulatory service standard (e.g., complaint handling timeframes)" }
+        {
+          "value": "internal",
+          "label": "Internal SLA (between business units)"
+        },
+        {
+          "value": "vendor",
+          "label": "Vendor / supplier SLA (we are the customer)"
+        },
+        {
+          "value": "client",
+          "label": "Client SLA (we are the service provider)"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory service standard (e.g., complaint handling timeframes)"
+        }
       ]
     },
     {
@@ -63,8 +75,7 @@
     }
   ],
   "recommendedPersonas": [
-    "pragmatist",
-    "systems-thinker"
+    "strategy-expert"
   ],
   "tags": [
     "sla",

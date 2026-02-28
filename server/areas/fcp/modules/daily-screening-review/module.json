@@ -39,10 +39,22 @@
       "description": "Which screening categories are covered in this batch?",
       "required": true,
       "options": [
-        { "value": "sanctions", "label": "Sanctions" },
-        { "value": "pep", "label": "PEP" },
-        { "value": "adverse_media", "label": "Adverse Media" },
-        { "value": "internal_watchlist", "label": "Internal Watchlist" }
+        {
+          "value": "sanctions",
+          "label": "Sanctions"
+        },
+        {
+          "value": "pep",
+          "label": "PEP"
+        },
+        {
+          "value": "adverse_media",
+          "label": "Adverse Media"
+        },
+        {
+          "value": "internal_watchlist",
+          "label": "Internal Watchlist"
+        }
       ]
     },
     {
@@ -69,8 +81,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "fsa-regulator"
+    "fcp-expert"
   ],
   "tags": [
     "sanctions-screening",

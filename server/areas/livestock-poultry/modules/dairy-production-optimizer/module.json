@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Dairy cow nutrition, milking management, mastitis prevention and detection, heat stress management, calf management, milk hygiene, marketing options for small-scale dairy in Africa and South Asia" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Dairy cow nutrition, milking management, mastitis prevention and detection, heat stress management, calf management, milk hygiene, marketing options for small-scale dairy in Africa and South Asia"
+      }
     }
   },
   "guidedInputs": [
@@ -28,10 +34,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "local-zebu", "label": "Local / Indigenous (Zebu)" },
-        { "value": "crossbred", "label": "Crossbred" },
-        { "value": "exotic-friesian", "label": "Exotic (Friesian / Holstein)" },
-        { "value": "mixed", "label": "Mixed / Not sure" }
+        {
+          "value": "local-zebu",
+          "label": "Local / Indigenous (Zebu)"
+        },
+        {
+          "value": "crossbred",
+          "label": "Crossbred"
+        },
+        {
+          "value": "exotic-friesian",
+          "label": "Exotic (Friesian / Holstein)"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed / Not sure"
+        }
       ]
     },
     {
@@ -40,16 +58,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -58,11 +106,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "under-5", "label": "Under 5 litres / day" },
-        { "value": "5-10", "label": "5–10 litres / day" },
-        { "value": "10-20", "label": "10–20 litres / day" },
-        { "value": "over-20", "label": "Over 20 litres / day" },
-        { "value": "unknown", "label": "Don't know" }
+        {
+          "value": "under-5",
+          "label": "Under 5 litres / day"
+        },
+        {
+          "value": "5-10",
+          "label": "5–10 litres / day"
+        },
+        {
+          "value": "10-20",
+          "label": "10–20 litres / day"
+        },
+        {
+          "value": "over-20",
+          "label": "Over 20 litres / day"
+        },
+        {
+          "value": "unknown",
+          "label": "Don't know"
+        }
       ]
     },
     {
@@ -71,14 +134,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "low-yield", "label": "Low yield" },
-        { "value": "milk-quality", "label": "Milk quality" },
-        { "value": "health-issues", "label": "Health issues" },
-        { "value": "feed-costs", "label": "Feed costs" },
-        { "value": "market-price", "label": "Market price" }
+        {
+          "value": "low-yield",
+          "label": "Low yield"
+        },
+        {
+          "value": "milk-quality",
+          "label": "Milk quality"
+        },
+        {
+          "value": "health-issues",
+          "label": "Health issues"
+        },
+        {
+          "value": "feed-costs",
+          "label": "Feed costs"
+        },
+        {
+          "value": "market-price",
+          "label": "Market price"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["dairy", "milk", "cattle", "mastitis", "feeding", "milking-management", "bop", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "dairy",
+    "milk",
+    "cattle",
+    "mastitis",
+    "feeding",
+    "milking-management",
+    "bop",
+    "africa",
+    "south-asia"
+  ]
 }

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Permit and license application processes by country: business operating permits, construction permits, driving licences, event permits. Official fees, required documents, processing times, anti-bribery guidance. Kenya, Nigeria, Ghana, South Africa, India, Bangladesh, Pakistan, Philippines." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Permit and license application processes by country: business operating permits, construction permits, driving licences, event permits. Official fees, required documents, processing times, anti-bribery guidance. Kenya, Nigeria, Ghana, South Africa, India, Bangladesh, Pakistan, Philippines."
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -48,12 +90,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "business-permit", "label": "Business operating permit" },
-        { "value": "construction", "label": "Construction / renovation" },
-        { "value": "event-market", "label": "Event / market permit" },
-        { "value": "driving-licence", "label": "Driving licence" },
-        { "value": "environmental", "label": "Environmental permit" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "business-permit",
+          "label": "Business operating permit"
+        },
+        {
+          "value": "construction",
+          "label": "Construction / renovation"
+        },
+        {
+          "value": "event-market",
+          "label": "Event / market permit"
+        },
+        {
+          "value": "driving-licence",
+          "label": "Driving licence"
+        },
+        {
+          "value": "environmental",
+          "label": "Environmental permit"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -62,13 +122,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "first-application", "label": "First application" },
-        { "value": "renewal", "label": "Renewal" },
-        { "value": "lost-damaged", "label": "Lost or damaged" },
-        { "value": "rejected-previously", "label": "Rejected previously" }
+        {
+          "value": "first-application",
+          "label": "First application"
+        },
+        {
+          "value": "renewal",
+          "label": "Renewal"
+        },
+        {
+          "value": "lost-damaged",
+          "label": "Lost or damaged"
+        },
+        {
+          "value": "rejected-previously",
+          "label": "Rejected previously"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
-  "tags": ["permits", "licenses", "business", "construction", "driving", "bop", "rights", "africa", "south-asia", "anti-corruption"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "permits",
+    "licenses",
+    "business",
+    "construction",
+    "driving",
+    "bop",
+    "rights",
+    "africa",
+    "south-asia",
+    "anti-corruption"
+  ]
 }

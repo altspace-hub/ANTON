@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "quick",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,11 +78,26 @@
       "label": "How do you earn money?",
       "required": true,
       "options": [
-        { "value": "monthly-salary", "label": "Monthly salary" },
-        { "value": "daily-wages", "label": "Daily wages" },
-        { "value": "weekly-market", "label": "Weekly market sales" },
-        { "value": "irregular", "label": "Irregular — different every month" },
-        { "value": "mix", "label": "Mix of sources" }
+        {
+          "value": "monthly-salary",
+          "label": "Monthly salary"
+        },
+        {
+          "value": "daily-wages",
+          "label": "Daily wages"
+        },
+        {
+          "value": "weekly-market",
+          "label": "Weekly market sales"
+        },
+        {
+          "value": "irregular",
+          "label": "Irregular — different every month"
+        },
+        {
+          "value": "mix",
+          "label": "Mix of sources"
+        }
       ]
     },
     {
@@ -62,10 +106,22 @@
       "label": "What is your biggest money problem right now?",
       "required": true,
       "options": [
-        { "value": "runs-out", "label": "Money runs out before month end" },
-        { "value": "dont-know", "label": "I don't know where my money goes" },
-        { "value": "cant-save", "label": "I want to save but I can't" },
-        { "value": "family-expenses", "label": "Family expenses are too high" }
+        {
+          "value": "runs-out",
+          "label": "Money runs out before month end"
+        },
+        {
+          "value": "dont-know",
+          "label": "I don't know where my money goes"
+        },
+        {
+          "value": "cant-save",
+          "label": "I want to save but I can't"
+        },
+        {
+          "value": "family-expenses",
+          "label": "Family expenses are too high"
+        }
       ]
     },
     {
@@ -74,14 +130,28 @@
       "label": "Who do you support?",
       "required": false,
       "options": [
-        { "value": "single", "label": "Just myself" },
-        { "value": "couple", "label": "Me and my partner" },
-        { "value": "family-children", "label": "Family with children" },
-        { "value": "extended", "label": "Extended family household" }
+        {
+          "value": "single",
+          "label": "Just myself"
+        },
+        {
+          "value": "couple",
+          "label": "Me and my partner"
+        },
+        {
+          "value": "family-children",
+          "label": "Family with children"
+        },
+        {
+          "value": "extended",
+          "label": "Extended family household"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Water conservation, low-cost irrigation, rainwater harvesting, drought management for smallholder farms in developing regions" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Water conservation, low-cost irrigation, rainwater harvesting, drought management for smallholder farms in developing regions"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "rainfall-only", "label": "Rainfall only" },
-        { "value": "river-stream", "label": "River or stream" },
-        { "value": "borehole-well", "label": "Borehole or well" },
-        { "value": "communal-water", "label": "Communal water point" },
-        { "value": "small-dam", "label": "Small dam" },
-        { "value": "no-reliable-source", "label": "No reliable water source" }
+        {
+          "value": "rainfall-only",
+          "label": "Rainfall only"
+        },
+        {
+          "value": "river-stream",
+          "label": "River or stream"
+        },
+        {
+          "value": "borehole-well",
+          "label": "Borehole or well"
+        },
+        {
+          "value": "communal-water",
+          "label": "Communal water point"
+        },
+        {
+          "value": "small-dam",
+          "label": "Small dam"
+        },
+        {
+          "value": "no-reliable-source",
+          "label": "No reliable water source"
+        }
       ]
     },
     {
@@ -42,10 +66,22 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "under-0.5ha", "label": "Less than 0.5 hectares" },
-        { "value": "0.5-1ha", "label": "0.5 to 1 hectare" },
-        { "value": "1-3ha", "label": "1 to 3 hectares" },
-        { "value": "3-5ha", "label": "3 to 5 hectares" }
+        {
+          "value": "under-0.5ha",
+          "label": "Less than 0.5 hectares"
+        },
+        {
+          "value": "0.5-1ha",
+          "label": "0.5 to 1 hectare"
+        },
+        {
+          "value": "1-3ha",
+          "label": "1 to 3 hectares"
+        },
+        {
+          "value": "3-5ha",
+          "label": "3 to 5 hectares"
+        }
       ]
     },
     {
@@ -54,12 +90,30 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "vegetables", "label": "Vegetables" },
-        { "value": "maize-cereals", "label": "Maize or cereals" },
-        { "value": "beans-legumes", "label": "Beans or legumes" },
-        { "value": "fruits", "label": "Fruits" },
-        { "value": "mixed", "label": "Mixed crops" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "vegetables",
+          "label": "Vegetables"
+        },
+        {
+          "value": "maize-cereals",
+          "label": "Maize or cereals"
+        },
+        {
+          "value": "beans-legumes",
+          "label": "Beans or legumes"
+        },
+        {
+          "value": "fruits",
+          "label": "Fruits"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed crops"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -68,12 +122,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "east-africa", "label": "East Africa" },
-        { "value": "west-africa", "label": "West Africa" },
-        { "value": "southern-africa", "label": "Southern Africa" },
-        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
-        { "value": "southeast-asia", "label": "Southeast Asia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southern-africa",
+          "label": "Southern Africa"
+        },
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Bangladesh)"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -82,13 +154,39 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "no-budget", "label": "No budget — free solutions only" },
-        { "value": "small-budget", "label": "Small budget ($10–$50)" },
-        { "value": "medium-budget", "label": "Medium budget ($50–$200)" },
-        { "value": "some-investment", "label": "Some investment possible" }
+        {
+          "value": "no-budget",
+          "label": "No budget — free solutions only"
+        },
+        {
+          "value": "small-budget",
+          "label": "Small budget ($10–$50)"
+        },
+        {
+          "value": "medium-budget",
+          "label": "Medium budget ($50–$200)"
+        },
+        {
+          "value": "some-investment",
+          "label": "Some investment possible"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["water-management", "irrigation", "drought", "rainwater-harvesting", "mulching", "drip-irrigation", "zai-pits", "tied-ridges", "water-conservation", "smallholder"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "water-management",
+    "irrigation",
+    "drought",
+    "rainwater-harvesting",
+    "mulching",
+    "drip-irrigation",
+    "zai-pits",
+    "tied-ridges",
+    "water-conservation",
+    "smallholder"
+  ]
 }

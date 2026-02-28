@@ -35,12 +35,30 @@
       "label": "Type of partnership",
       "required": true,
       "options": [
-        { "value": "commercial", "label": "Commercial / referral partnership" },
-        { "value": "technology", "label": "Technology integration or co-development" },
-        { "value": "distribution", "label": "Distribution or channel partnership" },
-        { "value": "jv", "label": "Joint venture or co-investment" },
-        { "value": "strategic_alliance", "label": "Strategic alliance or consortium" },
-        { "value": "supplier", "label": "Key supplier or outsourcing partner" }
+        {
+          "value": "commercial",
+          "label": "Commercial / referral partnership"
+        },
+        {
+          "value": "technology",
+          "label": "Technology integration or co-development"
+        },
+        {
+          "value": "distribution",
+          "label": "Distribution or channel partnership"
+        },
+        {
+          "value": "jv",
+          "label": "Joint venture or co-investment"
+        },
+        {
+          "value": "strategic_alliance",
+          "label": "Strategic alliance or consortium"
+        },
+        {
+          "value": "supplier",
+          "label": "Key supplier or outsourcing partner"
+        }
       ]
     },
     {
@@ -48,9 +66,18 @@
       "type": "select",
       "label": "Evaluation stage",
       "options": [
-        { "value": "initial_screen", "label": "Initial screening — go/no-go for further talks" },
-        { "value": "detailed_eval", "label": "Detailed evaluation — ready to negotiate" },
-        { "value": "due_diligence", "label": "Due diligence — final decision" }
+        {
+          "value": "initial_screen",
+          "label": "Initial screening — go/no-go for further talks"
+        },
+        {
+          "value": "detailed_eval",
+          "label": "Detailed evaluation — ready to negotiate"
+        },
+        {
+          "value": "due_diligence",
+          "label": "Due diligence — final decision"
+        }
       ]
     },
     {
@@ -74,8 +101,7 @@
     }
   ],
   "recommendedPersonas": [
-    "devil-advocate",
-    "investor-lens"
+    "strategy-expert"
   ],
   "tags": [
     "partnership",

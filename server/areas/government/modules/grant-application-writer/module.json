@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["policy-document", "executive-summary"],
+    "outputFormats": [
+      "policy-document",
+      "executive-summary"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -30,12 +33,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "eu-horizon", "label": "EU Horizon Europe" },
-        { "value": "ukri", "label": "UK UKRI" },
-        { "value": "world-bank", "label": "World Bank" },
-        { "value": "gates-foundation", "label": "Gates Foundation" },
-        { "value": "government-programme", "label": "Government programme" },
-        { "value": "other", "label": "Other / Multiple" }
+        {
+          "value": "eu-horizon",
+          "label": "EU Horizon Europe"
+        },
+        {
+          "value": "ukri",
+          "label": "UK UKRI"
+        },
+        {
+          "value": "world-bank",
+          "label": "World Bank"
+        },
+        {
+          "value": "gates-foundation",
+          "label": "Gates Foundation"
+        },
+        {
+          "value": "government-programme",
+          "label": "Government programme"
+        },
+        {
+          "value": "other",
+          "label": "Other / Multiple"
+        }
       ]
     },
     {
@@ -44,11 +65,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "government", "label": "Government" },
-        { "value": "ngo", "label": "NGO" },
-        { "value": "academic", "label": "Academic / Research" },
-        { "value": "social-enterprise", "label": "Social enterprise" },
-        { "value": "consortium", "label": "Consortium / Partnership" }
+        {
+          "value": "government",
+          "label": "Government"
+        },
+        {
+          "value": "ngo",
+          "label": "NGO"
+        },
+        {
+          "value": "academic",
+          "label": "Academic / Research"
+        },
+        {
+          "value": "social-enterprise",
+          "label": "Social enterprise"
+        },
+        {
+          "value": "consortium",
+          "label": "Consortium / Partnership"
+        }
       ]
     },
     {
@@ -57,10 +93,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "small", "label": "Small (under £50k)" },
-        { "value": "medium", "label": "Medium (£50k–£500k)" },
-        { "value": "large", "label": "Large (£500k–£5M)" },
-        { "value": "major", "label": "Major (over £5M)" }
+        {
+          "value": "small",
+          "label": "Small (under £50k)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (£50k–£500k)"
+        },
+        {
+          "value": "large",
+          "label": "Large (£500k–£5M)"
+        },
+        {
+          "value": "major",
+          "label": "Major (over £5M)"
+        }
       ]
     },
     {
@@ -69,13 +117,39 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "pre-application", "label": "Pre-application / scoping" },
-        { "value": "writing", "label": "Writing the application" },
-        { "value": "review", "label": "Reviewing a draft" },
-        { "value": "resubmission", "label": "Resubmission after rejection" }
+        {
+          "value": "pre-application",
+          "label": "Pre-application / scoping"
+        },
+        {
+          "value": "writing",
+          "label": "Writing the application"
+        },
+        {
+          "value": "review",
+          "label": "Reviewing a draft"
+        },
+        {
+          "value": "resubmission",
+          "label": "Resubmission after rejection"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["policy-analyst", "legal-expert"],
-  "tags": ["grant-writing", "funding", "theory-of-change", "logic-model", "monitoring-evaluation", "EU-Horizon", "UKRI", "World-Bank", "government", "NGO", "public-administration"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "grant-writing",
+    "funding",
+    "theory-of-change",
+    "logic-model",
+    "monitoring-evaluation",
+    "EU-Horizon",
+    "UKRI",
+    "World-Bank",
+    "government",
+    "NGO",
+    "public-administration"
+  ]
 }

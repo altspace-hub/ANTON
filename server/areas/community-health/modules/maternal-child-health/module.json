@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "WHO antenatal care guidelines, IMCI, breastfeeding, maternal danger signs, child development milestones" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "WHO antenatal care guidelines, IMCI, breastfeeding, maternal danger signs, child development milestones"
+      }
     }
   },
   "guidedInputs": [
@@ -28,11 +34,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "pregnant-planning-care", "label": "Pregnant (planning care)" },
-        { "value": "just-delivered", "label": "Just delivered" },
-        { "value": "baby-0-6-months", "label": "Baby 0-6 months" },
-        { "value": "child-6-24-months", "label": "Child 6-24 months" },
-        { "value": "child-2-5-years", "label": "Child 2-5 years" }
+        {
+          "value": "pregnant-planning-care",
+          "label": "Pregnant (planning care)"
+        },
+        {
+          "value": "just-delivered",
+          "label": "Just delivered"
+        },
+        {
+          "value": "baby-0-6-months",
+          "label": "Baby 0-6 months"
+        },
+        {
+          "value": "child-6-24-months",
+          "label": "Child 6-24 months"
+        },
+        {
+          "value": "child-2-5-years",
+          "label": "Child 2-5 years"
+        }
       ]
     },
     {
@@ -41,15 +62,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -58,15 +106,45 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "antenatal-visits", "label": "Antenatal visits" },
-        { "value": "danger-signs", "label": "Danger signs" },
-        { "value": "breastfeeding", "label": "Breastfeeding" },
-        { "value": "vaccination", "label": "Vaccination" },
-        { "value": "nutrition", "label": "Nutrition" },
-        { "value": "something-seems-wrong", "label": "Something seems wrong" }
+        {
+          "value": "antenatal-visits",
+          "label": "Antenatal visits"
+        },
+        {
+          "value": "danger-signs",
+          "label": "Danger signs"
+        },
+        {
+          "value": "breastfeeding",
+          "label": "Breastfeeding"
+        },
+        {
+          "value": "vaccination",
+          "label": "Vaccination"
+        },
+        {
+          "value": "nutrition",
+          "label": "Nutrition"
+        },
+        {
+          "value": "something-seems-wrong",
+          "label": "Something seems wrong"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
-  "tags": ["maternal-health", "antenatal", "pregnancy", "newborn", "breastfeeding", "child-health", "danger-signs", "1000-days"]
+  "recommendedPersonas": [
+    "community-health-worker",
+    "nutrition-health-educator"
+  ],
+  "tags": [
+    "maternal-health",
+    "antenatal",
+    "pregnancy",
+    "newborn",
+    "breastfeeding",
+    "child-health",
+    "danger-signs",
+    "1000-days"
+  ]
 }

@@ -36,13 +36,34 @@
       "description": "What type of GDPR data subject request is this?",
       "required": true,
       "options": [
-        { "value": "access", "label": "Subject Access Request (Art. 15 — Right of Access)" },
-        { "value": "rectification", "label": "Rectification Request (Art. 16 — Right to Correct)" },
-        { "value": "erasure", "label": "Erasure / Right to be Forgotten (Art. 17)" },
-        { "value": "portability", "label": "Data Portability (Art. 20)" },
-        { "value": "restriction", "label": "Restriction of Processing (Art. 18)" },
-        { "value": "objection", "label": "Objection to Processing (Art. 21)" },
-        { "value": "automated", "label": "Automated Decision-Making (Art. 22)" }
+        {
+          "value": "access",
+          "label": "Subject Access Request (Art. 15 — Right of Access)"
+        },
+        {
+          "value": "rectification",
+          "label": "Rectification Request (Art. 16 — Right to Correct)"
+        },
+        {
+          "value": "erasure",
+          "label": "Erasure / Right to be Forgotten (Art. 17)"
+        },
+        {
+          "value": "portability",
+          "label": "Data Portability (Art. 20)"
+        },
+        {
+          "value": "restriction",
+          "label": "Restriction of Processing (Art. 18)"
+        },
+        {
+          "value": "objection",
+          "label": "Objection to Processing (Art. 21)"
+        },
+        {
+          "value": "automated",
+          "label": "Automated Decision-Making (Art. 22)"
+        }
       ]
     },
     {
@@ -59,12 +80,30 @@
       "label": "Data Subject Type",
       "description": "What is the relationship with the data subject?",
       "options": [
-        { "value": "current_customer", "label": "Current Customer" },
-        { "value": "former_customer", "label": "Former Customer" },
-        { "value": "employee", "label": "Employee / Former Employee" },
-        { "value": "prospect", "label": "Prospect / Application Declined" },
-        { "value": "third_party", "label": "Third Party (e.g. guarantor, UBO)" },
-        { "value": "unknown", "label": "Unknown / Unverified" }
+        {
+          "value": "current_customer",
+          "label": "Current Customer"
+        },
+        {
+          "value": "former_customer",
+          "label": "Former Customer"
+        },
+        {
+          "value": "employee",
+          "label": "Employee / Former Employee"
+        },
+        {
+          "value": "prospect",
+          "label": "Prospect / Application Declined"
+        },
+        {
+          "value": "third_party",
+          "label": "Third Party (e.g. guarantor, UBO)"
+        },
+        {
+          "value": "unknown",
+          "label": "Unknown / Unverified"
+        }
       ]
     },
     {
@@ -88,12 +127,30 @@
       "label": "Potential Exemptions or Restrictions",
       "description": "Are there any grounds that might restrict or exempt the response?",
       "options": [
-        { "value": "aml_tipping_off", "label": "AML / Tipping-Off Restriction (AMLD Art. 41)" },
-        { "value": "legal_privilege", "label": "Legal Professional Privilege" },
-        { "value": "third_party_rights", "label": "Third-Party Personal Data" },
-        { "value": "crime_prevention", "label": "Crime Prevention / Detection" },
-        { "value": "regulatory_investigation", "label": "Ongoing Regulatory Investigation" },
-        { "value": "manifestly_unfounded", "label": "Manifestly Unfounded / Excessive" }
+        {
+          "value": "aml_tipping_off",
+          "label": "AML / Tipping-Off Restriction (AMLD Art. 41)"
+        },
+        {
+          "value": "legal_privilege",
+          "label": "Legal Professional Privilege"
+        },
+        {
+          "value": "third_party_rights",
+          "label": "Third-Party Personal Data"
+        },
+        {
+          "value": "crime_prevention",
+          "label": "Crime Prevention / Detection"
+        },
+        {
+          "value": "regulatory_investigation",
+          "label": "Ongoing Regulatory Investigation"
+        },
+        {
+          "value": "manifestly_unfounded",
+          "label": "Manifestly Unfounded / Excessive"
+        }
       ]
     }
   ],

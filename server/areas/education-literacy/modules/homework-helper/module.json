@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Primary and junior secondary curriculum in Kenya, Nigeria, Ghana, Tanzania, India, Bangladesh, age-appropriate pedagogy" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Primary and junior secondary curriculum in Kenya, Nigeria, Ghana, Tanzania, India, Bangladesh, age-appropriate pedagogy"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "english", "label": "English" },
-        { "value": "mathematics", "label": "Mathematics" },
-        { "value": "science", "label": "Science" },
-        { "value": "social-studies", "label": "Social Studies" },
-        { "value": "history", "label": "History" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "english",
+          "label": "English"
+        },
+        {
+          "value": "mathematics",
+          "label": "Mathematics"
+        },
+        {
+          "value": "science",
+          "label": "Science"
+        },
+        {
+          "value": "social-studies",
+          "label": "Social Studies"
+        },
+        {
+          "value": "history",
+          "label": "History"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -42,10 +66,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "primary-1-3", "label": "Primary 1-3 (ages 6-9)" },
-        { "value": "primary-4-6", "label": "Primary 4-6 (ages 10-12)" },
-        { "value": "junior-secondary", "label": "Junior Secondary (ages 12-15)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "primary-1-3",
+          "label": "Primary 1-3 (ages 6-9)"
+        },
+        {
+          "value": "primary-4-6",
+          "label": "Primary 4-6 (ages 10-12)"
+        },
+        {
+          "value": "junior-secondary",
+          "label": "Junior Secondary (ages 12-15)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,13 +97,36 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "simple-english", "label": "Simple English" },
-        { "value": "swahili", "label": "Swahili" },
-        { "value": "hindi", "label": "Hindi" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "simple-english",
+          "label": "Simple English"
+        },
+        {
+          "value": "swahili",
+          "label": "Swahili"
+        },
+        {
+          "value": "hindi",
+          "label": "Hindi"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
-  "tags": ["homework", "children", "primary-school", "secondary-school", "maths", "english", "science", "parent-support"]
+  "recommendedPersonas": [
+    "education-expert"
+  ],
+  "tags": [
+    "homework",
+    "children",
+    "primary-school",
+    "secondary-school",
+    "maths",
+    "english",
+    "science",
+    "parent-support"
+  ]
 }

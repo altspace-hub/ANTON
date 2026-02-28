@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "KCSE, WAEC, NECO exam formats, spaced repetition, active recall, exam strategy, study planning, stress management for students" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "KCSE, WAEC, NECO exam formats, spaced repetition, active recall, exam strategy, study planning, stress management for students"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "primary-leaving", "label": "Primary leaving exam" },
-        { "value": "kcse-waec-neco", "label": "KCSE / WAEC / NECO (national secondary exam)" },
-        { "value": "university-entrance", "label": "University entrance exam" },
-        { "value": "professional-certification", "label": "Professional certification" },
-        { "value": "english-language-test", "label": "English language test (IELTS / TOEFL)" },
-        { "value": "vocational-trade-exam", "label": "Vocational or trade exam" }
+        {
+          "value": "primary-leaving",
+          "label": "Primary leaving exam"
+        },
+        {
+          "value": "kcse-waec-neco",
+          "label": "KCSE / WAEC / NECO (national secondary exam)"
+        },
+        {
+          "value": "university-entrance",
+          "label": "University entrance exam"
+        },
+        {
+          "value": "professional-certification",
+          "label": "Professional certification"
+        },
+        {
+          "value": "english-language-test",
+          "label": "English language test (IELTS / TOEFL)"
+        },
+        {
+          "value": "vocational-trade-exam",
+          "label": "Vocational or trade exam"
+        }
       ]
     },
     {
@@ -42,16 +66,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -60,11 +114,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "english", "label": "English" },
-        { "value": "mathematics", "label": "Mathematics" },
-        { "value": "science", "label": "Science" },
-        { "value": "social-studies", "label": "Social Studies" },
-        { "value": "all-subjects", "label": "All subjects" }
+        {
+          "value": "english",
+          "label": "English"
+        },
+        {
+          "value": "mathematics",
+          "label": "Mathematics"
+        },
+        {
+          "value": "science",
+          "label": "Science"
+        },
+        {
+          "value": "social-studies",
+          "label": "Social Studies"
+        },
+        {
+          "value": "all-subjects",
+          "label": "All subjects"
+        }
       ]
     },
     {
@@ -73,13 +142,37 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "over-6-months", "label": "More than 6 months" },
-        { "value": "3-6-months", "label": "3-6 months" },
-        { "value": "1-3-months", "label": "1-3 months" },
-        { "value": "under-1-month", "label": "Less than 1 month" }
+        {
+          "value": "over-6-months",
+          "label": "More than 6 months"
+        },
+        {
+          "value": "3-6-months",
+          "label": "3-6 months"
+        },
+        {
+          "value": "1-3-months",
+          "label": "1-3 months"
+        },
+        {
+          "value": "under-1-month",
+          "label": "Less than 1 month"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
-  "tags": ["exam-preparation", "KCSE", "WAEC", "NECO", "study-skills", "spaced-repetition", "past-papers", "IELTS", "revision"]
+  "recommendedPersonas": [
+    "education-expert"
+  ],
+  "tags": [
+    "exam-preparation",
+    "KCSE",
+    "WAEC",
+    "NECO",
+    "study-skills",
+    "spaced-repetition",
+    "past-papers",
+    "IELTS",
+    "revision"
+  ]
 }

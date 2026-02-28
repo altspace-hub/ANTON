@@ -119,7 +119,9 @@
       "placeholder": "Describe the system components, their responsibilities, how they communicate, data flows, and deployment topology. Upload architecture diagrams as files if available."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "software",
     "architecture",

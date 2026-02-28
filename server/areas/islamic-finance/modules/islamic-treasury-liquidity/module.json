@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "action-plan"],
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,25 +32,57 @@
       "id": "institution_type",
       "label": "Institution Type",
       "type": "select",
-      "options": ["Full Islamic Bank", "Islamic Window", "Islamic NBFI"],
+      "options": [
+        "Full Islamic Bank",
+        "Islamic Window",
+        "Islamic NBFI"
+      ],
       "required": true
     },
     {
       "id": "liquidity_tools",
       "label": "Liquidity Instruments Used",
       "type": "chips",
-      "options": ["Commodity Murabaha", "Wakala", "Interbank Murabaha", "Sukuk", "ISCAP"],
+      "options": [
+        "Commodity Murabaha",
+        "Wakala",
+        "Interbank Murabaha",
+        "Sukuk",
+        "ISCAP"
+      ],
       "required": false
     },
     {
       "id": "regulatory_framework",
       "label": "Regulatory Framework",
       "type": "select",
-      "options": ["IFSB", "AAOIFI", "BNM", "SAMA", "Other"],
+      "options": [
+        "IFSB",
+        "AAOIFI",
+        "BNM",
+        "SAMA",
+        "Other"
+      ],
       "required": true
     }
   ],
-  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
-  "recommendedSkills": ["skill-ifsb-standards", "skill-aaoifi-standards"],
-  "tags": ["treasury", "liquidity", "ifsb-12", "commodity-murabaha", "wakala", "interbank", "lcr", "hqla", "islamic-banking"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-ifsb-standards",
+    "skill-aaoifi-standards"
+  ],
+  "tags": [
+    "treasury",
+    "liquidity",
+    "ifsb-12",
+    "commodity-murabaha",
+    "wakala",
+    "interbank",
+    "lcr",
+    "hqla",
+    "islamic-banking"
+  ]
 }

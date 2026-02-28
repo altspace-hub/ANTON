@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,11 +34,26 @@
       "label": "What do you sell?",
       "required": true,
       "options": [
-        { "value": "food-meals", "label": "Food / cooked meals" },
-        { "value": "physical-goods", "label": "Physical goods (clothes, shoes)" },
-        { "value": "crafts", "label": "Crafts" },
-        { "value": "services", "label": "Services (hair, repair)" },
-        { "value": "mixed", "label": "Mixed" }
+        {
+          "value": "food-meals",
+          "label": "Food / cooked meals"
+        },
+        {
+          "value": "physical-goods",
+          "label": "Physical goods (clothes, shoes)"
+        },
+        {
+          "value": "crafts",
+          "label": "Crafts"
+        },
+        {
+          "value": "services",
+          "label": "Services (hair, repair)"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed"
+        }
       ]
     },
     {
@@ -45,16 +62,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -63,10 +110,22 @@
       "label": "What is your situation?",
       "required": true,
       "options": [
-        { "value": "new-business", "label": "Starting new business" },
-        { "value": "checking-prices", "label": "Checking if current prices are right" },
-        { "value": "market-prices", "label": "Prices are set by market" },
-        { "value": "too-expensive", "label": "Customers say I'm too expensive" }
+        {
+          "value": "new-business",
+          "label": "Starting new business"
+        },
+        {
+          "value": "checking-prices",
+          "label": "Checking if current prices are right"
+        },
+        {
+          "value": "market-prices",
+          "label": "Prices are set by market"
+        },
+        {
+          "value": "too-expensive",
+          "label": "Customers say I'm too expensive"
+        }
       ]
     },
     {
@@ -75,14 +134,28 @@
       "label": "What worries you most about pricing?",
       "required": false,
       "options": [
-        { "value": "dont-know-cost", "label": "Don't know my true cost" },
-        { "value": "competitors-cheaper", "label": "Competitors charge less" },
-        { "value": "not-enough-profit", "label": "Not making enough profit" },
-        { "value": "want-to-expand", "label": "Want to expand" }
+        {
+          "value": "dont-know-cost",
+          "label": "Don't know my true cost"
+        },
+        {
+          "value": "competitors-cheaper",
+          "label": "Competitors charge less"
+        },
+        {
+          "value": "not-enough-profit",
+          "label": "Not making enough profit"
+        },
+        {
+          "value": "want-to-expand",
+          "label": "Want to expand"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "small-business-mentor"
+  ],
   "tags": [
     "micro-business",
     "bop",

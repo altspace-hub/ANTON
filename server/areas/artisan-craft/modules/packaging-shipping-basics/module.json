@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "What type of craft do you make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,9 +78,18 @@
       "label": "Where are you shipping to?",
       "required": true,
       "options": [
-        { "value": "local", "label": "Local — within the same city" },
-        { "value": "domestic", "label": "Domestic — within the same country" },
-        { "value": "international", "label": "International" }
+        {
+          "value": "local",
+          "label": "Local — within the same city"
+        },
+        {
+          "value": "domestic",
+          "label": "Domestic — within the same country"
+        },
+        {
+          "value": "international",
+          "label": "International"
+        }
       ]
     },
     {
@@ -60,9 +98,18 @@
       "label": "How fragile are your items?",
       "required": true,
       "options": [
-        { "value": "very-fragile", "label": "Very fragile (pottery, ceramics, glass)" },
-        { "value": "moderately-fragile", "label": "Moderately fragile (wood carving, jewellery)" },
-        { "value": "durable", "label": "Durable (fabric, leather, beads, baskets)" }
+        {
+          "value": "very-fragile",
+          "label": "Very fragile (pottery, ceramics, glass)"
+        },
+        {
+          "value": "moderately-fragile",
+          "label": "Moderately fragile (wood carving, jewellery)"
+        },
+        {
+          "value": "durable",
+          "label": "Durable (fabric, leather, beads, baskets)"
+        }
       ]
     },
     {
@@ -71,14 +118,29 @@
       "label": "What is your main shipping challenge?",
       "required": true,
       "options": [
-        { "value": "items-arrive-broken", "label": "Items arrive broken or damaged" },
-        { "value": "shipping-too-expensive", "label": "Shipping costs are too expensive" },
-        { "value": "dont-know-how", "label": "I don't know how to ship internationally" },
-        { "value": "all", "label": "All of these" }
+        {
+          "value": "items-arrive-broken",
+          "label": "Items arrive broken or damaged"
+        },
+        {
+          "value": "shipping-too-expensive",
+          "label": "Shipping costs are too expensive"
+        },
+        {
+          "value": "dont-know-how",
+          "label": "I don't know how to ship internationally"
+        },
+        {
+          "value": "all",
+          "label": "All of these"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "EPI schedules, national immunisation programmes, WHO vaccination recommendations for sub-Saharan Africa and South Asia" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "EPI schedules, national immunisation programmes, WHO vaccination recommendations for sub-Saharan Africa and South Asia"
+      }
     }
   },
   "guidedInputs": [
@@ -28,15 +34,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -45,13 +78,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "birth", "label": "Birth (at hospital or clinic)" },
-        { "value": "6-weeks", "label": "6 weeks" },
-        { "value": "10-weeks", "label": "10 weeks" },
-        { "value": "14-weeks", "label": "14 weeks" },
-        { "value": "9-months", "label": "9 months" },
-        { "value": "12-18-months", "label": "12-18 months" },
-        { "value": "over-2-years", "label": "Over 2 years" }
+        {
+          "value": "birth",
+          "label": "Birth (at hospital or clinic)"
+        },
+        {
+          "value": "6-weeks",
+          "label": "6 weeks"
+        },
+        {
+          "value": "10-weeks",
+          "label": "10 weeks"
+        },
+        {
+          "value": "14-weeks",
+          "label": "14 weeks"
+        },
+        {
+          "value": "9-months",
+          "label": "9 months"
+        },
+        {
+          "value": "12-18-months",
+          "label": "12-18 months"
+        },
+        {
+          "value": "over-2-years",
+          "label": "Over 2 years"
+        }
       ]
     },
     {
@@ -60,13 +114,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "vaccines-due-now", "label": "What vaccines are due now" },
-        { "value": "missed-vaccines-catchup", "label": "Missed vaccines — how to catch up" },
-        { "value": "read-vaccine-card", "label": "Help reading my child's vaccine card" },
-        { "value": "adult-vaccines", "label": "Adult vaccines" }
+        {
+          "value": "vaccines-due-now",
+          "label": "What vaccines are due now"
+        },
+        {
+          "value": "missed-vaccines-catchup",
+          "label": "Missed vaccines — how to catch up"
+        },
+        {
+          "value": "read-vaccine-card",
+          "label": "Help reading my child's vaccine card"
+        },
+        {
+          "value": "adult-vaccines",
+          "label": "Adult vaccines"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
-  "tags": ["vaccination", "immunisation", "EPI", "child-health", "vaccines", "BCG", "measles", "malaria-vaccine", "schedule"]
+  "recommendedPersonas": [
+    "community-health-worker",
+    "nutrition-health-educator"
+  ],
+  "tags": [
+    "vaccination",
+    "immunisation",
+    "EPI",
+    "child-health",
+    "vaccines",
+    "BCG",
+    "measles",
+    "malaria-vaccine",
+    "schedule"
+  ]
 }

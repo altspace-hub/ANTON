@@ -43,12 +43,30 @@
       "label": "Desired PMO type",
       "required": true,
       "options": [
-        { "value": "supportive", "label": "Supportive PMO — templates, guidance, coaching" },
-        { "value": "controlling", "label": "Controlling PMO — standards compliance, reviews, reporting" },
-        { "value": "directive", "label": "Directive PMO — manages projects directly" },
-        { "value": "centre_excellence", "label": "Centre of Excellence — capability building, methodology" },
-        { "value": "portfolio", "label": "Portfolio PMO — portfolio prioritisation and resource allocation" },
-        { "value": "unknown", "label": "Unsure — recommend based on context" }
+        {
+          "value": "supportive",
+          "label": "Supportive PMO — templates, guidance, coaching"
+        },
+        {
+          "value": "controlling",
+          "label": "Controlling PMO — standards compliance, reviews, reporting"
+        },
+        {
+          "value": "directive",
+          "label": "Directive PMO — manages projects directly"
+        },
+        {
+          "value": "centre_excellence",
+          "label": "Centre of Excellence — capability building, methodology"
+        },
+        {
+          "value": "portfolio",
+          "label": "Portfolio PMO — portfolio prioritisation and resource allocation"
+        },
+        {
+          "value": "unknown",
+          "label": "Unsure — recommend based on context"
+        }
       ]
     },
     {
@@ -76,7 +94,9 @@
       "placeholder": "Who will lead the PMO? What is their background and experience level? e.g. Head of Delivery, 10 years PM experience, no previous PMO leadership."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "project-management",
     "pmo",

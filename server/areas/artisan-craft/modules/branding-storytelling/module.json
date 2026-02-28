@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "What type of craft do you make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -56,15 +85,33 @@
       "label": "How do you currently market your work?",
       "required": true,
       "options": [
-        { "value": "none", "label": "No marketing — buyers come to me or I sell at market" },
-        { "value": "word-of-mouth", "label": "Word of mouth only" },
-        { "value": "social-media", "label": "Some social media" },
-        { "value": "ngo-cooperative", "label": "Through an NGO or cooperative" },
-        { "value": "all", "label": "All of the above" }
+        {
+          "value": "none",
+          "label": "No marketing — buyers come to me or I sell at market"
+        },
+        {
+          "value": "word-of-mouth",
+          "label": "Word of mouth only"
+        },
+        {
+          "value": "social-media",
+          "label": "Some social media"
+        },
+        {
+          "value": "ngo-cooperative",
+          "label": "Through an NGO or cooperative"
+        },
+        {
+          "value": "all",
+          "label": "All of the above"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

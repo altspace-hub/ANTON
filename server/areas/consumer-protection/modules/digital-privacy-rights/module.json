@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Digital privacy rights for BoP users: what personal data is, app permissions on Android, right to delete data, data protection laws (Kenya DPA 2019, Nigeria NDPA 2023, South Africa POPIA, India DPDPA 2023), reporting data violations, SIM registration data, phishing protection, mobile banking safety." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Digital privacy rights for BoP users: what personal data is, app permissions on Android, right to delete data, data protection laws (Kenya DPA 2019, Nigeria NDPA 2023, South Africa POPIA, India DPDPA 2023), reporting data violations, SIM registration data, phishing protection, mobile banking safety."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,12 +82,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "social-media", "label": "Social media (Facebook, WhatsApp, TikTok)" },
-        { "value": "mobile-money-app", "label": "Mobile money or banking app" },
-        { "value": "shopping-app", "label": "Shopping or delivery app" },
-        { "value": "government-app", "label": "Government app or digital service" },
-        { "value": "employer-platform", "label": "Employer or work platform" },
-        { "value": "other", "label": "Other app or website" }
+        {
+          "value": "social-media",
+          "label": "Social media (Facebook, WhatsApp, TikTok)"
+        },
+        {
+          "value": "mobile-money-app",
+          "label": "Mobile money or banking app"
+        },
+        {
+          "value": "shopping-app",
+          "label": "Shopping or delivery app"
+        },
+        {
+          "value": "government-app",
+          "label": "Government app or digital service"
+        },
+        {
+          "value": "employer-platform",
+          "label": "Employer or work platform"
+        },
+        {
+          "value": "other",
+          "label": "Other app or website"
+        }
       ]
     },
     {
@@ -60,15 +114,48 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "app-too-much-access", "label": "App is asking for too many permissions" },
-        { "value": "data-shared-without-permission", "label": "Personal data shared without my permission" },
-        { "value": "account-hacked", "label": "Account was hacked" },
-        { "value": "targeted-scams", "label": "Getting targeted scam calls or messages" },
-        { "value": "employer-monitoring", "label": "Employer monitoring concern" },
-        { "value": "general-rights", "label": "General rights and protection tips" }
+        {
+          "value": "app-too-much-access",
+          "label": "App is asking for too many permissions"
+        },
+        {
+          "value": "data-shared-without-permission",
+          "label": "Personal data shared without my permission"
+        },
+        {
+          "value": "account-hacked",
+          "label": "Account was hacked"
+        },
+        {
+          "value": "targeted-scams",
+          "label": "Getting targeted scam calls or messages"
+        },
+        {
+          "value": "employer-monitoring",
+          "label": "Employer monitoring concern"
+        },
+        {
+          "value": "general-rights",
+          "label": "General rights and protection tips"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
-  "tags": ["consumer-protection", "bop", "rights", "digital-privacy", "data-protection", "android", "app-permissions", "popia", "ndpa", "kenya-dpa", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate"
+  ],
+  "tags": [
+    "consumer-protection",
+    "bop",
+    "rights",
+    "digital-privacy",
+    "data-protection",
+    "android",
+    "app-permissions",
+    "popia",
+    "ndpa",
+    "kenya-dpa",
+    "africa",
+    "south-asia"
+  ]
 }

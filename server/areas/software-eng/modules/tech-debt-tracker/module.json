@@ -43,10 +43,22 @@
       "type": "select",
       "label": "Engineering team size working on this system",
       "options": [
-        { "value": "solo", "label": "Solo developer" },
-        { "value": "small", "label": "2-5 engineers" },
-        { "value": "medium", "label": "6-15 engineers" },
-        { "value": "large", "label": "16+ engineers" }
+        {
+          "value": "solo",
+          "label": "Solo developer"
+        },
+        {
+          "value": "small",
+          "label": "2-5 engineers"
+        },
+        {
+          "value": "medium",
+          "label": "6-15 engineers"
+        },
+        {
+          "value": "large",
+          "label": "16+ engineers"
+        }
       ]
     },
     {
@@ -54,10 +66,22 @@
       "type": "select",
       "label": "How old is this system?",
       "options": [
-        { "value": "new", "label": "Less than 1 year" },
-        { "value": "young", "label": "1-3 years" },
-        { "value": "mature", "label": "3-7 years" },
-        { "value": "legacy", "label": "7+ years" }
+        {
+          "value": "new",
+          "label": "Less than 1 year"
+        },
+        {
+          "value": "young",
+          "label": "1-3 years"
+        },
+        {
+          "value": "mature",
+          "label": "3-7 years"
+        },
+        {
+          "value": "legacy",
+          "label": "7+ years"
+        }
       ]
     },
     {
@@ -80,7 +104,9 @@
       "placeholder": "e.g., We need to scale from 1k to 10k concurrent users by Q3. The system processes EUR 5M/day in transactions. We have 2 engineers available for debt work, budget is EUR 150k."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "technical-debt",
     "refactoring",

@@ -60,11 +60,26 @@
       "type": "select",
       "label": "Audience for commentary",
       "options": [
-        { "value": "board", "label": "Board / Supervisory Board" },
-        { "value": "executive", "label": "Executive management (CEO/CFO)" },
-        { "value": "management", "label": "Operational management" },
-        { "value": "investors", "label": "Investors / shareholders" },
-        { "value": "auditors", "label": "Auditors" }
+        {
+          "value": "board",
+          "label": "Board / Supervisory Board"
+        },
+        {
+          "value": "executive",
+          "label": "Executive management (CEO/CFO)"
+        },
+        {
+          "value": "management",
+          "label": "Operational management"
+        },
+        {
+          "value": "investors",
+          "label": "Investors / shareholders"
+        },
+        {
+          "value": "auditors",
+          "label": "Auditors"
+        }
       ]
     },
     {
@@ -74,7 +89,10 @@
       "placeholder": "Prior period actuals for year-over-year comparison."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "budget",

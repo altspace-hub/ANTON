@@ -107,7 +107,9 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "recruitment",

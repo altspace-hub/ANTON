@@ -44,15 +44,42 @@
       "description": "What type of regulatory instrument is this?",
       "required": true,
       "options": [
-        { "value": "regulation", "label": "Regulation (directly applicable law)" },
-        { "value": "directive", "label": "Directive (requires national transposition)" },
-        { "value": "rts", "label": "Regulatory Technical Standard (RTS/ITS)" },
-        { "value": "eba_guideline", "label": "EBA / AMLA Guideline" },
-        { "value": "national_guidance", "label": "National Supervisory Guidance" },
-        { "value": "consultation", "label": "Consultation Paper (CP)" },
-        { "value": "supervisory_letter", "label": "Supervisory Letter / Dear CEO" },
-        { "value": "faq_qa", "label": "FAQ / Q&A Clarification" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "regulation",
+          "label": "Regulation (directly applicable law)"
+        },
+        {
+          "value": "directive",
+          "label": "Directive (requires national transposition)"
+        },
+        {
+          "value": "rts",
+          "label": "Regulatory Technical Standard (RTS/ITS)"
+        },
+        {
+          "value": "eba_guideline",
+          "label": "EBA / AMLA Guideline"
+        },
+        {
+          "value": "national_guidance",
+          "label": "National Supervisory Guidance"
+        },
+        {
+          "value": "consultation",
+          "label": "Consultation Paper (CP)"
+        },
+        {
+          "value": "supervisory_letter",
+          "label": "Supervisory Letter / Dear CEO"
+        },
+        {
+          "value": "faq_qa",
+          "label": "FAQ / Q&A Clarification"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -68,11 +95,26 @@
       "label": "Institution Type",
       "description": "What type of institution does this need to be assessed against?",
       "options": [
-        { "value": "bank", "label": "Bank / Credit Institution" },
-        { "value": "fintech", "label": "Fintech / Payment Institution" },
-        { "value": "investment", "label": "Investment Firm / Asset Manager" },
-        { "value": "crypto", "label": "Crypto Asset Service Provider" },
-        { "value": "other", "label": "Other Obliged Entity" }
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Payment Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto Asset Service Provider"
+        },
+        {
+          "value": "other",
+          "label": "Other Obliged Entity"
+        }
       ]
     },
     {
@@ -84,9 +126,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "legal-expert",
-    "fsa-regulator"
+    "fcp-expert"
   ],
   "tags": [
     "regulatory-change",

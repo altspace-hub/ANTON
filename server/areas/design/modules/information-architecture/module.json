@@ -6,7 +6,13 @@
   "icon": "GitBranch",
   "description": "Design content structures, navigation systems, and labelling strategies for websites, apps, and intranets. Includes card sort analysis and tree testing design.",
   "color": "adv-teal",
-  "tags": ["information-architecture", "navigation", "taxonomy", "card-sorting", "findability"],
+  "tags": [
+    "information-architecture",
+    "navigation",
+    "taxonomy",
+    "card-sorting",
+    "findability"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "haiku",
@@ -16,9 +22,15 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "policy-document"]
+    "outputFormats": [
+      "detailed-findings",
+      "policy-document"
+    ]
   },
-  "recommendedPersonas": ["ux-director", "service-designer"],
+  "recommendedPersonas": [
+    "creative-director",
+    "strategy-expert"
+  ],
   "guidedInputs": [
     {
       "id": "context",
@@ -48,11 +60,26 @@
       "label": "Primary IA Problem",
       "description": "What is the main IA challenge to solve?",
       "options": [
-        {"value": "new_design", "label": "Designing IA from scratch"},
-        {"value": "redesign", "label": "Redesigning existing IA that isn't working"},
-        {"value": "content_growth", "label": "Managing IA that has grown organically"},
-        {"value": "merger", "label": "Merging two separate sites/systems"},
-        {"value": "search_improvement", "label": "Improving findability and search"}
+        {
+          "value": "new_design",
+          "label": "Designing IA from scratch"
+        },
+        {
+          "value": "redesign",
+          "label": "Redesigning existing IA that isn't working"
+        },
+        {
+          "value": "content_growth",
+          "label": "Managing IA that has grown organically"
+        },
+        {
+          "value": "merger",
+          "label": "Merging two separate sites/systems"
+        },
+        {
+          "value": "search_improvement",
+          "label": "Improving findability and search"
+        }
       ]
     }
   ]

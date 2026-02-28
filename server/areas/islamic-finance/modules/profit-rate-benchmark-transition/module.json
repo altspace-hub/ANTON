@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["impact-assessment", "action-plan"],
+    "outputFormats": [
+      "impact-assessment",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,14 +32,26 @@
       "id": "product_types",
       "label": "Affected Product Types",
       "type": "chips",
-      "options": ["Murabaha", "Ijara", "Musharakah", "Sukuk", "All"],
+      "options": [
+        "Murabaha",
+        "Ijara",
+        "Musharakah",
+        "Sukuk",
+        "All"
+      ],
       "required": false
     },
     {
       "id": "current_benchmark",
       "label": "Current Benchmark Reference",
       "type": "select",
-      "options": ["LIBOR", "SAIBOR", "KLIBOR", "EIBOR", "Other IBOR"],
+      "options": [
+        "LIBOR",
+        "SAIBOR",
+        "KLIBOR",
+        "EIBOR",
+        "Other IBOR"
+      ],
       "required": true
     },
     {
@@ -47,7 +62,25 @@
       "required": false
     }
   ],
-  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
-  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
-  "tags": ["ibor-transition", "rfr", "profit-rate", "benchmark", "sofr", "saibor", "klibor", "murabaha", "ijara", "sukuk", "sharia-compliance"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards",
+    "skill-ifsb-standards"
+  ],
+  "tags": [
+    "ibor-transition",
+    "rfr",
+    "profit-rate",
+    "benchmark",
+    "sofr",
+    "saibor",
+    "klibor",
+    "murabaha",
+    "ijara",
+    "sukuk",
+    "sharia-compliance"
+  ]
 }

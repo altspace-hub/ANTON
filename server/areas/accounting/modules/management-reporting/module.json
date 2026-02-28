@@ -154,7 +154,10 @@
       "placeholder": "e.g., Current reports are too detailed for the board, need to focus on 5-7 key metrics. Revenue is EUR 200M, we operate in 4 Nordic countries, main challenge is margin erosion in Swedish market."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "reporting",

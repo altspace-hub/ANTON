@@ -36,10 +36,22 @@
       "label": "Your organisation type",
       "required": true,
       "options": [
-        { "value": "manufacturer", "label": "Manufacturer (produces physical products)" },
-        { "value": "retailer", "label": "Retailer or distributor" },
-        { "value": "services", "label": "Service business" },
-        { "value": "financial", "label": "Financial institution (financing supply chains)" }
+        {
+          "value": "manufacturer",
+          "label": "Manufacturer (produces physical products)"
+        },
+        {
+          "value": "retailer",
+          "label": "Retailer or distributor"
+        },
+        {
+          "value": "services",
+          "label": "Service business"
+        },
+        {
+          "value": "financial",
+          "label": "Financial institution (financing supply chains)"
+        }
       ]
     },
     {
@@ -54,11 +66,26 @@
       "type": "select",
       "label": "Purpose of this screening",
       "options": [
-        { "value": "csrd_esrs", "label": "CSRD/ESRS S2 (Value chain workers) compliance" },
-        { "value": "csddd", "label": "CSDDD (EU Corporate Sustainability Due Diligence Directive)" },
-        { "value": "procurement", "label": "Procurement risk management" },
-        { "value": "investor", "label": "Investor/rating agency due diligence" },
-        { "value": "reputation", "label": "Reputational risk management" }
+        {
+          "value": "csrd_esrs",
+          "label": "CSRD/ESRS S2 (Value chain workers) compliance"
+        },
+        {
+          "value": "csddd",
+          "label": "CSDDD (EU Corporate Sustainability Due Diligence Directive)"
+        },
+        {
+          "value": "procurement",
+          "label": "Procurement risk management"
+        },
+        {
+          "value": "investor",
+          "label": "Investor/rating agency due diligence"
+        },
+        {
+          "value": "reputation",
+          "label": "Reputational risk management"
+        }
       ]
     },
     {
@@ -74,7 +101,9 @@
       "placeholder": "What supplier ESG measures are already in place?\n- Supplier code of conduct\n- ESG questionnaires sent to suppliers\n- Third-party audits or certifications required\n- Supplier training programmes\n- Contract clauses for ESG requirements"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "supply-chain",
     "esg-risk",

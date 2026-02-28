@@ -12,10 +12,26 @@
     "creativity": "strict",
     "outputFormats": [],
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" },
-      "localFolder": { "enabled": true, "folderPaths": [], "recursive": true }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
     }
   },
   "guidedInputs": [],
-  "tags": ["coding", "implementation", "development", "professional"]
+  "tags": [
+    "coding",
+    "implementation",
+    "development",
+    "professional"
+  ],
+  "recommendedPersonas": [
+    "tech-expert"
+  ]
 }

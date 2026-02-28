@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Basic smartphone use, WhatsApp, internet browsing, email, online government services in Kenya, India, Philippines, mobile money, digital safety basics" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Basic smartphone use, WhatsApp, internet browsing, email, online government services in Kenya, India, Philippines, mobile money, digital safety basics"
+      }
     }
   },
   "guidedInputs": [
@@ -28,11 +34,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "basic-phone", "label": "Basic phone (not smartphone)" },
-        { "value": "android-smartphone", "label": "Android smartphone" },
-        { "value": "iphone", "label": "iPhone" },
-        { "value": "shared-computer", "label": "Shared computer (at school, library, or office)" },
-        { "value": "tablet", "label": "Tablet" }
+        {
+          "value": "basic-phone",
+          "label": "Basic phone (not smartphone)"
+        },
+        {
+          "value": "android-smartphone",
+          "label": "Android smartphone"
+        },
+        {
+          "value": "iphone",
+          "label": "iPhone"
+        },
+        {
+          "value": "shared-computer",
+          "label": "Shared computer (at school, library, or office)"
+        },
+        {
+          "value": "tablet",
+          "label": "Tablet"
+        }
       ]
     },
     {
@@ -41,10 +62,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "complete-beginner", "label": "Complete beginner — never used a smartphone" },
-        { "value": "can-use-whatsapp", "label": "Can use WhatsApp but not much else" },
-        { "value": "can-browse-internet", "label": "Can browse the internet" },
-        { "value": "want-to-improve", "label": "Can do basics but want to improve" }
+        {
+          "value": "complete-beginner",
+          "label": "Complete beginner — never used a smartphone"
+        },
+        {
+          "value": "can-use-whatsapp",
+          "label": "Can use WhatsApp but not much else"
+        },
+        {
+          "value": "can-browse-internet",
+          "label": "Can browse the internet"
+        },
+        {
+          "value": "want-to-improve",
+          "label": "Can do basics but want to improve"
+        }
       ]
     },
     {
@@ -53,15 +86,44 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "whatsapp-better", "label": "Use WhatsApp better" },
-        { "value": "internet-information", "label": "Use the internet to find information" },
-        { "value": "online-government-services", "label": "Online government services" },
-        { "value": "online-business", "label": "Use technology for my business" },
-        { "value": "email", "label": "Email" },
-        { "value": "learn-generally", "label": "Learn generally — everything helps" }
+        {
+          "value": "whatsapp-better",
+          "label": "Use WhatsApp better"
+        },
+        {
+          "value": "internet-information",
+          "label": "Use the internet to find information"
+        },
+        {
+          "value": "online-government-services",
+          "label": "Online government services"
+        },
+        {
+          "value": "online-business",
+          "label": "Use technology for my business"
+        },
+        {
+          "value": "email",
+          "label": "Email"
+        },
+        {
+          "value": "learn-generally",
+          "label": "Learn generally — everything helps"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
-  "tags": ["digital-literacy", "smartphone", "WhatsApp", "internet", "email", "mobile-money", "online-services", "digital-safety"]
+  "recommendedPersonas": [
+    "education-expert"
+  ],
+  "tags": [
+    "digital-literacy",
+    "smartphone",
+    "WhatsApp",
+    "internet",
+    "email",
+    "mobile-money",
+    "online-services",
+    "digital-safety"
+  ]
 }

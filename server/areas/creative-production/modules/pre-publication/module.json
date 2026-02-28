@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "gap-scoring-matrix"],
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -26,13 +29,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "literary-agent", "label": "Literary Agent" },
-        { "value": "publisher", "label": "Publisher (direct)" },
-        { "value": "film-festival", "label": "Film Festival" },
-        { "value": "production-company", "label": "Production Company / Studio" },
-        { "value": "self-publication", "label": "Self-Publication / Indie" },
-        { "value": "game-studio", "label": "Game Studio / Interactive" },
-        { "value": "theatre", "label": "Theatre Company / Venue" }
+        {
+          "value": "literary-agent",
+          "label": "Literary Agent"
+        },
+        {
+          "value": "publisher",
+          "label": "Publisher (direct)"
+        },
+        {
+          "value": "film-festival",
+          "label": "Film Festival"
+        },
+        {
+          "value": "production-company",
+          "label": "Production Company / Studio"
+        },
+        {
+          "value": "self-publication",
+          "label": "Self-Publication / Indie"
+        },
+        {
+          "value": "game-studio",
+          "label": "Game Studio / Interactive"
+        },
+        {
+          "value": "theatre",
+          "label": "Theatre Company / Venue"
+        }
       ]
     },
     {
@@ -71,6 +95,17 @@
       "placeholder": "List 2-4 published works your project is comparable to — helps calibrate the market readiness assessment"
     }
   ],
-  "recommendedPersonas": ["literary-agent", "script-reader", "acquisitions-editor"],
-  "tags": ["submission", "publication", "literary-agent", "query-letter", "synopsis", "market-readiness", "film-festival", "publishing"]
+  "recommendedPersonas": [
+    "creative-director"
+  ],
+  "tags": [
+    "submission",
+    "publication",
+    "literary-agent",
+    "query-letter",
+    "synopsis",
+    "market-readiness",
+    "film-festival",
+    "publishing"
+  ]
 }

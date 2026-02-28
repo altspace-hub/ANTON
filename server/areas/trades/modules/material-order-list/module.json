@@ -32,14 +32,38 @@
       "label": "Your trade",
       "required": true,
       "options": [
-        { "value": "plumbing", "label": "Plumbing / VVS" },
-        { "value": "electrical", "label": "Electrical / El" },
-        { "value": "carpentry", "label": "Carpentry / Snickeri" },
-        { "value": "painting", "label": "Painting / Målning" },
-        { "value": "tiling", "label": "Tiling / Kakling" },
-        { "value": "cleaning", "label": "Cleaning / Städning" },
-        { "value": "landscaping", "label": "Landscaping / Trädgård" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "plumbing",
+          "label": "Plumbing / VVS"
+        },
+        {
+          "value": "electrical",
+          "label": "Electrical / El"
+        },
+        {
+          "value": "carpentry",
+          "label": "Carpentry / Snickeri"
+        },
+        {
+          "value": "painting",
+          "label": "Painting / Målning"
+        },
+        {
+          "value": "tiling",
+          "label": "Tiling / Kakling"
+        },
+        {
+          "value": "cleaning",
+          "label": "Cleaning / Städning"
+        },
+        {
+          "value": "landscaping",
+          "label": "Landscaping / Trädgård"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -55,14 +79,28 @@
       "label": "Country (for supplier suggestions)",
       "required": false,
       "options": [
-        { "value": "se", "label": "Sweden" },
-        { "value": "uk", "label": "United Kingdom" },
-        { "value": "de", "label": "Germany" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "se",
+          "label": "Sweden"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "de",
+          "label": "Germany"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor"],
+  "recommendedPersonas": [
+    "trades-expert"
+  ],
   "tags": [
     "trades",
     "materials",

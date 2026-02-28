@@ -9,7 +9,9 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings"],
+    "outputFormats": [
+      "detailed-findings"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -26,13 +28,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "screenplay", "label": "Screenplay (Feature Film)" },
-        { "value": "teleplay", "label": "Teleplay (TV Episode)" },
-        { "value": "stage-play", "label": "Stage Play" },
-        { "value": "short-film", "label": "Short Film Script" },
-        { "value": "audio-drama", "label": "Audio Drama / Radio Play" },
-        { "value": "game-narrative", "label": "Game Narrative / Interactive Story" },
-        { "value": "web-series", "label": "Web Series Episode" }
+        {
+          "value": "screenplay",
+          "label": "Screenplay (Feature Film)"
+        },
+        {
+          "value": "teleplay",
+          "label": "Teleplay (TV Episode)"
+        },
+        {
+          "value": "stage-play",
+          "label": "Stage Play"
+        },
+        {
+          "value": "short-film",
+          "label": "Short Film Script"
+        },
+        {
+          "value": "audio-drama",
+          "label": "Audio Drama / Radio Play"
+        },
+        {
+          "value": "game-narrative",
+          "label": "Game Narrative / Interactive Story"
+        },
+        {
+          "value": "web-series",
+          "label": "Web Series Episode"
+        }
       ]
     },
     {
@@ -41,18 +64,54 @@
       "type": "chips",
       "required": true,
       "options": [
-        { "value": "drama", "label": "Drama" },
-        { "value": "comedy", "label": "Comedy" },
-        { "value": "thriller", "label": "Thriller" },
-        { "value": "horror", "label": "Horror" },
-        { "value": "sci-fi", "label": "Sci-Fi" },
-        { "value": "fantasy", "label": "Fantasy" },
-        { "value": "action", "label": "Action / Adventure" },
-        { "value": "romance", "label": "Romance" },
-        { "value": "documentary", "label": "Documentary" },
-        { "value": "musical", "label": "Musical" },
-        { "value": "comedy-drama", "label": "Comedy-Drama" },
-        { "value": "crime", "label": "Crime / Noir" }
+        {
+          "value": "drama",
+          "label": "Drama"
+        },
+        {
+          "value": "comedy",
+          "label": "Comedy"
+        },
+        {
+          "value": "thriller",
+          "label": "Thriller"
+        },
+        {
+          "value": "horror",
+          "label": "Horror"
+        },
+        {
+          "value": "sci-fi",
+          "label": "Sci-Fi"
+        },
+        {
+          "value": "fantasy",
+          "label": "Fantasy"
+        },
+        {
+          "value": "action",
+          "label": "Action / Adventure"
+        },
+        {
+          "value": "romance",
+          "label": "Romance"
+        },
+        {
+          "value": "documentary",
+          "label": "Documentary"
+        },
+        {
+          "value": "musical",
+          "label": "Musical"
+        },
+        {
+          "value": "comedy-drama",
+          "label": "Comedy-Drama"
+        },
+        {
+          "value": "crime",
+          "label": "Crime / Noir"
+        }
       ]
     },
     {
@@ -61,11 +120,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "logline", "label": "Logline & Concept" },
-        { "value": "treatment", "label": "Treatment (2-10 pages)" },
-        { "value": "outline", "label": "Scene-by-Scene Outline" },
-        { "value": "first-draft", "label": "First Draft Pages" },
-        { "value": "revision", "label": "Revision & Notes" }
+        {
+          "value": "logline",
+          "label": "Logline & Concept"
+        },
+        {
+          "value": "treatment",
+          "label": "Treatment (2-10 pages)"
+        },
+        {
+          "value": "outline",
+          "label": "Scene-by-Scene Outline"
+        },
+        {
+          "value": "first-draft",
+          "label": "First Draft Pages"
+        },
+        {
+          "value": "revision",
+          "label": "Revision & Notes"
+        }
       ]
     },
     {
@@ -74,11 +148,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "three-act", "label": "Three-Act Structure" },
-        { "value": "five-act", "label": "Five-Act Structure" },
-        { "value": "beat-sheet", "label": "Beat Sheet (Save the Cat)" },
-        { "value": "episodic", "label": "Episodic / Anthology" },
-        { "value": "non-linear", "label": "Non-linear" }
+        {
+          "value": "three-act",
+          "label": "Three-Act Structure"
+        },
+        {
+          "value": "five-act",
+          "label": "Five-Act Structure"
+        },
+        {
+          "value": "beat-sheet",
+          "label": "Beat Sheet (Save the Cat)"
+        },
+        {
+          "value": "episodic",
+          "label": "Episodic / Anthology"
+        },
+        {
+          "value": "non-linear",
+          "label": "Non-linear"
+        }
       ]
     },
     {
@@ -103,6 +192,19 @@
       "placeholder": "Paste your logline, treatment, existing pages, character notes, or creative brief..."
     }
   ],
-  "recommendedPersonas": ["screenwriter", "dramaturg", "creative-director"],
-  "tags": ["screenwriting", "playwriting", "screenplay", "script", "narrative", "drama", "film", "theatre", "television", "storytelling"]
+  "recommendedPersonas": [
+    "creative-director"
+  ],
+  "tags": [
+    "screenwriting",
+    "playwriting",
+    "screenplay",
+    "script",
+    "narrative",
+    "drama",
+    "film",
+    "theatre",
+    "television",
+    "storytelling"
+  ]
 }

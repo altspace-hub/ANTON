@@ -35,13 +35,34 @@
       "label": "Available Alternative Data Sources",
       "description": "Which alternative data sources are available for credit scoring? Select all that apply.",
       "options": [
-        { "value": "mobile-money", "label": "Mobile money history" },
-        { "value": "utility-payments", "label": "Utility payments" },
-        { "value": "social-network", "label": "Social network" },
-        { "value": "character-references", "label": "Character references" },
-        { "value": "business-cashflow", "label": "Business cash flow" },
-        { "value": "psychometric", "label": "Psychometric" },
-        { "value": "partial-credit-bureau", "label": "Credit bureau (partial)" }
+        {
+          "value": "mobile-money",
+          "label": "Mobile money history"
+        },
+        {
+          "value": "utility-payments",
+          "label": "Utility payments"
+        },
+        {
+          "value": "social-network",
+          "label": "Social network"
+        },
+        {
+          "value": "character-references",
+          "label": "Character references"
+        },
+        {
+          "value": "business-cashflow",
+          "label": "Business cash flow"
+        },
+        {
+          "value": "psychometric",
+          "label": "Psychometric"
+        },
+        {
+          "value": "partial-credit-bureau",
+          "label": "Credit bureau (partial)"
+        }
       ]
     },
     {
@@ -51,11 +72,26 @@
       "description": "Who is the primary target borrower segment?",
       "required": true,
       "options": [
-        { "value": "group-borrower", "label": "Group borrower" },
-        { "value": "individual-micro", "label": "Individual micro-borrower" },
-        { "value": "microenterprise", "label": "Microenterprise" },
-        { "value": "agricultural", "label": "Agricultural" },
-        { "value": "informal-worker", "label": "Informal worker" }
+        {
+          "value": "group-borrower",
+          "label": "Group borrower"
+        },
+        {
+          "value": "individual-micro",
+          "label": "Individual micro-borrower"
+        },
+        {
+          "value": "microenterprise",
+          "label": "Microenterprise"
+        },
+        {
+          "value": "agricultural",
+          "label": "Agricultural"
+        },
+        {
+          "value": "informal-worker",
+          "label": "Informal worker"
+        }
       ]
     },
     {
@@ -64,17 +100,32 @@
       "label": "Loan Products to Score",
       "description": "Which products will use the credit scoring model? Select all that apply.",
       "options": [
-        { "value": "working-capital", "label": "Working capital" },
-        { "value": "asset-finance", "label": "Asset finance" },
-        { "value": "agricultural", "label": "Agricultural" },
-        { "value": "education", "label": "Education" },
-        { "value": "emergency", "label": "Emergency" }
+        {
+          "value": "working-capital",
+          "label": "Working capital"
+        },
+        {
+          "value": "asset-finance",
+          "label": "Asset finance"
+        },
+        {
+          "value": "agricultural",
+          "label": "Agricultural"
+        },
+        {
+          "value": "education",
+          "label": "Education"
+        },
+        {
+          "value": "emergency",
+          "label": "Emergency"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "microfinance-director",
-    "fcp-expert"
+    "microfinance-field-officer",
+    "microenterprise-credit-advisor"
   ],
   "recommendedSkills": [
     "jurisdiction-ke-cbk",

@@ -30,13 +30,34 @@
       "label": "Meeting type",
       "required": true,
       "options": [
-        { "value": "board", "label": "Board meeting / Supervisory Board" },
-        { "value": "steering", "label": "Steering Committee / Project Board" },
-        { "value": "management", "label": "Management team meeting" },
-        { "value": "project", "label": "Project team meeting" },
-        { "value": "client", "label": "Client meeting" },
-        { "value": "operational", "label": "Operational / departmental meeting" },
-        { "value": "workshop", "label": "Workshop / working session" }
+        {
+          "value": "board",
+          "label": "Board meeting / Supervisory Board"
+        },
+        {
+          "value": "steering",
+          "label": "Steering Committee / Project Board"
+        },
+        {
+          "value": "management",
+          "label": "Management team meeting"
+        },
+        {
+          "value": "project",
+          "label": "Project team meeting"
+        },
+        {
+          "value": "client",
+          "label": "Client meeting"
+        },
+        {
+          "value": "operational",
+          "label": "Operational / departmental meeting"
+        },
+        {
+          "value": "workshop",
+          "label": "Workshop / working session"
+        }
       ]
     },
     {
@@ -64,9 +85,18 @@
       "type": "select",
       "label": "Formality level",
       "options": [
-        { "value": "formal", "label": "Formal — legal/governance quality (board, audit committee)" },
-        { "value": "standard", "label": "Standard — professional business minutes" },
-        { "value": "informal", "label": "Summary — concise action-focused record" }
+        {
+          "value": "formal",
+          "label": "Formal — legal/governance quality (board, audit committee)"
+        },
+        {
+          "value": "standard",
+          "label": "Standard — professional business minutes"
+        },
+        {
+          "value": "informal",
+          "label": "Summary — concise action-focused record"
+        }
       ]
     },
     {
@@ -76,7 +106,9 @@
       "placeholder": "e.g. Confidential — Internal Use Only"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "communications",
     "meetings",

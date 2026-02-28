@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Land title verification procedures by country: Kenya Ardhisasa portal, Nigeria State Land Registry, Ghana Lands Commission, India state land records, South Africa Deeds Registry, Tanzania Land Registry. Red flags, due diligence steps, customary vs formal title." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Land title verification procedures by country: Kenya Ardhisasa portal, Nigeria State Land Registry, Ghana Lands Commission, India state land records, South Africa Deeds Registry, Tanzania Land Registry. Red flags, due diligence steps, customary vs formal title."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,12 +82,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "buying", "label": "Buying land" },
-        { "value": "selling", "label": "Selling land" },
-        { "value": "renting", "label": "Renting land or property" },
-        { "value": "neighbour-dispute", "label": "Dispute with a neighbour" },
-        { "value": "inherited", "label": "Inherited land" },
-        { "value": "government-claim", "label": "Government claims the land" }
+        {
+          "value": "buying",
+          "label": "Buying land"
+        },
+        {
+          "value": "selling",
+          "label": "Selling land"
+        },
+        {
+          "value": "renting",
+          "label": "Renting land or property"
+        },
+        {
+          "value": "neighbour-dispute",
+          "label": "Dispute with a neighbour"
+        },
+        {
+          "value": "inherited",
+          "label": "Inherited land"
+        },
+        {
+          "value": "government-claim",
+          "label": "Government claims the land"
+        }
       ]
     },
     {
@@ -60,15 +114,45 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "formal-deed", "label": "Formal title deed" },
-        { "value": "leasehold", "label": "Leasehold" },
-        { "value": "community-land", "label": "Community land" },
-        { "value": "customary", "label": "Customary / traditional" },
-        { "value": "no-title", "label": "No title" },
-        { "value": "unknown", "label": "Don't know" }
+        {
+          "value": "formal-deed",
+          "label": "Formal title deed"
+        },
+        {
+          "value": "leasehold",
+          "label": "Leasehold"
+        },
+        {
+          "value": "community-land",
+          "label": "Community land"
+        },
+        {
+          "value": "customary",
+          "label": "Customary / traditional"
+        },
+        {
+          "value": "no-title",
+          "label": "No title"
+        },
+        {
+          "value": "unknown",
+          "label": "Don't know"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
-  "tags": ["land-rights", "bop", "rights", "title-verification", "due-diligence", "land-fraud", "customary-land", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "land-rights-paralegal"
+  ],
+  "tags": [
+    "land-rights",
+    "bop",
+    "rights",
+    "title-verification",
+    "due-diligence",
+    "land-fraud",
+    "customary-land",
+    "africa",
+    "south-asia"
+  ]
 }

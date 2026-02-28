@@ -27,15 +27,42 @@
       "label": "Material Type",
       "type": "select",
       "options": [
-        { "value": "condition-guide", "label": "Condition / Diagnosis Guide" },
-        { "value": "procedure-instructions", "label": "Pre / Post-Procedure Instructions" },
-        { "value": "medication-guide", "label": "Medication Information Guide" },
-        { "value": "self-management-plan", "label": "Self-Management Plan" },
-        { "value": "lifestyle-guide", "label": "Lifestyle / Healthy Living Guide" },
-        { "value": "discharge-instructions", "label": "Discharge Instructions" },
-        { "value": "screening-information", "label": "Screening / Prevention Information" },
-        { "value": "faq-sheet", "label": "FAQ Sheet" },
-        { "value": "caregiver-guide", "label": "Caregiver / Family Guide" }
+        {
+          "value": "condition-guide",
+          "label": "Condition / Diagnosis Guide"
+        },
+        {
+          "value": "procedure-instructions",
+          "label": "Pre / Post-Procedure Instructions"
+        },
+        {
+          "value": "medication-guide",
+          "label": "Medication Information Guide"
+        },
+        {
+          "value": "self-management-plan",
+          "label": "Self-Management Plan"
+        },
+        {
+          "value": "lifestyle-guide",
+          "label": "Lifestyle / Healthy Living Guide"
+        },
+        {
+          "value": "discharge-instructions",
+          "label": "Discharge Instructions"
+        },
+        {
+          "value": "screening-information",
+          "label": "Screening / Prevention Information"
+        },
+        {
+          "value": "faq-sheet",
+          "label": "FAQ Sheet"
+        },
+        {
+          "value": "caregiver-guide",
+          "label": "Caregiver / Family Guide"
+        }
       ],
       "required": true
     },
@@ -51,13 +78,34 @@
       "label": "Target Audience",
       "type": "select",
       "options": [
-        { "value": "general-adult", "label": "General adult patients" },
-        { "value": "low-health-literacy", "label": "Patients with low health literacy" },
-        { "value": "elderly", "label": "Older adults / Elderly patients" },
-        { "value": "parents-caregivers", "label": "Parents / Caregivers" },
-        { "value": "adolescents", "label": "Children / Adolescents" },
-        { "value": "non-native-speakers", "label": "Patients for whom English is a second language" },
-        { "value": "highly-educated", "label": "Highly educated / Professional patients" }
+        {
+          "value": "general-adult",
+          "label": "General adult patients"
+        },
+        {
+          "value": "low-health-literacy",
+          "label": "Patients with low health literacy"
+        },
+        {
+          "value": "elderly",
+          "label": "Older adults / Elderly patients"
+        },
+        {
+          "value": "parents-caregivers",
+          "label": "Parents / Caregivers"
+        },
+        {
+          "value": "adolescents",
+          "label": "Children / Adolescents"
+        },
+        {
+          "value": "non-native-speakers",
+          "label": "Patients for whom English is a second language"
+        },
+        {
+          "value": "highly-educated",
+          "label": "Highly educated / Professional patients"
+        }
       ],
       "required": true
     },
@@ -66,9 +114,18 @@
       "label": "Target Reading Level",
       "type": "select",
       "options": [
-        { "value": "simple", "label": "Simple — age 9-11 reading level (Flesch score 80+)" },
-        { "value": "standard", "label": "Standard — age 12-15 reading level (Flesch score 60-79)" },
-        { "value": "detailed", "label": "Detailed — educated adult (Flesch score 40-59)" }
+        {
+          "value": "simple",
+          "label": "Simple — age 9-11 reading level (Flesch score 80+)"
+        },
+        {
+          "value": "standard",
+          "label": "Standard — age 12-15 reading level (Flesch score 60-79)"
+        },
+        {
+          "value": "detailed",
+          "label": "Detailed — educated adult (Flesch score 40-59)"
+        }
       ],
       "required": true
     },
@@ -77,12 +134,30 @@
       "label": "Output Format",
       "type": "select",
       "options": [
-        { "value": "leaflet", "label": "Printed Leaflet / Handout" },
-        { "value": "web-content", "label": "Website / Patient Portal Content" },
-        { "value": "video-script", "label": "Video Script" },
-        { "value": "poster", "label": "Poster / Infographic Text" },
-        { "value": "app-content", "label": "App / Digital Tool Content" },
-        { "value": "email", "label": "Patient Email / Letter" }
+        {
+          "value": "leaflet",
+          "label": "Printed Leaflet / Handout"
+        },
+        {
+          "value": "web-content",
+          "label": "Website / Patient Portal Content"
+        },
+        {
+          "value": "video-script",
+          "label": "Video Script"
+        },
+        {
+          "value": "poster",
+          "label": "Poster / Infographic Text"
+        },
+        {
+          "value": "app-content",
+          "label": "App / Digital Tool Content"
+        },
+        {
+          "value": "email",
+          "label": "Patient Email / Letter"
+        }
       ],
       "required": false
     },
@@ -102,10 +177,7 @@
     }
   ],
   "recommendedPersonas": [
-    "health-educator",
-    "clinical-lead",
-    "patient-experience-manager",
-    "public-health-specialist"
+    "clinical-professional"
   ],
   "tags": [
     "healthcare",

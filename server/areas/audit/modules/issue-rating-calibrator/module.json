@@ -95,7 +95,9 @@
       "placeholder": "e.g., Two team members have rated similar findings differently. Management is pushing back on the Critical rating for Finding 2. We are uncertain whether the training finding rises to High given the small gap."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "auditor"
+  ],
   "tags": [
     "audit",
     "rating",

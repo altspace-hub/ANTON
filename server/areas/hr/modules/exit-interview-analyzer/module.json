@@ -81,7 +81,9 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "exit-interview",

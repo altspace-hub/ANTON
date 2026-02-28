@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "maturity-assessment"],
+    "outputFormats": [
+      "detailed-findings",
+      "maturity-assessment"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -31,11 +34,26 @@
       "label": "What's the valuation for?",
       "required": true,
       "options": [
-        { "value": "new-investment", "label": "New investment (what should we pay?)" },
-        { "value": "portfolio-mark", "label": "Portfolio mark-to-market (quarterly valuation)" },
-        { "value": "exit-prep", "label": "Exit preparation (what's it worth now?)" },
-        { "value": "fundraising-nav", "label": "Fundraising (fund NAV for LP reporting)" },
-        { "value": "secondary", "label": "Secondary transaction" }
+        {
+          "value": "new-investment",
+          "label": "New investment (what should we pay?)"
+        },
+        {
+          "value": "portfolio-mark",
+          "label": "Portfolio mark-to-market (quarterly valuation)"
+        },
+        {
+          "value": "exit-prep",
+          "label": "Exit preparation (what's it worth now?)"
+        },
+        {
+          "value": "fundraising-nav",
+          "label": "Fundraising (fund NAV for LP reporting)"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary transaction"
+        }
       ]
     },
     {
@@ -44,13 +62,34 @@
       "label": "Preferred methodology",
       "required": true,
       "options": [
-        { "value": "public-comps", "label": "Comparable public companies" },
-        { "value": "precedent-transactions", "label": "Precedent transactions" },
-        { "value": "dcf", "label": "DCF (discounted cash flow)" },
-        { "value": "lbo", "label": "LBO analysis (PE)" },
-        { "value": "revenue-multiple", "label": "Revenue multiple (VC)" },
-        { "value": "scorecard", "label": "Scorecard method (early VC)" },
-        { "value": "recommend", "label": "Let ANTON recommend based on stage" }
+        {
+          "value": "public-comps",
+          "label": "Comparable public companies"
+        },
+        {
+          "value": "precedent-transactions",
+          "label": "Precedent transactions"
+        },
+        {
+          "value": "dcf",
+          "label": "DCF (discounted cash flow)"
+        },
+        {
+          "value": "lbo",
+          "label": "LBO analysis (PE)"
+        },
+        {
+          "value": "revenue-multiple",
+          "label": "Revenue multiple (VC)"
+        },
+        {
+          "value": "scorecard",
+          "label": "Scorecard method (early VC)"
+        },
+        {
+          "value": "recommend",
+          "label": "Let ANTON recommend based on stage"
+        }
       ]
     },
     {
@@ -59,12 +98,30 @@
       "label": "Company stage",
       "required": true,
       "options": [
-        { "value": "pre-revenue", "label": "Pre-revenue" },
-        { "value": "early-revenue", "label": "Early revenue (<$1M ARR)" },
-        { "value": "growth", "label": "Growth ($1–10M ARR)" },
-        { "value": "scale", "label": "Scale ($10–50M ARR)" },
-        { "value": "mature", "label": "Mature ($50M+ revenue)" },
-        { "value": "profitable", "label": "Profitable / Cash-generating" }
+        {
+          "value": "pre-revenue",
+          "label": "Pre-revenue"
+        },
+        {
+          "value": "early-revenue",
+          "label": "Early revenue (<$1M ARR)"
+        },
+        {
+          "value": "growth",
+          "label": "Growth ($1–10M ARR)"
+        },
+        {
+          "value": "scale",
+          "label": "Scale ($10–50M ARR)"
+        },
+        {
+          "value": "mature",
+          "label": "Mature ($50M+ revenue)"
+        },
+        {
+          "value": "profitable",
+          "label": "Profitable / Cash-generating"
+        }
       ]
     },
     {
@@ -82,5 +139,16 @@
       "required": false
     }
   ],
-  "tags": ["pe-vc", "valuation", "dcf", "lbo", "comparables", "multiples", "investment-decision"]
+  "tags": [
+    "pe-vc",
+    "valuation",
+    "dcf",
+    "lbo",
+    "comparables",
+    "multiples",
+    "investment-decision"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

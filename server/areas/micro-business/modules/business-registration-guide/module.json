@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,16 +34,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -50,12 +82,30 @@
       "label": "What kind of business do you have?",
       "required": true,
       "options": [
-        { "value": "market-stall", "label": "Market stall" },
-        { "value": "shop-kiosk", "label": "Shop / kiosk" },
-        { "value": "food-vendor", "label": "Food vendor" },
-        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
-        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "market-stall",
+          "label": "Market stall"
+        },
+        {
+          "value": "shop-kiosk",
+          "label": "Shop / kiosk"
+        },
+        {
+          "value": "food-vendor",
+          "label": "Food vendor"
+        },
+        {
+          "value": "tailor-seamstress",
+          "label": "Tailor / seamstress"
+        },
+        {
+          "value": "service-provider",
+          "label": "Service provider (mechanic, hairdresser)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -64,9 +114,18 @@
       "label": "Who works in your business?",
       "required": true,
       "options": [
-        { "value": "solo", "label": "Solo / myself only" },
-        { "value": "family", "label": "Family business" },
-        { "value": "small-staff", "label": "2–5 employees" }
+        {
+          "value": "solo",
+          "label": "Solo / myself only"
+        },
+        {
+          "value": "family",
+          "label": "Family business"
+        },
+        {
+          "value": "small-staff",
+          "label": "2–5 employees"
+        }
       ]
     },
     {
@@ -75,15 +134,32 @@
       "label": "Why are you asking about registration?",
       "required": false,
       "options": [
-        { "value": "dont-know", "label": "Don't know if I need to register" },
-        { "value": "officials-asking", "label": "Officials have been asking me" },
-        { "value": "bank-account", "label": "Want to open a bank account" },
-        { "value": "loan", "label": "Want to apply for a loan" },
-        { "value": "harassment", "label": "Police / council harassing me" }
+        {
+          "value": "dont-know",
+          "label": "Don't know if I need to register"
+        },
+        {
+          "value": "officials-asking",
+          "label": "Officials have been asking me"
+        },
+        {
+          "value": "bank-account",
+          "label": "Want to open a bank account"
+        },
+        {
+          "value": "loan",
+          "label": "Want to apply for a loan"
+        },
+        {
+          "value": "harassment",
+          "label": "Police / council harassing me"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "small-business-mentor"
+  ],
   "tags": [
     "micro-business",
     "bop",

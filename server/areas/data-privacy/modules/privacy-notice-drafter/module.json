@@ -33,12 +33,30 @@
       "label": "Notice type",
       "required": true,
       "options": [
-        { "value": "website_privacy", "label": "Website privacy policy" },
-        { "value": "app_privacy", "label": "App privacy notice" },
-        { "value": "employee_privacy", "label": "Employee privacy notice" },
-        { "value": "cctv", "label": "CCTV notice" },
-        { "value": "cookie_notice", "label": "Cookie notice" },
-        { "value": "children_privacy", "label": "Children's privacy notice" }
+        {
+          "value": "website_privacy",
+          "label": "Website privacy policy"
+        },
+        {
+          "value": "app_privacy",
+          "label": "App privacy notice"
+        },
+        {
+          "value": "employee_privacy",
+          "label": "Employee privacy notice"
+        },
+        {
+          "value": "cctv",
+          "label": "CCTV notice"
+        },
+        {
+          "value": "cookie_notice",
+          "label": "Cookie notice"
+        },
+        {
+          "value": "children_privacy",
+          "label": "Children's privacy notice"
+        }
       ]
     },
     {
@@ -46,11 +64,26 @@
       "type": "select",
       "label": "Organisation type",
       "options": [
-        { "value": "eu_controller", "label": "EU Controller" },
-        { "value": "non_eu_controller", "label": "Non-EU Controller (EU market)" },
-        { "value": "processor", "label": "Processor" },
-        { "value": "joint_controller", "label": "Joint Controller" },
-        { "value": "public_authority", "label": "Public Authority" }
+        {
+          "value": "eu_controller",
+          "label": "EU Controller"
+        },
+        {
+          "value": "non_eu_controller",
+          "label": "Non-EU Controller (EU market)"
+        },
+        {
+          "value": "processor",
+          "label": "Processor"
+        },
+        {
+          "value": "joint_controller",
+          "label": "Joint Controller"
+        },
+        {
+          "value": "public_authority",
+          "label": "Public Authority"
+        }
       ]
     },
     {
@@ -58,12 +91,30 @@
       "type": "chips",
       "label": "Processing activities to cover",
       "options": [
-        { "value": "marketing", "label": "Marketing" },
-        { "value": "analytics", "label": "Analytics" },
-        { "value": "service_delivery", "label": "Service delivery" },
-        { "value": "hr", "label": "HR" },
-        { "value": "research", "label": "Research" },
-        { "value": "third_party_sharing", "label": "Third-party sharing" }
+        {
+          "value": "marketing",
+          "label": "Marketing"
+        },
+        {
+          "value": "analytics",
+          "label": "Analytics"
+        },
+        {
+          "value": "service_delivery",
+          "label": "Service delivery"
+        },
+        {
+          "value": "hr",
+          "label": "HR"
+        },
+        {
+          "value": "research",
+          "label": "Research"
+        },
+        {
+          "value": "third_party_sharing",
+          "label": "Third-party sharing"
+        }
       ]
     },
     {
@@ -71,17 +122,31 @@
       "type": "chips",
       "label": "Special requirements",
       "options": [
-        { "value": "children", "label": "Children's data" },
-        { "value": "health_data", "label": "Health data" },
-        { "value": "us_state", "label": "US state requirements" },
-        { "value": "uk_gdpr", "label": "UK GDPR" },
-        { "value": "lgpd", "label": "Brazil LGPD" }
+        {
+          "value": "children",
+          "label": "Children's data"
+        },
+        {
+          "value": "health_data",
+          "label": "Health data"
+        },
+        {
+          "value": "us_state",
+          "label": "US state requirements"
+        },
+        {
+          "value": "uk_gdpr",
+          "label": "UK GDPR"
+        },
+        {
+          "value": "lgpd",
+          "label": "Brazil LGPD"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "dpo",
-    "legal-expert"
+    "dpo"
   ],
   "tags": [
     "privacy-notice",

@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "action-plan"],
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,25 +32,55 @@
       "id": "entity_type",
       "label": "Entity Type",
       "type": "select",
-      "options": ["Islamic Bank", "Corporate", "Investment Fund", "Family Waqf"],
+      "options": [
+        "Islamic Bank",
+        "Corporate",
+        "Investment Fund",
+        "Family Waqf"
+      ],
       "required": true
     },
     {
       "id": "jurisdiction",
       "label": "Jurisdiction",
       "type": "select",
-      "options": ["Saudi Arabia", "Pakistan", "Malaysia", "UAE", "Other"],
+      "options": [
+        "Saudi Arabia",
+        "Pakistan",
+        "Malaysia",
+        "UAE",
+        "Other"
+      ],
       "required": true
     },
     {
       "id": "assets_in_scope",
       "label": "Assets in Scope",
       "type": "chips",
-      "options": ["Cash", "Investments", "Receivables", "Inventory", "Fixed Assets"],
+      "options": [
+        "Cash",
+        "Investments",
+        "Receivables",
+        "Inventory",
+        "Fixed Assets"
+      ],
       "required": false
     }
   ],
-  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer"],
-  "recommendedSkills": ["skill-aaoifi-standards"],
-  "tags": ["zakat", "nisab", "calculation", "distribution", "regulatory-reporting", "aaoifi", "corporate-zakat"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards"
+  ],
+  "tags": [
+    "zakat",
+    "nisab",
+    "calculation",
+    "distribution",
+    "regulatory-reporting",
+    "aaoifi",
+    "corporate-zakat"
+  ]
 }

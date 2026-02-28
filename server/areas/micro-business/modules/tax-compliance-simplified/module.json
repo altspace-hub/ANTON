@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,16 +34,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -50,12 +82,30 @@
       "label": "What kind of business do you have?",
       "required": true,
       "options": [
-        { "value": "market-stall", "label": "Market stall" },
-        { "value": "shop-kiosk", "label": "Shop / kiosk" },
-        { "value": "food-vendor", "label": "Food vendor" },
-        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
-        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "market-stall",
+          "label": "Market stall"
+        },
+        {
+          "value": "shop-kiosk",
+          "label": "Shop / kiosk"
+        },
+        {
+          "value": "food-vendor",
+          "label": "Food vendor"
+        },
+        {
+          "value": "tailor-seamstress",
+          "label": "Tailor / seamstress"
+        },
+        {
+          "value": "service-provider",
+          "label": "Service provider (mechanic, hairdresser)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -64,10 +114,22 @@
       "label": "How much do you earn per month (roughly)?",
       "required": true,
       "options": [
-        { "value": "very-small", "label": "Very small (under $500 / month)" },
-        { "value": "small", "label": "Small ($500–2,000 / month)" },
-        { "value": "medium", "label": "Medium ($2,000–5,000 / month)" },
-        { "value": "larger", "label": "Larger than $5,000 / month" }
+        {
+          "value": "very-small",
+          "label": "Very small (under $500 / month)"
+        },
+        {
+          "value": "small",
+          "label": "Small ($500–2,000 / month)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium ($2,000–5,000 / month)"
+        },
+        {
+          "value": "larger",
+          "label": "Larger than $5,000 / month"
+        }
       ]
     },
     {
@@ -76,14 +138,28 @@
       "label": "What is your tax situation now?",
       "required": false,
       "options": [
-        { "value": "never-paid", "label": "Never paid tax" },
-        { "value": "just-started", "label": "Just started my business" },
-        { "value": "contacted", "label": "Tax authority contacted me" },
-        { "value": "want-compliant", "label": "Want to be compliant" }
+        {
+          "value": "never-paid",
+          "label": "Never paid tax"
+        },
+        {
+          "value": "just-started",
+          "label": "Just started my business"
+        },
+        {
+          "value": "contacted",
+          "label": "Tax authority contacted me"
+        },
+        {
+          "value": "want-compliant",
+          "label": "Want to be compliant"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "small-business-mentor"
+  ],
   "tags": [
     "micro-business",
     "bop",

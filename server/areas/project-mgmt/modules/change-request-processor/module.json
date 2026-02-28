@@ -68,7 +68,9 @@
       "placeholder": "Any fixed constraints that the change must respect (e.g. fixed go-live date, budget cap, contractual obligations, regulatory deadline)."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "project-management",
     "change-control",

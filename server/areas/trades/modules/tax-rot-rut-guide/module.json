@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,12 +34,30 @@
       "label": "What do you need to know?",
       "required": true,
       "options": [
-        { "value": "eligible", "label": "Does my work qualify for ROT or RUT?" },
-        { "value": "calculate", "label": "Calculate the deduction for a job" },
-        { "value": "claim", "label": "How do I claim from Skatteverket?" },
-        { "value": "limits", "label": "What are the annual limits?" },
-        { "value": "company-customer", "label": "My customer is a company — can they still get the deduction?" },
-        { "value": "foreign-customer", "label": "My customer is not Swedish — what happens?" }
+        {
+          "value": "eligible",
+          "label": "Does my work qualify for ROT or RUT?"
+        },
+        {
+          "value": "calculate",
+          "label": "Calculate the deduction for a job"
+        },
+        {
+          "value": "claim",
+          "label": "How do I claim from Skatteverket?"
+        },
+        {
+          "value": "limits",
+          "label": "What are the annual limits?"
+        },
+        {
+          "value": "company-customer",
+          "label": "My customer is a company — can they still get the deduction?"
+        },
+        {
+          "value": "foreign-customer",
+          "label": "My customer is not Swedish — what happens?"
+        }
       ]
     },
     {
@@ -48,7 +68,9 @@
       "required": false
     }
   ],
-  "recommendedPersonas": ["small-business-mentor"],
+  "recommendedPersonas": [
+    "trades-expert"
+  ],
   "tags": [
     "trades",
     "rot",

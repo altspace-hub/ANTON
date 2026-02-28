@@ -127,7 +127,9 @@
       "placeholder": "e.g., Must hold CAMS certification, fluent in Swedish and English, experience with Norkom/Actimize preferred"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "recruitment",

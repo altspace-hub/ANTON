@@ -137,9 +137,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "fsa-regulator",
-    "auditor"
+    "cyber-expert"
   ],
   "tags": [
     "third-party-risk",

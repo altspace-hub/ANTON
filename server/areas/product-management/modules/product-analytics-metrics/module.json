@@ -34,12 +34,30 @@
       "label": "Product type",
       "required": true,
       "options": [
-        { "value": "b2b_saas", "label": "B2B SaaS" },
-        { "value": "b2c_mobile", "label": "B2C Mobile App" },
-        { "value": "marketplace", "label": "Marketplace" },
-        { "value": "api_platform", "label": "API Platform" },
-        { "value": "hardware_software", "label": "Hardware + Software" },
-        { "value": "internal_tool", "label": "Internal Tool" }
+        {
+          "value": "b2b_saas",
+          "label": "B2B SaaS"
+        },
+        {
+          "value": "b2c_mobile",
+          "label": "B2C Mobile App"
+        },
+        {
+          "value": "marketplace",
+          "label": "Marketplace"
+        },
+        {
+          "value": "api_platform",
+          "label": "API Platform"
+        },
+        {
+          "value": "hardware_software",
+          "label": "Hardware + Software"
+        },
+        {
+          "value": "internal_tool",
+          "label": "Internal Tool"
+        }
       ]
     },
     {
@@ -47,12 +65,30 @@
       "type": "select",
       "label": "Product lifecycle stage",
       "options": [
-        { "value": "discovery", "label": "Discovery" },
-        { "value": "zero_to_one", "label": "0→1 (building MVP)" },
-        { "value": "growth", "label": "Growth" },
-        { "value": "scaling", "label": "Scaling" },
-        { "value": "maturity", "label": "Maturity" },
-        { "value": "revival", "label": "Revival" }
+        {
+          "value": "discovery",
+          "label": "Discovery"
+        },
+        {
+          "value": "zero_to_one",
+          "label": "0→1 (building MVP)"
+        },
+        {
+          "value": "growth",
+          "label": "Growth"
+        },
+        {
+          "value": "scaling",
+          "label": "Scaling"
+        },
+        {
+          "value": "maturity",
+          "label": "Maturity"
+        },
+        {
+          "value": "revival",
+          "label": "Revival"
+        }
       ]
     },
     {
@@ -60,14 +96,38 @@
       "type": "chips",
       "label": "Metrics currently tracked",
       "options": [
-        { "value": "dau_mau", "label": "DAU/MAU" },
-        { "value": "retention", "label": "Retention" },
-        { "value": "churn", "label": "Churn" },
-        { "value": "conversion", "label": "Conversion" },
-        { "value": "nps", "label": "NPS" },
-        { "value": "revenue", "label": "Revenue" },
-        { "value": "feature_adoption", "label": "Feature adoption" },
-        { "value": "none", "label": "None yet" }
+        {
+          "value": "dau_mau",
+          "label": "DAU/MAU"
+        },
+        {
+          "value": "retention",
+          "label": "Retention"
+        },
+        {
+          "value": "churn",
+          "label": "Churn"
+        },
+        {
+          "value": "conversion",
+          "label": "Conversion"
+        },
+        {
+          "value": "nps",
+          "label": "NPS"
+        },
+        {
+          "value": "revenue",
+          "label": "Revenue"
+        },
+        {
+          "value": "feature_adoption",
+          "label": "Feature adoption"
+        },
+        {
+          "value": "none",
+          "label": "None yet"
+        }
       ]
     },
     {
@@ -75,16 +135,32 @@
       "type": "select",
       "label": "Primary business goal",
       "options": [
-        { "value": "acquisition", "label": "Grow acquisition" },
-        { "value": "retention", "label": "Improve retention" },
-        { "value": "revenue", "label": "Increase revenue" },
-        { "value": "churn", "label": "Reduce churn" },
-        { "value": "activation", "label": "Improve activation" }
+        {
+          "value": "acquisition",
+          "label": "Grow acquisition"
+        },
+        {
+          "value": "retention",
+          "label": "Improve retention"
+        },
+        {
+          "value": "revenue",
+          "label": "Increase revenue"
+        },
+        {
+          "value": "churn",
+          "label": "Reduce churn"
+        },
+        {
+          "value": "activation",
+          "label": "Improve activation"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "policy-analyst"
+    "strategy-expert",
+    "tech-expert"
   ],
   "tags": [
     "analytics",

@@ -34,15 +34,42 @@
       "type": "multi-select",
       "label": "Review scope",
       "options": [
-        { "value": "registration", "label": "VAT/GST registration obligations" },
-        { "value": "cross_border_supplies", "label": "Cross-border supply classification (B2B / B2C)" },
-        { "value": "input_recovery", "label": "Input tax recovery / partial exemption" },
-        { "value": "reverse_charge", "label": "Reverse charge / self-assessment" },
-        { "value": "e_invoicing", "label": "E-invoicing / mandatory invoice requirements" },
-        { "value": "digital_services", "label": "Digital / electronic services supply rules" },
-        { "value": "oss_ioss", "label": "EU OSS / IOSS (one-stop shop for e-commerce)" },
-        { "value": "customs_vat", "label": "Import VAT / customs interface" },
-        { "value": "intragroup_vat", "label": "Intragroup supplies / VAT grouping" }
+        {
+          "value": "registration",
+          "label": "VAT/GST registration obligations"
+        },
+        {
+          "value": "cross_border_supplies",
+          "label": "Cross-border supply classification (B2B / B2C)"
+        },
+        {
+          "value": "input_recovery",
+          "label": "Input tax recovery / partial exemption"
+        },
+        {
+          "value": "reverse_charge",
+          "label": "Reverse charge / self-assessment"
+        },
+        {
+          "value": "e_invoicing",
+          "label": "E-invoicing / mandatory invoice requirements"
+        },
+        {
+          "value": "digital_services",
+          "label": "Digital / electronic services supply rules"
+        },
+        {
+          "value": "oss_ioss",
+          "label": "EU OSS / IOSS (one-stop shop for e-commerce)"
+        },
+        {
+          "value": "customs_vat",
+          "label": "Import VAT / customs interface"
+        },
+        {
+          "value": "intragroup_vat",
+          "label": "Intragroup supplies / VAT grouping"
+        }
       ]
     },
     {
@@ -50,14 +77,38 @@
       "type": "multi-select",
       "label": "VAT jurisdictions in scope",
       "options": [
-        { "value": "eu_member_states", "label": "EU Member States (general)" },
-        { "value": "uk", "label": "United Kingdom (post-Brexit)" },
-        { "value": "no", "label": "Norway (MVA)" },
-        { "value": "ch", "label": "Switzerland (MWST)" },
-        { "value": "us", "label": "United States (Sales & Use Tax)" },
-        { "value": "au", "label": "Australia (GST)" },
-        { "value": "sg", "label": "Singapore (GST)" },
-        { "value": "other", "label": "Other (describe in context)" }
+        {
+          "value": "eu_member_states",
+          "label": "EU Member States (general)"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom (post-Brexit)"
+        },
+        {
+          "value": "no",
+          "label": "Norway (MVA)"
+        },
+        {
+          "value": "ch",
+          "label": "Switzerland (MWST)"
+        },
+        {
+          "value": "us",
+          "label": "United States (Sales & Use Tax)"
+        },
+        {
+          "value": "au",
+          "label": "Australia (GST)"
+        },
+        {
+          "value": "sg",
+          "label": "Singapore (GST)"
+        },
+        {
+          "value": "other",
+          "label": "Other (describe in context)"
+        }
       ]
     },
     {
@@ -65,12 +116,30 @@
       "type": "select",
       "label": "Business model",
       "options": [
-        { "value": "b2b_services", "label": "B2B services (professional, digital, financial)" },
-        { "value": "b2c_digital", "label": "B2C digital / e-commerce" },
-        { "value": "goods_manufacturer", "label": "Goods — manufacturer / distributor" },
-        { "value": "financial_services", "label": "Financial services (exempt / partially exempt)" },
-        { "value": "real_estate", "label": "Real estate (exempt / optional taxation)" },
-        { "value": "mixed", "label": "Mixed supply — taxable and exempt" }
+        {
+          "value": "b2b_services",
+          "label": "B2B services (professional, digital, financial)"
+        },
+        {
+          "value": "b2c_digital",
+          "label": "B2C digital / e-commerce"
+        },
+        {
+          "value": "goods_manufacturer",
+          "label": "Goods — manufacturer / distributor"
+        },
+        {
+          "value": "financial_services",
+          "label": "Financial services (exempt / partially exempt)"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real estate (exempt / optional taxation)"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed supply — taxable and exempt"
+        }
       ]
     },
     {
@@ -84,15 +153,24 @@
       "type": "select",
       "label": "Annual taxable turnover (EU/UK VAT)",
       "options": [
-        { "value": "below_registration", "label": "Below registration threshold (domestic)" },
-        { "value": "above_registration", "label": "Above registration threshold — registered" },
-        { "value": "large_enterprise", "label": "Large enterprise (>EUR 10M VAT turnover)" }
+        {
+          "value": "below_registration",
+          "label": "Below registration threshold (domestic)"
+        },
+        {
+          "value": "above_registration",
+          "label": "Above registration threshold — registered"
+        },
+        {
+          "value": "large_enterprise",
+          "label": "Large enterprise (>EUR 10M VAT turnover)"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
     "tax-director",
-    "fcp-expert"
+    "transfer-pricing-specialist"
   ],
   "modelTier": {
     "recommended": "sonnet",

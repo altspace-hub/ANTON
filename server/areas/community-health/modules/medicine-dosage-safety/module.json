@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Medicine safety, prescription reading, common medicine interactions, antibiotic adherence, safe storage, paracetamol safety" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Medicine safety, prescription reading, common medicine interactions, antibiotic adherence, safe storage, paracetamol safety"
+      }
     }
   },
   "guidedInputs": [
@@ -28,11 +34,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "understand-prescription", "label": "Doctor gave a prescription — want to understand it" },
-        { "value": "buying-at-pharmacy", "label": "Buying medicine at a pharmacy" },
-        { "value": "childs-medicine", "label": "Child's medicine" },
-        { "value": "multiple-medicines-interactions", "label": "Taking multiple medicines — check interactions" },
-        { "value": "medicine-effects", "label": "Understanding medicine effects or side effects" }
+        {
+          "value": "understand-prescription",
+          "label": "Doctor gave a prescription — want to understand it"
+        },
+        {
+          "value": "buying-at-pharmacy",
+          "label": "Buying medicine at a pharmacy"
+        },
+        {
+          "value": "childs-medicine",
+          "label": "Child's medicine"
+        },
+        {
+          "value": "multiple-medicines-interactions",
+          "label": "Taking multiple medicines — check interactions"
+        },
+        {
+          "value": "medicine-effects",
+          "label": "Understanding medicine effects or side effects"
+        }
       ]
     },
     {
@@ -41,13 +62,37 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "adult", "label": "Adult" },
-        { "value": "child", "label": "Child (give weight and age when asking)" },
-        { "value": "elderly", "label": "Elderly" },
-        { "value": "pregnant-woman", "label": "Pregnant woman" }
+        {
+          "value": "adult",
+          "label": "Adult"
+        },
+        {
+          "value": "child",
+          "label": "Child (give weight and age when asking)"
+        },
+        {
+          "value": "elderly",
+          "label": "Elderly"
+        },
+        {
+          "value": "pregnant-woman",
+          "label": "Pregnant woman"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
-  "tags": ["medicine-safety", "prescription", "dosage", "antibiotics", "paracetamol", "drug-interactions", "pharmacy", "storage"]
+  "recommendedPersonas": [
+    "community-health-worker",
+    "nutrition-health-educator"
+  ],
+  "tags": [
+    "medicine-safety",
+    "prescription",
+    "dosage",
+    "antibiotics",
+    "paracetamol",
+    "drug-interactions",
+    "pharmacy",
+    "storage"
+  ]
 }

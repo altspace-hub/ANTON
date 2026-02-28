@@ -37,10 +37,22 @@
       "description": "How far ahead should the horizon scan look?",
       "required": true,
       "options": [
-        { "value": "6_months", "label": "Next 6 months" },
-        { "value": "12_months", "label": "Next 12 months" },
-        { "value": "24_months", "label": "Next 24 months" },
-        { "value": "36_months", "label": "Next 36 months (strategic)" }
+        {
+          "value": "6_months",
+          "label": "Next 6 months"
+        },
+        {
+          "value": "12_months",
+          "label": "Next 12 months"
+        },
+        {
+          "value": "24_months",
+          "label": "Next 24 months"
+        },
+        {
+          "value": "36_months",
+          "label": "Next 36 months (strategic)"
+        }
       ]
     },
     {
@@ -50,14 +62,38 @@
       "description": "Which jurisdictions should be scanned?",
       "required": true,
       "options": [
-        { "value": "eu", "label": "EU (all member states)" },
-        { "value": "sweden", "label": "Sweden" },
-        { "value": "finland", "label": "Finland" },
-        { "value": "denmark", "label": "Denmark" },
-        { "value": "norway", "label": "Norway" },
-        { "value": "uk", "label": "United Kingdom" },
-        { "value": "germany", "label": "Germany" },
-        { "value": "global", "label": "Global / FATF" }
+        {
+          "value": "eu",
+          "label": "EU (all member states)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "global",
+          "label": "Global / FATF"
+        }
       ]
     },
     {
@@ -67,16 +103,46 @@
       "description": "Which regulatory topics should be scanned?",
       "required": true,
       "options": [
-        { "value": "aml_cft", "label": "AML/CFT" },
-        { "value": "sanctions", "label": "Sanctions" },
-        { "value": "gdpr_privacy", "label": "GDPR / Data Privacy" },
-        { "value": "dora", "label": "DORA / Operational Resilience" },
-        { "value": "mifid_mifir", "label": "MiFID II / MiFIR" },
-        { "value": "crd_crr", "label": "CRD / CRR (Banking)" },
-        { "value": "esg_csrd", "label": "ESG / CSRD" },
-        { "value": "crypto_mica", "label": "Crypto / MiCA" },
-        { "value": "psd3_psr", "label": "PSD3 / PSR" },
-        { "value": "ai_act", "label": "AI Act" }
+        {
+          "value": "aml_cft",
+          "label": "AML/CFT"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions"
+        },
+        {
+          "value": "gdpr_privacy",
+          "label": "GDPR / Data Privacy"
+        },
+        {
+          "value": "dora",
+          "label": "DORA / Operational Resilience"
+        },
+        {
+          "value": "mifid_mifir",
+          "label": "MiFID II / MiFIR"
+        },
+        {
+          "value": "crd_crr",
+          "label": "CRD / CRR (Banking)"
+        },
+        {
+          "value": "esg_csrd",
+          "label": "ESG / CSRD"
+        },
+        {
+          "value": "crypto_mica",
+          "label": "Crypto / MiCA"
+        },
+        {
+          "value": "psd3_psr",
+          "label": "PSD3 / PSR"
+        },
+        {
+          "value": "ai_act",
+          "label": "AI Act"
+        }
       ]
     },
     {
@@ -85,12 +151,30 @@
       "label": "Entity Type",
       "description": "What type of entity does the horizon scan apply to?",
       "options": [
-        { "value": "bank", "label": "Bank / Credit Institution" },
-        { "value": "fintech", "label": "Fintech / Payment Institution" },
-        { "value": "investment", "label": "Investment Firm / Asset Manager" },
-        { "value": "insurance", "label": "Insurance Company" },
-        { "value": "crypto", "label": "Crypto Asset Service Provider" },
-        { "value": "corporate", "label": "Non-Financial Corporate" }
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Payment Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto Asset Service Provider"
+        },
+        {
+          "value": "corporate",
+          "label": "Non-Financial Corporate"
+        }
       ]
     },
     {
@@ -102,9 +186,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "legal-expert",
-    "fsa-regulator"
+    "legal-expert"
   ],
   "tags": [
     "horizon-scanning",

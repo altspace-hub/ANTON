@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Post-harvest storage solutions, grain storage, PICS bags, hermetic storage, solar drying, food safety for smallholder farmers" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Post-harvest storage solutions, grain storage, PICS bags, hermetic storage, solar drying, food safety for smallholder farmers"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "maize-grain", "label": "Maize or grain" },
-        { "value": "beans", "label": "Beans" },
-        { "value": "root-crops", "label": "Root crops (cassava, yam, sweet potato)" },
-        { "value": "vegetables", "label": "Vegetables" },
-        { "value": "fruits", "label": "Fruits" },
-        { "value": "rice", "label": "Rice" }
+        {
+          "value": "maize-grain",
+          "label": "Maize or grain"
+        },
+        {
+          "value": "beans",
+          "label": "Beans"
+        },
+        {
+          "value": "root-crops",
+          "label": "Root crops (cassava, yam, sweet potato)"
+        },
+        {
+          "value": "vegetables",
+          "label": "Vegetables"
+        },
+        {
+          "value": "fruits",
+          "label": "Fruits"
+        },
+        {
+          "value": "rice",
+          "label": "Rice"
+        }
       ]
     },
     {
@@ -42,11 +66,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "mud-granary", "label": "Traditional mud granary" },
-        { "value": "metal-silo", "label": "Metal silo" },
-        { "value": "hermetic-bags", "label": "Hermetic bags (PICS or similar)" },
-        { "value": "open-shed", "label": "Open shed or room" },
-        { "value": "no-storage", "label": "No proper storage" }
+        {
+          "value": "mud-granary",
+          "label": "Traditional mud granary"
+        },
+        {
+          "value": "metal-silo",
+          "label": "Metal silo"
+        },
+        {
+          "value": "hermetic-bags",
+          "label": "Hermetic bags (PICS or similar)"
+        },
+        {
+          "value": "open-shed",
+          "label": "Open shed or room"
+        },
+        {
+          "value": "no-storage",
+          "label": "No proper storage"
+        }
       ]
     },
     {
@@ -55,10 +94,22 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "hot-humid", "label": "Hot and humid" },
-        { "value": "hot-dry", "label": "Hot and dry" },
-        { "value": "moderate", "label": "Moderate (not too hot or cold)" },
-        { "value": "cold-nights", "label": "Cold nights, warm days" }
+        {
+          "value": "hot-humid",
+          "label": "Hot and humid"
+        },
+        {
+          "value": "hot-dry",
+          "label": "Hot and dry"
+        },
+        {
+          "value": "moderate",
+          "label": "Moderate (not too hot or cold)"
+        },
+        {
+          "value": "cold-nights",
+          "label": "Cold nights, warm days"
+        }
       ]
     },
     {
@@ -67,14 +118,43 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "weevils-insects", "label": "Weevils or insects" },
-        { "value": "mould-fungus", "label": "Mould or fungus" },
-        { "value": "rodents", "label": "Rats or mice" },
-        { "value": "moisture", "label": "Too much moisture" },
-        { "value": "all-problems", "label": "All of these problems" }
+        {
+          "value": "weevils-insects",
+          "label": "Weevils or insects"
+        },
+        {
+          "value": "mould-fungus",
+          "label": "Mould or fungus"
+        },
+        {
+          "value": "rodents",
+          "label": "Rats or mice"
+        },
+        {
+          "value": "moisture",
+          "label": "Too much moisture"
+        },
+        {
+          "value": "all-problems",
+          "label": "All of these problems"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["post-harvest", "storage", "grain-storage", "pics-bags", "hermetic-storage", "solar-drying", "weevils", "mould-prevention", "food-safety", "smallholder"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "post-harvest",
+    "storage",
+    "grain-storage",
+    "pics-bags",
+    "hermetic-storage",
+    "solar-drying",
+    "weevils",
+    "mould-prevention",
+    "food-safety",
+    "smallholder"
+  ]
 }

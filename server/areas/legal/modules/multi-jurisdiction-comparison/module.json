@@ -44,17 +44,50 @@
       "description": "Select the jurisdictions to include in the comparison.",
       "required": true,
       "options": [
-        { "value": "eu_amlr", "label": "EU / AMLR" },
-        { "value": "sweden", "label": "Sweden" },
-        { "value": "finland", "label": "Finland" },
-        { "value": "denmark", "label": "Denmark" },
-        { "value": "norway", "label": "Norway" },
-        { "value": "uk", "label": "UK (FCA/HMRC)" },
-        { "value": "germany", "label": "Germany (BaFin)" },
-        { "value": "netherlands", "label": "Netherlands (DNB)" },
-        { "value": "luxembourg", "label": "Luxembourg (CSSF)" },
-        { "value": "ireland", "label": "Ireland (CBI)" },
-        { "value": "us_fincen", "label": "USA (FinCEN)" }
+        {
+          "value": "eu_amlr",
+          "label": "EU / AMLR"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK (FCA/HMRC)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (BaFin)"
+        },
+        {
+          "value": "netherlands",
+          "label": "Netherlands (DNB)"
+        },
+        {
+          "value": "luxembourg",
+          "label": "Luxembourg (CSSF)"
+        },
+        {
+          "value": "ireland",
+          "label": "Ireland (CBI)"
+        },
+        {
+          "value": "us_fincen",
+          "label": "USA (FinCEN)"
+        }
       ]
     },
     {
@@ -64,12 +97,30 @@
       "description": "What is the primary purpose of this multi-jurisdiction comparison?",
       "required": true,
       "options": [
-        { "value": "group_policy", "label": "Design Group-Level Policy (most restrictive baseline)" },
-        { "value": "market_entry", "label": "Market Entry Assessment" },
-        { "value": "licensing", "label": "Licensing / Regulatory Approval" },
-        { "value": "client_advice", "label": "Client Regulatory Advice" },
-        { "value": "harmonisation", "label": "Policy Harmonisation Across Entities" },
-        { "value": "gap_assessment", "label": "Gap Assessment Against Multiple Frameworks" }
+        {
+          "value": "group_policy",
+          "label": "Design Group-Level Policy (most restrictive baseline)"
+        },
+        {
+          "value": "market_entry",
+          "label": "Market Entry Assessment"
+        },
+        {
+          "value": "licensing",
+          "label": "Licensing / Regulatory Approval"
+        },
+        {
+          "value": "client_advice",
+          "label": "Client Regulatory Advice"
+        },
+        {
+          "value": "harmonisation",
+          "label": "Policy Harmonisation Across Entities"
+        },
+        {
+          "value": "gap_assessment",
+          "label": "Gap Assessment Against Multiple Frameworks"
+        }
       ]
     },
     {
@@ -85,19 +136,35 @@
       "label": "Entity Type",
       "description": "What type of entity does this comparison apply to?",
       "options": [
-        { "value": "bank", "label": "Bank / Credit Institution" },
-        { "value": "payment", "label": "Payment Institution" },
-        { "value": "investment", "label": "Investment Firm" },
-        { "value": "crypto", "label": "Crypto Asset Service Provider" },
-        { "value": "insurance", "label": "Insurance Company" },
-        { "value": "corporate", "label": "Non-Financial Corporate" }
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "payment",
+          "label": "Payment Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto Asset Service Provider"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "corporate",
+          "label": "Non-Financial Corporate"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "legal-expert",
-    "fcp-expert",
-    "fsa-regulator"
+    "legal-expert"
   ],
   "tags": [
     "multi-jurisdiction",

@@ -9,7 +9,11 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "action-plan", "project-plan"],
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan",
+      "project-plan"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -30,11 +34,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "application-licensing", "label": "Application / licensing" },
-        { "value": "benefits-grants", "label": "Benefits / grants" },
-        { "value": "information-guidance", "label": "Information / guidance" },
-        { "value": "transactional", "label": "Transactional (payments, registrations)" },
-        { "value": "cross-agency", "label": "Cross-agency / joined-up service" }
+        {
+          "value": "application-licensing",
+          "label": "Application / licensing"
+        },
+        {
+          "value": "benefits-grants",
+          "label": "Benefits / grants"
+        },
+        {
+          "value": "information-guidance",
+          "label": "Information / guidance"
+        },
+        {
+          "value": "transactional",
+          "label": "Transactional (payments, registrations)"
+        },
+        {
+          "value": "cross-agency",
+          "label": "Cross-agency / joined-up service"
+        }
       ]
     },
     {
@@ -43,10 +62,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "paper-based", "label": "Paper-based (no digital)" },
-        { "value": "partly-digital", "label": "Partly digital" },
-        { "value": "redesigning", "label": "Redesigning existing digital service" },
-        { "value": "new-service", "label": "Entirely new service" }
+        {
+          "value": "paper-based",
+          "label": "Paper-based (no digital)"
+        },
+        {
+          "value": "partly-digital",
+          "label": "Partly digital"
+        },
+        {
+          "value": "redesigning",
+          "label": "Redesigning existing digital service"
+        },
+        {
+          "value": "new-service",
+          "label": "Entirely new service"
+        }
       ]
     },
     {
@@ -55,13 +86,37 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "eu-uk", "label": "EU / UK (high connectivity)" },
-        { "value": "developing-country", "label": "Developing country" },
-        { "value": "low-connectivity", "label": "Low connectivity environment" },
-        { "value": "mobile-first", "label": "Mobile-first population" }
+        {
+          "value": "eu-uk",
+          "label": "EU / UK (high connectivity)"
+        },
+        {
+          "value": "developing-country",
+          "label": "Developing country"
+        },
+        {
+          "value": "low-connectivity",
+          "label": "Low connectivity environment"
+        },
+        {
+          "value": "mobile-first",
+          "label": "Mobile-first population"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["policy-analyst", "legal-expert"],
-  "tags": ["digital-government", "GDS", "service-design", "accessibility", "WCAG", "user-needs", "inclusive-design", "government", "public-administration"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "digital-government",
+    "GDS",
+    "service-design",
+    "accessibility",
+    "WCAG",
+    "user-needs",
+    "inclusive-design",
+    "government",
+    "public-administration"
+  ]
 }

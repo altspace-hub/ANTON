@@ -107,7 +107,9 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "auditor"
+  ],
   "tags": [
     "audit",
     "evidence",

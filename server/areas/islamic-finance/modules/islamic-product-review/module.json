@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "decision-memo"],
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,14 +32,27 @@
       "id": "product_type",
       "label": "Product Type",
       "type": "select",
-      "options": ["Murabaha", "Ijara", "Musharakah", "Mudarabah", "Tawarruq", "Istisna", "Salam", "Qard"],
+      "options": [
+        "Murabaha",
+        "Ijara",
+        "Musharakah",
+        "Mudarabah",
+        "Tawarruq",
+        "Istisna",
+        "Salam",
+        "Qard"
+      ],
       "required": true
     },
     {
       "id": "product_stage",
       "label": "Review Stage",
       "type": "select",
-      "options": ["New Product", "Existing Product Review", "Product Modification"],
+      "options": [
+        "New Product",
+        "Existing Product Review",
+        "Product Modification"
+      ],
       "required": true
     },
     {
@@ -47,7 +63,23 @@
       "required": false
     }
   ],
-  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer"],
-  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
-  "tags": ["product-review", "sharia", "murabaha", "ijara", "tawarruq", "istisna", "salam", "documentation", "compliance"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards",
+    "skill-ifsb-standards"
+  ],
+  "tags": [
+    "product-review",
+    "sharia",
+    "murabaha",
+    "ijara",
+    "tawarruq",
+    "istisna",
+    "salam",
+    "documentation",
+    "compliance"
+  ]
 }

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Government agricultural subsidies, input vouchers, farm loans, extension services by country including Kenya, Nigeria, Ghana, Tanzania, Uganda, Ethiopia, India, Bangladesh, Pakistan, Philippines" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Government agricultural subsidies, input vouchers, farm loans, extension services by country including Kenya, Nigeria, Ghana, Tanzania, Uganda, Ethiopia, India, Bangladesh, Pakistan, Philippines"
+      }
     }
   },
   "guidedInputs": [
@@ -28,17 +34,50 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -47,11 +86,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "food-crops", "label": "Food crops (maize, beans, rice)" },
-        { "value": "cash-crops", "label": "Cash crops (coffee, cotton, tobacco)" },
-        { "value": "mixed", "label": "Mixed crops" },
-        { "value": "livestock", "label": "Livestock" },
-        { "value": "all", "label": "All types" }
+        {
+          "value": "food-crops",
+          "label": "Food crops (maize, beans, rice)"
+        },
+        {
+          "value": "cash-crops",
+          "label": "Cash crops (coffee, cotton, tobacco)"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed crops"
+        },
+        {
+          "value": "livestock",
+          "label": "Livestock"
+        },
+        {
+          "value": "all",
+          "label": "All types"
+        }
       ]
     },
     {
@@ -60,12 +114,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "fertiliser-seeds", "label": "Fertiliser or seed subsidies" },
-        { "value": "equipment", "label": "Farm equipment" },
-        { "value": "loans-credit", "label": "Loans or credit" },
-        { "value": "training", "label": "Training programs" },
-        { "value": "market-access", "label": "Market access support" },
-        { "value": "all", "label": "All types of support" }
+        {
+          "value": "fertiliser-seeds",
+          "label": "Fertiliser or seed subsidies"
+        },
+        {
+          "value": "equipment",
+          "label": "Farm equipment"
+        },
+        {
+          "value": "loans-credit",
+          "label": "Loans or credit"
+        },
+        {
+          "value": "training",
+          "label": "Training programs"
+        },
+        {
+          "value": "market-access",
+          "label": "Market access support"
+        },
+        {
+          "value": "all",
+          "label": "All types of support"
+        }
       ]
     },
     {
@@ -74,14 +146,47 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "small-farm", "label": "My farm is very small" },
-        { "value": "no-land-title", "label": "I don't have a land title" },
-        { "value": "no-id-documents", "label": "I don't have all ID documents" },
-        { "value": "new-to-farming", "label": "I am new to farming" },
-        { "value": "not-sure", "label": "I am not sure what I need" }
+        {
+          "value": "small-farm",
+          "label": "My farm is very small"
+        },
+        {
+          "value": "no-land-title",
+          "label": "I don't have a land title"
+        },
+        {
+          "value": "no-id-documents",
+          "label": "I don't have all ID documents"
+        },
+        {
+          "value": "new-to-farming",
+          "label": "I am new to farming"
+        },
+        {
+          "value": "not-sure",
+          "label": "I am not sure what I need"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["subsidies", "government-support", "input-vouchers", "farm-loans", "pm-kisan", "anchor-borrowers", "kisan-credit", "extension-services", "smallholder", "eligibility", "kenya", "nigeria", "ghana", "india"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "subsidies",
+    "government-support",
+    "input-vouchers",
+    "farm-loans",
+    "pm-kisan",
+    "anchor-borrowers",
+    "kisan-credit",
+    "extension-services",
+    "smallholder",
+    "eligibility",
+    "kenya",
+    "nigeria",
+    "ghana",
+    "india"
+  ]
 }

@@ -35,9 +35,18 @@
       "label": "Review period",
       "required": true,
       "options": [
-        { "value": "mid_quarter", "label": "Mid-quarter check-in" },
-        { "value": "end_quarter", "label": "End-of-quarter review" },
-        { "value": "annual", "label": "Annual OKR retrospective" }
+        {
+          "value": "mid_quarter",
+          "label": "Mid-quarter check-in"
+        },
+        {
+          "value": "end_quarter",
+          "label": "End-of-quarter review"
+        },
+        {
+          "value": "annual",
+          "label": "Annual OKR retrospective"
+        }
       ]
     },
     {
@@ -55,8 +64,7 @@
     }
   ],
   "recommendedPersonas": [
-    "pragmatist",
-    "devil-advocate"
+    "strategy-expert"
   ],
   "tags": [
     "okr",

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Domestic worker rights by country, ILO Convention 189, hours, rest days, live-in conditions, termination, sexual harassment protections" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Domestic worker rights by country, ILO Convention 189, hours, rest days, live-in conditions, termination, sexual harassment protections"
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
-        { "value": "uae", "label": "UAE (migrant worker)" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia (migrant worker)"
+        },
+        {
+          "value": "uae",
+          "label": "UAE (migrant worker)"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -48,9 +90,18 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "live-in", "label": "Yes — I live in the employer's home" },
-        { "value": "live-out", "label": "No — I travel to and from work each day" },
-        { "value": "part-time-multiple", "label": "Part-time — I work for several employers" }
+        {
+          "value": "live-in",
+          "label": "Yes — I live in the employer's home"
+        },
+        {
+          "value": "live-out",
+          "label": "No — I travel to and from work each day"
+        },
+        {
+          "value": "part-time-multiple",
+          "label": "Part-time — I work for several employers"
+        }
       ]
     },
     {
@@ -59,9 +110,18 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "direct-employer", "label": "Directly by the household (no agency)" },
-        { "value": "through-agency", "label": "Through an employment agency" },
-        { "value": "family-informal", "label": "Family or informal arrangement (no written agreement)" }
+        {
+          "value": "direct-employer",
+          "label": "Directly by the household (no agency)"
+        },
+        {
+          "value": "through-agency",
+          "label": "Through an employment agency"
+        },
+        {
+          "value": "family-informal",
+          "label": "Family or informal arrangement (no written agreement)"
+        }
       ]
     },
     {
@@ -70,15 +130,47 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "hours", "label": "Working hours and rest time" },
-        { "value": "pay-deductions", "label": "Pay and deductions from wages" },
-        { "value": "leave", "label": "Leave entitlement (annual, sick, maternity)" },
-        { "value": "housing-food", "label": "Housing and food conditions (live-in)" },
-        { "value": "abuse-mistreatment", "label": "Abuse or mistreatment" },
-        { "value": "ending-employment", "label": "Ending my employment and leaving" }
+        {
+          "value": "hours",
+          "label": "Working hours and rest time"
+        },
+        {
+          "value": "pay-deductions",
+          "label": "Pay and deductions from wages"
+        },
+        {
+          "value": "leave",
+          "label": "Leave entitlement (annual, sick, maternity)"
+        },
+        {
+          "value": "housing-food",
+          "label": "Housing and food conditions (live-in)"
+        },
+        {
+          "value": "abuse-mistreatment",
+          "label": "Abuse or mistreatment"
+        },
+        {
+          "value": "ending-employment",
+          "label": "Ending my employment and leaving"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
-  "tags": ["workers-rights", "bop", "informal-economy", "domestic-workers", "household-workers", "ilo-c189", "live-in", "abuse", "rest-day", "leave"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid"
+  ],
+  "tags": [
+    "workers-rights",
+    "bop",
+    "informal-economy",
+    "domestic-workers",
+    "household-workers",
+    "ilo-c189",
+    "live-in",
+    "abuse",
+    "rest-day",
+    "leave"
+  ]
 }

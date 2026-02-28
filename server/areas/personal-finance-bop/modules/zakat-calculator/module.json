@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,10 +34,22 @@
       "label": "Which tradition would you like guidance on?",
       "required": true,
       "options": [
-        { "value": "islam-zakat", "label": "Islam — Zakat" },
-        { "value": "christianity-tithe", "label": "Christianity — Tithe" },
-        { "value": "other", "label": "Other tradition" },
-        { "value": "prefer-not-say", "label": "Prefer not to say" }
+        {
+          "value": "islam-zakat",
+          "label": "Islam — Zakat"
+        },
+        {
+          "value": "christianity-tithe",
+          "label": "Christianity — Tithe"
+        },
+        {
+          "value": "other",
+          "label": "Other tradition"
+        },
+        {
+          "value": "prefer-not-say",
+          "label": "Prefer not to say"
+        }
       ]
     },
     {
@@ -44,15 +58,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,16 +102,36 @@
       "label": "Which types of assets or income do you have? (select all that apply)",
       "required": false,
       "options": [
-        { "value": "cash-savings", "label": "Cash savings" },
-        { "value": "business-goods", "label": "Business goods or inventory" },
-        { "value": "gold-silver", "label": "Gold or silver" },
-        { "value": "livestock", "label": "Livestock" },
-        { "value": "agricultural", "label": "Agricultural produce" },
-        { "value": "investments", "label": "Investments or shares" }
+        {
+          "value": "cash-savings",
+          "label": "Cash savings"
+        },
+        {
+          "value": "business-goods",
+          "label": "Business goods or inventory"
+        },
+        {
+          "value": "gold-silver",
+          "label": "Gold or silver"
+        },
+        {
+          "value": "livestock",
+          "label": "Livestock"
+        },
+        {
+          "value": "agricultural",
+          "label": "Agricultural produce"
+        },
+        {
+          "value": "investments",
+          "label": "Investments or shares"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

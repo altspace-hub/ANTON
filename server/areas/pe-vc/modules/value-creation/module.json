@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["action-plan", "project-plan"],
+    "outputFormats": [
+      "action-plan",
+      "project-plan"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -31,11 +34,26 @@
       "label": "Where are you in the value creation cycle?",
       "required": true,
       "options": [
-        { "value": "pre-close", "label": "Pre-close: Building the 100-day plan" },
-        { "value": "first-100", "label": "First 100 days: Executing quick wins" },
-        { "value": "ongoing", "label": "Ongoing: Reviewing and updating value creation plan" },
-        { "value": "exit-prep", "label": "Preparing for exit: Demonstrating value created" },
-        { "value": "add-on", "label": "Add-on acquisition: Evaluating bolt-on targets" }
+        {
+          "value": "pre-close",
+          "label": "Pre-close: Building the 100-day plan"
+        },
+        {
+          "value": "first-100",
+          "label": "First 100 days: Executing quick wins"
+        },
+        {
+          "value": "ongoing",
+          "label": "Ongoing: Reviewing and updating value creation plan"
+        },
+        {
+          "value": "exit-prep",
+          "label": "Preparing for exit: Demonstrating value created"
+        },
+        {
+          "value": "add-on",
+          "label": "Add-on acquisition: Evaluating bolt-on targets"
+        }
       ]
     },
     {
@@ -51,15 +69,42 @@
       "label": "Which value levers are you exploring?",
       "required": true,
       "options": [
-        { "value": "revenue-growth", "label": "Revenue growth (new products, markets, channels)" },
-        { "value": "margin-improvement", "label": "Margin improvement (cost reduction, pricing, efficiency)" },
-        { "value": "working-capital", "label": "Working capital optimization" },
-        { "value": "management-upgrade", "label": "Management team upgrade" },
-        { "value": "digital-transformation", "label": "Technology / digital transformation" },
-        { "value": "add-on", "label": "Add-on acquisitions (buy-and-build)" },
-        { "value": "geographic-expansion", "label": "Geographic expansion" },
-        { "value": "esg", "label": "ESG improvement" },
-        { "value": "governance", "label": "Governance and reporting improvement" }
+        {
+          "value": "revenue-growth",
+          "label": "Revenue growth (new products, markets, channels)"
+        },
+        {
+          "value": "margin-improvement",
+          "label": "Margin improvement (cost reduction, pricing, efficiency)"
+        },
+        {
+          "value": "working-capital",
+          "label": "Working capital optimization"
+        },
+        {
+          "value": "management-upgrade",
+          "label": "Management team upgrade"
+        },
+        {
+          "value": "digital-transformation",
+          "label": "Technology / digital transformation"
+        },
+        {
+          "value": "add-on",
+          "label": "Add-on acquisitions (buy-and-build)"
+        },
+        {
+          "value": "geographic-expansion",
+          "label": "Geographic expansion"
+        },
+        {
+          "value": "esg",
+          "label": "ESG improvement"
+        },
+        {
+          "value": "governance",
+          "label": "Governance and reporting improvement"
+        }
       ]
     },
     {
@@ -70,5 +115,15 @@
       "required": false
     }
   ],
-  "tags": ["pe-vc", "value-creation", "100-day-plan", "portfolio", "operational-improvement", "pe-playbook"]
+  "tags": [
+    "pe-vc",
+    "value-creation",
+    "100-day-plan",
+    "portfolio",
+    "operational-improvement",
+    "pe-playbook"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

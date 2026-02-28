@@ -29,14 +29,38 @@
       "label": "Meeting type",
       "required": true,
       "options": [
-        { "value": "first_call", "label": "First call / cold outreach follow-up" },
-        { "value": "discovery", "label": "Discovery call" },
-        { "value": "demo", "label": "Product or solution demo" },
-        { "value": "proposal_review", "label": "Proposal review" },
-        { "value": "negotiation", "label": "Negotiation / commercial discussion" },
-        { "value": "qbr", "label": "Quarterly Business Review (QBR)" },
-        { "value": "executive", "label": "Executive / C-suite meeting" },
-        { "value": "renewal", "label": "Renewal discussion" }
+        {
+          "value": "first_call",
+          "label": "First call / cold outreach follow-up"
+        },
+        {
+          "value": "discovery",
+          "label": "Discovery call"
+        },
+        {
+          "value": "demo",
+          "label": "Product or solution demo"
+        },
+        {
+          "value": "proposal_review",
+          "label": "Proposal review"
+        },
+        {
+          "value": "negotiation",
+          "label": "Negotiation / commercial discussion"
+        },
+        {
+          "value": "qbr",
+          "label": "Quarterly Business Review (QBR)"
+        },
+        {
+          "value": "executive",
+          "label": "Executive / C-suite meeting"
+        },
+        {
+          "value": "renewal",
+          "label": "Renewal discussion"
+        }
       ]
     },
     {
@@ -72,7 +96,10 @@
       "placeholder": "e.g., They seem price-sensitive, I don't know who the real decision maker is, our last call went off-track, they mentioned a competitor"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "sales-prep",
     "call-brief",

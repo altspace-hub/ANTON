@@ -169,7 +169,9 @@
       "placeholder": "e.g., Monolithic codebase with circular dependencies, no automated testing, manual deployments taking 2 hours, database schema is undocumented, using deprecated libraries"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "software",
     "tech-debt",

@@ -67,14 +67,29 @@
       "type": "select",
       "label": "Proposal tone",
       "options": [
-        { "value": "formal", "label": "Formal and structured (large enterprise, regulated industry)" },
-        { "value": "consultative", "label": "Consultative and thoughtful (advisory relationship)" },
-        { "value": "partnership", "label": "Partnership-oriented (ongoing relationship)" },
-        { "value": "competitive", "label": "Competitive and assertive (competitive bid)" }
+        {
+          "value": "formal",
+          "label": "Formal and structured (large enterprise, regulated industry)"
+        },
+        {
+          "value": "consultative",
+          "label": "Consultative and thoughtful (advisory relationship)"
+        },
+        {
+          "value": "partnership",
+          "label": "Partnership-oriented (ongoing relationship)"
+        },
+        {
+          "value": "competitive",
+          "label": "Competitive and assertive (competitive bid)"
+        }
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "proposal",
     "sales",

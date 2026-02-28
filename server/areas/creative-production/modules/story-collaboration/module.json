@@ -9,7 +9,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings"],
+    "outputFormats": [
+      "detailed-findings"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -26,12 +28,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "continuity-check", "label": "Check continuity in submitted material" },
-        { "value": "character-arc-timeline", "label": "Build a character arc timeline" },
-        { "value": "series-bible", "label": "Create / update a series bible" },
-        { "value": "handoff-briefing", "label": "Generate a handoff briefing for the next writer" },
-        { "value": "voice-consistency", "label": "Voice consistency check across contributors" },
-        { "value": "conflict-log", "label": "Generate a continuity conflict log" }
+        {
+          "value": "continuity-check",
+          "label": "Check continuity in submitted material"
+        },
+        {
+          "value": "character-arc-timeline",
+          "label": "Build a character arc timeline"
+        },
+        {
+          "value": "series-bible",
+          "label": "Create / update a series bible"
+        },
+        {
+          "value": "handoff-briefing",
+          "label": "Generate a handoff briefing for the next writer"
+        },
+        {
+          "value": "voice-consistency",
+          "label": "Voice consistency check across contributors"
+        },
+        {
+          "value": "conflict-log",
+          "label": "Generate a continuity conflict log"
+        }
       ]
     },
     {
@@ -40,12 +60,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "tv-series", "label": "TV Series" },
-        { "value": "novel-series", "label": "Novel Series" },
-        { "value": "comic-series", "label": "Comic Book / Graphic Novel Series" },
-        { "value": "shared-universe", "label": "Shared Universe (multi-author)" },
-        { "value": "anthology", "label": "Anthology (linked stories)" },
-        { "value": "game", "label": "Game / Interactive Narrative" }
+        {
+          "value": "tv-series",
+          "label": "TV Series"
+        },
+        {
+          "value": "novel-series",
+          "label": "Novel Series"
+        },
+        {
+          "value": "comic-series",
+          "label": "Comic Book / Graphic Novel Series"
+        },
+        {
+          "value": "shared-universe",
+          "label": "Shared Universe (multi-author)"
+        },
+        {
+          "value": "anthology",
+          "label": "Anthology (linked stories)"
+        },
+        {
+          "value": "game",
+          "label": "Game / Interactive Narrative"
+        }
       ]
     },
     {
@@ -70,6 +108,17 @@
       "placeholder": "Paste the new script, chapter, or material to check for continuity conflicts..."
     }
   ],
-  "recommendedPersonas": ["showrunner", "series-editor", "continuity-editor"],
-  "tags": ["continuity", "series-bible", "writers-room", "collaboration", "character-arcs", "handoff", "shared-universe", "narrative-consistency"]
+  "recommendedPersonas": [
+    "creative-director"
+  ],
+  "tags": [
+    "continuity",
+    "series-bible",
+    "writers-room",
+    "collaboration",
+    "character-arcs",
+    "handoff",
+    "shared-universe",
+    "narrative-consistency"
+  ]
 }

@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "risk-appetite-statement"],
+    "outputFormats": [
+      "detailed-findings",
+      "risk-appetite-statement"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -31,13 +34,34 @@
       "label": "Sending Country",
       "required": true,
       "options": [
-        {"value": "uk", "label": "UK"},
-        {"value": "usa", "label": "USA"},
-        {"value": "uae", "label": "UAE"},
-        {"value": "saudi-arabia", "label": "Saudi Arabia"},
-        {"value": "kuwait", "label": "Kuwait"},
-        {"value": "germany", "label": "Germany"},
-        {"value": "other", "label": "Other"}
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "usa",
+          "label": "USA"
+        },
+        {
+          "value": "uae",
+          "label": "UAE"
+        },
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia"
+        },
+        {
+          "value": "kuwait",
+          "label": "Kuwait"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,14 +70,38 @@
       "label": "Receiving Country",
       "required": true,
       "options": [
-        {"value": "india", "label": "India"},
-        {"value": "pakistan", "label": "Pakistan"},
-        {"value": "bangladesh", "label": "Bangladesh"},
-        {"value": "nigeria", "label": "Nigeria"},
-        {"value": "kenya", "label": "Kenya"},
-        {"value": "philippines", "label": "Philippines"},
-        {"value": "somalia", "label": "Somalia"},
-        {"value": "other", "label": "Other"}
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "somalia",
+          "label": "Somalia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,10 +109,22 @@
       "type": "select",
       "label": "Estimated Annual Volume",
       "options": [
-        {"value": "under-1m", "label": "Under $1M annual"},
-        {"value": "1m-10m", "label": "$1M – $10M"},
-        {"value": "10m-100m", "label": "$10M – $100M"},
-        {"value": "over-100m", "label": "Over $100M"}
+        {
+          "value": "under-1m",
+          "label": "Under $1M annual"
+        },
+        {
+          "value": "1m-10m",
+          "label": "$1M – $10M"
+        },
+        {
+          "value": "10m-100m",
+          "label": "$10M – $100M"
+        },
+        {
+          "value": "over-100m",
+          "label": "Over $100M"
+        }
       ]
     },
     {
@@ -74,7 +134,19 @@
       "placeholder": "e.g. Increasing share of informal transfers observed, recent supervisory guidance received, new customer segment entering the corridor..."
     }
   ],
-  "recommendedPersonas": ["fcp-expert", "hawala-ivts-investigator"],
-  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
-  "tags": ["remittance", "corridor", "ivts", "informal-transfer", "aml", "fcp"]
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-hawala-ivts",
+    "skill-fatf-mutual-evaluation"
+  ],
+  "tags": [
+    "remittance",
+    "corridor",
+    "ivts",
+    "informal-transfer",
+    "aml",
+    "fcp"
+  ]
 }

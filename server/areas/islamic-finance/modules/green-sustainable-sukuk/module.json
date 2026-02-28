@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["policy-document", "detailed-findings"],
+    "outputFormats": [
+      "policy-document",
+      "detailed-findings"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,25 +32,58 @@
       "id": "esg_focus",
       "label": "ESG Focus",
       "type": "chips",
-      "options": ["Green", "Social", "Sustainability", "SDG-linked", "Transition"],
+      "options": [
+        "Green",
+        "Social",
+        "Sustainability",
+        "SDG-linked",
+        "Transition"
+      ],
       "required": false
     },
     {
       "id": "asset_type",
       "label": "Eligible Asset Categories",
       "type": "chips",
-      "options": ["Renewable Energy", "Green Buildings", "Water", "Transport", "Social Infrastructure"],
+      "options": [
+        "Renewable Energy",
+        "Green Buildings",
+        "Water",
+        "Transport",
+        "Social Infrastructure"
+      ],
       "required": false
     },
     {
       "id": "target_certification",
       "label": "Target Certification / Standard",
       "type": "select",
-      "options": ["ICMA Green Bond Principles", "Climate Bonds Standard", "ASEAN Green Bond", "Other"],
+      "options": [
+        "ICMA Green Bond Principles",
+        "Climate Bonds Standard",
+        "ASEAN Green Bond",
+        "Other"
+      ],
       "required": true
     }
   ],
-  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
-  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
-  "tags": ["green-sukuk", "esg", "sustainable-finance", "icma", "climate-bonds", "use-of-proceeds", "sdg", "sharia", "sukuk"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards",
+    "skill-ifsb-standards"
+  ],
+  "tags": [
+    "green-sukuk",
+    "esg",
+    "sustainable-finance",
+    "icma",
+    "climate-bonds",
+    "use-of-proceeds",
+    "sdg",
+    "sharia",
+    "sukuk"
+  ]
 }

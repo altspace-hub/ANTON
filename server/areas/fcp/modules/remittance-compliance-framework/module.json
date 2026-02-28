@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["policy-document", "gap-scoring-matrix"],
+    "outputFormats": [
+      "policy-document",
+      "gap-scoring-matrix"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -31,11 +34,26 @@
       "label": "Service Type",
       "required": true,
       "options": [
-        {"value": "bank-mto", "label": "Bank-owned MTO"},
-        {"value": "independent-mto", "label": "Independent MTO"},
-        {"value": "mobile-money", "label": "Mobile Money Operator"},
-        {"value": "fintech-remittance", "label": "Fintech Remittance"},
-        {"value": "informal-seeking-formalisation", "label": "Informal (seeking formalisation)"}
+        {
+          "value": "bank-mto",
+          "label": "Bank-owned MTO"
+        },
+        {
+          "value": "independent-mto",
+          "label": "Independent MTO"
+        },
+        {
+          "value": "mobile-money",
+          "label": "Mobile Money Operator"
+        },
+        {
+          "value": "fintech-remittance",
+          "label": "Fintech Remittance"
+        },
+        {
+          "value": "informal-seeking-formalisation",
+          "label": "Informal (seeking formalisation)"
+        }
       ]
     },
     {
@@ -43,12 +61,30 @@
       "type": "chips",
       "label": "Operating Corridors",
       "options": [
-        {"value": "south-asia", "label": "South Asia (India/Pakistan/Bangladesh)"},
-        {"value": "middle-east", "label": "Middle East / GCC"},
-        {"value": "east-africa", "label": "East Africa"},
-        {"value": "west-africa", "label": "West Africa"},
-        {"value": "southeast-asia", "label": "Southeast Asia"},
-        {"value": "europe-diaspora", "label": "Europe (diaspora communities)"}
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Pakistan/Bangladesh)"
+        },
+        {
+          "value": "middle-east",
+          "label": "Middle East / GCC"
+        },
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "europe-diaspora",
+          "label": "Europe (diaspora communities)"
+        }
       ]
     },
     {
@@ -57,13 +93,34 @@
       "label": "Primary Licensing Jurisdiction",
       "required": true,
       "options": [
-        {"value": "eu", "label": "EU"},
-        {"value": "uk", "label": "UK"},
-        {"value": "usa", "label": "USA"},
-        {"value": "uae", "label": "UAE"},
-        {"value": "kenya", "label": "Kenya"},
-        {"value": "nigeria", "label": "Nigeria"},
-        {"value": "other", "label": "Other"}
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "usa",
+          "label": "USA"
+        },
+        {
+          "value": "uae",
+          "label": "UAE"
+        },
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -71,14 +128,38 @@
       "type": "select",
       "label": "Current Compliance Maturity",
       "options": [
-        {"value": "none", "label": "No framework"},
-        {"value": "basic", "label": "Basic"},
-        {"value": "intermediate", "label": "Intermediate"},
-        {"value": "advanced", "label": "Advanced"}
+        {
+          "value": "none",
+          "label": "No framework"
+        },
+        {
+          "value": "basic",
+          "label": "Basic"
+        },
+        {
+          "value": "intermediate",
+          "label": "Intermediate"
+        },
+        {
+          "value": "advanced",
+          "label": "Advanced"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["fcp-expert"],
-  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
-  "tags": ["remittance", "mto", "msb", "travel-rule", "compliance-framework", "fcp"]
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-hawala-ivts",
+    "skill-fatf-mutual-evaluation"
+  ],
+  "tags": [
+    "remittance",
+    "mto",
+    "msb",
+    "travel-rule",
+    "compliance-framework",
+    "fcp"
+  ]
 }

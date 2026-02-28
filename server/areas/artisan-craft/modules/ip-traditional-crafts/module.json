@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "What type of craft do you make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,16 +78,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "indonesia", "label": "Indonesia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -67,10 +126,22 @@
       "label": "What is your main IP concern?",
       "required": true,
       "options": [
-        { "value": "design-copied", "label": "My design was copied by another seller" },
-        { "value": "fake-versions", "label": "Someone is selling fake or poor imitations of my work" },
-        { "value": "want-to-protect", "label": "I want to protect my designs before selling more widely" },
-        { "value": "community-design", "label": "Traditional community design is being used without permission" }
+        {
+          "value": "design-copied",
+          "label": "My design was copied by another seller"
+        },
+        {
+          "value": "fake-versions",
+          "label": "Someone is selling fake or poor imitations of my work"
+        },
+        {
+          "value": "want-to-protect",
+          "label": "I want to protect my designs before selling more widely"
+        },
+        {
+          "value": "community-design",
+          "label": "Traditional community design is being used without permission"
+        }
       ]
     },
     {
@@ -79,13 +150,25 @@
       "label": "Are you acting as an individual or for a community?",
       "required": true,
       "options": [
-        { "value": "individual", "label": "Individual artisan" },
-        { "value": "cooperative", "label": "Cooperative or artisan group" },
-        { "value": "community", "label": "Community or ethnic group with shared traditional design" }
+        {
+          "value": "individual",
+          "label": "Individual artisan"
+        },
+        {
+          "value": "cooperative",
+          "label": "Cooperative or artisan group"
+        },
+        {
+          "value": "community",
+          "label": "Community or ethnic group with shared traditional design"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

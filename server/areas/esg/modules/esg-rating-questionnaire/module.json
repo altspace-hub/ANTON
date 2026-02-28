@@ -35,13 +35,34 @@
       "label": "Rating agency / framework",
       "required": true,
       "options": [
-        { "value": "msci", "label": "MSCI ESG Ratings" },
-        { "value": "sustainalytics", "label": "Sustainalytics ESG Risk Rating" },
-        { "value": "cdp", "label": "CDP (Carbon Disclosure Project)" },
-        { "value": "ecovadis", "label": "EcoVadis Sustainability Rating" },
-        { "value": "sp_global", "label": "S&P Global (formerly Dow Jones Sustainability Index)" },
-        { "value": "iss", "label": "ISS ESG" },
-        { "value": "multiple", "label": "Multiple agencies — I need guidance on priorities" }
+        {
+          "value": "msci",
+          "label": "MSCI ESG Ratings"
+        },
+        {
+          "value": "sustainalytics",
+          "label": "Sustainalytics ESG Risk Rating"
+        },
+        {
+          "value": "cdp",
+          "label": "CDP (Carbon Disclosure Project)"
+        },
+        {
+          "value": "ecovadis",
+          "label": "EcoVadis Sustainability Rating"
+        },
+        {
+          "value": "sp_global",
+          "label": "S&P Global (formerly Dow Jones Sustainability Index)"
+        },
+        {
+          "value": "iss",
+          "label": "ISS ESG"
+        },
+        {
+          "value": "multiple",
+          "label": "Multiple agencies — I need guidance on priorities"
+        }
       ]
     },
     {
@@ -76,7 +97,9 @@
       "placeholder": "e.g., Target MSCI A rating, CDP B response, EcoVadis Silver"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "esg-rating",
     "msci",

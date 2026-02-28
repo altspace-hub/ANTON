@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Government service complaints by country: internal complaint process, ombudsman offices, anti-corruption bodies (EACC Kenya, ICPC Nigeria, CHRAJ Ghana, CVC India, Ombudsman Philippines), service charters, bribe reporting, police oversight mechanisms." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Government service complaints by country: internal complaint process, ombudsman offices, anti-corruption bodies (EACC Kenya, ICPC Nigeria, CHRAJ Ghana, CVC India, Ombudsman Philippines), service charters, bribe reporting, police oversight mechanisms."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,14 +82,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "identity-docs", "label": "Identity document / passport / birth certificate" },
-        { "value": "land-registry", "label": "Land registry" },
-        { "value": "healthcare", "label": "Public healthcare" },
-        { "value": "education", "label": "Public education" },
-        { "value": "police", "label": "Police" },
-        { "value": "customs", "label": "Customs or immigration" },
-        { "value": "tax", "label": "Tax authority" },
-        { "value": "local-council", "label": "Local council or municipality" }
+        {
+          "value": "identity-docs",
+          "label": "Identity document / passport / birth certificate"
+        },
+        {
+          "value": "land-registry",
+          "label": "Land registry"
+        },
+        {
+          "value": "healthcare",
+          "label": "Public healthcare"
+        },
+        {
+          "value": "education",
+          "label": "Public education"
+        },
+        {
+          "value": "police",
+          "label": "Police"
+        },
+        {
+          "value": "customs",
+          "label": "Customs or immigration"
+        },
+        {
+          "value": "tax",
+          "label": "Tax authority"
+        },
+        {
+          "value": "local-council",
+          "label": "Local council or municipality"
+        }
       ]
     },
     {
@@ -62,14 +122,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "unreasonable-delay", "label": "Unreasonable delay without explanation" },
-        { "value": "bribe-demanded", "label": "Official demanded a bribe" },
-        { "value": "wrong-service", "label": "Given incorrect or incomplete service" },
-        { "value": "poor-treatment", "label": "Treated badly or disrespectfully" },
-        { "value": "denied-service", "label": "Denied service without a reason given" }
+        {
+          "value": "unreasonable-delay",
+          "label": "Unreasonable delay without explanation"
+        },
+        {
+          "value": "bribe-demanded",
+          "label": "Official demanded a bribe"
+        },
+        {
+          "value": "wrong-service",
+          "label": "Given incorrect or incomplete service"
+        },
+        {
+          "value": "poor-treatment",
+          "label": "Treated badly or disrespectfully"
+        },
+        {
+          "value": "denied-service",
+          "label": "Denied service without a reason given"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
-  "tags": ["consumer-protection", "bop", "rights", "government-services", "corruption", "bribery", "ombudsman", "service-charter", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate"
+  ],
+  "tags": [
+    "consumer-protection",
+    "bop",
+    "rights",
+    "government-services",
+    "corruption",
+    "bribery",
+    "ombudsman",
+    "service-charter",
+    "africa",
+    "south-asia"
+  ]
 }

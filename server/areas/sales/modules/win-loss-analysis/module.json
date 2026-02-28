@@ -108,7 +108,10 @@
       "placeholder": "e.g., Why do we keep losing to Big 4 in competitive situations? Are we qualifying deals properly? Is our proposal format effective? What are our top 3 improvement areas?"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "sales",
     "win-loss",

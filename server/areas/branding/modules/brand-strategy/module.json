@@ -90,7 +90,10 @@
       "placeholder": "Where do you want the brand to be in 3-5 years? What should it stand for?"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "strategy-expert"
+  ],
   "tags": [
     "branding",
     "strategy",

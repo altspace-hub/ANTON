@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,11 +78,26 @@
       "label": "What type of microfinance loan are you applying for?",
       "required": true,
       "options": [
-        { "value": "grameen-group", "label": "Grameen-style group loan" },
-        { "value": "individual", "label": "Individual loan" },
-        { "value": "sacco", "label": "SACCO or cooperative loan" },
-        { "value": "ngo-mfi", "label": "NGO microfinance institution" },
-        { "value": "bank-micro", "label": "Bank microfinance product" }
+        {
+          "value": "grameen-group",
+          "label": "Grameen-style group loan"
+        },
+        {
+          "value": "individual",
+          "label": "Individual loan"
+        },
+        {
+          "value": "sacco",
+          "label": "SACCO or cooperative loan"
+        },
+        {
+          "value": "ngo-mfi",
+          "label": "NGO microfinance institution"
+        },
+        {
+          "value": "bank-micro",
+          "label": "Bank microfinance product"
+        }
       ]
     },
     {
@@ -62,12 +106,30 @@
       "label": "What type of business do you have?",
       "required": true,
       "options": [
-        { "value": "trading-market", "label": "Trading or market stall" },
-        { "value": "food", "label": "Food preparation or selling" },
-        { "value": "craft", "label": "Craft or tailoring" },
-        { "value": "service", "label": "Service business" },
-        { "value": "agriculture", "label": "Agriculture" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "trading-market",
+          "label": "Trading or market stall"
+        },
+        {
+          "value": "food",
+          "label": "Food preparation or selling"
+        },
+        {
+          "value": "craft",
+          "label": "Craft or tailoring"
+        },
+        {
+          "value": "service",
+          "label": "Service business"
+        },
+        {
+          "value": "agriculture",
+          "label": "Agriculture"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -76,15 +138,32 @@
       "label": "What will the loan be used for?",
       "required": true,
       "options": [
-        { "value": "stock-inventory", "label": "Stock or inventory" },
-        { "value": "equipment", "label": "Equipment or tools" },
-        { "value": "working-capital", "label": "Working capital" },
-        { "value": "expand", "label": "Expand the business" },
-        { "value": "first-loan", "label": "My first ever loan" }
+        {
+          "value": "stock-inventory",
+          "label": "Stock or inventory"
+        },
+        {
+          "value": "equipment",
+          "label": "Equipment or tools"
+        },
+        {
+          "value": "working-capital",
+          "label": "Working capital"
+        },
+        {
+          "value": "expand",
+          "label": "Expand the business"
+        },
+        {
+          "value": "first-loan",
+          "label": "My first ever loan"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

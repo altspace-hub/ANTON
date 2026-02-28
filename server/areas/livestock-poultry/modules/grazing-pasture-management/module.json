@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Rotational grazing, stocking rates, improved pasture grasses (Napier, Brachiaria), hay making, silage basics, water point management, zero-grazing cut-and-carry, communal grazing challenges in Africa and South Asia" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Rotational grazing, stocking rates, improved pasture grasses (Napier, Brachiaria), hay making, silage basics, water point management, zero-grazing cut-and-carry, communal grazing challenges in Africa and South Asia"
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "small-plot", "label": "Small plot (under 2 ha)" },
-        { "value": "medium", "label": "Medium (2–10 ha)" },
-        { "value": "communal-grazing", "label": "Large communal grazing" },
-        { "value": "tethered-zero", "label": "Tethered / zero grazing" },
-        { "value": "no-land", "label": "No land (buy all feed)" }
+        {
+          "value": "small-plot",
+          "label": "Small plot (under 2 ha)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (2–10 ha)"
+        },
+        {
+          "value": "communal-grazing",
+          "label": "Large communal grazing"
+        },
+        {
+          "value": "tethered-zero",
+          "label": "Tethered / zero grazing"
+        },
+        {
+          "value": "no-land",
+          "label": "No land (buy all feed)"
+        }
       ]
     },
     {
@@ -59,11 +110,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cattle", "label": "Cattle / Cows" },
-        { "value": "goats", "label": "Goats" },
-        { "value": "sheep", "label": "Sheep" },
-        { "value": "mixed", "label": "Mixed herd" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "cattle",
+          "label": "Cattle / Cows"
+        },
+        {
+          "value": "goats",
+          "label": "Goats"
+        },
+        {
+          "value": "sheep",
+          "label": "Sheep"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed herd"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -72,14 +138,43 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "overgrazing", "label": "Overgrazing" },
-        { "value": "dry-season", "label": "Dry season shortage" },
-        { "value": "poor-quality", "label": "Poor quality pasture" },
-        { "value": "soil-erosion", "label": "Soil erosion" },
-        { "value": "all", "label": "All of these" }
+        {
+          "value": "overgrazing",
+          "label": "Overgrazing"
+        },
+        {
+          "value": "dry-season",
+          "label": "Dry season shortage"
+        },
+        {
+          "value": "poor-quality",
+          "label": "Poor quality pasture"
+        },
+        {
+          "value": "soil-erosion",
+          "label": "Soil erosion"
+        },
+        {
+          "value": "all",
+          "label": "All of these"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["grazing", "pasture", "rotational-grazing", "land-management", "dry-season", "feed", "bop", "livestock", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "grazing",
+    "pasture",
+    "rotational-grazing",
+    "land-management",
+    "dry-season",
+    "feed",
+    "bop",
+    "livestock",
+    "africa",
+    "south-asia"
+  ]
 }

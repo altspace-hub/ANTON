@@ -41,10 +41,22 @@
       "type": "select",
       "label": "Decision status",
       "options": [
-        { "value": "proposed", "label": "Proposed — under discussion" },
-        { "value": "accepted", "label": "Accepted — decision made" },
-        { "value": "deprecated", "label": "Deprecated — superseded by newer decision" },
-        { "value": "superseded", "label": "Superseded — replaced by another ADR" }
+        {
+          "value": "proposed",
+          "label": "Proposed — under discussion"
+        },
+        {
+          "value": "accepted",
+          "label": "Accepted — decision made"
+        },
+        {
+          "value": "deprecated",
+          "label": "Deprecated — superseded by newer decision"
+        },
+        {
+          "value": "superseded",
+          "label": "Superseded — replaced by another ADR"
+        }
       ]
     },
     {
@@ -80,7 +92,9 @@
       "placeholder": "e.g., Engineering team, CTO, Architecture review board"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "adr",
     "architecture",

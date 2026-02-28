@@ -62,10 +62,22 @@
       "type": "select",
       "label": "Change sensitivity level",
       "options": [
-        { "value": "low", "label": "Low — routine change, minimal concern expected" },
-        { "value": "medium", "label": "Medium — moderate change, some concern expected" },
-        { "value": "high", "label": "High — significant change, high concern expected" },
-        { "value": "critical", "label": "Critical — major change with job security or major role implications" }
+        {
+          "value": "low",
+          "label": "Low — routine change, minimal concern expected"
+        },
+        {
+          "value": "medium",
+          "label": "Medium — moderate change, some concern expected"
+        },
+        {
+          "value": "high",
+          "label": "High — significant change, high concern expected"
+        },
+        {
+          "value": "critical",
+          "label": "Critical — major change with job security or major role implications"
+        }
       ]
     },
     {
@@ -79,18 +91,44 @@
       "type": "chips",
       "label": "Communication channels available",
       "options": [
-        { "value": "all_hands", "label": "All-hands / town hall" },
-        { "value": "email", "label": "Email (all staff)" },
-        { "value": "intranet", "label": "Intranet / internal portal" },
-        { "value": "manager_cascade", "label": "Manager cascade (briefings)" },
-        { "value": "small_group", "label": "Small group sessions" },
-        { "value": "chat", "label": "Teams / Slack" },
-        { "value": "faq", "label": "FAQ document" },
-        { "value": "video", "label": "Leadership video message" }
+        {
+          "value": "all_hands",
+          "label": "All-hands / town hall"
+        },
+        {
+          "value": "email",
+          "label": "Email (all staff)"
+        },
+        {
+          "value": "intranet",
+          "label": "Intranet / internal portal"
+        },
+        {
+          "value": "manager_cascade",
+          "label": "Manager cascade (briefings)"
+        },
+        {
+          "value": "small_group",
+          "label": "Small group sessions"
+        },
+        {
+          "value": "chat",
+          "label": "Teams / Slack"
+        },
+        {
+          "value": "faq",
+          "label": "FAQ document"
+        },
+        {
+          "value": "video",
+          "label": "Leadership video message"
+        }
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "communications",
     "change-management",

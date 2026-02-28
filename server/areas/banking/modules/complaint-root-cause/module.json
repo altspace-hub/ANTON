@@ -97,7 +97,10 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "cco"
+  ],
   "tags": [
     "banking",
     "complaints",

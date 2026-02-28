@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,16 +34,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "indonesia", "label": "Indonesia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -50,15 +82,42 @@
       "label": "What type of craft does your group make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "mixed", "label": "Mixed crafts" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed crafts"
+        }
       ]
     },
     {
@@ -67,10 +126,22 @@
       "label": "How many people are in your group?",
       "required": true,
       "options": [
-        { "value": "2-3", "label": "Just 2–3 people" },
-        { "value": "4-10", "label": "4–10 people" },
-        { "value": "10-30", "label": "10–30 people" },
-        { "value": "larger", "label": "Planning a larger group" }
+        {
+          "value": "2-3",
+          "label": "Just 2–3 people"
+        },
+        {
+          "value": "4-10",
+          "label": "4–10 people"
+        },
+        {
+          "value": "10-30",
+          "label": "10–30 people"
+        },
+        {
+          "value": "larger",
+          "label": "Planning a larger group"
+        }
       ]
     },
     {
@@ -79,15 +150,33 @@
       "label": "Why do you want to form a cooperative?",
       "required": true,
       "options": [
-        { "value": "bigger-orders", "label": "Access larger orders we cannot fill alone" },
-        { "value": "shared-marketing", "label": "Share marketing costs and effort" },
-        { "value": "bulk-materials", "label": "Buy materials together at lower prices" },
-        { "value": "fair-trade", "label": "Apply for fair trade certification" },
-        { "value": "all", "label": "All of these" }
+        {
+          "value": "bigger-orders",
+          "label": "Access larger orders we cannot fill alone"
+        },
+        {
+          "value": "shared-marketing",
+          "label": "Share marketing costs and effort"
+        },
+        {
+          "value": "bulk-materials",
+          "label": "Buy materials together at lower prices"
+        },
+        {
+          "value": "fair-trade",
+          "label": "Apply for fair trade certification"
+        },
+        {
+          "value": "all",
+          "label": "All of these"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

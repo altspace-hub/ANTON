@@ -63,7 +63,9 @@
       "placeholder": "Any leave, training, conference attendance, or other pre-committed time that reduces availability.\ne.g. Erik on annual leave 10-14 March. Lisa attending PMI conference 5-6 March. Sofia: 20% time allocated to Centre of Excellence work."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "project-management",
     "resource-management",

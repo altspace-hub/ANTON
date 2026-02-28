@@ -137,7 +137,10 @@
       "placeholder": "e.g., Core message: 'Compliance should protect your business, not slow it down.' Tone: confident, practical, no fear-mongering."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "strategy-expert"
+  ],
   "tags": [
     "branding",
     "campaign",

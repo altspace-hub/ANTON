@@ -94,7 +94,9 @@
       "placeholder": "e.g., AML e-learning (by day 10), Data protection/GDPR (by day 10), Information security (by day 5), Firm values and code of conduct (by day 3), CAMS certification preferred within 12 months..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "onboarding",

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "WASH in low-resource settings, water treatment methods, ORS preparation, latrine construction, handwashing behaviour change" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "WASH in low-resource settings, water treatment methods, ORS preparation, latrine construction, handwashing behaviour change"
+      }
     }
   },
   "guidedInputs": [
@@ -28,15 +34,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -45,12 +78,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "protected-borehole-tap", "label": "Protected borehole or tap" },
-        { "value": "river-stream", "label": "River or stream" },
-        { "value": "unprotected-well", "label": "Unprotected well" },
-        { "value": "rainwater", "label": "Rainwater" },
-        { "value": "vendor-water", "label": "Water vendor (bought)" },
-        { "value": "piped-tap", "label": "Piped tap water" }
+        {
+          "value": "protected-borehole-tap",
+          "label": "Protected borehole or tap"
+        },
+        {
+          "value": "river-stream",
+          "label": "River or stream"
+        },
+        {
+          "value": "unprotected-well",
+          "label": "Unprotected well"
+        },
+        {
+          "value": "rainwater",
+          "label": "Rainwater"
+        },
+        {
+          "value": "vendor-water",
+          "label": "Water vendor (bought)"
+        },
+        {
+          "value": "piped-tap",
+          "label": "Piped tap water"
+        }
       ]
     },
     {
@@ -59,14 +110,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "safe-drinking-water", "label": "Making water safe to drink" },
-        { "value": "diarrhea-in-household", "label": "Diarrhea in the household" },
-        { "value": "open-defecation-area", "label": "Open defecation area" },
-        { "value": "handwashing-habits", "label": "Handwashing habits" },
-        { "value": "building-latrine", "label": "Building a latrine" }
+        {
+          "value": "safe-drinking-water",
+          "label": "Making water safe to drink"
+        },
+        {
+          "value": "diarrhea-in-household",
+          "label": "Diarrhea in the household"
+        },
+        {
+          "value": "open-defecation-area",
+          "label": "Open defecation area"
+        },
+        {
+          "value": "handwashing-habits",
+          "label": "Handwashing habits"
+        },
+        {
+          "value": "building-latrine",
+          "label": "Building a latrine"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
-  "tags": ["WASH", "water-treatment", "sanitation", "hygiene", "handwashing", "diarrhea-prevention", "ORS", "latrine", "cholera"]
+  "recommendedPersonas": [
+    "community-health-worker",
+    "nutrition-health-educator"
+  ],
+  "tags": [
+    "WASH",
+    "water-treatment",
+    "sanitation",
+    "hygiene",
+    "handwashing",
+    "diarrhea-prevention",
+    "ORS",
+    "latrine",
+    "cholera"
+  ]
 }

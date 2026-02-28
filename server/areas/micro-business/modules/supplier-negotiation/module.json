@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,12 +34,30 @@
       "label": "What kind of business do you have?",
       "required": true,
       "options": [
-        { "value": "market-stall", "label": "Market stall" },
-        { "value": "shop-kiosk", "label": "Shop / kiosk" },
-        { "value": "food-vendor", "label": "Food vendor" },
-        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
-        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "market-stall",
+          "label": "Market stall"
+        },
+        {
+          "value": "shop-kiosk",
+          "label": "Shop / kiosk"
+        },
+        {
+          "value": "food-vendor",
+          "label": "Food vendor"
+        },
+        {
+          "value": "tailor-seamstress",
+          "label": "Tailor / seamstress"
+        },
+        {
+          "value": "service-provider",
+          "label": "Service provider (mechanic, hairdresser)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,10 +66,22 @@
       "label": "What is your relationship with your supplier?",
       "required": true,
       "options": [
-        { "value": "new-supplier", "label": "New supplier" },
-        { "value": "regular-supplier", "label": "Regular supplier (1+ years)" },
-        { "value": "only-one", "label": "Only one supplier available" },
-        { "value": "market-wholesale", "label": "Market / wholesale market" }
+        {
+          "value": "new-supplier",
+          "label": "New supplier"
+        },
+        {
+          "value": "regular-supplier",
+          "label": "Regular supplier (1+ years)"
+        },
+        {
+          "value": "only-one",
+          "label": "Only one supplier available"
+        },
+        {
+          "value": "market-wholesale",
+          "label": "Market / wholesale market"
+        }
       ]
     },
     {
@@ -65,14 +97,28 @@
       "label": "What do you want from your supplier?",
       "required": false,
       "options": [
-        { "value": "lower-prices", "label": "Lower prices" },
-        { "value": "credit-terms", "label": "Better credit terms (pay later)" },
-        { "value": "reliable-supply", "label": "More reliable supply" },
-        { "value": "all", "label": "All of these" }
+        {
+          "value": "lower-prices",
+          "label": "Lower prices"
+        },
+        {
+          "value": "credit-terms",
+          "label": "Better credit terms (pay later)"
+        },
+        {
+          "value": "reliable-supply",
+          "label": "More reliable supply"
+        },
+        {
+          "value": "all",
+          "label": "All of these"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "small-business-mentor"
+  ],
   "tags": [
     "micro-business",
     "bop",

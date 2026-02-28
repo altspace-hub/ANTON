@@ -105,7 +105,10 @@
       "placeholder": "e.g., Too many deals stuck in discovery, forecast keeps slipping, losing to one competitor consistently, new reps underperforming"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "sales",
     "pipeline",

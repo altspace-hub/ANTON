@@ -99,7 +99,9 @@
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "auditor"
+  ],
   "tags": [
     "audit",
     "findings",

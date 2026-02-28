@@ -69,7 +69,9 @@
       "placeholder": "List any incomplete stories being carried over from the previous sprint with remaining estimate."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "project-management",
     "agile",

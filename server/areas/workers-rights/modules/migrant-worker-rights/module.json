@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Migrant worker rights in GCC and Southeast Asia, kafala system, passport retention laws, embassy contacts, IOM helplines" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Migrant worker rights in GCC and Southeast Asia, kafala system, passport retention laws, embassy contacts, IOM helplines"
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "saudi-arabia", "label": "Saudi Arabia" },
-        { "value": "uae", "label": "UAE (United Arab Emirates)" },
-        { "value": "qatar", "label": "Qatar" },
-        { "value": "kuwait", "label": "Kuwait" },
-        { "value": "bahrain", "label": "Bahrain" },
-        { "value": "oman", "label": "Oman" },
-        { "value": "malaysia", "label": "Malaysia" },
-        { "value": "singapore", "label": "Singapore" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia"
+        },
+        {
+          "value": "uae",
+          "label": "UAE (United Arab Emirates)"
+        },
+        {
+          "value": "qatar",
+          "label": "Qatar"
+        },
+        {
+          "value": "kuwait",
+          "label": "Kuwait"
+        },
+        {
+          "value": "bahrain",
+          "label": "Bahrain"
+        },
+        {
+          "value": "oman",
+          "label": "Oman"
+        },
+        {
+          "value": "malaysia",
+          "label": "Malaysia"
+        },
+        {
+          "value": "singapore",
+          "label": "Singapore"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,15 +82,42 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "nepal", "label": "Nepal" },
-        { "value": "sri-lanka", "label": "Sri Lanka" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "indonesia", "label": "Indonesia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "nepal",
+          "label": "Nepal"
+        },
+        {
+          "value": "sri-lanka",
+          "label": "Sri Lanka"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -63,13 +126,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "domestic", "label": "Domestic worker (cleaner, cook, nanny, caregiver)" },
-        { "value": "construction", "label": "Construction" },
-        { "value": "driver", "label": "Driver" },
-        { "value": "factory", "label": "Factory / manufacturing" },
-        { "value": "hospitality", "label": "Hospitality / hotel / restaurant" },
-        { "value": "healthcare", "label": "Healthcare / cleaning in hospital" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "domestic",
+          "label": "Domestic worker (cleaner, cook, nanny, caregiver)"
+        },
+        {
+          "value": "construction",
+          "label": "Construction"
+        },
+        {
+          "value": "driver",
+          "label": "Driver"
+        },
+        {
+          "value": "factory",
+          "label": "Factory / manufacturing"
+        },
+        {
+          "value": "hospitality",
+          "label": "Hospitality / hotel / restaurant"
+        },
+        {
+          "value": "healthcare",
+          "label": "Healthcare / cleaning in hospital"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -78,15 +162,47 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "passport-taken", "label": "My employer took my passport" },
-        { "value": "not-paid", "label": "I am not being paid" },
-        { "value": "want-to-leave", "label": "I want to leave my employer or go home" },
-        { "value": "abuse-harassment", "label": "I am being abused or harassed" },
-        { "value": "contract-different", "label": "My contract is different from what was promised" },
-        { "value": "general", "label": "General information about my rights" }
+        {
+          "value": "passport-taken",
+          "label": "My employer took my passport"
+        },
+        {
+          "value": "not-paid",
+          "label": "I am not being paid"
+        },
+        {
+          "value": "want-to-leave",
+          "label": "I want to leave my employer or go home"
+        },
+        {
+          "value": "abuse-harassment",
+          "label": "I am being abused or harassed"
+        },
+        {
+          "value": "contract-different",
+          "label": "My contract is different from what was promised"
+        },
+        {
+          "value": "general",
+          "label": "General information about my rights"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
-  "tags": ["workers-rights", "bop", "informal-economy", "migrant-workers", "kafala", "passport-retention", "gcc", "southeast-asia", "domestic-workers", "forced-labour"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid"
+  ],
+  "tags": [
+    "workers-rights",
+    "bop",
+    "informal-economy",
+    "migrant-workers",
+    "kafala",
+    "passport-retention",
+    "gcc",
+    "southeast-asia",
+    "domestic-workers",
+    "forced-labour"
+  ]
 }

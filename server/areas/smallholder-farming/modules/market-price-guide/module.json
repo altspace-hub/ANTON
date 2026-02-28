@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Agricultural market pricing, seasonal price patterns, cooperative selling, negotiation strategies for smallholder farmers in developing regions" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Agricultural market pricing, seasonal price patterns, cooperative selling, negotiation strategies for smallholder farmers in developing regions"
+      }
     }
   },
   "guidedInputs": [
@@ -28,14 +34,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "maize", "label": "Maize" },
-        { "value": "beans", "label": "Beans" },
-        { "value": "cassava", "label": "Cassava" },
-        { "value": "rice", "label": "Rice" },
-        { "value": "tomatoes", "label": "Tomatoes" },
-        { "value": "groundnuts", "label": "Groundnuts" },
-        { "value": "vegetables", "label": "Vegetables" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "maize",
+          "label": "Maize"
+        },
+        {
+          "value": "beans",
+          "label": "Beans"
+        },
+        {
+          "value": "cassava",
+          "label": "Cassava"
+        },
+        {
+          "value": "rice",
+          "label": "Rice"
+        },
+        {
+          "value": "tomatoes",
+          "label": "Tomatoes"
+        },
+        {
+          "value": "groundnuts",
+          "label": "Groundnuts"
+        },
+        {
+          "value": "vegetables",
+          "label": "Vegetables"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -44,12 +74,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "east-africa", "label": "East Africa" },
-        { "value": "west-africa", "label": "West Africa" },
-        { "value": "southern-africa", "label": "Southern Africa" },
-        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
-        { "value": "southeast-asia", "label": "Southeast Asia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southern-africa",
+          "label": "Southern Africa"
+        },
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Bangladesh)"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -58,9 +106,18 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "small-surplus", "label": "Small amount (family use + small surplus)" },
-        { "value": "medium", "label": "Medium (100–500 kg)" },
-        { "value": "large", "label": "Large (500 kg or more)" }
+        {
+          "value": "small-surplus",
+          "label": "Small amount (family use + small surplus)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (100–500 kg)"
+        },
+        {
+          "value": "large",
+          "label": "Large (500 kg or more)"
+        }
       ]
     },
     {
@@ -69,13 +126,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "traders-pay-little", "label": "Traders pay too little" },
-        { "value": "dont-know-prices", "label": "I don't know the current prices" },
-        { "value": "forced-to-sell-now", "label": "Forced to sell immediately after harvest" },
-        { "value": "want-better-market", "label": "I want to find a better market" }
+        {
+          "value": "traders-pay-little",
+          "label": "Traders pay too little"
+        },
+        {
+          "value": "dont-know-prices",
+          "label": "I don't know the current prices"
+        },
+        {
+          "value": "forced-to-sell-now",
+          "label": "Forced to sell immediately after harvest"
+        },
+        {
+          "value": "want-better-market",
+          "label": "I want to find a better market"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["market-prices", "negotiation", "cooperative-selling", "seasonal-prices", "harvest-timing", "market-information", "traders", "smallholder", "rural-markets"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "market-prices",
+    "negotiation",
+    "cooperative-selling",
+    "seasonal-prices",
+    "harvest-timing",
+    "market-information",
+    "traders",
+    "smallholder",
+    "rural-markets"
+  ]
 }

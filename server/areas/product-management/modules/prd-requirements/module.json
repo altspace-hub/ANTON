@@ -34,11 +34,26 @@
       "label": "Feature type",
       "required": true,
       "options": [
-        { "value": "new_feature", "label": "New feature" },
-        { "value": "enhancement", "label": "Feature enhancement" },
-        { "value": "refactor", "label": "Technical refactor" },
-        { "value": "api", "label": "API" },
-        { "value": "platform", "label": "Platform capability" }
+        {
+          "value": "new_feature",
+          "label": "New feature"
+        },
+        {
+          "value": "enhancement",
+          "label": "Feature enhancement"
+        },
+        {
+          "value": "refactor",
+          "label": "Technical refactor"
+        },
+        {
+          "value": "api",
+          "label": "API"
+        },
+        {
+          "value": "platform",
+          "label": "Platform capability"
+        }
       ]
     },
     {
@@ -46,10 +61,22 @@
       "type": "select",
       "label": "Primary audience for this document",
       "options": [
-        { "value": "engineering", "label": "Engineering team" },
-        { "value": "cross_functional", "label": "Cross-functional" },
-        { "value": "external_partners", "label": "External partners" },
-        { "value": "regulatory", "label": "Regulatory submission" }
+        {
+          "value": "engineering",
+          "label": "Engineering team"
+        },
+        {
+          "value": "cross_functional",
+          "label": "Cross-functional"
+        },
+        {
+          "value": "external_partners",
+          "label": "External partners"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory submission"
+        }
       ]
     },
     {
@@ -57,9 +84,18 @@
       "type": "select",
       "label": "Detail level",
       "options": [
-        { "value": "lean", "label": "Lean one-pager" },
-        { "value": "standard", "label": "Standard PRD" },
-        { "value": "full", "label": "Full spec with edge cases" }
+        {
+          "value": "lean",
+          "label": "Lean one-pager"
+        },
+        {
+          "value": "standard",
+          "label": "Standard PRD"
+        },
+        {
+          "value": "full",
+          "label": "Full spec with edge cases"
+        }
       ]
     },
     {
@@ -70,7 +106,8 @@
     }
   ],
   "recommendedPersonas": [
-    "policy-analyst"
+    "strategy-expert",
+    "tech-expert"
   ],
   "tags": [
     "prd",

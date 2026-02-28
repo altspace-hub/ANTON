@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Basic first aid, malaria prevention, wound care, burn management, snakebite, TB recognition, community disease prevention" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Basic first aid, malaria prevention, wound care, burn management, snakebite, TB recognition, community disease prevention"
+      }
     }
   },
   "guidedInputs": [
@@ -28,15 +34,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -45,17 +78,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "malaria-prevention", "label": "Malaria prevention and response" },
-        { "value": "cholera-waterborne", "label": "Cholera and waterborne disease" },
-        { "value": "tb-symptoms-action", "label": "TB — symptoms and action" },
-        { "value": "first-aid-wounds", "label": "First aid for wounds" },
-        { "value": "first-aid-burns", "label": "First aid for burns" },
-        { "value": "snakebite", "label": "Snakebite" },
-        { "value": "drowning", "label": "Drowning" },
-        { "value": "heatstroke", "label": "Heatstroke" }
+        {
+          "value": "malaria-prevention",
+          "label": "Malaria prevention and response"
+        },
+        {
+          "value": "cholera-waterborne",
+          "label": "Cholera and waterborne disease"
+        },
+        {
+          "value": "tb-symptoms-action",
+          "label": "TB — symptoms and action"
+        },
+        {
+          "value": "first-aid-wounds",
+          "label": "First aid for wounds"
+        },
+        {
+          "value": "first-aid-burns",
+          "label": "First aid for burns"
+        },
+        {
+          "value": "snakebite",
+          "label": "Snakebite"
+        },
+        {
+          "value": "drowning",
+          "label": "Drowning"
+        },
+        {
+          "value": "heatstroke",
+          "label": "Heatstroke"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
-  "tags": ["first-aid", "malaria", "TB", "wound-care", "burns", "snakebite", "disease-prevention", "cholera", "community-health"]
+  "recommendedPersonas": [
+    "community-health-worker",
+    "nutrition-health-educator"
+  ],
+  "tags": [
+    "first-aid",
+    "malaria",
+    "TB",
+    "wound-care",
+    "burns",
+    "snakebite",
+    "disease-prevention",
+    "cholera",
+    "community-health"
+  ]
 }

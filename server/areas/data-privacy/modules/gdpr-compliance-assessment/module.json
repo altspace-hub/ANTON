@@ -35,11 +35,26 @@
       "label": "Organisation type",
       "required": true,
       "options": [
-        { "value": "eu_controller", "label": "EU Controller" },
-        { "value": "non_eu_controller", "label": "Non-EU Controller (EU market)" },
-        { "value": "processor", "label": "Processor" },
-        { "value": "joint_controller", "label": "Joint Controller" },
-        { "value": "public_authority", "label": "Public Authority" }
+        {
+          "value": "eu_controller",
+          "label": "EU Controller"
+        },
+        {
+          "value": "non_eu_controller",
+          "label": "Non-EU Controller (EU market)"
+        },
+        {
+          "value": "processor",
+          "label": "Processor"
+        },
+        {
+          "value": "joint_controller",
+          "label": "Joint Controller"
+        },
+        {
+          "value": "public_authority",
+          "label": "Public Authority"
+        }
       ]
     },
     {
@@ -48,13 +63,34 @@
       "label": "Sector",
       "required": true,
       "options": [
-        { "value": "financial_services", "label": "Financial Services" },
-        { "value": "healthcare", "label": "Healthcare" },
-        { "value": "retail", "label": "Retail" },
-        { "value": "technology", "label": "Technology" },
-        { "value": "hr_recruiting", "label": "HR / Recruiting" },
-        { "value": "marketing", "label": "Marketing" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "financial_services",
+          "label": "Financial Services"
+        },
+        {
+          "value": "healthcare",
+          "label": "Healthcare"
+        },
+        {
+          "value": "retail",
+          "label": "Retail"
+        },
+        {
+          "value": "technology",
+          "label": "Technology"
+        },
+        {
+          "value": "hr_recruiting",
+          "label": "HR / Recruiting"
+        },
+        {
+          "value": "marketing",
+          "label": "Marketing"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -62,13 +98,34 @@
       "type": "chips",
       "label": "Categories of personal data processed",
       "options": [
-        { "value": "identifiers", "label": "Personal identifiers" },
-        { "value": "financial", "label": "Financial data" },
-        { "value": "health", "label": "Health data" },
-        { "value": "biometric", "label": "Biometric" },
-        { "value": "children", "label": "Children's data" },
-        { "value": "criminal", "label": "Criminal records" },
-        { "value": "marketing_profiles", "label": "Marketing profiles" }
+        {
+          "value": "identifiers",
+          "label": "Personal identifiers"
+        },
+        {
+          "value": "financial",
+          "label": "Financial data"
+        },
+        {
+          "value": "health",
+          "label": "Health data"
+        },
+        {
+          "value": "biometric",
+          "label": "Biometric"
+        },
+        {
+          "value": "children",
+          "label": "Children's data"
+        },
+        {
+          "value": "criminal",
+          "label": "Criminal records"
+        },
+        {
+          "value": "marketing_profiles",
+          "label": "Marketing profiles"
+        }
       ]
     },
     {
@@ -79,8 +136,7 @@
     }
   ],
   "recommendedPersonas": [
-    "dpo",
-    "legal-expert"
+    "dpo"
   ],
   "tags": [
     "gdpr",

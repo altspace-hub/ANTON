@@ -114,7 +114,10 @@
       "placeholder": "e.g., Draft business plan v3, governance framework draft, proposed board composition..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "cco"
+  ],
   "tags": [
     "banking",
     "licensing",

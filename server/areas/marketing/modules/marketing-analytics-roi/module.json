@@ -35,13 +35,34 @@
       "label": "Analytics task",
       "required": true,
       "options": [
-        { "value": "performance_review", "label": "Campaign / channel performance review" },
-        { "value": "attribution_design", "label": "Attribution model design / review" },
-        { "value": "roi_calculation", "label": "Marketing ROI calculation" },
-        { "value": "measurement_framework", "label": "Measurement framework build" },
-        { "value": "ga4_audit", "label": "GA4 / analytics setup audit" },
-        { "value": "dashboard_design", "label": "Reporting dashboard design" },
-        { "value": "budget_optimisation", "label": "Budget reallocation / optimisation" }
+        {
+          "value": "performance_review",
+          "label": "Campaign / channel performance review"
+        },
+        {
+          "value": "attribution_design",
+          "label": "Attribution model design / review"
+        },
+        {
+          "value": "roi_calculation",
+          "label": "Marketing ROI calculation"
+        },
+        {
+          "value": "measurement_framework",
+          "label": "Measurement framework build"
+        },
+        {
+          "value": "ga4_audit",
+          "label": "GA4 / analytics setup audit"
+        },
+        {
+          "value": "dashboard_design",
+          "label": "Reporting dashboard design"
+        },
+        {
+          "value": "budget_optimisation",
+          "label": "Budget reallocation / optimisation"
+        }
       ]
     },
     {
@@ -50,16 +71,46 @@
       "label": "Available data sources",
       "description": "Which data sources or platforms does your analytics draw from?",
       "options": [
-        { "value": "ga4", "label": "Google Analytics 4 (GA4)" },
-        { "value": "google_ads", "label": "Google Ads" },
-        { "value": "meta_ads", "label": "Meta Ads Manager" },
-        { "value": "linkedin_ads", "label": "LinkedIn Campaign Manager" },
-        { "value": "crm", "label": "CRM (HubSpot, Salesforce, etc.)" },
-        { "value": "email_platform", "label": "Email platform (Klaviyo, Mailchimp, etc.)" },
-        { "value": "ecommerce", "label": "E-commerce platform (Shopify, WooCommerce, etc.)" },
-        { "value": "data_warehouse", "label": "Data warehouse (BigQuery, Snowflake, etc.)" },
-        { "value": "bi_tool", "label": "BI tool (Looker, Power BI, Tableau, etc.)" },
-        { "value": "manual_exports", "label": "Manual CSV exports / spreadsheets" }
+        {
+          "value": "ga4",
+          "label": "Google Analytics 4 (GA4)"
+        },
+        {
+          "value": "google_ads",
+          "label": "Google Ads"
+        },
+        {
+          "value": "meta_ads",
+          "label": "Meta Ads Manager"
+        },
+        {
+          "value": "linkedin_ads",
+          "label": "LinkedIn Campaign Manager"
+        },
+        {
+          "value": "crm",
+          "label": "CRM (HubSpot, Salesforce, etc.)"
+        },
+        {
+          "value": "email_platform",
+          "label": "Email platform (Klaviyo, Mailchimp, etc.)"
+        },
+        {
+          "value": "ecommerce",
+          "label": "E-commerce platform (Shopify, WooCommerce, etc.)"
+        },
+        {
+          "value": "data_warehouse",
+          "label": "Data warehouse (BigQuery, Snowflake, etc.)"
+        },
+        {
+          "value": "bi_tool",
+          "label": "BI tool (Looker, Power BI, Tableau, etc.)"
+        },
+        {
+          "value": "manual_exports",
+          "label": "Manual CSV exports / spreadsheets"
+        }
       ]
     },
     {
@@ -68,12 +119,30 @@
       "label": "Business model / revenue type",
       "description": "Affects which metrics and attribution approaches are most relevant.",
       "options": [
-        { "value": "ecommerce_transactional", "label": "E-commerce — transactional" },
-        { "value": "saas_subscription", "label": "SaaS / subscription" },
-        { "value": "b2b_pipeline", "label": "B2B — pipeline / deals" },
-        { "value": "lead_gen_service", "label": "Lead generation — service business" },
-        { "value": "marketplace", "label": "Marketplace / platform" },
-        { "value": "media_content", "label": "Media / content / advertising revenue" }
+        {
+          "value": "ecommerce_transactional",
+          "label": "E-commerce — transactional"
+        },
+        {
+          "value": "saas_subscription",
+          "label": "SaaS / subscription"
+        },
+        {
+          "value": "b2b_pipeline",
+          "label": "B2B — pipeline / deals"
+        },
+        {
+          "value": "lead_gen_service",
+          "label": "Lead generation — service business"
+        },
+        {
+          "value": "marketplace",
+          "label": "Marketplace / platform"
+        },
+        {
+          "value": "media_content",
+          "label": "Media / content / advertising revenue"
+        }
       ]
     },
     {
@@ -88,16 +157,28 @@
       "type": "select",
       "label": "Reporting cadence",
       "options": [
-        { "value": "weekly", "label": "Weekly" },
-        { "value": "fortnightly", "label": "Fortnightly" },
-        { "value": "monthly", "label": "Monthly" },
-        { "value": "quarterly", "label": "Quarterly" }
+        {
+          "value": "weekly",
+          "label": "Weekly"
+        },
+        {
+          "value": "fortnightly",
+          "label": "Fortnightly"
+        },
+        {
+          "value": "monthly",
+          "label": "Monthly"
+        },
+        {
+          "value": "quarterly",
+          "label": "Quarterly"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "marketing-analytics",

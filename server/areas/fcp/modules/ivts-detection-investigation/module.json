@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "problem-solution"],
+    "outputFormats": [
+      "detailed-findings",
+      "problem-solution"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -31,11 +34,26 @@
       "label": "Case Trigger",
       "required": true,
       "options": [
-        {"value": "str-received", "label": "STR received"},
-        {"value": "transaction-pattern", "label": "Transaction pattern detected"},
-        {"value": "regulatory-referral", "label": "Regulatory referral"},
-        {"value": "law-enforcement", "label": "Law enforcement request"},
-        {"value": "internal-audit", "label": "Internal audit finding"}
+        {
+          "value": "str-received",
+          "label": "STR received"
+        },
+        {
+          "value": "transaction-pattern",
+          "label": "Transaction pattern detected"
+        },
+        {
+          "value": "regulatory-referral",
+          "label": "Regulatory referral"
+        },
+        {
+          "value": "law-enforcement",
+          "label": "Law enforcement request"
+        },
+        {
+          "value": "internal-audit",
+          "label": "Internal audit finding"
+        }
       ]
     },
     {
@@ -43,11 +61,26 @@
       "type": "chips",
       "label": "Observed Transaction Patterns",
       "options": [
-        {"value": "structured-payments", "label": "Structured payments"},
-        {"value": "round-dollar", "label": "Round-dollar amounts"},
-        {"value": "third-party", "label": "Third-party payments"},
-        {"value": "cash-then-wire", "label": "Cash deposits followed by wire"},
-        {"value": "shared-beneficiary", "label": "Shared beneficiary accounts"}
+        {
+          "value": "structured-payments",
+          "label": "Structured payments"
+        },
+        {
+          "value": "round-dollar",
+          "label": "Round-dollar amounts"
+        },
+        {
+          "value": "third-party",
+          "label": "Third-party payments"
+        },
+        {
+          "value": "cash-then-wire",
+          "label": "Cash deposits followed by wire"
+        },
+        {
+          "value": "shared-beneficiary",
+          "label": "Shared beneficiary accounts"
+        }
       ]
     },
     {
@@ -55,12 +88,30 @@
       "type": "chips",
       "label": "Relevant Corridors",
       "options": [
-        {"value": "south-asia", "label": "South Asia (India/Pakistan/Bangladesh)"},
-        {"value": "middle-east", "label": "Middle East / GCC"},
-        {"value": "east-africa", "label": "East Africa"},
-        {"value": "west-africa", "label": "West Africa"},
-        {"value": "southeast-asia", "label": "Southeast Asia"},
-        {"value": "europe-diaspora", "label": "Europe (diaspora communities)"}
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Pakistan/Bangladesh)"
+        },
+        {
+          "value": "middle-east",
+          "label": "Middle East / GCC"
+        },
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "europe-diaspora",
+          "label": "Europe (diaspora communities)"
+        }
       ]
     },
     {
@@ -70,7 +121,18 @@
       "placeholder": "Describe the specific transactions, entities involved, timeline, amounts, and any other relevant information..."
     }
   ],
-  "recommendedPersonas": ["fcp-expert", "hawala-ivts-investigator"],
-  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
-  "tags": ["hawala", "ivts", "investigation", "financial-intelligence", "fcp"]
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-hawala-ivts",
+    "skill-fatf-mutual-evaluation"
+  ],
+  "tags": [
+    "hawala",
+    "ivts",
+    "investigation",
+    "financial-intelligence",
+    "fcp"
+  ]
 }

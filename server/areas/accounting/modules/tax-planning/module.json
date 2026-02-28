@@ -118,7 +118,10 @@
       "placeholder": "e.g., We are considering relocating our IP holding from Sweden to Ireland. What are the tax implications including exit taxation? We also need to understand the Pillar Two minimum tax impact."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "tax",

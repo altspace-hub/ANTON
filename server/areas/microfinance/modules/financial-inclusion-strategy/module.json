@@ -37,12 +37,30 @@
       "description": "What type of organisation is designing or commissioning the strategy?",
       "required": true,
       "options": [
-        { "value": "government", "label": "Government" },
-        { "value": "central-bank", "label": "Central Bank" },
-        { "value": "development-bank", "label": "Development Bank" },
-        { "value": "ngo", "label": "NGO" },
-        { "value": "private-sector", "label": "Private Sector" },
-        { "value": "donor", "label": "Donor" }
+        {
+          "value": "government",
+          "label": "Government"
+        },
+        {
+          "value": "central-bank",
+          "label": "Central Bank"
+        },
+        {
+          "value": "development-bank",
+          "label": "Development Bank"
+        },
+        {
+          "value": "ngo",
+          "label": "NGO"
+        },
+        {
+          "value": "private-sector",
+          "label": "Private Sector"
+        },
+        {
+          "value": "donor",
+          "label": "Donor"
+        }
       ]
     },
     {
@@ -51,13 +69,34 @@
       "label": "Target Population",
       "description": "Which underserved populations does the strategy aim to reach? Select all that apply.",
       "options": [
-        { "value": "rural-unbanked", "label": "Rural unbanked" },
-        { "value": "women", "label": "Women" },
-        { "value": "youth", "label": "Youth" },
-        { "value": "smallholder-farmers", "label": "Smallholder farmers" },
-        { "value": "micro-businesses", "label": "Micro-businesses" },
-        { "value": "refugees", "label": "Refugees" },
-        { "value": "disability", "label": "Disability" }
+        {
+          "value": "rural-unbanked",
+          "label": "Rural unbanked"
+        },
+        {
+          "value": "women",
+          "label": "Women"
+        },
+        {
+          "value": "youth",
+          "label": "Youth"
+        },
+        {
+          "value": "smallholder-farmers",
+          "label": "Smallholder farmers"
+        },
+        {
+          "value": "micro-businesses",
+          "label": "Micro-businesses"
+        },
+        {
+          "value": "refugees",
+          "label": "Refugees"
+        },
+        {
+          "value": "disability",
+          "label": "Disability"
+        }
       ]
     },
     {
@@ -67,11 +106,26 @@
       "description": "What is the geographic focus of the strategy?",
       "required": true,
       "options": [
-        { "value": "national", "label": "National" },
-        { "value": "regional", "label": "Regional" },
-        { "value": "urban", "label": "Urban" },
-        { "value": "peri-urban", "label": "Peri-urban" },
-        { "value": "rural", "label": "Rural" }
+        {
+          "value": "national",
+          "label": "National"
+        },
+        {
+          "value": "regional",
+          "label": "Regional"
+        },
+        {
+          "value": "urban",
+          "label": "Urban"
+        },
+        {
+          "value": "peri-urban",
+          "label": "Peri-urban"
+        },
+        {
+          "value": "rural",
+          "label": "Rural"
+        }
       ]
     },
     {
@@ -83,8 +137,8 @@
     }
   ],
   "recommendedPersonas": [
-    "microfinance-director",
-    "fcp-expert"
+    "microfinance-field-officer",
+    "microenterprise-credit-advisor"
   ],
   "recommendedSkills": [
     "jurisdiction-ke-cbk",

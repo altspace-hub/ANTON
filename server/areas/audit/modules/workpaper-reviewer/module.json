@@ -132,7 +132,9 @@
       "placeholder": "Internal methodology requirements, specific auditor level being reviewed, first-time vs. experienced auditor, area of engagement focus..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "auditor"
+  ],
   "tags": [
     "audit",
     "workpapers",

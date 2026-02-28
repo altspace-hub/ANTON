@@ -34,10 +34,22 @@
       "label": "Accounting standard",
       "required": true,
       "options": [
-        { "value": "ifrs_ias12", "label": "IFRS — IAS 12 Income Taxes" },
-        { "value": "us_gaap_asc740", "label": "US GAAP — ASC 740" },
-        { "value": "local_gaap", "label": "Local GAAP (specify in context)" },
-        { "value": "dual_ifrs_gaap", "label": "Dual reporting (IFRS + local GAAP)" }
+        {
+          "value": "ifrs_ias12",
+          "label": "IFRS — IAS 12 Income Taxes"
+        },
+        {
+          "value": "us_gaap_asc740",
+          "label": "US GAAP — ASC 740"
+        },
+        {
+          "value": "local_gaap",
+          "label": "Local GAAP (specify in context)"
+        },
+        {
+          "value": "dual_ifrs_gaap",
+          "label": "Dual reporting (IFRS + local GAAP)"
+        }
       ]
     },
     {
@@ -45,13 +57,34 @@
       "type": "multi-select",
       "label": "Provision areas to address",
       "options": [
-        { "value": "current_tax", "label": "Current tax (current year charge)" },
-        { "value": "deferred_tax", "label": "Deferred tax assets and liabilities" },
-        { "value": "utp", "label": "Uncertain tax positions (UTPs / FIN 48 reserves)" },
-        { "value": "etr_analysis", "label": "Effective tax rate (ETR) reconciliation" },
-        { "value": "pillar_two", "label": "Pillar Two GloBE top-up tax (IFRS Amendments)" },
-        { "value": "valuation_allowance", "label": "Deferred tax asset valuation / recoverability" },
-        { "value": "tax_disclosures", "label": "Financial statement tax disclosures (notes)" }
+        {
+          "value": "current_tax",
+          "label": "Current tax (current year charge)"
+        },
+        {
+          "value": "deferred_tax",
+          "label": "Deferred tax assets and liabilities"
+        },
+        {
+          "value": "utp",
+          "label": "Uncertain tax positions (UTPs / FIN 48 reserves)"
+        },
+        {
+          "value": "etr_analysis",
+          "label": "Effective tax rate (ETR) reconciliation"
+        },
+        {
+          "value": "pillar_two",
+          "label": "Pillar Two GloBE top-up tax (IFRS Amendments)"
+        },
+        {
+          "value": "valuation_allowance",
+          "label": "Deferred tax asset valuation / recoverability"
+        },
+        {
+          "value": "tax_disclosures",
+          "label": "Financial statement tax disclosures (notes)"
+        }
       ]
     },
     {
@@ -59,12 +92,30 @@
       "type": "select",
       "label": "Reporting period",
       "options": [
-        { "value": "year_end", "label": "Annual year-end provision" },
-        { "value": "interim_q1", "label": "Interim — Q1" },
-        { "value": "interim_q2", "label": "Interim — Q2 / Half year" },
-        { "value": "interim_q3", "label": "Interim — Q3" },
-        { "value": "acquisition", "label": "Acquisition / purchase price allocation" },
-        { "value": "prior_year_adjustment", "label": "Prior year adjustment / restatement" }
+        {
+          "value": "year_end",
+          "label": "Annual year-end provision"
+        },
+        {
+          "value": "interim_q1",
+          "label": "Interim — Q1"
+        },
+        {
+          "value": "interim_q2",
+          "label": "Interim — Q2 / Half year"
+        },
+        {
+          "value": "interim_q3",
+          "label": "Interim — Q3"
+        },
+        {
+          "value": "acquisition",
+          "label": "Acquisition / purchase price allocation"
+        },
+        {
+          "value": "prior_year_adjustment",
+          "label": "Prior year adjustment / restatement"
+        }
       ]
     },
     {
@@ -84,7 +135,7 @@
   ],
   "recommendedPersonas": [
     "tax-director",
-    "fcp-expert"
+    "transfer-pricing-specialist"
   ],
   "modelTier": {
     "recommended": "opus",

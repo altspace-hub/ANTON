@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Communicative language teaching, functional vocabulary for work and daily life, English as second language, beginner to intermediate language learning" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Communicative language teaching, functional vocabulary for work and daily life, English as second language, beginner to intermediate language learning"
+      }
     }
   },
   "guidedInputs": [
@@ -28,14 +34,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "english", "label": "English" },
-        { "value": "french", "label": "French" },
-        { "value": "arabic", "label": "Arabic" },
-        { "value": "swahili", "label": "Swahili" },
-        { "value": "hindi", "label": "Hindi" },
-        { "value": "mandarin", "label": "Mandarin Chinese" },
-        { "value": "portuguese", "label": "Portuguese" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "english",
+          "label": "English"
+        },
+        {
+          "value": "french",
+          "label": "French"
+        },
+        {
+          "value": "arabic",
+          "label": "Arabic"
+        },
+        {
+          "value": "swahili",
+          "label": "Swahili"
+        },
+        {
+          "value": "hindi",
+          "label": "Hindi"
+        },
+        {
+          "value": "mandarin",
+          "label": "Mandarin Chinese"
+        },
+        {
+          "value": "portuguese",
+          "label": "Portuguese"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -44,10 +74,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "complete-beginner", "label": "Complete beginner" },
-        { "value": "know-few-words", "label": "Know a few words" },
-        { "value": "simple-conversation", "label": "Can have a simple conversation" },
-        { "value": "intermediate", "label": "Intermediate — want to improve" }
+        {
+          "value": "complete-beginner",
+          "label": "Complete beginner"
+        },
+        {
+          "value": "know-few-words",
+          "label": "Know a few words"
+        },
+        {
+          "value": "simple-conversation",
+          "label": "Can have a simple conversation"
+        },
+        {
+          "value": "intermediate",
+          "label": "Intermediate — want to improve"
+        }
       ]
     },
     {
@@ -56,15 +98,44 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "work", "label": "Work" },
-        { "value": "business-communication", "label": "Business communication" },
-        { "value": "migration-preparation", "label": "Migration or relocation" },
-        { "value": "further-education", "label": "Further education" },
-        { "value": "travel", "label": "Travel" },
-        { "value": "social", "label": "Social — talking to people" }
+        {
+          "value": "work",
+          "label": "Work"
+        },
+        {
+          "value": "business-communication",
+          "label": "Business communication"
+        },
+        {
+          "value": "migration-preparation",
+          "label": "Migration or relocation"
+        },
+        {
+          "value": "further-education",
+          "label": "Further education"
+        },
+        {
+          "value": "travel",
+          "label": "Travel"
+        },
+        {
+          "value": "social",
+          "label": "Social — talking to people"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
-  "tags": ["language-learning", "English", "French", "Swahili", "conversation", "vocabulary", "work-language", "communicative-approach"]
+  "recommendedPersonas": [
+    "education-expert"
+  ],
+  "tags": [
+    "language-learning",
+    "English",
+    "French",
+    "Swahili",
+    "conversation",
+    "vocabulary",
+    "work-language",
+    "communicative-approach"
+  ]
 }

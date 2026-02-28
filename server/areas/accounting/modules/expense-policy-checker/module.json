@@ -49,10 +49,22 @@
       "label": "Employee grade / level",
       "description": "Some policies have grade-specific limits (e.g. business class only for VP+).",
       "options": [
-        { "value": "junior", "label": "Junior / Associate" },
-        { "value": "senior", "label": "Senior / Manager" },
-        { "value": "director", "label": "Director / VP" },
-        { "value": "executive", "label": "Executive / C-suite" }
+        {
+          "value": "junior",
+          "label": "Junior / Associate"
+        },
+        {
+          "value": "senior",
+          "label": "Senior / Manager"
+        },
+        {
+          "value": "director",
+          "label": "Director / VP"
+        },
+        {
+          "value": "executive",
+          "label": "Executive / C-suite"
+        }
       ]
     },
     {
@@ -62,7 +74,10 @@
       "placeholder": "Business purpose of the expense claim: e.g. client meetings in London with Barclays and HSBC, 2 days including presentation and contract negotiation."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "expenses",

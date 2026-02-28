@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Mobile money dispute resolution: M-Pesa, MTN MoMo, Airtel Money, bKash, GCash, Easypaisa. Wrong transfer recall process, failed transaction dispute, SIM swap response, agent disputes, customer care numbers, telecoms regulator escalation, 48-hour rule." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Mobile money dispute resolution: M-Pesa, MTN MoMo, Airtel Money, bKash, GCash, Easypaisa. Wrong transfer recall process, failed transaction dispute, SIM swap response, agent disputes, customer care numbers, telecoms regulator escalation, 48-hour rule."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,13 +82,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "mpesa", "label": "M-Pesa" },
-        { "value": "mtn-momo", "label": "MTN MoMo" },
-        { "value": "airtel-money", "label": "Airtel Money" },
-        { "value": "easypaisa", "label": "Easypaisa" },
-        { "value": "bkash", "label": "bKash" },
-        { "value": "gcash", "label": "GCash" },
-        { "value": "other", "label": "Other platform" }
+        {
+          "value": "mpesa",
+          "label": "M-Pesa"
+        },
+        {
+          "value": "mtn-momo",
+          "label": "MTN MoMo"
+        },
+        {
+          "value": "airtel-money",
+          "label": "Airtel Money"
+        },
+        {
+          "value": "easypaisa",
+          "label": "Easypaisa"
+        },
+        {
+          "value": "bkash",
+          "label": "bKash"
+        },
+        {
+          "value": "gcash",
+          "label": "GCash"
+        },
+        {
+          "value": "other",
+          "label": "Other platform"
+        }
       ]
     },
     {
@@ -61,12 +118,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "wrong-number", "label": "Sent to the wrong number" },
-        { "value": "transaction-failed", "label": "Money deducted but transaction failed" },
-        { "value": "account-hacked", "label": "Account hacked or SIM swap" },
-        { "value": "agent-dispute", "label": "Agent gave wrong amount or overcharged" },
-        { "value": "unauthorized-transaction", "label": "Unauthorised transaction I did not make" },
-        { "value": "account-locked", "label": "Account locked or suspended" }
+        {
+          "value": "wrong-number",
+          "label": "Sent to the wrong number"
+        },
+        {
+          "value": "transaction-failed",
+          "label": "Money deducted but transaction failed"
+        },
+        {
+          "value": "account-hacked",
+          "label": "Account hacked or SIM swap"
+        },
+        {
+          "value": "agent-dispute",
+          "label": "Agent gave wrong amount or overcharged"
+        },
+        {
+          "value": "unauthorized-transaction",
+          "label": "Unauthorised transaction I did not make"
+        },
+        {
+          "value": "account-locked",
+          "label": "Account locked or suspended"
+        }
       ]
     },
     {
@@ -75,12 +150,36 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "under-10", "label": "Under $10 (or equivalent)" },
-        { "value": "10-to-100", "label": "$10 to $100" },
-        { "value": "over-100", "label": "Over $100" }
+        {
+          "value": "under-10",
+          "label": "Under $10 (or equivalent)"
+        },
+        {
+          "value": "10-to-100",
+          "label": "$10 to $100"
+        },
+        {
+          "value": "over-100",
+          "label": "Over $100"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
-  "tags": ["consumer-protection", "bop", "rights", "mobile-money", "mpesa", "bkash", "mtn-momo", "wrong-transfer", "sim-swap", "fraud", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate"
+  ],
+  "tags": [
+    "consumer-protection",
+    "bop",
+    "rights",
+    "mobile-money",
+    "mpesa",
+    "bkash",
+    "mtn-momo",
+    "wrong-transfer",
+    "sim-swap",
+    "fraud",
+    "africa",
+    "south-asia"
+  ]
 }

@@ -118,7 +118,10 @@
       "placeholder": "e.g., Sweden (Finansinspektionen), Nordic region, EU cross-border"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "cco"
+  ],
   "tags": [
     "banking",
     "product-governance",

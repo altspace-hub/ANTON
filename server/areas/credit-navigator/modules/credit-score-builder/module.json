@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,11 +78,26 @@
       "label": "What is your starting point?",
       "required": true,
       "options": [
-        { "value": "no-history", "label": "No financial history at all" },
-        { "value": "mobile-money", "label": "I use mobile money regularly" },
-        { "value": "sacco-member", "label": "I am a SACCO or cooperative member" },
-        { "value": "past-problems", "label": "I had a loan problem before" },
-        { "value": "some-history", "label": "I have some history but need to improve" }
+        {
+          "value": "no-history",
+          "label": "No financial history at all"
+        },
+        {
+          "value": "mobile-money",
+          "label": "I use mobile money regularly"
+        },
+        {
+          "value": "sacco-member",
+          "label": "I am a SACCO or cooperative member"
+        },
+        {
+          "value": "past-problems",
+          "label": "I had a loan problem before"
+        },
+        {
+          "value": "some-history",
+          "label": "I have some history but need to improve"
+        }
       ]
     },
     {
@@ -62,14 +106,28 @@
       "label": "When do you need to access credit?",
       "required": true,
       "options": [
-        { "value": "3-months", "label": "In about 3 months" },
-        { "value": "6-12-months", "label": "In 6 to 12 months" },
-        { "value": "over-1-year", "label": "Over 1 year from now" },
-        { "value": "learning", "label": "I am just learning — no urgent need" }
+        {
+          "value": "3-months",
+          "label": "In about 3 months"
+        },
+        {
+          "value": "6-12-months",
+          "label": "In 6 to 12 months"
+        },
+        {
+          "value": "over-1-year",
+          "label": "Over 1 year from now"
+        },
+        {
+          "value": "learning",
+          "label": "I am just learning — no urgent need"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

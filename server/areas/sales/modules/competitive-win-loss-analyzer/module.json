@@ -65,7 +65,10 @@
       "placeholder": "e.g., Why do we keep losing to Deloitte on large bank engagements? How should we position against boutique competitors? Where is our competitive moat strongest?"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "competitive-intelligence",
     "win-loss",

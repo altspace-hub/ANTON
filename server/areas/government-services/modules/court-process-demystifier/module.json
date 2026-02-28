@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Court hierarchy and processes by country, magistrate court procedures, summons response, what to bring to court, legal aid access (Kenya Legal Aid Service, South Africa Legal Aid SA, India NALSA, Philippines PAO), statute of limitations, court etiquette and process demystified for non-lawyers." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Court hierarchy and processes by country, magistrate court procedures, summons response, what to bring to court, legal aid access (Kenya Legal Aid Service, South Africa Legal Aid SA, India NALSA, Philippines PAO), statute of limitations, court etiquette and process demystified for non-lawyers."
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -48,12 +90,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "magistrate-small-claims", "label": "Magistrate / Small claims court" },
-        { "value": "family-court", "label": "Family court" },
-        { "value": "land-court", "label": "Land court" },
-        { "value": "criminal-case", "label": "Criminal case" },
-        { "value": "labour-court", "label": "Labour court" },
-        { "value": "childrens-court", "label": "Children's court" }
+        {
+          "value": "magistrate-small-claims",
+          "label": "Magistrate / Small claims court"
+        },
+        {
+          "value": "family-court",
+          "label": "Family court"
+        },
+        {
+          "value": "land-court",
+          "label": "Land court"
+        },
+        {
+          "value": "criminal-case",
+          "label": "Criminal case"
+        },
+        {
+          "value": "labour-court",
+          "label": "Labour court"
+        },
+        {
+          "value": "childrens-court",
+          "label": "Children's court"
+        }
       ]
     },
     {
@@ -62,14 +122,41 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "claimant", "label": "I have a claim against someone" },
-        { "value": "defendant", "label": "Someone has a claim against me" },
-        { "value": "summons", "label": "I received a summons" },
-        { "value": "witness", "label": "I am a witness" },
-        { "value": "general", "label": "General information" }
+        {
+          "value": "claimant",
+          "label": "I have a claim against someone"
+        },
+        {
+          "value": "defendant",
+          "label": "Someone has a claim against me"
+        },
+        {
+          "value": "summons",
+          "label": "I received a summons"
+        },
+        {
+          "value": "witness",
+          "label": "I am a witness"
+        },
+        {
+          "value": "general",
+          "label": "General information"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "consumer-rights-advocate"],
-  "tags": ["court", "legal", "summons", "magistrate", "legal-aid", "rights", "bop", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "court",
+    "legal",
+    "summons",
+    "magistrate",
+    "legal-aid",
+    "rights",
+    "bop",
+    "africa",
+    "south-asia"
+  ]
 }

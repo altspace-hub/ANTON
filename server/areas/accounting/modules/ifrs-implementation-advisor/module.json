@@ -36,17 +36,50 @@
       "label": "Standard to implement",
       "required": true,
       "options": [
-        { "value": "ifrs_9", "label": "IFRS 9 — Financial Instruments" },
-        { "value": "ifrs_15", "label": "IFRS 15 — Revenue from Contracts" },
-        { "value": "ifrs_16", "label": "IFRS 16 — Leases" },
-        { "value": "ifrs_17", "label": "IFRS 17 — Insurance Contracts" },
-        { "value": "ifrs_18", "label": "IFRS 18 — Presentation & Disclosure (replaces IAS 1)" },
-        { "value": "ifrs_s1_s2", "label": "IFRS S1/S2 — Sustainability Disclosure" },
-        { "value": "ias_36", "label": "IAS 36 — Impairment of Assets" },
-        { "value": "ias_37", "label": "IAS 37 — Provisions and Contingencies" },
-        { "value": "asc_842", "label": "ASC 842 — Leases (US GAAP)" },
-        { "value": "asc_606", "label": "ASC 606 — Revenue Recognition (US GAAP)" },
-        { "value": "other", "label": "Other / describe below" }
+        {
+          "value": "ifrs_9",
+          "label": "IFRS 9 — Financial Instruments"
+        },
+        {
+          "value": "ifrs_15",
+          "label": "IFRS 15 — Revenue from Contracts"
+        },
+        {
+          "value": "ifrs_16",
+          "label": "IFRS 16 — Leases"
+        },
+        {
+          "value": "ifrs_17",
+          "label": "IFRS 17 — Insurance Contracts"
+        },
+        {
+          "value": "ifrs_18",
+          "label": "IFRS 18 — Presentation & Disclosure (replaces IAS 1)"
+        },
+        {
+          "value": "ifrs_s1_s2",
+          "label": "IFRS S1/S2 — Sustainability Disclosure"
+        },
+        {
+          "value": "ias_36",
+          "label": "IAS 36 — Impairment of Assets"
+        },
+        {
+          "value": "ias_37",
+          "label": "IAS 37 — Provisions and Contingencies"
+        },
+        {
+          "value": "asc_842",
+          "label": "ASC 842 — Leases (US GAAP)"
+        },
+        {
+          "value": "asc_606",
+          "label": "ASC 606 — Revenue Recognition (US GAAP)"
+        },
+        {
+          "value": "other",
+          "label": "Other / describe below"
+        }
       ]
     },
     {
@@ -81,7 +114,10 @@
       "placeholder": "e.g. Complex lease portfolio with variable lease terms, historical data availability for ECL model (IFRS 9), disclosure requirements exceed current data capture."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "ifrs",

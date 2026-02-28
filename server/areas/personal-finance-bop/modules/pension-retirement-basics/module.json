@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "quick",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,10 +78,22 @@
       "label": "How old are you?",
       "required": true,
       "options": [
-        { "value": "under-30", "label": "Under 30" },
-        { "value": "30-40", "label": "30 to 40" },
-        { "value": "40-50", "label": "40 to 50" },
-        { "value": "over-50", "label": "Over 50" }
+        {
+          "value": "under-30",
+          "label": "Under 30"
+        },
+        {
+          "value": "30-40",
+          "label": "30 to 40"
+        },
+        {
+          "value": "40-50",
+          "label": "40 to 50"
+        },
+        {
+          "value": "over-50",
+          "label": "Over 50"
+        }
       ]
     },
     {
@@ -61,11 +102,26 @@
       "label": "How do you earn your income?",
       "required": true,
       "options": [
-        { "value": "formal-employment", "label": "Formal employment — on a payroll" },
-        { "value": "self-employed", "label": "Self-employed" },
-        { "value": "informal", "label": "Informal work" },
-        { "value": "farming", "label": "Farming" },
-        { "value": "mix", "label": "Mix of sources" }
+        {
+          "value": "formal-employment",
+          "label": "Formal employment — on a payroll"
+        },
+        {
+          "value": "self-employed",
+          "label": "Self-employed"
+        },
+        {
+          "value": "informal",
+          "label": "Informal work"
+        },
+        {
+          "value": "farming",
+          "label": "Farming"
+        },
+        {
+          "value": "mix",
+          "label": "Mix of sources"
+        }
       ]
     },
     {
@@ -74,15 +130,32 @@
       "label": "What is your main concern?",
       "required": false,
       "options": [
-        { "value": "where-to-start", "label": "I don't know where to start" },
-        { "value": "cant-afford", "label": "I cannot afford to save much" },
-        { "value": "employer-not-paying", "label": "My employer is not paying my pension" },
-        { "value": "check-entitlement", "label": "I want to check what I am entitled to" },
-        { "value": "near-retirement", "label": "I am getting close to retirement age" }
+        {
+          "value": "where-to-start",
+          "label": "I don't know where to start"
+        },
+        {
+          "value": "cant-afford",
+          "label": "I cannot afford to save much"
+        },
+        {
+          "value": "employer-not-paying",
+          "label": "My employer is not paying my pension"
+        },
+        {
+          "value": "check-entitlement",
+          "label": "I want to check what I am entitled to"
+        },
+        {
+          "value": "near-retirement",
+          "label": "I am getting close to retirement age"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

@@ -138,7 +138,9 @@
       "placeholder": "Describe the topic, key learning objectives, any curriculum requirements to align with, and any special considerations (SEN students, mixed ability, etc.)."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "education-expert"
+  ],
   "tags": [
     "lesson",
     "planning",

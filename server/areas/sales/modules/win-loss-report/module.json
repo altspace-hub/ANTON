@@ -54,16 +54,37 @@
       "type": "multi-select",
       "label": "What are you trying to understand?",
       "options": [
-        { "value": "competitive", "label": "Competitive positioning and differentiation" },
-        { "value": "pricing", "label": "Pricing and commercial competitiveness" },
-        { "value": "process", "label": "Sales process effectiveness" },
-        { "value": "qualification", "label": "Lead qualification quality" },
-        { "value": "messaging", "label": "Value proposition and messaging" },
-        { "value": "relationships", "label": "Relationship and stakeholder factors" }
+        {
+          "value": "competitive",
+          "label": "Competitive positioning and differentiation"
+        },
+        {
+          "value": "pricing",
+          "label": "Pricing and commercial competitiveness"
+        },
+        {
+          "value": "process",
+          "label": "Sales process effectiveness"
+        },
+        {
+          "value": "qualification",
+          "label": "Lead qualification quality"
+        },
+        {
+          "value": "messaging",
+          "label": "Value proposition and messaging"
+        },
+        {
+          "value": "relationships",
+          "label": "Relationship and stakeholder factors"
+        }
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert",
+    "startup-advisor"
+  ],
   "tags": [
     "win-loss",
     "sales-analysis",

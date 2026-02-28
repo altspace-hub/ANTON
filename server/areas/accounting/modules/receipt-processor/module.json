@@ -67,7 +67,10 @@
       "placeholder": "Any specific company expense policy rules to check against.\ne.g. Meals capped at 500 SEK/person, hotel max 2 000 SEK/night, receipts required above 200 SEK."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "expenses",

@@ -170,7 +170,9 @@
       "placeholder": "e.g., Worried about SQL injection in the query builder, not sure if the caching strategy is correct, need to ensure GDPR-compliant data handling"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "software",
     "code-review",

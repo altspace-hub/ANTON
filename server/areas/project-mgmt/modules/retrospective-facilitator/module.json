@@ -63,7 +63,9 @@
       "placeholder": "e.g. 5 people (1 PO, 1 SM, 3 devs)"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "project-management",
     "agile",

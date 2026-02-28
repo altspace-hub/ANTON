@@ -41,13 +41,34 @@
       "type": "multi-select",
       "label": "Intelligence dimensions",
       "options": [
-        { "value": "positioning", "label": "Market positioning and messaging" },
-        { "value": "pricing", "label": "Pricing and commercial model" },
-        { "value": "products", "label": "Product/service capabilities" },
-        { "value": "recent_moves", "label": "Recent strategic moves and announcements" },
-        { "value": "talent", "label": "Talent and key hires" },
-        { "value": "clients", "label": "Client wins and losses" },
-        { "value": "technology", "label": "Technology and tools" }
+        {
+          "value": "positioning",
+          "label": "Market positioning and messaging"
+        },
+        {
+          "value": "pricing",
+          "label": "Pricing and commercial model"
+        },
+        {
+          "value": "products",
+          "label": "Product/service capabilities"
+        },
+        {
+          "value": "recent_moves",
+          "label": "Recent strategic moves and announcements"
+        },
+        {
+          "value": "talent",
+          "label": "Talent and key hires"
+        },
+        {
+          "value": "clients",
+          "label": "Client wins and losses"
+        },
+        {
+          "value": "technology",
+          "label": "Technology and tools"
+        }
       ]
     },
     {
@@ -64,8 +85,7 @@
     }
   ],
   "recommendedPersonas": [
-    "investor-lens",
-    "journalist"
+    "strategy-expert"
   ],
   "tags": [
     "competitive-intelligence",

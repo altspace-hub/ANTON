@@ -73,7 +73,9 @@
       "placeholder": "e.g., Emerging concern about IT change management following Critical finding. Regulatory examination expected Q3 — two audits being reprioritised to support readiness..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "auditor"
+  ],
   "tags": [
     "audit",
     "committee",

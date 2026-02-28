@@ -31,12 +31,30 @@
       "label": "Organisation type",
       "required": true,
       "options": [
-        { "value": "enterprise", "label": "Large enterprise (500+ employees)" },
-        { "value": "mid_market", "label": "Mid-market (100-500 employees)" },
-        { "value": "smb", "label": "SMB (under 100 employees)" },
-        { "value": "government", "label": "Government / public sector" },
-        { "value": "financial", "label": "Financial institution (bank, insurer, asset manager)" },
-        { "value": "healthcare", "label": "Healthcare / regulated industry" }
+        {
+          "value": "enterprise",
+          "label": "Large enterprise (500+ employees)"
+        },
+        {
+          "value": "mid_market",
+          "label": "Mid-market (100-500 employees)"
+        },
+        {
+          "value": "smb",
+          "label": "SMB (under 100 employees)"
+        },
+        {
+          "value": "government",
+          "label": "Government / public sector"
+        },
+        {
+          "value": "financial",
+          "label": "Financial institution (bank, insurer, asset manager)"
+        },
+        {
+          "value": "healthcare",
+          "label": "Healthcare / regulated industry"
+        }
       ]
     },
     {
@@ -51,12 +69,30 @@
       "type": "multi-select",
       "label": "Primary security concerns driving this assessment",
       "options": [
-        { "value": "remote_work", "label": "Remote / hybrid workforce security" },
-        { "value": "cloud_migration", "label": "Cloud migration and access control" },
-        { "value": "supply_chain", "label": "Third-party and supply chain access" },
-        { "value": "insider_threat", "label": "Insider threat and lateral movement" },
-        { "value": "compliance", "label": "Regulatory compliance (NIS2, DORA, ISO 27001)" },
-        { "value": "breach_response", "label": "Post-breach remediation" }
+        {
+          "value": "remote_work",
+          "label": "Remote / hybrid workforce security"
+        },
+        {
+          "value": "cloud_migration",
+          "label": "Cloud migration and access control"
+        },
+        {
+          "value": "supply_chain",
+          "label": "Third-party and supply chain access"
+        },
+        {
+          "value": "insider_threat",
+          "label": "Insider threat and lateral movement"
+        },
+        {
+          "value": "compliance",
+          "label": "Regulatory compliance (NIS2, DORA, ISO 27001)"
+        },
+        {
+          "value": "breach_response",
+          "label": "Post-breach remediation"
+        }
       ]
     },
     {
@@ -72,7 +108,9 @@
       "placeholder": "e.g., Okta for IAM, CrowdStrike for EDR, Zscaler for ZTNA, Azure AD Conditional Access, Palo Alto NGFW, Splunk SIEM"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "zero-trust",
     "security",

@@ -35,12 +35,30 @@
       "label": "Product type",
       "required": true,
       "options": [
-        { "value": "b2b_saas", "label": "B2B SaaS" },
-        { "value": "b2c_mobile", "label": "B2C Mobile App" },
-        { "value": "marketplace", "label": "Marketplace" },
-        { "value": "api_platform", "label": "API Platform" },
-        { "value": "hardware_software", "label": "Hardware + Software" },
-        { "value": "internal_tool", "label": "Internal Tool" }
+        {
+          "value": "b2b_saas",
+          "label": "B2B SaaS"
+        },
+        {
+          "value": "b2c_mobile",
+          "label": "B2C Mobile App"
+        },
+        {
+          "value": "marketplace",
+          "label": "Marketplace"
+        },
+        {
+          "value": "api_platform",
+          "label": "API Platform"
+        },
+        {
+          "value": "hardware_software",
+          "label": "Hardware + Software"
+        },
+        {
+          "value": "internal_tool",
+          "label": "Internal Tool"
+        }
       ]
     },
     {
@@ -49,12 +67,30 @@
       "label": "Product lifecycle stage",
       "required": true,
       "options": [
-        { "value": "discovery", "label": "Discovery" },
-        { "value": "zero_to_one", "label": "0→1 (building MVP)" },
-        { "value": "growth", "label": "Growth" },
-        { "value": "scaling", "label": "Scaling" },
-        { "value": "maturity", "label": "Maturity" },
-        { "value": "revival", "label": "Revival" }
+        {
+          "value": "discovery",
+          "label": "Discovery"
+        },
+        {
+          "value": "zero_to_one",
+          "label": "0→1 (building MVP)"
+        },
+        {
+          "value": "growth",
+          "label": "Growth"
+        },
+        {
+          "value": "scaling",
+          "label": "Scaling"
+        },
+        {
+          "value": "maturity",
+          "label": "Maturity"
+        },
+        {
+          "value": "revival",
+          "label": "Revival"
+        }
       ]
     },
     {
@@ -68,15 +104,28 @@
       "type": "select",
       "label": "Roadmap horizon",
       "options": [
-        { "value": "3m", "label": "3 months" },
-        { "value": "6m", "label": "6 months" },
-        { "value": "12m", "label": "12 months" },
-        { "value": "3y", "label": "3 years" }
+        {
+          "value": "3m",
+          "label": "3 months"
+        },
+        {
+          "value": "6m",
+          "label": "6 months"
+        },
+        {
+          "value": "12m",
+          "label": "12 months"
+        },
+        {
+          "value": "3y",
+          "label": "3 years"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "policy-analyst"
+    "strategy-expert",
+    "tech-expert"
   ],
   "tags": [
     "product-strategy",

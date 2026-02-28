@@ -41,12 +41,30 @@
       "label": "Process type",
       "required": true,
       "options": [
-        { "value": "operational", "label": "Operational process (day-to-day operations)" },
-        { "value": "compliance", "label": "Compliance or regulatory process" },
-        { "value": "it_systems", "label": "IT / systems process" },
-        { "value": "hr", "label": "HR / people process" },
-        { "value": "financial", "label": "Financial control process" },
-        { "value": "customer", "label": "Customer-facing process" }
+        {
+          "value": "operational",
+          "label": "Operational process (day-to-day operations)"
+        },
+        {
+          "value": "compliance",
+          "label": "Compliance or regulatory process"
+        },
+        {
+          "value": "it_systems",
+          "label": "IT / systems process"
+        },
+        {
+          "value": "hr",
+          "label": "HR / people process"
+        },
+        {
+          "value": "financial",
+          "label": "Financial control process"
+        },
+        {
+          "value": "customer",
+          "label": "Customer-facing process"
+        }
       ]
     },
     {
@@ -67,14 +85,23 @@
       "type": "select",
       "label": "Formality level",
       "options": [
-        { "value": "standard", "label": "Standard — professional and clear" },
-        { "value": "regulatory", "label": "Regulatory grade — formal, auditable, ISO-aligned" },
-        { "value": "simple", "label": "Simple — concise, step-by-step, easy to follow" }
+        {
+          "value": "standard",
+          "label": "Standard — professional and clear"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory grade — formal, auditable, ISO-aligned"
+        },
+        {
+          "value": "simple",
+          "label": "Simple — concise, step-by-step, easy to follow"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "sop",

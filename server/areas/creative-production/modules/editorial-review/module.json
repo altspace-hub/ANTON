@@ -9,7 +9,9 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings"],
+    "outputFormats": [
+      "detailed-findings"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -26,12 +28,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "developmental", "label": "Developmental Edit — structure, pacing, arcs, plot" },
-        { "value": "line", "label": "Line Edit — prose style, voice, rhythm, clarity" },
-        { "value": "copy", "label": "Copy Edit — grammar, consistency, fact-checking" },
-        { "value": "proofread", "label": "Proofread — typos, formatting, final polish" },
-        { "value": "sensitivity", "label": "Sensitivity Read — representation, cultural accuracy" },
-        { "value": "full", "label": "Full Edit — all passes in sequence" }
+        {
+          "value": "developmental",
+          "label": "Developmental Edit — structure, pacing, arcs, plot"
+        },
+        {
+          "value": "line",
+          "label": "Line Edit — prose style, voice, rhythm, clarity"
+        },
+        {
+          "value": "copy",
+          "label": "Copy Edit — grammar, consistency, fact-checking"
+        },
+        {
+          "value": "proofread",
+          "label": "Proofread — typos, formatting, final polish"
+        },
+        {
+          "value": "sensitivity",
+          "label": "Sensitivity Read — representation, cultural accuracy"
+        },
+        {
+          "value": "full",
+          "label": "Full Edit — all passes in sequence"
+        }
       ]
     },
     {
@@ -40,14 +60,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "novel", "label": "Novel" },
-        { "value": "short-story", "label": "Short Story" },
-        { "value": "play", "label": "Stage Play" },
-        { "value": "screenplay", "label": "Screenplay" },
-        { "value": "non-fiction", "label": "Non-fiction / Memoir" },
-        { "value": "poetry", "label": "Poetry Collection" },
-        { "value": "picture-book", "label": "Picture Book / Children's" },
-        { "value": "essay", "label": "Essay / Long-form journalism" }
+        {
+          "value": "novel",
+          "label": "Novel"
+        },
+        {
+          "value": "short-story",
+          "label": "Short Story"
+        },
+        {
+          "value": "play",
+          "label": "Stage Play"
+        },
+        {
+          "value": "screenplay",
+          "label": "Screenplay"
+        },
+        {
+          "value": "non-fiction",
+          "label": "Non-fiction / Memoir"
+        },
+        {
+          "value": "poetry",
+          "label": "Poetry Collection"
+        },
+        {
+          "value": "picture-book",
+          "label": "Picture Book / Children's"
+        },
+        {
+          "value": "essay",
+          "label": "Essay / Long-form journalism"
+        }
       ]
     },
     {
@@ -56,11 +100,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "chicago", "label": "Chicago Manual of Style" },
-        { "value": "ap", "label": "AP Style" },
-        { "value": "oxford", "label": "Oxford Style" },
-        { "value": "house", "label": "House style (describe in notes below)" },
-        { "value": "none", "label": "No specific style guide" }
+        {
+          "value": "chicago",
+          "label": "Chicago Manual of Style"
+        },
+        {
+          "value": "ap",
+          "label": "AP Style"
+        },
+        {
+          "value": "oxford",
+          "label": "Oxford Style"
+        },
+        {
+          "value": "house",
+          "label": "House style (describe in notes below)"
+        },
+        {
+          "value": "none",
+          "label": "No specific style guide"
+        }
       ]
     },
     {
@@ -69,14 +128,38 @@
       "type": "chips",
       "required": false,
       "options": [
-        { "value": "cultural", "label": "Cultural representation" },
-        { "value": "gender", "label": "Gender & sexuality" },
-        { "value": "disability", "label": "Disability & neurodivergence" },
-        { "value": "race", "label": "Race & ethnicity" },
-        { "value": "religion", "label": "Religion & belief" },
-        { "value": "age", "label": "Age & ageism" },
-        { "value": "class", "label": "Class & socioeconomic" },
-        { "value": "mental-health", "label": "Mental health portrayal" }
+        {
+          "value": "cultural",
+          "label": "Cultural representation"
+        },
+        {
+          "value": "gender",
+          "label": "Gender & sexuality"
+        },
+        {
+          "value": "disability",
+          "label": "Disability & neurodivergence"
+        },
+        {
+          "value": "race",
+          "label": "Race & ethnicity"
+        },
+        {
+          "value": "religion",
+          "label": "Religion & belief"
+        },
+        {
+          "value": "age",
+          "label": "Age & ageism"
+        },
+        {
+          "value": "class",
+          "label": "Class & socioeconomic"
+        },
+        {
+          "value": "mental-health",
+          "label": "Mental health portrayal"
+        }
       ]
     },
     {
@@ -94,6 +177,17 @@
       "placeholder": "Paste the text to be edited..."
     }
   ],
-  "recommendedPersonas": ["editor", "proofreader", "literary-agent"],
-  "tags": ["editing", "editorial", "proofreading", "copy-editing", "developmental-editing", "sensitivity-reading", "manuscript", "publishing"]
+  "recommendedPersonas": [
+    "creative-director"
+  ],
+  "tags": [
+    "editing",
+    "editorial",
+    "proofreading",
+    "copy-editing",
+    "developmental-editing",
+    "sensitivity-reading",
+    "manuscript",
+    "publishing"
+  ]
 }

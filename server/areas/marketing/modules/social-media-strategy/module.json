@@ -36,14 +36,38 @@
       "required": true,
       "description": "Which platforms should this strategy cover?",
       "options": [
-        { "value": "linkedin", "label": "LinkedIn" },
-        { "value": "instagram", "label": "Instagram" },
-        { "value": "facebook", "label": "Facebook" },
-        { "value": "tiktok", "label": "TikTok" },
-        { "value": "x_twitter", "label": "X (Twitter)" },
-        { "value": "youtube", "label": "YouTube" },
-        { "value": "pinterest", "label": "Pinterest" },
-        { "value": "threads", "label": "Threads" }
+        {
+          "value": "linkedin",
+          "label": "LinkedIn"
+        },
+        {
+          "value": "instagram",
+          "label": "Instagram"
+        },
+        {
+          "value": "facebook",
+          "label": "Facebook"
+        },
+        {
+          "value": "tiktok",
+          "label": "TikTok"
+        },
+        {
+          "value": "x_twitter",
+          "label": "X (Twitter)"
+        },
+        {
+          "value": "youtube",
+          "label": "YouTube"
+        },
+        {
+          "value": "pinterest",
+          "label": "Pinterest"
+        },
+        {
+          "value": "threads",
+          "label": "Threads"
+        }
       ]
     },
     {
@@ -58,10 +82,22 @@
       "type": "select",
       "label": "Current social media maturity",
       "options": [
-        { "value": "starting_fresh", "label": "Starting from scratch — no presence yet" },
-        { "value": "low_activity", "label": "Profiles exist but posting is inconsistent" },
-        { "value": "active_no_strategy", "label": "Active posting but no clear strategy" },
-        { "value": "strategic_optimising", "label": "Strategy in place — looking to optimise" }
+        {
+          "value": "starting_fresh",
+          "label": "Starting from scratch — no presence yet"
+        },
+        {
+          "value": "low_activity",
+          "label": "Profiles exist but posting is inconsistent"
+        },
+        {
+          "value": "active_no_strategy",
+          "label": "Active posting but no clear strategy"
+        },
+        {
+          "value": "strategic_optimising",
+          "label": "Strategy in place — looking to optimise"
+        }
       ]
     },
     {
@@ -69,13 +105,34 @@
       "type": "chips",
       "label": "Primary social media goals",
       "options": [
-        { "value": "brand_awareness", "label": "Brand awareness" },
-        { "value": "community_building", "label": "Community building" },
-        { "value": "lead_generation", "label": "Lead generation" },
-        { "value": "customer_support", "label": "Customer support / retention" },
-        { "value": "thought_leadership", "label": "Thought leadership" },
-        { "value": "product_discovery", "label": "Product discovery / social commerce" },
-        { "value": "talent_attraction", "label": "Employer branding / talent attraction" }
+        {
+          "value": "brand_awareness",
+          "label": "Brand awareness"
+        },
+        {
+          "value": "community_building",
+          "label": "Community building"
+        },
+        {
+          "value": "lead_generation",
+          "label": "Lead generation"
+        },
+        {
+          "value": "customer_support",
+          "label": "Customer support / retention"
+        },
+        {
+          "value": "thought_leadership",
+          "label": "Thought leadership"
+        },
+        {
+          "value": "product_discovery",
+          "label": "Product discovery / social commerce"
+        },
+        {
+          "value": "talent_attraction",
+          "label": "Employer branding / talent attraction"
+        }
       ]
     },
     {
@@ -84,17 +141,32 @@
       "label": "Content production capacity",
       "description": "How much resource is available to create social content?",
       "options": [
-        { "value": "minimal", "label": "Minimal — one person, part-time" },
-        { "value": "small_team", "label": "Small team — 1-2 people dedicated" },
-        { "value": "medium_team", "label": "Medium team — dedicated social team" },
-        { "value": "agency_supported", "label": "Agency-supported" },
-        { "value": "large_team", "label": "Large in-house team + agency" }
+        {
+          "value": "minimal",
+          "label": "Minimal — one person, part-time"
+        },
+        {
+          "value": "small_team",
+          "label": "Small team — 1-2 people dedicated"
+        },
+        {
+          "value": "medium_team",
+          "label": "Medium team — dedicated social team"
+        },
+        {
+          "value": "agency_supported",
+          "label": "Agency-supported"
+        },
+        {
+          "value": "large_team",
+          "label": "Large in-house team + agency"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "social-media",

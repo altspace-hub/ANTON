@@ -37,10 +37,22 @@
       "description": "What type of mobile money operator are you assessing or advising?",
       "required": true,
       "options": [
-        { "value": "mno", "label": "Mobile Network Operator (MNO)" },
-        { "value": "bank-led", "label": "Bank-led MMO" },
-        { "value": "fintech-mmo", "label": "Fintech MMO" },
-        { "value": "agent-network-manager", "label": "Agent Network Manager" }
+        {
+          "value": "mno",
+          "label": "Mobile Network Operator (MNO)"
+        },
+        {
+          "value": "bank-led",
+          "label": "Bank-led MMO"
+        },
+        {
+          "value": "fintech-mmo",
+          "label": "Fintech MMO"
+        },
+        {
+          "value": "agent-network-manager",
+          "label": "Agent Network Manager"
+        }
       ]
     },
     {
@@ -50,15 +62,42 @@
       "description": "Which country's regulatory framework is the primary reference?",
       "required": true,
       "options": [
-        { "value": "ke", "label": "Kenya" },
-        { "value": "ng", "label": "Nigeria" },
-        { "value": "gh", "label": "Ghana" },
-        { "value": "tz", "label": "Tanzania" },
-        { "value": "ug", "label": "Uganda" },
-        { "value": "bd", "label": "Bangladesh" },
-        { "value": "pk", "label": "Pakistan" },
-        { "value": "ph", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "ke",
+          "label": "Kenya"
+        },
+        {
+          "value": "ng",
+          "label": "Nigeria"
+        },
+        {
+          "value": "gh",
+          "label": "Ghana"
+        },
+        {
+          "value": "tz",
+          "label": "Tanzania"
+        },
+        {
+          "value": "ug",
+          "label": "Uganda"
+        },
+        {
+          "value": "bd",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pk",
+          "label": "Pakistan"
+        },
+        {
+          "value": "ph",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -67,12 +106,30 @@
       "label": "Active Services",
       "description": "Which services does the operator provide? Select all that apply.",
       "options": [
-        { "value": "p2p", "label": "P2P transfers" },
-        { "value": "bill-payments", "label": "Bill payments" },
-        { "value": "merchant-payments", "label": "Merchant payments" },
-        { "value": "savings-wallet", "label": "Savings (wallet)" },
-        { "value": "loans", "label": "Loans" },
-        { "value": "international-remittance", "label": "International remittance" }
+        {
+          "value": "p2p",
+          "label": "P2P transfers"
+        },
+        {
+          "value": "bill-payments",
+          "label": "Bill payments"
+        },
+        {
+          "value": "merchant-payments",
+          "label": "Merchant payments"
+        },
+        {
+          "value": "savings-wallet",
+          "label": "Savings (wallet)"
+        },
+        {
+          "value": "loans",
+          "label": "Loans"
+        },
+        {
+          "value": "international-remittance",
+          "label": "International remittance"
+        }
       ]
     },
     {
@@ -84,8 +141,8 @@
     }
   ],
   "recommendedPersonas": [
-    "mobile-money-compliance",
-    "fcp-expert"
+    "mobile-money-agent-trainer",
+    "mobile-money-compliance"
   ],
   "recommendedSkills": [
     "skill-gsma-mobile-money-aml",

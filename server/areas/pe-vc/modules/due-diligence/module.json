@@ -15,7 +15,11 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "action-plan", "gap-scoring-matrix"],
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan",
+      "gap-scoring-matrix"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -36,14 +40,38 @@
       "label": "What phase are you in?",
       "required": true,
       "options": [
-        { "value": "planning", "label": "Planning (need a diligence request list)" },
-        { "value": "commercial", "label": "Commercial DD (market, customers, competition)" },
-        { "value": "financial", "label": "Financial DD (analysing financials uploaded)" },
-        { "value": "operational", "label": "Operational DD (processes, team, technology)" },
-        { "value": "legal", "label": "Legal DD (contracts, IP, regulatory)" },
-        { "value": "esg", "label": "ESG DD (environmental, social, governance)" },
-        { "value": "synthesis", "label": "Findings synthesis (pulling it all together)" },
-        { "value": "red-flag", "label": "Red flag check (quick risk scan)" }
+        {
+          "value": "planning",
+          "label": "Planning (need a diligence request list)"
+        },
+        {
+          "value": "commercial",
+          "label": "Commercial DD (market, customers, competition)"
+        },
+        {
+          "value": "financial",
+          "label": "Financial DD (analysing financials uploaded)"
+        },
+        {
+          "value": "operational",
+          "label": "Operational DD (processes, team, technology)"
+        },
+        {
+          "value": "legal",
+          "label": "Legal DD (contracts, IP, regulatory)"
+        },
+        {
+          "value": "esg",
+          "label": "ESG DD (environmental, social, governance)"
+        },
+        {
+          "value": "synthesis",
+          "label": "Findings synthesis (pulling it all together)"
+        },
+        {
+          "value": "red-flag",
+          "label": "Red flag check (quick risk scan)"
+        }
       ]
     },
     {
@@ -52,11 +80,26 @@
       "label": "Investment type",
       "required": true,
       "options": [
-        { "value": "vc-early", "label": "VC Early Stage" },
-        { "value": "vc-growth", "label": "VC Growth" },
-        { "value": "pe-growth", "label": "PE Growth" },
-        { "value": "pe-buyout", "label": "PE Buyout" },
-        { "value": "pe-turnaround", "label": "PE Turnaround" }
+        {
+          "value": "vc-early",
+          "label": "VC Early Stage"
+        },
+        {
+          "value": "vc-growth",
+          "label": "VC Growth"
+        },
+        {
+          "value": "pe-growth",
+          "label": "PE Growth"
+        },
+        {
+          "value": "pe-buyout",
+          "label": "PE Buyout"
+        },
+        {
+          "value": "pe-turnaround",
+          "label": "PE Turnaround"
+        }
       ]
     },
     {
@@ -81,5 +124,15 @@
       "required": false
     }
   ],
-  "tags": ["pe-vc", "due-diligence", "data-room", "investment-analysis", "risk", "findings"]
+  "tags": [
+    "pe-vc",
+    "due-diligence",
+    "data-room",
+    "investment-analysis",
+    "risk",
+    "findings"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

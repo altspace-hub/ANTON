@@ -86,7 +86,8 @@
     }
   ],
   "recommendedPersonas": [
-    "business-expert"
+    "fcp-expert",
+    "cco"
   ],
   "tags": [
     "credit",

@@ -49,11 +49,26 @@
       "label": "Report audience",
       "required": true,
       "options": [
-        { "value": "board", "label": "Board of directors" },
-        { "value": "exec", "label": "Executive leadership team" },
-        { "value": "management", "label": "Senior management" },
-        { "value": "operational", "label": "Operational team" },
-        { "value": "investors", "label": "Investors / shareholders" }
+        {
+          "value": "board",
+          "label": "Board of directors"
+        },
+        {
+          "value": "exec",
+          "label": "Executive leadership team"
+        },
+        {
+          "value": "management",
+          "label": "Senior management"
+        },
+        {
+          "value": "operational",
+          "label": "Operational team"
+        },
+        {
+          "value": "investors",
+          "label": "Investors / shareholders"
+        }
       ]
     },
     {
@@ -64,7 +79,7 @@
     }
   ],
   "recommendedPersonas": [
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "kpi",

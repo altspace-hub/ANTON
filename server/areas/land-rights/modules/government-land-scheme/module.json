@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Government land and housing schemes by country: Kenya NLC Settlement Schemes, Nigeria FHA, Ghana SSNIT housing, India PM Awas Yojana, South Africa RDP and land redistribution, Tanzania village land allocation. Eligibility, application, waiting lists, common problems." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Government land and housing schemes by country: Kenya NLC Settlement Schemes, Nigeria FHA, Ghana SSNIT housing, India PM Awas Yojana, South Africa RDP and land redistribution, Tanzania village land allocation. Eligibility, application, waiting lists, common problems."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "housing", "label": "Housing / home" },
-        { "value": "agricultural", "label": "Agricultural land for farming" },
-        { "value": "business", "label": "Business premises" },
-        { "value": "after-displacement", "label": "Resettlement after displacement" },
-        { "value": "general", "label": "General — want to know options" }
+        {
+          "value": "housing",
+          "label": "Housing / home"
+        },
+        {
+          "value": "agricultural",
+          "label": "Agricultural land for farming"
+        },
+        {
+          "value": "business",
+          "label": "Business premises"
+        },
+        {
+          "value": "after-displacement",
+          "label": "Resettlement after displacement"
+        },
+        {
+          "value": "general",
+          "label": "General — want to know options"
+        }
       ]
     },
     {
@@ -59,14 +110,43 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "no-land", "label": "Have no land currently" },
-        { "value": "small-farmer", "label": "Small farmer wanting more land" },
-        { "value": "urban-poor", "label": "Urban poor or slum resident" },
-        { "value": "returned-refugee", "label": "Returned refugee or displaced person" },
-        { "value": "youth", "label": "Youth (under 35)" }
+        {
+          "value": "no-land",
+          "label": "Have no land currently"
+        },
+        {
+          "value": "small-farmer",
+          "label": "Small farmer wanting more land"
+        },
+        {
+          "value": "urban-poor",
+          "label": "Urban poor or slum resident"
+        },
+        {
+          "value": "returned-refugee",
+          "label": "Returned refugee or displaced person"
+        },
+        {
+          "value": "youth",
+          "label": "Youth (under 35)"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
-  "tags": ["land-rights", "bop", "rights", "government-schemes", "housing", "land-allocation", "rdp", "pm-awas-yojana", "settlement", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "land-rights-paralegal"
+  ],
+  "tags": [
+    "land-rights",
+    "bop",
+    "rights",
+    "government-schemes",
+    "housing",
+    "land-allocation",
+    "rdp",
+    "pm-awas-yojana",
+    "settlement",
+    "africa",
+    "south-asia"
+  ]
 }

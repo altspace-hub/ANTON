@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "What type of craft do you make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,16 +78,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "indonesia", "label": "Indonesia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "indonesia",
+          "label": "Indonesia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -67,10 +126,22 @@
       "label": "What is your current digital experience?",
       "required": true,
       "options": [
-        { "value": "smartphone-basic", "label": "I have a smartphone but no online selling experience" },
-        { "value": "whatsapp", "label": "I use WhatsApp regularly" },
-        { "value": "instagram", "label": "I already use Instagram" },
-        { "value": "want-marketplace", "label": "I want to try Etsy or an online marketplace" }
+        {
+          "value": "smartphone-basic",
+          "label": "I have a smartphone but no online selling experience"
+        },
+        {
+          "value": "whatsapp",
+          "label": "I use WhatsApp regularly"
+        },
+        {
+          "value": "instagram",
+          "label": "I already use Instagram"
+        },
+        {
+          "value": "want-marketplace",
+          "label": "I want to try Etsy or an online marketplace"
+        }
       ]
     },
     {
@@ -79,14 +150,29 @@
       "label": "Who do you want to sell to?",
       "required": true,
       "options": [
-        { "value": "local", "label": "Local buyers in my city or country" },
-        { "value": "diaspora", "label": "Diaspora community abroad" },
-        { "value": "international", "label": "International buyers" },
-        { "value": "all", "label": "All of the above" }
+        {
+          "value": "local",
+          "label": "Local buyers in my city or country"
+        },
+        {
+          "value": "diaspora",
+          "label": "Diaspora community abroad"
+        },
+        {
+          "value": "international",
+          "label": "International buyers"
+        },
+        {
+          "value": "all",
+          "label": "All of the above"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

@@ -139,7 +139,10 @@
       "placeholder": "e.g., Sweden, Finland, European cross-border"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "fcp-expert",
+    "cco"
+  ],
   "tags": [
     "banking",
     "PSD3",

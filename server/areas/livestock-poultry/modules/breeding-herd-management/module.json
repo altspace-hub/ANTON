@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Livestock breeding selection, culling principles, record keeping, artificial insemination, crossbreeding local and exotic breeds, breeding age and seasonality by species" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Livestock breeding selection, culling principles, record keeping, artificial insemination, crossbreeding local and exotic breeds, breeding age and seasonality by species"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cattle", "label": "Cattle / Cows" },
-        { "value": "goats", "label": "Goats" },
-        { "value": "sheep", "label": "Sheep" },
-        { "value": "pigs", "label": "Pigs" },
-        { "value": "poultry-breeding", "label": "Poultry (breeding flock)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "cattle",
+          "label": "Cattle / Cows"
+        },
+        {
+          "value": "goats",
+          "label": "Goats"
+        },
+        {
+          "value": "sheep",
+          "label": "Sheep"
+        },
+        {
+          "value": "pigs",
+          "label": "Pigs"
+        },
+        {
+          "value": "poultry-breeding",
+          "label": "Poultry (breeding flock)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -42,16 +66,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -60,11 +114,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "milk-yield", "label": "Increase milk yield" },
-        { "value": "meat-production", "label": "Better meat production" },
-        { "value": "disease-resistance", "label": "Disease resistance" },
-        { "value": "reduce-costs", "label": "Reduce costs" },
-        { "value": "more-offspring", "label": "More offspring" }
+        {
+          "value": "milk-yield",
+          "label": "Increase milk yield"
+        },
+        {
+          "value": "meat-production",
+          "label": "Better meat production"
+        },
+        {
+          "value": "disease-resistance",
+          "label": "Disease resistance"
+        },
+        {
+          "value": "reduce-costs",
+          "label": "Reduce costs"
+        },
+        {
+          "value": "more-offspring",
+          "label": "More offspring"
+        }
       ]
     },
     {
@@ -73,13 +142,40 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "random", "label": "Random breeding" },
-        { "value": "controlled", "label": "Controlled breeding" },
-        { "value": "ai", "label": "AI (artificial insemination)" },
-        { "value": "not-sure", "label": "Not sure" }
+        {
+          "value": "random",
+          "label": "Random breeding"
+        },
+        {
+          "value": "controlled",
+          "label": "Controlled breeding"
+        },
+        {
+          "value": "ai",
+          "label": "AI (artificial insemination)"
+        },
+        {
+          "value": "not-sure",
+          "label": "Not sure"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["breeding", "herd-management", "genetics", "record-keeping", "artificial-insemination", "culling", "crossbreeding", "bop", "livestock", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "breeding",
+    "herd-management",
+    "genetics",
+    "record-keeping",
+    "artificial-insemination",
+    "culling",
+    "crossbreeding",
+    "bop",
+    "livestock",
+    "africa",
+    "south-asia"
+  ]
 }

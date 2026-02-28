@@ -36,11 +36,26 @@
       "label": "Entity type",
       "required": true,
       "options": [
-        { "value": "bank", "label": "Bank / financial institution" },
-        { "value": "insurer", "label": "Insurance / reinsurance company" },
-        { "value": "asset_manager", "label": "Asset manager" },
-        { "value": "large_corp", "label": "Large non-financial corporation" },
-        { "value": "sme", "label": "SME or mid-market company" }
+        {
+          "value": "bank",
+          "label": "Bank / financial institution"
+        },
+        {
+          "value": "insurer",
+          "label": "Insurance / reinsurance company"
+        },
+        {
+          "value": "asset_manager",
+          "label": "Asset manager"
+        },
+        {
+          "value": "large_corp",
+          "label": "Large non-financial corporation"
+        },
+        {
+          "value": "sme",
+          "label": "SME or mid-market company"
+        }
       ]
     },
     {
@@ -48,12 +63,30 @@
       "type": "multi-select",
       "label": "Regulatory or reporting drivers",
       "options": [
-        { "value": "csrd_esrs", "label": "CSRD / ESRS E1 (mandatory for in-scope companies)" },
-        { "value": "sfdr", "label": "SFDR (for asset managers)" },
-        { "value": "ecb_guide", "label": "ECB Guide on climate and environmental risks" },
-        { "value": "eba", "label": "EBA Pillar 3 ESG risk disclosures" },
-        { "value": "investor_pressure", "label": "Investor/lender requirements" },
-        { "value": "voluntary", "label": "Voluntary TCFD adoption" }
+        {
+          "value": "csrd_esrs",
+          "label": "CSRD / ESRS E1 (mandatory for in-scope companies)"
+        },
+        {
+          "value": "sfdr",
+          "label": "SFDR (for asset managers)"
+        },
+        {
+          "value": "ecb_guide",
+          "label": "ECB Guide on climate and environmental risks"
+        },
+        {
+          "value": "eba",
+          "label": "EBA Pillar 3 ESG risk disclosures"
+        },
+        {
+          "value": "investor_pressure",
+          "label": "Investor/lender requirements"
+        },
+        {
+          "value": "voluntary",
+          "label": "Voluntary TCFD adoption"
+        }
       ]
     },
     {
@@ -68,10 +101,22 @@
       "type": "select",
       "label": "Scenario analysis status",
       "options": [
-        { "value": "none", "label": "Not yet conducted" },
-        { "value": "qualitative", "label": "Qualitative only — no quantification" },
-        { "value": "partial", "label": "Partial — some risks quantified" },
-        { "value": "full", "label": "Full quantitative scenario analysis" }
+        {
+          "value": "none",
+          "label": "Not yet conducted"
+        },
+        {
+          "value": "qualitative",
+          "label": "Qualitative only — no quantification"
+        },
+        {
+          "value": "partial",
+          "label": "Partial — some risks quantified"
+        },
+        {
+          "value": "full",
+          "label": "Full quantitative scenario analysis"
+        }
       ]
     },
     {
@@ -81,7 +126,9 @@
       "placeholder": "e.g., We don't know how to conduct scenario analysis, we have physical risk data but no financial quantification, our board doesn't have sufficient climate expertise, we can't get Scope 3 data from our supply chain / lending portfolio"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "tcfd",
     "climate-risk",

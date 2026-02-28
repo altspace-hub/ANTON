@@ -36,11 +36,26 @@
       "description": "Which Sharia-compliant product structure is being designed or assessed?",
       "required": true,
       "options": [
-        { "value": "qard-hasan", "label": "Qard Hasan (interest-free loan)" },
-        { "value": "murabaha", "label": "Murabaha (deferred sale)" },
-        { "value": "ijara", "label": "Ijara (leasing)" },
-        { "value": "musharakah", "label": "Musharakah (partnership)" },
-        { "value": "mixed", "label": "Mixed" }
+        {
+          "value": "qard-hasan",
+          "label": "Qard Hasan (interest-free loan)"
+        },
+        {
+          "value": "murabaha",
+          "label": "Murabaha (deferred sale)"
+        },
+        {
+          "value": "ijara",
+          "label": "Ijara (leasing)"
+        },
+        {
+          "value": "musharakah",
+          "label": "Musharakah (partnership)"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed"
+        }
       ]
     },
     {
@@ -50,10 +65,22 @@
       "description": "What type of institution is offering the Islamic microfinance product?",
       "required": true,
       "options": [
-        { "value": "islamic-mfi", "label": "Islamic MFI" },
-        { "value": "waqf-based", "label": "Waqf-based" },
-        { "value": "conventional-islamic-window", "label": "Conventional MFI adding Islamic window" },
-        { "value": "zakat-fund", "label": "Zakat fund" }
+        {
+          "value": "islamic-mfi",
+          "label": "Islamic MFI"
+        },
+        {
+          "value": "waqf-based",
+          "label": "Waqf-based"
+        },
+        {
+          "value": "conventional-islamic-window",
+          "label": "Conventional MFI adding Islamic window"
+        },
+        {
+          "value": "zakat-fund",
+          "label": "Zakat fund"
+        }
       ]
     },
     {
@@ -63,12 +90,30 @@
       "description": "In which country is the programme operating?",
       "required": true,
       "options": [
-        { "value": "pk", "label": "Pakistan" },
-        { "value": "bd", "label": "Bangladesh" },
-        { "value": "id", "label": "Indonesia" },
-        { "value": "ng", "label": "Nigeria" },
-        { "value": "sd", "label": "Sudan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "pk",
+          "label": "Pakistan"
+        },
+        {
+          "value": "bd",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "id",
+          "label": "Indonesia"
+        },
+        {
+          "value": "ng",
+          "label": "Nigeria"
+        },
+        {
+          "value": "sd",
+          "label": "Sudan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -80,8 +125,8 @@
     }
   ],
   "recommendedPersonas": [
-    "microfinance-director",
-    "fcp-expert"
+    "microfinance-field-officer",
+    "microenterprise-credit-advisor"
   ],
   "recommendedSkills": [
     "skill-aaoifi-standards",

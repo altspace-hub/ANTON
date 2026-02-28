@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "balanced",
-    "outputFormats": ["policy-document", "executive-summary"],
+    "outputFormats": [
+      "policy-document",
+      "executive-summary"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -38,11 +41,26 @@
       "label": "What kind of IC paper?",
       "required": true,
       "options": [
-        { "value": "full-ic-memo", "label": "Full IC memo (new investment recommendation)" },
-        { "value": "follow-on", "label": "Follow-on investment memo" },
-        { "value": "ic-update", "label": "IC update / progress report" },
-        { "value": "exit-rec", "label": "Exit recommendation memo" },
-        { "value": "preliminary", "label": "Preliminary IC teaser (seeking approval to proceed to diligence)" }
+        {
+          "value": "full-ic-memo",
+          "label": "Full IC memo (new investment recommendation)"
+        },
+        {
+          "value": "follow-on",
+          "label": "Follow-on investment memo"
+        },
+        {
+          "value": "ic-update",
+          "label": "IC update / progress report"
+        },
+        {
+          "value": "exit-rec",
+          "label": "Exit recommendation memo"
+        },
+        {
+          "value": "preliminary",
+          "label": "Preliminary IC teaser (seeking approval to proceed to diligence)"
+        }
       ]
     },
     {
@@ -51,11 +69,26 @@
       "label": "Your recommendation",
       "required": true,
       "options": [
-        { "value": "invest-strong", "label": "Invest (strong conviction)" },
-        { "value": "invest-conditions", "label": "Invest (with conditions)" },
-        { "value": "further-diligence", "label": "Further diligence needed" },
-        { "value": "pass", "label": "Pass" },
-        { "value": "balanced", "label": "Presenting both sides — IC to decide" }
+        {
+          "value": "invest-strong",
+          "label": "Invest (strong conviction)"
+        },
+        {
+          "value": "invest-conditions",
+          "label": "Invest (with conditions)"
+        },
+        {
+          "value": "further-diligence",
+          "label": "Further diligence needed"
+        },
+        {
+          "value": "pass",
+          "label": "Pass"
+        },
+        {
+          "value": "balanced",
+          "label": "Presenting both sides — IC to decide"
+        }
       ]
     },
     {
@@ -92,13 +125,38 @@
       "label": "Fund type",
       "required": true,
       "options": [
-        { "value": "vc-early", "label": "VC Early" },
-        { "value": "vc-growth", "label": "VC Growth" },
-        { "value": "pe-growth", "label": "PE Growth" },
-        { "value": "pe-buyout", "label": "PE Buyout" },
-        { "value": "pe-turnaround", "label": "PE Turnaround" }
+        {
+          "value": "vc-early",
+          "label": "VC Early"
+        },
+        {
+          "value": "vc-growth",
+          "label": "VC Growth"
+        },
+        {
+          "value": "pe-growth",
+          "label": "PE Growth"
+        },
+        {
+          "value": "pe-buyout",
+          "label": "PE Buyout"
+        },
+        {
+          "value": "pe-turnaround",
+          "label": "PE Turnaround"
+        }
       ]
     }
   ],
-  "tags": ["pe-vc", "ic-memo", "investment-committee", "deal-analysis", "recommendation", "my-way"]
+  "tags": [
+    "pe-vc",
+    "ic-memo",
+    "investment-committee",
+    "deal-analysis",
+    "recommendation",
+    "my-way"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

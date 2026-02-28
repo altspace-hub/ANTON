@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "quick",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,13 +34,34 @@
       "label": "Which mobile money service do you use?",
       "required": true,
       "options": [
-        { "value": "mpesa-kenya", "label": "M-Pesa (Kenya)" },
-        { "value": "mtn-momo", "label": "MTN MoMo" },
-        { "value": "airtel-money", "label": "Airtel Money" },
-        { "value": "easypaisa", "label": "Easypaisa (Pakistan)" },
-        { "value": "bkash", "label": "bKash (Bangladesh)" },
-        { "value": "gcash", "label": "GCash (Philippines)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "mpesa-kenya",
+          "label": "M-Pesa (Kenya)"
+        },
+        {
+          "value": "mtn-momo",
+          "label": "MTN MoMo"
+        },
+        {
+          "value": "airtel-money",
+          "label": "Airtel Money"
+        },
+        {
+          "value": "easypaisa",
+          "label": "Easypaisa (Pakistan)"
+        },
+        {
+          "value": "bkash",
+          "label": "bKash (Bangladesh)"
+        },
+        {
+          "value": "gcash",
+          "label": "GCash (Philippines)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -47,15 +70,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -64,15 +114,32 @@
       "label": "What do you need help with?",
       "required": true,
       "options": [
-        { "value": "learn-basics", "label": "Learn safety basics" },
-        { "value": "something-suspicious", "label": "Something suspicious happened" },
-        { "value": "lost-phone", "label": "I lost my phone" },
-        { "value": "wrong-transfer", "label": "I sent money to the wrong number" },
-        { "value": "account-locked", "label": "My account is locked" }
+        {
+          "value": "learn-basics",
+          "label": "Learn safety basics"
+        },
+        {
+          "value": "something-suspicious",
+          "label": "Something suspicious happened"
+        },
+        {
+          "value": "lost-phone",
+          "label": "I lost my phone"
+        },
+        {
+          "value": "wrong-transfer",
+          "label": "I sent money to the wrong number"
+        },
+        {
+          "value": "account-locked",
+          "label": "My account is locked"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

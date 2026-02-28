@@ -118,7 +118,9 @@
       "placeholder": "e.g., Candidates may have non-traditional backgrounds, assess for growth potential, include questions about remote team leadership"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "recruitment",

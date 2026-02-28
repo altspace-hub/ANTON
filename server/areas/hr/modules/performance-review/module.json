@@ -155,7 +155,9 @@
       "placeholder": "e.g., Organisation is moving to continuous feedback model, first time implementing structured reviews, need to include development planning section"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "performance",

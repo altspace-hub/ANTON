@@ -30,18 +30,54 @@
       "label": "Primary language / framework",
       "required": true,
       "options": [
-        { "value": "typescript", "label": "TypeScript / JavaScript" },
-        { "value": "python", "label": "Python" },
-        { "value": "java", "label": "Java / Kotlin" },
-        { "value": "csharp", "label": "C# / .NET" },
-        { "value": "go", "label": "Go" },
-        { "value": "rust", "label": "Rust" },
-        { "value": "cpp", "label": "C / C++" },
-        { "value": "swift", "label": "Swift" },
-        { "value": "ruby", "label": "Ruby" },
-        { "value": "php", "label": "PHP" },
-        { "value": "sql", "label": "SQL" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "typescript",
+          "label": "TypeScript / JavaScript"
+        },
+        {
+          "value": "python",
+          "label": "Python"
+        },
+        {
+          "value": "java",
+          "label": "Java / Kotlin"
+        },
+        {
+          "value": "csharp",
+          "label": "C# / .NET"
+        },
+        {
+          "value": "go",
+          "label": "Go"
+        },
+        {
+          "value": "rust",
+          "label": "Rust"
+        },
+        {
+          "value": "cpp",
+          "label": "C / C++"
+        },
+        {
+          "value": "swift",
+          "label": "Swift"
+        },
+        {
+          "value": "ruby",
+          "label": "Ruby"
+        },
+        {
+          "value": "php",
+          "label": "PHP"
+        },
+        {
+          "value": "sql",
+          "label": "SQL"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -56,14 +92,38 @@
       "label": "Type of change being reviewed",
       "required": true,
       "options": [
-        { "value": "new_feature", "label": "New feature" },
-        { "value": "bug_fix", "label": "Bug fix" },
-        { "value": "refactoring", "label": "Refactoring / cleanup" },
-        { "value": "api_change", "label": "API change (breaking or additive)" },
-        { "value": "security_fix", "label": "Security fix / hardening" },
-        { "value": "performance", "label": "Performance optimisation" },
-        { "value": "infra", "label": "Infrastructure / DevOps change" },
-        { "value": "dependency_update", "label": "Dependency update" }
+        {
+          "value": "new_feature",
+          "label": "New feature"
+        },
+        {
+          "value": "bug_fix",
+          "label": "Bug fix"
+        },
+        {
+          "value": "refactoring",
+          "label": "Refactoring / cleanup"
+        },
+        {
+          "value": "api_change",
+          "label": "API change (breaking or additive)"
+        },
+        {
+          "value": "security_fix",
+          "label": "Security fix / hardening"
+        },
+        {
+          "value": "performance",
+          "label": "Performance optimisation"
+        },
+        {
+          "value": "infra",
+          "label": "Infrastructure / DevOps change"
+        },
+        {
+          "value": "dependency_update",
+          "label": "Dependency update"
+        }
       ]
     },
     {
@@ -86,7 +146,9 @@
       "placeholder": "e.g., We enforce 80% test coverage, use ESLint strict, follow REST conventions, require OpenAPI spec updates for API changes"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "code-review",
     "checklist",

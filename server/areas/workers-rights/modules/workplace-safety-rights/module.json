@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Workplace safety rights by country and industry, right to refuse dangerous work, PPE requirements, accident reporting, workers compensation" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Workplace safety rights by country and industry, right to refuse dangerous work, PPE requirements, accident reporting, workers compensation"
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
-        { "value": "uae", "label": "UAE (migrant worker)" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia (migrant worker)"
+        },
+        {
+          "value": "uae",
+          "label": "UAE (migrant worker)"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -48,14 +90,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "construction", "label": "Construction / building site" },
-        { "value": "factory-manufacturing", "label": "Factory / manufacturing" },
-        { "value": "agriculture", "label": "Agriculture / farming" },
-        { "value": "mining", "label": "Mining" },
-        { "value": "domestic", "label": "Domestic / household work" },
-        { "value": "transport", "label": "Transport / driving" },
-        { "value": "hospitality", "label": "Hospitality / kitchen" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "construction",
+          "label": "Construction / building site"
+        },
+        {
+          "value": "factory-manufacturing",
+          "label": "Factory / manufacturing"
+        },
+        {
+          "value": "agriculture",
+          "label": "Agriculture / farming"
+        },
+        {
+          "value": "mining",
+          "label": "Mining"
+        },
+        {
+          "value": "domestic",
+          "label": "Domestic / household work"
+        },
+        {
+          "value": "transport",
+          "label": "Transport / driving"
+        },
+        {
+          "value": "hospitality",
+          "label": "Hospitality / kitchen"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -64,14 +130,38 @@
       "type": "chips",
       "required": false,
       "options": [
-        { "value": "chemical", "label": "Chemical exposure" },
-        { "value": "falls-heights", "label": "Falls or working at heights" },
-        { "value": "machinery", "label": "Dangerous machinery" },
-        { "value": "heat-sun", "label": "Extreme heat or sun" },
-        { "value": "violence", "label": "Violence or threats" },
-        { "value": "sexual-harassment", "label": "Sexual harassment" },
-        { "value": "no-ppe", "label": "No protective equipment" },
-        { "value": "other", "label": "Other hazard" }
+        {
+          "value": "chemical",
+          "label": "Chemical exposure"
+        },
+        {
+          "value": "falls-heights",
+          "label": "Falls or working at heights"
+        },
+        {
+          "value": "machinery",
+          "label": "Dangerous machinery"
+        },
+        {
+          "value": "heat-sun",
+          "label": "Extreme heat or sun"
+        },
+        {
+          "value": "violence",
+          "label": "Violence or threats"
+        },
+        {
+          "value": "sexual-harassment",
+          "label": "Sexual harassment"
+        },
+        {
+          "value": "no-ppe",
+          "label": "No protective equipment"
+        },
+        {
+          "value": "other",
+          "label": "Other hazard"
+        }
       ]
     },
     {
@@ -80,13 +170,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "immediate-danger", "label": "Dangerous situation right now" },
-        { "value": "recent-accident", "label": "There was an accident recently" },
-        { "value": "ongoing-concern", "label": "Ongoing concern I want to report" },
-        { "value": "general-info", "label": "I want to understand my rights generally" }
+        {
+          "value": "immediate-danger",
+          "label": "Dangerous situation right now"
+        },
+        {
+          "value": "recent-accident",
+          "label": "There was an accident recently"
+        },
+        {
+          "value": "ongoing-concern",
+          "label": "Ongoing concern I want to report"
+        },
+        {
+          "value": "general-info",
+          "label": "I want to understand my rights generally"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
-  "tags": ["workers-rights", "bop", "informal-economy", "workplace-safety", "ppe", "accident", "right-to-refuse", "workers-compensation", "hazard"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid"
+  ],
+  "tags": [
+    "workers-rights",
+    "bop",
+    "informal-economy",
+    "workplace-safety",
+    "ppe",
+    "accident",
+    "right-to-refuse",
+    "workers-compensation",
+    "hazard"
+  ]
 }

@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,12 +34,30 @@
       "label": "What kind of business do you have?",
       "required": true,
       "options": [
-        { "value": "market-stall", "label": "Market stall" },
-        { "value": "shop-kiosk", "label": "Shop / kiosk" },
-        { "value": "food-vendor", "label": "Food vendor" },
-        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
-        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "market-stall",
+          "label": "Market stall"
+        },
+        {
+          "value": "shop-kiosk",
+          "label": "Shop / kiosk"
+        },
+        {
+          "value": "food-vendor",
+          "label": "Food vendor"
+        },
+        {
+          "value": "tailor-seamstress",
+          "label": "Tailor / seamstress"
+        },
+        {
+          "value": "service-provider",
+          "label": "Service provider (mechanic, hairdresser)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,16 +66,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -64,11 +114,26 @@
       "label": "How do you keep records now?",
       "required": true,
       "options": [
-        { "value": "none", "label": "I keep no records" },
-        { "value": "messy-notebook", "label": "I use a notebook but it's messy" },
-        { "value": "phone", "label": "I use my phone" },
-        { "value": "helper", "label": "I have a helper" },
-        { "value": "start-fresh", "label": "I want to start from scratch" }
+        {
+          "value": "none",
+          "label": "I keep no records"
+        },
+        {
+          "value": "messy-notebook",
+          "label": "I use a notebook but it's messy"
+        },
+        {
+          "value": "phone",
+          "label": "I use my phone"
+        },
+        {
+          "value": "helper",
+          "label": "I have a helper"
+        },
+        {
+          "value": "start-fresh",
+          "label": "I want to start from scratch"
+        }
       ]
     },
     {
@@ -77,14 +142,28 @@
       "label": "What is your biggest problem right now?",
       "required": false,
       "options": [
-        { "value": "dont-know-profit", "label": "I don't know if I'm making profit" },
-        { "value": "money-disappears", "label": "Money disappears" },
-        { "value": "family-takes-money", "label": "Family takes money from the business" },
-        { "value": "want-loan", "label": "I want to get a loan" }
+        {
+          "value": "dont-know-profit",
+          "label": "I don't know if I'm making profit"
+        },
+        {
+          "value": "money-disappears",
+          "label": "Money disappears"
+        },
+        {
+          "value": "family-takes-money",
+          "label": "Family takes money from the business"
+        },
+        {
+          "value": "want-loan",
+          "label": "I want to get a loan"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "small-business-mentor"
+  ],
   "tags": [
     "micro-business",
     "bop",

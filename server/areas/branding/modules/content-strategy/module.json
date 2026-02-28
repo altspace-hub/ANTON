@@ -122,7 +122,10 @@
       "placeholder": "e.g., We publish sporadically, no editorial calendar, LinkedIn presence is personal not company-driven, website blog has 20 posts but low traffic"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "strategy-expert"
+  ],
   "tags": [
     "branding",
     "content",

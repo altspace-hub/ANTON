@@ -37,15 +37,42 @@
       "description": "Which regulatory authority is conducting the examination?",
       "required": true,
       "options": [
-        { "value": "fi_sweden", "label": "Finansinspektionen (FI) — Sweden" },
-        { "value": "fiva_finland", "label": "Finanssivalvonta (FiVA) — Finland" },
-        { "value": "fsa_denmark", "label": "Finanstilsynet — Denmark" },
-        { "value": "fsa_norway", "label": "Finanstilsynet — Norway" },
-        { "value": "bafin", "label": "BaFin — Germany" },
-        { "value": "fca", "label": "FCA — UK" },
-        { "value": "amla", "label": "AMLA — EU Direct Supervision" },
-        { "value": "ecb_jst", "label": "ECB / Joint Supervisory Team" },
-        { "value": "other", "label": "Other Regulator" }
+        {
+          "value": "fi_sweden",
+          "label": "Finansinspektionen (FI) — Sweden"
+        },
+        {
+          "value": "fiva_finland",
+          "label": "Finanssivalvonta (FiVA) — Finland"
+        },
+        {
+          "value": "fsa_denmark",
+          "label": "Finanstilsynet — Denmark"
+        },
+        {
+          "value": "fsa_norway",
+          "label": "Finanstilsynet — Norway"
+        },
+        {
+          "value": "bafin",
+          "label": "BaFin — Germany"
+        },
+        {
+          "value": "fca",
+          "label": "FCA — UK"
+        },
+        {
+          "value": "amla",
+          "label": "AMLA — EU Direct Supervision"
+        },
+        {
+          "value": "ecb_jst",
+          "label": "ECB / Joint Supervisory Team"
+        },
+        {
+          "value": "other",
+          "label": "Other Regulator"
+        }
       ]
     },
     {
@@ -55,13 +82,34 @@
       "description": "What type of regulatory examination is this?",
       "required": true,
       "options": [
-        { "value": "targeted_aml", "label": "Targeted AML/CFT Examination" },
-        { "value": "full_srep", "label": "Full SREP / Comprehensive Examination" },
-        { "value": "follow_up", "label": "Follow-Up / Enforcement Review" },
-        { "value": "thematic", "label": "Thematic Review (Industry-Wide)" },
-        { "value": "sanctions", "label": "Sanctions Compliance Review" },
-        { "value": "data_request", "label": "Data Request / Document Submission" },
-        { "value": "onsite", "label": "On-Site Inspection" }
+        {
+          "value": "targeted_aml",
+          "label": "Targeted AML/CFT Examination"
+        },
+        {
+          "value": "full_srep",
+          "label": "Full SREP / Comprehensive Examination"
+        },
+        {
+          "value": "follow_up",
+          "label": "Follow-Up / Enforcement Review"
+        },
+        {
+          "value": "thematic",
+          "label": "Thematic Review (Industry-Wide)"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions Compliance Review"
+        },
+        {
+          "value": "data_request",
+          "label": "Data Request / Document Submission"
+        },
+        {
+          "value": "onsite",
+          "label": "On-Site Inspection"
+        }
       ]
     },
     {
@@ -94,9 +142,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "fsa-regulator",
-    "legal-expert"
+    "fcp-expert"
   ],
   "tags": [
     "regulatory-exam",

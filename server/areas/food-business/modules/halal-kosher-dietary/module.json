@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,11 +34,26 @@
       "label": "Which dietary standard do you need guidance on?",
       "required": true,
       "options": [
-        { "value": "halal", "label": "Halal" },
-        { "value": "kosher", "label": "Kosher" },
-        { "value": "vegetarian-vegan", "label": "Vegetarian or vegan" },
-        { "value": "allergens", "label": "Allergen management" },
-        { "value": "multiple", "label": "Multiple standards" }
+        {
+          "value": "halal",
+          "label": "Halal"
+        },
+        {
+          "value": "kosher",
+          "label": "Kosher"
+        },
+        {
+          "value": "vegetarian-vegan",
+          "label": "Vegetarian or vegan"
+        },
+        {
+          "value": "allergens",
+          "label": "Allergen management"
+        },
+        {
+          "value": "multiple",
+          "label": "Multiple standards"
+        }
       ]
     },
     {
@@ -45,11 +62,26 @@
       "label": "What kind of food business do you have?",
       "required": true,
       "options": [
-        { "value": "street-stall", "label": "Street food stall" },
-        { "value": "small-restaurant", "label": "Small restaurant" },
-        { "value": "catering", "label": "Catering" },
-        { "value": "home-based", "label": "Home-based food business" },
-        { "value": "market-vendor", "label": "Market food vendor" }
+        {
+          "value": "street-stall",
+          "label": "Street food stall"
+        },
+        {
+          "value": "small-restaurant",
+          "label": "Small restaurant"
+        },
+        {
+          "value": "catering",
+          "label": "Catering"
+        },
+        {
+          "value": "home-based",
+          "label": "Home-based food business"
+        },
+        {
+          "value": "market-vendor",
+          "label": "Market food vendor"
+        }
       ]
     },
     {
@@ -58,15 +90,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -75,14 +134,29 @@
       "label": "What is your goal?",
       "required": true,
       "options": [
-        { "value": "get-certified", "label": "Get certified" },
-        { "value": "understand-requirements", "label": "Understand the requirements" },
-        { "value": "adjust-menu", "label": "Adjust my menu" },
-        { "value": "serve-community", "label": "Serve a specific religious or dietary community" }
+        {
+          "value": "get-certified",
+          "label": "Get certified"
+        },
+        {
+          "value": "understand-requirements",
+          "label": "Understand the requirements"
+        },
+        {
+          "value": "adjust-menu",
+          "label": "Adjust my menu"
+        },
+        {
+          "value": "serve-community",
+          "label": "Serve a specific religious or dietary community"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "recommendedPersonas": [
+    "food-safety-inspector",
+    "small-business-mentor"
+  ],
   "tags": [
     "bop",
     "food-business",

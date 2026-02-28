@@ -35,13 +35,34 @@
       "label": "Primary task",
       "required": true,
       "options": [
-        { "value": "full_audit", "label": "Full SEO audit — technical + content + links" },
-        { "value": "content_strategy", "label": "Content strategy and editorial plan" },
-        { "value": "keyword_research", "label": "Keyword research and opportunity analysis" },
-        { "value": "technical_seo", "label": "Technical SEO review" },
-        { "value": "competitor_seo", "label": "Competitor SEO gap analysis" },
-        { "value": "local_seo", "label": "Local SEO strategy" },
-        { "value": "international_seo", "label": "International / multilingual SEO" }
+        {
+          "value": "full_audit",
+          "label": "Full SEO audit — technical + content + links"
+        },
+        {
+          "value": "content_strategy",
+          "label": "Content strategy and editorial plan"
+        },
+        {
+          "value": "keyword_research",
+          "label": "Keyword research and opportunity analysis"
+        },
+        {
+          "value": "technical_seo",
+          "label": "Technical SEO review"
+        },
+        {
+          "value": "competitor_seo",
+          "label": "Competitor SEO gap analysis"
+        },
+        {
+          "value": "local_seo",
+          "label": "Local SEO strategy"
+        },
+        {
+          "value": "international_seo",
+          "label": "International / multilingual SEO"
+        }
       ]
     },
     {
@@ -71,14 +92,38 @@
       "label": "Content priorities",
       "description": "Which content types or outcomes should the strategy prioritise?",
       "options": [
-        { "value": "blog_articles", "label": "Blog / articles" },
-        { "value": "landing_pages", "label": "Product / service landing pages" },
-        { "value": "thought_leadership", "label": "Thought leadership / whitepapers" },
-        { "value": "how_to_guides", "label": "How-to guides / tutorials" },
-        { "value": "case_studies", "label": "Case studies" },
-        { "value": "comparison_pages", "label": "Comparison / alternative pages" },
-        { "value": "local_content", "label": "Local / regional content" },
-        { "value": "video_content", "label": "Video SEO" }
+        {
+          "value": "blog_articles",
+          "label": "Blog / articles"
+        },
+        {
+          "value": "landing_pages",
+          "label": "Product / service landing pages"
+        },
+        {
+          "value": "thought_leadership",
+          "label": "Thought leadership / whitepapers"
+        },
+        {
+          "value": "how_to_guides",
+          "label": "How-to guides / tutorials"
+        },
+        {
+          "value": "case_studies",
+          "label": "Case studies"
+        },
+        {
+          "value": "comparison_pages",
+          "label": "Comparison / alternative pages"
+        },
+        {
+          "value": "local_content",
+          "label": "Local / regional content"
+        },
+        {
+          "value": "video_content",
+          "label": "Video SEO"
+        }
       ]
     },
     {
@@ -91,7 +136,7 @@
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "SEO",

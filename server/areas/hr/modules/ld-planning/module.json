@@ -214,7 +214,9 @@
       "placeholder": "e.g., Limited budget, participants are in multiple time zones, must integrate with existing LMS, regulatory requirement to complete within Q1"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "hr-expert"
+  ],
   "tags": [
     "hr",
     "learning",

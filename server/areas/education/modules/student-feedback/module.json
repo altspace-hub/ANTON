@@ -90,7 +90,9 @@
       "placeholder": "Describe the student's performance, strengths, areas for improvement, any specific achievements or concerns, and the subject/context."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "education-expert"
+  ],
   "tags": [
     "feedback",
     "reports",

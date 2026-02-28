@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Livestock seasonal price patterns, religious festival timing (Eid al-Adha, Christmas, Easter), dry season cattle price cycles, market comparison, pre-sale conditioning, negotiation basics, mobile phone price information for Africa and South Asia" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Livestock seasonal price patterns, religious festival timing (Eid al-Adha, Christmas, Easter), dry season cattle price cycles, market comparison, pre-sale conditioning, negotiation basics, mobile phone price information for Africa and South Asia"
+      }
     }
   },
   "guidedInputs": [
@@ -28,13 +34,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cattle", "label": "Cattle / Cows" },
-        { "value": "goats", "label": "Goats" },
-        { "value": "sheep", "label": "Sheep" },
-        { "value": "pigs", "label": "Pigs" },
-        { "value": "chickens", "label": "Chickens / Poultry" },
-        { "value": "ducks", "label": "Ducks" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "cattle",
+          "label": "Cattle / Cows"
+        },
+        {
+          "value": "goats",
+          "label": "Goats"
+        },
+        {
+          "value": "sheep",
+          "label": "Sheep"
+        },
+        {
+          "value": "pigs",
+          "label": "Pigs"
+        },
+        {
+          "value": "chickens",
+          "label": "Chickens / Poultry"
+        },
+        {
+          "value": "ducks",
+          "label": "Ducks"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -43,16 +70,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,14 +118,44 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "best-time", "label": "When is the price highest?" },
-        { "value": "price-fell", "label": "Prices fell suddenly — why?" },
-        { "value": "need-money-now", "label": "I need money now" },
-        { "value": "festival-planning", "label": "Planning for Eid / festival" },
-        { "value": "compare-markets", "label": "Compare different markets" }
+        {
+          "value": "best-time",
+          "label": "When is the price highest?"
+        },
+        {
+          "value": "price-fell",
+          "label": "Prices fell suddenly — why?"
+        },
+        {
+          "value": "need-money-now",
+          "label": "I need money now"
+        },
+        {
+          "value": "festival-planning",
+          "label": "Planning for Eid / festival"
+        },
+        {
+          "value": "compare-markets",
+          "label": "Compare different markets"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["market", "pricing", "selling", "seasonal", "eid", "festival", "negotiation", "bop", "livestock", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "market",
+    "pricing",
+    "selling",
+    "seasonal",
+    "eid",
+    "festival",
+    "negotiation",
+    "bop",
+    "livestock",
+    "africa",
+    "south-asia"
+  ]
 }

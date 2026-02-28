@@ -44,10 +44,22 @@
       "description": "Who is the primary audience for this update?",
       "required": true,
       "options": [
-        { "value": "board", "label": "Board of Directors" },
-        { "value": "audit_committee", "label": "Audit / Risk Committee" },
-        { "value": "senior_management", "label": "Senior Management / EXCO" },
-        { "value": "compliance_team", "label": "Compliance / Legal Team Internal" }
+        {
+          "value": "board",
+          "label": "Board of Directors"
+        },
+        {
+          "value": "audit_committee",
+          "label": "Audit / Risk Committee"
+        },
+        {
+          "value": "senior_management",
+          "label": "Senior Management / EXCO"
+        },
+        {
+          "value": "compliance_team",
+          "label": "Compliance / Legal Team Internal"
+        }
       ]
     },
     {
@@ -56,12 +68,30 @@
       "label": "Jurisdictions to Cover",
       "description": "Which jurisdictions are relevant?",
       "options": [
-        { "value": "eu", "label": "EU" },
-        { "value": "sweden", "label": "Sweden" },
-        { "value": "finland", "label": "Finland" },
-        { "value": "denmark", "label": "Denmark" },
-        { "value": "norway", "label": "Norway" },
-        { "value": "uk", "label": "UK" }
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
       ]
     },
     {
@@ -70,14 +100,38 @@
       "label": "Topics to Include",
       "description": "Which regulatory areas should be covered?",
       "options": [
-        { "value": "aml_cft", "label": "AML/CFT" },
-        { "value": "sanctions", "label": "Sanctions" },
-        { "value": "gdpr", "label": "GDPR / Privacy" },
-        { "value": "dora", "label": "DORA / Cyber" },
-        { "value": "prudential", "label": "Prudential" },
-        { "value": "conduct", "label": "Conduct / Consumer" },
-        { "value": "esg", "label": "ESG / Sustainability" },
-        { "value": "enforcement", "label": "Enforcement Actions" }
+        {
+          "value": "aml_cft",
+          "label": "AML/CFT"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR / Privacy"
+        },
+        {
+          "value": "dora",
+          "label": "DORA / Cyber"
+        },
+        {
+          "value": "prudential",
+          "label": "Prudential"
+        },
+        {
+          "value": "conduct",
+          "label": "Conduct / Consumer"
+        },
+        {
+          "value": "esg",
+          "label": "ESG / Sustainability"
+        },
+        {
+          "value": "enforcement",
+          "label": "Enforcement Actions"
+        }
       ]
     },
     {
@@ -96,7 +150,6 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
     "legal-expert"
   ],
   "tags": [

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Government scholarships and bursaries in Kenya, Nigeria, Ghana, South Africa, India, Bangladesh, Pakistan, Philippines, international NGO scholarships, Mastercard Foundation, scholarship application process" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Government scholarships and bursaries in Kenya, Nigeria, Ghana, South Africa, India, Bangladesh, Pakistan, Philippines, international NGO scholarships, Mastercard Foundation, scholarship application process"
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "primary", "label": "Primary school" },
-        { "value": "secondary", "label": "Secondary school" },
-        { "value": "university-college", "label": "University or college" },
-        { "value": "vocational-training", "label": "Vocational / skills training" },
-        { "value": "adult-education", "label": "Adult education" }
+        {
+          "value": "primary",
+          "label": "Primary school"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary school"
+        },
+        {
+          "value": "university-college",
+          "label": "University or college"
+        },
+        {
+          "value": "vocational-training",
+          "label": "Vocational / skills training"
+        },
+        {
+          "value": "adult-education",
+          "label": "Adult education"
+        }
       ]
     },
     {
@@ -59,16 +110,48 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "student", "label": "Student" },
-        { "value": "parent-for-child", "label": "Parent applying for a child" },
-        { "value": "woman-girl", "label": "Woman or girl" },
-        { "value": "disabled-student", "label": "Student with disability" },
-        { "value": "orphan", "label": "Orphan" },
-        { "value": "refugee", "label": "Refugee or displaced person" },
-        { "value": "all", "label": "General — show all" }
+        {
+          "value": "student",
+          "label": "Student"
+        },
+        {
+          "value": "parent-for-child",
+          "label": "Parent applying for a child"
+        },
+        {
+          "value": "woman-girl",
+          "label": "Woman or girl"
+        },
+        {
+          "value": "disabled-student",
+          "label": "Student with disability"
+        },
+        {
+          "value": "orphan",
+          "label": "Orphan"
+        },
+        {
+          "value": "refugee",
+          "label": "Refugee or displaced person"
+        },
+        {
+          "value": "all",
+          "label": "General — show all"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
-  "tags": ["scholarships", "bursaries", "funding", "education-finance", "HELB", "NSFAS", "Mastercard-Foundation", "student-loans"]
+  "recommendedPersonas": [
+    "education-expert"
+  ],
+  "tags": [
+    "scholarships",
+    "bursaries",
+    "funding",
+    "education-finance",
+    "HELB",
+    "NSFAS",
+    "Mastercard-Foundation",
+    "student-loans"
+  ]
 }

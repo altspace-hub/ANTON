@@ -35,10 +35,22 @@
       "label": "Board meeting type",
       "required": true,
       "options": [
-        { "value": "quarterly", "label": "Quarterly board meeting" },
-        { "value": "annual", "label": "Annual strategy and budget review" },
-        { "value": "special", "label": "Special / extraordinary meeting" },
-        { "value": "committee", "label": "Board committee (audit, risk, remuneration)" }
+        {
+          "value": "quarterly",
+          "label": "Quarterly board meeting"
+        },
+        {
+          "value": "annual",
+          "label": "Annual strategy and budget review"
+        },
+        {
+          "value": "special",
+          "label": "Special / extraordinary meeting"
+        },
+        {
+          "value": "committee",
+          "label": "Board committee (audit, risk, remuneration)"
+        }
       ]
     },
     {
@@ -46,13 +58,34 @@
       "type": "multi-select",
       "label": "Pack sections to include",
       "options": [
-        { "value": "ceo_report", "label": "CEO / MD report" },
-        { "value": "financials", "label": "Financial performance highlights" },
-        { "value": "strategy", "label": "Strategic initiatives update" },
-        { "value": "risk", "label": "Risk summary" },
-        { "value": "regulatory", "label": "Regulatory and compliance update" },
-        { "value": "decisions", "label": "Decisions required" },
-        { "value": "minutes", "label": "Draft minutes from last meeting" }
+        {
+          "value": "ceo_report",
+          "label": "CEO / MD report"
+        },
+        {
+          "value": "financials",
+          "label": "Financial performance highlights"
+        },
+        {
+          "value": "strategy",
+          "label": "Strategic initiatives update"
+        },
+        {
+          "value": "risk",
+          "label": "Risk summary"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory and compliance update"
+        },
+        {
+          "value": "decisions",
+          "label": "Decisions required"
+        },
+        {
+          "value": "minutes",
+          "label": "Draft minutes from last meeting"
+        }
       ]
     },
     {
@@ -63,8 +96,7 @@
     }
   ],
   "recommendedPersonas": [
-    "executive-lens",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "board",

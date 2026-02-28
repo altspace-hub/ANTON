@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,11 +34,26 @@
       "label": "What kind of food business do you have?",
       "required": true,
       "options": [
-        { "value": "street-stall", "label": "Street food stall" },
-        { "value": "small-restaurant", "label": "Small restaurant" },
-        { "value": "catering", "label": "Catering" },
-        { "value": "home-based", "label": "Home-based food business" },
-        { "value": "market-vendor", "label": "Market food vendor" }
+        {
+          "value": "street-stall",
+          "label": "Street food stall"
+        },
+        {
+          "value": "small-restaurant",
+          "label": "Small restaurant"
+        },
+        {
+          "value": "catering",
+          "label": "Catering"
+        },
+        {
+          "value": "home-based",
+          "label": "Home-based food business"
+        },
+        {
+          "value": "market-vendor",
+          "label": "Market food vendor"
+        }
       ]
     },
     {
@@ -52,10 +69,22 @@
       "label": "How often do you currently buy ingredients?",
       "required": true,
       "options": [
-        { "value": "daily", "label": "Daily" },
-        { "value": "weekly", "label": "Weekly" },
-        { "value": "as-needed", "label": "When I run out" },
-        { "value": "monthly", "label": "Monthly" }
+        {
+          "value": "daily",
+          "label": "Daily"
+        },
+        {
+          "value": "weekly",
+          "label": "Weekly"
+        },
+        {
+          "value": "as-needed",
+          "label": "When I run out"
+        },
+        {
+          "value": "monthly",
+          "label": "Monthly"
+        }
       ]
     },
     {
@@ -64,14 +93,29 @@
       "label": "What is your main supply challenge?",
       "required": true,
       "options": [
-        { "value": "prices-rising", "label": "Ingredient prices keep going up" },
-        { "value": "supply-runs-out", "label": "Supply runs out when I need it" },
-        { "value": "quality-varies", "label": "Quality varies between purchases" },
-        { "value": "want-cheaper", "label": "I don't know where to buy cheaper" }
+        {
+          "value": "prices-rising",
+          "label": "Ingredient prices keep going up"
+        },
+        {
+          "value": "supply-runs-out",
+          "label": "Supply runs out when I need it"
+        },
+        {
+          "value": "quality-varies",
+          "label": "Quality varies between purchases"
+        },
+        {
+          "value": "want-cheaper",
+          "label": "I don't know where to buy cheaper"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "recommendedPersonas": [
+    "food-safety-inspector",
+    "small-business-mentor"
+  ],
   "tags": [
     "bop",
     "food-business",

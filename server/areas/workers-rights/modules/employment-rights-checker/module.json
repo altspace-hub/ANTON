@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Basic employment rights by country: minimum wage, working hours, leave entitlement, contract rights, right to organise" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Basic employment rights by country: minimum wage, working hours, leave entitlement, contract rights, right to organise"
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
-        { "value": "uae", "label": "UAE (migrant worker)" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia (migrant worker)"
+        },
+        {
+          "value": "uae",
+          "label": "UAE (migrant worker)"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -48,14 +90,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "formal-employee", "label": "Formal employee (have a contract)" },
-        { "value": "casual-day-labour", "label": "Casual / day labour" },
-        { "value": "domestic-worker", "label": "Domestic worker (cleaner, cook, nanny)" },
-        { "value": "factory-garment", "label": "Factory / garment worker" },
-        { "value": "construction", "label": "Construction worker" },
-        { "value": "agriculture", "label": "Agriculture / farm worker" },
-        { "value": "platform-gig", "label": "Platform / gig worker (app-based)" },
-        { "value": "self-employed", "label": "Self-employed" }
+        {
+          "value": "formal-employee",
+          "label": "Formal employee (have a contract)"
+        },
+        {
+          "value": "casual-day-labour",
+          "label": "Casual / day labour"
+        },
+        {
+          "value": "domestic-worker",
+          "label": "Domestic worker (cleaner, cook, nanny)"
+        },
+        {
+          "value": "factory-garment",
+          "label": "Factory / garment worker"
+        },
+        {
+          "value": "construction",
+          "label": "Construction worker"
+        },
+        {
+          "value": "agriculture",
+          "label": "Agriculture / farm worker"
+        },
+        {
+          "value": "platform-gig",
+          "label": "Platform / gig worker (app-based)"
+        },
+        {
+          "value": "self-employed",
+          "label": "Self-employed"
+        }
       ]
     },
     {
@@ -64,16 +130,50 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "pay", "label": "Not being paid properly" },
-        { "value": "hours", "label": "Working too many hours" },
-        { "value": "leave", "label": "Leave (annual, sick, maternity)" },
-        { "value": "contract", "label": "No contract or written agreement" },
-        { "value": "treatment", "label": "Bad treatment or harassment" },
-        { "value": "all", "label": "All of these" },
-        { "value": "general", "label": "General information about my rights" }
+        {
+          "value": "pay",
+          "label": "Not being paid properly"
+        },
+        {
+          "value": "hours",
+          "label": "Working too many hours"
+        },
+        {
+          "value": "leave",
+          "label": "Leave (annual, sick, maternity)"
+        },
+        {
+          "value": "contract",
+          "label": "No contract or written agreement"
+        },
+        {
+          "value": "treatment",
+          "label": "Bad treatment or harassment"
+        },
+        {
+          "value": "all",
+          "label": "All of these"
+        },
+        {
+          "value": "general",
+          "label": "General information about my rights"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
-  "tags": ["workers-rights", "bop", "informal-economy", "employment", "basic-rights", "labour-law", "minimum-wage", "leave", "contracts"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid"
+  ],
+  "tags": [
+    "workers-rights",
+    "bop",
+    "informal-economy",
+    "employment",
+    "basic-rights",
+    "labour-law",
+    "minimum-wage",
+    "leave",
+    "contracts"
+  ]
 }

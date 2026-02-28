@@ -159,7 +159,10 @@
       "placeholder": "e.g., Is the company's leverage sustainable? What is driving the margin decline? How does working capital efficiency compare to peers?"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "finance",

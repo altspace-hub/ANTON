@@ -9,7 +9,11 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "gap-scoring-matrix", "action-plan"],
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -31,11 +35,26 @@
       "label": "Institution Type",
       "required": true,
       "options": [
-        {"value": "bank", "label": "Bank"},
-        {"value": "mto", "label": "Money Transfer Operator"},
-        {"value": "exchange", "label": "Currency Exchange"},
-        {"value": "msb", "label": "Other Money Service Business"},
-        {"value": "regulator", "label": "Regulator / FIU"}
+        {
+          "value": "bank",
+          "label": "Bank"
+        },
+        {
+          "value": "mto",
+          "label": "Money Transfer Operator"
+        },
+        {
+          "value": "exchange",
+          "label": "Currency Exchange"
+        },
+        {
+          "value": "msb",
+          "label": "Other Money Service Business"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator / FIU"
+        }
       ]
     },
     {
@@ -43,12 +62,30 @@
       "type": "chips",
       "label": "Relevant Corridors",
       "options": [
-        {"value": "south-asia", "label": "South Asia (India/Pakistan/Bangladesh)"},
-        {"value": "middle-east", "label": "Middle East / GCC"},
-        {"value": "east-africa", "label": "East Africa"},
-        {"value": "west-africa", "label": "West Africa"},
-        {"value": "southeast-asia", "label": "Southeast Asia"},
-        {"value": "europe-diaspora", "label": "Europe (diaspora communities)"}
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Pakistan/Bangladesh)"
+        },
+        {
+          "value": "middle-east",
+          "label": "Middle East / GCC"
+        },
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "europe-diaspora",
+          "label": "Europe (diaspora communities)"
+        }
       ]
     },
     {
@@ -58,7 +95,19 @@
       "placeholder": "e.g. Multiple structured payments to same beneficiary country, customers in hawala-linked professions, STRs received..."
     }
   ],
-  "recommendedPersonas": ["fcp-expert", "hawala-ivts-investigator"],
-  "recommendedSkills": ["skill-hawala-ivts", "skill-fatf-mutual-evaluation"],
-  "tags": ["hawala", "ivts", "informal-remittance", "aml", "fcp"]
+  "recommendedPersonas": [
+    "fcp-expert",
+    "data-scientist"
+  ],
+  "recommendedSkills": [
+    "skill-hawala-ivts",
+    "skill-fatf-mutual-evaluation"
+  ],
+  "tags": [
+    "hawala",
+    "ivts",
+    "informal-remittance",
+    "aml",
+    "fcp"
+  ]
 }

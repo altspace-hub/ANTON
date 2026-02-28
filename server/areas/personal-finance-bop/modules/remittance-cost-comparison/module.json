@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "quick",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,13 +34,34 @@
       "label": "Where are you sending money FROM?",
       "required": true,
       "options": [
-        { "value": "uk", "label": "United Kingdom" },
-        { "value": "usa", "label": "USA" },
-        { "value": "saudi-arabia", "label": "Saudi Arabia" },
-        { "value": "uae", "label": "UAE" },
-        { "value": "qatar", "label": "Qatar" },
-        { "value": "germany", "label": "Germany" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "usa",
+          "label": "USA"
+        },
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia"
+        },
+        {
+          "value": "uae",
+          "label": "UAE"
+        },
+        {
+          "value": "qatar",
+          "label": "Qatar"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -47,15 +70,42 @@
       "label": "Where is the money going TO?",
       "required": true,
       "options": [
-        { "value": "india", "label": "India" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -64,10 +114,22 @@
       "label": "How much are you sending?",
       "required": true,
       "options": [
-        { "value": "under-100", "label": "Under $100" },
-        { "value": "100-500", "label": "$100 to $500" },
-        { "value": "500-2000", "label": "$500 to $2,000" },
-        { "value": "over-2000", "label": "Over $2,000" }
+        {
+          "value": "under-100",
+          "label": "Under $100"
+        },
+        {
+          "value": "100-500",
+          "label": "$100 to $500"
+        },
+        {
+          "value": "500-2000",
+          "label": "$500 to $2,000"
+        },
+        {
+          "value": "over-2000",
+          "label": "Over $2,000"
+        }
       ]
     },
     {
@@ -76,14 +138,28 @@
       "label": "How quickly does the money need to arrive?",
       "required": false,
       "options": [
-        { "value": "today", "label": "Today — urgent" },
-        { "value": "3-days", "label": "Within 3 days" },
-        { "value": "1-week", "label": "Within a week" },
-        { "value": "monthly", "label": "Regular monthly transfer — no rush" }
+        {
+          "value": "today",
+          "label": "Today — urgent"
+        },
+        {
+          "value": "3-days",
+          "label": "Within 3 days"
+        },
+        {
+          "value": "1-week",
+          "label": "Within a week"
+        },
+        {
+          "value": "monthly",
+          "label": "Regular monthly transfer — no rush"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

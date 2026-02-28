@@ -74,8 +74,14 @@
       "label": "Private person or company?",
       "required": true,
       "options": [
-        { "value": "private", "label": "Private person" },
-        { "value": "company", "label": "Company / business" }
+        {
+          "value": "private",
+          "label": "Private person"
+        },
+        {
+          "value": "company",
+          "label": "Company / business"
+        }
       ]
     },
     {
@@ -84,13 +90,24 @@
       "label": "ROT or RUT deduction? (Sweden only)",
       "required": false,
       "options": [
-        { "value": "none", "label": "No deduction" },
-        { "value": "rot", "label": "ROT (plumbing, construction, renovation)" },
-        { "value": "rut", "label": "RUT (cleaning, gardening)" }
+        {
+          "value": "none",
+          "label": "No deduction"
+        },
+        {
+          "value": "rot",
+          "label": "ROT (plumbing, construction, renovation)"
+        },
+        {
+          "value": "rut",
+          "label": "RUT (cleaning, gardening)"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor"],
+  "recommendedPersonas": [
+    "trades-expert"
+  ],
   "myWayProcessType": "invoicing",
   "tags": [
     "trades",

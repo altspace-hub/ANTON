@@ -35,15 +35,42 @@
       "label": "Incentive categories to explore",
       "required": true,
       "options": [
-        { "value": "rd_credits", "label": "R&D tax credits / super-deductions" },
-        { "value": "patent_box", "label": "Patent box / IP income regime" },
-        { "value": "investment_allowances", "label": "Investment allowances / accelerated depreciation" },
-        { "value": "free_zone", "label": "Free trade zone / special economic zone" },
-        { "value": "holding_regime", "label": "Participation exemption / holding regime" },
-        { "value": "green_incentives", "label": "Green / ESG tax incentives" },
-        { "value": "employment_credits", "label": "Employment / job creation credits" },
-        { "value": "film_creative", "label": "Creative industries / film tax credits" },
-        { "value": "startup_sme", "label": "SME / startup reliefs (SEIS, EIS, QSBS)" }
+        {
+          "value": "rd_credits",
+          "label": "R&D tax credits / super-deductions"
+        },
+        {
+          "value": "patent_box",
+          "label": "Patent box / IP income regime"
+        },
+        {
+          "value": "investment_allowances",
+          "label": "Investment allowances / accelerated depreciation"
+        },
+        {
+          "value": "free_zone",
+          "label": "Free trade zone / special economic zone"
+        },
+        {
+          "value": "holding_regime",
+          "label": "Participation exemption / holding regime"
+        },
+        {
+          "value": "green_incentives",
+          "label": "Green / ESG tax incentives"
+        },
+        {
+          "value": "employment_credits",
+          "label": "Employment / job creation credits"
+        },
+        {
+          "value": "film_creative",
+          "label": "Creative industries / film tax credits"
+        },
+        {
+          "value": "startup_sme",
+          "label": "SME / startup reliefs (SEIS, EIS, QSBS)"
+        }
       ]
     },
     {
@@ -51,16 +78,46 @@
       "type": "multi-select",
       "label": "Jurisdictions to analyse",
       "options": [
-        { "value": "se", "label": "Sweden" },
-        { "value": "uk", "label": "United Kingdom" },
-        { "value": "nl", "label": "Netherlands" },
-        { "value": "ie", "label": "Ireland" },
-        { "value": "lu", "label": "Luxembourg" },
-        { "value": "be", "label": "Belgium" },
-        { "value": "fr", "label": "France" },
-        { "value": "sg", "label": "Singapore" },
-        { "value": "ae", "label": "UAE (Free Zones)" },
-        { "value": "us", "label": "United States" }
+        {
+          "value": "se",
+          "label": "Sweden"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "nl",
+          "label": "Netherlands"
+        },
+        {
+          "value": "ie",
+          "label": "Ireland"
+        },
+        {
+          "value": "lu",
+          "label": "Luxembourg"
+        },
+        {
+          "value": "be",
+          "label": "Belgium"
+        },
+        {
+          "value": "fr",
+          "label": "France"
+        },
+        {
+          "value": "sg",
+          "label": "Singapore"
+        },
+        {
+          "value": "ae",
+          "label": "UAE (Free Zones)"
+        },
+        {
+          "value": "us",
+          "label": "United States"
+        }
       ]
     },
     {
@@ -76,9 +133,18 @@
       "label": "Is the group in scope for Pillar Two?",
       "description": "Groups with consolidated revenue >= EUR 750M are subject to Pillar Two GloBE minimum tax from 2024.",
       "options": [
-        { "value": "yes_in_scope", "label": "Yes — in scope for Pillar Two" },
-        { "value": "no_below_threshold", "label": "No — below EUR 750M threshold" },
-        { "value": "uncertain", "label": "Uncertain — near threshold" }
+        {
+          "value": "yes_in_scope",
+          "label": "Yes — in scope for Pillar Two"
+        },
+        {
+          "value": "no_below_threshold",
+          "label": "No — below EUR 750M threshold"
+        },
+        {
+          "value": "uncertain",
+          "label": "Uncertain — near threshold"
+        }
       ]
     },
     {
@@ -86,15 +152,24 @@
       "type": "select",
       "label": "Prior incentive claims",
       "options": [
-        { "value": "none", "label": "No prior claims — starting fresh" },
-        { "value": "some_claims", "label": "Some prior claims — looking to expand" },
-        { "value": "review_existing", "label": "Review and optimise existing claims" }
+        {
+          "value": "none",
+          "label": "No prior claims — starting fresh"
+        },
+        {
+          "value": "some_claims",
+          "label": "Some prior claims — looking to expand"
+        },
+        {
+          "value": "review_existing",
+          "label": "Review and optimise existing claims"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
     "tax-director",
-    "fcp-expert"
+    "transfer-pricing-specialist"
   ],
   "modelTier": {
     "recommended": "sonnet",

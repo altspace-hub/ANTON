@@ -292,7 +292,7 @@ export default function ModulePage() {
     clearSession();
     setModule(moduleId);
     setSystemPrompt('');
-    setSelectedPersonas(['fcp-expert']);
+    setSelectedPersonas(['general-assistant']);
 
     // Always fetch module prompt + config (needed for guided inputs, areaId, transparency)
     fetchModulePrompt(moduleId).then((prompt) => {
@@ -374,6 +374,11 @@ export default function ModulePage() {
           if (typeof cfg.defaults?.transparencyLevel === 'number') {
             setTransparencyLevel(cfg.defaults.transparencyLevel as 0 | 1 | 2);
           }
+          // Apply first recommended persona if available
+          const personas = (cfg as Record<string, unknown>).recommendedPersonas as string[] | undefined;
+          if (Array.isArray(personas) && personas.length > 0) {
+            setSelectedPersonas([personas[0]]);
+          }
         });
       } else if (dynamicCfg) {
         // API-discovered module (e.g. Trades area) — use defaults from server module.json
@@ -388,6 +393,11 @@ export default function ModulePage() {
         }
         if (defs.knowledgeSources?.claudeKnowledge) {
           Object.assign(defaultKS.modes.claudeKnowledge, defs.knowledgeSources.claudeKnowledge);
+        }
+        // Apply first recommended persona if available
+        const dynPersonas = (dynamicCfg as Record<string, unknown>).recommendedPersonas as string[] | undefined;
+        if (Array.isArray(dynPersonas) && dynPersonas.length > 0) {
+          setSelectedPersonas([dynPersonas[0]]);
         }
       }
 

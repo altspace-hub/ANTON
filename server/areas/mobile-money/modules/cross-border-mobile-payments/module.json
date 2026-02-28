@@ -35,13 +35,34 @@
       "label": "Payment Corridors",
       "description": "Which cross-border corridors are active or planned? Select all that apply.",
       "options": [
-        { "value": "east-africa", "label": "E Africa" },
-        { "value": "west-africa", "label": "W Africa" },
-        { "value": "south-asia", "label": "South Asia" },
-        { "value": "se-asia", "label": "SE Asia" },
-        { "value": "africa-europe", "label": "Africa–Europe" },
-        { "value": "africa-us", "label": "Africa–US" },
-        { "value": "me-south-asia", "label": "Middle East–South Asia" }
+        {
+          "value": "east-africa",
+          "label": "E Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "W Africa"
+        },
+        {
+          "value": "south-asia",
+          "label": "South Asia"
+        },
+        {
+          "value": "se-asia",
+          "label": "SE Asia"
+        },
+        {
+          "value": "africa-europe",
+          "label": "Africa–Europe"
+        },
+        {
+          "value": "africa-us",
+          "label": "Africa–US"
+        },
+        {
+          "value": "me-south-asia",
+          "label": "Middle East–South Asia"
+        }
       ]
     },
     {
@@ -51,10 +72,22 @@
       "description": "What is the operator's role in the cross-border payment flow?",
       "required": true,
       "options": [
-        { "value": "sending", "label": "Sending operator" },
-        { "value": "receiving", "label": "Receiving operator" },
-        { "value": "intermediary", "label": "Intermediary" },
-        { "value": "hub-switch", "label": "Hub/Switch" }
+        {
+          "value": "sending",
+          "label": "Sending operator"
+        },
+        {
+          "value": "receiving",
+          "label": "Receiving operator"
+        },
+        {
+          "value": "intermediary",
+          "label": "Intermediary"
+        },
+        {
+          "value": "hub-switch",
+          "label": "Hub/Switch"
+        }
       ]
     },
     {
@@ -63,16 +96,28 @@
       "label": "Applicable Regulatory Frameworks",
       "description": "Which frameworks govern the corridors in question? Select all that apply.",
       "options": [
-        { "value": "fatf-r16", "label": "FATF R.16 (Travel Rule)" },
-        { "value": "eu-wire-transfer", "label": "EU Wire Transfer Regulation" },
-        { "value": "cemac", "label": "CEMAC rules" },
-        { "value": "eac", "label": "EAC protocols" }
+        {
+          "value": "fatf-r16",
+          "label": "FATF R.16 (Travel Rule)"
+        },
+        {
+          "value": "eu-wire-transfer",
+          "label": "EU Wire Transfer Regulation"
+        },
+        {
+          "value": "cemac",
+          "label": "CEMAC rules"
+        },
+        {
+          "value": "eac",
+          "label": "EAC protocols"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "mobile-money-compliance",
-    "fcp-expert"
+    "mobile-money-agent-trainer",
+    "mobile-money-compliance"
   ],
   "recommendedSkills": [
     "skill-gsma-mobile-money-aml",

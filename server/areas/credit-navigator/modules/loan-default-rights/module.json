@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,12 +78,30 @@
       "label": "Who is the lender?",
       "required": true,
       "options": [
-        { "value": "formal-mfi", "label": "Formal microfinance institution (MFI)" },
-        { "value": "bank", "label": "Bank" },
-        { "value": "mobile-app", "label": "Mobile loan application" },
-        { "value": "sacco", "label": "SACCO or savings cooperative" },
-        { "value": "moneylender", "label": "Private moneylender" },
-        { "value": "family-friend", "label": "Family or friend" }
+        {
+          "value": "formal-mfi",
+          "label": "Formal microfinance institution (MFI)"
+        },
+        {
+          "value": "bank",
+          "label": "Bank"
+        },
+        {
+          "value": "mobile-app",
+          "label": "Mobile loan application"
+        },
+        {
+          "value": "sacco",
+          "label": "SACCO or savings cooperative"
+        },
+        {
+          "value": "moneylender",
+          "label": "Private moneylender"
+        },
+        {
+          "value": "family-friend",
+          "label": "Family or friend"
+        }
       ]
     },
     {
@@ -63,15 +110,32 @@
       "label": "What is your situation right now?",
       "required": true,
       "options": [
-        { "value": "behind-payments", "label": "I am behind on payments" },
-        { "value": "cannot-pay", "label": "I cannot pay at all" },
-        { "value": "lender-threatening", "label": "The lender is threatening me" },
-        { "value": "assets-being-taken", "label": "My assets are being taken" },
-        { "value": "want-to-understand", "label": "I want to understand my rights before a problem happens" }
+        {
+          "value": "behind-payments",
+          "label": "I am behind on payments"
+        },
+        {
+          "value": "cannot-pay",
+          "label": "I cannot pay at all"
+        },
+        {
+          "value": "lender-threatening",
+          "label": "The lender is threatening me"
+        },
+        {
+          "value": "assets-being-taken",
+          "label": "My assets are being taken"
+        },
+        {
+          "value": "want-to-understand",
+          "label": "I want to understand my rights before a problem happens"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

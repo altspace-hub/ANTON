@@ -34,10 +34,22 @@
       "label": "Entity Type",
       "required": true,
       "options": [
-        { "value": "corporate", "label": "Corporate treasury" },
-        { "value": "bank", "label": "Bank treasury" },
-        { "value": "public_sector", "label": "Public sector / government entity" },
-        { "value": "islamic_bank", "label": "Islamic bank (Sharia-compliant instruments only)" }
+        {
+          "value": "corporate",
+          "label": "Corporate treasury"
+        },
+        {
+          "value": "bank",
+          "label": "Bank treasury"
+        },
+        {
+          "value": "public_sector",
+          "label": "Public sector / government entity"
+        },
+        {
+          "value": "islamic_bank",
+          "label": "Islamic bank (Sharia-compliant instruments only)"
+        }
       ]
     },
     {
@@ -45,12 +57,30 @@
       "type": "multi-select",
       "label": "Focus Areas",
       "options": [
-        { "value": "cash_pooling", "label": "Cash pooling and cash concentration" },
-        { "value": "fx", "label": "FX risk management and hedging" },
-        { "value": "irr", "label": "Interest rate risk management" },
-        { "value": "liquidity", "label": "Liquidity management and policy" },
-        { "value": "investment", "label": "Short-term investment policy" },
-        { "value": "counterparty", "label": "Counterparty and bank credit risk" }
+        {
+          "value": "cash_pooling",
+          "label": "Cash pooling and cash concentration"
+        },
+        {
+          "value": "fx",
+          "label": "FX risk management and hedging"
+        },
+        {
+          "value": "irr",
+          "label": "Interest rate risk management"
+        },
+        {
+          "value": "liquidity",
+          "label": "Liquidity management and policy"
+        },
+        {
+          "value": "investment",
+          "label": "Short-term investment policy"
+        },
+        {
+          "value": "counterparty",
+          "label": "Counterparty and bank credit risk"
+        }
       ]
     },
     {
@@ -58,11 +88,26 @@
       "type": "select",
       "label": "Primary Jurisdiction",
       "options": [
-        { "value": "eu", "label": "EU" },
-        { "value": "uk", "label": "UK" },
-        { "value": "us", "label": "US" },
-        { "value": "gcc", "label": "GCC (Gulf Cooperation Council)" },
-        { "value": "other", "label": "Other / multi-jurisdiction" }
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "us",
+          "label": "US"
+        },
+        {
+          "value": "gcc",
+          "label": "GCC (Gulf Cooperation Council)"
+        },
+        {
+          "value": "other",
+          "label": "Other / multi-jurisdiction"
+        }
       ]
     },
     {
@@ -72,7 +117,10 @@
       "placeholder": "e.g. Need to set up a notional cash pool across 12 EU entities, FX hedge accounting documentation not meeting IFRS 9 requirements, bank is asking us to review our liquidity buffer policy..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "treasury",
     "cash-management",

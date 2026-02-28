@@ -31,12 +31,30 @@
       "description": "What type of regulated entity is this calendar for?",
       "required": true,
       "options": [
-        { "value": "bank", "label": "Bank / Credit Institution" },
-        { "value": "fintech", "label": "Fintech / Payment Institution" },
-        { "value": "investment", "label": "Investment Firm / Asset Manager" },
-        { "value": "insurance", "label": "Insurance Company" },
-        { "value": "crypto", "label": "Crypto Asset Service Provider" },
-        { "value": "corporate", "label": "Non-Financial Corporate" }
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Payment Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto Asset Service Provider"
+        },
+        {
+          "value": "corporate",
+          "label": "Non-Financial Corporate"
+        }
       ]
     },
     {
@@ -46,12 +64,30 @@
       "description": "Which jurisdictions apply to this institution?",
       "required": true,
       "options": [
-        { "value": "eu", "label": "EU" },
-        { "value": "sweden", "label": "Sweden" },
-        { "value": "finland", "label": "Finland" },
-        { "value": "denmark", "label": "Denmark" },
-        { "value": "norway", "label": "Norway" },
-        { "value": "uk", "label": "UK" }
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
       ]
     },
     {
@@ -60,13 +96,34 @@
       "label": "Regulatory Areas to Include",
       "description": "Which compliance areas should the calendar cover?",
       "options": [
-        { "value": "aml_cft", "label": "AML/CFT" },
-        { "value": "gdpr", "label": "GDPR / Data Privacy" },
-        { "value": "dora", "label": "DORA" },
-        { "value": "prudential", "label": "Prudential (CRD/CRR)" },
-        { "value": "conduct", "label": "Conduct / MiFID" },
-        { "value": "sanctions", "label": "Sanctions Compliance" },
-        { "value": "reporting", "label": "Regulatory Reporting" }
+        {
+          "value": "aml_cft",
+          "label": "AML/CFT"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR / Data Privacy"
+        },
+        {
+          "value": "dora",
+          "label": "DORA"
+        },
+        {
+          "value": "prudential",
+          "label": "Prudential (CRD/CRR)"
+        },
+        {
+          "value": "conduct",
+          "label": "Conduct / MiFID"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions Compliance"
+        },
+        {
+          "value": "reporting",
+          "label": "Regulatory Reporting"
+        }
       ]
     },
     {
@@ -85,7 +142,6 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
     "legal-expert"
   ],
   "tags": [

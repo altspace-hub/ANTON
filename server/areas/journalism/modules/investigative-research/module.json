@@ -6,7 +6,14 @@
   "icon": "Microscope",
   "description": "Plan and execute investigative research: identify sources, build document trails, cross-reference data, identify leads, and structure the investigation methodology.",
   "color": "adv-teal",
-  "tags": ["investigative", "research", "sources", "documents", "data-journalism", "foia"],
+  "tags": [
+    "investigative",
+    "research",
+    "sources",
+    "documents",
+    "data-journalism",
+    "foia"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "sonnet",
@@ -16,9 +23,14 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "project-plan"]
+    "outputFormats": [
+      "detailed-findings",
+      "project-plan"
+    ]
   },
-  "recommendedPersonas": ["investigative-journalist", "data-journalist"],
+  "recommendedPersonas": [
+    "general-assistant"
+  ],
   "guidedInputs": [
     {
       "id": "investigation_subject",
@@ -41,14 +53,38 @@
       "label": "Investigation Type",
       "description": "What type of investigation is this?",
       "options": [
-        {"value": "financial", "label": "Financial / Corruption"},
-        {"value": "corporate", "label": "Corporate / Business"},
-        {"value": "government", "label": "Government / Public sector"},
-        {"value": "environmental", "label": "Environmental"},
-        {"value": "human_rights", "label": "Human rights / Social"},
-        {"value": "health", "label": "Health / Medical"},
-        {"value": "technology", "label": "Technology / Data"},
-        {"value": "crime", "label": "Crime / Law enforcement"}
+        {
+          "value": "financial",
+          "label": "Financial / Corruption"
+        },
+        {
+          "value": "corporate",
+          "label": "Corporate / Business"
+        },
+        {
+          "value": "government",
+          "label": "Government / Public sector"
+        },
+        {
+          "value": "environmental",
+          "label": "Environmental"
+        },
+        {
+          "value": "human_rights",
+          "label": "Human rights / Social"
+        },
+        {
+          "value": "health",
+          "label": "Health / Medical"
+        },
+        {
+          "value": "technology",
+          "label": "Technology / Data"
+        },
+        {
+          "value": "crime",
+          "label": "Crime / Law enforcement"
+        }
       ]
     },
     {

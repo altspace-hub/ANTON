@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "decision-memo"],
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -30,10 +33,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "government-consultation", "label": "Government consultation" },
-        { "value": "parliamentary-inquiry", "label": "Parliamentary inquiry" },
-        { "value": "regulatory-consultation", "label": "Regulatory body consultation" },
-        { "value": "international-organisation", "label": "International organisation (FATF, EU, UN)" }
+        {
+          "value": "government-consultation",
+          "label": "Government consultation"
+        },
+        {
+          "value": "parliamentary-inquiry",
+          "label": "Parliamentary inquiry"
+        },
+        {
+          "value": "regulatory-consultation",
+          "label": "Regulatory body consultation"
+        },
+        {
+          "value": "international-organisation",
+          "label": "International organisation (FATF, EU, UN)"
+        }
       ]
     },
     {
@@ -42,11 +57,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "government-body", "label": "Government body" },
-        { "value": "industry-association", "label": "Industry association" },
-        { "value": "ngo", "label": "NGO / Civil society" },
-        { "value": "think-tank", "label": "Think tank / Academic" },
-        { "value": "business", "label": "Business" }
+        {
+          "value": "government-body",
+          "label": "Government body"
+        },
+        {
+          "value": "industry-association",
+          "label": "Industry association"
+        },
+        {
+          "value": "ngo",
+          "label": "NGO / Civil society"
+        },
+        {
+          "value": "think-tank",
+          "label": "Think tank / Academic"
+        },
+        {
+          "value": "business",
+          "label": "Business"
+        }
       ]
     },
     {
@@ -57,6 +87,18 @@
       "placeholder": "Briefly describe your organisation's main position, key concerns, and what you are recommending. The AI will help structure and develop this into a full response."
     }
   ],
-  "recommendedPersonas": ["policy-analyst", "legal-expert"],
-  "tags": ["consultation", "government", "regulatory", "policy-response", "stakeholder", "parliamentary", "FATF", "EU", "public-administration"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "consultation",
+    "government",
+    "regulatory",
+    "policy-response",
+    "stakeholder",
+    "parliamentary",
+    "FATF",
+    "EU",
+    "public-administration"
+  ]
 }

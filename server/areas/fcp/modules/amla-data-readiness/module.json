@@ -37,12 +37,30 @@
       "description": "What type of obliged entity is subject to AMLA reporting?",
       "required": true,
       "options": [
-        { "value": "bank", "label": "Bank / Credit Institution" },
-        { "value": "payment", "label": "Payment Institution / E-Money Institution" },
-        { "value": "investment", "label": "Investment Firm / Asset Manager" },
-        { "value": "crypto", "label": "Crypto Asset Service Provider (CASP)" },
-        { "value": "insurance", "label": "Insurance Company" },
-        { "value": "other", "label": "Other Obliged Entity" }
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "payment",
+          "label": "Payment Institution / E-Money Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto Asset Service Provider (CASP)"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "other",
+          "label": "Other Obliged Entity"
+        }
       ]
     },
     {
@@ -51,13 +69,34 @@
       "label": "AMLA Reporting Scope",
       "description": "Which AMLA data domains does this assessment cover?",
       "options": [
-        { "value": "customer_data", "label": "Customer Data" },
-        { "value": "beneficial_ownership", "label": "Beneficial Ownership" },
-        { "value": "transaction_data", "label": "Transaction Data" },
-        { "value": "alert_sar_data", "label": "Alert & SAR Data" },
-        { "value": "screening_data", "label": "Screening Results" },
-        { "value": "kyc_cdd_data", "label": "KYC / CDD Evidence" },
-        { "value": "risk_scores", "label": "Customer Risk Scores" }
+        {
+          "value": "customer_data",
+          "label": "Customer Data"
+        },
+        {
+          "value": "beneficial_ownership",
+          "label": "Beneficial Ownership"
+        },
+        {
+          "value": "transaction_data",
+          "label": "Transaction Data"
+        },
+        {
+          "value": "alert_sar_data",
+          "label": "Alert & SAR Data"
+        },
+        {
+          "value": "screening_data",
+          "label": "Screening Results"
+        },
+        {
+          "value": "kyc_cdd_data",
+          "label": "KYC / CDD Evidence"
+        },
+        {
+          "value": "risk_scores",
+          "label": "Customer Risk Scores"
+        }
       ]
     },
     {
@@ -84,8 +123,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "fsa-regulator"
+    "fcp-expert"
   ],
   "tags": [
     "amla",

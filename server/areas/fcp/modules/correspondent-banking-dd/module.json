@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "decision-memo"],
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -31,9 +34,18 @@
       "label": "Assessment Perspective",
       "required": true,
       "options": [
-        {"value": "respondent-seeking", "label": "Respondent bank seeking correspondent"},
-        {"value": "correspondent-assessing", "label": "Correspondent bank assessing respondent"},
-        {"value": "regulator-reviewing", "label": "Regulator reviewing relationship"}
+        {
+          "value": "respondent-seeking",
+          "label": "Respondent bank seeking correspondent"
+        },
+        {
+          "value": "correspondent-assessing",
+          "label": "Correspondent bank assessing respondent"
+        },
+        {
+          "value": "regulator-reviewing",
+          "label": "Regulator reviewing relationship"
+        }
       ]
     },
     {
@@ -42,13 +54,34 @@
       "label": "Respondent Bank Jurisdiction",
       "required": true,
       "options": [
-        {"value": "sub-saharan-africa", "label": "Sub-Saharan Africa"},
-        {"value": "north-africa", "label": "North Africa"},
-        {"value": "middle-east", "label": "Middle East"},
-        {"value": "south-asia", "label": "South Asia"},
-        {"value": "southeast-asia", "label": "Southeast Asia"},
-        {"value": "central-asia", "label": "Central Asia"},
-        {"value": "other", "label": "Other"}
+        {
+          "value": "sub-saharan-africa",
+          "label": "Sub-Saharan Africa"
+        },
+        {
+          "value": "north-africa",
+          "label": "North Africa"
+        },
+        {
+          "value": "middle-east",
+          "label": "Middle East"
+        },
+        {
+          "value": "south-asia",
+          "label": "South Asia"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "central-asia",
+          "label": "Central Asia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -56,11 +89,26 @@
       "type": "select",
       "label": "Relationship Type",
       "options": [
-        {"value": "usd-clearing", "label": "USD clearing"},
-        {"value": "eur-clearing", "label": "EUR clearing"},
-        {"value": "trade-finance", "label": "Trade Finance"},
-        {"value": "nostro-vostro", "label": "Nostro/Vostro account"},
-        {"value": "full-correspondent", "label": "Full correspondent relationship"}
+        {
+          "value": "usd-clearing",
+          "label": "USD clearing"
+        },
+        {
+          "value": "eur-clearing",
+          "label": "EUR clearing"
+        },
+        {
+          "value": "trade-finance",
+          "label": "Trade Finance"
+        },
+        {
+          "value": "nostro-vostro",
+          "label": "Nostro/Vostro account"
+        },
+        {
+          "value": "full-correspondent",
+          "label": "Full correspondent relationship"
+        }
       ]
     },
     {
@@ -70,7 +118,18 @@
       "placeholder": "e.g. Incomplete CBDD questionnaire responses, high-risk jurisdiction with weak AML enforcement, ownership opacity, previous regulatory sanctions, recent de-risking pressure from other correspondents..."
     }
   ],
-  "recommendedPersonas": ["fcp-expert", "legal-expert"],
-  "recommendedSkills": ["skill-fatf-mutual-evaluation"],
-  "tags": ["correspondent-banking", "cbdd", "de-risking", "wolfsberg", "fatf-r13", "fcp"]
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-fatf-mutual-evaluation"
+  ],
+  "tags": [
+    "correspondent-banking",
+    "cbdd",
+    "de-risking",
+    "wolfsberg",
+    "fatf-r13",
+    "fcp"
+  ]
 }

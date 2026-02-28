@@ -35,16 +35,46 @@
       "label": "Business type",
       "required": true,
       "options": [
-        { "value": "b2b_enterprise", "label": "B2B — Enterprise / Large accounts" },
-        { "value": "b2b_smb", "label": "B2B — SMB / Mid-market" },
-        { "value": "b2c_mass", "label": "B2C — Mass market / Consumer" },
-        { "value": "b2c_premium", "label": "B2C — Premium / Luxury" },
-        { "value": "b2b2c", "label": "B2B2C — Sell through intermediaries" },
-        { "value": "marketplace", "label": "Marketplace / Platform" },
-        { "value": "saas", "label": "SaaS / Software" },
-        { "value": "ecommerce", "label": "E-commerce / Retail" },
-        { "value": "professional_services", "label": "Professional Services" },
-        { "value": "nonprofit", "label": "Non-profit / Social enterprise" }
+        {
+          "value": "b2b_enterprise",
+          "label": "B2B — Enterprise / Large accounts"
+        },
+        {
+          "value": "b2b_smb",
+          "label": "B2B — SMB / Mid-market"
+        },
+        {
+          "value": "b2c_mass",
+          "label": "B2C — Mass market / Consumer"
+        },
+        {
+          "value": "b2c_premium",
+          "label": "B2C — Premium / Luxury"
+        },
+        {
+          "value": "b2b2c",
+          "label": "B2B2C — Sell through intermediaries"
+        },
+        {
+          "value": "marketplace",
+          "label": "Marketplace / Platform"
+        },
+        {
+          "value": "saas",
+          "label": "SaaS / Software"
+        },
+        {
+          "value": "ecommerce",
+          "label": "E-commerce / Retail"
+        },
+        {
+          "value": "professional_services",
+          "label": "Professional Services"
+        },
+        {
+          "value": "nonprofit",
+          "label": "Non-profit / Social enterprise"
+        }
       ]
     },
     {
@@ -53,10 +83,22 @@
       "label": "Strategy horizon",
       "required": true,
       "options": [
-        { "value": "90_day", "label": "90-day sprint / Quick-wins" },
-        { "value": "6_month", "label": "6-month plan" },
-        { "value": "12_month", "label": "12-month annual plan" },
-        { "value": "3_year", "label": "3-year strategic roadmap" }
+        {
+          "value": "90_day",
+          "label": "90-day sprint / Quick-wins"
+        },
+        {
+          "value": "6_month",
+          "label": "6-month plan"
+        },
+        {
+          "value": "12_month",
+          "label": "12-month annual plan"
+        },
+        {
+          "value": "3_year",
+          "label": "3-year strategic roadmap"
+        }
       ]
     },
     {
@@ -78,12 +120,30 @@
       "type": "select",
       "label": "Annual marketing budget (approximate)",
       "options": [
-        { "value": "under_50k", "label": "Under €50k" },
-        { "value": "50k_200k", "label": "€50k – €200k" },
-        { "value": "200k_1m", "label": "€200k – €1M" },
-        { "value": "1m_5m", "label": "€1M – €5M" },
-        { "value": "over_5m", "label": "Over €5M" },
-        { "value": "unknown", "label": "Not yet defined" }
+        {
+          "value": "under_50k",
+          "label": "Under €50k"
+        },
+        {
+          "value": "50k_200k",
+          "label": "€50k – €200k"
+        },
+        {
+          "value": "200k_1m",
+          "label": "€200k – €1M"
+        },
+        {
+          "value": "1m_5m",
+          "label": "€1M – €5M"
+        },
+        {
+          "value": "over_5m",
+          "label": "Over €5M"
+        },
+        {
+          "value": "unknown",
+          "label": "Not yet defined"
+        }
       ]
     },
     {
@@ -92,20 +152,44 @@
       "label": "Primary marketing objective(s)",
       "description": "Select the main goals this strategy must achieve.",
       "options": [
-        { "value": "brand_awareness", "label": "Build brand awareness" },
-        { "value": "demand_generation", "label": "Generate demand / pipeline" },
-        { "value": "lead_generation", "label": "Capture leads" },
-        { "value": "customer_retention", "label": "Retain and grow customers" },
-        { "value": "market_entry", "label": "Enter a new market" },
-        { "value": "product_launch", "label": "Launch a new product" },
-        { "value": "repositioning", "label": "Reposition the brand" },
-        { "value": "revenue_growth", "label": "Drive direct revenue growth" }
+        {
+          "value": "brand_awareness",
+          "label": "Build brand awareness"
+        },
+        {
+          "value": "demand_generation",
+          "label": "Generate demand / pipeline"
+        },
+        {
+          "value": "lead_generation",
+          "label": "Capture leads"
+        },
+        {
+          "value": "customer_retention",
+          "label": "Retain and grow customers"
+        },
+        {
+          "value": "market_entry",
+          "label": "Enter a new market"
+        },
+        {
+          "value": "product_launch",
+          "label": "Launch a new product"
+        },
+        {
+          "value": "repositioning",
+          "label": "Reposition the brand"
+        },
+        {
+          "value": "revenue_growth",
+          "label": "Drive direct revenue growth"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "marketing-strategy",

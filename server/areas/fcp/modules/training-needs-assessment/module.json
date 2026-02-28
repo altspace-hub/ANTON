@@ -36,14 +36,38 @@
       "description": "Which staff groups does this training needs assessment cover?",
       "required": true,
       "options": [
-        { "value": "board", "label": "Board" },
-        { "value": "senior_management", "label": "Senior Management" },
-        { "value": "compliance_fcp", "label": "Compliance / FCP Team" },
-        { "value": "relationship_managers", "label": "Relationship Managers" },
-        { "value": "front_line", "label": "Front-Line Staff" },
-        { "value": "operations", "label": "Operations / Back Office" },
-        { "value": "it", "label": "IT / Technology" },
-        { "value": "new_joiners", "label": "New Joiners" }
+        {
+          "value": "board",
+          "label": "Board"
+        },
+        {
+          "value": "senior_management",
+          "label": "Senior Management"
+        },
+        {
+          "value": "compliance_fcp",
+          "label": "Compliance / FCP Team"
+        },
+        {
+          "value": "relationship_managers",
+          "label": "Relationship Managers"
+        },
+        {
+          "value": "front_line",
+          "label": "Front-Line Staff"
+        },
+        {
+          "value": "operations",
+          "label": "Operations / Back Office"
+        },
+        {
+          "value": "it",
+          "label": "IT / Technology"
+        },
+        {
+          "value": "new_joiners",
+          "label": "New Joiners"
+        }
       ]
     },
     {
@@ -52,13 +76,34 @@
       "label": "Training Need Drivers",
       "description": "What is driving the training needs assessment?",
       "options": [
-        { "value": "regulatory_change", "label": "New Regulation or Guidance" },
-        { "value": "audit_findings", "label": "Audit / Review Findings" },
-        { "value": "investigation_outcomes", "label": "Investigation or SAR Patterns" },
-        { "value": "supervision_feedback", "label": "Regulatory Examination Feedback" },
-        { "value": "annual_programme", "label": "Annual Training Programme Review" },
-        { "value": "new_products", "label": "New Products / Services Launch" },
-        { "value": "staff_performance", "label": "Staff Performance Concerns" }
+        {
+          "value": "regulatory_change",
+          "label": "New Regulation or Guidance"
+        },
+        {
+          "value": "audit_findings",
+          "label": "Audit / Review Findings"
+        },
+        {
+          "value": "investigation_outcomes",
+          "label": "Investigation or SAR Patterns"
+        },
+        {
+          "value": "supervision_feedback",
+          "label": "Regulatory Examination Feedback"
+        },
+        {
+          "value": "annual_programme",
+          "label": "Annual Training Programme Review"
+        },
+        {
+          "value": "new_products",
+          "label": "New Products / Services Launch"
+        },
+        {
+          "value": "staff_performance",
+          "label": "Staff Performance Concerns"
+        }
       ]
     },
     {

@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "decision-memo"],
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -31,11 +34,26 @@
       "label": "What are you assessing?",
       "required": true,
       "options": [
-        { "value": "founder-vc", "label": "Founder assessment (VC — will this person build a big company?)" },
-        { "value": "management-pe", "label": "Management team assessment (PE — can this team execute the value creation plan?)" },
-        { "value": "ceo-search", "label": "CEO search / leadership gap analysis" },
-        { "value": "reference-synthesis", "label": "Reference check synthesis (compile reference notes into themes)" },
-        { "value": "board-review", "label": "Board composition review" }
+        {
+          "value": "founder-vc",
+          "label": "Founder assessment (VC — will this person build a big company?)"
+        },
+        {
+          "value": "management-pe",
+          "label": "Management team assessment (PE — can this team execute the value creation plan?)"
+        },
+        {
+          "value": "ceo-search",
+          "label": "CEO search / leadership gap analysis"
+        },
+        {
+          "value": "reference-synthesis",
+          "label": "Reference check synthesis (compile reference notes into themes)"
+        },
+        {
+          "value": "board-review",
+          "label": "Board composition review"
+        }
       ]
     },
     {
@@ -67,5 +85,15 @@
       "required": false
     }
   ],
-  "tags": ["pe-vc", "founder-assessment", "management-team", "reference-checks", "people", "leadership"]
+  "tags": [
+    "pe-vc",
+    "founder-assessment",
+    "management-team",
+    "reference-checks",
+    "people",
+    "leadership"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

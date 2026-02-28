@@ -36,15 +36,42 @@
       "description": "Which regulator's sandbox is the applicant targeting?",
       "required": true,
       "options": [
-        { "value": "ke", "label": "Kenya (CBK)" },
-        { "value": "ng", "label": "Nigeria (CBN / SEC)" },
-        { "value": "gh", "label": "Ghana (Bank of Ghana)" },
-        { "value": "sg", "label": "Singapore (MAS)" },
-        { "value": "my", "label": "Malaysia (BNM)" },
-        { "value": "ae", "label": "UAE (FSRA / DIFC)" },
-        { "value": "uk", "label": "UK (FCA)" },
-        { "value": "rw", "label": "Rwanda (BNR)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "ke",
+          "label": "Kenya (CBK)"
+        },
+        {
+          "value": "ng",
+          "label": "Nigeria (CBN / SEC)"
+        },
+        {
+          "value": "gh",
+          "label": "Ghana (Bank of Ghana)"
+        },
+        {
+          "value": "sg",
+          "label": "Singapore (MAS)"
+        },
+        {
+          "value": "my",
+          "label": "Malaysia (BNM)"
+        },
+        {
+          "value": "ae",
+          "label": "UAE (FSRA / DIFC)"
+        },
+        {
+          "value": "uk",
+          "label": "UK (FCA)"
+        },
+        {
+          "value": "rw",
+          "label": "Rwanda (BNR)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -64,8 +91,8 @@
     }
   ],
   "recommendedPersonas": [
-    "mobile-money-compliance",
-    "fcp-expert"
+    "mobile-money-agent-trainer",
+    "mobile-money-compliance"
   ],
   "recommendedSkills": [
     "skill-gsma-mobile-money-aml",

@@ -35,14 +35,38 @@
       "label": "Section to draft",
       "required": true,
       "options": [
-        { "value": "management_commentary", "label": "Management commentary / Directors' report" },
-        { "value": "mda", "label": "MD&A (Management Discussion & Analysis)" },
-        { "value": "accounting_policies", "label": "Accounting policies note" },
-        { "value": "specific_note", "label": "Specific financial statement note" },
-        { "value": "going_concern", "label": "Going concern statement" },
-        { "value": "risk_disclosures", "label": "Risk and uncertainty disclosures" },
-        { "value": "subsequent_events", "label": "Subsequent events note" },
-        { "value": "ceo_statement", "label": "CEO/Chairman statement" }
+        {
+          "value": "management_commentary",
+          "label": "Management commentary / Directors' report"
+        },
+        {
+          "value": "mda",
+          "label": "MD&A (Management Discussion & Analysis)"
+        },
+        {
+          "value": "accounting_policies",
+          "label": "Accounting policies note"
+        },
+        {
+          "value": "specific_note",
+          "label": "Specific financial statement note"
+        },
+        {
+          "value": "going_concern",
+          "label": "Going concern statement"
+        },
+        {
+          "value": "risk_disclosures",
+          "label": "Risk and uncertainty disclosures"
+        },
+        {
+          "value": "subsequent_events",
+          "label": "Subsequent events note"
+        },
+        {
+          "value": "ceo_statement",
+          "label": "CEO/Chairman statement"
+        }
       ]
     },
     {
@@ -50,12 +74,30 @@
       "type": "select",
       "label": "Reporting framework",
       "options": [
-        { "value": "ifrs_listed", "label": "IFRS (listed company)" },
-        { "value": "ifrs_unlisted", "label": "IFRS (unlisted)" },
-        { "value": "k3", "label": "Swedish K3" },
-        { "value": "k2", "label": "Swedish K2" },
-        { "value": "us_gaap", "label": "US GAAP / SEC filing" },
-        { "value": "uk_gaap", "label": "UK GAAP (FRS 102)" }
+        {
+          "value": "ifrs_listed",
+          "label": "IFRS (listed company)"
+        },
+        {
+          "value": "ifrs_unlisted",
+          "label": "IFRS (unlisted)"
+        },
+        {
+          "value": "k3",
+          "label": "Swedish K3"
+        },
+        {
+          "value": "k2",
+          "label": "Swedish K2"
+        },
+        {
+          "value": "us_gaap",
+          "label": "US GAAP / SEC filing"
+        },
+        {
+          "value": "uk_gaap",
+          "label": "UK GAAP (FRS 102)"
+        }
       ]
     },
     {
@@ -76,9 +118,18 @@
       "type": "select",
       "label": "Tone and style",
       "options": [
-        { "value": "formal_listed", "label": "Formal — listed company (measured, precise)" },
-        { "value": "professional", "label": "Professional — private company (clear, accessible)" },
-        { "value": "investor_facing", "label": "Investor-facing (forward-looking, growth narrative)" }
+        {
+          "value": "formal_listed",
+          "label": "Formal — listed company (measured, precise)"
+        },
+        {
+          "value": "professional",
+          "label": "Professional — private company (clear, accessible)"
+        },
+        {
+          "value": "investor_facing",
+          "label": "Investor-facing (forward-looking, growth narrative)"
+        }
       ]
     },
     {
@@ -88,7 +139,10 @@
       "placeholder": "Any specific disclosures, risks, or topics that must be covered. e.g. significant acquisition completed in November, going concern assessment, material litigation."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "financial-statements",

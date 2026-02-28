@@ -35,14 +35,38 @@
       "label": "Campaign objective",
       "required": true,
       "options": [
-        { "value": "awareness", "label": "Brand awareness / Reach" },
-        { "value": "consideration", "label": "Consideration / Engagement" },
-        { "value": "lead_gen", "label": "Lead generation" },
-        { "value": "conversion", "label": "Direct conversion / Sales" },
-        { "value": "retention", "label": "Retention / Upsell" },
-        { "value": "product_launch", "label": "Product / Feature launch" },
-        { "value": "event_promotion", "label": "Event promotion" },
-        { "value": "reactivation", "label": "Win-back / Reactivation" }
+        {
+          "value": "awareness",
+          "label": "Brand awareness / Reach"
+        },
+        {
+          "value": "consideration",
+          "label": "Consideration / Engagement"
+        },
+        {
+          "value": "lead_gen",
+          "label": "Lead generation"
+        },
+        {
+          "value": "conversion",
+          "label": "Direct conversion / Sales"
+        },
+        {
+          "value": "retention",
+          "label": "Retention / Upsell"
+        },
+        {
+          "value": "product_launch",
+          "label": "Product / Feature launch"
+        },
+        {
+          "value": "event_promotion",
+          "label": "Event promotion"
+        },
+        {
+          "value": "reactivation",
+          "label": "Win-back / Reactivation"
+        }
       ]
     },
     {
@@ -51,17 +75,50 @@
       "label": "Channels to include",
       "description": "Which digital channels should be part of this campaign?",
       "options": [
-        { "value": "paid_search", "label": "Paid Search (Google / Bing Ads)" },
-        { "value": "paid_social_meta", "label": "Paid Social — Meta (Facebook / Instagram)" },
-        { "value": "paid_social_linkedin", "label": "Paid Social — LinkedIn" },
-        { "value": "paid_social_tiktok", "label": "Paid Social — TikTok" },
-        { "value": "display_programmatic", "label": "Display / Programmatic" },
-        { "value": "youtube_video", "label": "YouTube / Video" },
-        { "value": "email", "label": "Email marketing" },
-        { "value": "seo_content", "label": "SEO / Content" },
-        { "value": "influencer", "label": "Influencer / Creator" },
-        { "value": "affiliate", "label": "Affiliate / Partner" },
-        { "value": "podcast_audio", "label": "Podcast / Audio ads" }
+        {
+          "value": "paid_search",
+          "label": "Paid Search (Google / Bing Ads)"
+        },
+        {
+          "value": "paid_social_meta",
+          "label": "Paid Social — Meta (Facebook / Instagram)"
+        },
+        {
+          "value": "paid_social_linkedin",
+          "label": "Paid Social — LinkedIn"
+        },
+        {
+          "value": "paid_social_tiktok",
+          "label": "Paid Social — TikTok"
+        },
+        {
+          "value": "display_programmatic",
+          "label": "Display / Programmatic"
+        },
+        {
+          "value": "youtube_video",
+          "label": "YouTube / Video"
+        },
+        {
+          "value": "email",
+          "label": "Email marketing"
+        },
+        {
+          "value": "seo_content",
+          "label": "SEO / Content"
+        },
+        {
+          "value": "influencer",
+          "label": "Influencer / Creator"
+        },
+        {
+          "value": "affiliate",
+          "label": "Affiliate / Partner"
+        },
+        {
+          "value": "podcast_audio",
+          "label": "Podcast / Audio ads"
+        }
       ]
     },
     {
@@ -69,11 +126,26 @@
       "type": "select",
       "label": "Total campaign budget",
       "options": [
-        { "value": "under_10k", "label": "Under €10k" },
-        { "value": "10k_50k", "label": "€10k – €50k" },
-        { "value": "50k_200k", "label": "€50k – €200k" },
-        { "value": "200k_1m", "label": "€200k – €1M" },
-        { "value": "over_1m", "label": "Over €1M" }
+        {
+          "value": "under_10k",
+          "label": "Under €10k"
+        },
+        {
+          "value": "10k_50k",
+          "label": "€10k – €50k"
+        },
+        {
+          "value": "50k_200k",
+          "label": "€50k – €200k"
+        },
+        {
+          "value": "200k_1m",
+          "label": "€200k – €1M"
+        },
+        {
+          "value": "over_1m",
+          "label": "Over €1M"
+        }
       ]
     },
     {
@@ -81,11 +153,26 @@
       "type": "select",
       "label": "Campaign duration",
       "options": [
-        { "value": "2_weeks", "label": "1–2 weeks (burst)" },
-        { "value": "4_weeks", "label": "3–4 weeks" },
-        { "value": "3_months", "label": "3 months (quarterly)" },
-        { "value": "6_months", "label": "6 months" },
-        { "value": "always_on", "label": "Always-on / Ongoing" }
+        {
+          "value": "2_weeks",
+          "label": "1–2 weeks (burst)"
+        },
+        {
+          "value": "4_weeks",
+          "label": "3–4 weeks"
+        },
+        {
+          "value": "3_months",
+          "label": "3 months (quarterly)"
+        },
+        {
+          "value": "6_months",
+          "label": "6 months"
+        },
+        {
+          "value": "always_on",
+          "label": "Always-on / Ongoing"
+        }
       ]
     },
     {
@@ -105,7 +192,7 @@
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "digital-campaign",

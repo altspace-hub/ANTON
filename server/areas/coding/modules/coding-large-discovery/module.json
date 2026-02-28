@@ -10,10 +10,20 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings"],
+    "outputFormats": [
+      "detailed-findings"
+    ],
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": true, "description": "" },
-      "localFolder": { "enabled": true, "folderPaths": [], "recursive": true }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
     }
   },
   "guidedInputs": [
@@ -49,5 +59,14 @@
       "placeholder": "e.g., must integrate with SAP, deadline Q3 2026, budget limit..."
     }
   ],
-  "tags": ["coding", "project-management", "discovery", "requirements", "professional"]
+  "tags": [
+    "coding",
+    "project-management",
+    "discovery",
+    "requirements",
+    "professional"
+  ],
+  "recommendedPersonas": [
+    "tech-expert"
+  ]
 }

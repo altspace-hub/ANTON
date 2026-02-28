@@ -34,11 +34,26 @@
       "label": "Organisation type",
       "required": true,
       "options": [
-        { "value": "eu_controller", "label": "EU Controller" },
-        { "value": "non_eu_controller", "label": "Non-EU Controller (EU market)" },
-        { "value": "processor", "label": "Processor" },
-        { "value": "joint_controller", "label": "Joint Controller" },
-        { "value": "public_authority", "label": "Public Authority" }
+        {
+          "value": "eu_controller",
+          "label": "EU Controller"
+        },
+        {
+          "value": "non_eu_controller",
+          "label": "Non-EU Controller (EU market)"
+        },
+        {
+          "value": "processor",
+          "label": "Processor"
+        },
+        {
+          "value": "joint_controller",
+          "label": "Joint Controller"
+        },
+        {
+          "value": "public_authority",
+          "label": "Public Authority"
+        }
       ]
     },
     {
@@ -46,13 +61,34 @@
       "type": "select",
       "label": "Breach scenario (if responding to a specific incident)",
       "options": [
-        { "value": "ransomware", "label": "Ransomware" },
-        { "value": "accidental_disclosure", "label": "Accidental disclosure" },
-        { "value": "insider_threat", "label": "Insider threat" },
-        { "value": "third_party_breach", "label": "Third-party breach" },
-        { "value": "lost_device", "label": "Lost device" },
-        { "value": "phishing", "label": "Phishing" },
-        { "value": "unknown", "label": "Unknown / General plan" }
+        {
+          "value": "ransomware",
+          "label": "Ransomware"
+        },
+        {
+          "value": "accidental_disclosure",
+          "label": "Accidental disclosure"
+        },
+        {
+          "value": "insider_threat",
+          "label": "Insider threat"
+        },
+        {
+          "value": "third_party_breach",
+          "label": "Third-party breach"
+        },
+        {
+          "value": "lost_device",
+          "label": "Lost device"
+        },
+        {
+          "value": "phishing",
+          "label": "Phishing"
+        },
+        {
+          "value": "unknown",
+          "label": "Unknown / General plan"
+        }
       ]
     },
     {
@@ -60,13 +96,34 @@
       "type": "chips",
       "label": "Categories of personal data potentially affected",
       "options": [
-        { "value": "identifiers", "label": "Personal identifiers" },
-        { "value": "financial", "label": "Financial data" },
-        { "value": "health", "label": "Health data" },
-        { "value": "biometric", "label": "Biometric" },
-        { "value": "children", "label": "Children's data" },
-        { "value": "criminal", "label": "Criminal records" },
-        { "value": "marketing_profiles", "label": "Marketing profiles" }
+        {
+          "value": "identifiers",
+          "label": "Personal identifiers"
+        },
+        {
+          "value": "financial",
+          "label": "Financial data"
+        },
+        {
+          "value": "health",
+          "label": "Health data"
+        },
+        {
+          "value": "biometric",
+          "label": "Biometric"
+        },
+        {
+          "value": "children",
+          "label": "Children's data"
+        },
+        {
+          "value": "criminal",
+          "label": "Criminal records"
+        },
+        {
+          "value": "marketing_profiles",
+          "label": "Marketing profiles"
+        }
       ]
     },
     {
@@ -74,16 +131,27 @@
       "type": "select",
       "label": "Notification obligation status",
       "options": [
-        { "value": "required", "label": "72-hour DPA notification required" },
-        { "value": "potentially_required", "label": "Potentially required" },
-        { "value": "assessing", "label": "Assessing" },
-        { "value": "not_required", "label": "Not required" }
+        {
+          "value": "required",
+          "label": "72-hour DPA notification required"
+        },
+        {
+          "value": "potentially_required",
+          "label": "Potentially required"
+        },
+        {
+          "value": "assessing",
+          "label": "Assessing"
+        },
+        {
+          "value": "not_required",
+          "label": "Not required"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "dpo",
-    "legal-expert"
+    "dpo"
   ],
   "tags": [
     "data-breach",

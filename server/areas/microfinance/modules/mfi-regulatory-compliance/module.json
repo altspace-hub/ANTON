@@ -36,11 +36,26 @@
       "description": "What type of microfinance institution is being assessed?",
       "required": true,
       "options": [
-        { "value": "ngo-mfi", "label": "NGO-MFI" },
-        { "value": "licensed-mfi", "label": "Licensed MFI" },
-        { "value": "credit-cooperative", "label": "Credit Cooperative" },
-        { "value": "commercial-microbank", "label": "Commercial Microbank" },
-        { "value": "development-bank", "label": "Development Bank" }
+        {
+          "value": "ngo-mfi",
+          "label": "NGO-MFI"
+        },
+        {
+          "value": "licensed-mfi",
+          "label": "Licensed MFI"
+        },
+        {
+          "value": "credit-cooperative",
+          "label": "Credit Cooperative"
+        },
+        {
+          "value": "commercial-microbank",
+          "label": "Commercial Microbank"
+        },
+        {
+          "value": "development-bank",
+          "label": "Development Bank"
+        }
       ]
     },
     {
@@ -50,16 +65,46 @@
       "description": "Which country's regulatory framework is the primary reference?",
       "required": true,
       "options": [
-        { "value": "ke", "label": "Kenya" },
-        { "value": "ug", "label": "Uganda" },
-        { "value": "tz", "label": "Tanzania" },
-        { "value": "ng", "label": "Nigeria" },
-        { "value": "gh", "label": "Ghana" },
-        { "value": "bd", "label": "Bangladesh" },
-        { "value": "in", "label": "India" },
-        { "value": "pk", "label": "Pakistan" },
-        { "value": "mm", "label": "Myanmar" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "ke",
+          "label": "Kenya"
+        },
+        {
+          "value": "ug",
+          "label": "Uganda"
+        },
+        {
+          "value": "tz",
+          "label": "Tanzania"
+        },
+        {
+          "value": "ng",
+          "label": "Nigeria"
+        },
+        {
+          "value": "gh",
+          "label": "Ghana"
+        },
+        {
+          "value": "bd",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "in",
+          "label": "India"
+        },
+        {
+          "value": "pk",
+          "label": "Pakistan"
+        },
+        {
+          "value": "mm",
+          "label": "Myanmar"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -69,11 +114,26 @@
       "description": "What is the institution's current regulatory status?",
       "required": true,
       "options": [
-        { "value": "deposit-taking", "label": "Deposit-taking" },
-        { "value": "non-deposit", "label": "Non-deposit" },
-        { "value": "cooperative", "label": "Cooperative" },
-        { "value": "informal", "label": "Informal / Unregistered" },
-        { "value": "seeking", "label": "Seeking licence" }
+        {
+          "value": "deposit-taking",
+          "label": "Deposit-taking"
+        },
+        {
+          "value": "non-deposit",
+          "label": "Non-deposit"
+        },
+        {
+          "value": "cooperative",
+          "label": "Cooperative"
+        },
+        {
+          "value": "informal",
+          "label": "Informal / Unregistered"
+        },
+        {
+          "value": "seeking",
+          "label": "Seeking licence"
+        }
       ]
     },
     {
@@ -85,8 +145,8 @@
     }
   ],
   "recommendedPersonas": [
-    "microfinance-director",
-    "fcp-expert"
+    "microfinance-field-officer",
+    "microenterprise-credit-advisor"
   ],
   "recommendedSkills": [
     "jurisdiction-ke-cbk",

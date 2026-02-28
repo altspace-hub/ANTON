@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings", "gap-scoring-matrix"],
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -26,13 +29,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "script-excerpt", "label": "Script / Screenplay excerpt" },
-        { "value": "chapter", "label": "Novel chapter" },
-        { "value": "synopsis", "label": "Synopsis / Summary" },
-        { "value": "logline", "label": "Logline / Pitch" },
-        { "value": "trailer-description", "label": "Trailer / Teaser description" },
-        { "value": "opening-pages", "label": "Opening pages / First act" },
-        { "value": "game-narrative", "label": "Game narrative / Interactive story" }
+        {
+          "value": "script-excerpt",
+          "label": "Script / Screenplay excerpt"
+        },
+        {
+          "value": "chapter",
+          "label": "Novel chapter"
+        },
+        {
+          "value": "synopsis",
+          "label": "Synopsis / Summary"
+        },
+        {
+          "value": "logline",
+          "label": "Logline / Pitch"
+        },
+        {
+          "value": "trailer-description",
+          "label": "Trailer / Teaser description"
+        },
+        {
+          "value": "opening-pages",
+          "label": "Opening pages / First act"
+        },
+        {
+          "value": "game-narrative",
+          "label": "Game narrative / Interactive story"
+        }
       ]
     },
     {
@@ -55,13 +79,34 @@
       "type": "chips",
       "required": true,
       "options": [
-        { "value": "emotional-impact", "label": "Emotional impact" },
-        { "value": "comprehension", "label": "Comprehension & clarity" },
-        { "value": "engagement", "label": "Engagement & pacing" },
-        { "value": "cultural-resonance", "label": "Cultural resonance" },
-        { "value": "marketability", "label": "Marketability & hook" },
-        { "value": "character-appeal", "label": "Character appeal" },
-        { "value": "authenticity", "label": "Authenticity & credibility" }
+        {
+          "value": "emotional-impact",
+          "label": "Emotional impact"
+        },
+        {
+          "value": "comprehension",
+          "label": "Comprehension & clarity"
+        },
+        {
+          "value": "engagement",
+          "label": "Engagement & pacing"
+        },
+        {
+          "value": "cultural-resonance",
+          "label": "Cultural resonance"
+        },
+        {
+          "value": "marketability",
+          "label": "Marketability & hook"
+        },
+        {
+          "value": "character-appeal",
+          "label": "Character appeal"
+        },
+        {
+          "value": "authenticity",
+          "label": "Authenticity & credibility"
+        }
       ]
     },
     {
@@ -79,6 +124,15 @@
       "placeholder": "Name comparable titles in your genre — helps calibrate the simulated reactions against market expectations..."
     }
   ],
-  "recommendedPersonas": ["market-researcher", "literary-agent", "producer"],
-  "tags": ["audience-testing", "focus-group", "market-research", "reader-response", "audience-analysis", "creative-market"]
+  "recommendedPersonas": [
+    "creative-director"
+  ],
+  "tags": [
+    "audience-testing",
+    "focus-group",
+    "market-research",
+    "reader-response",
+    "audience-analysis",
+    "creative-market"
+  ]
 }

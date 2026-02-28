@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "maturity-assessment"],
+    "outputFormats": [
+      "detailed-findings",
+      "maturity-assessment"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -36,15 +39,42 @@
       "label": "What analysis do you need?",
       "required": true,
       "options": [
-        { "value": "unit-economics", "label": "Unit economics breakdown (VC)" },
-        { "value": "revenue-model", "label": "Revenue model analysis and projections" },
-        { "value": "quality-of-earnings", "label": "Quality of earnings analysis (PE)" },
-        { "value": "working-capital", "label": "Working capital and cash flow analysis" },
-        { "value": "lbo-returns", "label": "LBO returns analysis (PE buyout)" },
-        { "value": "comparable-analysis", "label": "Comparable company / transaction analysis" },
-        { "value": "sensitivity", "label": "Sensitivity analysis (what breaks the model?)" },
-        { "value": "red-flags", "label": "Financial statement red flags" },
-        { "value": "mgmt-vs-our-case", "label": "Management case vs. our case comparison" }
+        {
+          "value": "unit-economics",
+          "label": "Unit economics breakdown (VC)"
+        },
+        {
+          "value": "revenue-model",
+          "label": "Revenue model analysis and projections"
+        },
+        {
+          "value": "quality-of-earnings",
+          "label": "Quality of earnings analysis (PE)"
+        },
+        {
+          "value": "working-capital",
+          "label": "Working capital and cash flow analysis"
+        },
+        {
+          "value": "lbo-returns",
+          "label": "LBO returns analysis (PE buyout)"
+        },
+        {
+          "value": "comparable-analysis",
+          "label": "Comparable company / transaction analysis"
+        },
+        {
+          "value": "sensitivity",
+          "label": "Sensitivity analysis (what breaks the model?)"
+        },
+        {
+          "value": "red-flags",
+          "label": "Financial statement red flags"
+        },
+        {
+          "value": "mgmt-vs-our-case",
+          "label": "Management case vs. our case comparison"
+        }
       ]
     },
     {
@@ -53,10 +83,22 @@
       "label": "What financial data do you have?",
       "required": true,
       "options": [
-        { "value": "full", "label": "Full P&L and balance sheet" },
-        { "value": "summary", "label": "Summary financials / deck" },
-        { "value": "metrics-only", "label": "Key metrics only (ARR, growth, margins)" },
-        { "value": "nothing", "label": "Nothing yet — help me structure what to ask for" }
+        {
+          "value": "full",
+          "label": "Full P&L and balance sheet"
+        },
+        {
+          "value": "summary",
+          "label": "Summary financials / deck"
+        },
+        {
+          "value": "metrics-only",
+          "label": "Key metrics only (ARR, growth, margins)"
+        },
+        {
+          "value": "nothing",
+          "label": "Nothing yet — help me structure what to ask for"
+        }
       ]
     },
     {
@@ -72,12 +114,35 @@
       "label": "Investment type",
       "required": true,
       "options": [
-        { "value": "vc-early", "label": "VC Early" },
-        { "value": "vc-growth", "label": "VC Growth" },
-        { "value": "pe-growth", "label": "PE Growth" },
-        { "value": "pe-buyout", "label": "PE Buyout" }
+        {
+          "value": "vc-early",
+          "label": "VC Early"
+        },
+        {
+          "value": "vc-growth",
+          "label": "VC Growth"
+        },
+        {
+          "value": "pe-growth",
+          "label": "PE Growth"
+        },
+        {
+          "value": "pe-buyout",
+          "label": "PE Buyout"
+        }
       ]
     }
   ],
-  "tags": ["pe-vc", "financial-analysis", "unit-economics", "lbo", "quality-of-earnings", "dcf", "modelling"]
+  "tags": [
+    "pe-vc",
+    "financial-analysis",
+    "unit-economics",
+    "lbo",
+    "quality-of-earnings",
+    "dcf",
+    "modelling"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

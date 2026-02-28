@@ -39,13 +39,34 @@
       "type": "chips",
       "label": "Categories of personal data involved",
       "options": [
-        { "value": "identifiers", "label": "Personal identifiers" },
-        { "value": "financial", "label": "Financial data" },
-        { "value": "health", "label": "Health data" },
-        { "value": "biometric", "label": "Biometric" },
-        { "value": "children", "label": "Children's data" },
-        { "value": "criminal", "label": "Criminal records" },
-        { "value": "marketing_profiles", "label": "Marketing profiles" }
+        {
+          "value": "identifiers",
+          "label": "Personal identifiers"
+        },
+        {
+          "value": "financial",
+          "label": "Financial data"
+        },
+        {
+          "value": "health",
+          "label": "Health data"
+        },
+        {
+          "value": "biometric",
+          "label": "Biometric"
+        },
+        {
+          "value": "children",
+          "label": "Children's data"
+        },
+        {
+          "value": "criminal",
+          "label": "Criminal records"
+        },
+        {
+          "value": "marketing_profiles",
+          "label": "Marketing profiles"
+        }
       ]
     },
     {
@@ -53,10 +74,22 @@
       "type": "select",
       "label": "Volume of data subjects affected",
       "options": [
-        { "value": "small", "label": "Small (<1,000 people)" },
-        { "value": "medium", "label": "Medium (1,000–100k)" },
-        { "value": "large", "label": "Large (100k–1M)" },
-        { "value": "xlarge", "label": "Very large (>1M)" }
+        {
+          "value": "small",
+          "label": "Small (<1,000 people)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (1,000–100k)"
+        },
+        {
+          "value": "large",
+          "label": "Large (100k–1M)"
+        },
+        {
+          "value": "xlarge",
+          "label": "Very large (>1M)"
+        }
       ]
     },
     {
@@ -64,19 +97,39 @@
       "type": "chips",
       "label": "High-risk indicators present",
       "options": [
-        { "value": "systematic_monitoring", "label": "Systematic monitoring" },
-        { "value": "profiling", "label": "Profiling" },
-        { "value": "special_categories", "label": "Special categories" },
-        { "value": "children", "label": "Children" },
-        { "value": "new_technology", "label": "New technology" },
-        { "value": "automated_decisions", "label": "Automated decisions" },
-        { "value": "large_scale", "label": "Large-scale processing" }
+        {
+          "value": "systematic_monitoring",
+          "label": "Systematic monitoring"
+        },
+        {
+          "value": "profiling",
+          "label": "Profiling"
+        },
+        {
+          "value": "special_categories",
+          "label": "Special categories"
+        },
+        {
+          "value": "children",
+          "label": "Children"
+        },
+        {
+          "value": "new_technology",
+          "label": "New technology"
+        },
+        {
+          "value": "automated_decisions",
+          "label": "Automated decisions"
+        },
+        {
+          "value": "large_scale",
+          "label": "Large-scale processing"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "dpo",
-    "legal-expert"
+    "dpo"
   ],
   "tags": [
     "dpia",

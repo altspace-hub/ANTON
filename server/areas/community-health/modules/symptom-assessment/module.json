@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Community health triage, WHO IMCI guidelines, danger signs, referral criteria for low-resource settings" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Community health triage, WHO IMCI guidelines, danger signs, referral criteria for low-resource settings"
+      }
     }
   },
   "guidedInputs": [
@@ -28,11 +34,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "adult", "label": "Adult" },
-        { "value": "child-under-5", "label": "Child under 5" },
-        { "value": "baby-under-1", "label": "Baby under 1" },
-        { "value": "elderly", "label": "Elderly" },
-        { "value": "pregnant-woman", "label": "Pregnant woman" }
+        {
+          "value": "adult",
+          "label": "Adult"
+        },
+        {
+          "value": "child-under-5",
+          "label": "Child under 5"
+        },
+        {
+          "value": "baby-under-1",
+          "label": "Baby under 1"
+        },
+        {
+          "value": "elderly",
+          "label": "Elderly"
+        },
+        {
+          "value": "pregnant-woman",
+          "label": "Pregnant woman"
+        }
       ]
     },
     {
@@ -41,15 +62,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -58,15 +106,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "fever", "label": "Fever" },
-        { "value": "diarrhea", "label": "Diarrhea" },
-        { "value": "difficulty-breathing", "label": "Difficulty breathing" },
-        { "value": "severe-pain", "label": "Severe pain" },
-        { "value": "vomiting", "label": "Vomiting" },
-        { "value": "unconscious", "label": "Unconscious / not responding" },
-        { "value": "seizure", "label": "Seizure" },
-        { "value": "bleeding", "label": "Bleeding" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "fever",
+          "label": "Fever"
+        },
+        {
+          "value": "diarrhea",
+          "label": "Diarrhea"
+        },
+        {
+          "value": "difficulty-breathing",
+          "label": "Difficulty breathing"
+        },
+        {
+          "value": "severe-pain",
+          "label": "Severe pain"
+        },
+        {
+          "value": "vomiting",
+          "label": "Vomiting"
+        },
+        {
+          "value": "unconscious",
+          "label": "Unconscious / not responding"
+        },
+        {
+          "value": "seizure",
+          "label": "Seizure"
+        },
+        {
+          "value": "bleeding",
+          "label": "Bleeding"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -75,13 +150,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "just-started", "label": "Just started" },
-        { "value": "under-24h", "label": "Less than 24 hours" },
-        { "value": "2-3-days", "label": "2-3 days" },
-        { "value": "over-3-days", "label": "Over 3 days" }
+        {
+          "value": "just-started",
+          "label": "Just started"
+        },
+        {
+          "value": "under-24h",
+          "label": "Less than 24 hours"
+        },
+        {
+          "value": "2-3-days",
+          "label": "2-3 days"
+        },
+        {
+          "value": "over-3-days",
+          "label": "Over 3 days"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["community-health-worker", "nutrition-health-educator"],
-  "tags": ["triage", "symptoms", "referral", "danger-signs", "IMCI", "fever", "diarrhea", "malaria", "community-health"]
+  "recommendedPersonas": [
+    "community-health-worker",
+    "nutrition-health-educator"
+  ],
+  "tags": [
+    "triage",
+    "symptoms",
+    "referral",
+    "danger-signs",
+    "IMCI",
+    "fever",
+    "diarrhea",
+    "malaria",
+    "community-health"
+  ]
 }

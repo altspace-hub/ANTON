@@ -37,12 +37,30 @@
       "label": "Entity type",
       "required": true,
       "options": [
-        { "value": "standard_company", "label": "Standard Swedish company (AB/HB)" },
-        { "value": "financial_services", "label": "Financial services (partially exempt)" },
-        { "value": "real_estate", "label": "Real estate / property" },
-        { "value": "ngo", "label": "Non-profit / association" },
-        { "value": "eu_cross_border", "label": "Business with EU cross-border transactions" },
-        { "value": "import_export", "label": "Import/export business" }
+        {
+          "value": "standard_company",
+          "label": "Standard Swedish company (AB/HB)"
+        },
+        {
+          "value": "financial_services",
+          "label": "Financial services (partially exempt)"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real estate / property"
+        },
+        {
+          "value": "ngo",
+          "label": "Non-profit / association"
+        },
+        {
+          "value": "eu_cross_border",
+          "label": "Business with EU cross-border transactions"
+        },
+        {
+          "value": "import_export",
+          "label": "Import/export business"
+        }
       ]
     },
     {
@@ -65,7 +83,10 @@
       "placeholder": "Describe any transactions or adjustments that may require special VAT treatment this period."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "vat",

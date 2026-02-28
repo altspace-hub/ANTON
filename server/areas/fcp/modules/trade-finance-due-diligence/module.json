@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "action-plan"],
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -31,11 +34,26 @@
       "label": "Transaction Type",
       "required": true,
       "options": [
-        {"value": "lc", "label": "Letter of Credit"},
-        {"value": "doc-collection", "label": "Documentary Collection"},
-        {"value": "guarantee", "label": "Bank Guarantee"},
-        {"value": "open-account", "label": "Open Account"},
-        {"value": "commodity-finance", "label": "Commodity Finance"}
+        {
+          "value": "lc",
+          "label": "Letter of Credit"
+        },
+        {
+          "value": "doc-collection",
+          "label": "Documentary Collection"
+        },
+        {
+          "value": "guarantee",
+          "label": "Bank Guarantee"
+        },
+        {
+          "value": "open-account",
+          "label": "Open Account"
+        },
+        {
+          "value": "commodity-finance",
+          "label": "Commodity Finance"
+        }
       ]
     },
     {
@@ -58,7 +76,18 @@
       "placeholder": "Any concerns raised during initial review — e.g. pricing anomalies, unusual routing, counterparty connections, document discrepancies..."
     }
   ],
-  "recommendedPersonas": ["fcp-expert"],
-  "recommendedSkills": ["skill-tbml-methods", "skill-fatf-mutual-evaluation"],
-  "tags": ["trade-finance", "due-diligence", "tbml", "letters-of-credit", "fcp"]
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-tbml-methods",
+    "skill-fatf-mutual-evaluation"
+  ],
+  "tags": [
+    "trade-finance",
+    "due-diligence",
+    "tbml",
+    "letters-of-credit",
+    "fcp"
+  ]
 }

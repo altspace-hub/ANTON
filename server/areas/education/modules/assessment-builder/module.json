@@ -125,7 +125,9 @@
       "placeholder": "Describe the topic, learning objectives being assessed, number of questions, time allocation, and any specific requirements."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "education-expert"
+  ],
   "tags": [
     "assessment",
     "quiz",

@@ -9,7 +9,9 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["detailed-findings"],
+    "outputFormats": [
+      "detailed-findings"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -40,15 +42,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "novel", "label": "Novel / Prose Fiction" },
-        { "value": "play", "label": "Stage Play" },
-        { "value": "screenplay", "label": "Screenplay" },
-        { "value": "poetry", "label": "Poetry" },
-        { "value": "song-lyrics", "label": "Song Lyrics" },
-        { "value": "game-dialogue", "label": "Game Dialogue / Interactive" },
-        { "value": "subtitles", "label": "Subtitles / SDH" },
-        { "value": "picture-book", "label": "Picture Book / Children's" },
-        { "value": "short-story", "label": "Short Story" }
+        {
+          "value": "novel",
+          "label": "Novel / Prose Fiction"
+        },
+        {
+          "value": "play",
+          "label": "Stage Play"
+        },
+        {
+          "value": "screenplay",
+          "label": "Screenplay"
+        },
+        {
+          "value": "poetry",
+          "label": "Poetry"
+        },
+        {
+          "value": "song-lyrics",
+          "label": "Song Lyrics"
+        },
+        {
+          "value": "game-dialogue",
+          "label": "Game Dialogue / Interactive"
+        },
+        {
+          "value": "subtitles",
+          "label": "Subtitles / SDH"
+        },
+        {
+          "value": "picture-book",
+          "label": "Picture Book / Children's"
+        },
+        {
+          "value": "short-story",
+          "label": "Short Story"
+        }
       ]
     },
     {
@@ -57,9 +86,18 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "faithful", "label": "Faithful / Literal — preserve original structure closely" },
-        { "value": "balanced", "label": "Balanced — equivalence in meaning and feel" },
-        { "value": "adaptive", "label": "Free / Adaptive — prioritise natural target-language expression" }
+        {
+          "value": "faithful",
+          "label": "Faithful / Literal — preserve original structure closely"
+        },
+        {
+          "value": "balanced",
+          "label": "Balanced — equivalence in meaning and feel"
+        },
+        {
+          "value": "adaptive",
+          "label": "Free / Adaptive — prioritise natural target-language expression"
+        }
       ]
     },
     {
@@ -68,9 +106,18 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "minimal", "label": "Minimal — keep cultural references intact" },
-        { "value": "moderate", "label": "Moderate — explain or lightly adapt unfamiliar references" },
-        { "value": "full", "label": "Full localisation — replace with culturally equivalent references" }
+        {
+          "value": "minimal",
+          "label": "Minimal — keep cultural references intact"
+        },
+        {
+          "value": "moderate",
+          "label": "Moderate — explain or lightly adapt unfamiliar references"
+        },
+        {
+          "value": "full",
+          "label": "Full localisation — replace with culturally equivalent references"
+        }
       ]
     },
     {
@@ -79,11 +126,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "formal", "label": "Formal / Literary" },
-        { "value": "informal", "label": "Informal / Colloquial" },
-        { "value": "mixed", "label": "Mixed (varies by character/scene)" },
-        { "value": "period", "label": "Period-specific / Archaic" },
-        { "value": "dialect", "label": "Dialect / Regional" }
+        {
+          "value": "formal",
+          "label": "Formal / Literary"
+        },
+        {
+          "value": "informal",
+          "label": "Informal / Colloquial"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed (varies by character/scene)"
+        },
+        {
+          "value": "period",
+          "label": "Period-specific / Archaic"
+        },
+        {
+          "value": "dialect",
+          "label": "Dialect / Regional"
+        }
       ]
     },
     {
@@ -101,6 +163,16 @@
       "placeholder": "Author's intentions, glossary of character names/places, previous translation decisions, style guide..."
     }
   ],
-  "recommendedPersonas": ["translator", "editor", "dramaturg"],
-  "tags": ["translation", "literary-translation", "localisation", "adaptation", "cultural-adaptation", "subtitles", "multilingual"]
+  "recommendedPersonas": [
+    "creative-director"
+  ],
+  "tags": [
+    "translation",
+    "literary-translation",
+    "localisation",
+    "adaptation",
+    "cultural-adaptation",
+    "subtitles",
+    "multilingual"
+  ]
 }

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Minimum wage rates by country and sector, lawful vs. unlawful wage deductions, in-kind payment rules" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Minimum wage rates by country and sector, lawful vs. unlawful wage deductions, in-kind payment rules"
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
-        { "value": "uae", "label": "UAE (migrant worker)" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia (migrant worker)"
+        },
+        {
+          "value": "uae",
+          "label": "UAE (migrant worker)"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -48,14 +90,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "general", "label": "General (no specific sector)" },
-        { "value": "domestic", "label": "Domestic worker (cleaner, cook, nanny)" },
-        { "value": "agriculture", "label": "Agriculture / farming" },
-        { "value": "construction", "label": "Construction" },
-        { "value": "garment-textile", "label": "Garment / textile / factory" },
-        { "value": "security", "label": "Security guard" },
-        { "value": "hospitality", "label": "Hospitality / hotel / restaurant" },
-        { "value": "platform-gig", "label": "Platform / gig (app-based delivery, rides)" }
+        {
+          "value": "general",
+          "label": "General (no specific sector)"
+        },
+        {
+          "value": "domestic",
+          "label": "Domestic worker (cleaner, cook, nanny)"
+        },
+        {
+          "value": "agriculture",
+          "label": "Agriculture / farming"
+        },
+        {
+          "value": "construction",
+          "label": "Construction"
+        },
+        {
+          "value": "garment-textile",
+          "label": "Garment / textile / factory"
+        },
+        {
+          "value": "security",
+          "label": "Security guard"
+        },
+        {
+          "value": "hospitality",
+          "label": "Hospitality / hotel / restaurant"
+        },
+        {
+          "value": "platform-gig",
+          "label": "Platform / gig (app-based delivery, rides)"
+        }
       ]
     },
     {
@@ -64,12 +130,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "monthly-salary", "label": "Monthly salary" },
-        { "value": "daily-wage", "label": "Daily wage" },
-        { "value": "hourly", "label": "Hourly" },
-        { "value": "piece-rate", "label": "Piece-rate (paid per item made)" },
-        { "value": "in-kind", "label": "In-kind (food and housing instead of or plus cash)" },
-        { "value": "commission-only", "label": "Commission only" }
+        {
+          "value": "monthly-salary",
+          "label": "Monthly salary"
+        },
+        {
+          "value": "daily-wage",
+          "label": "Daily wage"
+        },
+        {
+          "value": "hourly",
+          "label": "Hourly"
+        },
+        {
+          "value": "piece-rate",
+          "label": "Piece-rate (paid per item made)"
+        },
+        {
+          "value": "in-kind",
+          "label": "In-kind (food and housing instead of or plus cash)"
+        },
+        {
+          "value": "commission-only",
+          "label": "Commission only"
+        }
       ]
     },
     {
@@ -78,13 +162,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "check-if-legal", "label": "Check if my wage is legal" },
-        { "value": "underpaid", "label": "I think I am being underpaid" },
-        { "value": "in-kind-counts", "label": "Employer says food / housing counts as part of my wage" },
-        { "value": "deductions", "label": "Money is being taken out of my pay" }
+        {
+          "value": "check-if-legal",
+          "label": "Check if my wage is legal"
+        },
+        {
+          "value": "underpaid",
+          "label": "I think I am being underpaid"
+        },
+        {
+          "value": "in-kind-counts",
+          "label": "Employer says food / housing counts as part of my wage"
+        },
+        {
+          "value": "deductions",
+          "label": "Money is being taken out of my pay"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
-  "tags": ["workers-rights", "bop", "informal-economy", "minimum-wage", "underpayment", "wage-theft", "deductions", "domestic-workers", "piece-rate"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid"
+  ],
+  "tags": [
+    "workers-rights",
+    "bop",
+    "informal-economy",
+    "minimum-wage",
+    "underpayment",
+    "wage-theft",
+    "deductions",
+    "domestic-workers",
+    "piece-rate"
+  ]
 }

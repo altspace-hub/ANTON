@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Soil health assessment, simple field tests, composting, organic soil improvement, soil types and structure for smallholder farming" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Soil health assessment, simple field tests, composting, organic soil improvement, soil types and structure for smallholder farming"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "east-africa", "label": "East Africa" },
-        { "value": "west-africa", "label": "West Africa" },
-        { "value": "southern-africa", "label": "Southern Africa" },
-        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
-        { "value": "southeast-asia", "label": "Southeast Asia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southern-africa",
+          "label": "Southern Africa"
+        },
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Bangladesh)"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -42,12 +66,30 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "dark-brown-black", "label": "Dark brown or black (rich)" },
-        { "value": "light-brown", "label": "Light brown" },
-        { "value": "reddish", "label": "Reddish" },
-        { "value": "pale-yellow", "label": "Pale or yellow" },
-        { "value": "grey", "label": "Grey" },
-        { "value": "clay-grey", "label": "Clay grey (sits in water)" }
+        {
+          "value": "dark-brown-black",
+          "label": "Dark brown or black (rich)"
+        },
+        {
+          "value": "light-brown",
+          "label": "Light brown"
+        },
+        {
+          "value": "reddish",
+          "label": "Reddish"
+        },
+        {
+          "value": "pale-yellow",
+          "label": "Pale or yellow"
+        },
+        {
+          "value": "grey",
+          "label": "Grey"
+        },
+        {
+          "value": "clay-grey",
+          "label": "Clay grey (sits in water)"
+        }
       ]
     },
     {
@@ -56,10 +98,22 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "good-crops", "label": "Good crops, healthy plants" },
-        { "value": "weak-thin", "label": "Weak or thin crops" },
-        { "value": "almost-nothing", "label": "Almost nothing grows well" },
-        { "value": "mixed", "label": "Some areas good, some bad" }
+        {
+          "value": "good-crops",
+          "label": "Good crops, healthy plants"
+        },
+        {
+          "value": "weak-thin",
+          "label": "Weak or thin crops"
+        },
+        {
+          "value": "almost-nothing",
+          "label": "Almost nothing grows well"
+        },
+        {
+          "value": "mixed",
+          "label": "Some areas good, some bad"
+        }
       ]
     },
     {
@@ -68,10 +122,22 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "same-crop-3-years", "label": "Same crop for 3 or more years" },
-        { "value": "rotated", "label": "Rotated different crops" },
-        { "value": "new-land", "label": "New land, never farmed" },
-        { "value": "was-forest-grassland", "label": "Was forest or grassland" }
+        {
+          "value": "same-crop-3-years",
+          "label": "Same crop for 3 or more years"
+        },
+        {
+          "value": "rotated",
+          "label": "Rotated different crops"
+        },
+        {
+          "value": "new-land",
+          "label": "New land, never farmed"
+        },
+        {
+          "value": "was-forest-grassland",
+          "label": "Was forest or grassland"
+        }
       ]
     },
     {
@@ -80,14 +146,43 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "low-yields", "label": "Low yields year after year" },
-        { "value": "hard-soil", "label": "Soil feels very hard" },
-        { "value": "waterlogging", "label": "Water sits on the field" },
-        { "value": "erosion", "label": "Soil washing away" },
-        { "value": "all", "label": "All of these issues" }
+        {
+          "value": "low-yields",
+          "label": "Low yields year after year"
+        },
+        {
+          "value": "hard-soil",
+          "label": "Soil feels very hard"
+        },
+        {
+          "value": "waterlogging",
+          "label": "Water sits on the field"
+        },
+        {
+          "value": "erosion",
+          "label": "Soil washing away"
+        },
+        {
+          "value": "all",
+          "label": "All of these issues"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["soil-health", "composting", "green-manure", "soil-testing", "organic-matter", "erosion", "waterlogging", "fertility", "smallholder", "no-cost-improvement"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "soil-health",
+    "composting",
+    "green-manure",
+    "soil-testing",
+    "organic-matter",
+    "erosion",
+    "waterlogging",
+    "fertility",
+    "smallholder",
+    "no-cost-improvement"
+  ]
 }

@@ -116,7 +116,10 @@
       "placeholder": "e.g., Tax authority is challenging our management fee allocation method. We need to demonstrate arm's length pricing for EUR 5M annual IT services charge from parent to subsidiaries."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "accounting",
     "transfer-pricing",

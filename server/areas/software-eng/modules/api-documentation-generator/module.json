@@ -36,11 +36,26 @@
       "label": "API type",
       "required": true,
       "options": [
-        { "value": "rest", "label": "REST API" },
-        { "value": "graphql", "label": "GraphQL" },
-        { "value": "grpc", "label": "gRPC" },
-        { "value": "websocket", "label": "WebSocket" },
-        { "value": "sdk", "label": "SDK / Client Library" }
+        {
+          "value": "rest",
+          "label": "REST API"
+        },
+        {
+          "value": "graphql",
+          "label": "GraphQL"
+        },
+        {
+          "value": "grpc",
+          "label": "gRPC"
+        },
+        {
+          "value": "websocket",
+          "label": "WebSocket"
+        },
+        {
+          "value": "sdk",
+          "label": "SDK / Client Library"
+        }
       ]
     },
     {
@@ -48,9 +63,18 @@
       "type": "select",
       "label": "Primary audience",
       "options": [
-        { "value": "external", "label": "External developers (public API)" },
-        { "value": "partner", "label": "Partner developers (private/partner API)" },
-        { "value": "internal", "label": "Internal teams only" }
+        {
+          "value": "external",
+          "label": "External developers (public API)"
+        },
+        {
+          "value": "partner",
+          "label": "Partner developers (private/partner API)"
+        },
+        {
+          "value": "internal",
+          "label": "Internal teams only"
+        }
       ]
     },
     {
@@ -65,12 +89,30 @@
       "type": "select",
       "label": "Authentication method",
       "options": [
-        { "value": "api_key", "label": "API Key (header or query param)" },
-        { "value": "bearer", "label": "Bearer Token (JWT)" },
-        { "value": "oauth2", "label": "OAuth 2.0" },
-        { "value": "basic", "label": "Basic Authentication" },
-        { "value": "none", "label": "No authentication" },
-        { "value": "other", "label": "Other / describe below" }
+        {
+          "value": "api_key",
+          "label": "API Key (header or query param)"
+        },
+        {
+          "value": "bearer",
+          "label": "Bearer Token (JWT)"
+        },
+        {
+          "value": "oauth2",
+          "label": "OAuth 2.0"
+        },
+        {
+          "value": "basic",
+          "label": "Basic Authentication"
+        },
+        {
+          "value": "none",
+          "label": "No authentication"
+        },
+        {
+          "value": "other",
+          "label": "Other / describe below"
+        }
       ]
     },
     {
@@ -80,7 +122,9 @@
       "placeholder": "e.g., Rate limits (100 req/min per API key), supported regions (EU-only), versioning policy (breaking changes in major versions only), known limitations, sandbox environment URL"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "api",
     "documentation",

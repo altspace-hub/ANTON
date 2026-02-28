@@ -35,11 +35,26 @@
       "label": "Reporting framework",
       "required": true,
       "options": [
-        { "value": "csrd_esrs", "label": "CSRD / ESRS (EU mandatory reporting)" },
-        { "value": "gri", "label": "GRI Standards (Global Reporting Initiative)" },
-        { "value": "tcfd", "label": "TCFD (Task Force on Climate-related Financial Disclosures)" },
-        { "value": "un_sdg", "label": "UN Sustainable Development Goals" },
-        { "value": "integrated", "label": "Integrated (combining multiple frameworks)" }
+        {
+          "value": "csrd_esrs",
+          "label": "CSRD / ESRS (EU mandatory reporting)"
+        },
+        {
+          "value": "gri",
+          "label": "GRI Standards (Global Reporting Initiative)"
+        },
+        {
+          "value": "tcfd",
+          "label": "TCFD (Task Force on Climate-related Financial Disclosures)"
+        },
+        {
+          "value": "un_sdg",
+          "label": "UN Sustainable Development Goals"
+        },
+        {
+          "value": "integrated",
+          "label": "Integrated (combining multiple frameworks)"
+        }
       ]
     },
     {
@@ -48,16 +63,46 @@
       "label": "Report section to draft",
       "required": true,
       "options": [
-        { "value": "governance", "label": "Governance (board oversight, governance structures)" },
-        { "value": "strategy", "label": "Strategy (risks, opportunities, business model)" },
-        { "value": "climate_environment", "label": "Climate and environment (GHG, energy, nature)" },
-        { "value": "own_workforce", "label": "Own workforce (employees, health & safety, DEI)" },
-        { "value": "value_chain_workers", "label": "Value chain workers and suppliers" },
-        { "value": "communities", "label": "Communities and affected stakeholders" },
-        { "value": "business_conduct", "label": "Business conduct and ethics" },
-        { "value": "executive_summary", "label": "CEO/Executive message and highlights" },
-        { "value": "materiality", "label": "Materiality assessment results" },
-        { "value": "targets_progress", "label": "Targets and progress" }
+        {
+          "value": "governance",
+          "label": "Governance (board oversight, governance structures)"
+        },
+        {
+          "value": "strategy",
+          "label": "Strategy (risks, opportunities, business model)"
+        },
+        {
+          "value": "climate_environment",
+          "label": "Climate and environment (GHG, energy, nature)"
+        },
+        {
+          "value": "own_workforce",
+          "label": "Own workforce (employees, health & safety, DEI)"
+        },
+        {
+          "value": "value_chain_workers",
+          "label": "Value chain workers and suppliers"
+        },
+        {
+          "value": "communities",
+          "label": "Communities and affected stakeholders"
+        },
+        {
+          "value": "business_conduct",
+          "label": "Business conduct and ethics"
+        },
+        {
+          "value": "executive_summary",
+          "label": "CEO/Executive message and highlights"
+        },
+        {
+          "value": "materiality",
+          "label": "Materiality assessment results"
+        },
+        {
+          "value": "targets_progress",
+          "label": "Targets and progress"
+        }
       ]
     },
     {
@@ -78,13 +123,24 @@
       "type": "select",
       "label": "Report tone",
       "options": [
-        { "value": "formal", "label": "Formal compliance tone (regulatory, assurance-focused)" },
-        { "value": "transparent", "label": "Transparent and balanced (including challenges)" },
-        { "value": "stakeholder", "label": "Stakeholder-friendly (accessible, engaging narrative)" }
+        {
+          "value": "formal",
+          "label": "Formal compliance tone (regulatory, assurance-focused)"
+        },
+        {
+          "value": "transparent",
+          "label": "Transparent and balanced (including challenges)"
+        },
+        {
+          "value": "stakeholder",
+          "label": "Stakeholder-friendly (accessible, engaging narrative)"
+        }
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "sustainability-reporting",
     "csrd",

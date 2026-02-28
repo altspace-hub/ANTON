@@ -34,11 +34,26 @@
       "label": "Entity Type",
       "required": true,
       "options": [
-        { "value": "islamic_bank", "label": "Islamic Bank" },
-        { "value": "takaful", "label": "Takaful Operator" },
-        { "value": "investment_fund", "label": "Islamic Investment Fund" },
-        { "value": "waqf", "label": "Waqf Institution" },
-        { "value": "islamic_window", "label": "Conventional institution with Islamic window" }
+        {
+          "value": "islamic_bank",
+          "label": "Islamic Bank"
+        },
+        {
+          "value": "takaful",
+          "label": "Takaful Operator"
+        },
+        {
+          "value": "investment_fund",
+          "label": "Islamic Investment Fund"
+        },
+        {
+          "value": "waqf",
+          "label": "Waqf Institution"
+        },
+        {
+          "value": "islamic_window",
+          "label": "Conventional institution with Islamic window"
+        }
       ]
     },
     {
@@ -47,13 +62,34 @@
       "label": "Jurisdiction",
       "required": true,
       "options": [
-        { "value": "bahrain", "label": "Bahrain (AAOIFI mandatory)" },
-        { "value": "saudi", "label": "Saudi Arabia" },
-        { "value": "uae", "label": "UAE" },
-        { "value": "malaysia", "label": "Malaysia (IFRS-based, partial AAOIFI Sharia)" },
-        { "value": "jordan", "label": "Jordan" },
-        { "value": "sudan", "label": "Sudan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "bahrain",
+          "label": "Bahrain (AAOIFI mandatory)"
+        },
+        {
+          "value": "saudi",
+          "label": "Saudi Arabia"
+        },
+        {
+          "value": "uae",
+          "label": "UAE"
+        },
+        {
+          "value": "malaysia",
+          "label": "Malaysia (IFRS-based, partial AAOIFI Sharia)"
+        },
+        {
+          "value": "jordan",
+          "label": "Jordan"
+        },
+        {
+          "value": "sudan",
+          "label": "Sudan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,10 +97,22 @@
       "type": "multi-select",
       "label": "Focus Areas",
       "options": [
-        { "value": "fas", "label": "FAS — Financial Accounting Standards" },
-        { "value": "ss", "label": "SS — Sharia Standards and financial statement implications" },
-        { "value": "gsifi", "label": "GSIFI — Governance Standards for Islamic Financial Institutions" },
-        { "value": "agsifi", "label": "AGSIFI — Auditing Standards" }
+        {
+          "value": "fas",
+          "label": "FAS — Financial Accounting Standards"
+        },
+        {
+          "value": "ss",
+          "label": "SS — Sharia Standards and financial statement implications"
+        },
+        {
+          "value": "gsifi",
+          "label": "GSIFI — Governance Standards for Islamic Financial Institutions"
+        },
+        {
+          "value": "agsifi",
+          "label": "AGSIFI — Auditing Standards"
+        }
       ]
     },
     {
@@ -74,7 +122,10 @@
       "placeholder": "e.g. Transition from legacy Murabaha accounting to FAS 28, Sukuk issuance accounting under FAS 33, Sharia board disclosure requirements..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "aaoifi",
     "islamic-finance",

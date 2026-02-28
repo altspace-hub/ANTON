@@ -34,10 +34,22 @@
       "label": "Backlog size",
       "required": true,
       "options": [
-        { "value": "small", "label": "<10 items" },
-        { "value": "medium", "label": "10–50 items" },
-        { "value": "large", "label": "50–200 items" },
-        { "value": "xlarge", "label": ">200 items" }
+        {
+          "value": "small",
+          "label": "<10 items"
+        },
+        {
+          "value": "medium",
+          "label": "10–50 items"
+        },
+        {
+          "value": "large",
+          "label": "50–200 items"
+        },
+        {
+          "value": "xlarge",
+          "label": ">200 items"
+        }
       ]
     },
     {
@@ -46,12 +58,30 @@
       "label": "Prioritisation method",
       "required": true,
       "options": [
-        { "value": "rice", "label": "RICE (Reach / Impact / Confidence / Effort)" },
-        { "value": "moscow", "label": "MoSCoW" },
-        { "value": "kano", "label": "Kano model" },
-        { "value": "ice", "label": "ICE" },
-        { "value": "weighted", "label": "Weighted scoring" },
-        { "value": "choose", "label": "Help me choose" }
+        {
+          "value": "rice",
+          "label": "RICE (Reach / Impact / Confidence / Effort)"
+        },
+        {
+          "value": "moscow",
+          "label": "MoSCoW"
+        },
+        {
+          "value": "kano",
+          "label": "Kano model"
+        },
+        {
+          "value": "ice",
+          "label": "ICE"
+        },
+        {
+          "value": "weighted",
+          "label": "Weighted scoring"
+        },
+        {
+          "value": "choose",
+          "label": "Help me choose"
+        }
       ]
     },
     {
@@ -59,11 +89,26 @@
       "type": "chips",
       "label": "Active constraints",
       "options": [
-        { "value": "eng_capacity", "label": "Engineering capacity" },
-        { "value": "design_resources", "label": "Design resources" },
-        { "value": "q_deadline", "label": "Q deadline" },
-        { "value": "regulatory", "label": "Regulatory requirement" },
-        { "value": "customer_commit", "label": "Customer commitment" }
+        {
+          "value": "eng_capacity",
+          "label": "Engineering capacity"
+        },
+        {
+          "value": "design_resources",
+          "label": "Design resources"
+        },
+        {
+          "value": "q_deadline",
+          "label": "Q deadline"
+        },
+        {
+          "value": "regulatory",
+          "label": "Regulatory requirement"
+        },
+        {
+          "value": "customer_commit",
+          "label": "Customer commitment"
+        }
       ]
     },
     {
@@ -74,7 +119,8 @@
     }
   ],
   "recommendedPersonas": [
-    "policy-analyst"
+    "strategy-expert",
+    "tech-expert"
   ],
   "tags": [
     "prioritisation",

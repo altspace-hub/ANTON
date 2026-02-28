@@ -9,7 +9,11 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "balanced",
-    "outputFormats": ["executive-summary", "decision-memo", "detailed-findings"],
+    "outputFormats": [
+      "executive-summary",
+      "decision-memo",
+      "detailed-findings"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -37,11 +41,26 @@
       "type": "chips",
       "required": false,
       "options": [
-        { "value": "government", "label": "Government" },
-        { "value": "business", "label": "Business" },
-        { "value": "civil-society", "label": "Civil society" },
-        { "value": "international", "label": "International bodies" },
-        { "value": "multiple", "label": "Multiple / Cross-cutting" }
+        {
+          "value": "government",
+          "label": "Government"
+        },
+        {
+          "value": "business",
+          "label": "Business"
+        },
+        {
+          "value": "civil-society",
+          "label": "Civil society"
+        },
+        {
+          "value": "international",
+          "label": "International bodies"
+        },
+        {
+          "value": "multiple",
+          "label": "Multiple / Cross-cutting"
+        }
       ]
     },
     {
@@ -50,10 +69,22 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "urgent", "label": "Urgent (this week)" },
-        { "value": "short", "label": "Short (1 month)" },
-        { "value": "medium", "label": "Medium (3–6 months)" },
-        { "value": "long-term", "label": "Long-term" }
+        {
+          "value": "urgent",
+          "label": "Urgent (this week)"
+        },
+        {
+          "value": "short",
+          "label": "Short (1 month)"
+        },
+        {
+          "value": "medium",
+          "label": "Medium (3–6 months)"
+        },
+        {
+          "value": "long-term",
+          "label": "Long-term"
+        }
       ]
     },
     {
@@ -62,14 +93,40 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "green-book", "label": "UK Green Book" },
-        { "value": "eu-impact-assessment", "label": "EU Impact Assessment" },
-        { "value": "oecd-ria", "label": "OECD RIA" },
-        { "value": "cost-benefit", "label": "Cost-Benefit Analysis" },
-        { "value": "general", "label": "Other / General" }
+        {
+          "value": "green-book",
+          "label": "UK Green Book"
+        },
+        {
+          "value": "eu-impact-assessment",
+          "label": "EU Impact Assessment"
+        },
+        {
+          "value": "oecd-ria",
+          "label": "OECD RIA"
+        },
+        {
+          "value": "cost-benefit",
+          "label": "Cost-Benefit Analysis"
+        },
+        {
+          "value": "general",
+          "label": "Other / General"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["policy-analyst", "legal-expert"],
-  "tags": ["policy", "government", "policy-brief", "option-appraisal", "cost-benefit", "stakeholder-analysis", "evidence-based", "public-administration"]
+  "recommendedPersonas": [
+    "policy-analyst"
+  ],
+  "tags": [
+    "policy",
+    "government",
+    "policy-brief",
+    "option-appraisal",
+    "cost-benefit",
+    "stakeholder-analysis",
+    "evidence-based",
+    "public-administration"
+  ]
 }

@@ -35,11 +35,26 @@
       "label": "Applicable Framework",
       "required": true,
       "options": [
-        { "value": "sox", "label": "SOX Section 302 / 404 (US-listed)" },
-        { "value": "jsox", "label": "J-SOX — Financial Instruments and Exchange Act (Japan)" },
-        { "value": "king_iv", "label": "King IV — Internal controls (South Africa)" },
-        { "value": "coso_only", "label": "COSO framework only (non-listed best practice)" },
-        { "value": "eu", "label": "EU equivalent (Transparency Directive / CSRD)" }
+        {
+          "value": "sox",
+          "label": "SOX Section 302 / 404 (US-listed)"
+        },
+        {
+          "value": "jsox",
+          "label": "J-SOX — Financial Instruments and Exchange Act (Japan)"
+        },
+        {
+          "value": "king_iv",
+          "label": "King IV — Internal controls (South Africa)"
+        },
+        {
+          "value": "coso_only",
+          "label": "COSO framework only (non-listed best practice)"
+        },
+        {
+          "value": "eu",
+          "label": "EU equivalent (Transparency Directive / CSRD)"
+        }
       ]
     },
     {
@@ -48,11 +63,26 @@
       "label": "Entity Type",
       "required": true,
       "options": [
-        { "value": "us_listed", "label": "US-listed company (SEC registrant)" },
-        { "value": "japanese_listed", "label": "Japanese-listed company" },
-        { "value": "eu_listed", "label": "EU-listed company" },
-        { "value": "subsidiary", "label": "Subsidiary of listed company (SOX scope)" },
-        { "value": "private", "label": "Private company (best practice / lender requirement)" }
+        {
+          "value": "us_listed",
+          "label": "US-listed company (SEC registrant)"
+        },
+        {
+          "value": "japanese_listed",
+          "label": "Japanese-listed company"
+        },
+        {
+          "value": "eu_listed",
+          "label": "EU-listed company"
+        },
+        {
+          "value": "subsidiary",
+          "label": "Subsidiary of listed company (SOX scope)"
+        },
+        {
+          "value": "private",
+          "label": "Private company (best practice / lender requirement)"
+        }
       ]
     },
     {
@@ -60,11 +90,26 @@
       "type": "multi-select",
       "label": "Focus Areas",
       "options": [
-        { "value": "elc", "label": "Entity-level controls (tone at the top, risk assessment, monitoring)" },
-        { "value": "itgc", "label": "IT general controls (access management, change management, operations)" },
-        { "value": "kfsc", "label": "Key financial statement controls (process-level)" },
-        { "value": "fraud", "label": "Fraud risk controls" },
-        { "value": "disclosure", "label": "Disclosure controls and procedures (DC&P)" }
+        {
+          "value": "elc",
+          "label": "Entity-level controls (tone at the top, risk assessment, monitoring)"
+        },
+        {
+          "value": "itgc",
+          "label": "IT general controls (access management, change management, operations)"
+        },
+        {
+          "value": "kfsc",
+          "label": "Key financial statement controls (process-level)"
+        },
+        {
+          "value": "fraud",
+          "label": "Fraud risk controls"
+        },
+        {
+          "value": "disclosure",
+          "label": "Disclosure controls and procedures (DC&P)"
+        }
       ]
     },
     {
@@ -74,7 +119,10 @@
       "placeholder": "e.g. External auditor identified a significant deficiency in revenue recognition controls, IT access provisioning not reviewed timely, management override risk in journal entry approval..."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "finance-expert",
+    "auditor"
+  ],
   "tags": [
     "internal-controls",
     "sox",

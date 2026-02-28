@@ -9,7 +9,11 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["impact-assessment", "executive-summary", "action-plan"],
+    "outputFormats": [
+      "impact-assessment",
+      "executive-summary",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -31,13 +35,34 @@
       "label": "Affected Country / Region",
       "required": true,
       "options": [
-        {"value": "somalia", "label": "Somalia"},
-        {"value": "afghanistan", "label": "Afghanistan"},
-        {"value": "myanmar", "label": "Myanmar"},
-        {"value": "yemen", "label": "Yemen"},
-        {"value": "haiti", "label": "Haiti"},
-        {"value": "pacific-island", "label": "Pacific Island nation"},
-        {"value": "other", "label": "Other"}
+        {
+          "value": "somalia",
+          "label": "Somalia"
+        },
+        {
+          "value": "afghanistan",
+          "label": "Afghanistan"
+        },
+        {
+          "value": "myanmar",
+          "label": "Myanmar"
+        },
+        {
+          "value": "yemen",
+          "label": "Yemen"
+        },
+        {
+          "value": "haiti",
+          "label": "Haiti"
+        },
+        {
+          "value": "pacific-island",
+          "label": "Pacific Island nation"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,11 +71,26 @@
       "label": "Corridor / Sector Type",
       "required": true,
       "options": [
-        {"value": "remittance", "label": "Remittance corridor"},
-        {"value": "trade-finance", "label": "Trade finance"},
-        {"value": "humanitarian", "label": "Humanitarian"},
-        {"value": "ngo", "label": "NGO / Civil Society"},
-        {"value": "other", "label": "Other"}
+        {
+          "value": "remittance",
+          "label": "Remittance corridor"
+        },
+        {
+          "value": "trade-finance",
+          "label": "Trade finance"
+        },
+        {
+          "value": "humanitarian",
+          "label": "Humanitarian"
+        },
+        {
+          "value": "ngo",
+          "label": "NGO / Civil Society"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -66,7 +106,17 @@
       "placeholder": "What alternatives currently exist or have been proposed? e.g. mobile money, regional banks, new payment corridors, central bank solutions..."
     }
   ],
-  "recommendedPersonas": ["fcp-expert", "legal-expert"],
-  "recommendedSkills": ["skill-fatf-mutual-evaluation"],
-  "tags": ["de-risking", "financial-inclusion", "correspondent-banking", "humanitarian", "fcp"]
+  "recommendedPersonas": [
+    "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "skill-fatf-mutual-evaluation"
+  ],
+  "tags": [
+    "de-risking",
+    "financial-inclusion",
+    "correspondent-banking",
+    "humanitarian",
+    "fcp"
+  ]
 }

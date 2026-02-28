@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,11 +78,26 @@
       "label": "What type of group lending are you involved in?",
       "required": true,
       "options": [
-        { "value": "grameen", "label": "Grameen solidarity group" },
-        { "value": "village-banking", "label": "Village banking" },
-        { "value": "shg", "label": "Self-Help Group (SHG)" },
-        { "value": "vsla", "label": "Village Savings and Loan Association (VSLA)" },
-        { "value": "dont-know", "label": "I am not sure of the model" }
+        {
+          "value": "grameen",
+          "label": "Grameen solidarity group"
+        },
+        {
+          "value": "village-banking",
+          "label": "Village banking"
+        },
+        {
+          "value": "shg",
+          "label": "Self-Help Group (SHG)"
+        },
+        {
+          "value": "vsla",
+          "label": "Village Savings and Loan Association (VSLA)"
+        },
+        {
+          "value": "dont-know",
+          "label": "I am not sure of the model"
+        }
       ]
     },
     {
@@ -62,14 +106,28 @@
       "label": "What is your situation?",
       "required": true,
       "options": [
-        { "value": "considering", "label": "Considering joining a group loan" },
-        { "value": "in-group-problem", "label": "Already in a group and have a problem" },
-        { "value": "want-to-form", "label": "Want to form a group" },
-        { "value": "member-not-paying", "label": "A group member is not paying" }
+        {
+          "value": "considering",
+          "label": "Considering joining a group loan"
+        },
+        {
+          "value": "in-group-problem",
+          "label": "Already in a group and have a problem"
+        },
+        {
+          "value": "want-to-form",
+          "label": "Want to form a group"
+        },
+        {
+          "value": "member-not-paying",
+          "label": "A group member is not paying"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

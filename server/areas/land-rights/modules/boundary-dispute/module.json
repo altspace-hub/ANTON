@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Land boundary dispute resolution: surveyor role, survey beacons, land registry maps, mediation and land tribunals, boundary realignment agreements, cost of court vs survey, criminal protection of survey beacons." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Land boundary dispute resolution: surveyor role, survey beacons, land registry maps, mediation and land tribunals, boundary realignment agreements, cost of court vs survey, criminal protection of survey beacons."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "fence-wall", "label": "Fence or wall in the wrong place" },
-        { "value": "encroachment-on-me", "label": "Neighbour encroaching on my land" },
-        { "value": "accused-of-encroaching", "label": "I was accused of encroaching" },
-        { "value": "survey-contradicts", "label": "New survey contradicts old boundaries" },
-        { "value": "water-drainage", "label": "Water or drainage boundary dispute" }
+        {
+          "value": "fence-wall",
+          "label": "Fence or wall in the wrong place"
+        },
+        {
+          "value": "encroachment-on-me",
+          "label": "Neighbour encroaching on my land"
+        },
+        {
+          "value": "accused-of-encroaching",
+          "label": "I was accused of encroaching"
+        },
+        {
+          "value": "survey-contradicts",
+          "label": "New survey contradicts old boundaries"
+        },
+        {
+          "value": "water-drainage",
+          "label": "Water or drainage boundary dispute"
+        }
       ]
     },
     {
@@ -59,10 +110,22 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "title-with-map", "label": "Original title deed with map" },
-        { "value": "survey-beacons", "label": "Old survey beacons in place" },
-        { "value": "no-formal-docs", "label": "No formal documents" },
-        { "value": "memory-agreement", "label": "Only old memory or verbal agreement" }
+        {
+          "value": "title-with-map",
+          "label": "Original title deed with map"
+        },
+        {
+          "value": "survey-beacons",
+          "label": "Old survey beacons in place"
+        },
+        {
+          "value": "no-formal-docs",
+          "label": "No formal documents"
+        },
+        {
+          "value": "memory-agreement",
+          "label": "Only old memory or verbal agreement"
+        }
       ]
     },
     {
@@ -71,12 +134,34 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "good", "label": "Good — want to preserve it" },
-        { "value": "bad", "label": "Bad relationship" },
-        { "value": "unknown", "label": "Don't know the neighbour well" }
+        {
+          "value": "good",
+          "label": "Good — want to preserve it"
+        },
+        {
+          "value": "bad",
+          "label": "Bad relationship"
+        },
+        {
+          "value": "unknown",
+          "label": "Don't know the neighbour well"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
-  "tags": ["land-rights", "bop", "rights", "boundary-dispute", "surveyor", "survey-beacons", "mediation", "neighbour", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "land-rights-paralegal"
+  ],
+  "tags": [
+    "land-rights",
+    "bop",
+    "rights",
+    "boundary-dispute",
+    "surveyor",
+    "survey-beacons",
+    "mediation",
+    "neighbour",
+    "africa",
+    "south-asia"
+  ]
 }

@@ -36,10 +36,22 @@
       "label": "Market entry type",
       "required": true,
       "options": [
-        { "value": "geography", "label": "New country or geography" },
-        { "value": "segment", "label": "New customer segment" },
-        { "value": "product", "label": "New product or service line" },
-        { "value": "channel", "label": "New distribution channel" }
+        {
+          "value": "geography",
+          "label": "New country or geography"
+        },
+        {
+          "value": "segment",
+          "label": "New customer segment"
+        },
+        {
+          "value": "product",
+          "label": "New product or service line"
+        },
+        {
+          "value": "channel",
+          "label": "New distribution channel"
+        }
       ]
     },
     {
@@ -61,10 +73,22 @@
       "type": "select",
       "label": "Entry timeline aspiration",
       "options": [
-        { "value": "immediate", "label": "Within 6 months" },
-        { "value": "near_term", "label": "6-18 months" },
-        { "value": "medium_term", "label": "18-36 months" },
-        { "value": "exploratory", "label": "Exploratory — no fixed timeline" }
+        {
+          "value": "immediate",
+          "label": "Within 6 months"
+        },
+        {
+          "value": "near_term",
+          "label": "6-18 months"
+        },
+        {
+          "value": "medium_term",
+          "label": "18-36 months"
+        },
+        {
+          "value": "exploratory",
+          "label": "Exploratory — no fixed timeline"
+        }
       ]
     },
     {
@@ -75,9 +99,7 @@
     }
   ],
   "recommendedPersonas": [
-    "investor-lens",
-    "devil-advocate",
-    "systems-thinker"
+    "strategy-expert"
   ],
   "tags": [
     "market-entry",

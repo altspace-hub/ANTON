@@ -44,15 +44,42 @@
       "description": "What type of contract is being reviewed?",
       "required": true,
       "options": [
-        { "value": "outsourcing", "label": "Outsourcing / Service Agreement" },
-        { "value": "cloud_it", "label": "Cloud / IT Services Agreement" },
-        { "value": "data_processing", "label": "Data Processing Agreement (DPA / GDPR)" },
-        { "value": "third_party_aml", "label": "Third-Party AML / KYC Services" },
-        { "value": "correspondent_banking", "label": "Correspondent Banking Agreement" },
-        { "value": "vendor", "label": "Vendor / Supplier Agreement" },
-        { "value": "employment", "label": "Employment Contract" },
-        { "value": "nda", "label": "NDA / Confidentiality Agreement" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "outsourcing",
+          "label": "Outsourcing / Service Agreement"
+        },
+        {
+          "value": "cloud_it",
+          "label": "Cloud / IT Services Agreement"
+        },
+        {
+          "value": "data_processing",
+          "label": "Data Processing Agreement (DPA / GDPR)"
+        },
+        {
+          "value": "third_party_aml",
+          "label": "Third-Party AML / KYC Services"
+        },
+        {
+          "value": "correspondent_banking",
+          "label": "Correspondent Banking Agreement"
+        },
+        {
+          "value": "vendor",
+          "label": "Vendor / Supplier Agreement"
+        },
+        {
+          "value": "employment",
+          "label": "Employment Contract"
+        },
+        {
+          "value": "nda",
+          "label": "NDA / Confidentiality Agreement"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,12 +88,30 @@
       "label": "Applicable Regulatory Requirements",
       "description": "Which regulatory frameworks should the contract be checked against?",
       "options": [
-        { "value": "dora", "label": "DORA (Operational Resilience)" },
-        { "value": "eba_outsourcing", "label": "EBA Outsourcing Guidelines" },
-        { "value": "gdpr", "label": "GDPR (Data Processing)" },
-        { "value": "amlr", "label": "AMLR (AML Outsourcing)" },
-        { "value": "crd_crr", "label": "CRD / CRR (Banking)" },
-        { "value": "internal_standards", "label": "Internal Clause Library / Standards" }
+        {
+          "value": "dora",
+          "label": "DORA (Operational Resilience)"
+        },
+        {
+          "value": "eba_outsourcing",
+          "label": "EBA Outsourcing Guidelines"
+        },
+        {
+          "value": "gdpr",
+          "label": "GDPR (Data Processing)"
+        },
+        {
+          "value": "amlr",
+          "label": "AMLR (AML Outsourcing)"
+        },
+        {
+          "value": "crd_crr",
+          "label": "CRD / CRR (Banking)"
+        },
+        {
+          "value": "internal_standards",
+          "label": "Internal Clause Library / Standards"
+        }
       ]
     },
     {
@@ -75,12 +120,30 @@
       "label": "Counterparty Type",
       "description": "What type of entity is the counterparty?",
       "options": [
-        { "value": "critical_ict", "label": "Critical ICT / Technology Provider" },
-        { "value": "financial_institution", "label": "Financial Institution / Bank" },
-        { "value": "aml_kyc_provider", "label": "AML / KYC Service Provider" },
-        { "value": "data_processor", "label": "Data Processor / Cloud Provider" },
-        { "value": "professional_services", "label": "Professional Services / Consultancy" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "critical_ict",
+          "label": "Critical ICT / Technology Provider"
+        },
+        {
+          "value": "financial_institution",
+          "label": "Financial Institution / Bank"
+        },
+        {
+          "value": "aml_kyc_provider",
+          "label": "AML / KYC Service Provider"
+        },
+        {
+          "value": "data_processor",
+          "label": "Data Processor / Cloud Provider"
+        },
+        {
+          "value": "professional_services",
+          "label": "Professional Services / Consultancy"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -92,8 +155,7 @@
     }
   ],
   "recommendedPersonas": [
-    "legal-expert",
-    "fcp-expert"
+    "legal-expert"
   ],
   "tags": [
     "contract",

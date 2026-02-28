@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Weather interpretation for farmers, seasonal forecasts, El Nino La Nina effects, critical crop growth stages, emergency weather responses for smallholder farming" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Weather interpretation for farmers, seasonal forecasts, El Nino La Nina effects, critical crop growth stages, emergency weather responses for smallholder farming"
+      }
     }
   },
   "guidedInputs": [
@@ -28,12 +34,30 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "east-africa", "label": "East Africa" },
-        { "value": "west-africa", "label": "West Africa" },
-        { "value": "southern-africa", "label": "Southern Africa" },
-        { "value": "south-asia", "label": "South Asia (India/Bangladesh)" },
-        { "value": "southeast-asia", "label": "Southeast Asia" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "east-africa",
+          "label": "East Africa"
+        },
+        {
+          "value": "west-africa",
+          "label": "West Africa"
+        },
+        {
+          "value": "southern-africa",
+          "label": "Southern Africa"
+        },
+        {
+          "value": "south-asia",
+          "label": "South Asia (India/Bangladesh)"
+        },
+        {
+          "value": "southeast-asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -42,11 +66,26 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "about-to-plant", "label": "About to plant" },
-        { "value": "just-planted", "label": "Just planted" },
-        { "value": "growing", "label": "Growing (leaves and stems growing)" },
-        { "value": "flowering", "label": "Flowering" },
-        { "value": "near-harvest", "label": "Near harvest" }
+        {
+          "value": "about-to-plant",
+          "label": "About to plant"
+        },
+        {
+          "value": "just-planted",
+          "label": "Just planted"
+        },
+        {
+          "value": "growing",
+          "label": "Growing (leaves and stems growing)"
+        },
+        {
+          "value": "flowering",
+          "label": "Flowering"
+        },
+        {
+          "value": "near-harvest",
+          "label": "Near harvest"
+        }
       ]
     },
     {
@@ -55,11 +94,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "too-much-rain", "label": "Too much rain or flooding" },
-        { "value": "drought-dry", "label": "Drought or long dry spell" },
-        { "value": "unexpected-cold", "label": "Unexpected cold" },
-        { "value": "strong-winds", "label": "Strong winds" },
-        { "value": "unsure", "label": "Normal weather but unsure what to do" }
+        {
+          "value": "too-much-rain",
+          "label": "Too much rain or flooding"
+        },
+        {
+          "value": "drought-dry",
+          "label": "Drought or long dry spell"
+        },
+        {
+          "value": "unexpected-cold",
+          "label": "Unexpected cold"
+        },
+        {
+          "value": "strong-winds",
+          "label": "Strong winds"
+        },
+        {
+          "value": "unsure",
+          "label": "Normal weather but unsure what to do"
+        }
       ]
     },
     {
@@ -68,14 +122,43 @@
       "type": "select",
       "required": false,
       "options": [
-        { "value": "radio", "label": "Radio weather report" },
-        { "value": "sms-service", "label": "SMS weather service" },
-        { "value": "phone-app", "label": "Phone app" },
-        { "value": "word-of-mouth", "label": "Word of mouth from neighbours" },
-        { "value": "no-forecast", "label": "No forecast available" }
+        {
+          "value": "radio",
+          "label": "Radio weather report"
+        },
+        {
+          "value": "sms-service",
+          "label": "SMS weather service"
+        },
+        {
+          "value": "phone-app",
+          "label": "Phone app"
+        },
+        {
+          "value": "word-of-mouth",
+          "label": "Word of mouth from neighbours"
+        },
+        {
+          "value": "no-forecast",
+          "label": "No forecast available"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["weather", "seasonal-forecast", "drought-response", "flood-response", "planting-decisions", "el-nino", "la-nina", "climate-adaptation", "smallholder", "crop-stages"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "weather",
+    "seasonal-forecast",
+    "drought-response",
+    "flood-response",
+    "planting-decisions",
+    "el-nino",
+    "la-nina",
+    "climate-adaptation",
+    "smallholder",
+    "crop-stages"
+  ]
 }

@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Community land registration by country: Kenya Community Land Act 2016, Tanzania Village Land Act, Ghana customary area secretariats, India Forest Rights Act 2006, South Africa communal land rights. Participatory mapping, VGGT guidelines, land governance structures." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Community land registration by country: Kenya Community Land Act 2016, Tanzania Village Land Act, Ghana customary area secretariats, India Forest Rights Act 2006, South Africa communal land rights. Participatory mapping, VGGT guidelines, land governance structures."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "ancestral-clan", "label": "Ancestral / clan land" },
-        { "value": "village-communal", "label": "Village communal land" },
-        { "value": "pastoral-grazing", "label": "Pastoral or grazing land" },
-        { "value": "forest-community", "label": "Forest community land" },
-        { "value": "urban-informal", "label": "Urban informal settlement" }
+        {
+          "value": "ancestral-clan",
+          "label": "Ancestral / clan land"
+        },
+        {
+          "value": "village-communal",
+          "label": "Village communal land"
+        },
+        {
+          "value": "pastoral-grazing",
+          "label": "Pastoral or grazing land"
+        },
+        {
+          "value": "forest-community",
+          "label": "Forest community land"
+        },
+        {
+          "value": "urban-informal",
+          "label": "Urban informal settlement"
+        }
       ]
     },
     {
@@ -59,13 +110,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "no-protection", "label": "No formal protection yet" },
-        { "value": "facing-threats", "label": "Facing outside threats or land grabs" },
-        { "value": "development-project", "label": "Preparing for a development project" },
-        { "value": "want-to-formalise", "label": "Want to formalise community rights" }
+        {
+          "value": "no-protection",
+          "label": "No formal protection yet"
+        },
+        {
+          "value": "facing-threats",
+          "label": "Facing outside threats or land grabs"
+        },
+        {
+          "value": "development-project",
+          "label": "Preparing for a development project"
+        },
+        {
+          "value": "want-to-formalise",
+          "label": "Want to formalise community rights"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["land-rights-paralegal", "paralegal-aid"],
-  "tags": ["land-rights", "bop", "rights", "community-land", "indigenous-rights", "fpic", "participatory-mapping", "vggt", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "land-rights-paralegal"
+  ],
+  "tags": [
+    "land-rights",
+    "bop",
+    "rights",
+    "community-land",
+    "indigenous-rights",
+    "fpic",
+    "participatory-mapping",
+    "vggt",
+    "africa",
+    "south-asia"
+  ]
 }

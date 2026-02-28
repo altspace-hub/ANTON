@@ -6,7 +6,13 @@
   "icon": "ClipboardCheck",
   "description": "Evaluate an existing interface against usability heuristics, accessibility standards, and UX best practices. Produces prioritised findings with severity ratings.",
   "color": "adv-teal",
-  "tags": ["usability", "heuristics", "accessibility", "ux-audit", "wcag"],
+  "tags": [
+    "usability",
+    "heuristics",
+    "accessibility",
+    "ux-audit",
+    "wcag"
+  ],
   "modelTier": {
     "recommended": "sonnet",
     "minimum": "sonnet",
@@ -16,9 +22,15 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "action-plan"]
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan"
+    ]
   },
-  "recommendedPersonas": ["ux-researcher", "ux-director"],
+  "recommendedPersonas": [
+    "creative-director",
+    "strategy-expert"
+  ],
   "guidedInputs": [
     {
       "id": "product_description",
@@ -49,13 +61,31 @@
       "label": "Audit Scope",
       "description": "Which frameworks should the audit apply?",
       "options": [
-        {"value": "nielsen_heuristics", "label": "Nielsen's 10 Heuristics"},
-        {"value": "wcag_aa", "label": "WCAG 2.1 AA Accessibility"},
-        {"value": "cognitive_load", "label": "Cognitive Load & Clarity"},
-        {"value": "mobile_best_practice", "label": "Mobile UX Best Practices"},
-        {"value": "conversion_optimisation", "label": "Conversion & Friction Analysis"}
+        {
+          "value": "nielsen_heuristics",
+          "label": "Nielsen's 10 Heuristics"
+        },
+        {
+          "value": "wcag_aa",
+          "label": "WCAG 2.1 AA Accessibility"
+        },
+        {
+          "value": "cognitive_load",
+          "label": "Cognitive Load & Clarity"
+        },
+        {
+          "value": "mobile_best_practice",
+          "label": "Mobile UX Best Practices"
+        },
+        {
+          "value": "conversion_optimisation",
+          "label": "Conversion & Friction Analysis"
+        }
       ],
-      "defaultValue": ["nielsen_heuristics", "wcag_aa"]
+      "defaultValue": [
+        "nielsen_heuristics",
+        "wcag_aa"
+      ]
     }
   ]
 }

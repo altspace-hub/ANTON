@@ -56,13 +56,34 @@
       "label": "Assessment dimensions",
       "description": "Select which dimensions to assess (default: all).",
       "options": [
-        { "value": "delivery", "label": "Delivery performance" },
-        { "value": "governance", "label": "Governance & controls" },
-        { "value": "stakeholder", "label": "Stakeholder management" },
-        { "value": "risk", "label": "Risk & issues" },
-        { "value": "financial", "label": "Financial management" },
-        { "value": "benefits", "label": "Benefits realisation" },
-        { "value": "resources", "label": "Resources & capability" }
+        {
+          "value": "delivery",
+          "label": "Delivery performance"
+        },
+        {
+          "value": "governance",
+          "label": "Governance & controls"
+        },
+        {
+          "value": "stakeholder",
+          "label": "Stakeholder management"
+        },
+        {
+          "value": "risk",
+          "label": "Risk & issues"
+        },
+        {
+          "value": "financial",
+          "label": "Financial management"
+        },
+        {
+          "value": "benefits",
+          "label": "Benefits realisation"
+        },
+        {
+          "value": "resources",
+          "label": "Resources & capability"
+        }
       ]
     },
     {
@@ -70,14 +91,28 @@
       "type": "select",
       "label": "Primary audience for report",
       "options": [
-        { "value": "sponsor", "label": "Programme sponsor / executive leadership" },
-        { "value": "steering", "label": "Steering committee" },
-        { "value": "programme_team", "label": "Programme team (improvement focus)" },
-        { "value": "board", "label": "Board / Supervisory Board" }
+        {
+          "value": "sponsor",
+          "label": "Programme sponsor / executive leadership"
+        },
+        {
+          "value": "steering",
+          "label": "Steering committee"
+        },
+        {
+          "value": "programme_team",
+          "label": "Programme team (improvement focus)"
+        },
+        {
+          "value": "board",
+          "label": "Board / Supervisory Board"
+        }
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "project-management",
     "programme",

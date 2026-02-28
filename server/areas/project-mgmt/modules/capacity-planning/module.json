@@ -35,9 +35,18 @@
       "label": "Planning horizon",
       "required": true,
       "options": [
-        { "value": "quarter", "label": "Quarterly (next 3 months)" },
-        { "value": "annual", "label": "Annual (next 12 months)" },
-        { "value": "multi_year", "label": "Multi-year (2-3 years)" }
+        {
+          "value": "quarter",
+          "label": "Quarterly (next 3 months)"
+        },
+        {
+          "value": "annual",
+          "label": "Annual (next 12 months)"
+        },
+        {
+          "value": "multi_year",
+          "label": "Multi-year (2-3 years)"
+        }
       ]
     },
     {
@@ -46,9 +55,18 @@
       "label": "Resource type",
       "required": true,
       "options": [
-        { "value": "people", "label": "People / FTE (headcount planning)" },
-        { "value": "technology", "label": "Technology / infrastructure capacity" },
-        { "value": "both", "label": "Both people and technology" }
+        {
+          "value": "people",
+          "label": "People / FTE (headcount planning)"
+        },
+        {
+          "value": "technology",
+          "label": "Technology / infrastructure capacity"
+        },
+        {
+          "value": "both",
+          "label": "Both people and technology"
+        }
       ]
     },
     {
@@ -73,8 +91,7 @@
     }
   ],
   "recommendedPersonas": [
-    "pragmatist",
-    "systems-thinker"
+    "strategy-expert"
   ],
   "tags": [
     "capacity-planning",

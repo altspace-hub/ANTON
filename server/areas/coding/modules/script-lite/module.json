@@ -12,7 +12,11 @@
     "creativity": "balanced",
     "outputFormats": [],
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": ""
+      }
     }
   },
   "guidedInputs": [
@@ -36,5 +40,14 @@
       "placeholder": "e.g., must use pandas, output as CSV, handle missing values..."
     }
   ],
-  "tags": ["coding", "python", "script", "automation", "data-analysis"]
+  "tags": [
+    "coding",
+    "python",
+    "script",
+    "automation",
+    "data-analysis"
+  ],
+  "recommendedPersonas": [
+    "tech-expert"
+  ]
 }

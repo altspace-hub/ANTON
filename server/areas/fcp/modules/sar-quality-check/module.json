@@ -44,13 +44,34 @@
       "description": "Which FIU will this report be filed with?",
       "required": true,
       "options": [
-        { "value": "sweden_fipo", "label": "Sweden — Finanspolisen (FIPO)" },
-        { "value": "finland_kpo", "label": "Finland — Keskusrikospoliisi (KRP/FIU)" },
-        { "value": "denmark_hvidvask", "label": "Denmark — Hvidvasksekretariatet" },
-        { "value": "norway_okokrim", "label": "Norway — Enheten for finansiell etterretning (EFE)" },
-        { "value": "uk_nca", "label": "UK — National Crime Agency (NCA)" },
-        { "value": "eu_generic", "label": "EU — Generic (AMLA framework)" },
-        { "value": "other", "label": "Other jurisdiction" }
+        {
+          "value": "sweden_fipo",
+          "label": "Sweden — Finanspolisen (FIPO)"
+        },
+        {
+          "value": "finland_kpo",
+          "label": "Finland — Keskusrikospoliisi (KRP/FIU)"
+        },
+        {
+          "value": "denmark_hvidvask",
+          "label": "Denmark — Hvidvasksekretariatet"
+        },
+        {
+          "value": "norway_okokrim",
+          "label": "Norway — Enheten for finansiell etterretning (EFE)"
+        },
+        {
+          "value": "uk_nca",
+          "label": "UK — National Crime Agency (NCA)"
+        },
+        {
+          "value": "eu_generic",
+          "label": "EU — Generic (AMLA framework)"
+        },
+        {
+          "value": "other",
+          "label": "Other jurisdiction"
+        }
       ]
     },
     {
@@ -59,15 +80,42 @@
       "label": "Suspected Predicate Offence",
       "description": "What type of financial crime is suspected?",
       "options": [
-        { "value": "ml_generic", "label": "Money Laundering (general)" },
-        { "value": "drug_trafficking", "label": "Drug Trafficking Proceeds" },
-        { "value": "fraud", "label": "Fraud / Embezzlement" },
-        { "value": "tax_crime", "label": "Tax Crime / VAT Fraud" },
-        { "value": "corruption", "label": "Corruption / Bribery" },
-        { "value": "sanctions_evasion", "label": "Sanctions Evasion" },
-        { "value": "pf", "label": "Proliferation Financing" },
-        { "value": "human_trafficking", "label": "Human Trafficking Proceeds" },
-        { "value": "unknown", "label": "Unknown / Unable to Determine" }
+        {
+          "value": "ml_generic",
+          "label": "Money Laundering (general)"
+        },
+        {
+          "value": "drug_trafficking",
+          "label": "Drug Trafficking Proceeds"
+        },
+        {
+          "value": "fraud",
+          "label": "Fraud / Embezzlement"
+        },
+        {
+          "value": "tax_crime",
+          "label": "Tax Crime / VAT Fraud"
+        },
+        {
+          "value": "corruption",
+          "label": "Corruption / Bribery"
+        },
+        {
+          "value": "sanctions_evasion",
+          "label": "Sanctions Evasion"
+        },
+        {
+          "value": "pf",
+          "label": "Proliferation Financing"
+        },
+        {
+          "value": "human_trafficking",
+          "label": "Human Trafficking Proceeds"
+        },
+        {
+          "value": "unknown",
+          "label": "Unknown / Unable to Determine"
+        }
       ]
     },
     {
@@ -86,8 +134,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "fsa-regulator"
+    "fcp-expert"
   ],
   "tags": [
     "sar",

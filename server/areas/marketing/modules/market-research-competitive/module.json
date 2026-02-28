@@ -35,13 +35,34 @@
       "label": "Research type",
       "required": true,
       "options": [
-        { "value": "competitive_landscape", "label": "Competitive landscape analysis" },
-        { "value": "market_sizing", "label": "Market sizing / TAM-SAM-SOM" },
-        { "value": "competitor_deep_dive", "label": "Specific competitor deep-dive" },
-        { "value": "market_entry", "label": "New market entry assessment" },
-        { "value": "customer_segment", "label": "Customer segment research" },
-        { "value": "pricing_intelligence", "label": "Pricing intelligence / benchmarking" },
-        { "value": "trend_analysis", "label": "Industry trend analysis" }
+        {
+          "value": "competitive_landscape",
+          "label": "Competitive landscape analysis"
+        },
+        {
+          "value": "market_sizing",
+          "label": "Market sizing / TAM-SAM-SOM"
+        },
+        {
+          "value": "competitor_deep_dive",
+          "label": "Specific competitor deep-dive"
+        },
+        {
+          "value": "market_entry",
+          "label": "New market entry assessment"
+        },
+        {
+          "value": "customer_segment",
+          "label": "Customer segment research"
+        },
+        {
+          "value": "pricing_intelligence",
+          "label": "Pricing intelligence / benchmarking"
+        },
+        {
+          "value": "trend_analysis",
+          "label": "Industry trend analysis"
+        }
       ]
     },
     {
@@ -70,9 +91,18 @@
       "type": "select",
       "label": "Depth of analysis required",
       "options": [
-        { "value": "overview", "label": "High-level overview — quick orientation" },
-        { "value": "detailed", "label": "Detailed analysis — strategic planning input" },
-        { "value": "deep_dive", "label": "Deep dive — M&A, investment, or major strategic decision" }
+        {
+          "value": "overview",
+          "label": "High-level overview — quick orientation"
+        },
+        {
+          "value": "detailed",
+          "label": "Detailed analysis — strategic planning input"
+        },
+        {
+          "value": "deep_dive",
+          "label": "Deep dive — M&A, investment, or major strategic decision"
+        }
       ]
     },
     {
@@ -85,7 +115,7 @@
   ],
   "recommendedPersonas": [
     "digital-marketing-manager",
-    "pragmatist"
+    "strategy-expert"
   ],
   "tags": [
     "market-research",

@@ -15,7 +15,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": ["action-plan", "executive-summary"],
+    "outputFormats": [
+      "action-plan",
+      "executive-summary"
+    ],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
@@ -31,11 +34,26 @@
       "label": "Where are you in the exit process?",
       "required": true,
       "options": [
-        { "value": "early-planning", "label": "Early planning (12–18 months out)" },
-        { "value": "preparation", "label": "Preparation (6–12 months out)" },
-        { "value": "active-process", "label": "Active process (preparing materials)" },
-        { "value": "running-process", "label": "Running the process (managing buyers)" },
-        { "value": "post-loi", "label": "Post-LOI / pre-close" }
+        {
+          "value": "early-planning",
+          "label": "Early planning (12–18 months out)"
+        },
+        {
+          "value": "preparation",
+          "label": "Preparation (6–12 months out)"
+        },
+        {
+          "value": "active-process",
+          "label": "Active process (preparing materials)"
+        },
+        {
+          "value": "running-process",
+          "label": "Running the process (managing buyers)"
+        },
+        {
+          "value": "post-loi",
+          "label": "Post-LOI / pre-close"
+        }
       ]
     },
     {
@@ -44,11 +62,26 @@
       "label": "Expected exit route",
       "required": true,
       "options": [
-        { "value": "trade-sale", "label": "Trade sale (strategic buyer)" },
-        { "value": "secondary-buyout", "label": "Secondary buyout (PE to PE)" },
-        { "value": "ipo", "label": "IPO" },
-        { "value": "mbo", "label": "Management buyout" },
-        { "value": "exploring", "label": "Not sure yet — exploring options" }
+        {
+          "value": "trade-sale",
+          "label": "Trade sale (strategic buyer)"
+        },
+        {
+          "value": "secondary-buyout",
+          "label": "Secondary buyout (PE to PE)"
+        },
+        {
+          "value": "ipo",
+          "label": "IPO"
+        },
+        {
+          "value": "mbo",
+          "label": "Management buyout"
+        },
+        {
+          "value": "exploring",
+          "label": "Not sure yet — exploring options"
+        }
       ]
     },
     {
@@ -71,14 +104,43 @@
       "label": "What specifically do you need?",
       "required": true,
       "options": [
-        { "value": "readiness-assessment", "label": "Exit readiness assessment" },
-        { "value": "vendor-dd-prep", "label": "Vendor due diligence preparation" },
-        { "value": "cim-draft", "label": "Information memorandum / CIM draft" },
-        { "value": "mgmt-presentation", "label": "Management presentation preparation" },
-        { "value": "buyer-universe", "label": "Buyer universe identification" },
-        { "value": "return-analysis", "label": "Return analysis at different exit valuations" }
+        {
+          "value": "readiness-assessment",
+          "label": "Exit readiness assessment"
+        },
+        {
+          "value": "vendor-dd-prep",
+          "label": "Vendor due diligence preparation"
+        },
+        {
+          "value": "cim-draft",
+          "label": "Information memorandum / CIM draft"
+        },
+        {
+          "value": "mgmt-presentation",
+          "label": "Management presentation preparation"
+        },
+        {
+          "value": "buyer-universe",
+          "label": "Buyer universe identification"
+        },
+        {
+          "value": "return-analysis",
+          "label": "Return analysis at different exit valuations"
+        }
       ]
     }
   ],
-  "tags": ["pe-vc", "exit", "m&a", "cim", "ipo", "secondary", "return-analysis"]
+  "tags": [
+    "pe-vc",
+    "exit",
+    "m&a",
+    "cim",
+    "ipo",
+    "secondary",
+    "return-analysis"
+  ],
+  "recommendedPersonas": [
+    "pe-vc-expert"
+  ]
 }

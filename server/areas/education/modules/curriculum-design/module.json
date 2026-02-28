@@ -91,7 +91,9 @@
       "placeholder": "Describe the subject area, target competencies, any national curriculum standards to align with, and desired learning outcomes."
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "education-expert"
+  ],
   "tags": [
     "curriculum",
     "design",

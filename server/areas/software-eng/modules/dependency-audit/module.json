@@ -30,16 +30,46 @@
       "label": "Package ecosystem",
       "required": true,
       "options": [
-        { "value": "npm", "label": "npm / Node.js (package.json)" },
-        { "value": "pip", "label": "pip / Python (requirements.txt, pyproject.toml)" },
-        { "value": "maven", "label": "Maven / Java (pom.xml)" },
-        { "value": "gradle", "label": "Gradle / Java or Kotlin (build.gradle)" },
-        { "value": "nuget", "label": "NuGet / .NET (*.csproj, packages.config)" },
-        { "value": "cargo", "label": "Cargo / Rust (Cargo.toml)" },
-        { "value": "gem", "label": "RubyGems (Gemfile)" },
-        { "value": "composer", "label": "Composer / PHP (composer.json)" },
-        { "value": "go", "label": "Go modules (go.mod)" },
-        { "value": "mixed", "label": "Multiple ecosystems" }
+        {
+          "value": "npm",
+          "label": "npm / Node.js (package.json)"
+        },
+        {
+          "value": "pip",
+          "label": "pip / Python (requirements.txt, pyproject.toml)"
+        },
+        {
+          "value": "maven",
+          "label": "Maven / Java (pom.xml)"
+        },
+        {
+          "value": "gradle",
+          "label": "Gradle / Java or Kotlin (build.gradle)"
+        },
+        {
+          "value": "nuget",
+          "label": "NuGet / .NET (*.csproj, packages.config)"
+        },
+        {
+          "value": "cargo",
+          "label": "Cargo / Rust (Cargo.toml)"
+        },
+        {
+          "value": "gem",
+          "label": "RubyGems (Gemfile)"
+        },
+        {
+          "value": "composer",
+          "label": "Composer / PHP (composer.json)"
+        },
+        {
+          "value": "go",
+          "label": "Go modules (go.mod)"
+        },
+        {
+          "value": "mixed",
+          "label": "Multiple ecosystems"
+        }
       ]
     },
     {
@@ -60,10 +90,22 @@
       "type": "select",
       "label": "License compliance policy",
       "options": [
-        { "value": "none", "label": "No specific policy — flag obvious risks" },
-        { "value": "commercial", "label": "Commercial product — GPL/AGPL not permitted" },
-        { "value": "strict", "label": "Strict: only permissive licenses (MIT, Apache, BSD)" },
-        { "value": "open_source", "label": "Open source project — copyleft analysis needed" }
+        {
+          "value": "none",
+          "label": "No specific policy — flag obvious risks"
+        },
+        {
+          "value": "commercial",
+          "label": "Commercial product — GPL/AGPL not permitted"
+        },
+        {
+          "value": "strict",
+          "label": "Strict: only permissive licenses (MIT, Apache, BSD)"
+        },
+        {
+          "value": "open_source",
+          "label": "Open source project — copyleft analysis needed"
+        }
       ]
     },
     {
@@ -73,7 +115,9 @@
       "placeholder": "e.g., Never, 6 months ago, Q3 2024"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "security",
     "dependencies",

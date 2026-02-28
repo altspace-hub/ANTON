@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Adult literacy teaching methods, phonics, whole-language approach, functional literacy, aspirational literacy for adults in developing countries" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Adult literacy teaching methods, phonics, whole-language approach, functional literacy, aspirational literacy for adults in developing countries"
+      }
     }
   },
   "guidedInputs": [
@@ -28,17 +34,50 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "english", "label": "English" },
-        { "value": "swahili", "label": "Swahili" },
-        { "value": "hausa", "label": "Hausa" },
-        { "value": "yoruba", "label": "Yoruba" },
-        { "value": "igbo", "label": "Igbo" },
-        { "value": "amharic", "label": "Amharic" },
-        { "value": "hindi", "label": "Hindi" },
-        { "value": "bengali", "label": "Bengali" },
-        { "value": "urdu", "label": "Urdu" },
-        { "value": "filipino", "label": "Filipino" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "english",
+          "label": "English"
+        },
+        {
+          "value": "swahili",
+          "label": "Swahili"
+        },
+        {
+          "value": "hausa",
+          "label": "Hausa"
+        },
+        {
+          "value": "yoruba",
+          "label": "Yoruba"
+        },
+        {
+          "value": "igbo",
+          "label": "Igbo"
+        },
+        {
+          "value": "amharic",
+          "label": "Amharic"
+        },
+        {
+          "value": "hindi",
+          "label": "Hindi"
+        },
+        {
+          "value": "bengali",
+          "label": "Bengali"
+        },
+        {
+          "value": "urdu",
+          "label": "Urdu"
+        },
+        {
+          "value": "filipino",
+          "label": "Filipino"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -47,11 +86,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cannot-read-at-all", "label": "Cannot read at all" },
-        { "value": "can-read-simple-words", "label": "Can read simple words" },
-        { "value": "can-read-sentences-slowly", "label": "Can read sentences but slowly" },
-        { "value": "can-read-not-write", "label": "Can read but cannot write" },
-        { "value": "want-to-improve", "label": "Can do both but want to improve" }
+        {
+          "value": "cannot-read-at-all",
+          "label": "Cannot read at all"
+        },
+        {
+          "value": "can-read-simple-words",
+          "label": "Can read simple words"
+        },
+        {
+          "value": "can-read-sentences-slowly",
+          "label": "Can read sentences but slowly"
+        },
+        {
+          "value": "can-read-not-write",
+          "label": "Can read but cannot write"
+        },
+        {
+          "value": "want-to-improve",
+          "label": "Can do both but want to improve"
+        }
       ]
     },
     {
@@ -60,13 +114,35 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "reading", "label": "Reading practice" },
-        { "value": "writing", "label": "Writing practice" },
-        { "value": "both", "label": "Both reading and writing" },
-        { "value": "numbers-too", "label": "Numbers and basic maths too" }
+        {
+          "value": "reading",
+          "label": "Reading practice"
+        },
+        {
+          "value": "writing",
+          "label": "Writing practice"
+        },
+        {
+          "value": "both",
+          "label": "Both reading and writing"
+        },
+        {
+          "value": "numbers-too",
+          "label": "Numbers and basic maths too"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["digital-literacy-trainer", "youth-enterprise-mentor"],
-  "tags": ["literacy", "adult-learning", "reading", "writing", "phonics", "functional-literacy", "non-formal-education"]
+  "recommendedPersonas": [
+    "education-expert"
+  ],
+  "tags": [
+    "literacy",
+    "adult-learning",
+    "reading",
+    "writing",
+    "phonics",
+    "functional-literacy",
+    "non-formal-education"
+  ]
 }

@@ -139,7 +139,10 @@
       "placeholder": "e.g., Must work in both digital and print, need accessibility compliance (WCAG AA), budget does not allow custom photography"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "strategy-expert"
+  ],
   "tags": [
     "branding",
     "visual-identity",

@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,12 +34,30 @@
       "label": "What kind of business do you have?",
       "required": true,
       "options": [
-        { "value": "market-stall", "label": "Market stall" },
-        { "value": "shop-kiosk", "label": "Shop / kiosk" },
-        { "value": "food-vendor", "label": "Food vendor" },
-        { "value": "tailor-seamstress", "label": "Tailor / seamstress" },
-        { "value": "service-provider", "label": "Service provider (mechanic, hairdresser)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "market-stall",
+          "label": "Market stall"
+        },
+        {
+          "value": "shop-kiosk",
+          "label": "Shop / kiosk"
+        },
+        {
+          "value": "food-vendor",
+          "label": "Food vendor"
+        },
+        {
+          "value": "tailor-seamstress",
+          "label": "Tailor / seamstress"
+        },
+        {
+          "value": "service-provider",
+          "label": "Service provider (mechanic, hairdresser)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,16 +66,46 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -64,10 +114,22 @@
       "label": "What is your biggest customer challenge?",
       "required": true,
       "options": [
-        { "value": "dont-return", "label": "Customers buy once and don't return" },
-        { "value": "losing-to-competitors", "label": "Losing customers to competitors" },
-        { "value": "find-new", "label": "Don't know how to find new customers" },
-        { "value": "referrals", "label": "Want to grow through referrals" }
+        {
+          "value": "dont-return",
+          "label": "Customers buy once and don't return"
+        },
+        {
+          "value": "losing-to-competitors",
+          "label": "Losing customers to competitors"
+        },
+        {
+          "value": "find-new",
+          "label": "Don't know how to find new customers"
+        },
+        {
+          "value": "referrals",
+          "label": "Want to grow through referrals"
+        }
       ]
     },
     {
@@ -76,13 +138,24 @@
       "label": "Who are your customers?",
       "required": false,
       "options": [
-        { "value": "individuals", "label": "Mostly individual buyers" },
-        { "value": "mixed", "label": "Mix of individuals and small businesses" },
-        { "value": "businesses", "label": "Mostly businesses" }
+        {
+          "value": "individuals",
+          "label": "Mostly individual buyers"
+        },
+        {
+          "value": "mixed",
+          "label": "Mix of individuals and small businesses"
+        },
+        {
+          "value": "businesses",
+          "label": "Mostly businesses"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "small-business-mentor"
+  ],
   "tags": [
     "micro-business",
     "bop",

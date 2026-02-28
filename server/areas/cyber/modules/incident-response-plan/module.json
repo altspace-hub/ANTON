@@ -148,9 +148,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "fsa-regulator",
-    "systems-thinker"
+    "cyber-expert"
   ],
   "tags": [
     "incident-response",

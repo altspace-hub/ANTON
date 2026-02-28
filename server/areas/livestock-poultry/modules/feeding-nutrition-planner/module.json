@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Livestock nutrition by species, local feed sources in Africa and South Asia, deficiency signs, feed cost reduction strategies, dry season feed planning" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Livestock nutrition by species, local feed sources in Africa and South Asia, deficiency signs, feed cost reduction strategies, dry season feed planning"
+      }
     }
   },
   "guidedInputs": [
@@ -28,13 +34,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cattle", "label": "Cattle / Cows" },
-        { "value": "goats", "label": "Goats" },
-        { "value": "sheep", "label": "Sheep" },
-        { "value": "pigs", "label": "Pigs" },
-        { "value": "chickens", "label": "Chickens / Poultry" },
-        { "value": "ducks", "label": "Ducks" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "cattle",
+          "label": "Cattle / Cows"
+        },
+        {
+          "value": "goats",
+          "label": "Goats"
+        },
+        {
+          "value": "sheep",
+          "label": "Sheep"
+        },
+        {
+          "value": "pigs",
+          "label": "Pigs"
+        },
+        {
+          "value": "chickens",
+          "label": "Chickens / Poultry"
+        },
+        {
+          "value": "ducks",
+          "label": "Ducks"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -43,16 +70,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,11 +118,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "meat", "label": "Meat" },
-        { "value": "milk", "label": "Milk" },
-        { "value": "eggs", "label": "Eggs" },
-        { "value": "breeding", "label": "Breeding" },
-        { "value": "all", "label": "All / General" }
+        {
+          "value": "meat",
+          "label": "Meat"
+        },
+        {
+          "value": "milk",
+          "label": "Milk"
+        },
+        {
+          "value": "eggs",
+          "label": "Eggs"
+        },
+        {
+          "value": "breeding",
+          "label": "Breeding"
+        },
+        {
+          "value": "all",
+          "label": "All / General"
+        }
       ]
     },
     {
@@ -74,14 +146,44 @@
       "type": "chips",
       "required": false,
       "options": [
-        { "value": "grass-pasture", "label": "Grass / Pasture" },
-        { "value": "crop-residues", "label": "Crop residues" },
-        { "value": "kitchen-waste", "label": "Kitchen waste" },
-        { "value": "commercial-feed", "label": "Commercial feed" },
-        { "value": "mix", "label": "Mix of sources" }
+        {
+          "value": "grass-pasture",
+          "label": "Grass / Pasture"
+        },
+        {
+          "value": "crop-residues",
+          "label": "Crop residues"
+        },
+        {
+          "value": "kitchen-waste",
+          "label": "Kitchen waste"
+        },
+        {
+          "value": "commercial-feed",
+          "label": "Commercial feed"
+        },
+        {
+          "value": "mix",
+          "label": "Mix of sources"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["nutrition", "feeding", "livestock", "poultry", "local-feed", "bop", "dairy", "eggs", "meat", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "nutrition",
+    "feeding",
+    "livestock",
+    "poultry",
+    "local-feed",
+    "bop",
+    "dairy",
+    "eggs",
+    "meat",
+    "africa",
+    "south-asia"
+  ]
 }

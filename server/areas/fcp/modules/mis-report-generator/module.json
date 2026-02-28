@@ -44,11 +44,26 @@
       "description": "Who is the primary audience for this report?",
       "required": true,
       "options": [
-        { "value": "board", "label": "Board of Directors" },
-        { "value": "risk_committee", "label": "Risk / Compliance Committee" },
-        { "value": "senior_management", "label": "Senior Management / MLRO" },
-        { "value": "fcp_team", "label": "FCP Team Internal" },
-        { "value": "regulator", "label": "Regulatory Submission" }
+        {
+          "value": "board",
+          "label": "Board of Directors"
+        },
+        {
+          "value": "risk_committee",
+          "label": "Risk / Compliance Committee"
+        },
+        {
+          "value": "senior_management",
+          "label": "Senior Management / MLRO"
+        },
+        {
+          "value": "fcp_team",
+          "label": "FCP Team Internal"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulatory Submission"
+        }
       ]
     },
     {

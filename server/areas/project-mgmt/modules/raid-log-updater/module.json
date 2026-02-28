@@ -61,13 +61,24 @@
       "label": "Escalation threshold",
       "description": "Which risk/issue rating triggers escalation to steering committee?",
       "options": [
-        { "value": "critical", "label": "Critical only" },
-        { "value": "high_critical", "label": "High and Critical" },
-        { "value": "medium_plus", "label": "Medium and above" }
+        {
+          "value": "critical",
+          "label": "Critical only"
+        },
+        {
+          "value": "high_critical",
+          "label": "High and Critical"
+        },
+        {
+          "value": "medium_plus",
+          "label": "Medium and above"
+        }
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "project-management",
     "raid",

@@ -36,11 +36,26 @@
       "label": "Entity type",
       "required": true,
       "options": [
-        { "value": "large_listed", "label": "Large listed company (>500 employees)" },
-        { "value": "large_unlisted", "label": "Large non-listed company" },
-        { "value": "sme_listed", "label": "Listed SME" },
-        { "value": "non_eu", "label": "Non-EU parent (>EUR 150M EU turnover)" },
-        { "value": "financial", "label": "Financial institution (bank, insurer, asset manager)" }
+        {
+          "value": "large_listed",
+          "label": "Large listed company (>500 employees)"
+        },
+        {
+          "value": "large_unlisted",
+          "label": "Large non-listed company"
+        },
+        {
+          "value": "sme_listed",
+          "label": "Listed SME"
+        },
+        {
+          "value": "non_eu",
+          "label": "Non-EU parent (>EUR 150M EU turnover)"
+        },
+        {
+          "value": "financial",
+          "label": "Financial institution (bank, insurer, asset manager)"
+        }
       ]
     },
     {
@@ -75,7 +90,9 @@
       "placeholder": "e.g., Scope 3 data collection is our biggest challenge, we don't know how to map ESRS requirements to our existing systems, we need to set up a data governance process"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "csrd",
     "esrs",

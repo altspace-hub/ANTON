@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Trade union rights, ILO conventions 87 and 98, collective bargaining, union formation, shop steward role, employer intimidation" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Trade union rights, ILO conventions 87 and 98, collective bargaining, union formation, shop steward role, employer intimidation"
+      }
     }
   },
   "guidedInputs": [
@@ -28,18 +34,54 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "saudi-arabia", "label": "Saudi Arabia (migrant worker)" },
-        { "value": "uae", "label": "UAE (migrant worker)" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "saudi-arabia",
+          "label": "Saudi Arabia (migrant worker)"
+        },
+        {
+          "value": "uae",
+          "label": "UAE (migrant worker)"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -48,14 +90,38 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "factory-manufacturing", "label": "Factory / manufacturing" },
-        { "value": "construction", "label": "Construction" },
-        { "value": "agriculture", "label": "Agriculture / farming" },
-        { "value": "domestic", "label": "Domestic work (household)" },
-        { "value": "transport", "label": "Transport / driving" },
-        { "value": "healthcare", "label": "Healthcare" },
-        { "value": "education", "label": "Education" },
-        { "value": "informal-sector", "label": "Informal sector / street vendor / market" }
+        {
+          "value": "factory-manufacturing",
+          "label": "Factory / manufacturing"
+        },
+        {
+          "value": "construction",
+          "label": "Construction"
+        },
+        {
+          "value": "agriculture",
+          "label": "Agriculture / farming"
+        },
+        {
+          "value": "domestic",
+          "label": "Domestic work (household)"
+        },
+        {
+          "value": "transport",
+          "label": "Transport / driving"
+        },
+        {
+          "value": "healthcare",
+          "label": "Healthcare"
+        },
+        {
+          "value": "education",
+          "label": "Education"
+        },
+        {
+          "value": "informal-sector",
+          "label": "Informal sector / street vendor / market"
+        }
       ]
     },
     {
@@ -64,14 +130,43 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "join-union", "label": "I want to join a union" },
-        { "value": "form-union", "label": "I want to help form a union at my workplace" },
-        { "value": "employer-against", "label": "My employer is trying to stop union activity" },
-        { "value": "union-problem", "label": "I am already in a union and have a problem" },
-        { "value": "general-info", "label": "I just want to understand what unions do" }
+        {
+          "value": "join-union",
+          "label": "I want to join a union"
+        },
+        {
+          "value": "form-union",
+          "label": "I want to help form a union at my workplace"
+        },
+        {
+          "value": "employer-against",
+          "label": "My employer is trying to stop union activity"
+        },
+        {
+          "value": "union-problem",
+          "label": "I am already in a union and have a problem"
+        },
+        {
+          "value": "general-info",
+          "label": "I just want to understand what unions do"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["paralegal-aid", "gig-economy-rights-advisor"],
-  "tags": ["workers-rights", "bop", "informal-economy", "trade-union", "collective-bargaining", "right-to-organise", "ilo-c87", "ilo-c98", "shop-steward", "employer-intimidation"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid"
+  ],
+  "tags": [
+    "workers-rights",
+    "bop",
+    "informal-economy",
+    "trade-union",
+    "collective-bargaining",
+    "right-to-organise",
+    "ilo-c87",
+    "ilo-c98",
+    "shop-steward",
+    "employer-intimidation"
+  ]
 }

@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "What type of craft do you make?",
       "required": true,
       "options": [
-        { "value": "weaving-fabric", "label": "Weaving or fabric" },
-        { "value": "pottery", "label": "Pottery" },
-        { "value": "jewellery", "label": "Jewellery" },
-        { "value": "woodwork", "label": "Woodwork" },
-        { "value": "leather", "label": "Leather goods" },
-        { "value": "beadwork", "label": "Beadwork" },
-        { "value": "basketry", "label": "Basketry" },
-        { "value": "embroidery", "label": "Embroidery" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "weaving-fabric",
+          "label": "Weaving or fabric"
+        },
+        {
+          "value": "pottery",
+          "label": "Pottery"
+        },
+        {
+          "value": "jewellery",
+          "label": "Jewellery"
+        },
+        {
+          "value": "woodwork",
+          "label": "Woodwork"
+        },
+        {
+          "value": "leather",
+          "label": "Leather goods"
+        },
+        {
+          "value": "beadwork",
+          "label": "Beadwork"
+        },
+        {
+          "value": "basketry",
+          "label": "Basketry"
+        },
+        {
+          "value": "embroidery",
+          "label": "Embroidery"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,12 +78,30 @@
       "label": "Which market are you exporting to?",
       "required": true,
       "options": [
-        { "value": "eu", "label": "Europe (EU)" },
-        { "value": "uk", "label": "United Kingdom" },
-        { "value": "usa", "label": "USA" },
-        { "value": "middle-east", "label": "Middle East" },
-        { "value": "regional", "label": "Regional (within Africa or Asia)" },
-        { "value": "multiple", "label": "Multiple markets" }
+        {
+          "value": "eu",
+          "label": "Europe (EU)"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "usa",
+          "label": "USA"
+        },
+        {
+          "value": "middle-east",
+          "label": "Middle East"
+        },
+        {
+          "value": "regional",
+          "label": "Regional (within Africa or Asia)"
+        },
+        {
+          "value": "multiple",
+          "label": "Multiple markets"
+        }
       ]
     },
     {
@@ -63,9 +110,18 @@
       "label": "How would you describe your current quality?",
       "required": true,
       "options": [
-        { "value": "inconsistent", "label": "Inconsistent — some items better than others" },
-        { "value": "good-rejected", "label": "Good but sometimes rejected by buyers" },
-        { "value": "good-locally-unsure-export", "label": "Good for local market, not sure about export" }
+        {
+          "value": "inconsistent",
+          "label": "Inconsistent — some items better than others"
+        },
+        {
+          "value": "good-rejected",
+          "label": "Good but sometimes rejected by buyers"
+        },
+        {
+          "value": "good-locally-unsure-export",
+          "label": "Good for local market, not sure about export"
+        }
       ]
     },
     {
@@ -74,13 +130,25 @@
       "label": "What is your production volume?",
       "required": false,
       "options": [
-        { "value": "samples", "label": "Sample orders only so far" },
-        { "value": "growing", "label": "Growing — some regular export orders" },
-        { "value": "established", "label": "Established exporter" }
+        {
+          "value": "samples",
+          "label": "Sample orders only so far"
+        },
+        {
+          "value": "growing",
+          "label": "Growing — some regular export orders"
+        },
+        {
+          "value": "established",
+          "label": "Established exporter"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "cooperative-development-officer", "womens-empowerment-advisor"],
+  "recommendedPersonas": [
+    "small-business-mentor",
+    "cooperative-development-officer"
+  ],
   "tags": [
     "bop",
     "artisan",

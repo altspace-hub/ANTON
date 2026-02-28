@@ -65,11 +65,26 @@
       "label": "Primary Jurisdiction",
       "description": "Which regulatory framework sets the periodic review requirements?",
       "options": [
-        { "value": "eu_amlr", "label": "EU / AMLR (2024/1624)" },
-        { "value": "sweden", "label": "Sweden (Penningtvättslagen)" },
-        { "value": "finland", "label": "Finland (Laki rahanpesun estämisestä)" },
-        { "value": "uk", "label": "UK (MLR 2017)" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "eu_amlr",
+          "label": "EU / AMLR (2024/1624)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden (Penningtvättslagen)"
+        },
+        {
+          "value": "finland",
+          "label": "Finland (Laki rahanpesun estämisestä)"
+        },
+        {
+          "value": "uk",
+          "label": "UK (MLR 2017)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {

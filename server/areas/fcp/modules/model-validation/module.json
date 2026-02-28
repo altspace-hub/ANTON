@@ -99,8 +99,7 @@
     }
   ],
   "recommendedPersonas": [
-    "fcp-expert",
-    "cyber-expert"
+    "fcp-expert"
   ],
   "tags": [
     "model-validation",

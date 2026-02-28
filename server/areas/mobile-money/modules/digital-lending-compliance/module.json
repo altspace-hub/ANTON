@@ -36,11 +36,26 @@
       "description": "What type of digital lending product is being assessed?",
       "required": true,
       "options": [
-        { "value": "bnpl", "label": "BNPL (Buy Now Pay Later)" },
-        { "value": "mobile-credit", "label": "Mobile credit" },
-        { "value": "embedded-finance", "label": "Embedded finance" },
-        { "value": "nano-loans", "label": "Nano-loans" },
-        { "value": "sme-digital", "label": "SME digital loans" }
+        {
+          "value": "bnpl",
+          "label": "BNPL (Buy Now Pay Later)"
+        },
+        {
+          "value": "mobile-credit",
+          "label": "Mobile credit"
+        },
+        {
+          "value": "embedded-finance",
+          "label": "Embedded finance"
+        },
+        {
+          "value": "nano-loans",
+          "label": "Nano-loans"
+        },
+        {
+          "value": "sme-digital",
+          "label": "SME digital loans"
+        }
       ]
     },
     {
@@ -50,15 +65,42 @@
       "description": "Which country's regulatory framework applies?",
       "required": true,
       "options": [
-        { "value": "ke", "label": "Kenya" },
-        { "value": "ng", "label": "Nigeria" },
-        { "value": "gh", "label": "Ghana" },
-        { "value": "tz", "label": "Tanzania" },
-        { "value": "ug", "label": "Uganda" },
-        { "value": "bd", "label": "Bangladesh" },
-        { "value": "pk", "label": "Pakistan" },
-        { "value": "ph", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "ke",
+          "label": "Kenya"
+        },
+        {
+          "value": "ng",
+          "label": "Nigeria"
+        },
+        {
+          "value": "gh",
+          "label": "Ghana"
+        },
+        {
+          "value": "tz",
+          "label": "Tanzania"
+        },
+        {
+          "value": "ug",
+          "label": "Uganda"
+        },
+        {
+          "value": "bd",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pk",
+          "label": "Pakistan"
+        },
+        {
+          "value": "ph",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -68,16 +110,28 @@
       "description": "How is interest or cost of credit calculated and disclosed?",
       "required": true,
       "options": [
-        { "value": "simple", "label": "Simple interest" },
-        { "value": "reducing-balance", "label": "Reducing balance" },
-        { "value": "flat-rate", "label": "Flat rate" },
-        { "value": "revenue-share", "label": "Revenue share" }
+        {
+          "value": "simple",
+          "label": "Simple interest"
+        },
+        {
+          "value": "reducing-balance",
+          "label": "Reducing balance"
+        },
+        {
+          "value": "flat-rate",
+          "label": "Flat rate"
+        },
+        {
+          "value": "revenue-share",
+          "label": "Revenue share"
+        }
       ]
     }
   ],
   "recommendedPersonas": [
-    "mobile-money-compliance",
-    "fcp-expert"
+    "mobile-money-agent-trainer",
+    "mobile-money-compliance"
   ],
   "recommendedSkills": [
     "jurisdiction-ke-cbk",

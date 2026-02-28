@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "strict",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Veterinary first response: bloat, dystocia, wounds, newborn resuscitation, heat stroke, fractures, first aid while waiting for vet — cattle, goats, sheep, pigs, poultry" }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Veterinary first response: bloat, dystocia, wounds, newborn resuscitation, heat stroke, fractures, first aid while waiting for vet — cattle, goats, sheep, pigs, poultry"
+      }
     }
   },
   "guidedInputs": [
@@ -28,13 +34,34 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "cattle", "label": "Cattle / Cows" },
-        { "value": "goats", "label": "Goats" },
-        { "value": "sheep", "label": "Sheep" },
-        { "value": "pigs", "label": "Pigs" },
-        { "value": "chickens", "label": "Chickens / Poultry" },
-        { "value": "ducks", "label": "Ducks" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "cattle",
+          "label": "Cattle / Cows"
+        },
+        {
+          "value": "goats",
+          "label": "Goats"
+        },
+        {
+          "value": "sheep",
+          "label": "Sheep"
+        },
+        {
+          "value": "pigs",
+          "label": "Pigs"
+        },
+        {
+          "value": "chickens",
+          "label": "Chickens / Poultry"
+        },
+        {
+          "value": "ducks",
+          "label": "Ducks"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -43,15 +70,42 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "bloat", "label": "Bloat (swollen belly)" },
-        { "value": "difficult-birth", "label": "Difficult birth" },
-        { "value": "snake-bite", "label": "Snake / animal bite" },
-        { "value": "wound", "label": "Wound / injury" },
-        { "value": "heat-stroke", "label": "Heat stroke" },
-        { "value": "choke", "label": "Choking" },
-        { "value": "fracture", "label": "Fracture / broken bone" },
-        { "value": "sudden-collapse", "label": "Sudden collapse" },
-        { "value": "newborn-not-breathing", "label": "Newborn not breathing" }
+        {
+          "value": "bloat",
+          "label": "Bloat (swollen belly)"
+        },
+        {
+          "value": "difficult-birth",
+          "label": "Difficult birth"
+        },
+        {
+          "value": "snake-bite",
+          "label": "Snake / animal bite"
+        },
+        {
+          "value": "wound",
+          "label": "Wound / injury"
+        },
+        {
+          "value": "heat-stroke",
+          "label": "Heat stroke"
+        },
+        {
+          "value": "choke",
+          "label": "Choking"
+        },
+        {
+          "value": "fracture",
+          "label": "Fracture / broken bone"
+        },
+        {
+          "value": "sudden-collapse",
+          "label": "Sudden collapse"
+        },
+        {
+          "value": "newborn-not-breathing",
+          "label": "Newborn not breathing"
+        }
       ]
     },
     {
@@ -60,19 +114,64 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "ethiopia", "label": "Ethiopia" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "uganda", "label": "Uganda" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "ethiopia",
+          "label": "Ethiopia"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "uganda",
+          "label": "Uganda"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["agricultural-extension-worker", "veteran-farmer"],
-  "tags": ["emergency", "veterinary", "first-response", "bloat", "dystocia", "wound", "newborn", "bop", "livestock", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "agricultural-extension-worker",
+    "veteran-farmer"
+  ],
+  "tags": [
+    "emergency",
+    "veterinary",
+    "first-response",
+    "bloat",
+    "dystocia",
+    "wound",
+    "newborn",
+    "bop",
+    "livestock",
+    "africa",
+    "south-asia"
+  ]
 }

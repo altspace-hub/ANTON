@@ -157,7 +157,9 @@
       "placeholder": "e.g., Must support pagination for large result sets, need real-time updates for order status, rate limiting required, backward compatibility with v1 API"
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "tech-expert"
+  ],
   "tags": [
     "software",
     "api",

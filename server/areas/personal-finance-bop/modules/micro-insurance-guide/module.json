@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "quick",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,15 +34,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -49,11 +78,26 @@
       "label": "Which type of insurance do you want to understand?",
       "required": true,
       "options": [
-        { "value": "health", "label": "Health insurance" },
-        { "value": "life", "label": "Life insurance or funeral cover" },
-        { "value": "crop-livestock", "label": "Crop or livestock insurance" },
-        { "value": "mobile-phone", "label": "Mobile phone insurance" },
-        { "value": "all-basics", "label": "All the basics — where to start" }
+        {
+          "value": "health",
+          "label": "Health insurance"
+        },
+        {
+          "value": "life",
+          "label": "Life insurance or funeral cover"
+        },
+        {
+          "value": "crop-livestock",
+          "label": "Crop or livestock insurance"
+        },
+        {
+          "value": "mobile-phone",
+          "label": "Mobile phone insurance"
+        },
+        {
+          "value": "all-basics",
+          "label": "All the basics — where to start"
+        }
       ]
     },
     {
@@ -62,9 +106,18 @@
       "label": "What best describes your income?",
       "required": true,
       "options": [
-        { "value": "very-low", "label": "Very low — day-to-day survival" },
-        { "value": "low-stable", "label": "Low but stable income" },
-        { "value": "small-business", "label": "Small business owner" }
+        {
+          "value": "very-low",
+          "label": "Very low — day-to-day survival"
+        },
+        {
+          "value": "low-stable",
+          "label": "Low but stable income"
+        },
+        {
+          "value": "small-business",
+          "label": "Small business owner"
+        }
       ]
     },
     {
@@ -73,14 +126,28 @@
       "label": "What do you most need help with?",
       "required": false,
       "options": [
-        { "value": "understand", "label": "Understand what insurance is" },
-        { "value": "find-affordable", "label": "Find affordable options" },
-        { "value": "bad-experience", "label": "I had a bad experience with insurance" },
-        { "value": "claim", "label": "Help filing a claim" }
+        {
+          "value": "understand",
+          "label": "Understand what insurance is"
+        },
+        {
+          "value": "find-affordable",
+          "label": "Find affordable options"
+        },
+        {
+          "value": "bad-experience",
+          "label": "I had a bad experience with insurance"
+        },
+        {
+          "value": "claim",
+          "label": "Help filing a claim"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microfinance-field-officer", "mobile-money-agent-trainer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

@@ -9,7 +9,11 @@
   "defaults": {
     "thinking": "investigate",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "gap-scoring-matrix", "action-plan"],
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,21 +33,41 @@
       "id": "product_type",
       "label": "Product / Activity Type",
       "type": "select",
-      "options": ["Murabaha", "Ijara", "Musharakah", "Mudarabah", "Tawarruq", "Sukuk", "Other"],
+      "options": [
+        "Murabaha",
+        "Ijara",
+        "Musharakah",
+        "Mudarabah",
+        "Tawarruq",
+        "Sukuk",
+        "Other"
+      ],
       "required": true
     },
     {
       "id": "institution_type",
       "label": "Institution Type",
       "type": "select",
-      "options": ["Full Islamic Bank", "Islamic Window", "NBFI", "Takaful Operator"],
+      "options": [
+        "Full Islamic Bank",
+        "Islamic Window",
+        "NBFI",
+        "Takaful Operator"
+      ],
       "required": true
     },
     {
       "id": "sharia_standard",
       "label": "Applicable Sharia Standard",
       "type": "select",
-      "options": ["AAOIFI", "Local Sharia Board", "IFSB", "BNM SAC", "SAMA", "Other"],
+      "options": [
+        "AAOIFI",
+        "Local Sharia Board",
+        "IFSB",
+        "BNM SAC",
+        "SAMA",
+        "Other"
+      ],
       "required": true
     },
     {
@@ -54,7 +78,23 @@
       "required": false
     }
   ],
-  "recommendedPersonas": ["sharia-board-member", "islamic-finance-structurer", "fcp-expert"],
-  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
-  "tags": ["sharia", "compliance", "aaoifi", "ifsb", "assessment", "murabaha", "ijara", "musharakah", "islamic-banking"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards",
+    "skill-ifsb-standards"
+  ],
+  "tags": [
+    "sharia",
+    "compliance",
+    "aaoifi",
+    "ifsb",
+    "assessment",
+    "murabaha",
+    "ijara",
+    "musharakah",
+    "islamic-banking"
+  ]
 }

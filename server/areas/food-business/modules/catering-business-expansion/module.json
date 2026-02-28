@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,10 +34,22 @@
       "label": "What is your current food business?",
       "required": true,
       "options": [
-        { "value": "street-food", "label": "Street food stall" },
-        { "value": "home-cooking", "label": "Home-based cooking" },
-        { "value": "small-restaurant", "label": "Small restaurant" },
-        { "value": "market-stall", "label": "Market stall" }
+        {
+          "value": "street-food",
+          "label": "Street food stall"
+        },
+        {
+          "value": "home-cooking",
+          "label": "Home-based cooking"
+        },
+        {
+          "value": "small-restaurant",
+          "label": "Small restaurant"
+        },
+        {
+          "value": "market-stall",
+          "label": "Market stall"
+        }
       ]
     },
     {
@@ -44,15 +58,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -61,11 +102,26 @@
       "label": "What type of catering are you interested in?",
       "required": true,
       "options": [
-        { "value": "weddings-parties", "label": "Weddings and social events" },
-        { "value": "corporate-office", "label": "Corporate and office catering" },
-        { "value": "school-feeding", "label": "School feeding programmes" },
-        { "value": "ngo-events", "label": "NGO and community events" },
-        { "value": "all", "label": "All types" }
+        {
+          "value": "weddings-parties",
+          "label": "Weddings and social events"
+        },
+        {
+          "value": "corporate-office",
+          "label": "Corporate and office catering"
+        },
+        {
+          "value": "school-feeding",
+          "label": "School feeding programmes"
+        },
+        {
+          "value": "ngo-events",
+          "label": "NGO and community events"
+        },
+        {
+          "value": "all",
+          "label": "All types"
+        }
       ]
     },
     {
@@ -74,14 +130,29 @@
       "label": "Where are you now?",
       "required": true,
       "options": [
-        { "value": "just-idea", "label": "Just an idea — thinking about it" },
-        { "value": "been-asked", "label": "People have asked me to cater for them" },
-        { "value": "booking-coming", "label": "I have a booking coming up" },
-        { "value": "ready-to-start", "label": "Ready to start, need guidance" }
+        {
+          "value": "just-idea",
+          "label": "Just an idea — thinking about it"
+        },
+        {
+          "value": "been-asked",
+          "label": "People have asked me to cater for them"
+        },
+        {
+          "value": "booking-coming",
+          "label": "I have a booking coming up"
+        },
+        {
+          "value": "ready-to-start",
+          "label": "Ready to start, need guidance"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["small-business-mentor", "food-safety-inspector"],
+  "recommendedPersonas": [
+    "food-safety-inspector",
+    "small-business-mentor"
+  ],
   "tags": [
     "bop",
     "food-business",

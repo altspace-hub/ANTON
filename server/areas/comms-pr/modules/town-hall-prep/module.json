@@ -42,14 +42,38 @@
       "label": "What is driving this town hall?",
       "required": true,
       "options": [
-        { "value": "strategy", "label": "Strategic update / annual strategy presentation" },
-        { "value": "results", "label": "Financial results / performance update" },
-        { "value": "change", "label": "Organizational change announcement" },
-        { "value": "acquisition", "label": "Acquisition / merger announcement or update" },
-        { "value": "crisis", "label": "Crisis or difficult news communication" },
-        { "value": "milestone", "label": "Milestone celebration / achievement" },
-        { "value": "regular", "label": "Regular quarterly/annual all-hands" },
-        { "value": "other", "label": "Other — describe below" }
+        {
+          "value": "strategy",
+          "label": "Strategic update / annual strategy presentation"
+        },
+        {
+          "value": "results",
+          "label": "Financial results / performance update"
+        },
+        {
+          "value": "change",
+          "label": "Organizational change announcement"
+        },
+        {
+          "value": "acquisition",
+          "label": "Acquisition / merger announcement or update"
+        },
+        {
+          "value": "crisis",
+          "label": "Crisis or difficult news communication"
+        },
+        {
+          "value": "milestone",
+          "label": "Milestone celebration / achievement"
+        },
+        {
+          "value": "regular",
+          "label": "Regular quarterly/annual all-hands"
+        },
+        {
+          "value": "other",
+          "label": "Other — describe below"
+        }
       ]
     },
     {
@@ -77,15 +101,32 @@
       "label": "Current employee sentiment",
       "description": "Honest assessment of current mood helps calibrate tone.",
       "options": [
-        { "value": "positive", "label": "Positive — high morale and engagement" },
-        { "value": "cautious", "label": "Cautious — some uncertainty but generally stable" },
-        { "value": "anxious", "label": "Anxious — significant uncertainty or concern" },
-        { "value": "low", "label": "Low — morale challenges or difficult period" },
-        { "value": "mixed", "label": "Mixed — varies by team or geography" }
+        {
+          "value": "positive",
+          "label": "Positive — high morale and engagement"
+        },
+        {
+          "value": "cautious",
+          "label": "Cautious — some uncertainty but generally stable"
+        },
+        {
+          "value": "anxious",
+          "label": "Anxious — significant uncertainty or concern"
+        },
+        {
+          "value": "low",
+          "label": "Low — morale challenges or difficult period"
+        },
+        {
+          "value": "mixed",
+          "label": "Mixed — varies by team or geography"
+        }
       ]
     }
   ],
-  "recommendedPersonas": [],
+  "recommendedPersonas": [
+    "strategy-expert"
+  ],
   "tags": [
     "communications",
     "town-hall",

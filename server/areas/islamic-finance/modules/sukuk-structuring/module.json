@@ -9,7 +9,10 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "strict",
-    "outputFormats": ["detailed-findings", "decision-memo"],
+    "outputFormats": [
+      "detailed-findings",
+      "decision-memo"
+    ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -29,7 +32,13 @@
       "id": "sukuk_type",
       "label": "Sukuk Structure Type",
       "type": "select",
-      "options": ["Ijara Sukuk", "Musharakah Sukuk", "Murabaha Sukuk", "Wakala Sukuk", "Hybrid"],
+      "options": [
+        "Ijara Sukuk",
+        "Musharakah Sukuk",
+        "Murabaha Sukuk",
+        "Wakala Sukuk",
+        "Hybrid"
+      ],
       "required": true
     },
     {
@@ -43,7 +52,12 @@
       "id": "tenor",
       "label": "Tenor",
       "type": "select",
-      "options": ["Short-term (<1 year)", "Medium (1–5 years)", "Long (5–10 years)", "Very long (10+ years)"],
+      "options": [
+        "Short-term (<1 year)",
+        "Medium (1–5 years)",
+        "Long (5–10 years)",
+        "Very long (10+ years)"
+      ],
       "required": true
     },
     {
@@ -54,7 +68,23 @@
       "required": false
     }
   ],
-  "recommendedPersonas": ["islamic-finance-structurer", "sharia-board-member"],
-  "recommendedSkills": ["skill-aaoifi-standards", "skill-ifsb-standards"],
-  "tags": ["sukuk", "structuring", "capital-markets", "ijara", "wakala", "musharakah", "spv", "aaoifi", "islamic-bonds"]
+  "recommendedPersonas": [
+    "sharia-board-member",
+    "islamic-finance-structurer"
+  ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards",
+    "skill-ifsb-standards"
+  ],
+  "tags": [
+    "sukuk",
+    "structuring",
+    "capital-markets",
+    "ijara",
+    "wakala",
+    "musharakah",
+    "spv",
+    "aaoifi",
+    "islamic-bonds"
+  ]
 }

@@ -15,7 +15,9 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -32,12 +34,30 @@
       "label": "What type of business do you have?",
       "required": true,
       "options": [
-        { "value": "trading-market", "label": "Trading or market stall" },
-        { "value": "food", "label": "Food preparation or selling" },
-        { "value": "craft", "label": "Craft or tailoring" },
-        { "value": "service", "label": "Service business" },
-        { "value": "agriculture", "label": "Agriculture or farming" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "trading-market",
+          "label": "Trading or market stall"
+        },
+        {
+          "value": "food",
+          "label": "Food preparation or selling"
+        },
+        {
+          "value": "craft",
+          "label": "Craft or tailoring"
+        },
+        {
+          "value": "service",
+          "label": "Service business"
+        },
+        {
+          "value": "agriculture",
+          "label": "Agriculture or farming"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -46,15 +66,42 @@
       "label": "Which country are you in?",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -63,10 +110,22 @@
       "label": "How much are you applying to borrow?",
       "required": true,
       "options": [
-        { "value": "under-100", "label": "Under $100" },
-        { "value": "100-500", "label": "$100 to $500" },
-        { "value": "500-2000", "label": "$500 to $2,000" },
-        { "value": "over-2000", "label": "Over $2,000" }
+        {
+          "value": "under-100",
+          "label": "Under $100"
+        },
+        {
+          "value": "100-500",
+          "label": "$100 to $500"
+        },
+        {
+          "value": "500-2000",
+          "label": "$500 to $2,000"
+        },
+        {
+          "value": "over-2000",
+          "label": "Over $2,000"
+        }
       ]
     },
     {
@@ -75,14 +134,28 @@
       "label": "What stage is your business at?",
       "required": true,
       "options": [
-        { "value": "new", "label": "New business — just starting" },
-        { "value": "existing-expanding", "label": "Existing business — I want to expand" },
-        { "value": "seasonal", "label": "Seasonal business" },
-        { "value": "working-capital", "label": "Established — I need working capital" }
+        {
+          "value": "new",
+          "label": "New business — just starting"
+        },
+        {
+          "value": "existing-expanding",
+          "label": "Existing business — I want to expand"
+        },
+        {
+          "value": "seasonal",
+          "label": "Seasonal business"
+        },
+        {
+          "value": "working-capital",
+          "label": "Established — I need working capital"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["microenterprise-credit-advisor", "microfinance-field-officer"],
+  "recommendedPersonas": [
+    "microfinance-field-officer"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

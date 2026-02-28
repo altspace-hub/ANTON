@@ -15,10 +15,16 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": ["quick-briefing"],
+    "outputFormats": [
+      "quick-briefing"
+    ],
     "transparencyLevel": 0,
     "knowledgeSources": {
-      "claudeKnowledge": { "enabled": true, "webSearchEnabled": false, "description": "Banking consumer rights by country: fee disclosure, right to statement, account closure rights, central bank consumer divisions (CBK Kenya, CBN Nigeria, Bank of Ghana, RBI India), financial services ombudsman, illegal charges, account freezing rules." }
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Banking consumer rights by country: fee disclosure, right to statement, account closure rights, central bank consumer divisions (CBK Kenya, CBN Nigeria, Bank of Ghana, RBI India), financial services ombudsman, illegal charges, account freezing rules."
+      }
     }
   },
   "guidedInputs": [
@@ -28,16 +34,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "kenya", "label": "Kenya" },
-        { "value": "nigeria", "label": "Nigeria" },
-        { "value": "ghana", "label": "Ghana" },
-        { "value": "tanzania", "label": "Tanzania" },
-        { "value": "south-africa", "label": "South Africa" },
-        { "value": "india", "label": "India" },
-        { "value": "bangladesh", "label": "Bangladesh" },
-        { "value": "pakistan", "label": "Pakistan" },
-        { "value": "philippines", "label": "Philippines" },
-        { "value": "other", "label": "Other country" }
+        {
+          "value": "kenya",
+          "label": "Kenya"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania"
+        },
+        {
+          "value": "south-africa",
+          "label": "South Africa"
+        },
+        {
+          "value": "india",
+          "label": "India"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh"
+        },
+        {
+          "value": "pakistan",
+          "label": "Pakistan"
+        },
+        {
+          "value": "philippines",
+          "label": "Philippines"
+        },
+        {
+          "value": "other",
+          "label": "Other country"
+        }
       ]
     },
     {
@@ -46,11 +82,26 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "commercial-bank", "label": "Commercial bank" },
-        { "value": "microfinance", "label": "Microfinance bank or institution" },
-        { "value": "mobile-money-bank", "label": "Mobile money or digital bank" },
-        { "value": "credit-union-sacco", "label": "Credit union or SACCO" },
-        { "value": "post-bank", "label": "Post bank or savings institution" }
+        {
+          "value": "commercial-bank",
+          "label": "Commercial bank"
+        },
+        {
+          "value": "microfinance",
+          "label": "Microfinance bank or institution"
+        },
+        {
+          "value": "mobile-money-bank",
+          "label": "Mobile money or digital bank"
+        },
+        {
+          "value": "credit-union-sacco",
+          "label": "Credit union or SACCO"
+        },
+        {
+          "value": "post-bank",
+          "label": "Post bank or savings institution"
+        }
       ]
     },
     {
@@ -59,15 +110,46 @@
       "type": "select",
       "required": true,
       "options": [
-        { "value": "unexplained-charges", "label": "Unexplained or unauthorised charges" },
-        { "value": "account-frozen", "label": "Account frozen without explanation" },
-        { "value": "loan-refused", "label": "Loan refused without explanation" },
-        { "value": "poor-service", "label": "Poor customer service" },
-        { "value": "account-closed", "label": "Account closed unexpectedly" },
-        { "value": "discrimination", "label": "Treated differently or discriminated against" }
+        {
+          "value": "unexplained-charges",
+          "label": "Unexplained or unauthorised charges"
+        },
+        {
+          "value": "account-frozen",
+          "label": "Account frozen without explanation"
+        },
+        {
+          "value": "loan-refused",
+          "label": "Loan refused without explanation"
+        },
+        {
+          "value": "poor-service",
+          "label": "Poor customer service"
+        },
+        {
+          "value": "account-closed",
+          "label": "Account closed unexpectedly"
+        },
+        {
+          "value": "discrimination",
+          "label": "Treated differently or discriminated against"
+        }
       ]
     }
   ],
-  "recommendedPersonas": ["consumer-rights-advocate", "paralegal-aid"],
-  "tags": ["consumer-protection", "bop", "rights", "banking", "bank-fees", "financial-ombudsman", "account-rights", "microfinance", "africa", "south-asia"]
+  "recommendedPersonas": [
+    "consumer-rights-advocate"
+  ],
+  "tags": [
+    "consumer-protection",
+    "bop",
+    "rights",
+    "banking",
+    "bank-fees",
+    "financial-ombudsman",
+    "account-rights",
+    "microfinance",
+    "africa",
+    "south-asia"
+  ]
 }
