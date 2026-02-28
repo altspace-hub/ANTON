@@ -8,38 +8,39 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 ### Option A — Windows launcher (easiest)
 
-**One-time setup (do this once on each new computer):**
+**Prerequisites (one-time, manual):**
 
-1. Install **Node.js 22+** — download the LTS installer from [nodejs.org](https://nodejs.org) and run it.
-   Already installed but on an older version? Upgrade via terminal:
-   ```bash
-   winget upgrade OpenJS.NodeJS.LTS
-   ```
-   Then close and reopen the terminal. Check your version with `node --version` — it should show v20 or higher.
-2. Open a terminal and install pnpm:
-   ```bash
-   npm install -g pnpm
-   ```
-3. Clone the repo and enter the folder:
-   ```bash
-   git clone https://github.com/altspace-hub/ANTON.git
-   cd ANTON
-   ```
-4. Copy `.env.example` to `.env` and add your `ANTHROPIC_API_KEY`
-5. Install dependencies and set up the database:
-   ```bash
-   pnpm install
-   pnpm run db:init
-   ```
+Install **Node.js 22+** from [nodejs.org](https://nodejs.org) (choose the LTS installer).
+Already have Node but on an older version? Upgrade in a terminal:
+```
+winget upgrade OpenJS.NodeJS.LTS
+```
+Close and reopen the terminal afterwards. Confirm with `node --version` — should show v22 or higher.
+
+**One-time setup — clone and run the setup script:**
+
+```bash
+git clone https://github.com/altspace-hub/ANTON.git
+cd ANTON
+```
+
+Then double-click **`setup-anton.bat`** (or run it in a terminal).
+
+The script handles everything automatically:
+- Checks your Node.js version
+- Installs pnpm if it's missing
+- Creates `.env` from the template and **prompts you for your Anthropic API key**
+- Runs `pnpm install`, `pnpm run db:init`, and `pnpm run build`
+
+Get your API key at [console.anthropic.com](https://console.anthropic.com).
 
 **Every time you want to run ANTON:**
 
-6. Start ANTON:
-   - **Windows:** Double-click **`START ANTON.bat`**
-   - **Linux / Mac:** Run `./start-anton.sh` in a terminal
-7. ANTON opens automatically at [http://localhost:3001](http://localhost:3001)
+Double-click **`start-anton.bat`**.
 
-To stop: close the terminal window (Windows) or press `Ctrl+C` (Linux/Mac).
+ANTON starts and your browser opens automatically at [http://localhost:3001](http://localhost:3001).
+
+To stop: press `Ctrl+C` in the terminal window.
 
 ---
 
