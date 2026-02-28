@@ -347,52 +347,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* My Custom Modules showcase */}
-      <div className="mb-8">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Puzzle className="h-4 w-4 text-adv-teal" />
-            <h2 className="text-sm font-semibold text-adv-teal uppercase tracking-wider">My Custom Modules</h2>
-            {myCustomModules.length > 0 && (
-              <span className="text-xs text-adv-gray-med">{myCustomModules.length}</span>
-            )}
-          </div>
-          <Link to="/build-module" className="text-xs text-adv-teal hover:underline flex items-center gap-1">
-            Build new <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
-        {myCustomModules.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-adv-teal/20 bg-adv-teal/5 px-5 py-5 text-center">
-            <Puzzle className="h-8 w-8 text-adv-teal/30 mx-auto mb-2" />
-            <p className="text-sm text-adv-gray-med">No custom modules yet.</p>
-            <Link to="/build-module" className="mt-2 inline-flex items-center gap-1 text-xs text-adv-teal hover:underline">
-              Build your first module <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-        ) : (
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-adv-card">
-            {myCustomModules.map((mod) => (
-              <Link
-                key={mod.id}
-                to={`/module/${mod.id}`}
-                className="group shrink-0 w-52 rounded-xl border border-adv-teal/20 bg-adv-card p-4 transition-all hover:border-adv-teal/50 hover:shadow-lg hover:shadow-adv-teal/5"
-              >
-                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border bg-adv-teal/10 text-adv-teal border-adv-teal/20">
-                  <Puzzle className="h-4.5 w-4.5" />
-                </div>
-                <h3 className="mb-1 text-sm font-semibold text-adv-white group-hover:text-adv-teal transition-colors line-clamp-1">
-                  {mod.name}
-                </h3>
-                <p className="text-xs text-adv-gray leading-relaxed line-clamp-2">{mod.description || 'Custom module'}</p>
-                <div className="mt-3 flex items-center gap-1 text-xs text-adv-teal opacity-0 transition-opacity group-hover:opacity-100">
-                  Open <ArrowRight className="h-3 w-3" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Scheduled Job Results Widget */}
       {scheduledNotifications.length > 0 && (
         <div className="mb-6 rounded-xl border border-adv-gold/30 bg-adv-gold/5 px-5 py-4">
@@ -590,6 +544,52 @@ export default function Dashboard() {
           <TeamWorkloadView />
         </div>
       </details>
+
+      {/* My Custom Modules showcase */}
+      <div className="mb-8">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Puzzle className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-teal uppercase tracking-wider">My Custom Modules</h2>
+            {myCustomModules.length > 0 && (
+              <span className="text-xs text-adv-gray-med">{myCustomModules.length}</span>
+            )}
+          </div>
+          <Link to="/build-module" className="text-xs text-adv-teal hover:underline flex items-center gap-1">
+            Build new <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        {myCustomModules.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-adv-teal/20 bg-adv-teal/5 px-5 py-5 text-center">
+            <Puzzle className="h-8 w-8 text-adv-teal/30 mx-auto mb-2" />
+            <p className="text-sm text-adv-gray-med">No custom modules yet.</p>
+            <Link to="/build-module" className="mt-2 inline-flex items-center gap-1 text-xs text-adv-teal hover:underline">
+              Build your first module <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        ) : (
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-adv-card">
+            {myCustomModules.map((mod) => (
+              <Link
+                key={mod.id}
+                to={`/module/${mod.id}`}
+                className="group shrink-0 w-52 rounded-xl border border-adv-teal/20 bg-adv-card p-4 transition-all hover:border-adv-teal/50 hover:shadow-lg hover:shadow-adv-teal/5"
+              >
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border bg-adv-teal/10 text-adv-teal border-adv-teal/20">
+                  <Puzzle className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="mb-1 text-sm font-semibold text-adv-white group-hover:text-adv-teal transition-colors line-clamp-1">
+                  {mod.name}
+                </h3>
+                <p className="text-xs text-adv-gray leading-relaxed line-clamp-2">{mod.description || 'Custom module'}</p>
+                <div className="mt-3 flex items-center gap-1 text-xs text-adv-teal opacity-0 transition-opacity group-hover:opacity-100">
+                  Open <ArrowRight className="h-3 w-3" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* AI-powered module finder — replaces static Starter Packs */}
       <SmartModuleSearch />
