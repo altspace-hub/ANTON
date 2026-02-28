@@ -166,7 +166,21 @@ export function useClaude() {
           const session = await createSession({
             moduleId,
             title: userMessage.slice(0, 80) + (userMessage.length > 80 ? '…' : ''),
-            config: { model, thinking, creativity, selectedOutputFormats },
+            config: {
+              model,
+              thinking,
+              creativity,
+              transparencyLevel,
+              selectedOutputFormats,
+              selectedPersonas,
+              selectedSkills,
+              moduleInputs,
+              knowledgeSources,
+              plainTextMode,
+              writingTone,
+              audience: audience || undefined,
+              outputLanguage: outputLanguage || undefined,
+            },
           });
           activeSessionId = session.id;
           setSessionId(session.id);

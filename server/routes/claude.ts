@@ -526,6 +526,27 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
               ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
                 .catch(() => {});
             }
+            // Persist the settings that produced this output so history shows accurate config
+            if (sessionId) {
+              try {
+                const configSnapshot = {
+                  model: req.body.model || 'claude-opus-4-6',
+                  thinking: req.body.thinking,
+                  creativity: req.body.creativity,
+                  transparencyLevel: req.body.transparencyLevel,
+                  selectedOutputFormats: outputFormats,
+                  selectedPersonas,
+                  selectedSkills,
+                  knowledgeSources,
+                  plainTextMode: req.body.plainTextMode,
+                  writingTone: req.body.writingTone,
+                  audience: req.body.audience,
+                  outputLanguage: req.body.outputLanguage,
+                };
+                db.prepare('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?')
+                  .run(JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);
+              } catch { /* non-fatal */ }
+            }
             // Auto-save version snapshot
             if (sessionId && data.text && data.text.length > 100) {
               try {
