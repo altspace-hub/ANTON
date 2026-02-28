@@ -15,6 +15,7 @@
 
 import path from 'path';
 import fs from 'fs-extra';
+import { watch as fsWatch } from 'node:fs';
 import { fileURLToPath } from 'url';
 import type { AreaConfig, ModuleConfig, LoadedArea } from '../types/area-config.js';
 
@@ -25,6 +26,22 @@ const AREAS_DIR = path.join(__dirname, '..', 'areas');
 
 let _areas: LoadedArea[] | null = null;
 let _moduleIndex: Map<string, ModuleConfig> | null = null; // moduleId → module
+
+// ── Dev-mode file watcher ─────────────────────────────────────
+// Invalidates cache whenever any area JSON/MD file changes so
+// edits to module.json / system-prompt.md are picked up on the
+// next request without a server restart.
+
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    fsWatch(AREAS_DIR, { recursive: true }, () => {
+      _areas = null;
+      _moduleIndex = null;
+    });
+  } catch {
+    // Recursive watch not supported on all platforms — silently ignore
+  }
+}
 
 // ── Loader ───────────────────────────────────────────────────
 
