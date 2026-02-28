@@ -34,6 +34,11 @@ const ICON_OPTIONS = [
 
 const THINKING_OPTIONS = ['quick', 'think', 'think_hard', 'investigate', 'plan_first'];
 const CREATIVITY_OPTIONS = ['strict', 'balanced', 'creative'];
+const MODEL_OPTIONS = [
+  { value: 'claude-opus-4-6', label: 'Opus 4.6 (most capable)' },
+  { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6 (fast)' },
+  { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5 (budget)' },
+];
 
 // ── Save As Dialog ──────────────────────────────────────────────────────────
 
@@ -203,11 +208,14 @@ interface WizardData {
   system_prompt: string;
   thinking: string;
   creativity: string;
+  model: string;
+  transparencyLevel: 0 | 1 | 2;
   personas: string[];
   skills: string[];
   output_formats: string[];
   defaultKnowledgeLibraryIds: string[];
   defaultWebSearch: boolean;
+  defaultReferenceUrls: string[];
   referenceOutput: string;
   referenceOutputLabel: string;
   testQuery: string;
@@ -235,11 +243,14 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
     system_prompt: initialData?.system_prompt || '',
     thinking: initialData?.thinking || 'think_hard',
     creativity: initialData?.creativity || 'balanced',
+    model: 'claude-opus-4-6',
+    transparencyLevel: 1,
     personas: initialData?.personas || [],
     skills: initialData?.skills || [],
     output_formats: initialData?.output_formats || [],
     defaultKnowledgeLibraryIds: [],
     defaultWebSearch: false,
+    defaultReferenceUrls: [],
     referenceOutput: '',
     referenceOutputLabel: '',
     testQuery: '',
@@ -285,11 +296,14 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
         config: {
           thinking: data.thinking,
           creativity: data.creativity,
+          model: data.model,
+          transparencyLevel: data.transparencyLevel,
           outputFormats: data.output_formats,
           personas: data.personas,
           skills: data.skills,
           defaultKnowledgeLibraryIds: data.defaultKnowledgeLibraryIds,
           defaultWebSearch: data.defaultWebSearch,
+          defaultReferenceUrls: data.defaultReferenceUrls.length > 0 ? data.defaultReferenceUrls : undefined,
           referenceOutput: data.referenceOutput || undefined,
           referenceOutputLabel: data.referenceOutputLabel || undefined,
           testQuery: data.testQuery || undefined,
@@ -381,6 +395,30 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
                 <select className={inputCls} value={data.creativity} onChange={(e) => set('creativity', e.target.value)}>
                   {CREATIVITY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className={labelCls}>Default model</label>
+                <select className={inputCls} value={data.model} onChange={(e) => set('model', e.target.value)}>
+                  {MODEL_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Thinking display</label>
+                <div className="flex gap-3 mt-1.5">
+                  {([0, 1, 2] as const).map((level) => (
+                    <label key={level} className="flex items-center gap-1.5 cursor-pointer text-xs text-adv-gray">
+                      <input
+                        type="radio"
+                        name="transparencyLevel"
+                        value={level}
+                        checked={data.transparencyLevel === level}
+                        onChange={() => set('transparencyLevel', level)}
+                        className="accent-adv-teal"
+                      />
+                      {level === 0 ? 'Off' : level === 1 ? 'Summary' : 'Full'}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
             <div>
@@ -547,6 +585,21 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
               />
               Enable web search by default
             </label>
+
+            <div>
+              <label className="block text-xs font-medium text-adv-off-white mb-1">Reference URLs (optional)</label>
+              <textarea
+                className={`${inputCls} resize-none font-mono text-xs`}
+                rows={4}
+                placeholder="https://eur-lex.europa.eu/eli/reg/2024/1624/oj&#10;https://www.eba.europa.eu/...&#10;One URL per line"
+                value={data.defaultReferenceUrls.join('\n')}
+                onChange={(e) => {
+                  const urls = e.target.value.split('\n').map(s => s.trim()).filter(Boolean);
+                  set('defaultReferenceUrls', urls);
+                }}
+              />
+              <p className="mt-1 text-[11px] text-adv-gray-med">Paste URLs to regulations or online documents. Claude will read them when users open this module.</p>
+            </div>
 
             <button
               onClick={() => setStep(step + 1)}

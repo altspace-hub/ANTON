@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Store,
   ExternalLink,
@@ -15,7 +15,7 @@ import {
   Clock,
   X,
 } from 'lucide-react';
-import { getAuthHeader } from '../lib/api';
+import { getAuthHeader, fetchCustomModules, type CustomModuleData } from '../lib/api';
 
 interface AntonManifest {
   name?: string;
@@ -70,8 +70,20 @@ export default function MarketplacePage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
   const [exportModal, setExportModal] = useState<string | null>(null);
+  const [exportableModules, setExportableModules] = useState<CustomModuleData[]>([]);
+  const [loadingExportList, setLoadingExportList] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (exportModal === 'module') {
+      setLoadingExportList(true);
+      fetchCustomModules()
+        .then(setExportableModules)
+        .catch(() => setExportableModules([]))
+        .finally(() => setLoadingExportList(false));
+    }
+  }, [exportModal]);
 
   async function handleFile(file: File) {
     if (!file.name.endsWith('.anton')) {
@@ -409,14 +421,66 @@ export default function MarketplacePage() {
               as an <code className="text-adv-teal bg-adv-dark px-1 rounded">.anton</code> package
               to share with the community. Select an item from the list below.
             </p>
-            <div className="py-8 text-center border border-dashed border-border rounded-lg">
-              <p className="text-adv-gray-med text-sm">
-                No {exportModal === 'skill-pack' ? 'skill packs' : exportModal + 's'} available to export.
-              </p>
-              <p className="text-xs text-adv-gray-med mt-1">
-                Create one first, then return here to export it.
-              </p>
-            </div>
+            {exportModal === 'module' ? (
+              loadingExportList ? (
+                <div className="py-8 text-center">
+                  <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-adv-teal border-t-transparent" />
+                  <p className="mt-2 text-xs text-adv-gray-med">Loading your modules...</p>
+                </div>
+              ) : exportableModules.length === 0 ? (
+                <div className="py-8 text-center border border-dashed border-border rounded-lg">
+                  <p className="text-adv-gray-med text-sm">No custom modules yet.</p>
+                  <p className="text-xs text-adv-gray-med mt-1">
+                    <a href="/build-module" className="text-adv-teal hover:underline">Build one →</a>{' '}then return here to export it.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {exportableModules.map((mod) => (
+                    <div key={mod.id} className="flex items-center gap-3 rounded-lg border border-border bg-adv-dark px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-adv-off-white truncate">{mod.name}</div>
+                        {mod.description && (
+                          <div className="text-xs text-adv-gray-med truncate">{mod.description}</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`/api/exchange/export/${mod.id}?type=custom`, {
+                              headers: { ...getAuthHeader() },
+                            });
+                            if (!res.ok) throw new Error('Export failed');
+                            const blob = await res.blob();
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${mod.name.replace(/\s+/g, '-').toLowerCase()}.anton`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          } catch {
+                            alert('Export failed. Please try again.');
+                          }
+                        }}
+                        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-adv-teal/10 border border-adv-teal/20 px-2.5 py-1 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors"
+                      >
+                        <Download className="h-3 w-3" />
+                        Export .anton
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="py-8 text-center border border-dashed border-border rounded-lg">
+                <p className="text-adv-gray-med text-sm">
+                  No {exportModal === 'skill-pack' ? 'skill packs' : exportModal + 's'} available to export.
+                </p>
+                <p className="text-xs text-adv-gray-med mt-1">
+                  Create one first, then return here to export it.
+                </p>
+              </div>
+            )}
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => setExportModal(null)}

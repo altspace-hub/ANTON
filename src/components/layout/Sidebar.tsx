@@ -1140,6 +1140,55 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           );
         })}
 
+        {/* ── My Modules section — appears before domain areas for quick access ── */}
+        {!sidebarCollapsed && sectionsExpanded.modules && (() => {
+          const myModules = customModules.filter(() => true);
+          if (myModules.length === 0) return null;
+          const isExpanded = expandedAreas.has('my-modules');
+          return (
+            <div className="mb-1">
+              <button
+                onClick={() => toggleArea('my-modules')}
+                className="mb-0.5 flex w-full items-center justify-between rounded-lg px-3 py-1.5 transition-colors hover:bg-adv-card"
+              >
+                <div className="flex items-center gap-2">
+                  <Puzzle className="h-3.5 w-3.5 shrink-0 text-adv-teal" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">
+                    {t('nav.myModules')}
+                  </span>
+                  <span className="text-[10px] text-adv-gray-med">{myModules.length}</span>
+                </div>
+                <ChevronDown
+                  className={`h-3 w-3 text-adv-gray-med transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`}
+                />
+              </button>
+              {isExpanded && (
+                <div className="ml-2 border-l border-adv-teal/20 pl-1">
+                  {myModules.map((cm) => {
+                    const Icon = iconMap[cm.icon] || Puzzle;
+                    return (
+                      <NavLink
+                        key={cm.id}
+                        to={`/module/${cm.id}`}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                            isActive
+                              ? 'bg-adv-teal-dim text-adv-teal'
+                              : 'text-adv-gray hover:bg-adv-card hover:text-adv-off-white'
+                          }`
+                        }
+                      >
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{cm.short_name || cm.name}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Expanded: modules grouped by area */}
         {!sidebarCollapsed && sectionsExpanded.modules && AREAS.map((area) => {
           const isExpanded = expandedAreas.has(area.id);
@@ -1216,57 +1265,6 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             </div>
           );
         })}
-
-        {/* ── My Modules section — custom modules not assigned to a specific area ── */}
-        {!sidebarCollapsed && sectionsExpanded.modules && (() => {
-          const myModules = customModules.filter(
-            (cm) => !cm.area || cm.area === 'custom' || cm.area === 'my-modules'
-          );
-          if (myModules.length === 0) return null;
-          const isExpanded = expandedAreas.has('my-modules');
-          return (
-            <div className="mb-1">
-              <button
-                onClick={() => toggleArea('my-modules')}
-                className="mb-0.5 flex w-full items-center justify-between rounded-lg px-3 py-1.5 transition-colors hover:bg-adv-card"
-              >
-                <div className="flex items-center gap-2">
-                  <Puzzle className="h-3.5 w-3.5 shrink-0 text-adv-teal" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">
-                    {t('nav.myModules')}
-                  </span>
-                  <span className="text-[10px] text-adv-gray-med">{myModules.length}</span>
-                </div>
-                <ChevronDown
-                  className={`h-3 w-3 text-adv-gray-med transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`}
-                />
-              </button>
-              {isExpanded && (
-                <div className="ml-2 border-l border-adv-teal/20 pl-1">
-                  {myModules.map((cm) => {
-                    const Icon = iconMap[cm.icon] || Puzzle;
-                    return (
-                      <NavLink
-                        key={cm.id}
-                        to={`/module/${cm.id}`}
-                        className={({ isActive }) =>
-                          `flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors ${
-                            isActive
-                              ? 'bg-adv-teal-dim text-adv-teal'
-                              : 'text-adv-gray hover:bg-adv-card hover:text-adv-off-white'
-                          }`
-                        }
-                      >
-                        <Icon className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{cm.short_name || cm.name}</span>
-                      </NavLink>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })()}
 
         {/* Recent Sessions removed from nav — available on Dashboard and My Work */}
       </nav>
