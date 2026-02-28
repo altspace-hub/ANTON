@@ -135,7 +135,7 @@
     "knowledgeSources": "Knowledge Sources",
     "outputFormats": "Output Formats",
     "systemPrompt": "System Prompt",
-    "transparencyLevel": "Reasoning Transparency",
+    "transparencyLevel": "Approach Transparency",
     "transparencyOff": "Off",
     "transparencySummary": "Summary",
     "transparencyDetailed": "Detailed",

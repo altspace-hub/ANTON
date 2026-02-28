@@ -174,7 +174,7 @@ export default function SessionTogglesPanel({
 
         {/* Transparency level */}
         <div>
-          <div className="mb-1.5 text-[11px] text-adv-gray-med">Transparency</div>
+          <div className="mb-1.5 text-[11px] text-adv-gray-med">Approach Transparency</div>
           <div className="flex gap-1.5">
             {([
               { level: 0 as const, label: 'Off', icon: <EyeOff className="h-3 w-3" /> },
