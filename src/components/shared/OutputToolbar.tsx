@@ -137,6 +137,12 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     }
   }, [showBenchmarkBreakdown]);
 
+  // Reset trust score when session changes so we don't show a stale score from a previous session
+  useEffect(() => {
+    setTrustScore(null);
+    setTrustLoading(false);
+  }, [sessionId]);
+
   // Fetch quality score when trust panel opens — with retry (scoring is async, may not be ready yet)
   useEffect(() => {
     if (activePanel !== 'trust' || !sessionId || trustScore || trustLoading) return;
