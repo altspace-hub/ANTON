@@ -1954,7 +1954,7 @@ interface MWPattern {
 
 function MyWaySettingsContent() {
   const getToken = () => localStorage.getItem('openexpert-token') || '';
-  const authHeaders = () => {
+  const authHeaders = (): Record<string, string> => {
     const t = getToken();
     return t ? { Authorization: `Bearer ${t}` } : {};
   };

@@ -1019,8 +1019,8 @@ function ExtractionResult({ extracted, docType, onConfirm, onRedo, saving }: {
           {vocab?.documentTitle && <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />You call it "{vocab.documentTitle}"</li>}
           {vocab?.labourLabel && <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />Labour called "{vocab.labourLabel}"</li>}
           {vocab?.materialsLabel && <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />Materials called "{vocab.materialsLabel}"</li>}
-          {formatting?.lineItemStyle && <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />Line items: {formatting.lineItemStyle as string}</li>}
-          {formatting?.currencyFormat && <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />Currency format: {formatting.currencyFormat as string}</li>}
+          {!!formatting?.lineItemStyle && <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />Line items: {String(formatting.lineItemStyle)}</li>}
+          {!!formatting?.currencyFormat && <li className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />Currency format: {String(formatting.currencyFormat)}</li>}
           {rules.slice(0, 3).map((rule, i) => (
             <li key={i} className="flex items-center gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-adv-green shrink-0" />{rule}</li>
           ))}
