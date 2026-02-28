@@ -15,7 +15,7 @@ Already have Node but on an older version? Upgrade in a terminal:
 ```
 winget upgrade OpenJS.NodeJS.LTS
 ```
-Close and reopen the terminal afterwards. Confirm with `node --version` — should show v22 or higher.
+Close and reopen the terminal afterwards. Confirm with `node --version` — should show v20 or higher.
 
 **One-time setup — clone and run the setup script:**
 

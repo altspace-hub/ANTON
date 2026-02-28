@@ -32,8 +32,8 @@ try {
     $nodeRaw = & node --version 2>&1
     if ($LASTEXITCODE -ne 0) { throw "not found" }
     $major = [int]($nodeRaw -replace 'v(\d+)\..*', '$1')
-    if ($major -lt 22) {
-        Write-Fail "Node.js $nodeRaw is too old. ANTON requires v22+."
+    if ($major -lt 20) {
+        Write-Fail "Node.js $nodeRaw is too old. ANTON requires v20+."
         Write-Blank
         Write-Info "Run this in a terminal to upgrade, then re-run setup:"
         Write-Info ""
