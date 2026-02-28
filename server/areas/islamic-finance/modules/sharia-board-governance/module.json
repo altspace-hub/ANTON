@@ -49,6 +49,9 @@
         "UAE (CBUAE/DFSA)",
         "Malaysia (BNM)",
         "Pakistan (SBP)",
+        "Bahrain (CBB)",
+        "Kuwait (CBK)",
+        "Indonesia (OJK)",
         "Other"
       ],
       "required": true
@@ -67,7 +70,7 @@
     }
   ],
   "recommendedPersonas": [
-    "sharia-board-member",
+    "islamic-board-member",
     "islamic-finance-structurer"
   ],
   "recommendedSkills": [

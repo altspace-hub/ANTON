@@ -62,13 +62,17 @@
         "ICMA Green Bond Principles",
         "Climate Bonds Standard",
         "ASEAN Green Bond",
+        "SC Malaysia SRI Sukuk",
+        "EU Taxonomy",
+        "SBP Green Taxonomy (Pakistan)",
+        "BNM Principles-based Taxonomy",
         "Other"
       ],
       "required": true
     }
   ],
   "recommendedPersonas": [
-    "sharia-board-member",
+    "islamic-board-member",
     "islamic-finance-structurer"
   ],
   "recommendedSkills": [

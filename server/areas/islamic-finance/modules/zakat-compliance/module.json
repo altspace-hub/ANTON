@@ -49,6 +49,9 @@
         "Pakistan",
         "Malaysia",
         "UAE",
+        "Kuwait",
+        "Bahrain",
+        "Indonesia",
         "Other"
       ],
       "required": true
@@ -68,7 +71,7 @@
     }
   ],
   "recommendedPersonas": [
-    "sharia-board-member",
+    "islamic-board-member",
     "islamic-finance-structurer"
   ],
   "recommendedSkills": [

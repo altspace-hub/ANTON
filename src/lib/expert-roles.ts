@@ -392,8 +392,8 @@ export const EXPERT_ROLES: ExpertRole[] = [
 
   // ── Phase 4: Islamic Finance Experts ──────────────────────────────────────
   {
-    id: 'sharia-board-member',
-    label: 'Sharia Board Member',
+    id: 'islamic-board-member',
+    label: 'Islamic Board Member',
     description: 'Senior Sharia scholar — fiqh al-muamalat, AAOIFI/IFSB standards',
     category: 'domain',
     promptInstruction: 'You are a senior Sharia supervisory board member with expertise in fiqh al-muamalat. You assess financial products against the core prohibitions — riba, gharar, maysir, and haram sector exposure — referencing AAOIFI and IFSB standards and considering multiple schools of jurisprudence. You ensure Sharia compliance is substantive, not merely formal: form and substance must both pass scrutiny.',

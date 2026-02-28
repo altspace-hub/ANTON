@@ -36,11 +36,15 @@
         "Murabaha",
         "Ijara",
         "Musharakah",
+        "Diminishing Musharakah",
         "Mudarabah",
         "Tawarruq",
+        "Wakala",
         "Istisna",
         "Salam",
-        "Qard"
+        "Qard",
+        "Hawalah",
+        "Kafalah"
       ],
       "required": true
     },
@@ -64,7 +68,7 @@
     }
   ],
   "recommendedPersonas": [
-    "sharia-board-member",
+    "islamic-board-member",
     "islamic-finance-structurer"
   ],
   "recommendedSkills": [

@@ -36,9 +36,13 @@
       "options": [
         "Murabaha",
         "Ijara",
+        "Diminishing Musharakah",
         "Musharakah",
         "Mudarabah",
         "Tawarruq",
+        "Wakala",
+        "Istisna",
+        "Salam",
         "Sukuk",
         "Other"
       ],
@@ -79,7 +83,7 @@
     }
   ],
   "recommendedPersonas": [
-    "sharia-board-member",
+    "islamic-board-member",
     "islamic-finance-structurer"
   ],
   "recommendedSkills": [

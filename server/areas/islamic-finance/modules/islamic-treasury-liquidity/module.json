@@ -35,7 +35,10 @@
       "options": [
         "Full Islamic Bank",
         "Islamic Window",
-        "Islamic NBFI"
+        "Islamic Investment Bank",
+        "Islamic NBFI",
+        "Takaful Operator",
+        "Development Finance Institution"
       ],
       "required": true
     },
@@ -67,7 +70,7 @@
     }
   ],
   "recommendedPersonas": [
-    "sharia-board-member",
+    "islamic-board-member",
     "islamic-finance-structurer"
   ],
   "recommendedSkills": [

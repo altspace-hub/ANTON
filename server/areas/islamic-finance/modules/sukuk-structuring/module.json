@@ -35,8 +35,11 @@
       "options": [
         "Ijara Sukuk",
         "Musharakah Sukuk",
+        "Mudarabah Sukuk",
         "Murabaha Sukuk",
         "Wakala Sukuk",
+        "Istisna Sukuk",
+        "Diminishing Musharakah Sukuk",
         "Hybrid"
       ],
       "required": true
@@ -69,7 +72,7 @@
     }
   ],
   "recommendedPersonas": [
-    "sharia-board-member",
+    "islamic-board-member",
     "islamic-finance-structurer"
   ],
   "recommendedSkills": [
