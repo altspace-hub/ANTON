@@ -28,14 +28,38 @@
       "label": "Organisation Type",
       "type": "select",
       "options": [
-        "Hospital/healthcare provider",
-        "Primary care practice",
-        "Pharmaceutical company",
-        "Medical device company",
-        "Clinical research organisation",
-        "Health technology company",
-        "Health insurance provider",
-        "Public health authority"
+        {
+          "value": "hospital-healthcare-provider",
+          "label": "Hospital/healthcare provider"
+        },
+        {
+          "value": "primary-care-practice",
+          "label": "Primary care practice"
+        },
+        {
+          "value": "pharmaceutical-company",
+          "label": "Pharmaceutical company"
+        },
+        {
+          "value": "medical-device-company",
+          "label": "Medical device company"
+        },
+        {
+          "value": "clinical-research-organisation",
+          "label": "Clinical research organisation"
+        },
+        {
+          "value": "health-technology-company",
+          "label": "Health technology company"
+        },
+        {
+          "value": "health-insurance-provider",
+          "label": "Health insurance provider"
+        },
+        {
+          "value": "public-health-authority",
+          "label": "Public health authority"
+        }
       ],
       "required": true
     },
@@ -44,14 +68,38 @@
       "label": "Data Processing Activities",
       "type": "multiselect",
       "options": [
-        "Patient records/EHR",
-        "Clinical trials data",
-        "Biobank/genomic data",
-        "Health apps/wearables",
-        "Insurance claims data",
-        "Employee health data",
-        "Research databases",
-        "Cross-border data sharing"
+        {
+          "value": "patient-records-ehr",
+          "label": "Patient records/EHR"
+        },
+        {
+          "value": "clinical-trials-data",
+          "label": "Clinical trials data"
+        },
+        {
+          "value": "biobank-genomic-data",
+          "label": "Biobank/genomic data"
+        },
+        {
+          "value": "health-apps-wearables",
+          "label": "Health apps/wearables"
+        },
+        {
+          "value": "insurance-claims-data",
+          "label": "Insurance claims data"
+        },
+        {
+          "value": "employee-health-data",
+          "label": "Employee health data"
+        },
+        {
+          "value": "research-databases",
+          "label": "Research databases"
+        },
+        {
+          "value": "cross-border-data-sharing",
+          "label": "Cross-border data sharing"
+        }
       ],
       "required": true
     },
@@ -60,13 +108,34 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "Germany",
-        "EU (multi-country)"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "eu-multi-country",
+          "label": "EU (multi-country)"
+        }
       ],
       "required": true
     },
@@ -75,14 +144,38 @@
       "label": "Assessment Scope",
       "type": "multiselect",
       "options": [
-        "Lawful basis review",
-        "DPIA",
-        "Patient rights compliance",
-        "Data sharing agreements",
-        "Security measures",
-        "Breach notification readiness",
-        "Cross-border transfers",
-        "Full GDPR compliance review"
+        {
+          "value": "lawful-basis-review",
+          "label": "Lawful basis review"
+        },
+        {
+          "value": "dpia",
+          "label": "DPIA"
+        },
+        {
+          "value": "patient-rights-compliance",
+          "label": "Patient rights compliance"
+        },
+        {
+          "value": "data-sharing-agreements",
+          "label": "Data sharing agreements"
+        },
+        {
+          "value": "security-measures",
+          "label": "Security measures"
+        },
+        {
+          "value": "breach-notification-readiness",
+          "label": "Breach notification readiness"
+        },
+        {
+          "value": "cross-border-transfers",
+          "label": "Cross-border transfers"
+        },
+        {
+          "value": "full-gdpr-compliance-review",
+          "label": "Full GDPR compliance review"
+        }
       ],
       "required": true
     },

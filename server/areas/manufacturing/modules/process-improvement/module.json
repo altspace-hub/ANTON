@@ -28,16 +28,46 @@
       "label": "Industry",
       "type": "select",
       "options": [
-        "Automotive",
-        "Electronics",
-        "Food & beverage",
-        "Pharmaceutical",
-        "Chemical",
-        "Metals & mining",
-        "Packaging",
-        "Textiles",
-        "General manufacturing",
-        "Service operations"
+        {
+          "value": "automotive",
+          "label": "Automotive"
+        },
+        {
+          "value": "electronics",
+          "label": "Electronics"
+        },
+        {
+          "value": "food-beverage",
+          "label": "Food & beverage"
+        },
+        {
+          "value": "pharmaceutical",
+          "label": "Pharmaceutical"
+        },
+        {
+          "value": "chemical",
+          "label": "Chemical"
+        },
+        {
+          "value": "metals-mining",
+          "label": "Metals & mining"
+        },
+        {
+          "value": "packaging",
+          "label": "Packaging"
+        },
+        {
+          "value": "textiles",
+          "label": "Textiles"
+        },
+        {
+          "value": "general-manufacturing",
+          "label": "General manufacturing"
+        },
+        {
+          "value": "service-operations",
+          "label": "Service operations"
+        }
       ],
       "required": true
     },
@@ -46,14 +76,38 @@
       "label": "Process Area",
       "type": "select",
       "options": [
-        "Production/assembly",
-        "Warehousing/logistics",
-        "Quality control",
-        "Procurement",
-        "Maintenance",
-        "Order fulfilment",
-        "Customer service",
-        "End-to-end value stream"
+        {
+          "value": "production-assembly",
+          "label": "Production/assembly"
+        },
+        {
+          "value": "warehousing-logistics",
+          "label": "Warehousing/logistics"
+        },
+        {
+          "value": "quality-control",
+          "label": "Quality control"
+        },
+        {
+          "value": "procurement",
+          "label": "Procurement"
+        },
+        {
+          "value": "maintenance",
+          "label": "Maintenance"
+        },
+        {
+          "value": "order-fulfilment",
+          "label": "Order fulfilment"
+        },
+        {
+          "value": "customer-service",
+          "label": "Customer service"
+        },
+        {
+          "value": "end-to-end-value-stream",
+          "label": "End-to-end value stream"
+        }
       ],
       "required": true
     },
@@ -62,14 +116,38 @@
       "label": "Improvement Goals",
       "type": "multiselect",
       "options": [
-        "Reduce cycle time",
-        "Reduce waste/scrap",
-        "Increase throughput",
-        "Reduce costs",
-        "Improve quality",
-        "Reduce inventory",
-        "Improve OEE",
-        "Standardise processes"
+        {
+          "value": "reduce-cycle-time",
+          "label": "Reduce cycle time"
+        },
+        {
+          "value": "reduce-waste-scrap",
+          "label": "Reduce waste/scrap"
+        },
+        {
+          "value": "increase-throughput",
+          "label": "Increase throughput"
+        },
+        {
+          "value": "reduce-costs",
+          "label": "Reduce costs"
+        },
+        {
+          "value": "improve-quality",
+          "label": "Improve quality"
+        },
+        {
+          "value": "reduce-inventory",
+          "label": "Reduce inventory"
+        },
+        {
+          "value": "improve-oee",
+          "label": "Improve OEE"
+        },
+        {
+          "value": "standardise-processes",
+          "label": "Standardise processes"
+        }
       ],
       "required": true
     },

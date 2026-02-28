@@ -27,10 +27,22 @@
       "label": "Investment Experience",
       "type": "select",
       "options": [
-        "Beginner — never invested",
-        "Some experience — basic funds/savings",
-        "Intermediate — diversified portfolio",
-        "Experienced — active investor"
+        {
+          "value": "beginner-never-invested",
+          "label": "Beginner — never invested"
+        },
+        {
+          "value": "some-experience-basic-funds-savings",
+          "label": "Some experience — basic funds/savings"
+        },
+        {
+          "value": "intermediate-diversified-portfolio",
+          "label": "Intermediate — diversified portfolio"
+        },
+        {
+          "value": "experienced-active-investor",
+          "label": "Experienced — active investor"
+        }
       ],
       "required": true
     },
@@ -39,10 +51,22 @@
       "label": "Risk Tolerance",
       "type": "select",
       "options": [
-        "Conservative — capital preservation priority",
-        "Moderate — balanced growth and safety",
-        "Growth — accept volatility for higher returns",
-        "Aggressive — maximum growth potential"
+        {
+          "value": "conservative-capital-preservation-priority",
+          "label": "Conservative — capital preservation priority"
+        },
+        {
+          "value": "moderate-balanced-growth-and-safety",
+          "label": "Moderate — balanced growth and safety"
+        },
+        {
+          "value": "growth-accept-volatility-for-higher-returns",
+          "label": "Growth — accept volatility for higher returns"
+        },
+        {
+          "value": "aggressive-maximum-growth-potential",
+          "label": "Aggressive — maximum growth potential"
+        }
       ],
       "required": true
     },
@@ -51,11 +75,26 @@
       "label": "Time Horizon",
       "type": "select",
       "options": [
-        "Short-term (1-3 years)",
-        "Medium-term (3-7 years)",
-        "Long-term (7-15 years)",
-        "Very long-term (15+ years)",
-        "Multiple horizons"
+        {
+          "value": "short-term-1-3-years",
+          "label": "Short-term (1-3 years)"
+        },
+        {
+          "value": "medium-term-3-7-years",
+          "label": "Medium-term (3-7 years)"
+        },
+        {
+          "value": "long-term-7-15-years",
+          "label": "Long-term (7-15 years)"
+        },
+        {
+          "value": "very-long-term-15-years",
+          "label": "Very long-term (15+ years)"
+        },
+        {
+          "value": "multiple-horizons",
+          "label": "Multiple horizons"
+        }
       ],
       "required": true
     },
@@ -64,13 +103,34 @@
       "label": "Savings Goals",
       "type": "multiselect",
       "options": [
-        "Emergency fund",
-        "House deposit",
-        "Education fund",
-        "Financial independence",
-        "Retirement supplement",
-        "Major purchase",
-        "General wealth building"
+        {
+          "value": "emergency-fund",
+          "label": "Emergency fund"
+        },
+        {
+          "value": "house-deposit",
+          "label": "House deposit"
+        },
+        {
+          "value": "education-fund",
+          "label": "Education fund"
+        },
+        {
+          "value": "financial-independence",
+          "label": "Financial independence"
+        },
+        {
+          "value": "retirement-supplement",
+          "label": "Retirement supplement"
+        },
+        {
+          "value": "major-purchase",
+          "label": "Major purchase"
+        },
+        {
+          "value": "general-wealth-building",
+          "label": "General wealth building"
+        }
       ],
       "required": true
     },
@@ -79,11 +139,26 @@
       "label": "Monthly Amount Available",
       "type": "select",
       "options": [
-        "Under 2,000 SEK",
-        "2,000–5,000 SEK",
-        "5,000–15,000 SEK",
-        "15,000–30,000 SEK",
-        "Over 30,000 SEK"
+        {
+          "value": "under-2-000-sek",
+          "label": "Under 2,000 SEK"
+        },
+        {
+          "value": "2-000-5-000-sek",
+          "label": "2,000–5,000 SEK"
+        },
+        {
+          "value": "5-000-15-000-sek",
+          "label": "5,000–15,000 SEK"
+        },
+        {
+          "value": "15-000-30-000-sek",
+          "label": "15,000–30,000 SEK"
+        },
+        {
+          "value": "over-30-000-sek",
+          "label": "Over 30,000 SEK"
+        }
       ],
       "required": false
     },

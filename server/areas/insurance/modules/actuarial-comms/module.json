@@ -27,13 +27,34 @@
       "label": "Source Report Type",
       "type": "select",
       "options": [
-        "Reserve valuation",
-        "ORSA report",
-        "Capital model results",
-        "Pricing analysis",
-        "Experience study",
-        "IFRS 17 results",
-        "Other actuarial analysis"
+        {
+          "value": "reserve-valuation",
+          "label": "Reserve valuation"
+        },
+        {
+          "value": "orsa-report",
+          "label": "ORSA report"
+        },
+        {
+          "value": "capital-model-results",
+          "label": "Capital model results"
+        },
+        {
+          "value": "pricing-analysis",
+          "label": "Pricing analysis"
+        },
+        {
+          "value": "experience-study",
+          "label": "Experience study"
+        },
+        {
+          "value": "ifrs-17-results",
+          "label": "IFRS 17 results"
+        },
+        {
+          "value": "other-actuarial-analysis",
+          "label": "Other actuarial analysis"
+        }
       ],
       "required": true
     },
@@ -42,12 +63,30 @@
       "label": "Target Audience",
       "type": "select",
       "options": [
-        "Board of directors",
-        "Senior management",
-        "Risk committee",
-        "Audit committee",
-        "Non-technical stakeholders",
-        "Regulators"
+        {
+          "value": "board-of-directors",
+          "label": "Board of directors"
+        },
+        {
+          "value": "senior-management",
+          "label": "Senior management"
+        },
+        {
+          "value": "risk-committee",
+          "label": "Risk committee"
+        },
+        {
+          "value": "audit-committee",
+          "label": "Audit committee"
+        },
+        {
+          "value": "non-technical-stakeholders",
+          "label": "Non-technical stakeholders"
+        },
+        {
+          "value": "regulators",
+          "label": "Regulators"
+        }
       ],
       "required": true
     },

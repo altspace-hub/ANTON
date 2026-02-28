@@ -27,13 +27,34 @@
       "label": "Property Type",
       "type": "select",
       "options": [
-        "Commercial office",
-        "Retail",
-        "Industrial",
-        "Residential",
-        "Mixed-use",
-        "Development site",
-        "Special purpose"
+        {
+          "value": "commercial-office",
+          "label": "Commercial office"
+        },
+        {
+          "value": "retail",
+          "label": "Retail"
+        },
+        {
+          "value": "industrial",
+          "label": "Industrial"
+        },
+        {
+          "value": "residential",
+          "label": "Residential"
+        },
+        {
+          "value": "mixed-use",
+          "label": "Mixed-use"
+        },
+        {
+          "value": "development-site",
+          "label": "Development site"
+        },
+        {
+          "value": "special-purpose",
+          "label": "Special purpose"
+        }
       ],
       "required": true
     },
@@ -42,13 +63,34 @@
       "label": "Valuation Purpose",
       "type": "select",
       "options": [
-        "Acquisition",
-        "Disposal",
-        "Lending/mortgage",
-        "Financial reporting",
-        "Tax purposes",
-        "Insurance",
-        "Dispute resolution"
+        {
+          "value": "acquisition",
+          "label": "Acquisition"
+        },
+        {
+          "value": "disposal",
+          "label": "Disposal"
+        },
+        {
+          "value": "lending-mortgage",
+          "label": "Lending/mortgage"
+        },
+        {
+          "value": "financial-reporting",
+          "label": "Financial reporting"
+        },
+        {
+          "value": "tax-purposes",
+          "label": "Tax purposes"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance"
+        },
+        {
+          "value": "dispute-resolution",
+          "label": "Dispute resolution"
+        }
       ],
       "required": true
     },
@@ -57,12 +99,30 @@
       "label": "Valuation Methodology",
       "type": "multiselect",
       "options": [
-        "Comparable transactions",
-        "DCF analysis",
-        "Capitalisation approach",
-        "Cost approach",
-        "Residual method",
-        "All methods"
+        {
+          "value": "comparable-transactions",
+          "label": "Comparable transactions"
+        },
+        {
+          "value": "dcf-analysis",
+          "label": "DCF analysis"
+        },
+        {
+          "value": "capitalisation-approach",
+          "label": "Capitalisation approach"
+        },
+        {
+          "value": "cost-approach",
+          "label": "Cost approach"
+        },
+        {
+          "value": "residual-method",
+          "label": "Residual method"
+        },
+        {
+          "value": "all-methods",
+          "label": "All methods"
+        }
       ],
       "required": false
     },

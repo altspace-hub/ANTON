@@ -35,11 +35,26 @@
       "label": "Entity Type",
       "required": true,
       "options": [
-        "Life Insurance",
-        "Non-Life / P&C Insurance",
-        "Composite Insurer",
-        "Reinsurer",
-        "Takaful Operator"
+        {
+          "value": "life-insurance",
+          "label": "Life Insurance"
+        },
+        {
+          "value": "non-life-p-c-insurance",
+          "label": "Non-Life / P&C Insurance"
+        },
+        {
+          "value": "composite-insurer",
+          "label": "Composite Insurer"
+        },
+        {
+          "value": "reinsurer",
+          "label": "Reinsurer"
+        },
+        {
+          "value": "takaful-operator",
+          "label": "Takaful Operator"
+        }
       ]
     },
     {
@@ -47,9 +62,18 @@
       "type": "multiselect",
       "label": "Applicable Measurement Models",
       "options": [
-        "General Measurement Model (GMM/BBA)",
-        "Premium Allocation Approach (PAA)",
-        "Variable Fee Approach (VFA)"
+        {
+          "value": "general-measurement-model-gmm-bba",
+          "label": "General Measurement Model (GMM/BBA)"
+        },
+        {
+          "value": "premium-allocation-approach-paa",
+          "label": "Premium Allocation Approach (PAA)"
+        },
+        {
+          "value": "variable-fee-approach-vfa",
+          "label": "Variable Fee Approach (VFA)"
+        }
       ]
     },
     {
@@ -57,11 +81,26 @@
       "type": "select",
       "label": "Implementation Stage",
       "options": [
-        "Impact assessment",
-        "Solution design",
-        "Build & test",
-        "Parallel run",
-        "Post go-live / refinement"
+        {
+          "value": "impact-assessment",
+          "label": "Impact assessment"
+        },
+        {
+          "value": "solution-design",
+          "label": "Solution design"
+        },
+        {
+          "value": "build-test",
+          "label": "Build & test"
+        },
+        {
+          "value": "parallel-run",
+          "label": "Parallel run"
+        },
+        {
+          "value": "post-go-live-refinement",
+          "label": "Post go-live / refinement"
+        }
       ]
     },
     {

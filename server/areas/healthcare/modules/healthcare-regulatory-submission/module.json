@@ -28,13 +28,34 @@
       "label": "Submission Type",
       "type": "select",
       "options": [
-        "Marketing Authorisation Application (MAA)",
-        "New Drug Application (NDA)",
-        "510(k)",
-        "PMA",
-        "Variation",
-        "PSUR/PBRER",
-        "Clinical trial application"
+        {
+          "value": "marketing-authorisation-application-maa",
+          "label": "Marketing Authorisation Application (MAA)"
+        },
+        {
+          "value": "new-drug-application-nda",
+          "label": "New Drug Application (NDA)"
+        },
+        {
+          "value": "510-k",
+          "label": "510(k)"
+        },
+        {
+          "value": "pma",
+          "label": "PMA"
+        },
+        {
+          "value": "variation",
+          "label": "Variation"
+        },
+        {
+          "value": "psur-pbrer",
+          "label": "PSUR/PBRER"
+        },
+        {
+          "value": "clinical-trial-application",
+          "label": "Clinical trial application"
+        }
       ],
       "required": true
     },
@@ -43,12 +64,30 @@
       "label": "Regulatory Authority",
       "type": "multiselect",
       "options": [
-        "EMA (EU)",
-        "FDA (US)",
-        "MHRA (UK)",
-        "TGA (Australia)",
-        "HC (Canada)",
-        "National authority (other)"
+        {
+          "value": "ema-eu",
+          "label": "EMA (EU)"
+        },
+        {
+          "value": "fda-us",
+          "label": "FDA (US)"
+        },
+        {
+          "value": "mhra-uk",
+          "label": "MHRA (UK)"
+        },
+        {
+          "value": "tga-australia",
+          "label": "TGA (Australia)"
+        },
+        {
+          "value": "hc-canada",
+          "label": "HC (Canada)"
+        },
+        {
+          "value": "national-authority-other",
+          "label": "National authority (other)"
+        }
       ],
       "required": true
     },
@@ -57,12 +96,30 @@
       "label": "Product Type",
       "type": "select",
       "options": [
-        "Chemical pharmaceutical",
-        "Biological",
-        "Biosimilar",
-        "Medical device",
-        "IVD",
-        "Advanced therapy"
+        {
+          "value": "chemical-pharmaceutical",
+          "label": "Chemical pharmaceutical"
+        },
+        {
+          "value": "biological",
+          "label": "Biological"
+        },
+        {
+          "value": "biosimilar",
+          "label": "Biosimilar"
+        },
+        {
+          "value": "medical-device",
+          "label": "Medical device"
+        },
+        {
+          "value": "ivd",
+          "label": "IVD"
+        },
+        {
+          "value": "advanced-therapy",
+          "label": "Advanced therapy"
+        }
       ],
       "required": true
     },
@@ -71,11 +128,26 @@
       "label": "Current Stage",
       "type": "select",
       "options": [
-        "Pre-submission",
-        "Submission preparation",
-        "Under review",
-        "Responding to questions",
-        "Post-approval"
+        {
+          "value": "pre-submission",
+          "label": "Pre-submission"
+        },
+        {
+          "value": "submission-preparation",
+          "label": "Submission preparation"
+        },
+        {
+          "value": "under-review",
+          "label": "Under review"
+        },
+        {
+          "value": "responding-to-questions",
+          "label": "Responding to questions"
+        },
+        {
+          "value": "post-approval",
+          "label": "Post-approval"
+        }
       ],
       "required": true
     }

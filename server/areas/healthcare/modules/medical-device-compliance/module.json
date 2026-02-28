@@ -29,12 +29,30 @@
       "label": "Device Type",
       "type": "select",
       "options": [
-        "Active implantable",
-        "Active non-implantable",
-        "Non-active implantable",
-        "IVD",
-        "Software as a Medical Device (SaMD)",
-        "Other"
+        {
+          "value": "active-implantable",
+          "label": "Active implantable"
+        },
+        {
+          "value": "active-non-implantable",
+          "label": "Active non-implantable"
+        },
+        {
+          "value": "non-active-implantable",
+          "label": "Non-active implantable"
+        },
+        {
+          "value": "ivd",
+          "label": "IVD"
+        },
+        {
+          "value": "software-as-a-medical-device-samd",
+          "label": "Software as a Medical Device (SaMD)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -43,13 +61,34 @@
       "label": "Risk Classification",
       "type": "select",
       "options": [
-        "EU Class I",
-        "EU Class IIa",
-        "EU Class IIb",
-        "EU Class III",
-        "IVD Class A-D",
-        "FDA Class I-III",
-        "Unknown — help me classify"
+        {
+          "value": "eu-class-i",
+          "label": "EU Class I"
+        },
+        {
+          "value": "eu-class-iia",
+          "label": "EU Class IIa"
+        },
+        {
+          "value": "eu-class-iib",
+          "label": "EU Class IIb"
+        },
+        {
+          "value": "eu-class-iii",
+          "label": "EU Class III"
+        },
+        {
+          "value": "ivd-class-a-d",
+          "label": "IVD Class A-D"
+        },
+        {
+          "value": "fda-class-i-iii",
+          "label": "FDA Class I-III"
+        },
+        {
+          "value": "unknown-help-me-classify",
+          "label": "Unknown — help me classify"
+        }
       ],
       "required": true
     },
@@ -58,12 +97,30 @@
       "label": "Target Markets",
       "type": "multiselect",
       "options": [
-        "EU (MDR 2017/745)",
-        "UK (UKCA)",
-        "US (FDA)",
-        "Japan (PMDA)",
-        "Australia (TGA)",
-        "Other"
+        {
+          "value": "eu-mdr-2017-745",
+          "label": "EU (MDR 2017/745)"
+        },
+        {
+          "value": "uk-ukca",
+          "label": "UK (UKCA)"
+        },
+        {
+          "value": "us-fda",
+          "label": "US (FDA)"
+        },
+        {
+          "value": "japan-pmda",
+          "label": "Japan (PMDA)"
+        },
+        {
+          "value": "australia-tga",
+          "label": "Australia (TGA)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -72,11 +129,26 @@
       "label": "Current Stage",
       "type": "select",
       "options": [
-        "Design phase",
-        "Technical documentation",
-        "Conformity assessment",
-        "Post-market",
-        "QMS only"
+        {
+          "value": "design-phase",
+          "label": "Design phase"
+        },
+        {
+          "value": "technical-documentation",
+          "label": "Technical documentation"
+        },
+        {
+          "value": "conformity-assessment",
+          "label": "Conformity assessment"
+        },
+        {
+          "value": "post-market",
+          "label": "Post-market"
+        },
+        {
+          "value": "qms-only",
+          "label": "QMS only"
+        }
       ],
       "required": true
     }

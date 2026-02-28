@@ -27,14 +27,38 @@
       "label": "Insurance Line",
       "type": "select",
       "options": [
-        "Motor",
-        "Property",
-        "Health",
-        "Life",
-        "Liability",
-        "Marine",
-        "Travel",
-        "Multiple lines"
+        {
+          "value": "motor",
+          "label": "Motor"
+        },
+        {
+          "value": "property",
+          "label": "Property"
+        },
+        {
+          "value": "health",
+          "label": "Health"
+        },
+        {
+          "value": "life",
+          "label": "Life"
+        },
+        {
+          "value": "liability",
+          "label": "Liability"
+        },
+        {
+          "value": "marine",
+          "label": "Marine"
+        },
+        {
+          "value": "travel",
+          "label": "Travel"
+        },
+        {
+          "value": "multiple-lines",
+          "label": "Multiple lines"
+        }
       ],
       "required": true
     },
@@ -43,11 +67,26 @@
       "label": "Analysis Type",
       "type": "select",
       "options": [
-        "Fraud indicator assessment",
-        "Claims pattern analysis",
-        "Red flag framework development",
-        "Investigation procedure design",
-        "Claims leakage review"
+        {
+          "value": "fraud-indicator-assessment",
+          "label": "Fraud indicator assessment"
+        },
+        {
+          "value": "claims-pattern-analysis",
+          "label": "Claims pattern analysis"
+        },
+        {
+          "value": "red-flag-framework-development",
+          "label": "Red flag framework development"
+        },
+        {
+          "value": "investigation-procedure-design",
+          "label": "Investigation procedure design"
+        },
+        {
+          "value": "claims-leakage-review",
+          "label": "Claims leakage review"
+        }
       ],
       "required": true
     },

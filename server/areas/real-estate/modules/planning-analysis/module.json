@@ -27,13 +27,34 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "Germany",
-        "Other EU"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "other-eu",
+          "label": "Other EU"
+        }
       ],
       "required": true
     },
@@ -42,12 +63,30 @@
       "label": "Analysis Type",
       "type": "select",
       "options": [
-        "Permitted use assessment",
-        "Development potential",
-        "Planning application review",
-        "Zoning compliance check",
-        "Change of use feasibility",
-        "Environmental impact screening"
+        {
+          "value": "permitted-use-assessment",
+          "label": "Permitted use assessment"
+        },
+        {
+          "value": "development-potential",
+          "label": "Development potential"
+        },
+        {
+          "value": "planning-application-review",
+          "label": "Planning application review"
+        },
+        {
+          "value": "zoning-compliance-check",
+          "label": "Zoning compliance check"
+        },
+        {
+          "value": "change-of-use-feasibility",
+          "label": "Change of use feasibility"
+        },
+        {
+          "value": "environmental-impact-screening",
+          "label": "Environmental impact screening"
+        }
       ],
       "required": true
     },

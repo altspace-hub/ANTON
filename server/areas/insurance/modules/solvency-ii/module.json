@@ -28,12 +28,30 @@
       "label": "Entity Type",
       "type": "select",
       "options": [
-        "Life insurer",
-        "Non-life insurer",
-        "Composite insurer",
-        "Reinsurer",
-        "Insurance group",
-        "Captive insurer"
+        {
+          "value": "life-insurer",
+          "label": "Life insurer"
+        },
+        {
+          "value": "non-life-insurer",
+          "label": "Non-life insurer"
+        },
+        {
+          "value": "composite-insurer",
+          "label": "Composite insurer"
+        },
+        {
+          "value": "reinsurer",
+          "label": "Reinsurer"
+        },
+        {
+          "value": "insurance-group",
+          "label": "Insurance group"
+        },
+        {
+          "value": "captive-insurer",
+          "label": "Captive insurer"
+        }
       ],
       "required": true
     },
@@ -42,13 +60,34 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "Germany",
-        "UK (post-Brexit)",
-        "EU (general)"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "uk-post-brexit",
+          "label": "UK (post-Brexit)"
+        },
+        {
+          "value": "eu-general",
+          "label": "EU (general)"
+        }
       ],
       "required": true
     },
@@ -57,10 +96,22 @@
       "label": "Pillar Focus",
       "type": "multiselect",
       "options": [
-        "Pillar 1 — Quantitative",
-        "Pillar 2 — Governance & ORSA",
-        "Pillar 3 — Reporting & Disclosure",
-        "All Pillars"
+        {
+          "value": "pillar-1-quantitative",
+          "label": "Pillar 1 — Quantitative"
+        },
+        {
+          "value": "pillar-2-governance-orsa",
+          "label": "Pillar 2 — Governance & ORSA"
+        },
+        {
+          "value": "pillar-3-reporting-disclosure",
+          "label": "Pillar 3 — Reporting & Disclosure"
+        },
+        {
+          "value": "all-pillars",
+          "label": "All Pillars"
+        }
       ],
       "required": true
     },

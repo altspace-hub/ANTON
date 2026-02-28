@@ -27,14 +27,38 @@
       "label": "Material Type",
       "type": "select",
       "options": [
-        "Patient information leaflet",
-        "Consent form",
-        "Treatment explanation",
-        "Discharge instructions",
-        "Health education material",
-        "Appointment letter/reminder",
-        "Clinical trial information",
-        "FAQ document"
+        {
+          "value": "patient-information-leaflet",
+          "label": "Patient information leaflet"
+        },
+        {
+          "value": "consent-form",
+          "label": "Consent form"
+        },
+        {
+          "value": "treatment-explanation",
+          "label": "Treatment explanation"
+        },
+        {
+          "value": "discharge-instructions",
+          "label": "Discharge instructions"
+        },
+        {
+          "value": "health-education-material",
+          "label": "Health education material"
+        },
+        {
+          "value": "appointment-letter-reminder",
+          "label": "Appointment letter/reminder"
+        },
+        {
+          "value": "clinical-trial-information",
+          "label": "Clinical trial information"
+        },
+        {
+          "value": "faq-document",
+          "label": "FAQ document"
+        }
       ],
       "required": true
     },
@@ -50,13 +74,34 @@
       "label": "Target Audience",
       "type": "select",
       "options": [
-        "General adult patients",
-        "Elderly patients",
-        "Parents/caregivers",
-        "Adolescents",
-        "Patients with low health literacy",
-        "Non-native language speakers",
-        "Patients with specific conditions"
+        {
+          "value": "general-adult-patients",
+          "label": "General adult patients"
+        },
+        {
+          "value": "elderly-patients",
+          "label": "Elderly patients"
+        },
+        {
+          "value": "parents-caregivers",
+          "label": "Parents/caregivers"
+        },
+        {
+          "value": "adolescents",
+          "label": "Adolescents"
+        },
+        {
+          "value": "patients-with-low-health-literacy",
+          "label": "Patients with low health literacy"
+        },
+        {
+          "value": "non-native-language-speakers",
+          "label": "Non-native language speakers"
+        },
+        {
+          "value": "patients-with-specific-conditions",
+          "label": "Patients with specific conditions"
+        }
       ],
       "required": true
     },
@@ -65,9 +110,18 @@
       "label": "Target Reading Level",
       "type": "select",
       "options": [
-        "Simple (age 11-12 reading level)",
-        "Standard (age 14-16 reading level)",
-        "Detailed (educated adult)"
+        {
+          "value": "simple-age-11-12-reading-level",
+          "label": "Simple (age 11-12 reading level)"
+        },
+        {
+          "value": "standard-age-14-16-reading-level",
+          "label": "Standard (age 14-16 reading level)"
+        },
+        {
+          "value": "detailed-educated-adult",
+          "label": "Detailed (educated adult)"
+        }
       ],
       "required": false
     },

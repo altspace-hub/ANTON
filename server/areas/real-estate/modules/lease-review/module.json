@@ -27,12 +27,30 @@
       "label": "Lease Type",
       "type": "select",
       "options": [
-        "Commercial — office",
-        "Commercial — retail",
-        "Commercial — industrial",
-        "Residential",
-        "Ground lease",
-        "Sublease"
+        {
+          "value": "commercial-office",
+          "label": "Commercial — office"
+        },
+        {
+          "value": "commercial-retail",
+          "label": "Commercial — retail"
+        },
+        {
+          "value": "commercial-industrial",
+          "label": "Commercial — industrial"
+        },
+        {
+          "value": "residential",
+          "label": "Residential"
+        },
+        {
+          "value": "ground-lease",
+          "label": "Ground lease"
+        },
+        {
+          "value": "sublease",
+          "label": "Sublease"
+        }
       ],
       "required": true
     },
@@ -41,9 +59,18 @@
       "label": "Review Perspective",
       "type": "select",
       "options": [
-        "Tenant",
-        "Landlord",
-        "Neutral/advisory"
+        {
+          "value": "tenant",
+          "label": "Tenant"
+        },
+        {
+          "value": "landlord",
+          "label": "Landlord"
+        },
+        {
+          "value": "neutral-advisory",
+          "label": "Neutral/advisory"
+        }
       ],
       "required": true
     },
@@ -52,13 +79,34 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "Germany",
-        "Other EU"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "other-eu",
+          "label": "Other EU"
+        }
       ],
       "required": true
     },
@@ -67,14 +115,38 @@
       "label": "Focus Areas",
       "type": "multiselect",
       "options": [
-        "Rent and indexation",
-        "Break clauses",
-        "Repair and maintenance",
-        "Alienation/assignment",
-        "Insurance",
-        "Service charges",
-        "Termination",
-        "All clauses"
+        {
+          "value": "rent-and-indexation",
+          "label": "Rent and indexation"
+        },
+        {
+          "value": "break-clauses",
+          "label": "Break clauses"
+        },
+        {
+          "value": "repair-and-maintenance",
+          "label": "Repair and maintenance"
+        },
+        {
+          "value": "alienation-assignment",
+          "label": "Alienation/assignment"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance"
+        },
+        {
+          "value": "service-charges",
+          "label": "Service charges"
+        },
+        {
+          "value": "termination",
+          "label": "Termination"
+        },
+        {
+          "value": "all-clauses",
+          "label": "All clauses"
+        }
       ],
       "required": true
     },

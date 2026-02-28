@@ -34,10 +34,22 @@
       "label": "Cedant / Entity Type",
       "required": true,
       "options": [
-        "Primary insurer",
-        "Lloyd's managing agency",
-        "Captive insurer",
-        "Takaful operator"
+        {
+          "value": "primary-insurer",
+          "label": "Primary insurer"
+        },
+        {
+          "value": "lloyd-s-managing-agency",
+          "label": "Lloyd's managing agency"
+        },
+        {
+          "value": "captive-insurer",
+          "label": "Captive insurer"
+        },
+        {
+          "value": "takaful-operator",
+          "label": "Takaful operator"
+        }
       ]
     },
     {
@@ -45,13 +57,34 @@
       "type": "multiselect",
       "label": "Lines of Business",
       "options": [
-        "Property CAT",
-        "Property per risk",
-        "Casualty / liability",
-        "Marine and cargo",
-        "Life and health",
-        "Financial lines (D&O, cyber)",
-        "Specialty and aviation"
+        {
+          "value": "property-cat",
+          "label": "Property CAT"
+        },
+        {
+          "value": "property-per-risk",
+          "label": "Property per risk"
+        },
+        {
+          "value": "casualty-liability",
+          "label": "Casualty / liability"
+        },
+        {
+          "value": "marine-and-cargo",
+          "label": "Marine and cargo"
+        },
+        {
+          "value": "life-and-health",
+          "label": "Life and health"
+        },
+        {
+          "value": "financial-lines-d-o-cyber",
+          "label": "Financial lines (D&O, cyber)"
+        },
+        {
+          "value": "specialty-and-aviation",
+          "label": "Specialty and aviation"
+        }
       ]
     },
     {
@@ -60,11 +93,26 @@
       "label": "Purpose of Review",
       "required": true,
       "options": [
-        "Annual renewal — adequacy review",
-        "Post-loss review",
-        "New line of business — program design",
-        "Rating agency or capital model requirement",
-        "Capital optimisation exercise"
+        {
+          "value": "annual-renewal-adequacy-review",
+          "label": "Annual renewal — adequacy review"
+        },
+        {
+          "value": "post-loss-review",
+          "label": "Post-loss review"
+        },
+        {
+          "value": "new-line-of-business-program-design",
+          "label": "New line of business — program design"
+        },
+        {
+          "value": "rating-agency-or-capital-model-requirement",
+          "label": "Rating agency or capital model requirement"
+        },
+        {
+          "value": "capital-optimisation-exercise",
+          "label": "Capital optimisation exercise"
+        }
       ]
     },
     {

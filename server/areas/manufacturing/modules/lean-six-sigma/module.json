@@ -28,12 +28,30 @@
       "label": "Current DMAIC Phase",
       "type": "select",
       "options": [
-        "Define — scoping the problem",
-        "Measure — understanding current state",
-        "Analyse — identifying root causes",
-        "Improve — designing solutions",
-        "Control — sustaining gains",
-        "Full DMAIC project support"
+        {
+          "value": "define-scoping-the-problem",
+          "label": "Define — scoping the problem"
+        },
+        {
+          "value": "measure-understanding-current-state",
+          "label": "Measure — understanding current state"
+        },
+        {
+          "value": "analyse-identifying-root-causes",
+          "label": "Analyse — identifying root causes"
+        },
+        {
+          "value": "improve-designing-solutions",
+          "label": "Improve — designing solutions"
+        },
+        {
+          "value": "control-sustaining-gains",
+          "label": "Control — sustaining gains"
+        },
+        {
+          "value": "full-dmaic-project-support",
+          "label": "Full DMAIC project support"
+        }
       ],
       "required": true
     },
@@ -42,14 +60,38 @@
       "label": "Problem Type",
       "type": "select",
       "options": [
-        "Quality defects",
-        "Process variation",
-        "Cycle time/lead time",
-        "Waste/scrap reduction",
-        "Capacity constraints",
-        "Cost reduction",
-        "Customer complaints",
-        "OEE improvement"
+        {
+          "value": "quality-defects",
+          "label": "Quality defects"
+        },
+        {
+          "value": "process-variation",
+          "label": "Process variation"
+        },
+        {
+          "value": "cycle-time-lead-time",
+          "label": "Cycle time/lead time"
+        },
+        {
+          "value": "waste-scrap-reduction",
+          "label": "Waste/scrap reduction"
+        },
+        {
+          "value": "capacity-constraints",
+          "label": "Capacity constraints"
+        },
+        {
+          "value": "cost-reduction",
+          "label": "Cost reduction"
+        },
+        {
+          "value": "customer-complaints",
+          "label": "Customer complaints"
+        },
+        {
+          "value": "oee-improvement",
+          "label": "OEE improvement"
+        }
       ],
       "required": true
     },
@@ -58,11 +100,26 @@
       "label": "Team Belt Level",
       "type": "select",
       "options": [
-        "White Belt (awareness)",
-        "Yellow Belt (participant)",
-        "Green Belt (project leader)",
-        "Black Belt (expert)",
-        "No formal Lean Six Sigma training"
+        {
+          "value": "white-belt-awareness",
+          "label": "White Belt (awareness)"
+        },
+        {
+          "value": "yellow-belt-participant",
+          "label": "Yellow Belt (participant)"
+        },
+        {
+          "value": "green-belt-project-leader",
+          "label": "Green Belt (project leader)"
+        },
+        {
+          "value": "black-belt-expert",
+          "label": "Black Belt (expert)"
+        },
+        {
+          "value": "no-formal-lean-six-sigma-training",
+          "label": "No formal Lean Six Sigma training"
+        }
       ],
       "required": false
     },

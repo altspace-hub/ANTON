@@ -29,12 +29,30 @@
       "label": "Organisation Type",
       "type": "select",
       "options": [
-        "Hospital",
-        "Clinic",
-        "Diagnostic lab",
-        "Pharmaceutical manufacturer",
-        "Medical device company",
-        "Home care"
+        {
+          "value": "hospital",
+          "label": "Hospital"
+        },
+        {
+          "value": "clinic",
+          "label": "Clinic"
+        },
+        {
+          "value": "diagnostic-lab",
+          "label": "Diagnostic lab"
+        },
+        {
+          "value": "pharmaceutical-manufacturer",
+          "label": "Pharmaceutical manufacturer"
+        },
+        {
+          "value": "medical-device-company",
+          "label": "Medical device company"
+        },
+        {
+          "value": "home-care",
+          "label": "Home care"
+        }
       ],
       "required": true
     },
@@ -43,12 +61,30 @@
       "label": "Accreditation Target",
       "type": "select",
       "options": [
-        "JCI",
-        "ISO 15189",
-        "CQC (UK)",
-        "TÜV",
-        "National accreditation",
-        "None"
+        {
+          "value": "jci",
+          "label": "JCI"
+        },
+        {
+          "value": "iso-15189",
+          "label": "ISO 15189"
+        },
+        {
+          "value": "cqc-uk",
+          "label": "CQC (UK)"
+        },
+        {
+          "value": "t-v",
+          "label": "TÜV"
+        },
+        {
+          "value": "national-accreditation",
+          "label": "National accreditation"
+        },
+        {
+          "value": "none",
+          "label": "None"
+        }
       ],
       "required": true
     },
@@ -57,12 +93,30 @@
       "label": "Safety Focus Areas",
       "type": "multiselect",
       "options": [
-        "Serious adverse events",
-        "Medication errors",
-        "Surgical safety",
-        "Infection control",
-        "Falls prevention",
-        "Near-miss reporting"
+        {
+          "value": "serious-adverse-events",
+          "label": "Serious adverse events"
+        },
+        {
+          "value": "medication-errors",
+          "label": "Medication errors"
+        },
+        {
+          "value": "surgical-safety",
+          "label": "Surgical safety"
+        },
+        {
+          "value": "infection-control",
+          "label": "Infection control"
+        },
+        {
+          "value": "falls-prevention",
+          "label": "Falls prevention"
+        },
+        {
+          "value": "near-miss-reporting",
+          "label": "Near-miss reporting"
+        }
       ],
       "required": true
     },

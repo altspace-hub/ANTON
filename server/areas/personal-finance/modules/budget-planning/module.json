@@ -27,11 +27,26 @@
       "label": "Budget Type",
       "type": "select",
       "options": [
-        "Individual",
-        "Couple/household",
-        "Family with children",
-        "Student",
-        "Retiree"
+        {
+          "value": "individual",
+          "label": "Individual"
+        },
+        {
+          "value": "couple-household",
+          "label": "Couple/household"
+        },
+        {
+          "value": "family-with-children",
+          "label": "Family with children"
+        },
+        {
+          "value": "student",
+          "label": "Student"
+        },
+        {
+          "value": "retiree",
+          "label": "Retiree"
+        }
       ],
       "required": true
     },
@@ -40,12 +55,30 @@
       "label": "Monthly Net Income Range",
       "type": "select",
       "options": [
-        "Under 20,000 SEK",
-        "20,000–40,000 SEK",
-        "40,000–60,000 SEK",
-        "60,000–100,000 SEK",
-        "Over 100,000 SEK",
-        "Prefer not to specify"
+        {
+          "value": "under-20-000-sek",
+          "label": "Under 20,000 SEK"
+        },
+        {
+          "value": "20-000-40-000-sek",
+          "label": "20,000–40,000 SEK"
+        },
+        {
+          "value": "40-000-60-000-sek",
+          "label": "40,000–60,000 SEK"
+        },
+        {
+          "value": "60-000-100-000-sek",
+          "label": "60,000–100,000 SEK"
+        },
+        {
+          "value": "over-100-000-sek",
+          "label": "Over 100,000 SEK"
+        },
+        {
+          "value": "prefer-not-to-specify",
+          "label": "Prefer not to specify"
+        }
       ],
       "required": false
     },
@@ -54,13 +87,34 @@
       "label": "Financial Goals",
       "type": "multiselect",
       "options": [
-        "Emergency fund",
-        "Debt reduction",
-        "Home purchase savings",
-        "Holiday/travel fund",
-        "Education fund",
-        "General savings increase",
-        "Spending reduction"
+        {
+          "value": "emergency-fund",
+          "label": "Emergency fund"
+        },
+        {
+          "value": "debt-reduction",
+          "label": "Debt reduction"
+        },
+        {
+          "value": "home-purchase-savings",
+          "label": "Home purchase savings"
+        },
+        {
+          "value": "holiday-travel-fund",
+          "label": "Holiday/travel fund"
+        },
+        {
+          "value": "education-fund",
+          "label": "Education fund"
+        },
+        {
+          "value": "general-savings-increase",
+          "label": "General savings increase"
+        },
+        {
+          "value": "spending-reduction",
+          "label": "Spending reduction"
+        }
       ],
       "required": true
     },

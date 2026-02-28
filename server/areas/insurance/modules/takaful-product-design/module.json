@@ -34,11 +34,26 @@
       "label": "Takaful Type",
       "required": true,
       "options": [
-        "Family Takaful (life equivalent)",
-        "General Takaful (P&C equivalent)",
-        "Medical Takaful",
-        "Micro-Takaful",
-        "Retakaful"
+        {
+          "value": "family-takaful-life-equivalent",
+          "label": "Family Takaful (life equivalent)"
+        },
+        {
+          "value": "general-takaful-p-c-equivalent",
+          "label": "General Takaful (P&C equivalent)"
+        },
+        {
+          "value": "medical-takaful",
+          "label": "Medical Takaful"
+        },
+        {
+          "value": "micro-takaful",
+          "label": "Micro-Takaful"
+        },
+        {
+          "value": "retakaful",
+          "label": "Retakaful"
+        }
       ]
     },
     {
@@ -47,10 +62,22 @@
       "label": "Takaful Model",
       "required": true,
       "options": [
-        "Wakala (agency fee model)",
-        "Mudarabah (profit sharing model)",
-        "Hybrid Wakala-Mudarabah",
-        "Waqf-based model"
+        {
+          "value": "wakala-agency-fee-model",
+          "label": "Wakala (agency fee model)"
+        },
+        {
+          "value": "mudarabah-profit-sharing-model",
+          "label": "Mudarabah (profit sharing model)"
+        },
+        {
+          "value": "hybrid-wakala-mudarabah",
+          "label": "Hybrid Wakala-Mudarabah"
+        },
+        {
+          "value": "waqf-based-model",
+          "label": "Waqf-based model"
+        }
       ]
     },
     {
@@ -58,13 +85,34 @@
       "type": "select",
       "label": "Jurisdiction / Regulator",
       "options": [
-        "Saudi Arabia (SAMA)",
-        "UAE (IA / CBUAE)",
-        "Malaysia (BNM)",
-        "Pakistan (SECP)",
-        "Bahrain (CBB)",
-        "Indonesia (OJK)",
-        "Other"
+        {
+          "value": "saudi-arabia-sama",
+          "label": "Saudi Arabia (SAMA)"
+        },
+        {
+          "value": "uae-ia-cbuae",
+          "label": "UAE (IA / CBUAE)"
+        },
+        {
+          "value": "malaysia-bnm",
+          "label": "Malaysia (BNM)"
+        },
+        {
+          "value": "pakistan-secp",
+          "label": "Pakistan (SECP)"
+        },
+        {
+          "value": "bahrain-cbb",
+          "label": "Bahrain (CBB)"
+        },
+        {
+          "value": "indonesia-ojk",
+          "label": "Indonesia (OJK)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {

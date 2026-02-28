@@ -27,12 +27,30 @@
       "label": "Distributor Type",
       "type": "select",
       "options": [
-        "Insurance undertaking (direct)",
-        "Insurance broker",
-        "Insurance agent",
-        "Ancillary insurance intermediary",
-        "Comparison website",
-        "Bancassurance"
+        {
+          "value": "insurance-undertaking-direct",
+          "label": "Insurance undertaking (direct)"
+        },
+        {
+          "value": "insurance-broker",
+          "label": "Insurance broker"
+        },
+        {
+          "value": "insurance-agent",
+          "label": "Insurance agent"
+        },
+        {
+          "value": "ancillary-insurance-intermediary",
+          "label": "Ancillary insurance intermediary"
+        },
+        {
+          "value": "comparison-website",
+          "label": "Comparison website"
+        },
+        {
+          "value": "bancassurance",
+          "label": "Bancassurance"
+        }
       ],
       "required": true
     },
@@ -41,13 +59,34 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "Germany",
-        "Netherlands",
-        "EU (general)"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "netherlands",
+          "label": "Netherlands"
+        },
+        {
+          "value": "eu-general",
+          "label": "EU (general)"
+        }
       ],
       "required": true
     },
@@ -56,11 +95,26 @@
       "label": "Product Scope",
       "type": "multiselect",
       "options": [
-        "Non-life products",
-        "Life products",
-        "IBIPs",
-        "Pension products",
-        "All products"
+        {
+          "value": "non-life-products",
+          "label": "Non-life products"
+        },
+        {
+          "value": "life-products",
+          "label": "Life products"
+        },
+        {
+          "value": "ibips",
+          "label": "IBIPs"
+        },
+        {
+          "value": "pension-products",
+          "label": "Pension products"
+        },
+        {
+          "value": "all-products",
+          "label": "All products"
+        }
       ],
       "required": true
     },
@@ -69,13 +123,34 @@
       "label": "Focus Areas",
       "type": "multiselect",
       "options": [
-        "Demands and needs",
-        "Suitability/appropriateness",
-        "Disclosure requirements",
-        "Conflicts of interest",
-        "Cross-selling",
-        "Professional requirements",
-        "All areas"
+        {
+          "value": "demands-and-needs",
+          "label": "Demands and needs"
+        },
+        {
+          "value": "suitability-appropriateness",
+          "label": "Suitability/appropriateness"
+        },
+        {
+          "value": "disclosure-requirements",
+          "label": "Disclosure requirements"
+        },
+        {
+          "value": "conflicts-of-interest",
+          "label": "Conflicts of interest"
+        },
+        {
+          "value": "cross-selling",
+          "label": "Cross-selling"
+        },
+        {
+          "value": "professional-requirements",
+          "label": "Professional requirements"
+        },
+        {
+          "value": "all-areas",
+          "label": "All areas"
+        }
       ],
       "required": true
     },

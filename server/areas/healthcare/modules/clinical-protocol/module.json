@@ -27,17 +27,50 @@
       "label": "Clinical Area",
       "type": "select",
       "options": [
-        "Primary care",
-        "Emergency medicine",
-        "Surgery",
-        "Oncology",
-        "Cardiology",
-        "Mental health",
-        "Paediatrics",
-        "Geriatrics",
-        "Pharmacy",
-        "Nursing",
-        "Other specialty"
+        {
+          "value": "primary-care",
+          "label": "Primary care"
+        },
+        {
+          "value": "emergency-medicine",
+          "label": "Emergency medicine"
+        },
+        {
+          "value": "surgery",
+          "label": "Surgery"
+        },
+        {
+          "value": "oncology",
+          "label": "Oncology"
+        },
+        {
+          "value": "cardiology",
+          "label": "Cardiology"
+        },
+        {
+          "value": "mental-health",
+          "label": "Mental health"
+        },
+        {
+          "value": "paediatrics",
+          "label": "Paediatrics"
+        },
+        {
+          "value": "geriatrics",
+          "label": "Geriatrics"
+        },
+        {
+          "value": "pharmacy",
+          "label": "Pharmacy"
+        },
+        {
+          "value": "nursing",
+          "label": "Nursing"
+        },
+        {
+          "value": "other-specialty",
+          "label": "Other specialty"
+        }
       ],
       "required": true
     },
@@ -46,13 +79,34 @@
       "label": "Protocol Type",
       "type": "select",
       "options": [
-        "Clinical pathway",
-        "Standard operating procedure",
-        "Treatment protocol",
-        "Diagnostic protocol",
-        "Prescribing guideline",
-        "Care plan template",
-        "Emergency response procedure"
+        {
+          "value": "clinical-pathway",
+          "label": "Clinical pathway"
+        },
+        {
+          "value": "standard-operating-procedure",
+          "label": "Standard operating procedure"
+        },
+        {
+          "value": "treatment-protocol",
+          "label": "Treatment protocol"
+        },
+        {
+          "value": "diagnostic-protocol",
+          "label": "Diagnostic protocol"
+        },
+        {
+          "value": "prescribing-guideline",
+          "label": "Prescribing guideline"
+        },
+        {
+          "value": "care-plan-template",
+          "label": "Care plan template"
+        },
+        {
+          "value": "emergency-response-procedure",
+          "label": "Emergency response procedure"
+        }
       ],
       "required": true
     },
@@ -61,13 +115,34 @@
       "label": "Healthcare Setting",
       "type": "select",
       "options": [
-        "Hospital",
-        "Primary care clinic",
-        "Specialist clinic",
-        "Home care",
-        "Long-term care facility",
-        "Pharmacy",
-        "Research setting"
+        {
+          "value": "hospital",
+          "label": "Hospital"
+        },
+        {
+          "value": "primary-care-clinic",
+          "label": "Primary care clinic"
+        },
+        {
+          "value": "specialist-clinic",
+          "label": "Specialist clinic"
+        },
+        {
+          "value": "home-care",
+          "label": "Home care"
+        },
+        {
+          "value": "long-term-care-facility",
+          "label": "Long-term care facility"
+        },
+        {
+          "value": "pharmacy",
+          "label": "Pharmacy"
+        },
+        {
+          "value": "research-setting",
+          "label": "Research setting"
+        }
       ],
       "required": true
     },

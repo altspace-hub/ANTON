@@ -27,14 +27,38 @@
       "label": "Property Type",
       "type": "select",
       "options": [
-        "Commercial office",
-        "Retail",
-        "Industrial/warehouse",
-        "Residential (single)",
-        "Residential (multi-unit)",
-        "Mixed-use",
-        "Land/development site",
-        "Hotel/hospitality"
+        {
+          "value": "commercial-office",
+          "label": "Commercial office"
+        },
+        {
+          "value": "retail",
+          "label": "Retail"
+        },
+        {
+          "value": "industrial-warehouse",
+          "label": "Industrial/warehouse"
+        },
+        {
+          "value": "residential-single",
+          "label": "Residential (single)"
+        },
+        {
+          "value": "residential-multi-unit",
+          "label": "Residential (multi-unit)"
+        },
+        {
+          "value": "mixed-use",
+          "label": "Mixed-use"
+        },
+        {
+          "value": "land-development-site",
+          "label": "Land/development site"
+        },
+        {
+          "value": "hotel-hospitality",
+          "label": "Hotel/hospitality"
+        }
       ],
       "required": true
     },
@@ -43,11 +67,26 @@
       "label": "Transaction Type",
       "type": "select",
       "options": [
-        "Acquisition",
-        "Disposal",
-        "Refinancing",
-        "Joint venture",
-        "Portfolio transaction"
+        {
+          "value": "acquisition",
+          "label": "Acquisition"
+        },
+        {
+          "value": "disposal",
+          "label": "Disposal"
+        },
+        {
+          "value": "refinancing",
+          "label": "Refinancing"
+        },
+        {
+          "value": "joint-venture",
+          "label": "Joint venture"
+        },
+        {
+          "value": "portfolio-transaction",
+          "label": "Portfolio transaction"
+        }
       ],
       "required": true
     },
@@ -56,13 +95,34 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "Germany",
-        "Other EU"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "other-eu",
+          "label": "Other EU"
+        }
       ],
       "required": true
     },
@@ -71,14 +131,38 @@
       "label": "Due Diligence Scope",
       "type": "multiselect",
       "options": [
-        "Legal/title",
-        "Environmental",
-        "Technical/structural",
-        "Financial",
-        "Tax",
-        "Planning/zoning",
-        "Tenant analysis",
-        "All areas"
+        {
+          "value": "legal-title",
+          "label": "Legal/title"
+        },
+        {
+          "value": "environmental",
+          "label": "Environmental"
+        },
+        {
+          "value": "technical-structural",
+          "label": "Technical/structural"
+        },
+        {
+          "value": "financial",
+          "label": "Financial"
+        },
+        {
+          "value": "tax",
+          "label": "Tax"
+        },
+        {
+          "value": "planning-zoning",
+          "label": "Planning/zoning"
+        },
+        {
+          "value": "tenant-analysis",
+          "label": "Tenant analysis"
+        },
+        {
+          "value": "all-areas",
+          "label": "All areas"
+        }
       ],
       "required": true
     },

@@ -28,14 +28,38 @@
       "label": "Asset Type",
       "type": "select",
       "options": [
-        "Office",
-        "Retail",
-        "Industrial/logistics",
-        "Residential",
-        "Student housing",
-        "Healthcare/care homes",
-        "Hotel",
-        "Mixed-use portfolio"
+        {
+          "value": "office",
+          "label": "Office"
+        },
+        {
+          "value": "retail",
+          "label": "Retail"
+        },
+        {
+          "value": "industrial-logistics",
+          "label": "Industrial/logistics"
+        },
+        {
+          "value": "residential",
+          "label": "Residential"
+        },
+        {
+          "value": "student-housing",
+          "label": "Student housing"
+        },
+        {
+          "value": "healthcare-care-homes",
+          "label": "Healthcare/care homes"
+        },
+        {
+          "value": "hotel",
+          "label": "Hotel"
+        },
+        {
+          "value": "mixed-use-portfolio",
+          "label": "Mixed-use portfolio"
+        }
       ],
       "required": true
     },
@@ -44,11 +68,26 @@
       "label": "Investment Type",
       "type": "select",
       "options": [
-        "Core",
-        "Core+",
-        "Value-add",
-        "Opportunistic",
-        "Development"
+        {
+          "value": "core",
+          "label": "Core"
+        },
+        {
+          "value": "core",
+          "label": "Core+"
+        },
+        {
+          "value": "value-add",
+          "label": "Value-add"
+        },
+        {
+          "value": "opportunistic",
+          "label": "Opportunistic"
+        },
+        {
+          "value": "development",
+          "label": "Development"
+        }
       ],
       "required": true
     },

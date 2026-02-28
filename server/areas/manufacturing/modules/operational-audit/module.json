@@ -28,14 +28,38 @@
       "label": "Audit Type",
       "type": "select",
       "options": [
-        "Internal process audit",
-        "Supplier audit",
-        "System audit (QMS/EMS)",
-        "Product audit",
-        "Health & safety audit",
-        "Environmental audit",
-        "Financial controls audit",
-        "Compliance audit"
+        {
+          "value": "internal-process-audit",
+          "label": "Internal process audit"
+        },
+        {
+          "value": "supplier-audit",
+          "label": "Supplier audit"
+        },
+        {
+          "value": "system-audit-qms-ems",
+          "label": "System audit (QMS/EMS)"
+        },
+        {
+          "value": "product-audit",
+          "label": "Product audit"
+        },
+        {
+          "value": "health-safety-audit",
+          "label": "Health & safety audit"
+        },
+        {
+          "value": "environmental-audit",
+          "label": "Environmental audit"
+        },
+        {
+          "value": "financial-controls-audit",
+          "label": "Financial controls audit"
+        },
+        {
+          "value": "compliance-audit",
+          "label": "Compliance audit"
+        }
       ],
       "required": true
     },
@@ -44,11 +68,26 @@
       "label": "Audit Scope",
       "type": "select",
       "options": [
-        "Single process/department",
-        "Multiple processes",
-        "Full site/facility",
-        "Multi-site",
-        "Supply chain"
+        {
+          "value": "single-process-department",
+          "label": "Single process/department"
+        },
+        {
+          "value": "multiple-processes",
+          "label": "Multiple processes"
+        },
+        {
+          "value": "full-site-facility",
+          "label": "Full site/facility"
+        },
+        {
+          "value": "multi-site",
+          "label": "Multi-site"
+        },
+        {
+          "value": "supply-chain",
+          "label": "Supply chain"
+        }
       ],
       "required": true
     },
@@ -57,14 +96,38 @@
       "label": "Applicable Standards",
       "type": "multiselect",
       "options": [
-        "ISO 9001",
-        "ISO 14001",
-        "ISO 45001",
-        "IATF 16949",
-        "ISO 13485",
-        "Company-specific standards",
-        "Regulatory requirements",
-        "Customer requirements"
+        {
+          "value": "iso-9001",
+          "label": "ISO 9001"
+        },
+        {
+          "value": "iso-14001",
+          "label": "ISO 14001"
+        },
+        {
+          "value": "iso-45001",
+          "label": "ISO 45001"
+        },
+        {
+          "value": "iatf-16949",
+          "label": "IATF 16949"
+        },
+        {
+          "value": "iso-13485",
+          "label": "ISO 13485"
+        },
+        {
+          "value": "company-specific-standards",
+          "label": "Company-specific standards"
+        },
+        {
+          "value": "regulatory-requirements",
+          "label": "Regulatory requirements"
+        },
+        {
+          "value": "customer-requirements",
+          "label": "Customer requirements"
+        }
       ],
       "required": true
     },
@@ -73,12 +136,30 @@
       "label": "Audit Phase Support Needed",
       "type": "select",
       "options": [
-        "Audit programme planning",
-        "Audit plan/checklist development",
-        "Finding analysis and classification",
-        "Report writing",
-        "Corrective action follow-up",
-        "Full audit support"
+        {
+          "value": "audit-programme-planning",
+          "label": "Audit programme planning"
+        },
+        {
+          "value": "audit-plan-checklist-development",
+          "label": "Audit plan/checklist development"
+        },
+        {
+          "value": "finding-analysis-and-classification",
+          "label": "Finding analysis and classification"
+        },
+        {
+          "value": "report-writing",
+          "label": "Report writing"
+        },
+        {
+          "value": "corrective-action-follow-up",
+          "label": "Corrective action follow-up"
+        },
+        {
+          "value": "full-audit-support",
+          "label": "Full audit support"
+        }
       ],
       "required": true
     },

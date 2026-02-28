@@ -27,14 +27,38 @@
       "label": "Types of Debt",
       "type": "multiselect",
       "options": [
-        "Mortgage",
-        "Consumer loans",
-        "Credit cards",
-        "Student loans",
-        "Car loan",
-        "Personal loans",
-        "Tax debt",
-        "Business debt"
+        {
+          "value": "mortgage",
+          "label": "Mortgage"
+        },
+        {
+          "value": "consumer-loans",
+          "label": "Consumer loans"
+        },
+        {
+          "value": "credit-cards",
+          "label": "Credit cards"
+        },
+        {
+          "value": "student-loans",
+          "label": "Student loans"
+        },
+        {
+          "value": "car-loan",
+          "label": "Car loan"
+        },
+        {
+          "value": "personal-loans",
+          "label": "Personal loans"
+        },
+        {
+          "value": "tax-debt",
+          "label": "Tax debt"
+        },
+        {
+          "value": "business-debt",
+          "label": "Business debt"
+        }
       ],
       "required": true
     },
@@ -43,10 +67,22 @@
       "label": "Debt Situation Severity",
       "type": "select",
       "options": [
-        "Manageable — seeking optimisation",
-        "Stretched — need a plan",
-        "Struggling — missing payments",
-        "Critical — considering formal debt relief"
+        {
+          "value": "manageable-seeking-optimisation",
+          "label": "Manageable — seeking optimisation"
+        },
+        {
+          "value": "stretched-need-a-plan",
+          "label": "Stretched — need a plan"
+        },
+        {
+          "value": "struggling-missing-payments",
+          "label": "Struggling — missing payments"
+        },
+        {
+          "value": "critical-considering-formal-debt-relief",
+          "label": "Critical — considering formal debt relief"
+        }
       ],
       "required": true
     },
@@ -55,11 +91,26 @@
       "label": "Monthly Surplus for Debt Repayment",
       "type": "select",
       "options": [
-        "Under 2,000 SEK",
-        "2,000–5,000 SEK",
-        "5,000–10,000 SEK",
-        "Over 10,000 SEK",
-        "Uncertain/need help calculating"
+        {
+          "value": "under-2-000-sek",
+          "label": "Under 2,000 SEK"
+        },
+        {
+          "value": "2-000-5-000-sek",
+          "label": "2,000–5,000 SEK"
+        },
+        {
+          "value": "5-000-10-000-sek",
+          "label": "5,000–10,000 SEK"
+        },
+        {
+          "value": "over-10-000-sek",
+          "label": "Over 10,000 SEK"
+        },
+        {
+          "value": "uncertain-need-help-calculating",
+          "label": "Uncertain/need help calculating"
+        }
       ],
       "required": false
     },
@@ -68,12 +119,30 @@
       "label": "Debt Management Goals",
       "type": "multiselect",
       "options": [
-        "Reduce total interest paid",
-        "Lower monthly payments",
-        "Become debt-free by target date",
-        "Consolidate debts",
-        "Improve credit score",
-        "Avoid formal debt proceedings"
+        {
+          "value": "reduce-total-interest-paid",
+          "label": "Reduce total interest paid"
+        },
+        {
+          "value": "lower-monthly-payments",
+          "label": "Lower monthly payments"
+        },
+        {
+          "value": "become-debt-free-by-target-date",
+          "label": "Become debt-free by target date"
+        },
+        {
+          "value": "consolidate-debts",
+          "label": "Consolidate debts"
+        },
+        {
+          "value": "improve-credit-score",
+          "label": "Improve credit score"
+        },
+        {
+          "value": "avoid-formal-debt-proceedings",
+          "label": "Avoid formal debt proceedings"
+        }
       ],
       "required": true
     },

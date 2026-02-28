@@ -27,13 +27,34 @@
       "label": "Product Type",
       "type": "select",
       "options": [
-        "Life insurance",
-        "Non-life insurance",
-        "Unit-linked",
-        "Insurance-based investment product (IBIP)",
-        "Pension product",
-        "Group insurance",
-        "Multiple products"
+        {
+          "value": "life-insurance",
+          "label": "Life insurance"
+        },
+        {
+          "value": "non-life-insurance",
+          "label": "Non-life insurance"
+        },
+        {
+          "value": "unit-linked",
+          "label": "Unit-linked"
+        },
+        {
+          "value": "insurance-based-investment-product-ibip",
+          "label": "Insurance-based investment product (IBIP)"
+        },
+        {
+          "value": "pension-product",
+          "label": "Pension product"
+        },
+        {
+          "value": "group-insurance",
+          "label": "Group insurance"
+        },
+        {
+          "value": "multiple-products",
+          "label": "Multiple products"
+        }
       ],
       "required": true
     },
@@ -42,9 +63,18 @@
       "label": "Role in Product Lifecycle",
       "type": "select",
       "options": [
-        "Manufacturer",
-        "Distributor",
-        "Both manufacturer and distributor"
+        {
+          "value": "manufacturer",
+          "label": "Manufacturer"
+        },
+        {
+          "value": "distributor",
+          "label": "Distributor"
+        },
+        {
+          "value": "both-manufacturer-and-distributor",
+          "label": "Both manufacturer and distributor"
+        }
       ],
       "required": true
     },
@@ -53,12 +83,30 @@
       "label": "Task Focus",
       "type": "select",
       "options": [
-        "POG framework development",
-        "Target market definition",
-        "Product testing methodology",
-        "Distribution strategy review",
-        "Product monitoring programme",
-        "Full governance review"
+        {
+          "value": "pog-framework-development",
+          "label": "POG framework development"
+        },
+        {
+          "value": "target-market-definition",
+          "label": "Target market definition"
+        },
+        {
+          "value": "product-testing-methodology",
+          "label": "Product testing methodology"
+        },
+        {
+          "value": "distribution-strategy-review",
+          "label": "Distribution strategy review"
+        },
+        {
+          "value": "product-monitoring-programme",
+          "label": "Product monitoring programme"
+        },
+        {
+          "value": "full-governance-review",
+          "label": "Full governance review"
+        }
       ],
       "required": true
     },

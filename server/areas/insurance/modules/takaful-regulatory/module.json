@@ -34,12 +34,30 @@
       "label": "Jurisdiction / Regulator",
       "required": true,
       "options": [
-        "Saudi Arabia (SAMA)",
-        "UAE (IA / CBUAE)",
-        "Malaysia (BNM)",
-        "Pakistan (SECP)",
-        "Bahrain (CBB)",
-        "Other"
+        {
+          "value": "saudi-arabia-sama",
+          "label": "Saudi Arabia (SAMA)"
+        },
+        {
+          "value": "uae-ia-cbuae",
+          "label": "UAE (IA / CBUAE)"
+        },
+        {
+          "value": "malaysia-bnm",
+          "label": "Malaysia (BNM)"
+        },
+        {
+          "value": "pakistan-secp",
+          "label": "Pakistan (SECP)"
+        },
+        {
+          "value": "bahrain-cbb",
+          "label": "Bahrain (CBB)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ]
     },
     {
@@ -48,10 +66,22 @@
       "label": "Entity Type",
       "required": true,
       "options": [
-        "Standalone Takaful operator",
-        "Retakaful operator",
-        "Islamic window within conventional insurer",
-        "Family and General composite Takaful"
+        {
+          "value": "standalone-takaful-operator",
+          "label": "Standalone Takaful operator"
+        },
+        {
+          "value": "retakaful-operator",
+          "label": "Retakaful operator"
+        },
+        {
+          "value": "islamic-window-within-conventional-insurer",
+          "label": "Islamic window within conventional insurer"
+        },
+        {
+          "value": "family-and-general-composite-takaful",
+          "label": "Family and General composite Takaful"
+        }
       ]
     },
     {
@@ -59,12 +89,30 @@
       "type": "multiselect",
       "label": "Compliance Focus Areas",
       "options": [
-        "Solvency margins and capital requirements",
-        "Sharia governance and SSB requirements",
-        "Participant fund management and segregation",
-        "Disclosure and reporting obligations",
-        "Investment restrictions and compliance",
-        "Surplus distribution policy"
+        {
+          "value": "solvency-margins-and-capital-requirements",
+          "label": "Solvency margins and capital requirements"
+        },
+        {
+          "value": "sharia-governance-and-ssb-requirements",
+          "label": "Sharia governance and SSB requirements"
+        },
+        {
+          "value": "participant-fund-management-and-segregation",
+          "label": "Participant fund management and segregation"
+        },
+        {
+          "value": "disclosure-and-reporting-obligations",
+          "label": "Disclosure and reporting obligations"
+        },
+        {
+          "value": "investment-restrictions-and-compliance",
+          "label": "Investment restrictions and compliance"
+        },
+        {
+          "value": "surplus-distribution-policy",
+          "label": "Surplus distribution policy"
+        }
       ]
     },
     {

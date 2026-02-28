@@ -29,12 +29,30 @@
       "label": "Product Type",
       "type": "select",
       "options": [
-        "Small molecule",
-        "Biologic",
-        "Oncology",
-        "Rare disease",
-        "Vaccine",
-        "Diagnostic"
+        {
+          "value": "small-molecule",
+          "label": "Small molecule"
+        },
+        {
+          "value": "biologic",
+          "label": "Biologic"
+        },
+        {
+          "value": "oncology",
+          "label": "Oncology"
+        },
+        {
+          "value": "rare-disease",
+          "label": "Rare disease"
+        },
+        {
+          "value": "vaccine",
+          "label": "Vaccine"
+        },
+        {
+          "value": "diagnostic",
+          "label": "Diagnostic"
+        }
       ],
       "required": true
     },
@@ -43,12 +61,30 @@
       "label": "Target Markets",
       "type": "multiselect",
       "options": [
-        "EU (EMA)",
-        "UK (NICE/SMC)",
-        "Germany (IQWiG/G-BA)",
-        "France (HAS)",
-        "US (commercial)",
-        "Other"
+        {
+          "value": "eu-ema",
+          "label": "EU (EMA)"
+        },
+        {
+          "value": "uk-nice-smc",
+          "label": "UK (NICE/SMC)"
+        },
+        {
+          "value": "germany-iqwig-g-ba",
+          "label": "Germany (IQWiG/G-BA)"
+        },
+        {
+          "value": "france-has",
+          "label": "France (HAS)"
+        },
+        {
+          "value": "us-commercial",
+          "label": "US (commercial)"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -57,11 +93,26 @@
       "label": "Launch Stage",
       "type": "select",
       "options": [
-        "Early development",
-        "Phase III planning",
-        "Pre-launch",
-        "Launch",
-        "Post-launch optimisation"
+        {
+          "value": "early-development",
+          "label": "Early development"
+        },
+        {
+          "value": "phase-iii-planning",
+          "label": "Phase III planning"
+        },
+        {
+          "value": "pre-launch",
+          "label": "Pre-launch"
+        },
+        {
+          "value": "launch",
+          "label": "Launch"
+        },
+        {
+          "value": "post-launch-optimisation",
+          "label": "Post-launch optimisation"
+        }
       ],
       "required": true
     },

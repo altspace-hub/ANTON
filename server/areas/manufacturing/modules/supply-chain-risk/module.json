@@ -28,15 +28,42 @@
       "label": "Industry",
       "type": "select",
       "options": [
-        "Automotive",
-        "Electronics",
-        "Food & beverage",
-        "Pharmaceutical",
-        "Chemical",
-        "Aerospace",
-        "Consumer goods",
-        "Industrial equipment",
-        "Other"
+        {
+          "value": "automotive",
+          "label": "Automotive"
+        },
+        {
+          "value": "electronics",
+          "label": "Electronics"
+        },
+        {
+          "value": "food-beverage",
+          "label": "Food & beverage"
+        },
+        {
+          "value": "pharmaceutical",
+          "label": "Pharmaceutical"
+        },
+        {
+          "value": "chemical",
+          "label": "Chemical"
+        },
+        {
+          "value": "aerospace",
+          "label": "Aerospace"
+        },
+        {
+          "value": "consumer-goods",
+          "label": "Consumer goods"
+        },
+        {
+          "value": "industrial-equipment",
+          "label": "Industrial equipment"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
       ],
       "required": true
     },
@@ -45,16 +72,46 @@
       "label": "Risk Focus Areas",
       "type": "multiselect",
       "options": [
-        "Supplier concentration",
-        "Geopolitical/country risk",
-        "Financial stability of suppliers",
-        "Logistics/transportation",
-        "Raw material availability",
-        "ESG/sustainability",
-        "Regulatory compliance",
-        "Cybersecurity",
-        "Force majeure/pandemic preparedness",
-        "All areas"
+        {
+          "value": "supplier-concentration",
+          "label": "Supplier concentration"
+        },
+        {
+          "value": "geopolitical-country-risk",
+          "label": "Geopolitical/country risk"
+        },
+        {
+          "value": "financial-stability-of-suppliers",
+          "label": "Financial stability of suppliers"
+        },
+        {
+          "value": "logistics-transportation",
+          "label": "Logistics/transportation"
+        },
+        {
+          "value": "raw-material-availability",
+          "label": "Raw material availability"
+        },
+        {
+          "value": "esg-sustainability",
+          "label": "ESG/sustainability"
+        },
+        {
+          "value": "regulatory-compliance",
+          "label": "Regulatory compliance"
+        },
+        {
+          "value": "cybersecurity",
+          "label": "Cybersecurity"
+        },
+        {
+          "value": "force-majeure-pandemic-preparedness",
+          "label": "Force majeure/pandemic preparedness"
+        },
+        {
+          "value": "all-areas",
+          "label": "All areas"
+        }
       ],
       "required": true
     },
@@ -63,10 +120,22 @@
       "label": "Supply Chain Scope",
       "type": "select",
       "options": [
-        "Tier 1 suppliers only",
-        "Tier 1 and Tier 2",
-        "Full multi-tier supply chain",
-        "Specific commodity/category"
+        {
+          "value": "tier-1-suppliers-only",
+          "label": "Tier 1 suppliers only"
+        },
+        {
+          "value": "tier-1-and-tier-2",
+          "label": "Tier 1 and Tier 2"
+        },
+        {
+          "value": "full-multi-tier-supply-chain",
+          "label": "Full multi-tier supply chain"
+        },
+        {
+          "value": "specific-commodity-category",
+          "label": "Specific commodity/category"
+        }
       ],
       "required": true
     },

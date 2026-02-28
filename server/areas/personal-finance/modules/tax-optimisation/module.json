@@ -27,13 +27,34 @@
       "label": "Tax Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "Germany",
-        "Cross-border (specify in notes)"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "cross-border-specify-in-notes",
+          "label": "Cross-border (specify in notes)"
+        }
       ],
       "required": true
     },
@@ -42,14 +63,38 @@
       "label": "Tax Areas of Interest",
       "type": "multiselect",
       "options": [
-        "Employment income",
-        "Capital gains",
-        "Dividend income",
-        "Pension contributions",
-        "Property/real estate",
-        "Business/self-employment",
-        "Cross-border taxation",
-        "Inheritance/gift tax"
+        {
+          "value": "employment-income",
+          "label": "Employment income"
+        },
+        {
+          "value": "capital-gains",
+          "label": "Capital gains"
+        },
+        {
+          "value": "dividend-income",
+          "label": "Dividend income"
+        },
+        {
+          "value": "pension-contributions",
+          "label": "Pension contributions"
+        },
+        {
+          "value": "property-real-estate",
+          "label": "Property/real estate"
+        },
+        {
+          "value": "business-self-employment",
+          "label": "Business/self-employment"
+        },
+        {
+          "value": "cross-border-taxation",
+          "label": "Cross-border taxation"
+        },
+        {
+          "value": "inheritance-gift-tax",
+          "label": "Inheritance/gift tax"
+        }
       ],
       "required": true
     },
@@ -58,12 +103,30 @@
       "label": "Employment Type",
       "type": "select",
       "options": [
-        "Employed",
-        "Self-employed",
-        "Business owner",
-        "Mixed income",
-        "Retired",
-        "Student"
+        {
+          "value": "employed",
+          "label": "Employed"
+        },
+        {
+          "value": "self-employed",
+          "label": "Self-employed"
+        },
+        {
+          "value": "business-owner",
+          "label": "Business owner"
+        },
+        {
+          "value": "mixed-income",
+          "label": "Mixed income"
+        },
+        {
+          "value": "retired",
+          "label": "Retired"
+        },
+        {
+          "value": "student",
+          "label": "Student"
+        }
       ],
       "required": true
     },

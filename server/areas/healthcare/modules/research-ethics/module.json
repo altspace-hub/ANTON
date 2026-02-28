@@ -27,15 +27,42 @@
       "label": "Research Type",
       "type": "select",
       "options": [
-        "Clinical trial (interventional)",
-        "Observational study",
-        "Registry-based research",
-        "Biobank research",
-        "Genomic/precision medicine",
-        "Health services research",
-        "Digital health research",
-        "AI/ML in healthcare research",
-        "Social/behavioural health research"
+        {
+          "value": "clinical-trial-interventional",
+          "label": "Clinical trial (interventional)"
+        },
+        {
+          "value": "observational-study",
+          "label": "Observational study"
+        },
+        {
+          "value": "registry-based-research",
+          "label": "Registry-based research"
+        },
+        {
+          "value": "biobank-research",
+          "label": "Biobank research"
+        },
+        {
+          "value": "genomic-precision-medicine",
+          "label": "Genomic/precision medicine"
+        },
+        {
+          "value": "health-services-research",
+          "label": "Health services research"
+        },
+        {
+          "value": "digital-health-research",
+          "label": "Digital health research"
+        },
+        {
+          "value": "ai-ml-in-healthcare-research",
+          "label": "AI/ML in healthcare research"
+        },
+        {
+          "value": "social-behavioural-health-research",
+          "label": "Social/behavioural health research"
+        }
       ],
       "required": true
     },
@@ -44,13 +71,34 @@
       "label": "Task Type",
       "type": "select",
       "options": [
-        "Ethics framework development",
-        "Ethics application support",
-        "Informed consent design",
-        "Vulnerable populations assessment",
-        "Data ethics framework",
-        "Ethics review process design",
-        "Ethics policy review"
+        {
+          "value": "ethics-framework-development",
+          "label": "Ethics framework development"
+        },
+        {
+          "value": "ethics-application-support",
+          "label": "Ethics application support"
+        },
+        {
+          "value": "informed-consent-design",
+          "label": "Informed consent design"
+        },
+        {
+          "value": "vulnerable-populations-assessment",
+          "label": "Vulnerable populations assessment"
+        },
+        {
+          "value": "data-ethics-framework",
+          "label": "Data ethics framework"
+        },
+        {
+          "value": "ethics-review-process-design",
+          "label": "Ethics review process design"
+        },
+        {
+          "value": "ethics-policy-review",
+          "label": "Ethics policy review"
+        }
       ],
       "required": true
     },
@@ -59,14 +107,38 @@
       "label": "Vulnerable Populations Involved",
       "type": "multiselect",
       "options": [
-        "None",
-        "Children/minors",
-        "Elderly",
-        "Pregnant women",
-        "Cognitively impaired",
-        "Prisoners/detained",
-        "Economically disadvantaged",
-        "Emergency situations"
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "children-minors",
+          "label": "Children/minors"
+        },
+        {
+          "value": "elderly",
+          "label": "Elderly"
+        },
+        {
+          "value": "pregnant-women",
+          "label": "Pregnant women"
+        },
+        {
+          "value": "cognitively-impaired",
+          "label": "Cognitively impaired"
+        },
+        {
+          "value": "prisoners-detained",
+          "label": "Prisoners/detained"
+        },
+        {
+          "value": "economically-disadvantaged",
+          "label": "Economically disadvantaged"
+        },
+        {
+          "value": "emergency-situations",
+          "label": "Emergency situations"
+        }
       ],
       "required": true
     },
@@ -75,15 +147,42 @@
       "label": "Jurisdiction",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "Germany",
-        "EU (multi-country)",
-        "US",
-        "Global/multi-jurisdictional"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "eu-multi-country",
+          "label": "EU (multi-country)"
+        },
+        {
+          "value": "us",
+          "label": "US"
+        },
+        {
+          "value": "global-multi-jurisdictional",
+          "label": "Global/multi-jurisdictional"
+        }
       ],
       "required": true
     },

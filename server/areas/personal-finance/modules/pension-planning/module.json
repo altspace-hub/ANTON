@@ -28,13 +28,34 @@
       "label": "Country",
       "type": "select",
       "options": [
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "Germany",
-        "Cross-border"
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "cross-border",
+          "label": "Cross-border"
+        }
       ],
       "required": true
     },
@@ -43,12 +64,30 @@
       "label": "Life Stage",
       "type": "select",
       "options": [
-        "Early career (25-35)",
-        "Mid-career (35-50)",
-        "Pre-retirement (50-60)",
-        "Near retirement (60-65)",
-        "In retirement",
-        "Career change/break"
+        {
+          "value": "early-career-25-35",
+          "label": "Early career (25-35)"
+        },
+        {
+          "value": "mid-career-35-50",
+          "label": "Mid-career (35-50)"
+        },
+        {
+          "value": "pre-retirement-50-60",
+          "label": "Pre-retirement (50-60)"
+        },
+        {
+          "value": "near-retirement-60-65",
+          "label": "Near retirement (60-65)"
+        },
+        {
+          "value": "in-retirement",
+          "label": "In retirement"
+        },
+        {
+          "value": "career-change-break",
+          "label": "Career change/break"
+        }
       ],
       "required": true
     },
@@ -57,13 +96,34 @@
       "label": "Existing Pension Arrangements",
       "type": "multiselect",
       "options": [
-        "State pension",
-        "Occupational pension (employer)",
-        "Private pension savings",
-        "ISK/investment account",
-        "Property as retirement asset",
-        "No current pension savings",
-        "Unknown/need review"
+        {
+          "value": "state-pension",
+          "label": "State pension"
+        },
+        {
+          "value": "occupational-pension-employer",
+          "label": "Occupational pension (employer)"
+        },
+        {
+          "value": "private-pension-savings",
+          "label": "Private pension savings"
+        },
+        {
+          "value": "isk-investment-account",
+          "label": "ISK/investment account"
+        },
+        {
+          "value": "property-as-retirement-asset",
+          "label": "Property as retirement asset"
+        },
+        {
+          "value": "no-current-pension-savings",
+          "label": "No current pension savings"
+        },
+        {
+          "value": "unknown-need-review",
+          "label": "Unknown/need review"
+        }
       ],
       "required": true
     },

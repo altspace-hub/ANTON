@@ -27,15 +27,42 @@
       "label": "Product Type",
       "type": "select",
       "options": [
-        "Pharmaceutical — small molecule",
-        "Pharmaceutical — biologic",
-        "Medical device — Class I",
-        "Medical device — Class II",
-        "Medical device — Class III",
-        "In vitro diagnostic",
-        "Combination product",
-        "Advanced therapy (ATMP)",
-        "Digital health/software as medical device"
+        {
+          "value": "pharmaceutical-small-molecule",
+          "label": "Pharmaceutical — small molecule"
+        },
+        {
+          "value": "pharmaceutical-biologic",
+          "label": "Pharmaceutical — biologic"
+        },
+        {
+          "value": "medical-device-class-i",
+          "label": "Medical device — Class I"
+        },
+        {
+          "value": "medical-device-class-ii",
+          "label": "Medical device — Class II"
+        },
+        {
+          "value": "medical-device-class-iii",
+          "label": "Medical device — Class III"
+        },
+        {
+          "value": "in-vitro-diagnostic",
+          "label": "In vitro diagnostic"
+        },
+        {
+          "value": "combination-product",
+          "label": "Combination product"
+        },
+        {
+          "value": "advanced-therapy-atmp",
+          "label": "Advanced therapy (ATMP)"
+        },
+        {
+          "value": "digital-health-software-as-medical-device",
+          "label": "Digital health/software as medical device"
+        }
       ],
       "required": true
     },
@@ -44,16 +71,46 @@
       "label": "Target Markets",
       "type": "multiselect",
       "options": [
-        "EU (centralised)",
-        "EU (decentralised)",
-        "EU (mutual recognition)",
-        "Sweden",
-        "Finland",
-        "Denmark",
-        "Norway",
-        "UK",
-        "US (FDA)",
-        "Global"
+        {
+          "value": "eu-centralised",
+          "label": "EU (centralised)"
+        },
+        {
+          "value": "eu-decentralised",
+          "label": "EU (decentralised)"
+        },
+        {
+          "value": "eu-mutual-recognition",
+          "label": "EU (mutual recognition)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "us-fda",
+          "label": "US (FDA)"
+        },
+        {
+          "value": "global",
+          "label": "Global"
+        }
       ],
       "required": true
     },
@@ -62,14 +119,38 @@
       "label": "Development Stage",
       "type": "select",
       "options": [
-        "Pre-clinical",
-        "Phase I",
-        "Phase II",
-        "Phase III",
-        "Pre-submission",
-        "Under review",
-        "Post-approval variation",
-        "Life-cycle management"
+        {
+          "value": "pre-clinical",
+          "label": "Pre-clinical"
+        },
+        {
+          "value": "phase-i",
+          "label": "Phase I"
+        },
+        {
+          "value": "phase-ii",
+          "label": "Phase II"
+        },
+        {
+          "value": "phase-iii",
+          "label": "Phase III"
+        },
+        {
+          "value": "pre-submission",
+          "label": "Pre-submission"
+        },
+        {
+          "value": "under-review",
+          "label": "Under review"
+        },
+        {
+          "value": "post-approval-variation",
+          "label": "Post-approval variation"
+        },
+        {
+          "value": "life-cycle-management",
+          "label": "Life-cycle management"
+        }
       ],
       "required": true
     },

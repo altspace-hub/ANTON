@@ -27,14 +27,38 @@
       "label": "Applicable Standard",
       "type": "select",
       "options": [
-        "ISO 9001:2015",
-        "IATF 16949 (automotive)",
-        "ISO 13485 (medical devices)",
-        "AS9100 (aerospace)",
-        "ISO 22000 (food safety)",
-        "GMP (pharmaceutical)",
-        "Multiple standards",
-        "No specific standard — best practice"
+        {
+          "value": "iso-9001-2015",
+          "label": "ISO 9001:2015"
+        },
+        {
+          "value": "iatf-16949-automotive",
+          "label": "IATF 16949 (automotive)"
+        },
+        {
+          "value": "iso-13485-medical-devices",
+          "label": "ISO 13485 (medical devices)"
+        },
+        {
+          "value": "as9100-aerospace",
+          "label": "AS9100 (aerospace)"
+        },
+        {
+          "value": "iso-22000-food-safety",
+          "label": "ISO 22000 (food safety)"
+        },
+        {
+          "value": "gmp-pharmaceutical",
+          "label": "GMP (pharmaceutical)"
+        },
+        {
+          "value": "multiple-standards",
+          "label": "Multiple standards"
+        },
+        {
+          "value": "no-specific-standard-best-practice",
+          "label": "No specific standard — best practice"
+        }
       ],
       "required": true
     },
@@ -43,11 +67,26 @@
       "label": "QMS Maturity",
       "type": "select",
       "options": [
-        "No formal QMS",
-        "Basic QMS — needs significant improvement",
-        "Established QMS — periodic review",
-        "Mature QMS — optimisation focus",
-        "Transitioning between standards"
+        {
+          "value": "no-formal-qms",
+          "label": "No formal QMS"
+        },
+        {
+          "value": "basic-qms-needs-significant-improvement",
+          "label": "Basic QMS — needs significant improvement"
+        },
+        {
+          "value": "established-qms-periodic-review",
+          "label": "Established QMS — periodic review"
+        },
+        {
+          "value": "mature-qms-optimisation-focus",
+          "label": "Mature QMS — optimisation focus"
+        },
+        {
+          "value": "transitioning-between-standards",
+          "label": "Transitioning between standards"
+        }
       ],
       "required": true
     },
@@ -56,14 +95,38 @@
       "label": "Task Focus",
       "type": "select",
       "options": [
-        "Full QMS development",
-        "Quality policy and objectives",
-        "Process documentation",
-        "Non-conformance/CAPA procedures",
-        "Management review framework",
-        "Internal audit programme",
-        "Supplier quality management",
-        "Pre-certification gap assessment"
+        {
+          "value": "full-qms-development",
+          "label": "Full QMS development"
+        },
+        {
+          "value": "quality-policy-and-objectives",
+          "label": "Quality policy and objectives"
+        },
+        {
+          "value": "process-documentation",
+          "label": "Process documentation"
+        },
+        {
+          "value": "non-conformance-capa-procedures",
+          "label": "Non-conformance/CAPA procedures"
+        },
+        {
+          "value": "management-review-framework",
+          "label": "Management review framework"
+        },
+        {
+          "value": "internal-audit-programme",
+          "label": "Internal audit programme"
+        },
+        {
+          "value": "supplier-quality-management",
+          "label": "Supplier quality management"
+        },
+        {
+          "value": "pre-certification-gap-assessment",
+          "label": "Pre-certification gap assessment"
+        }
       ],
       "required": true
     },
