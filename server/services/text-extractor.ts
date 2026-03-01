@@ -57,7 +57,7 @@ async function extractXlsx(filePath: string): Promise<string> {
   const stat = await fs.stat(filePath);
   if (stat.size > MAX_FILE_BYTES) {
     const sizeMB = (stat.size / 1024 / 1024).toFixed(1);
-    console.warn(`[extractor] XLSX too large (${sizeMB} MB > 50 MB limit): ${path.basename(filePath)}`);
+    console.warn(`[extractor] Excel too large (${sizeMB} MB > 50 MB limit): ${path.basename(filePath)}`);
     return (
       `[CONTEXT NOTE: ${path.basename(filePath)} could not be loaded — ` +
       `file size ${sizeMB} MB exceeds the 50 MB limit. ` +
@@ -65,20 +65,19 @@ async function extractXlsx(filePath: string): Promise<string> {
     );
   }
 
-  const { Workbook } = await import('exceljs');
-  const workbook = new Workbook();
-  await workbook.xlsx.readFile(filePath);
+  // Use SheetJS (xlsx) which supports both .xlsx and legacy .xls formats
+  const XLSX = await import('xlsx');
+  const buffer = await fs.readFile(filePath);
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
 
   const lines: string[] = [];
-  workbook.eachSheet((sheet) => {
-    lines.push(`--- Sheet: ${sheet.name} ---`);
-    sheet.eachRow((row) => {
-      const cells = (row.values as (string | number | null | undefined)[])
-        .slice(1) // row.values is 1-indexed
-        .map((v) => (v == null ? '' : String(v)));
-      lines.push(cells.join('\t'));
-    });
-  });
+  for (const sheetName of workbook.SheetNames) {
+    lines.push(`--- Sheet: ${sheetName} ---`);
+    const sheet = workbook.Sheets[sheetName];
+    // sheet_to_csv handles empty cells, merged cells, and dates cleanly
+    const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
+    lines.push(csv);
+  }
   return lines.join('\n');
 }
 
@@ -130,7 +129,8 @@ export async function extractTextFromFile(filePath: string): Promise<string | nu
       case '.pdf':   return await extractPdf(filePath);
       case '.docx':
       case '.doc':   return await extractDocx(filePath);
-      case '.xlsx':  return await extractXlsx(filePath);
+      case '.xlsx':
+      case '.xls':   return await extractXlsx(filePath);
       case '.csv':   return await extractCsv(filePath);
       case '.txt':
       case '.md':    return await extractText(filePath);
