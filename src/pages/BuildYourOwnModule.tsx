@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Puzzle, Trash2, ChevronRight, Wand2, BookMarked, Check, Download, Sparkles, Send, Bot, User, RefreshCw } from 'lucide-react';
+import { Puzzle, Trash2, ChevronRight, Wand2, BookMarked, Check, Download, Sparkles, Send, Bot, User, RefreshCw, Plus, GripVertical, X } from 'lucide-react';
 import { fetchCustomModules, createCustomModule, deleteCustomModule, shareModuleWithCommunity, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import { EXPERT_ROLES } from '@/lib/expert-roles';
 import { AREAS } from '@/lib/constants';
@@ -26,6 +26,29 @@ interface GeneratedModuleConfig {
   skills: string[];
   output_formats: string[];
 }
+
+// ── Guided Input Field Types ─────────────────────────────────────────────────
+
+export interface GuidedInputField {
+  id: string;
+  type: 'text' | 'textarea' | 'select' | 'multi-select' | 'chips' | 'boolean' | 'number';
+  label: string;
+  description?: string;
+  placeholder?: string;
+  required?: boolean;
+  options?: { value: string; label: string }[];
+  defaultValue?: unknown;
+}
+
+const FIELD_TYPES: { value: GuidedInputField['type']; label: string; hint: string }[] = [
+  { value: 'text',         label: 'Short text',    hint: 'Single line answer' },
+  { value: 'textarea',     label: 'Long text',     hint: 'Multi-line answer' },
+  { value: 'select',       label: 'Dropdown',      hint: 'Pick one from a list' },
+  { value: 'multi-select', label: 'Multi-select',  hint: 'Pick several from a list' },
+  { value: 'chips',        label: 'Chips',         hint: 'Toggle multiple options' },
+  { value: 'boolean',      label: 'Yes / No',      hint: 'On/off toggle' },
+  { value: 'number',       label: 'Number',        hint: 'Numeric value' },
+];
 
 const ICON_OPTIONS = [
   'Puzzle', 'Star', 'Zap', 'Shield', 'BookOpen', 'FileText', 'Search', 'Target',
@@ -195,6 +218,7 @@ const WIZARD_STEPS = [
   { id: 'outputs', label: 'Output Formats', description: 'Default deliverables' },
   { id: 'knowledge', label: 'Knowledge Setup', description: 'Default knowledge sources' },
   { id: 'quality', label: 'Quality Reference', description: 'Example output for formatting' },
+  { id: 'settings', label: 'Module Settings', description: 'Questions asked before each run' },
   { id: 'testrun', label: 'Test Run', description: 'Preview before saving' },
   { id: 'review', label: 'Review & Save', description: 'Confirm and save' },
 ];
@@ -218,7 +242,186 @@ interface WizardData {
   defaultReferenceUrls: string[];
   referenceOutput: string;
   referenceOutputLabel: string;
+  guidedInputs: GuidedInputField[];
   testQuery: string;
+}
+
+// ── Guided Input Field Editor ────────────────────────────────────────────────
+
+function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; onChange: (f: GuidedInputField[]) => void }) {
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+
+  function addField() {
+    const newField: GuidedInputField = {
+      id: `field_${Date.now()}`,
+      type: 'text',
+      label: '',
+    };
+    const updated = [...fields, newField];
+    onChange(updated);
+    setEditingIdx(updated.length - 1);
+  }
+
+  function removeField(idx: number) {
+    const updated = fields.filter((_, i) => i !== idx);
+    onChange(updated);
+    if (editingIdx === idx) setEditingIdx(null);
+    else if (editingIdx !== null && editingIdx > idx) setEditingIdx(editingIdx - 1);
+  }
+
+  function updateField(idx: number, patch: Partial<GuidedInputField>) {
+    const updated = fields.map((f, i) => i === idx ? { ...f, ...patch } : f);
+    // Auto-generate id from label if id is still the timestamp default
+    if (patch.label !== undefined && updated[idx].id.startsWith('field_')) {
+      updated[idx].id = patch.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || `field_${idx}`;
+    }
+    onChange(updated);
+  }
+
+  function addOption(idx: number) {
+    const existing = fields[idx].options || [];
+    updateField(idx, { options: [...existing, { value: '', label: '' }] });
+  }
+
+  function updateOption(fieldIdx: number, optIdx: number, text: string) {
+    const existing = fields[fieldIdx].options || [];
+    const updated = existing.map((o, i) => i === optIdx ? { value: text.toLowerCase().replace(/\s+/g, '_'), label: text } : o);
+    updateField(fieldIdx, { options: updated });
+  }
+
+  function removeOption(fieldIdx: number, optIdx: number) {
+    const existing = fields[fieldIdx].options || [];
+    updateField(fieldIdx, { options: existing.filter((_, i) => i !== optIdx) });
+  }
+
+  const needsOptions = (type: GuidedInputField['type']) => ['select', 'multi-select', 'chips'].includes(type);
+
+  return (
+    <div className="space-y-3">
+      {fields.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-adv-gray-med">
+          No questions yet — add one below
+        </div>
+      )}
+
+      {fields.map((field, idx) => (
+        <div key={field.id} className="rounded-lg border border-border bg-adv-dark-2">
+          {/* Collapsed header */}
+          <div
+            className="flex items-center gap-2 px-3 py-2.5 cursor-pointer"
+            onClick={() => setEditingIdx(editingIdx === idx ? null : idx)}
+          >
+            <GripVertical className="h-3.5 w-3.5 text-adv-gray-med shrink-0" />
+            <span className="flex-1 text-sm text-adv-off-white truncate">
+              {field.label || <span className="text-adv-gray-med italic">Untitled question</span>}
+            </span>
+            <span className="rounded bg-adv-dark px-1.5 py-0.5 text-[10px] text-adv-gray-med">
+              {FIELD_TYPES.find(t => t.value === field.type)?.label ?? field.type}
+            </span>
+            {field.required && <span className="text-[10px] text-adv-teal">required</span>}
+            <button onClick={(e) => { e.stopPropagation(); removeField(idx); }} className="p-0.5 text-adv-gray-med hover:text-adv-red transition-colors">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Expanded editor */}
+          {editingIdx === idx && (
+            <div className="border-t border-border px-3 pb-3 pt-3 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-adv-gray mb-1">Label <span className="text-adv-red">*</span></label>
+                  <input
+                    value={field.label}
+                    onChange={e => updateField(idx, { label: e.target.value })}
+                    placeholder="e.g. Institution Type"
+                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-adv-gray mb-1">Field type</label>
+                  <select
+                    value={field.type}
+                    onChange={e => updateField(idx, { type: e.target.value as GuidedInputField['type'], options: needsOptions(e.target.value as GuidedInputField['type']) ? (field.options || []) : undefined })}
+                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  >
+                    {FIELD_TYPES.map(t => (
+                      <option key={t.value} value={t.value}>{t.label} — {t.hint}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {(field.type === 'text' || field.type === 'textarea' || field.type === 'number') && (
+                <div>
+                  <label className="block text-[11px] text-adv-gray mb-1">Placeholder text</label>
+                  <input
+                    value={field.placeholder || ''}
+                    onChange={e => updateField(idx, { placeholder: e.target.value })}
+                    placeholder="e.g. e.g. Bank / Credit Institution"
+                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] text-adv-gray mb-1">Help text (optional)</label>
+                <input
+                  value={field.description || ''}
+                  onChange={e => updateField(idx, { description: e.target.value })}
+                  placeholder="Short explanation shown below the field"
+                  className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                />
+              </div>
+
+              {needsOptions(field.type) && (
+                <div>
+                  <label className="block text-[11px] text-adv-gray mb-1.5">Options</label>
+                  <div className="space-y-1.5">
+                    {(field.options || []).map((opt, oIdx) => (
+                      <div key={oIdx} className="flex items-center gap-2">
+                        <input
+                          value={opt.label}
+                          onChange={e => updateOption(idx, oIdx, e.target.value)}
+                          placeholder={`Option ${oIdx + 1}`}
+                          className="flex-1 rounded border border-border bg-adv-dark px-2.5 py-1 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                        />
+                        <button onClick={() => removeOption(idx, oIdx)} className="text-adv-gray-med hover:text-adv-red transition-colors">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addOption(idx)}
+                      className="flex items-center gap-1 text-[11px] text-adv-teal hover:text-adv-teal-dark transition-colors"
+                    >
+                      <Plus className="h-3 w-3" /> Add option
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!field.required}
+                  onChange={e => updateField(idx, { required: e.target.checked })}
+                  className="h-3.5 w-3.5 rounded border-border bg-adv-dark accent-[#2DD4A8]"
+                />
+                <span className="text-[11px] text-adv-gray">Required (user must fill this before running)</span>
+              </label>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <button
+        onClick={addField}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-adv-teal/40 py-2.5 text-xs text-adv-teal hover:border-adv-teal hover:bg-adv-teal/5 transition-colors"
+      >
+        <Plus className="h-3.5 w-3.5" /> Add a question
+      </button>
+    </div>
+  );
 }
 
 function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialData?: Partial<WizardData> }) {
@@ -253,6 +456,7 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
     defaultReferenceUrls: [],
     referenceOutput: '',
     referenceOutputLabel: '',
+    guidedInputs: [],
     testQuery: '',
   });
 
@@ -306,6 +510,7 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
           defaultReferenceUrls: data.defaultReferenceUrls.length > 0 ? data.defaultReferenceUrls : undefined,
           referenceOutput: data.referenceOutput || undefined,
           referenceOutputLabel: data.referenceOutputLabel || undefined,
+          guidedInputs: data.guidedInputs.length > 0 ? data.guidedInputs : undefined,
           testQuery: data.testQuery || undefined,
         },
       });
@@ -677,8 +882,32 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
           </div>
         )}
 
-        {/* Step 7: Test Run */}
+        {/* Step 7: Module Settings */}
         {step === 7 && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-adv-off-white">Module Settings</h3>
+              <p className="text-xs text-adv-gray mt-1">
+                Define questions that appear at the top of the module. Users fill them in before running — answers are sent to Claude as structured context.
+              </p>
+            </div>
+
+            <GuidedInputEditor
+              fields={data.guidedInputs}
+              onChange={(fields) => setData((prev) => ({ ...prev, guidedInputs: fields }))}
+            />
+
+            <button
+              onClick={() => setStep(step + 1)}
+              className="text-xs text-adv-gray-med hover:text-adv-gray underline"
+            >
+              Skip &rarr;
+            </button>
+          </div>
+        )}
+
+        {/* Step 8: Test Run */}
+        {step === 8 && (
           <div className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-adv-off-white">Test Your Module</h3>
@@ -749,8 +978,8 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
           </div>
         )}
 
-        {/* Step: Review */}
-        {step === 8 && (
+        {/* Step 9: Review */}
+        {step === 9 && (
           <div className="space-y-3 text-sm">
             <div className="rounded-lg bg-adv-dark-2 p-4 space-y-2">
               <div className="text-adv-white font-medium">{data.name || '(unnamed)'}</div>
@@ -761,6 +990,7 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
                 <div>Personas: <span className="text-adv-off-white">{data.personas.length || 'none'}</span></div>
                 <div>Skills: <span className="text-adv-off-white">{data.skills.length || 'none'}</span></div>
                 <div>Output formats: <span className="text-adv-off-white">{data.output_formats.length || 'none'}</span></div>
+                <div>Module Settings: <span className="text-adv-off-white">{data.guidedInputs.length ? `${data.guidedInputs.length} question${data.guidedInputs.length !== 1 ? 's' : ''}` : 'none'}</span></div>
               </div>
               <div className="mt-2 text-xs text-adv-gray">
                 System prompt: {data.system_prompt ? `${data.system_prompt.slice(0, 80)}...` : '(empty)'}

@@ -77,6 +77,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         outputLanguage,
         sessionId,
         seed,
+        moduleInputs,
       } = req.body;
 
       // Determine provider and validate API key
@@ -186,7 +187,21 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           }
         }
       }
-      messages.push({ role: 'user', content: userMessage });
+      // Inject guided module inputs as a structured context block before the user message
+      let finalUserMessage = userMessage;
+      if (moduleInputs && typeof moduleInputs === 'object' && Object.keys(moduleInputs as object).length > 0) {
+        const inputLines = Object.entries(moduleInputs as Record<string, unknown>)
+          .filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
+          .map(([k, v]) => {
+            const label = k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const value = Array.isArray(v) ? (v as unknown[]).join(', ') : String(v);
+            return `- **${label}:** ${value}`;
+          });
+        if (inputLines.length > 0) {
+          finalUserMessage = `## Module Settings\n${inputLines.join('\n')}\n\n---\n\n${userMessage}`;
+        }
+      }
+      messages.push({ role: 'user', content: finalUserMessage });
 
       // WP-11: Load user profile for Layer 0 prompt personalisation
       const userProfile = db

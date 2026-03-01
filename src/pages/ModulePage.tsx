@@ -219,6 +219,7 @@ export default function ModulePage() {
       if (Array.isArray(cfg.outputFormats)) setSelectedOutputFormats(cfg.outputFormats as string[]);
       if (Array.isArray(cfg.personas)) setSelectedPersonas(cfg.personas as string[]);
       if (Array.isArray(cfg.skills)) setSelectedSkills(cfg.skills as string[]);
+      if (Array.isArray(cfg.guidedInputs)) setGuidedInputFields(cfg.guidedInputs as Parameters<typeof setGuidedInputFields>[0]);
 
       // Phase B: auto-load default knowledge library corpora
       const defaultKnowledgeLibraryIds = cfg.defaultKnowledgeLibraryIds as string[] | undefined;
