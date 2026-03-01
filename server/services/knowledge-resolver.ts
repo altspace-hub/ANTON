@@ -176,6 +176,7 @@ export async function resolveKnowledgeSources(
   if (uploadedFilePaths.length > 0) {
     for (const filePath of uploadedFilePaths) {
       if (usedTokens >= effectiveBudget) {
+        console.warn(`[resolver] SKIPPING ${path.basename(filePath)} — budget exhausted (${usedTokens}/${effectiveBudget})`);
         contextParts.push(`\n### UPLOADED FILE (SKIPPED — context budget): ${path.basename(filePath)}`);
         continue;
       }

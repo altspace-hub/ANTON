@@ -123,7 +123,7 @@ export function createAtomExtractor(db: Database.Database, client: Anthropic) {
 
     // Truncate to avoid large context window usage (Haiku has 200k but cost matters)
     const dataStr = JSON.stringify(outputData);
-    const truncated = dataStr.length > 6000 ? dataStr.slice(0, 6000) + '...(truncated)' : dataStr;
+    const truncated = dataStr.length > 3000 ? dataStr.slice(0, 3000) + '...(truncated)' : dataStr;
 
     const systemPrompt = `You are extracting knowledge atoms from a workflow output.
 A knowledge atom is a single, discrete, meaningful piece of information.
@@ -134,16 +134,14 @@ For each atom, provide JSON with exactly these fields:
 - category: observation | decision | action | risk | status | recommendation (required)
 - subcategory: more specific label (optional)
 - sentiment: positive | negative | neutral | warning | critical (optional)
-- temporal_type: point_in_time | trend | recurring | permanent (optional)
-- entities: array of {type, id, name} — extract: customer, product, department, system, regulation, person, project, vendor (optional)
 - confidence: 0.0–1.0 (optional, default 0.8)
-- valid_until: ISO 8601 date if this fact expires, null otherwise (optional)
 
 Rules:
-- Extract 3–15 atoms depending on content complexity.
+- Extract 3–8 atoms maximum. Focus on the most important findings only.
 - Prioritise: decisions, risks, anomalies, measurements, status changes.
 - Skip: boilerplate, procedural steps, routine confirmations.
-- Return ONLY a valid JSON array of atom objects — no markdown, no explanation.`;
+- Return ONLY a valid JSON array of atom objects — no markdown, no explanation.
+- Keep each "content" field under 150 characters.`;
 
     let rawAtoms: RawAtom[] = [];
 
@@ -167,10 +165,28 @@ Rules:
 
       // Parse JSON — strip any accidental markdown fencing
       const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-      rawAtoms = JSON.parse(cleaned) as RawAtom[];
+      try {
+        rawAtoms = JSON.parse(cleaned) as RawAtom[];
+      } catch {
+        // Response may be truncated mid-JSON — salvage complete objects by finding the
+        // last complete array element (closing brace before the truncation point).
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace > 0) {
+          const repaired = cleaned.slice(0, lastBrace + 1) + ']';
+          try {
+            // Find the opening bracket and try to parse from there
+            const openBracket = repaired.indexOf('[');
+            if (openBracket >= 0) {
+              rawAtoms = JSON.parse(repaired.slice(openBracket)) as RawAtom[];
+            }
+          } catch {
+            // Could not salvage — skip atom extraction for this output
+          }
+        }
+      }
       if (!Array.isArray(rawAtoms)) rawAtoms = [];
     } catch (err) {
-      console.error('[atom-extractor] Claude call or JSON parse failed for output', outputId, err);
+      console.error('[atom-extractor] Claude call failed for output', outputId, err);
       return;
     }
 

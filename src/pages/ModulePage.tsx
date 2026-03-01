@@ -91,7 +91,7 @@ export default function ModulePage() {
     setSelectedOutputFormats, setKnowledgeSources, setModuleInputs, clearSession,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, setStructureReference,
     setReferenceOutput,
-    areaId, setUploadedFileIds, setAreaId, setGuidedInputFields, setTransparencyLevel,
+    areaId, uploadedFileIds, setUploadedFileIds, setAreaId, setGuidedInputFields, setTransparencyLevel,
     setWritingTone, setEmojiEnabled, setNativeReasoningEnabled, restoreSession,
     truncateMessagesAt,
     audience, channel, outputLanguage,
@@ -127,11 +127,15 @@ export default function ModulePage() {
   const [learnSaving, setLearnSaving] = useState(false);
   const [learnDone, setLearnDone] = useState(false);
 
-  // Sync completed upload IDs into session store so Claude receives the files
+  // Sync completed upload IDs into session store so Claude receives the files.
+  // Also depends on uploadedFileIds.length so this re-runs after clearSession() resets
+  // the store to [] — ensuring files are re-synced even when the user navigates away
+  // and back to the same module (which calls clearSession again).
   useEffect(() => {
     const completedIds = files.filter((f) => f.status === 'done').map((f) => f.id);
     setUploadedFileIds(completedIds);
-  }, [files, setUploadedFileIds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, uploadedFileIds.length, setUploadedFileIds]);
 
   // Auto-save output version when streaming completes + offer learning loop for Trades modules
   const prevIsStreamingRef = useRef<boolean>(false);
@@ -1144,7 +1148,7 @@ export default function ModulePage() {
             channel={channel}
             outputLanguage={outputLanguage}
             knowledgeSources={knowledgeSources as unknown as Record<string, unknown>}
-            uploadedFileIds={useSessionStore.getState().uploadedFileIds}
+            uploadedFileIds={uploadedFileIds}
             moduleLabel={module?.label ?? customModuleLabel ?? moduleId}
             moduleIcon={module?.icon}
             selectedOutputFormats={selectedOutputFormats}

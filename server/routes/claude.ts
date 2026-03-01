@@ -215,7 +215,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         .map((id) => path.join(UPLOAD_DIR, id))
         .filter((p) => {
           // Security: ensure the resolved path is within UPLOAD_DIR
-          return p.startsWith(UPLOAD_DIR);
+          const ok = p.startsWith(UPLOAD_DIR);
+          if (!ok) console.warn(`[claude] Rejected path (outside UPLOAD_DIR): ${p}`);
+          return ok;
         });
 
       // When the 1M context beta is enabled, give the knowledge resolver an 800k budget

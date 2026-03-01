@@ -1026,15 +1026,15 @@ Quality bar: Every line item must have a source for the estimate (market rate, s
   // ── Strategic (new) ────────────────────────────────────────────────────────
   {
     id: 'sharia-compliance-opinion',
-    label: 'Sharia Compliance Opinion',
+    label: 'Islamic Compliance Opinion',
     icon: 'Scale',
-    description: 'Formal Sharia board opinion: transaction structure, prohibition analysis, conditions, approval/rejection',
+    description: 'Formal Islamic compliance opinion: transaction structure, prohibition analysis, conditions, approval/rejection',
     category: 'strategic',
     exportFormats: ['docx', 'pdf'],
     estimatedLength: '2-5 pages',
     audience: 'Sharia board, Islamic finance clients',
-    promptInstruction: `## OUTPUT FORMAT: SHARIA COMPLIANCE OPINION
-Produce a formal Sharia compliance opinion suitable for Sharia supervisory board review.
+    promptInstruction: `## OUTPUT FORMAT: ISLAMIC COMPLIANCE OPINION
+Produce a formal Islamic compliance opinion suitable for Sharia supervisory board review.
 
 Structure:
 1. **Matter Reference** — Product/transaction name, date, institution
