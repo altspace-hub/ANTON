@@ -448,7 +448,9 @@ export default function MarketplacePage() {
                         onClick={async () => {
                           try {
                             const res = await fetch(`/api/exchange/export/${mod.id}?type=custom`, {
-                              headers: { ...getAuthHeader() },
+                              method: 'POST',
+                              headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+                              body: JSON.stringify({}),
                             });
                             if (!res.ok) throw new Error('Export failed');
                             const blob = await res.blob();

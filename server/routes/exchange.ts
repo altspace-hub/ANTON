@@ -22,18 +22,13 @@ export function createExchangeRoutes(db: Database) {
   router.post('/exchange/export/:moduleId', async (req, res) => {
     const { moduleId } = req.params;
     const { type = 'builtin' } = req.query;
-    const userId = (req as any).user?.id;
 
     try {
       let buffer: Buffer;
 
       if (type === 'custom') {
-        // Export custom module from database
-        if (!userId) {
-          res.status(401).json({ error: 'Authentication required for custom module export' });
-          return;
-        }
-        buffer = await bundleModuleToAnton(db, moduleId, userId);
+        // Export custom module from database (works in both solo and authenticated mode)
+        buffer = await bundleModuleToAnton(db, moduleId);
       } else {
         // Export built-in module from file system
         const {
@@ -139,21 +134,15 @@ export function createExchangeRoutes(db: Database) {
     }
   });
 
-  // Import a .anton file to user's custom modules
+  // Import a .anton file to user's custom modules (works in solo and authenticated mode)
   router.post('/exchange/import', upload.single('file'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
       return;
     }
 
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      res.status(401).json({ error: 'Authentication required' });
-      return;
-    }
-
     try {
-      const result = await importAntonFile(req.file.buffer, db, userId);
+      const result = await importAntonFile(req.file.buffer, db);
       res.json(result);
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : 'Import failed' });

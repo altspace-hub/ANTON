@@ -202,38 +202,43 @@ function buildSpecManifest(params: {
 
 export async function bundleModuleToAnton(
   db: Database,
-  moduleId: string,
-  userId: string
+  moduleId: string
 ): Promise<Buffer> {
-  // Fetch module from database
+  // Fetch module from database using actual custom_modules schema
   const module = db
     .prepare(
-      `SELECT id, name, description, icon, color, system_prompt, guided_inputs,
-              default_config, author, version, tags, category, created_at, updated_at
+      `SELECT id, name, short_name, description, icon, area,
+              system_prompt, config, created_at, updated_at
        FROM custom_modules
-       WHERE id = ? AND user_id = ?`
+       WHERE id = ?`
     )
-    .get(moduleId, userId) as any;
+    .get(moduleId) as Record<string, unknown> | undefined;
 
   if (!module) {
-    throw new Error('Module not found or access denied');
+    throw new Error('Module not found');
   }
 
+  // Parse config blob (stores model defaults, tags, etc.)
+  const configBlob: Record<string, unknown> =
+    module.config && typeof module.config === 'string'
+      ? (JSON.parse(module.config) as Record<string, unknown>)
+      : {};
+
   const exportData: ModuleExportData = {
-    id: module.id,
-    name: module.name,
-    description: module.description || '',
-    icon: module.icon,
-    color: module.color,
-    systemPrompt: module.system_prompt || '',
-    guidedInputs: module.guided_inputs ? JSON.parse(module.guided_inputs) : [],
-    defaultConfig: module.default_config ? JSON.parse(module.default_config) : {},
-    author: module.author || 'Unknown',
-    version: module.version || '1.0.0',
-    tags: module.tags ? JSON.parse(module.tags) : [],
-    category: module.category || 'custom',
-    createdAt: module.created_at,
-    updatedAt: module.updated_at,
+    id: module.id as string,
+    name: module.name as string,
+    description: (module.description as string) || '',
+    icon: (module.icon as string) || '📦',
+    color: '#2DD4A8',
+    systemPrompt: (module.system_prompt as string) || '',
+    guidedInputs: (configBlob.guidedInputs as unknown[]) || [],
+    defaultConfig: (configBlob.defaultConfig as Record<string, unknown>) || {},
+    author: (configBlob.author as string) || 'Unknown',
+    version: (configBlob.version as string) || '1.0.0',
+    tags: Array.isArray(configBlob.tags) ? (configBlob.tags as string[]) : [],
+    category: (module.area as string) || 'custom',
+    createdAt: module.created_at as string,
+    updatedAt: module.updated_at as string,
   };
 
   // Create ZIP archive

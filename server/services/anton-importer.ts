@@ -24,7 +24,7 @@ export interface ImportResult {
 export async function importAntonFile(
   buffer: Buffer,
   db: Database,
-  userId: string
+  _userId?: string
 ): Promise<ImportResult> {
   // Step 1-5: Validate the .anton file
   const validation = await validateAntonFile(buffer, db);
@@ -44,36 +44,38 @@ export async function importAntonFile(
   }
 
   const systemPrompt = files.get('system-prompt.md') || '';
-  const guidedInputs = files.get('guided-inputs.json') || '[]';
-  const defaultConfig = files.get('default-config.json') || '{}';
+  const guidedInputsRaw = files.get('guided-inputs.json') || '[]';
+  const defaultConfigRaw = files.get('default-config.json') || '{}';
 
   // Generate new ID (don't use manifest ID to avoid conflicts)
   const moduleId = uuidv4();
 
-  // Insert into database
+  // Store extra metadata that doesn't have dedicated columns in config JSON blob
+  const configBlob = JSON.stringify({
+    author: manifest.meta.author || 'Unknown',
+    version: manifest.meta.version || '1.0.0',
+    tags: manifest.meta.tags || [],
+    guidedInputs: JSON.parse(guidedInputsRaw),
+    defaultConfig: JSON.parse(defaultConfigRaw),
+  });
+
+  // Insert using actual custom_modules schema
   try {
     db.prepare(
       `INSERT INTO custom_modules (
-        id, user_id, name, description, icon, color,
-        system_prompt, guided_inputs, default_config,
-        author, version, tags, category,
-        is_community_shared, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        id, name, short_name, description, icon, area,
+        system_prompt, config,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       moduleId,
-      userId,
       manifest.meta.name,
+      manifest.meta.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30),
       manifest.meta.description || '',
       '📦', // Default icon for imported modules
-      '#2DD4A8', // Default color
-      systemPrompt,
-      guidedInputs,
-      defaultConfig,
-      manifest.meta.author || 'Unknown',
-      manifest.meta.version || '1.0.0',
-      JSON.stringify(manifest.meta.tags || []),
       manifest.meta.category || 'imported',
-      0, // Not community-shared by default
+      systemPrompt,
+      configBlob,
       new Date().toISOString(),
       new Date().toISOString()
     );
