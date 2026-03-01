@@ -353,7 +353,7 @@ export default function ModulePage() {
           thinkingContent: (m.thinking_content as string | null) ?? undefined,
           tokenCount: (m.token_count as number | null) ?? undefined,
           createdAt: m.created_at as string,
-          configSnapshot: (m as Record<string, unknown>).config_snapshot ?? null,
+          configSnapshot: ((m as Record<string, unknown>).config_snapshot as Record<string, unknown> | null) ?? null,
         }));
 
         restoreSession(data.id as string, restored);

@@ -165,9 +165,9 @@ export function createSessionRoutes(db: Database.Database) {
         res.status(404).json({ error: 'Session not found or access denied' });
         return;
       }
-      const messages = db.prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC')
-        .all(req.params.id)
-        .map((m: Record<string, unknown>) => ({
+      const messages = (db.prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC')
+        .all(req.params.id) as Record<string, unknown>[])
+        .map((m) => ({
           ...m,
           config_snapshot: m.config_snapshot
             ? JSON.parse(m.config_snapshot as string)
