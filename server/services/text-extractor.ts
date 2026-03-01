@@ -5,7 +5,7 @@
  */
 
 import * as path from 'path';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 
 // ── Type-safe dynamic imports for ESM compatibility ──────────
 

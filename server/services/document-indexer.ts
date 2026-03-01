@@ -5,7 +5,7 @@
 
 import type { Database } from 'better-sqlite3';
 import * as path from 'path';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import { extractTextFromFile } from './text-extractor.js';
 import { chunkDocument, type ChunkingOptions } from './chunker.js';
 import { addToCollection, deleteFromCollection } from './chroma-client.js';
