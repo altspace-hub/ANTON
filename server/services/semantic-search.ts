@@ -29,26 +29,25 @@ export interface SearchResult {
 }
 
 /**
- * Semantic search across one or more knowledge collections using ChromaDB vector similarity.
- * Returns relevant chunks with relevance scores, metadata, and citations.
+ * Semantic search across one or more knowledge collections.
+ * Tries ChromaDB vector similarity first; falls back to SQLite keyword search
+ * automatically when ChromaDB is unavailable (no OPENAI_API_KEY / no server).
  */
 export async function semanticSearch(db: Database.Database, query: SearchQuery): Promise<SearchResult[]> {
   const topK = query.topK || 10;
   const allResults: SearchResult[] = [];
 
-  // Search each collection
+  // Attempt ChromaDB vector search
   for (const collectionId of query.collections) {
     try {
       const results = await queryCollection(collectionId, query.query, topK, query.filters);
 
-      // Process results
       for (let i = 0; i < results.ids[0].length; i++) {
         const chromaId = results.ids[0][i];
         const content = results.documents[0][i];
         const metadata = results.metadatas[0][i] || {};
         const distance = results.distances[0][i];
 
-        // Get document info from SQLite
         const chunk = db
           .prepare('SELECT document_id, chunk_index FROM rag_chunks WHERE chroma_id = ?')
           .get(chromaId) as any;
@@ -70,7 +69,7 @@ export async function semanticSearch(db: Database.Database, query: SearchQuery):
           collectionId: doc.collection_id,
           collectionName: collection?.display_name || doc.collection_id,
           content,
-          relevanceScore: 1 - distance, // Convert distance to similarity (0-1)
+          relevanceScore: 1 - distance,
           metadata: {
             chunkIndex: chunk.chunk_index,
             filename: doc.filename,
@@ -81,14 +80,18 @@ export async function semanticSearch(db: Database.Database, query: SearchQuery):
         });
       }
     } catch (error) {
-      console.error(`Error searching collection ${collectionId}:`, error);
+      console.warn(`[semantic-search] ChromaDB unavailable for collection ${collectionId} — will use keyword fallback`);
     }
   }
 
-  // Sort by relevance
+  // ChromaDB returned nothing — fall back to SQLite keyword search
+  if (allResults.length === 0) {
+    console.log('[semantic-search] No vector results — using SQLite keyword search fallback');
+    return keywordSearch(db, query.query, query.collections, topK);
+  }
+
   allResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-  // Re-rank if requested
   if (query.rerank && allResults.length > 0) {
     return rerankResults(query.query, allResults, topK);
   }
@@ -135,9 +138,21 @@ function rerankResults(query: string, results: SearchResult[], topK: number): Se
   return scored.slice(0, topK);
 }
 
+// Common English stop words — excluded from keyword scoring
+const STOP_WORDS = new Set([
+  'the','and','for','are','but','not','with','this','that','from','have',
+  'will','what','when','how','does','into','your','they','their','should',
+  'about','need','also','which','been','its','use','can','may','more',
+  'our','all','one','has','had','was','were','would','could','shall',
+  'any','some','each','such','than','then','now','only','just','like',
+  'who','him','her','his','she','him','you','did','get','got','let',
+]);
+
 /**
- * Keyword search (fallback when embeddings not available or for exact phrase matching).
- * Uses SQLite full-text search on chunk content.
+ * Keyword search fallback for when ChromaDB / embeddings are unavailable.
+ * Extracts meaningful terms from the query, then scores each chunk in the
+ * selected collections by how many of those terms appear in the content.
+ * Returns topK chunks ranked by match density (matched terms / total terms).
  */
 export function keywordSearch(
   db: Database.Database,
@@ -145,15 +160,21 @@ export function keywordSearch(
   collectionIds: string[],
   limit: number = 10
 ): SearchResult[] {
-  const queryWords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+  // Deduplicated meaningful keywords from the query
+  const queryWords = [...new Set(
+    query.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOP_WORDS.has(w))
+  )];
+
   if (queryWords.length === 0) return [];
 
-  // Build LIKE pattern for each word
-  const pattern = `%${queryWords.join('%')}%`;
-
-  const sql = `
+  // Load all indexed chunks from the selected collections
+  const collectionPlaceholders = collectionIds.map(() => '?').join(',');
+  const rows = db.prepare(`
     SELECT
-      c.chroma_id as chunk_id,
+      c.chroma_id  AS chunk_id,
       c.document_id,
       c.content,
       c.chunk_index,
@@ -161,26 +182,33 @@ export function keywordSearch(
       d.filename,
       d.file_type,
       d.collection_id,
-      col.display_name as collection_name
+      col.display_name AS collection_name
     FROM rag_chunks c
-    JOIN rag_documents d ON c.document_id = d.id
+    JOIN rag_documents d   ON c.document_id   = d.id
     JOIN knowledge_collections col ON d.collection_id = col.id
-    WHERE d.collection_id IN (${collectionIds.map(() => '?').join(',')})
-    AND LOWER(c.content) LIKE ?
-    ORDER BY d.uploaded_at DESC
-    LIMIT ?
-  `;
+    WHERE d.collection_id IN (${collectionPlaceholders})
+      AND d.index_status = 'indexed'
+  `).all(...collectionIds) as any[];
 
-  const rows = db.prepare(sql).all(...collectionIds, pattern, limit) as any[];
+  // Score each chunk by proportion of query terms it contains
+  const scored = rows
+    .map((row) => {
+      const lower = row.content.toLowerCase();
+      const matchCount = queryWords.filter((w) => lower.includes(w)).length;
+      return { row, matchCount };
+    })
+    .filter((r) => r.matchCount > 0)
+    .sort((a, b) => b.matchCount - a.matchCount)
+    .slice(0, limit);
 
-  return rows.map((row) => ({
+  return scored.map(({ row, matchCount }) => ({
     chunkId: row.chunk_id,
     documentId: row.document_id,
     documentName: row.filename,
     collectionId: row.collection_id,
     collectionName: row.collection_name,
     content: row.content,
-    relevanceScore: 0.5, // Keyword matches get fixed 0.5 score
+    relevanceScore: matchCount / queryWords.length,
     metadata: {
       chunkIndex: row.chunk_index,
       filename: row.filename,
