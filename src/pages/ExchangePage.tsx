@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
-import { Package, Upload, Download, AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Package, Upload, Download, AlertTriangle, CheckCircle, XCircle, Info, Loader2 } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
+import { fetchCustomModules, getAuthHeader, type CustomModuleData } from '@/lib/api';
 
 const API_BASE = '/api';
 
@@ -64,6 +65,7 @@ export default function ExchangePage() {
 
 function ExportTab() {
   const [moduleId, setModuleId] = useState('');
+  const [isCustom, setIsCustom] = useState(false);
   const [authorName, setAuthorName] = useState('');
   const [authorOrg, setAuthorOrg] = useState('');
   const [description, setDescription] = useState('');
@@ -71,14 +73,42 @@ function ExportTab() {
   const [license, setLicense] = useState('CC-BY-4.0');
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [customModules, setCustomModules] = useState<CustomModuleData[]>([]);
+  const [loadingCustom, setLoadingCustom] = useState(true);
 
-  // Build module options grouped by area
-  const moduleOptions = AREAS.map((area) => ({
+  // Load custom modules on mount and keep list fresh
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingCustom(true);
+    fetchCustomModules()
+      .then((mods) => { if (!cancelled) setCustomModules(mods); })
+      .finally(() => { if (!cancelled) setLoadingCustom(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build built-in module options grouped by area
+  const builtinOptions = AREAS.map((area) => ({
     area,
     modules: area.moduleIds
       .map((id) => MODULES.find((m) => m.id === id))
       .filter(Boolean) as typeof MODULES,
   })).filter((g) => g.modules.length > 0);
+
+  function handleSelect(value: string) {
+    if (!value) {
+      setModuleId('');
+      setIsCustom(false);
+      return;
+    }
+    // Custom module IDs are prefixed with "custom:" in the <option> value
+    if (value.startsWith('custom:')) {
+      setModuleId(value.slice(7));
+      setIsCustom(true);
+    } else {
+      setModuleId(value);
+      setIsCustom(false);
+    }
+  }
 
   async function handleExport() {
     if (!moduleId) {
@@ -88,9 +118,10 @@ function ExportTab() {
     setExporting(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/exchange/export/${moduleId}`, {
+      const url = `${API_BASE}/exchange/export/${moduleId}${isCustom ? '?type=custom' : ''}`;
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           authorName: authorName.trim() || 'Anonymous',
           authorOrg: authorOrg.trim(),
@@ -110,14 +141,14 @@ function ExportTab() {
 
       // Trigger browser download
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const dlUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = dlUrl;
       a.download = `${moduleId}.anton`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(dlUrl);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Export failed');
     } finally {
@@ -125,28 +156,54 @@ function ExportTab() {
     }
   }
 
+  // Compute the current <select> value from state
+  const selectValue = moduleId ? (isCustom ? `custom:${moduleId}` : moduleId) : '';
+
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-border bg-adv-card p-5 space-y-4">
         {/* Module selector */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-adv-off-white">Module</label>
-          <select
-            value={moduleId}
-            onChange={(e) => setModuleId(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
-          >
-            <option value="">Select a module...</option>
-            {moduleOptions.map((group) => (
-              <optgroup key={group.area.id} label={group.area.label}>
-                {group.modules.map((mod) => (
-                  <option key={mod.id} value={mod.id}>
-                    {mod.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectValue}
+              onChange={(e) => handleSelect(e.target.value)}
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            >
+              <option value="">Select a module...</option>
+
+              {/* My Modules — from database */}
+              {!loadingCustom && customModules.length > 0 && (
+                <optgroup label="My Modules">
+                  {customModules.map((mod) => (
+                    <option key={mod.id} value={`custom:${mod.id}`}>
+                      {mod.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {/* Built-in modules — grouped by area */}
+              {builtinOptions.map((group) => (
+                <optgroup key={group.area.id} label={group.area.label}>
+                  {group.modules.map((mod) => (
+                    <option key={mod.id} value={mod.id}>
+                      {mod.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            {loadingCustom && (
+              <Loader2 className="pointer-events-none absolute right-8 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-adv-gray-med" />
+            )}
+          </div>
+          {!loadingCustom && customModules.length > 0 && (
+            <p className="mt-1 text-[11px] text-adv-gray-med">
+              {customModules.length} custom module{customModules.length !== 1 ? 's' : ''} in My Modules
+            </p>
+          )}
         </div>
 
         {/* Author fields */}
@@ -319,11 +376,7 @@ function ImportTab() {
       {result && (
         <div className="rounded-lg border border-border bg-adv-card p-5 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
-            {result.success ? (
-              <p className="text-adv-off-white">{fileName}</p>
-            ) : (
-              <p className="text-adv-off-white">{fileName}</p>
-            )}
+            <p className="text-adv-off-white">{fileName}</p>
           </div>
 
           {/* Success */}
