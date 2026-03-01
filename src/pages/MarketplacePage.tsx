@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import JSZip from 'jszip';
 import {
   Store,
   ExternalLink,
@@ -18,13 +19,16 @@ import {
 import { getAuthHeader, fetchCustomModules, type CustomModuleData } from '../lib/api';
 
 interface AntonManifest {
+  // New spec-compliant fields
+  bundle_type?: string;
+  package?: { name?: string; description?: string; author?: { name?: string } };
+  contents?: { modules?: number; skills?: number; workflows?: number };
+  meta?: { name?: string; description?: string; author?: string };
+  // Legacy / flat fields
   name?: string;
   author?: string;
   version?: string;
   description?: string;
-  modules?: unknown[];
-  skills?: unknown[];
-  workflows?: unknown[];
   [key: string]: unknown;
 }
 
@@ -92,13 +96,17 @@ export default function MarketplacePage() {
     }
     try {
       const buffer = await file.arrayBuffer();
-      const text = new TextDecoder().decode(buffer);
-      let manifest: AntonManifest = {};
+      let manifest: AntonManifest = { name: file.name.replace('.anton', ''), author: 'Unknown' };
       try {
-        manifest = JSON.parse(text) as AntonManifest;
+        // .anton files are ZIP archives — extract manifest.json from inside
+        const zip = await JSZip.loadAsync(buffer);
+        const manifestFile = zip.file('manifest.json');
+        if (manifestFile) {
+          const text = await manifestFile.async('text');
+          manifest = JSON.parse(text) as AntonManifest;
+        }
       } catch {
-        // binary zip — parse metadata from outer JSON wrapper if present
-        manifest = { name: file.name.replace('.anton', ''), author: 'Unknown' };
+        // Not a valid ZIP or no manifest — use filename as fallback
       }
       setPreview({ manifest, fileName: file.name, fileBuffer: buffer, file });
       setImportResult(null);
@@ -145,9 +153,10 @@ export default function MarketplacePage() {
     }
   }
 
-  const moduleCount = Array.isArray(preview?.manifest.modules) ? preview!.manifest.modules.length : 0;
-  const skillCount = Array.isArray(preview?.manifest.skills) ? preview!.manifest.skills.length : 0;
-  const workflowCount = Array.isArray(preview?.manifest.workflows) ? preview!.manifest.workflows.length : 0;
+  // Support both spec-compliant (contents.modules as number) and legacy (modules as array)
+  const moduleCount = preview?.manifest.contents?.modules ?? (Array.isArray(preview?.manifest.modules) ? (preview!.manifest.modules as unknown[]).length : 0);
+  const skillCount = preview?.manifest.contents?.skills ?? (Array.isArray(preview?.manifest.skills) ? (preview!.manifest.skills as unknown[]).length : 0);
+  const workflowCount = preview?.manifest.contents?.workflows ?? (Array.isArray(preview?.manifest.workflows) ? (preview!.manifest.workflows as unknown[]).length : 0);
 
   return (
     <div className="min-h-screen bg-adv-dark p-6 space-y-6">
@@ -243,20 +252,20 @@ export default function MarketplacePage() {
               <div>
                 <p className="text-xs text-adv-gray-med uppercase tracking-wide mb-1">Package Name</p>
                 <p className="text-adv-off-white font-medium">
-                  {preview.manifest.name || preview.fileName.replace('.anton', '')}
+                  {preview.manifest.package?.name || preview.manifest.meta?.name || preview.manifest.name || preview.fileName.replace('.anton', '')}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-adv-gray-med uppercase tracking-wide mb-1">Author</p>
                 <div className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-adv-gray" />
-                  <p className="text-adv-off-white">{preview.manifest.author || 'Unknown'}</p>
+                  <p className="text-adv-off-white">{preview.manifest.package?.author?.name || preview.manifest.meta?.author || preview.manifest.author || 'Unknown'}</p>
                 </div>
               </div>
-              {preview.manifest.description && (
+              {(preview.manifest.package?.description || preview.manifest.meta?.description || preview.manifest.description) && (
                 <div className="col-span-2">
                   <p className="text-xs text-adv-gray-med uppercase tracking-wide mb-1">Description</p>
-                  <p className="text-adv-gray text-sm">{preview.manifest.description}</p>
+                  <p className="text-adv-gray text-sm">{preview.manifest.package?.description || preview.manifest.meta?.description || preview.manifest.description}</p>
                 </div>
               )}
             </div>
