@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Puzzle, Trash2, ChevronRight, Wand2, BookMarked, Check, Download, Sparkles, Send, Bot, User, RefreshCw, Plus, GripVertical, X } from 'lucide-react';
-import { fetchCustomModules, createCustomModule, deleteCustomModule, shareModuleWithCommunity, getAuthHeader, type CustomModuleData } from '@/lib/api';
+import { Puzzle, Trash2, ChevronRight, Wand2, BookMarked, Check, Download, Sparkles, Send, Bot, User, RefreshCw, Plus, GripVertical, X, Pencil } from 'lucide-react';
+import { fetchCustomModules, createCustomModule, patchCustomModule, deleteCustomModule, shareModuleWithCommunity, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import { EXPERT_ROLES } from '@/lib/expert-roles';
 import { AREAS } from '@/lib/constants';
 import { useSessionStore } from '@/stores/useSessionStore';
@@ -424,7 +424,7 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
   );
 }
 
-function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialData?: Partial<WizardData> }) {
+function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () => void; initialData?: Partial<WizardData>; editingModuleId?: string }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [shareWithCommunity, setShareWithCommunity] = useState(false);
@@ -490,7 +490,7 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
     if (!data.name.trim()) return;
     setSaving(true);
     try {
-      const created = await createCustomModule({
+      const payload = {
         name: data.name.trim(),
         short_name: (data.short_name || data.name).trim().slice(0, 20),
         description: data.description.trim(),
@@ -513,21 +513,30 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
           guidedInputs: data.guidedInputs.length > 0 ? data.guidedInputs : undefined,
           testQuery: data.testQuery || undefined,
         },
-      });
-      if (shareWithCommunity && created.id) {
-        await shareModuleWithCommunity(created.id);
+      };
+
+      let savedId: string;
+      if (editingModuleId) {
+        // Edit mode — PATCH existing module
+        const updated = await patchCustomModule(editingModuleId, payload);
+        savedId = updated.id;
+      } else {
+        // Create mode — POST new module
+        const created = await createCustomModule(payload);
+        if (shareWithCommunity && created.id) {
+          await shareModuleWithCommunity(created.id);
+        }
+        savedId = created.id;
       }
-      // Save initial version snapshot
-      if (created.id) {
-        fetch(`/api/versions/module/${created.id}`, {
+
+      // Save version snapshot
+      if (savedId) {
+        fetch(`/api/versions/module/${savedId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            content: JSON.stringify({
-              system_prompt: data.system_prompt,
-              config: { thinking: data.thinking, creativity: data.creativity, outputFormats: data.output_formats, personas: data.personas, skills: data.skills, defaultKnowledgeLibraryIds: data.defaultKnowledgeLibraryIds, defaultWebSearch: data.defaultWebSearch, referenceOutput: data.referenceOutput || undefined, referenceOutputLabel: data.referenceOutputLabel || undefined },
-            }),
-            label: `Saved ${new Date().toLocaleDateString()}`,
+            content: JSON.stringify({ system_prompt: data.system_prompt, config: payload.config }),
+            label: editingModuleId ? `Edited ${new Date().toLocaleDateString()}` : `Saved ${new Date().toLocaleDateString()}`,
           }),
         }).catch(() => {});
       }
@@ -1030,7 +1039,7 @@ function BuildWizard({ onSaved, initialData }: { onSaved: () => void; initialDat
             </button>
           ) : (
             <button onClick={handleSave} disabled={saving || !data.name.trim()} className="flex-1 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50">
-              {saving ? 'Saving...' : 'Create Module'}
+              {saving ? 'Saving...' : editingModuleId ? 'Save Changes' : 'Create Module'}
             </button>
           )}
         </div>
@@ -1273,13 +1282,14 @@ function GuidedBuilder({ onModuleReady, onCancel }: {
 export default function BuildYourOwnModule() {
   const navigate = useNavigate();
   const [modules, setModules] = useState<CustomModuleData[]>([]);
-  const [mode, setMode] = useState<'list' | 'save-as' | 'build' | 'guide'>('list');
+  const [mode, setMode] = useState<'list' | 'save-as' | 'build' | 'guide' | 'edit'>('list');
   const [showSaveAs, setShowSaveAs] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [guidedConfig, setGuidedConfig] = useState<GeneratedModuleConfig | null>(null);
+  const [editingModule, setEditingModule] = useState<CustomModuleData | null>(null);
 
   async function loadModules() {
     const list = await fetchCustomModules();
@@ -1423,6 +1433,39 @@ export default function BuildYourOwnModule() {
         </div>
       )}
 
+      {mode === 'edit' && editingModule && (
+        <div className="mb-8">
+          <div className="mb-4 flex items-center gap-3">
+            <button onClick={() => { setMode('list'); setEditingModule(null); }} className="text-xs text-adv-gray hover:text-adv-off-white transition-colors">
+              ← Back to My Modules
+            </button>
+            <span className="text-[11px] text-adv-gold bg-adv-gold/10 border border-adv-gold/20 rounded px-2 py-0.5">
+              Editing: {editingModule.name}
+            </span>
+          </div>
+          <BuildWizard
+            onSaved={handleSaved}
+            editingModuleId={editingModule.id}
+            initialData={{
+              name: editingModule.name,
+              short_name: editingModule.short_name || editingModule.name,
+              description: editingModule.description || '',
+              icon: editingModule.icon || 'Puzzle',
+              area: editingModule.area || 'my-modules',
+              system_prompt: editingModule.system_prompt || '',
+              thinking: (editingModule.config as Record<string, unknown>)?.thinking as string || 'think_hard',
+              creativity: (editingModule.config as Record<string, unknown>)?.creativity as string || 'balanced',
+              personas: (editingModule.config as Record<string, unknown>)?.personas as string[] || [],
+              skills: (editingModule.config as Record<string, unknown>)?.skills as string[] || [],
+              output_formats: (editingModule.config as Record<string, unknown>)?.outputFormats as string[] || [],
+              guidedInputs: (editingModule.config as Record<string, unknown>)?.guidedInputs as GuidedInputField[] || [],
+              referenceOutput: (editingModule.config as Record<string, unknown>)?.referenceOutput as string || '',
+              referenceOutputLabel: (editingModule.config as Record<string, unknown>)?.referenceOutputLabel as string || '',
+            }}
+          />
+        </div>
+      )}
+
       {/* Export error banner */}
       {exportError && (
         <div className="mb-4 rounded-lg border border-adv-red/30 bg-adv-red/10 px-4 py-3 text-sm text-adv-red">
@@ -1471,6 +1514,13 @@ export default function BuildYourOwnModule() {
                       className="rounded-lg border border-adv-teal/40 bg-adv-teal-dim px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal hover:text-adv-dark transition-colors"
                     >
                       Open
+                    </button>
+                    <button
+                      onClick={() => { setEditingModule(m); setMode('edit'); }}
+                      title="Edit module"
+                      className="rounded-lg border border-border p-1.5 text-adv-gray-med hover:border-adv-teal/40 hover:text-adv-teal transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleExportAnton(m)}

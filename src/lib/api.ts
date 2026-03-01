@@ -421,6 +421,16 @@ export async function createCustomModule(data: Partial<CustomModuleData>): Promi
   return res.json();
 }
 
+export async function patchCustomModule(id: string, data: Partial<CustomModuleData>): Promise<CustomModuleData> {
+  const res = await fetch(`${API_BASE}/custom-modules/${id}`, {
+    method: 'PATCH',
+    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update custom module');
+  return res.json();
+}
+
 export async function deleteCustomModule(id: string): Promise<void> {
   await fetch(`${API_BASE}/custom-modules/${id}`, { method: 'DELETE', headers: { ...getAuthHeader() } });
 }
