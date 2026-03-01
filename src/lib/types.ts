@@ -230,6 +230,7 @@ export interface Message {
   tokenCount?: number;
   cost?: number;
   createdAt: string;
+  configSnapshot?: Record<string, unknown> | null;
 }
 
 export interface ContentBlock {

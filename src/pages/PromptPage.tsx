@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useClaude } from '@/hooks/useClaude';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { streamMessage, fetchSessions, fetchSession, deleteSession } from '@/lib/api';
-import type { KnowledgeSourceConfig } from '@/lib/types';
+import type { KnowledgeSourceConfig, ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import ThinkingControls from '@/components/shared/ThinkingControls';
 import ModelSelector from '@/components/shared/ModelSelector';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
@@ -76,12 +76,19 @@ export default function PromptPage() {
     setTransparencyLevel, setWritingTone, setEmojiEnabled, setNativeReasoningEnabled,
     truncateMessagesAt,
     setModule, setAreaId, restoreSession,
+    setAudience, setChannel, setOutputLanguage, setMultiAgentEnabled,
   } = useSessionStore();
 
   const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens } = useClaude();
   const { files, upload, remove } = useFileUpload();
   const { doExport, isExporting } = useExport();
   const { isListening, transcript, startListening, stopListening, isSupported: isSpeechSupported } = useSpeechRecognition();
+
+  // Per-message config snapshot for "How ANTON Thought" accuracy on old sessions
+  const lastAssistantConfigSnapshot = useMemo(() => {
+    const last = [...messages].reverse().find((m) => m.role === 'assistant');
+    return last?.configSnapshot ?? null;
+  }, [messages]);
 
   const [userInput, setUserInput] = useState('');
   const [showConfig, setShowConfig] = useState(false);
@@ -154,16 +161,52 @@ export default function PromptPage() {
     try {
       const data = await fetchSession(historySessionId);
       if (data && data.messages) {
-        const parsedMessages = typeof data.messages === 'string' ? JSON.parse(data.messages) : data.messages;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawMessages: any[] = typeof data.messages === 'string' ? JSON.parse(data.messages) : data.messages;
+        const parsedMessages: Message[] = rawMessages.map((m) => ({
+          id: m.id as string,
+          sessionId: (m.session_id as string) ?? historySessionId,
+          role: m.role as 'user' | 'assistant',
+          content: m.content as string,
+          thinkingContent: (m.thinking_content as string | null) ?? undefined,
+          tokenCount: (m.token_count as number | null) ?? undefined,
+          createdAt: m.created_at as string,
+          configSnapshot: (m as Record<string, unknown>).config_snapshot ?? null,
+        }));
         restoreSession(historySessionId, parsedMessages);
         setModule('open-chat');
-        setSystemPrompt(DEFAULT_SYSTEM_PROMPT);
-        setSelectedPersonas(['general-assistant']);
+        const cfg: Record<string, unknown> =
+          typeof data.config === 'string' ? JSON.parse(data.config) : (data.config ?? {});
+        // Always restore system prompt and persona (fall back to defaults)
+        setSystemPrompt((cfg.systemPrompt as string) || DEFAULT_SYSTEM_PROMPT);
+        setSelectedPersonas(
+          Array.isArray(cfg.selectedPersonas) && (cfg.selectedPersonas as string[]).length
+            ? (cfg.selectedPersonas as string[]) : ['general-assistant']
+        );
+        if (Array.isArray(cfg.selectedSkills)) setSelectedSkills(cfg.selectedSkills as string[]);
+        if (cfg.model) setModel(cfg.model as ModelId);
+        if (cfg.thinking) setThinking(cfg.thinking as ThinkingLevel);
+        if (cfg.creativity) setCreativity(cfg.creativity as CreativityLevel);
+        if (cfg.transparencyLevel !== undefined) setTransparencyLevel(cfg.transparencyLevel as 0 | 1 | 2);
+        if (cfg.writingTone) setWritingTone(cfg.writingTone as 'formal' | 'professional' | 'casual' | 'conversational');
+        if (cfg.emojiEnabled !== undefined) setEmojiEnabled(cfg.emojiEnabled as boolean);
+        if (cfg.metaCognitiveEnabled !== undefined) setMetaCognitiveEnabled(cfg.metaCognitiveEnabled as boolean);
+        if (cfg.multiPerspective !== undefined) setMultiPerspective(cfg.multiPerspective as boolean);
+        if (cfg.nativeReasoningEnabled !== undefined) setNativeReasoningEnabled(cfg.nativeReasoningEnabled as boolean);
+        if (cfg.knowledgeSources) setKnowledgeSources(cfg.knowledgeSources as KnowledgeSourceConfig);
+        if (cfg.audience) setAudience(cfg.audience as string);
+        if (cfg.outputLanguage) setOutputLanguage(cfg.outputLanguage as string);
+        if (cfg.multiAgentEnabled !== undefined) setMultiAgentEnabled(cfg.multiAgentEnabled as boolean);
+        if (cfg.channel) setChannel(cfg.channel as string);
       }
     } catch {
       // Failed to restore — stay on current session
     }
-  }, [sessionId, restoreSession, setModule, setSystemPrompt, setSelectedPersonas]);
+  }, [sessionId, restoreSession, setModule, setSystemPrompt, setSelectedPersonas,
+      setSelectedSkills, setModel, setThinking, setCreativity, setTransparencyLevel,
+      setWritingTone, setEmojiEnabled, setMetaCognitiveEnabled, setMultiPerspective,
+      setNativeReasoningEnabled, setKnowledgeSources, setAudience, setOutputLanguage,
+      setMultiAgentEnabled, setChannel]);
 
   // Restore session from ?session= URL param (e.g. when arriving from My Work)
   useEffect(() => {
@@ -556,6 +599,7 @@ export default function PromptPage() {
               );
             }}
             onUpgradeThinking={(level) => setThinking(level)}
+            configSnapshot={lastAssistantConfigSnapshot}
           />
       )}
 

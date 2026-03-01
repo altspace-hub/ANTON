@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { MODULES, MODULE_DEFAULT_SKILLS, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
@@ -97,12 +97,19 @@ export default function ModulePage() {
     audience, channel, outputLanguage,
     setAudience, setChannel, setOutputLanguage, setSeed,
     deliberationEnabled, setDeliberationEnabled,
+    setPlainTextMode, setMultiAgentEnabled,
   } = useSessionStore();
 
   const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens } = useClaude();
   const { files, upload, remove } = useFileUpload();
   const { doExport, isExporting } = useExport();
   const { isListening, transcript, startListening, stopListening, isSupported: isSpeechSupported } = useSpeechRecognition();
+
+  // Per-message config snapshot for "How ANTON Thought" accuracy on old sessions
+  const lastAssistantConfigSnapshot = useMemo(() => {
+    const last = [...messages].reverse().find((m) => m.role === 'assistant');
+    return last?.configSnapshot ?? null;
+  }, [messages]);
 
   const [userInput, setUserInput] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -317,6 +324,24 @@ export default function ModulePage() {
         if (cfg.thinking) setThinking(cfg.thinking as Parameters<typeof setThinking>[0]);
         if (cfg.creativity) setCreativity(cfg.creativity as Parameters<typeof setCreativity>[0]);
         if (Array.isArray(cfg.selectedOutputFormats)) setSelectedOutputFormats(cfg.selectedOutputFormats as string[]);
+        // Full config restoration from saved session
+        if (Array.isArray(cfg.selectedPersonas) && (cfg.selectedPersonas as string[]).length)
+          setSelectedPersonas(cfg.selectedPersonas as string[]);
+        if (Array.isArray(cfg.selectedSkills)) setSelectedSkills(cfg.selectedSkills as string[]);
+        if (cfg.transparencyLevel !== undefined) setTransparencyLevel(cfg.transparencyLevel as 0 | 1 | 2);
+        if (cfg.writingTone) setWritingTone(cfg.writingTone as 'formal' | 'professional' | 'casual' | 'conversational');
+        if (cfg.emojiEnabled !== undefined) setEmojiEnabled(cfg.emojiEnabled as boolean);
+        if (cfg.nativeReasoningEnabled !== undefined) setNativeReasoningEnabled(cfg.nativeReasoningEnabled as boolean);
+        if (cfg.metaCognitiveEnabled !== undefined) setMetaCognitiveEnabled(cfg.metaCognitiveEnabled as boolean);
+        if (cfg.multiPerspective !== undefined) setMultiPerspective(cfg.multiPerspective as boolean);
+        if (cfg.knowledgeSources) setKnowledgeSources(cfg.knowledgeSources as KnowledgeSourceConfig);
+        if (cfg.plainTextMode !== undefined) setPlainTextMode(cfg.plainTextMode as boolean);
+        if (cfg.audience) setAudience(cfg.audience as string);
+        if (cfg.channel) setChannel(cfg.channel as string);
+        if (cfg.outputLanguage) setOutputLanguage(cfg.outputLanguage as string);
+        if (cfg.multiAgentEnabled !== undefined) setMultiAgentEnabled(cfg.multiAgentEnabled as boolean);
+        // Restore custom system prompt override (module default is already set above)
+        if (cfg.systemPrompt) setSystemPrompt(cfg.systemPrompt as string);
 
         // Map DB rows → Message type
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -328,6 +353,7 @@ export default function ModulePage() {
           thinkingContent: (m.thinking_content as string | null) ?? undefined,
           tokenCount: (m.token_count as number | null) ?? undefined,
           createdAt: m.created_at as string,
+          configSnapshot: (m as Record<string, unknown>).config_snapshot ?? null,
         }));
 
         restoreSession(data.id as string, restored);
@@ -1128,6 +1154,7 @@ export default function ModulePage() {
               );
             }}
             onUpgradeThinking={(level) => setThinking(level)}
+            configSnapshot={lastAssistantConfigSnapshot}
           />
         )}
         </div>{/* end scrollable output area */}

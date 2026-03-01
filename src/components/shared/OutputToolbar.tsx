@@ -58,6 +58,8 @@ interface OutputToolbarProps {
   onApplyReview?: (reviewText: string) => void;
   /** Called when user clicks "Go Deeper" — parent should upgrade thinking level and re-run */
   onUpgradeThinking?: (level: 'think_hard' | 'investigate') => void;
+  /** Per-message config snapshot — used for accurate "How ANTON Thought" display on old sessions */
+  configSnapshot?: Record<string, unknown> | null;
 }
 
 // ── Chip config ──────────────────────────────────────────────
@@ -86,7 +88,24 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     audience, channel, outputLanguage, knowledgeSources, uploadedFileIds,
     moduleLabel, moduleIcon, selectedOutputFormats, knowledgeSourcesRaw,
     onSaveSuccess, onApplyReview, onUpgradeThinking,
+    configSnapshot,
   } = props;
+
+  // Derive trail display values — prefer per-message configSnapshot over live store state
+  const snap = configSnapshot ?? {};
+  const trailModel      = (snap.model as string)                ?? model;
+  const trailThinking   = (snap.thinking as string)             ?? thinking ?? 'quick';
+  const trailCreativity = (snap.creativity as string)           ?? creativity ?? 'balanced';
+  const trailTransp     = (snap.transparencyLevel as 0 | 1 | 2) ?? transparencyLevel ?? 0;
+  const trailTone       = (snap.writingTone as string)          ?? writingTone;
+  const trailAudience   = (snap.audience as string)             ?? audience;
+  const trailChannel    = (snap.channel as string)              ?? channel;
+  const trailLang       = (snap.outputLanguage as string)       ?? outputLanguage;
+  const trailPersonas   = (snap.selectedPersonas as string[])   ?? selectedPersonas;
+  const trailSkills     = (snap.selectedSkills as string[])     ?? selectedSkills;
+  const trailMeta       = (snap.metaCognitiveEnabled as boolean) ?? metaCognitiveEnabled;
+  const trailMultiPersp = (snap.multiPerspective as boolean)    ?? multiPerspective;
+  const trailStructRef  = (snap.structureReference as typeof structureReference) ?? structureReference;
 
   const [activePanel, setActivePanel] = useState<PanelId>(null);
 
@@ -645,19 +664,19 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               </div>
               <div className="space-y-1.5">
                 {([
-                  { label: 'Model', value: model, color: 'text-adv-blue' },
-                  { label: 'Thinking', value: thinking || 'quick', color: 'text-adv-teal' },
-                  { label: 'Creativity', value: creativity || 'balanced', color: 'text-adv-teal' },
-                  { label: 'Transparency', value: `Level ${transparencyLevel ?? 0}`, color: 'text-adv-gray' },
-                  ...(writingTone ? [{ label: 'Tone', value: writingTone, color: 'text-adv-gray' }] : []),
-                  ...(audience ? [{ label: 'Audience', value: audience, color: 'text-adv-gray' }] : []),
-                  ...(channel ? [{ label: 'Channel', value: channel, color: 'text-adv-gray' }] : []),
-                  ...(outputLanguage && outputLanguage !== 'en' ? [{ label: 'Language', value: outputLanguage, color: 'text-adv-gray' }] : []),
-                  ...(selectedPersonas && selectedPersonas.length > 0 ? [{ label: 'Personas', value: selectedPersonas.join(', '), color: 'text-adv-gold' }] : []),
-                  ...(selectedSkills && selectedSkills.length > 0 ? [{ label: 'Skills', value: selectedSkills.join(', '), color: 'text-adv-gold' }] : []),
-                  ...(multiPerspective ? [{ label: 'Multi-Perspective', value: 'Enabled', color: 'text-adv-teal' }] : []),
-                  ...(metaCognitiveEnabled ? [{ label: 'Meta-Cognitive', value: 'Enabled', color: 'text-adv-teal' }] : []),
-                  ...(structureReference ? [{ label: 'Structure Ref', value: structureReference.mode + (structureReference.fileName ? ` · ${structureReference.fileName}` : ''), color: 'text-adv-gray' }] : []),
+                  { label: 'Model', value: trailModel, color: 'text-adv-blue' },
+                  { label: 'Thinking', value: trailThinking, color: 'text-adv-teal' },
+                  { label: 'Creativity', value: trailCreativity, color: 'text-adv-teal' },
+                  { label: 'Transparency', value: `Level ${trailTransp}`, color: 'text-adv-gray' },
+                  ...(trailTone ? [{ label: 'Tone', value: trailTone, color: 'text-adv-gray' }] : []),
+                  ...(trailAudience ? [{ label: 'Audience', value: trailAudience, color: 'text-adv-gray' }] : []),
+                  ...(trailChannel ? [{ label: 'Channel', value: trailChannel, color: 'text-adv-gray' }] : []),
+                  ...(trailLang && trailLang !== 'en' ? [{ label: 'Language', value: trailLang, color: 'text-adv-gray' }] : []),
+                  ...(trailPersonas && trailPersonas.length > 0 ? [{ label: 'Personas', value: trailPersonas.join(', '), color: 'text-adv-gold' }] : []),
+                  ...(trailSkills && trailSkills.length > 0 ? [{ label: 'Skills', value: trailSkills.join(', '), color: 'text-adv-gold' }] : []),
+                  ...(trailMultiPersp ? [{ label: 'Multi-Perspective', value: 'Enabled', color: 'text-adv-teal' }] : []),
+                  ...(trailMeta ? [{ label: 'Meta-Cognitive', value: 'Enabled', color: 'text-adv-teal' }] : []),
+                  ...(trailStructRef ? [{ label: 'Structure Ref', value: trailStructRef.mode + (trailStructRef.fileName ? ` · ${trailStructRef.fileName}` : ''), color: 'text-adv-gray' }] : []),
                 ] as { label: string; value: string; color: string }[]).map(({ label, value, color }) => (
                   <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-adv-dark px-3 py-2">
                     <span className="shrink-0 text-[11px] text-adv-gray-med">{label}</span>

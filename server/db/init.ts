@@ -106,6 +106,18 @@ export function initDatabase(): Database.Database {
     db.exec('ALTER TABLE sessions ADD COLUMN reviewed_at DATETIME');
   }
 
+  // Per-message config_snapshot + model_id for full auditability
+  const msgCols = db.prepare("PRAGMA table_info(messages)").all() as Array<{ name: string }>;
+  const msgColNames = msgCols.map((c: { name: string }) => c.name);
+  if (!msgColNames.includes('config_snapshot')) {
+    db.exec('ALTER TABLE messages ADD COLUMN config_snapshot TEXT DEFAULT NULL');
+    console.log('[db] Added config_snapshot column to messages table');
+  }
+  if (!msgColNames.includes('model_id')) {
+    db.exec('ALTER TABLE messages ADD COLUMN model_id TEXT DEFAULT NULL');
+    console.log('[db] Added model_id column to messages table');
+  }
+
   // Add seed column to audit_log for reproducible outputs (GPT/Mistral only)
   const auditLogCols = db.prepare("PRAGMA table_info(audit_log)").all() as Array<{ name: string }>;
   const auditLogColNames = auditLogCols.map((c) => c.name);

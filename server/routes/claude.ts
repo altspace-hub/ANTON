@@ -470,10 +470,37 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
         ? (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; rawContentBlocks?: unknown[] }) => {
+            // Build config snapshot first — used in both INSERT and UPDATE below
+            const configSnapshot = {
+              model: selectedModel,
+              thinking: req.body.thinking,
+              creativity: req.body.creativity,
+              transparencyLevel: req.body.transparencyLevel,
+              selectedOutputFormats: outputFormats,
+              selectedPersonas,
+              selectedSkills,
+              knowledgeSources,
+              plainTextMode: !!req.body.plainTextMode,
+              writingTone: req.body.writingTone || 'professional',
+              audience: req.body.audience || null,
+              outputLanguage: req.body.outputLanguage || null,
+              // Full audit fields
+              systemPrompt: (req.body.systemPrompt as string) || null,
+              metaCognitiveEnabled: !!req.body.metaCognitiveEnabled,
+              multiPerspective: !!req.body.multiPerspective,
+              emojiEnabled: !!req.body.emojiEnabled,
+              nativeReasoningEnabled: !!req.body.nativeReasoningEnabled,
+              structureReference: req.body.structureReference || null,
+              multiAgentEnabled: !!req.body.multiAgentEnabled,
+              multiAgentTeam: req.body.multiAgentTeam || null,
+              multiAgentStyle: req.body.multiAgentStyle || null,
+              precision: req.body.precision || null,
+              channel: req.body.channel || null,
+            };
             try {
               db.prepare(
-                `INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, created_at)
-                 VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?)`
+                `INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, model_id, config_snapshot, created_at)
+                 VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)`
               ).run(
                 crypto.randomUUID(),
                 sessionId,
@@ -482,6 +509,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
                 // Persist full content blocks (with thinking signatures) for multi-turn replay
                 data.rawContentBlocks ? JSON.stringify(data.rawContentBlocks) : null,
                 data.outputTokens,
+                selectedModel,
+                JSON.stringify(configSnapshot),
                 new Date().toISOString()
               );
             } catch {
@@ -527,26 +556,10 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
                 .catch(() => {});
             }
             // Persist the settings that produced this output so history shows accurate config
-            if (sessionId) {
-              try {
-                const configSnapshot = {
-                  model: req.body.model || 'claude-opus-4-6',
-                  thinking: req.body.thinking,
-                  creativity: req.body.creativity,
-                  transparencyLevel: req.body.transparencyLevel,
-                  selectedOutputFormats: outputFormats,
-                  selectedPersonas,
-                  selectedSkills,
-                  knowledgeSources,
-                  plainTextMode: req.body.plainTextMode,
-                  writingTone: req.body.writingTone,
-                  audience: req.body.audience,
-                  outputLanguage: req.body.outputLanguage,
-                };
-                db.prepare('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?')
-                  .run(JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);
-              } catch { /* non-fatal */ }
-            }
+            try {
+              db.prepare('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?')
+                .run(JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);
+            } catch { /* non-fatal */ }
             // Auto-save version snapshot
             if (sessionId && data.text && data.text.length > 100) {
               try {

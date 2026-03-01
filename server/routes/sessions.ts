@@ -165,7 +165,14 @@ export function createSessionRoutes(db: Database.Database) {
         res.status(404).json({ error: 'Session not found or access denied' });
         return;
       }
-      const messages = db.prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC').all(req.params.id);
+      const messages = db.prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC')
+        .all(req.params.id)
+        .map((m: Record<string, unknown>) => ({
+          ...m,
+          config_snapshot: m.config_snapshot
+            ? JSON.parse(m.config_snapshot as string)
+            : null,
+        }));
       res.json({ ...session as object, messages });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch session' });
