@@ -9,7 +9,7 @@
 
 import { validateAntonFile, type ValidationResult } from './anton-validator.js';
 import type { Database } from 'better-sqlite3';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -47,8 +47,8 @@ export async function importAntonFile(
   const guidedInputsRaw = files.get('guided-inputs.json') || '[]';
   const defaultConfigRaw = files.get('default-config.json') || '{}';
 
-  // Generate new ID (don't use manifest ID to avoid conflicts)
-  const moduleId = uuidv4();
+  // Generate new ID using same format as the module builder: custom-{8 hex chars}
+  const moduleId = `custom-${crypto.randomUUID().slice(0, 8)}`;
 
   // Parse default-config.json — this IS the config blob (personas, outputFormats, skills, model, etc.)
   // Merge in metadata fields so they survive a re-export
