@@ -224,6 +224,8 @@ export async function bundleModuleToAnton(
       ? (JSON.parse(module.config) as Record<string, unknown>)
       : {};
 
+  // The config blob IS the default config (personas, output formats, skills, model settings, etc.)
+  // Extract any extra fields that have their own top-level keys, use the rest as defaultConfig
   const exportData: ModuleExportData = {
     id: module.id as string,
     name: module.name as string,
@@ -232,7 +234,8 @@ export async function bundleModuleToAnton(
     color: '#2DD4A8',
     systemPrompt: (module.system_prompt as string) || '',
     guidedInputs: (configBlob.guidedInputs as unknown[]) || [],
-    defaultConfig: (configBlob.defaultConfig as Record<string, unknown>) || {},
+    // The full config blob (personas, outputFormats, skills, model, thinking, etc.) goes into defaultConfig
+    defaultConfig: configBlob,
     author: (configBlob.author as string) || 'Unknown',
     version: (configBlob.version as string) || '1.0.0',
     tags: Array.isArray(configBlob.tags) ? (configBlob.tags as string[]) : [],

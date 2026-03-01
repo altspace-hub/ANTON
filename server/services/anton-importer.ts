@@ -50,13 +50,15 @@ export async function importAntonFile(
   // Generate new ID (don't use manifest ID to avoid conflicts)
   const moduleId = uuidv4();
 
-  // Store extra metadata that doesn't have dedicated columns in config JSON blob
+  // Parse default-config.json — this IS the config blob (personas, outputFormats, skills, model, etc.)
+  // Merge in metadata fields so they survive a re-export
+  const parsedDefaultConfig = JSON.parse(defaultConfigRaw) as Record<string, unknown>;
   const configBlob = JSON.stringify({
-    author: manifest.meta.author || 'Unknown',
-    version: manifest.meta.version || '1.0.0',
-    tags: manifest.meta.tags || [],
+    ...parsedDefaultConfig,
+    author: parsedDefaultConfig.author || manifest.meta.author || 'Unknown',
+    version: parsedDefaultConfig.version || manifest.meta.version || '1.0.0',
+    tags: Array.isArray(parsedDefaultConfig.tags) ? parsedDefaultConfig.tags : (manifest.meta.tags || []),
     guidedInputs: JSON.parse(guidedInputsRaw),
-    defaultConfig: JSON.parse(defaultConfigRaw),
   });
 
   // Insert using actual custom_modules schema
