@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, Database as DatabaseIcon } from 'lucide-react';
+import { Plus, Trash2, FileText, Database as DatabaseIcon, AlertCircle, RefreshCw } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { CreateCollectionModal } from '../components/knowledge/CreateCollectionModal';
 import { DocumentUploader } from '../components/knowledge/DocumentUploader';
@@ -21,6 +21,7 @@ interface Document {
   file_size: number;
   chunk_count: number;
   uploaded_at: string;
+  index_status: 'pending' | 'indexing' | 'indexed' | 'failed';
 }
 
 export default function KnowledgeBasePage() {
@@ -170,15 +171,35 @@ export default function KnowledgeBasePage() {
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className="flex items-center justify-between p-4 bg-adv-card rounded border border-adv-gray-med hover:border-adv-teal transition-colors"
+                    className={`flex items-center justify-between p-4 bg-adv-card rounded border transition-colors ${
+                      doc.index_status === 'failed'
+                        ? 'border-adv-red/40'
+                        : doc.index_status === 'indexing'
+                        ? 'border-adv-gold/40'
+                        : 'border-adv-gray-med hover:border-adv-teal'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-adv-gray" />
+                      {doc.index_status === 'failed' ? (
+                        <AlertCircle className="h-5 w-5 text-adv-red flex-shrink-0" />
+                      ) : doc.index_status === 'indexing' ? (
+                        <RefreshCw className="h-5 w-5 text-adv-gold animate-spin flex-shrink-0" />
+                      ) : (
+                        <FileText className="h-5 w-5 text-adv-gray flex-shrink-0" />
+                      )}
                       <div>
                         <div className="text-sm font-medium text-adv-off-white">{doc.filename}</div>
                         <div className="text-xs text-adv-gray">
-                          {doc.chunk_count} chunks · {(doc.file_size / 1024).toFixed(1)} KB · Uploaded{' '}
-                          {new Date(doc.uploaded_at).toLocaleDateString()}
+                          {doc.index_status === 'failed' ? (
+                            <span className="text-adv-red">Indexing failed — delete and re-upload</span>
+                          ) : doc.index_status === 'indexing' ? (
+                            <span className="text-adv-gold">Indexing in progress...</span>
+                          ) : (
+                            <>
+                              {doc.chunk_count} chunks · {(doc.file_size / 1024).toFixed(1)} KB · Uploaded{' '}
+                              {new Date(doc.uploaded_at).toLocaleDateString()}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

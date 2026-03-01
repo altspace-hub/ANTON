@@ -4,7 +4,6 @@
  */
 
 import type { Database } from 'better-sqlite3';
-import { randomUUID } from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { extractTextFromFile } from './text-extractor.js';
@@ -31,7 +30,7 @@ export async function indexDocument(
   customMetadata?: Record<string, any>,
   chunkingOptions?: Partial<ChunkingOptions>
 ): Promise<IndexDocumentResult> {
-  const documentId = randomUUID();
+  let documentId: string | null = null;
 
   try {
     // 1. Extract text from file
@@ -46,7 +45,8 @@ export async function indexDocument(
     const fileType = path.extname(filename).slice(1).toLowerCase();
 
     // 3. Create document record in SQLite (status: indexing)
-    createRAGDocument(db, {
+    // Capture the id returned by createRAGDocument (it generates its own id internally)
+    documentId = createRAGDocument(db, {
       collection_id: collectionId,
       filename,
       file_path: filePath,
@@ -74,25 +74,28 @@ export async function indexDocument(
       return { success: false, error: 'No chunks created from document' };
     }
 
-    // 5. Store chunks in ChromaDB
+    // 5. Try to store chunks in ChromaDB (optional — skipped gracefully if unavailable)
     const chromaIds = chunks.map((c) => c.id);
     const documents = chunks.map((c) => c.content);
     const metadatas = chunks.map((c) => c.metadata);
 
-    const chromaSuccess = await addToCollection(collectionId, chromaIds, documents, metadatas);
-
-    if (!chromaSuccess) {
-      updateRAGDocument(db, documentId, { index_status: 'failed' });
-      return { success: false, error: 'Failed to add chunks to ChromaDB' };
+    try {
+      const chromaSuccess = await addToCollection(collectionId, chromaIds, documents, metadatas);
+      if (!chromaSuccess) {
+        console.warn('[document-indexer] ChromaDB storage failed — using SQLite-only storage (vector search unavailable)');
+      }
+    } catch (chromaErr) {
+      console.warn('[document-indexer] ChromaDB unavailable — using SQLite-only storage:', String(chromaErr));
+      // Continue without ChromaDB — document is still fully usable via SQLite FTS
     }
 
-    // 6. Store chunk records in SQLite
+    // 6. Store chunk records in SQLite (always — this is the primary storage)
     for (const chunk of chunks) {
       createRAGChunk(db, {
         document_id: documentId,
         chunk_index: chunk.metadata.chunkIndex,
         content: chunk.content,
-        chroma_id: chunk.id,
+        chroma_id: chunk.id, // Reuse chunk id when ChromaDB is unavailable
         metadata: JSON.stringify(chunk.metadata),
       });
     }
@@ -107,10 +110,12 @@ export async function indexDocument(
     return { success: true, documentId, chunkCount: chunks.length };
   } catch (error) {
     console.error('[document-indexer] Error indexing document:', error);
-    // Mark document as failed
-    try {
-      updateRAGDocument(db, documentId, { index_status: 'failed' });
-    } catch {}
+    // Mark document as failed if we have its id
+    if (documentId) {
+      try {
+        updateRAGDocument(db, documentId, { index_status: 'failed' });
+      } catch {}
+    }
     return { success: false, error: String(error) };
   }
 }
@@ -167,15 +172,18 @@ export async function reindexDocument(
       return { success: false, error: 'No chunks created from document' };
     }
 
-    // 5. Store new chunks in ChromaDB
+    // 5. Try to store new chunks in ChromaDB (optional)
     const chromaIds = chunks.map((c) => c.id);
     const documents = chunks.map((c) => c.content);
     const metadatas = chunks.map((c) => c.metadata);
 
-    const chromaSuccess = await addToCollection(collectionId, chromaIds, documents, metadatas);
-
-    if (!chromaSuccess) {
-      return { success: false, error: 'Failed to add chunks to ChromaDB' };
+    try {
+      const chromaSuccess = await addToCollection(collectionId, chromaIds, documents, metadatas);
+      if (!chromaSuccess) {
+        console.warn('[document-indexer] ChromaDB storage failed during reindex — using SQLite-only storage');
+      }
+    } catch (chromaErr) {
+      console.warn('[document-indexer] ChromaDB unavailable during reindex:', String(chromaErr));
     }
 
     // 6. Store new chunk records in SQLite
