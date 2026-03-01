@@ -1,0 +1,311 @@
+{
+  "_readme": "KitchenBox EU AB — ANTON Workflow Test Payloads. Use with POST /api/claude/stream or inject into the ANTON UI. All payloads use KitchenBox EU AB as the subject company.",
+
+  "workflows": [
+
+    {
+      "id": "gap-analysis-vat-oss",
+      "name": "VAT OSS Compliance Gap Analysis",
+      "description": "Analyse KitchenBox EU's VAT OSS position for compliance gaps across their 8 destination countries.",
+      "module": "gap-analysis",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB (org. 559234-7891) is a Swedish e-commerce retailer selling kitchen equipment B2C and B2B across the EU. They have been registered for EU VAT OSS since July 2021 (EU372009841). Their 2024 B2C revenue by country: Germany 24%, Netherlands 16%, France 12%, Denmark 7%, Finland 6%, Belgium 5%, Other EU 2%. They also have ~20 B2B customers including VAT-registered restaurants and culinary schools.\n\nConduct a VAT compliance gap analysis covering:\n1. OSS registration and filing obligations\n2. B2B reverse charge application\n3. Distance selling rules post-OSS\n4. VAT rate accuracy per destination country\n5. Record-keeping requirements under EU VAT Directive\n\nRate each area RAG (Red/Amber/Green) and provide a priority action plan.",
+        "model": "claude-opus-4-6",
+        "thinking": "investigate",
+        "creativity": "strict",
+        "transparencyLevel": 2,
+        "selectedPersonas": ["tax-advisor", "compliance-advisor"],
+        "selectedOutputFormats": ["gap-scoring-matrix", "action-plan", "executive-summary"],
+        "uploadedFileIds": [],
+        "moduleId": "gap-analysis",
+        "knowledgeSources": {
+          "modes": {
+            "claudeKnowledge": {
+              "enabled": true,
+              "webSearchEnabled": true,
+              "description": "EU VAT Directive 2006/112/EC, VAT OSS scheme, MOSS to OSS transition, distance selling rules"
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "id": "gdpr-data-audit",
+      "name": "GDPR Customer Data Audit",
+      "description": "Audit KitchenBox EU's customer data fields against GDPR Article 13/14 and data minimisation requirements.",
+      "module": "data-management",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB holds personal data on 20 EU customers. Their customer database contains these fields: customer_id, first_name, last_name, email, phone, date_of_birth, customer_type, company_name, vat_number, street, city, postcode, country_code, country, registered_date, total_orders, total_spent_eur, last_order_date, marketing_consent, gdpr_basis.\n\nGDPR basis breakdown:\n- 14 customers: 'consent' (marketing consent = true)\n- 3 customers: 'legitimate_interest' (CUST-0003 Sophie Dubois FR, CUST-0010 Björn Lindqvist SE, CUST-0017 Klaus Wagner DE — all have marketing_consent = false)\n- 3 B2B customers: 'contract' basis (restaurants/culinary academy)\n- 1 customer (CUST-0008 Marco Rossi IT): 'consent' basis but last order 2022-06-30, no recent activity\n\nConduct a GDPR data management audit covering:\n1. Lawful basis adequacy for each category\n2. Data minimisation — is date_of_birth necessary?\n3. Retention policy recommendations\n4. Right to erasure triggers\n5. Marketing consent validity\n6. Data portability obligations",
+        "model": "claude-opus-4-6",
+        "thinking": "think_hard",
+        "creativity": "strict",
+        "transparencyLevel": 2,
+        "selectedPersonas": ["compliance-advisor"],
+        "selectedOutputFormats": ["data-readiness-scorecard", "action-plan"],
+        "uploadedFileIds": [],
+        "moduleId": "data-management",
+        "knowledgeSources": {
+          "modes": {
+            "claudeKnowledge": {
+              "enabled": true,
+              "webSearchEnabled": false,
+              "description": "GDPR Articles 5-7, 13-17, legitimate interest balancing test, e-commerce data retention"
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "id": "supplier-risk-assessment",
+      "name": "Supplier Risk Assessment",
+      "description": "Assess KitchenBox EU's supply chain for concentration, sanctions, and regulatory compliance risks.",
+      "module": "risk-assessment",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB sources products from 10 suppliers across Germany (3), Italy (2), Portugal, Japan, Netherlands, Sweden, and France. Key risk factors:\n\n1. CONCENTRATION: Top supplier Güter Stahl GmbH (Solingen, DE) = 28% of procurement (€312,000/year)\n2. SINGLE-SOURCE SKUs: Santoku knife from Tanaka Pro (Japan only), Cast Iron from Fonte Royale (France only), Bamboo Board from Holzwerk (Germany only), Digital Scale from Präzision (Germany only)\n3. FX RISK: Tanaka Pro invoiced in USD, NordicStore in SEK\n4. JAPAN SUPPLIER: 10–14 week lead time, 50% prepayment required\n5. PRODUCT REGULATIONS: Cookware requires PFOA-free certificates (EU REACH), kitchen scales under EU Measuring Instruments Directive 2014/32/EU, food contact materials under EC 1935/2004\n6. ESG: Bamboo board claims FSC certification — not independently verified by KitchenBox\n\nProduce a supplier risk assessment covering:\n- Concentration risk rating\n- Sanctions screening considerations for each supplier country\n- Regulatory compliance gaps by product category\n- Supply chain resilience recommendations",
+        "model": "claude-opus-4-6",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "transparencyLevel": 1,
+        "selectedPersonas": ["risk-advisor"],
+        "selectedOutputFormats": ["maturity-assessment", "detailed-findings", "mitigation-plan"],
+        "uploadedFileIds": [],
+        "moduleId": "risk-assessment",
+        "knowledgeSources": {
+          "modes": {
+            "claudeKnowledge": {
+              "enabled": true,
+              "webSearchEnabled": true,
+              "description": "EU sanctions regulations, REACH PFOA restrictions, EU Measuring Instruments Directive, EC 1935/2004 food contact materials"
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "id": "aml-policy-document",
+      "name": "AML/CFT Policy Document (Simplified)",
+      "description": "Generate a simplified AML/CFT policy for KitchenBox EU as an e-commerce retailer.",
+      "module": "document-creation",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB is a Swedish e-commerce company (not a financial institution). However, as they expand their B2B operations serving restaurants, hotels, and culinary schools, they want a basic AML/CFT awareness policy covering:\n\n1. Company overview: D2C/B2B e-commerce, selling via Shopify Plus, payment via Stripe + Klarna\n2. B2B customer types: restaurants, catering businesses, culinary schools\n3. Key risk factors: online-only sales, Klarna BNPL risk, B2B invoice payment\n4. What they are NOT: they are not a credit institution, not required to register as a payment service provider\n5. Their payment providers (Stripe, Klarna) carry primary AML obligations for payment processing\n\nDraft a concise AML awareness policy (not a full regulated entity policy) covering:\n- Purpose and scope\n- Customer types and associated risk levels\n- Red flag indicators relevant to an e-commerce kitchen goods retailer\n- Escalation process (to CEO Erik Lindström or CFO Maria Santos)\n- Record-keeping approach",
+        "model": "claude-opus-4-6",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "transparencyLevel": 1,
+        "selectedPersonas": ["compliance-advisor"],
+        "selectedOutputFormats": ["policy-document"],
+        "uploadedFileIds": [],
+        "moduleId": "document-creation",
+        "knowledgeSources": {
+          "modes": {
+            "claudeKnowledge": {
+              "enabled": true,
+              "webSearchEnabled": false,
+              "description": "4th and 6th EU AML Directives, non-financial sector AML obligations, Swedish AML Act (penningtvättslagen)"
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "id": "regulatory-monitor-gpsr",
+      "name": "Product Safety Regulatory Update (GPSR)",
+      "description": "Monitor and assess the impact of the EU General Product Safety Regulation on KitchenBox EU.",
+      "module": "regulatory-monitor",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB sells kitchen equipment (knives, cookware, bakeware, storage) across the EU. The EU General Product Safety Regulation (GPSR) 2023/988 entered into force on 13 December 2024, replacing the General Product Safety Directive 2001/95/EC.\n\nKitchenBox EU AB's current status: 'Product safety (GPSR): Compliant — CE markings verified for all EU-sold products'.\n\nAnalyse the impact of GPSR on KitchenBox EU, specifically:\n1. New obligations as an online marketplace/e-commerce retailer (Article 22 GPSR)\n2. Changes vs. old GPSD\n3. Traceability requirements for their 32 SKUs sourced from DE/IT/PT/JP/NL/SE/FR suppliers\n4. Recall and withdrawal notification obligations\n5. Impact on their digital product passport obligations\n6. Gap between their current 'CE markings verified' status and full GPSR compliance\n\nProvide a concise impact assessment and 90-day action plan.",
+        "model": "claude-opus-4-6",
+        "thinking": "think",
+        "creativity": "balanced",
+        "transparencyLevel": 1,
+        "selectedPersonas": ["regulatory-advisor"],
+        "selectedOutputFormats": ["impact-assessment", "action-plan"],
+        "uploadedFileIds": [],
+        "moduleId": "regulatory-monitor",
+        "knowledgeSources": {
+          "modes": {
+            "claudeKnowledge": {
+              "enabled": true,
+              "webSearchEnabled": true,
+              "description": "EU GPSR 2023/988, General Product Safety Regulation, online marketplace obligations, product traceability, digital product passport"
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "id": "b2b-contract-template",
+      "name": "B2B Sales Contract Template",
+      "description": "Generate a B2B sales contract template for KitchenBox EU's restaurant and hospitality clients.",
+      "module": "document-creation",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB needs a B2B sales contract template for their restaurant and hospitality clients. Current B2B customers include Restaurant De Gouden Lepel (NL), Culinary Academy Stockholm (SE), and Hotel Gastronome Brugge (BE).\n\nContract requirements:\n- Swedish law governing (or optionally Dutch/Belgian for local B2B)\n- Terms aligned with KitchenBox pricing policy: B2B minimum order €200 ex-VAT, free shipping threshold €150 ex-VAT, payment Net 30\n- VAT: reverse charge for EU VAT-registered clients (VIES verified), standard VAT for non-registered\n- 30-day return policy, 2-year legal guarantee (EU Directive 2011/83/EU)\n- Product liability covered by Folksam policy €5M per claim\n- GDPR: basis = 'contract', data processed for order fulfilment only\n- Dispute resolution: Swedish arbitration preferred\n\nDraft a professional B2B sales contract template (in English) suitable for KitchenBox EU's restaurant/hospitality clients. Include all standard commercial contract sections.",
+        "model": "claude-opus-4-6",
+        "thinking": "think_hard",
+        "creativity": "balanced",
+        "transparencyLevel": 1,
+        "selectedPersonas": ["legal-advisor"],
+        "selectedOutputFormats": ["policy-document"],
+        "uploadedFileIds": [],
+        "moduleId": "document-creation"
+      }
+    },
+
+    {
+      "id": "financial-analysis-margins",
+      "name": "Margin Analysis & Pricing Review",
+      "description": "Analyse KitchenBox EU's product margins and identify pricing optimisation opportunities.",
+      "module": "data-management",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB has 32 SKUs across 5 categories. Margin data from the product catalog:\n\nKitchen Knives: margins 58.1% (Santoku/Japan) to 69.1% (Honing Steel). Average ~65%.\nCookware: margins 63.6% (Sauté Pan) to 69.0% (Frying Pan 24cm). Average ~66%.\nBakeware: margins 68.2% to 70.5%. Average ~70%.\nFood Storage: margins 66.1% to 70.0%. Average ~68%.\nGadgets & Tools: margins 65.2% to 71.8%. Average ~70%.\n\nCompany gross margin 2024: 44.0% (vs product-level ~67% average — gap explained by COGS additions: inbound freight, warehouse handling, returns).\n\nFinancial context:\n- Gross revenue: €3,240,000\n- Returns: 5.0% (€162,000)\n- COGS (full): €1,724,000\n- Operating expenses: €1,098,000\n- EBIT: €256,000 (8.3%)\n\nAnalyse:\n1. Which product categories offer the best margin expansion opportunity?\n2. Why is Santoku (KB-KN-004, 58.1%) significantly below category average — is this sustainable?\n3. The Cookware Set (KB-CW-007, €189, 64%) vs buying components separately — basket analysis recommendation\n4. Free shipping threshold (€75 B2C / €150 B2B) — does this erode margins?\n5. B2B discounting impact (seen in orders: up to €100 discount per B2B order)",
+        "model": "claude-opus-4-6",
+        "thinking": "think",
+        "creativity": "strict",
+        "transparencyLevel": 1,
+        "selectedPersonas": ["financial-advisor"],
+        "selectedOutputFormats": ["detailed-findings", "decision-memo"],
+        "uploadedFileIds": [],
+        "moduleId": "data-management"
+      }
+    },
+
+    {
+      "id": "training-content-gdpr-staff",
+      "name": "GDPR Staff Training — E-commerce Focus",
+      "description": "Generate GDPR training content for KitchenBox EU staff handling customer data.",
+      "module": "training-content",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB needs GDPR training for their 12-person team. The company handles customer data for ~20 EU customers (sample size for testing), processes B2C and B2B orders, uses Shopify Plus, Stripe, Klarna, Zendesk, and HubSpot. DPA agreements in place with Shopify, Stripe, and Klarna.\n\nKey GDPR aspects relevant to KitchenBox:\n- Customer personal data: name, email, address, DOB, purchase history\n- Consent vs legitimate interest basis\n- B2B 'contract' basis for restaurant/culinary school clients\n- Marketing emails: consent-based, opt-out mechanism\n- Data access requests (DSARs) — currently no formal process\n- Retention: no defined retention policy documented\n- Third-party processors: Shopify (US, SCCs in place), Stripe (US, EU subsidiary), Klarna (SE)\n\nCreate a GDPR training module for KitchenBox EU all-staff (12 people, mixed technical/non-technical). Target: 30-minute training. Include practical examples specific to an online kitchen retailer.",
+        "model": "claude-opus-4-6",
+        "thinking": "think",
+        "creativity": "creative",
+        "transparencyLevel": 0,
+        "selectedPersonas": ["training-designer"],
+        "selectedOutputFormats": ["training-material"],
+        "uploadedFileIds": [],
+        "moduleId": "training-content",
+        "knowledgeSources": {
+          "modes": {
+            "claudeKnowledge": {
+              "enabled": true,
+              "webSearchEnabled": false,
+              "description": "GDPR basics, e-commerce GDPR best practice, staff training requirements"
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "id": "sanctions-screening-customers",
+      "name": "Sanctions Screening — Customer List Review",
+      "description": "Review KitchenBox EU customer list for sanctions screening considerations.",
+      "module": "sanctions-advisory",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "KitchenBox EU AB has 20 customers (for testing). As part of a sanctions awareness exercise, review these customer names and nationalities against EU/UN/OFAC sanctions considerations. Note: this is a FICTIONAL company with fictional customers for testing purposes only.\n\nCustomer list by country:\n- SE (Sweden): Anna Eriksson, Emma Johansson, Björn Lindqvist, Erik Svensson, Culinary Academy Stockholm\n- DE (Germany): Thomas Müller, Hannah Schmidt, Klaus Wagner\n- NL (Netherlands): Pieter de Vries, Annelies van den Berg, Restaurant De Gouden Lepel (VAT: NL820394819)\n- FR (France): Sophie Dubois, Julie Martin\n- FI (Finland): Maria Korhonen, Mikael Haapala\n- DK (Denmark): Lars Andersen\n- BE (Belgium): Sofie Peeters, Hotel Gastronome Brugge NV (VAT: BE0682394157)\n- IT (Italy): Marco Rossi\n- IE (Ireland): Fiona O'Brien\n\nFor this test scenario:\n1. Explain what sanctions screening KitchenBox should consider as an e-commerce retailer\n2. Are there any name patterns in this (fictional) list that would typically trigger enhanced review?\n3. What screening tools/approaches are appropriate for a small e-commerce company?\n4. How should they screen B2B clients (restaurants/hotels) differently from B2C?",
+        "model": "claude-opus-4-6",
+        "thinking": "think_hard",
+        "creativity": "strict",
+        "transparencyLevel": 2,
+        "selectedPersonas": ["sanctions-advisor", "compliance-advisor"],
+        "selectedOutputFormats": ["detailed-findings", "quick-briefing"],
+        "uploadedFileIds": [],
+        "moduleId": "sanctions-advisory",
+        "knowledgeSources": {
+          "modes": {
+            "claudeKnowledge": {
+              "enabled": true,
+              "webSearchEnabled": true,
+              "description": "EU consolidated sanctions list, OFAC, UN Security Council sanctions, e-commerce sanctions obligations"
+            }
+          }
+        }
+      }
+    },
+
+    {
+      "id": "executive-summary-2024",
+      "name": "2024 Annual Executive Summary",
+      "description": "Generate a board-ready executive summary of KitchenBox EU's 2024 performance.",
+      "module": "document-creation",
+      "endpoint": "POST /api/claude/stream",
+      "payload": {
+        "message": "Prepare a board-ready executive summary of KitchenBox EU AB's 2024 performance for the Annual General Meeting. Key data:\n\nFINANCIALS:\n- Gross revenue: €3,240,000 (+15.3% YoY)\n- Net revenue: €3,078,000\n- Gross margin: 44.0% (+1.1pp)\n- EBIT: €256,000 (+56.1% YoY)\n- EBIT margin: 8.3% (+2.1pp)\n- Net profit: €203,600\n- Cash position: €437,900\n\nOPERATIONAL:\n- 32 SKUs across 5 categories\n- 10 suppliers (5 EU countries + Japan)\n- 2 warehouses: Malmö SE + Veghel NL\n- 12 employees\n- VAT OSS: 8 EU countries, €409,212 OSS VAT remitted\n\nCUSTOMER:\n- Revenue split: 92% B2C, 8% B2B\n- Top markets: SE 28%, DE 24%, NL 16%, FR 12%\n- Return rate: 5.0% (industry: 6-8%)\n\nSTRATEGIC:\n- 2025 budget: €3,800,000 gross revenue target (+17.3%)\n- Key initiatives: NL warehouse expansion, B2B growth, 8 new SKUs, email automation\n\nWrite a concise, professional executive summary (max 2 pages) suitable for the Board of Directors and investor Nordic Seed Fund II AB.",
+        "model": "claude-opus-4-6",
+        "thinking": "think",
+        "creativity": "balanced",
+        "transparencyLevel": 0,
+        "selectedPersonas": ["general-assistant"],
+        "selectedOutputFormats": ["executive-summary"],
+        "uploadedFileIds": [],
+        "moduleId": "document-creation"
+      }
+    }
+
+  ],
+
+  "quick_tests": [
+    {
+      "id": "ping-haiku",
+      "name": "Quick Haiku Ping (latency test)",
+      "description": "Minimal request to test API connectivity and response time",
+      "payload": {
+        "message": "What is KitchenBox EU AB's EBIT margin in 2024? Answer in one sentence.",
+        "model": "claude-haiku-4-5-20251001",
+        "thinking": "quick",
+        "creativity": "strict",
+        "transparencyLevel": 0,
+        "selectedPersonas": ["general-assistant"],
+        "selectedOutputFormats": [],
+        "uploadedFileIds": [],
+        "moduleId": ""
+      }
+    },
+    {
+      "id": "test-thinking",
+      "name": "Extended Thinking Test",
+      "description": "Test that adaptive thinking works correctly for Opus",
+      "payload": {
+        "message": "KitchenBox EU has a 44% gross margin but only 8.3% EBIT. In one paragraph, explain the main factors bridging these two numbers based on what you know about e-commerce operations.",
+        "model": "claude-opus-4-6",
+        "thinking": "think",
+        "creativity": "balanced",
+        "transparencyLevel": 2,
+        "selectedPersonas": ["financial-advisor"],
+        "selectedOutputFormats": [],
+        "uploadedFileIds": [],
+        "moduleId": ""
+      }
+    },
+    {
+      "id": "test-streaming",
+      "name": "Stream Stability Test (long output)",
+      "description": "Test SSE stream stability with a longer response",
+      "payload": {
+        "message": "Write a detailed 500-word profile of KitchenBox EU AB as if writing a business case study. Include: company background, product range, market position, financial performance, key risks, and growth opportunities. Use the following facts: Swedish company, founded 2019, €3.24M revenue 2024, 32 SKUs, 10 EU+JP suppliers, 12 employees, 8.3% EBIT margin.",
+        "model": "claude-sonnet-4-6",
+        "thinking": "think",
+        "creativity": "balanced",
+        "transparencyLevel": 1,
+        "selectedPersonas": ["general-assistant"],
+        "selectedOutputFormats": [],
+        "uploadedFileIds": [],
+        "moduleId": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+customer_id,first_name,last_name,email,phone,date_of_birth,customer_type,company_name,vat_number,street,city,postcode,country_code,country,registered_date,total_orders,total_spent_eur,last_order_date,marketing_consent,gdpr_basis
+CUST-0001,Anna,Eriksson,anna.eriksson@gmail.com,+46701234567,1985-03-12,B2C,,, Kungsgatan 14,Stockholm,111 35,SE,Sweden,2021-04-18,8,612.50,2024-11-22,true,consent
+CUST-0002,Thomas,Müller,thomas.mueller@web.de,+4917612345678,1978-09-24,B2C,,,Berliner Str. 42,Berlin,10115,DE,Germany,2021-07-03,5,389.00,2024-10-15,true,consent
+CUST-0003,Sophie,Dubois,sophie.dubois@orange.fr,+33612345678,1992-06-15,B2C,,,Rue de Rivoli 88,Paris,75001,FR,France,2022-01-11,3,247.00,2024-09-08,false,legitimate_interest
+CUST-0004,Pieter,de Vries,p.devries@ziggo.nl,+31612345678,1969-11-30,B2C,,,Keizersgracht 112,Amsterdam,1015 CW,NL,Netherlands,2021-09-22,12,1040.00,2024-12-01,true,consent
+CUST-0005,Maria,Korhonen,maria.korhonen@hotmail.fi,+358401234567,1988-02-07,B2C,,,Mannerheimintie 55,Helsinki,00250,FI,Finland,2022-03-14,4,318.00,2024-08-20,true,consent
+CUST-0006,Lars,Andersen,lars.andersen@gmail.com,+4520123456,1975-05-19,B2C,,,Strøget 8,Copenhagen,1158,DK,Denmark,2021-11-08,7,542.00,2024-11-10,true,consent
+CUST-0007,Emma,Johansson,emma.johansson@telia.se,+46731234567,1995-08-28,B2C,,,Vasagatan 22,Gothenburg,411 24,SE,Sweden,2023-01-05,2,148.00,2024-07-14,true,consent
+CUST-0008,Marco,Rossi,marco.rossi@libero.it,+393312345678,1982-12-03,B2C,,,Via Roma 31,Milan,20121,IT,Italy,2022-06-30,1,89.00,2022-06-30,false,consent
+CUST-0009,Annelies,van den Berg,annelies.vdberg@gmail.com,+31623456789,1970-04-16,B2C,,,Prinsengracht 220,Amsterdam,1016 HB,NL,Netherlands,2021-10-02,9,724.50,2024-12-08,true,consent
+CUST-0010,Björn,Lindqvist,bjorn.lindqvist@hotmail.se,+46761234567,1963-07-22,B2C,,,Storgatan 5,Malmö,211 22,SE,Sweden,2022-05-17,6,498.00,2024-10-28,false,legitimate_interest
+CUST-0011,Restaurant De Gouden Lepel,,,info@goudenlevel.nl,+31104567890,,B2B,Restaurant De Gouden Lepel,NL820394819,Wijnhaven 77,Rotterdam,3011 WH,NL,Netherlands,2022-08-01,15,4280.00,2024-12-12,true,contract
+CUST-0012,Hannah,Schmidt,hannah.schmidt@gmx.de,+4915112345678,1990-01-25,B2C,,,Hauptstraße 67,Munich,80331,DE,Germany,2022-02-28,4,312.00,2024-09-30,true,consent
+CUST-0013,Culinary Academy Stockholm,,,,+46812345678,,B2B,Culinary Academy Stockholm,SE556789234501,Östermalmsplan 3,Stockholm,114 42,SE,Sweden,2021-12-01,22,8640.00,2024-12-01,true,contract
+CUST-0014,Julie,Martin,julie.martin@sfr.fr,+33712345678,1987-10-11,B2C,,,Avenue des Champs-Élysées 120,Paris,75008,FR,France,2023-04-19,2,178.00,2024-11-05,true,consent
+CUST-0015,Erik,Svensson,erik.svensson@outlook.se,+46791234567,1980-03-04,B2C,,,Drottninggatan 14,Malmö,211 27,SE,Sweden,2021-06-15,10,810.00,2024-12-15,true,consent
+CUST-0016,Fiona,O'Brien,fiona.obrien@gmail.com,+353861234567,1993-09-17,B2C,,,Grafton Street 45,Dublin,D02 XH35,IE,Ireland,2023-07-22,1,59.00,2023-07-22,false,consent
+CUST-0017,Klaus,Wagner,k.wagner@t-online.de,+4916312345678,1955-06-08,B2C,,,Goethestraße 12,Frankfurt,60313,DE,Germany,2022-10-14,3,267.00,2024-06-20,false,legitimate_interest
+CUST-0018,Sofie,Peeters,sofie.peeters@telenet.be,+32472123456,1989-04-29,B2C,,,Meir 78,Antwerp,2000,BE,Belgium,2023-02-08,3,224.00,2024-10-01,true,consent
+CUST-0019,Hotel Gastronome Brugge,,,,+3250123456,,B2B,Hotel Gastronome Brugge NV,BE0682394157,Markt 12,Brugge,8000,BE,Belgium,2023-05-15,8,2940.00,2024-11-28,true,contract
+CUST-0020,Mikael,Haapala,mikael.haapala@gmail.com,+358501234567,1977-08-13,B2C,,,Aleksanterinkatu 18,Helsinki,00100,FI,Finland,2022-09-03,5,406.00,2024-08-30,true,consent
