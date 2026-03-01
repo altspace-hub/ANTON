@@ -234,8 +234,10 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       let ragChunks: any[] = [];
       let ragTokenEstimate = 0;
 
-      if (req.body.ragSearch?.enabled && req.body.ragSearch.collections?.length > 0) {
-        const { collections, topK, rerank } = req.body.ragSearch;
+      // ragSearch is nested inside knowledgeSources on the client side
+      const ragSearchConfig = (knowledgeSources as any)?.ragSearch ?? req.body.ragSearch;
+      if (ragSearchConfig?.enabled && ragSearchConfig.collections?.length > 0) {
+        const { collections, topK, rerank } = ragSearchConfig;
 
         try {
           const results = await semanticSearch(db as Database.Database, {
