@@ -3,9 +3,19 @@
  * Converts Markdown content to a well-formatted .docx file.
  * Uses the `docx` npm package (pure JS, no native deps).
  *
- * Supports: # headings, ## subheadings, ### h3, **bold**, *italic*,
- *           bullet lists (- item), numbered lists (1. item), --- dividers,
- *           tables (| col | col |), and plain paragraphs.
+ * Default layout (applied when no brand config is supplied):
+ *   A4 portrait · 2-column (4657 DXA col, 432 DXA gutter)
+ *   Body: Aptos 8 pt · Headings: Montserrat #1E3A8A
+ *     H1 20 pt | H2 11 pt | H3 8 pt bold | H4 8 pt bold
+ *   Spacing: before 0, after 160 twips (8 pt) on every paragraph
+ *   Page break before H1 and H2 · Hierarchical heading auto-numbering
+ *   --- dividers: skipped (no output) · Word-native list numbering
+ *   Tables: DXA widths (max 4657 DXA per column)
+ *
+ * Supports: # headings, ## subheadings, ### h3, #### h4,
+ *           **bold**, *italic*, bullet lists (- item),
+ *           numbered lists (1. item), tables (| col | col |),
+ *           and plain paragraphs.
  */
 
 import {
@@ -24,7 +34,7 @@ import {
   Header,
   Footer,
   PageNumber,
-  NumberFormat,
+  LevelFormat,
 } from 'docx';
 
 // ── Locale-aware export section labels ────────────────────────
@@ -149,101 +159,166 @@ export function getExportLabels(language: string): Record<string, string> {
   return EXPORT_LABELS[language] ?? EXPORT_LABELS['en'];
 }
 
-// ── Brand config type ─────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────
+
 interface BrandFontEntry { family: string; size: string; color: string }
+
 interface BrandConfig {
-  fonts: { body: BrandFontEntry; h1: BrandFontEntry; h2: BrandFontEntry; h3: BrandFontEntry; h4: BrandFontEntry };
+  fonts: {
+    body: BrandFontEntry;
+    h1: BrandFontEntry;
+    h2: BrandFontEntry;
+    h3: BrandFontEntry;
+    h4: BrandFontEntry;
+  };
   palette: string[];
+  /** Optional layout overrides — defaults to 2-column A4 */
+  layout?: { columns?: number; columnSpacing?: number };
 }
 
-// ── Default colour palette (openEXPERT brand) ─────────────────
-const DEF_TEAL = '2DD4A8';
-const DEF_DARK = '0F1B2D';
-const DEF_GRAY = '707070';
-const DEF_WHITE = 'FFFFFF';
+/** Plain text-run spec used internally before constructing TextRun instances */
+type RunSpec = { text: string; bold?: boolean; italics?: boolean };
 
-/** Strip '#' from hex color */
+// ── Default colour constants ───────────────────────────────────
+
+/** Default heading colour: Montserrat #1E3A8A (per spec) */
+const DEF_HEADING = '1E3A8A';
+const DEF_TEAL    = '2DD4A8';
+const DEF_DARK    = '0F1B2D';
+const DEF_GRAY    = '707070';
+const DEF_WHITE   = 'FFFFFF';
+
+// ── A4 two-column layout constants (DXA = twentieths of a point) ─
+//   A4 = 210 × 297 mm = 11906 × 16838 DXA
+//   Margins: 1080 DXA (0.75 in) each side → content width 9746 DXA
+//   2 columns + 432 DXA gutter → each column 4657 DXA wide
+const PAGE_WIDTH_DXA  = 11906;
+const PAGE_HEIGHT_DXA = 16838;
+const MARGIN_DXA      = 1080;
+const COL_GAP_DXA     = 432;
+const COL_WIDTH_DXA   = 4657;
+
+/** Universal paragraph spacing: 0 before, 160 twips (8 pt) after */
+const PARA_SPACING = { before: 0, after: 160 } as const;
+
+// ── Utility helpers ───────────────────────────────────────────
+
+/** Strip '#' prefix from a hex colour string */
 function hex(c: string): string { return c.replace('#', ''); }
 
-/** Convert "24pt" → 48 half-points for docx */
+/** Convert "20pt" string → half-points integer for docx */
 function ptToHalf(s: string): number {
   const n = parseInt(s, 10);
-  return isNaN(n) ? 22 : n * 2;
+  return isNaN(n) ? 16 : n * 2;
 }
 
-/** Derive styling constants from optional brand config */
+/** Build resolved style constants, applying brand overrides over spec defaults */
 function resolveStyle(brand?: BrandConfig | null) {
-  const accent    = brand?.palette?.[0] ? hex(brand.palette[0]) : DEF_TEAL;
-  const bodyFont  = brand?.fonts?.body?.family || 'Calibri';
-  const bodySize  = brand ? ptToHalf(brand.fonts.body.size) : 22;
-  const h1Font    = brand?.fonts?.h1?.family || bodyFont;
-  const h1Size    = brand ? ptToHalf(brand.fonts.h1.size) : 36;
-  const h1Color   = brand?.fonts?.h1?.color ? hex(brand.fonts.h1.color) : accent;
-  const h2Font    = brand?.fonts?.h2?.family || bodyFont;
-  const h2Size    = brand ? ptToHalf(brand.fonts.h2.size) : 28;
-  const h2Color   = brand?.fonts?.h2?.color ? hex(brand.fonts.h2.color) : DEF_DARK;
-  const h3Font    = brand?.fonts?.h3?.family || bodyFont;
-  const h3Size    = brand ? ptToHalf(brand.fonts.h3.size) : 24;
-  const h3Color   = brand?.fonts?.h3?.color ? hex(brand.fonts.h3.color) : '333333';
-  const h4Font    = brand?.fonts?.h4?.family || bodyFont;
-  const h4Size    = brand ? ptToHalf(brand.fonts.h4.size) : 22;
-  const h4Color   = brand?.fonts?.h4?.color ? hex(brand.fonts.h4.color) : '44546A';
-  return { accent, bodyFont, bodySize, h1Font, h1Size, h1Color, h2Font, h2Size, h2Color, h3Font, h3Size, h3Color, h4Font, h4Size, h4Color };
+  const accent      = brand?.palette?.[0]        ? hex(brand.palette[0]) : DEF_TEAL;
+  const bodyFont    = brand?.fonts?.body?.family  || 'Aptos';
+  const bodySize    = brand?.fonts?.body          ? ptToHalf(brand.fonts.body.size)  : 16; // 8 pt
+  const h1Font      = brand?.fonts?.h1?.family    || 'Montserrat';
+  const h1Size      = brand?.fonts?.h1            ? ptToHalf(brand.fonts.h1.size)    : 40; // 20 pt
+  const h1Color     = brand?.fonts?.h1?.color     ? hex(brand.fonts.h1.color) : DEF_HEADING;
+  const h2Font      = brand?.fonts?.h2?.family    || 'Montserrat';
+  const h2Size      = brand?.fonts?.h2            ? ptToHalf(brand.fonts.h2.size)    : 22; // 11 pt
+  const h2Color     = brand?.fonts?.h2?.color     ? hex(brand.fonts.h2.color) : DEF_HEADING;
+  const h3Font      = brand?.fonts?.h3?.family    || 'Montserrat';
+  const h3Size      = brand?.fonts?.h3            ? ptToHalf(brand.fonts.h3.size)    : 16; // 8 pt bold
+  const h3Color     = brand?.fonts?.h3?.color     ? hex(brand.fonts.h3.color) : DEF_HEADING;
+  const h4Font      = brand?.fonts?.h4?.family    || 'Montserrat';
+  const h4Size      = brand?.fonts?.h4            ? ptToHalf(brand.fonts.h4.size)    : 16; // 8 pt bold
+  const h4Color     = brand?.fonts?.h4?.color     ? hex(brand.fonts.h4.color) : DEF_HEADING;
+  const columns     = brand?.layout?.columns    ?? 2;
+  const colSpacing  = brand?.layout?.columnSpacing ?? COL_GAP_DXA;
+  return {
+    accent, bodyFont, bodySize,
+    h1Font, h1Size, h1Color,
+    h2Font, h2Size, h2Color,
+    h3Font, h3Size, h3Color,
+    h4Font, h4Size, h4Color,
+    columns, colSpacing,
+  };
 }
 
-// ── Inline text parser ────────────────────────────────────────
+// ── Heading prefix stripper ───────────────────────────────────
 
-function parseInline(text: string): TextRun[] {
-  const runs: TextRun[] = [];
-  // Handle **bold**, *italic*, and plain text
+/**
+ * Strips leading §N and decimal-number prefixes so that the
+ * automatic heading counter is the single source of numbering.
+ * Examples: "§32. Expert Areas" → "Expert Areas"
+ *           "1.2 Overview"      → "Overview"
+ *           "PART 9: Title"     → "PART 9: Title" (kept — not a bare number)
+ */
+function stripHeadingPrefix(text: string): string {
+  return text
+    .replace(/^§\d+\.?\s*/, '')           // §32. or §32
+    .replace(/^\d+(\.\d+)*\.?\s+/, '')    // 1.  or 1.2.  or 1.2.3
+    .trim();
+}
+
+// ── Inline text parser (returns plain specs, not TextRun instances) ──
+
+function parseInline(text: string): RunSpec[] {
+  const runs: RunSpec[] = [];
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
   for (const part of parts) {
     if (part.startsWith('**') && part.endsWith('**')) {
-      runs.push(new TextRun({ text: part.slice(2, -2), bold: true }));
+      runs.push({ text: part.slice(2, -2), bold: true });
     } else if (part.startsWith('*') && part.endsWith('*')) {
-      runs.push(new TextRun({ text: part.slice(1, -1), italics: true }));
+      runs.push({ text: part.slice(1, -1), italics: true });
     } else if (part) {
-      runs.push(new TextRun({ text: part }));
+      runs.push({ text: part });
     }
   }
-  return runs.length > 0 ? runs : [new TextRun({ text: '' })];
+  return runs.length > 0 ? runs : [{ text: '' }];
+}
+
+/** Convert RunSpecs to TextRun instances, merging any per-call overrides */
+function makeRuns(
+  specs: RunSpec[],
+  overrides?: { bold?: boolean; color?: string; font?: string; size?: number },
+): TextRun[] {
+  return specs.map(s => new TextRun({ ...s, ...overrides }));
 }
 
 // ── Table parser ──────────────────────────────────────────────
 
 function parseMarkdownTable(lines: string[], accent: string = DEF_TEAL): Table | null {
-  const dataLines = lines.filter((l) => !l.match(/^\|[\s:-]+\|/));
+  // Remove the separator row (|---|---|)
+  const dataLines = lines.filter(l => !l.match(/^\|[\s:-]+\|/));
   if (dataLines.length === 0) return null;
 
-  const rows = dataLines.map((line) => {
-    return line
-      .split('|')
-      .slice(1, -1)
-      .map((cell) => cell.trim());
-  });
-
-  const colCount = Math.max(...rows.map((r) => r.length));
-  const headerBg = DEF_DARK;
+  const rows = dataLines.map(line =>
+    line.split('|').slice(1, -1).map(cell => cell.trim())
+  );
+  const colCount = Math.max(...rows.map(r => r.length));
+  // Each column shares the single-column width; for tables that span both
+  // columns, Word will expand automatically within the column flow.
+  const cellWidthDxa = Math.floor(COL_WIDTH_DXA / colCount);
 
   return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: COL_WIDTH_DXA, type: WidthType.DXA },
     rows: rows.map((cells, rowIdx) =>
       new TableRow({
         children: Array.from({ length: colCount }, (_, colIdx) => {
           const cellText = cells[colIdx] ?? '';
+          const specs = parseInline(cellText);
           return new TableCell({
+            width: { size: cellWidthDxa, type: WidthType.DXA },
             shading: rowIdx === 0
-              ? { type: ShadingType.CLEAR, color: headerBg, fill: headerBg }
+              ? { type: ShadingType.CLEAR, color: DEF_DARK, fill: DEF_DARK }
               : undefined,
-            borders: rowIdx === 0 ? {
-              bottom: { style: BorderStyle.SINGLE, size: 4, color: accent },
-            } : undefined,
+            borders: rowIdx === 0
+              ? { bottom: { style: BorderStyle.SINGLE, size: 4, color: accent } }
+              : undefined,
             children: [
               new Paragraph({
-                children: parseInline(cellText).map((run) =>
-                  rowIdx === 0 ? new TextRun({ ...run, bold: true, color: DEF_WHITE }) : run
+                children: makeRuns(
+                  specs,
+                  rowIdx === 0 ? { bold: true, color: DEF_WHITE } : undefined,
                 ),
-                spacing: { before: 30, after: 30 },
+                spacing: PARA_SPACING,
               }),
             ],
           });
@@ -258,81 +333,77 @@ function parseMarkdownTable(lines: string[], accent: string = DEF_TEAL): Table |
 export async function generateDocx(
   markdown: string,
   metadata: { title?: string; author?: string; subject?: string } = {},
-  brandConfig?: BrandConfig | null
+  brandConfig?: BrandConfig | null,
 ): Promise<Buffer> {
   const s = resolveStyle(brandConfig);
   const lines = markdown.split('\n');
   const children: (Paragraph | Table)[] = [];
 
+  // Hierarchical heading counters for auto-numbering
+  let h1n = 0, h2n = 0, h3n = 0, h4n = 0;
+
   let i = 0;
-  let lastWasBlank = false;
   while (i < lines.length) {
     const line = lines[i];
 
-    // Heading 1
+    // ── Heading 1 — page break before, 20 pt Montserrat, numbered ──
     if (line.startsWith('# ')) {
-      children.push(
-        new Paragraph({
-          text: line.slice(2).trim(),
-          heading: HeadingLevel.HEADING_1,
-          spacing: { before: 300, after: 60 },
-        })
-      );
-      i++;
-      continue;
+      h1n++; h2n = 0; h3n = 0; h4n = 0;
+      const clean = stripHeadingPrefix(line.slice(2).trim());
+      children.push(new Paragraph({
+        children: makeRuns(parseInline(`${h1n}  ${clean}`)),
+        heading: HeadingLevel.HEADING_1,
+        pageBreakBefore: true,
+        spacing: PARA_SPACING,
+      }));
+      i++; continue;
     }
 
-    // Heading 2
+    // ── Heading 2 — page break before, 11 pt Montserrat, numbered ──
     if (line.startsWith('## ')) {
-      children.push(
-        new Paragraph({
-          text: line.slice(3).trim(),
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 200, after: 40 },
-        })
-      );
-      i++;
-      continue;
+      h2n++; h3n = 0; h4n = 0;
+      const clean = stripHeadingPrefix(line.slice(3).trim());
+      children.push(new Paragraph({
+        children: makeRuns(parseInline(`${h1n}.${h2n}  ${clean}`)),
+        heading: HeadingLevel.HEADING_2,
+        pageBreakBefore: true,
+        spacing: PARA_SPACING,
+      }));
+      i++; continue;
     }
 
-    // Heading 3
+    // ── Heading 3 — no page break, 8 pt Montserrat bold, numbered ──
     if (line.startsWith('### ')) {
-      children.push(
-        new Paragraph({
-          text: line.slice(4).trim(),
-          heading: HeadingLevel.HEADING_3,
-          spacing: { before: 160, after: 30 },
-        })
-      );
-      i++;
-      continue;
+      h3n++; h4n = 0;
+      const clean = stripHeadingPrefix(line.slice(4).trim());
+      children.push(new Paragraph({
+        children: makeRuns(parseInline(`${h1n}.${h2n}.${h3n}  ${clean}`)),
+        heading: HeadingLevel.HEADING_3,
+        spacing: PARA_SPACING,
+      }));
+      i++; continue;
     }
 
-    // Heading 4
+    // ── Heading 4 — no page break, 8 pt Montserrat bold, numbered ──
     if (line.startsWith('#### ')) {
-      children.push(
-        new Paragraph({
-          children: [new TextRun({ text: line.slice(5).trim(), bold: true, color: s.h4Color, font: s.h4Font, size: s.h4Size })],
-          spacing: { before: 120, after: 20 },
-        })
-      );
-      i++;
-      continue;
+      h4n++;
+      const clean = stripHeadingPrefix(line.slice(5).trim());
+      children.push(new Paragraph({
+        children: makeRuns(
+          parseInline(`${h1n}.${h2n}.${h3n}.${h4n}  ${clean}`),
+          { bold: true, font: s.h4Font, size: s.h4Size, color: s.h4Color },
+        ),
+        spacing: PARA_SPACING,
+      }));
+      i++; continue;
     }
 
-    // Horizontal rule (---) — render as whitespace only, no visible line
+    // ── Horizontal rule (---) — skip entirely per spec ──────────
     if (line.match(/^-{3,}$/) || line.match(/^\*{3,}$/)) {
-      children.push(
-        new Paragraph({
-          text: '',
-          spacing: { before: 120, after: 120 },
-        })
-      );
-      i++;
-      continue;
+      i++; continue;
     }
 
-    // Table — collect all table lines
+    // ── Markdown table — collect all table lines ─────────────────
     if (line.startsWith('|')) {
       const tableLines: string[] = [];
       while (i < lines.length && lines[i].startsWith('|')) {
@@ -341,65 +412,51 @@ export async function generateDocx(
       }
       const table = parseMarkdownTable(tableLines, s.accent);
       if (table) {
-        children.push(new Paragraph({ text: '', spacing: { before: 60 } }));
+        children.push(new Paragraph({ text: '', spacing: PARA_SPACING }));
         children.push(table);
-        children.push(new Paragraph({ text: '', spacing: { after: 40 } }));
+        children.push(new Paragraph({ text: '', spacing: PARA_SPACING }));
       }
       continue;
     }
 
-    // Bullet list
+    // ── Bullet list (Word-native numbering, no unicode inline) ───
     if (line.match(/^[\s]*[-*]\s+/)) {
       const depth = (line.match(/^(\s*)/) || ['', ''])[1].length;
       const text = line.replace(/^[\s]*[-*]\s+/, '');
-      children.push(
-        new Paragraph({
-          children: parseInline(text),
-          bullet: { level: Math.min(Math.floor(depth / 2), 8) },
-          spacing: { before: 20, after: 20 },
-        })
-      );
-      i++;
-      continue;
+      children.push(new Paragraph({
+        children: makeRuns(parseInline(text)),
+        numbering: { reference: 'bullet-list', level: Math.min(Math.floor(depth / 2), 8) },
+        spacing: PARA_SPACING,
+      }));
+      i++; continue;
     }
 
-    // Numbered list
+    // ── Numbered list (Word-native decimal numbering) ────────────
     if (line.match(/^[\s]*\d+\.\s+/)) {
       const text = line.replace(/^[\s]*\d+\.\s+/, '');
-      children.push(
-        new Paragraph({
-          children: parseInline(text),
-          numbering: { reference: 'ordered-list', level: 0 },
-          spacing: { before: 20, after: 20 },
-        })
-      );
-      i++;
-      continue;
+      children.push(new Paragraph({
+        children: makeRuns(parseInline(text)),
+        numbering: { reference: 'ordered-list', level: 0 },
+        spacing: PARA_SPACING,
+      }));
+      i++; continue;
     }
 
-    // Blank line — collapse consecutive blank lines into one small gap
+    // ── Blank line — skip (spacing handled by after-spacing) ─────
     if (line.trim() === '') {
-      if (!lastWasBlank) {
-        children.push(new Paragraph({ text: '', spacing: { before: 40 } }));
-        lastWasBlank = true;
-      }
-      // Skip consecutive blank lines entirely
-      i++;
-      continue;
+      i++; continue;
     }
-    lastWasBlank = false;
 
-    // Default: paragraph with inline formatting
-    children.push(
-      new Paragraph({
-        children: parseInline(line),
-        spacing: { before: 30, after: 30 },
-        alignment: AlignmentType.LEFT,
-      })
-    );
+    // ── Default body paragraph ───────────────────────────────────
+    children.push(new Paragraph({
+      children: makeRuns(parseInline(line)),
+      spacing: PARA_SPACING,
+      alignment: AlignmentType.LEFT,
+    }));
     i++;
   }
 
+  // ── Build Document ───────────────────────────────────────────
   const doc = new Document({
     creator: metadata.author || 'ANTON by openEXPERT',
     title: metadata.title || 'openEXPERT Output',
@@ -408,12 +465,40 @@ export async function generateDocx(
 
     numbering: {
       config: [
+        // Bullet list: Word-native bullets at 3 indent levels
+        {
+          reference: 'bullet-list',
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.BULLET,
+              text: '\u2022',
+              alignment: AlignmentType.LEFT,
+              style: { paragraph: { indent: { left: 720, hanging: 360 } } },
+            },
+            {
+              level: 1,
+              format: LevelFormat.BULLET,
+              text: '\u25E6',
+              alignment: AlignmentType.LEFT,
+              style: { paragraph: { indent: { left: 1080, hanging: 360 } } },
+            },
+            {
+              level: 2,
+              format: LevelFormat.BULLET,
+              text: '\u25AA',
+              alignment: AlignmentType.LEFT,
+              style: { paragraph: { indent: { left: 1440, hanging: 360 } } },
+            },
+          ],
+        },
+        // Ordered list: decimal numbering
         {
           reference: 'ordered-list',
           levels: [
             {
               level: 0,
-              format: NumberFormat.DECIMAL,
+              format: LevelFormat.DECIMAL,
               text: '%1.',
               alignment: AlignmentType.LEFT,
               style: { paragraph: { indent: { left: 720, hanging: 360 } } },
@@ -427,7 +512,7 @@ export async function generateDocx(
       default: {
         document: {
           run: { font: s.bodyFont, size: s.bodySize },
-          paragraph: { spacing: { line: 276 } },
+          paragraph: { spacing: { line: 276 } }, // ~1.15× line height
         },
       },
       paragraphStyles: [
@@ -436,27 +521,44 @@ export async function generateDocx(
           name: 'Heading 1',
           basedOn: 'Normal',
           run: { size: s.h1Size, bold: true, color: s.h1Color, font: s.h1Font },
-          paragraph: { spacing: { before: 300, after: 60 } },
+          paragraph: { spacing: PARA_SPACING },
         },
         {
           id: 'Heading2',
           name: 'Heading 2',
           basedOn: 'Normal',
           run: { size: s.h2Size, bold: true, color: s.h2Color, font: s.h2Font },
-          paragraph: { spacing: { before: 200, after: 40 } },
+          paragraph: { spacing: PARA_SPACING },
         },
         {
           id: 'Heading3',
           name: 'Heading 3',
           basedOn: 'Normal',
           run: { size: s.h3Size, bold: true, color: s.h3Color, font: s.h3Font },
-          paragraph: { spacing: { before: 160, after: 30 } },
+          paragraph: { spacing: PARA_SPACING },
         },
       ],
     },
 
     sections: [
       {
+        // ── A4 two-column layout ─────────────────────────────────
+        properties: {
+          column: {
+            count: s.columns,
+            space: s.colSpacing,
+          },
+          page: {
+            size: { width: PAGE_WIDTH_DXA, height: PAGE_HEIGHT_DXA },
+            margin: {
+              top: MARGIN_DXA,
+              right: MARGIN_DXA,
+              bottom: MARGIN_DXA,
+              left: MARGIN_DXA,
+            },
+          },
+        },
+
         headers: {
           default: new Header({
             children: [
@@ -470,6 +572,7 @@ export async function generateDocx(
             ],
           }),
         },
+
         footers: {
           default: new Footer({
             children: [
@@ -485,6 +588,7 @@ export async function generateDocx(
             ],
           }),
         },
+
         children,
       },
     ],
