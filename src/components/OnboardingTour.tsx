@@ -24,7 +24,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     stepNumber: 1,
     icon: <LayoutGrid className="h-8 w-8 text-adv-teal" />,
-    title: '238+ expert modules across 29 domains',
+    title: '485+ expert modules across 56 domains',
     description:
       'Browse the sidebar to discover modules built for Financial Crime Prevention, Legal & Regulatory, Audit & Assurance, Consulting, HR, Strategy, and many more. Every module comes pre-configured with expert defaults so you can get professional results with a single click.',
   },
@@ -146,6 +146,22 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           <p className="text-center text-sm leading-relaxed text-adv-gray">
             {step.description}
           </p>
+
+          {/* Whitepaper link on last step */}
+          {isLast && (
+            <p className="mt-4 text-center text-xs text-adv-gray-med">
+              Want to go deeper?{' '}
+              <a
+                href="/ANTON by openEXPERT whitepaper.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-adv-teal hover:underline"
+              >
+                Read the whitepaper
+              </a>
+              {' '}— the full story of how ANTON works and the thinking behind it.
+            </p>
+          )}
         </div>
 
         {/* Step dots */}
