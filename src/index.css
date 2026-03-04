@@ -246,3 +246,34 @@ html.corporate .prose-output tbody tr:hover { background: oklch(0.96 0.008 250);
 
 /* Links */
 .prose-output a { color: var(--color-adv-teal); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── Noto Script Fonts (School Mode) ────────────────────────────────────────
+   Applied when SchoolLayout sets lang attribute based on UI language.
+   Urdu uses Nastaliq (RTL calligraphic script).
+   Hindi uses Devanagari.
+   Arabic uses Naskh (already loaded, supplement with Noto Naskh). */
+
+:lang(ur),
+[lang="ur"] {
+  font-family: 'Noto Nastaliq Urdu', 'Noto Naskh Arabic', serif;
+  line-height: 2;      /* Nastaliq needs more vertical space */
+  letter-spacing: 0;
+}
+
+:lang(hi),
+[lang="hi"] {
+  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+}
+
+:lang(ar),
+[lang="ar"] {
+  font-family: 'Noto Naskh Arabic', 'Noto Sans Arabic', sans-serif;
+}
+
+/* School Mode RTL utilities — complement Tailwind rtl: prefix */
+[dir="rtl"] .school-chat-bubble-user {
+  border-radius: 1rem 0.25rem 1rem 1rem;
+}
+[dir="rtl"] .school-chat-bubble-ai {
+  border-radius: 0.25rem 1rem 1rem 1rem;
+}

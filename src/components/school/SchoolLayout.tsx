@@ -261,7 +261,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="flex h-screen overflow-hidden bg-background" dir={isRtl ? 'rtl' : 'ltr'} lang={i18n.language}>
       {/* Desktop sidebar — uses logical border (border-e flips for RTL) */}
       <aside className="hidden w-60 shrink-0 border-e border-border lg:block">
         <SidebarContent />

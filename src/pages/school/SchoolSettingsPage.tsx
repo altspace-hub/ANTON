@@ -11,6 +11,9 @@ const TEACHING_LANGUAGES = [
   { code: 'no', label: 'Norsk' },
   { code: 'da', label: 'Dansk' },
   { code: 'fi', label: 'Suomi' },
+  { code: 'ur', label: 'اردو' },
+  { code: 'hi', label: 'हिन्दी' },
+  { code: 'ar', label: 'العربية' },
 ];
 
 const UI_LANGUAGES = [
@@ -18,6 +21,8 @@ const UI_LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'ar', label: 'العربية (RTL)' },
   { code: 'fr', label: 'Français' },
+  { code: 'ur', label: 'اردو (RTL)' },
+  { code: 'hi', label: 'हिन्दी' },
 ];
 
 export default function SchoolSettingsPage() {

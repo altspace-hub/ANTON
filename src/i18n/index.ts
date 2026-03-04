@@ -11,8 +11,8 @@ i18n
       loadPath: (lng: string[], ns: string[]) => {
         const namespace = ns[0];
         if (namespace === 'school') {
-          // Arabic, English, Swedish have dedicated school translations; fall back to English for others
-          const schoolLng = ['en', 'sv', 'ar', 'fr'].includes(lng[0]) ? lng[0] : 'en';
+          // Languages with dedicated school translations; fall back to English for others
+          const schoolLng = ['en', 'sv', 'ar', 'fr', 'ur', 'hi'].includes(lng[0]) ? lng[0] : 'en';
           return `/locales/${schoolLng}-school.json`;
         }
         return `/locales/${lng[0]}.json`;
