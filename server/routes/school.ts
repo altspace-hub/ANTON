@@ -206,6 +206,13 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
   'data-science': 'nora',
   modersmal: 'saga',
   'sfi-bridge': 'saga',
+  // T1 Primary subjects
+  'primary-mathematics': 'alma',
+  'primary-reading': 'saga',
+  'primary-writing': 'saga',
+  'primary-science': 'viktor',
+  'primary-english': 'alma',
+  'primary-art': 'alma',
   // T4 University subjects
   'uni-mathematics': 'professor-lindstrom',
   'uni-physics': 'professor-lindstrom',

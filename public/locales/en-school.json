@@ -89,7 +89,13 @@
     "uni-biology": "Cell Biology & Genetics",
     "uni-chemistry": "Organic & Physical Chemistry",
     "uni-philosophy": "Philosophy & Ethics",
-    "uni-statistics": "Applied Statistics & Data Analysis"
+    "uni-statistics": "Applied Statistics & Data Analysis",
+    "primary-mathematics": "Primary Maths",
+    "primary-reading": "Reading",
+    "primary-writing": "Writing",
+    "primary-science": "Science",
+    "primary-english": "English",
+    "primary-art": "Art & Creativity"
   },
   "chat": {
     "greeting": "Hi! I'm {{persona}}. What are you working on today?",
@@ -314,6 +320,7 @@
         "title": "Welcome to ANTON School!",
         "subtitle": "Let's get you set up.",
         "selectTier": "What year are you in?",
+        "tierT1": "Primary School (ages 7–12)",
         "tierT2": "Years 7–9 (ages 13–15)",
         "tierT3": "Years 10–12 (ages 16–18)",
         "tierT4": "University (18+)"
@@ -325,6 +332,8 @@
         "norway": "Norway (LK20)",
         "uk": "United Kingdom",
         "france": "France (Baccalauréat)",
+        "india": "India (CBSE)",
+        "nigeria": "Nigeria (WAEC)",
         "other": "Other"
       },
       "step3": {

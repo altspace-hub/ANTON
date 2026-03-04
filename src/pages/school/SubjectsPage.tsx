@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain, Atom, Dna, ScrollText, Lightbulb, Languages, BarChart2, Scale, Microscope } from 'lucide-react';
+import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain, Atom, Dna, ScrollText, Lightbulb, Languages, BarChart2, Scale, Microscope, Star, Palette } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -25,6 +25,61 @@ interface JoinForm {
 
 // Static subject catalogue — available without a class code
 const CATALOGUE = [
+  // T1 Primary subjects (ages 7-12)
+  {
+    id: 'primary-mathematics',
+    nameKey: 'subject.primary-mathematics',
+    name: 'Primary Maths',
+    persona: 'Alma',
+    icon: <Star className="h-5 w-5 text-adv-teal" />,
+    tier: 'T1',
+    modules: ['Numbers', 'Shapes', 'Measurement', 'Data'],
+  },
+  {
+    id: 'primary-reading',
+    nameKey: 'subject.primary-reading',
+    name: 'Reading',
+    persona: 'Saga',
+    icon: <BookOpen className="h-5 w-5 text-adv-teal" />,
+    tier: 'T1',
+    modules: ['Phonics', 'Comprehension', 'Vocabulary', 'Fluency'],
+  },
+  {
+    id: 'primary-writing',
+    nameKey: 'subject.primary-writing',
+    name: 'Writing',
+    persona: 'Saga',
+    icon: <ScrollText className="h-5 w-5 text-adv-teal" />,
+    tier: 'T1',
+    modules: ['Creative Writing', 'Spelling', 'Sentences', 'Stories'],
+  },
+  {
+    id: 'primary-science',
+    nameKey: 'subject.primary-science',
+    name: 'Science',
+    persona: 'Viktor',
+    icon: <FlaskConical className="h-5 w-5 text-adv-teal" />,
+    tier: 'T1',
+    modules: ['Animals', 'Plants', 'Materials', 'Our World'],
+  },
+  {
+    id: 'primary-english',
+    nameKey: 'subject.primary-english',
+    name: 'English',
+    persona: 'Alma',
+    icon: <MessageSquare className="h-5 w-5 text-adv-teal" />,
+    tier: 'T1',
+    modules: ['Speaking', 'Reading', 'Writing', 'Grammar'],
+  },
+  {
+    id: 'primary-art',
+    nameKey: 'subject.primary-art',
+    name: 'Art & Creativity',
+    persona: 'Alma',
+    icon: <Palette className="h-5 w-5 text-adv-teal" />,
+    tier: 'T1',
+    modules: ['Drawing', 'Colour', 'Crafts', 'Imagination'],
+  },
   {
     id: 'mathematics',
     nameKey: 'subject.mathematics',
@@ -298,7 +353,7 @@ export default function SubjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [joinForm, setJoinForm] = useState<JoinForm>({ visible: false, code: '', loading: false, error: null });
   const [activeTab, setActiveTab] = useState<'mine' | 'browse'>('browse');
-  const [browseTier, setBrowseTier] = useState<'T2' | 'T3' | 'T4'>('T2');
+  const [browseTier, setBrowseTier] = useState<'T1' | 'T2' | 'T3' | 'T4'>('T2');
 
   useEffect(() => {
     loadClasses();
@@ -445,25 +500,32 @@ export default function SubjectsPage() {
         {activeTab === 'browse' && (
           <div className="space-y-3">
             {/* Tier sub-tabs */}
-            <div className="flex gap-1 rounded-lg border border-border bg-adv-dark p-1">
+            <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-adv-dark p-1">
+              <button
+                type="button"
+                onClick={() => setBrowseTier('T1')}
+                className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T1' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+              >
+                {t('onboarding.student.step1.tierT1', 'Primary (7–12)')}
+              </button>
               <button
                 type="button"
                 onClick={() => setBrowseTier('T2')}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T2' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+                className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T2' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
               >
-                {t('onboarding.student.step1.tierT2', 'Years 7–9')} (Grundskola)
+                {t('onboarding.student.step1.tierT2', 'Years 7–9')}
               </button>
               <button
                 type="button"
                 onClick={() => setBrowseTier('T3')}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T3' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+                className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T3' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
               >
-                {t('onboarding.student.step1.tierT3', 'Years 10–12')} (Gymnasiet)
+                {t('onboarding.student.step1.tierT3', 'Years 10–12')}
               </button>
               <button
                 type="button"
                 onClick={() => setBrowseTier('T4')}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T4' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+                className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T4' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
               >
                 {t('onboarding.student.step1.tierT4', 'University')}
               </button>

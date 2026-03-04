@@ -153,6 +153,7 @@ export default function SchoolOnboardingPage() {
           </div>
           <div className="space-y-3">
             {[
+              { value: 'T1', label: t('onboarding.student.step1.tierT1', 'Primary School (ages 7–12)'), icon: BookOpen },
               { value: 'T2', label: t('onboarding.student.step1.tierT2', 'Years 7–9 (ages 13–15)'), icon: BookOpen },
               { value: 'T3', label: t('onboarding.student.step1.tierT3', 'Years 10–12 (ages 16–18)'), icon: BookOpen },
               { value: 'T4', label: t('onboarding.student.step1.tierT4', 'University (18+)'), icon: GraduationCap },
@@ -191,6 +192,8 @@ export default function SchoolOnboardingPage() {
               { value: 'no', label: t('onboarding.student.step2.norway', 'Norway (LK20)') },
               { value: 'gb', label: t('onboarding.student.step2.uk', 'United Kingdom') },
               { value: 'fr', label: t('onboarding.student.step2.france', 'France (Baccalauréat)') },
+              { value: 'in', label: t('onboarding.student.step2.india', 'India (CBSE)') },
+              { value: 'ng', label: t('onboarding.student.step2.nigeria', 'Nigeria (WAEC)') },
               { value: 'other', label: t('onboarding.student.step2.other', 'Other') },
             ].map(({ value, label }) => (
               <button
