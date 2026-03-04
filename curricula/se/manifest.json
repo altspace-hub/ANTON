@@ -1,0 +1,52 @@
+{
+  "country_code": "se",
+  "country_name": "Sweden",
+  "language": "sv",
+  "curriculum_authority": "Skolverket",
+  "school_structure": {
+    "T1": {
+      "local_name": "Lågstadiet & Mellanstadiet",
+      "years": "Åk 1–6",
+      "ages": "6–12"
+    },
+    "T2": {
+      "local_name": "Högstadiet",
+      "years": "Åk 7–9",
+      "ages": "13–15"
+    },
+    "T3": {
+      "local_name": "Gymnasiet",
+      "years": "Gy 1–3",
+      "ages": "16–18"
+    }
+  },
+  "grading_system": {
+    "scale": ["A", "B", "C", "D", "E", "F"],
+    "passing_grade": "E",
+    "highest_grade": "A",
+    "notes": "E=Pass, C=Developing, A=High Achievement. B and D are intermediate grades based on predominant meeting of E+C or C+A criteria respectively."
+  },
+  "term_structure": {
+    "terms_per_year": 2,
+    "term_1": {
+      "name": "Höstterminen",
+      "start_month": 8,
+      "end_month": 12
+    },
+    "term_2": {
+      "name": "Vårterminen",
+      "start_month": 1,
+      "end_month": 6
+    }
+  },
+  "curricula_available": [
+    {
+      "id": "lgr22",
+      "name": "Lgr22",
+      "full_name": "Läroplan för grundskolan, förskoleklassen och fritidshemmet 2022",
+      "year": 2022,
+      "covers": ["T1", "T2"],
+      "source_url": "https://www.skolverket.se/undervisning/grundskolan/laroplan-och-kursplaner-for-grundskolan"
+    }
+  ]
+}

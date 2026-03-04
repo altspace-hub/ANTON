@@ -73,6 +73,15 @@ function applyThemeToDOM(theme: Theme) {
 }
 
 type DeploymentMode = 'solo' | 'team';
+export type AppMode = 'work' | 'school';
+
+function getInitialAppMode(): AppMode {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('openexpert-app-mode');
+    if (saved === 'school') return 'school';
+  }
+  return 'work';
+}
 
 function getInitialEmailNotificationsEnabled(): boolean {
   if (typeof window !== 'undefined') {
@@ -92,6 +101,7 @@ interface SettingsState {
   defaultCreativity: CreativityLevel;
   deploymentMode: DeploymentMode;
   emailNotificationsEnabled: boolean;
+  appMode: AppMode;
   checkHealth: () => Promise<void>;
   fetchDeploymentConfig: () => Promise<void>;
   toggleTheme: () => void;
@@ -101,6 +111,7 @@ interface SettingsState {
   setDefaultThinking: (thinking: ThinkingLevel) => void;
   setDefaultCreativity: (creativity: CreativityLevel) => void;
   setEmailNotificationsEnabled: (enabled: boolean) => void;
+  setAppMode: (mode: AppMode) => void;
 }
 
 // Apply the initial theme immediately so there is no flash
@@ -118,6 +129,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   defaultCreativity: getStoredDefaultCreativity(),
   deploymentMode: 'solo' as DeploymentMode,
   emailNotificationsEnabled: getInitialEmailNotificationsEnabled(),
+  appMode: getInitialAppMode(),
 
   checkHealth: async () => {
     set({ isLoading: true, error: null });
@@ -183,5 +195,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setEmailNotificationsEnabled: (enabled: boolean) => {
     localStorage.setItem('openexpert-email-notifications', String(enabled));
     set({ emailNotificationsEnabled: enabled });
+  },
+
+  setAppMode: (mode: AppMode) => {
+    localStorage.setItem('openexpert-app-mode', mode);
+    set({ appMode: mode });
   },
 }));

@@ -1,0 +1,257 @@
+{
+  "modeToggle": {
+    "ariaLabel": "Switch between Work and School mode",
+    "work": "Work",
+    "school": "School"
+  },
+  "school": {
+    "nav": {
+      "schoolMode": "School Mode",
+      "dashboard": "Dashboard",
+      "subjects": "Subjects",
+      "study": "Study",
+      "assignments": "Assignments",
+      "myClasses": "My Classes",
+      "createAssignment": "Create Assignment",
+      "students": "Students",
+      "teacherTools": "Teacher Tools",
+      "schoolSettings": "School Settings",
+      "myProfile": "My Profile",
+      "backToWork": "Back to Work Mode",
+      "role": {
+        "student": "Student",
+        "guardian": "Guardian",
+        "teacher": "Teacher",
+        "school_admin": "School Admin"
+      }
+    },
+    "dashboard": {
+      "welcome": "Welcome back, {{name}}!",
+      "thisWeek": "This Week",
+      "myProgress": "My Progress",
+      "allSubjects": "All Subjects",
+      "quickQuestion": "Quick Question",
+      "quickQuestionPlaceholder": "Ask anything...",
+      "quickQuestionHelp": "For quick questions that don't belong to a specific subject",
+      "continueStudying": "Continue",
+      "startStudying": "Start",
+      "progressLabel": "{{pct}}% complete",
+      "noClasses": "You're not enrolled in any classes yet.",
+      "enrollPrompt": "Ask your teacher for a class code to get started.",
+      "loading": "Loading your dashboard..."
+    },
+    "subject": {
+      "mathematics": "Mathematics",
+      "algebra": "Algebra",
+      "geometry": "Geometry",
+      "statistics": "Statistics & Probability",
+      "functions": "Functions",
+      "numberTheory": "Number Theory"
+    },
+    "chat": {
+      "greeting": "Hi! I'm {{persona}}. What are you working on today?",
+      "taskTypes": {
+        "homework": "Homework help",
+        "studying": "Studying",
+        "practice": "Practice problems"
+      },
+      "assistanceLevel": {
+        "L1": "Full Guidance",
+        "L2": "Moderate Help",
+        "L3": "Practice Mode",
+        "L4": "Reference Mode",
+        "label": "Assistance Level"
+      },
+      "placeholder": "Write your question here...",
+      "send": "Send",
+      "thinking": "Alma is thinking...",
+      "uploadsAllowed": "You can upload files or photos of your work",
+      "laxhjalpMode": "Stuck? Let's work through it",
+      "endSession": "End session"
+    },
+    "laxhjalp": {
+      "title": "Stuck Point — Let's Figure This Out",
+      "subtitle": "Alma will help you find the gap and build a bridge",
+      "phase": {
+        "identify": "What are you stuck on?",
+        "traceBack": "Finding solid ground",
+        "bridge": "Building understanding",
+        "practice": "Practice",
+        "return": "Back to your problem",
+        "verify": "Check your understanding"
+      },
+      "stuckPrompt": "Tell me exactly what you're stuck on. What were you trying to do?",
+      "progress": "Phase {{current}} of {{total}}",
+      "resolved": "Great work! You solved it.",
+      "continue": "Continue to original problem"
+    },
+    "assessment": {
+      "multipleChoice": "Multiple Choice",
+      "shortAnswer": "Short Answer",
+      "calculation": "Calculation",
+      "checkAnswer": "Check my answer",
+      "nextQuestion": "Next question",
+      "submit": "Submit",
+      "score": "{{score}}%",
+      "correct": "Correct!",
+      "incorrect": "Not quite — let's look at this together",
+      "explanation": "Explanation",
+      "timeRemaining": "{{minutes}}m remaining",
+      "completed": "Assessment complete",
+      "resultsSummary": "You scored {{score}}% on {{topic}}"
+    },
+    "teacher": {
+      "dashboard": {
+        "title": "My Classes",
+        "createClass": "Create Class",
+        "classCode": "Class code",
+        "copyCode": "Copy",
+        "codeCopied": "Copied!",
+        "studentsEnrolled": "{{count}} students",
+        "viewProgress": "View Progress",
+        "createAssignment": "Create Assignment",
+        "noClasses": "You haven't created any classes yet.",
+        "setupFirst": "Set up your first class to get started."
+      },
+      "classConfig": {
+        "title": "Class Settings",
+        "className": "Class name",
+        "subject": "Subject",
+        "tier": "Education tier",
+        "assistanceLevels": "Assistance levels",
+        "homeworkLevel": "Homework",
+        "selfStudyLevel": "Self-study",
+        "examPracticeLevel": "Exam practice",
+        "referenceLevel": "Reference",
+        "defaultPersona": "Default teacher",
+        "webSearch": "Allow web search",
+        "save": "Save Settings",
+        "saved": "Saved",
+        "uploadCurriculum": "Upload curriculum document",
+        "uploadHelp": "Upload your school's curriculum or year plan (PDF, DOCX). Alma will generate a week-by-week study plan.",
+        "studyPlan": "Study plan",
+        "generatePlan": "Generate study plan",
+        "generating": "Generating plan..."
+      },
+      "assignment": {
+        "title": "Create Assignment",
+        "assignmentTitle": "Title",
+        "titlePlaceholder": "e.g. Quadratic Equations — Week 38",
+        "instructions": "Instructions",
+        "instructionsPlaceholder": "What should students do?",
+        "type": "Type",
+        "typeHomework": "Homework",
+        "typeExam": "Exam",
+        "typePractice": "Practice",
+        "addQuestion": "Add question",
+        "questionContent": "Question",
+        "questionType": "Type",
+        "questionMarks": "Marks",
+        "removeQuestion": "Remove",
+        "assistanceLevel": "Assistance level",
+        "dueDate": "Due date",
+        "timeLimit": "Time limit",
+        "timeLimitUnlimited": "No limit",
+        "retakes": "Retakes allowed",
+        "retakesNone": "No retakes",
+        "export": "Export as .anton",
+        "save": "Save",
+        "rubricsSection": "Grading rubric",
+        "addRubricCriteria": "Add criteria"
+      }
+    },
+    "guardian": {
+      "dashboard": {
+        "title": "{{name}}'s Learning",
+        "overallProgress": "Overall Progress",
+        "recentActivity": "Recent Activity",
+        "upcomingDeadlines": "Upcoming Deadlines",
+        "subjects": "Subjects",
+        "timeThisWeek": "Study time this week",
+        "noData": "No activity yet this week.",
+        "linkPrompt": "Link a student account to see their progress."
+      },
+      "link": {
+        "title": "Link to a Student Account",
+        "enterCode": "Enter the invite code from your child or their teacher",
+        "codePlaceholder": "e.g. MATH-9B-ANNA",
+        "link": "Link account",
+        "success": "Successfully linked to {{name}}'s account!",
+        "error": "Invalid code. Please check with the teacher.",
+        "privacyNote": "You'll see progress summaries. Individual conversations are private to your child."
+      }
+    },
+    "onboarding": {
+      "student": {
+        "step1": {
+          "title": "Welcome to ANTON School!",
+          "subtitle": "Let's get you set up.",
+          "selectTier": "What year are you in?",
+          "tierT2": "Years 7–9 (ages 13–15)",
+          "tierT3": "Years 10–12 (ages 16–18)",
+          "tierT4": "University (18+)"
+        },
+        "step2": {
+          "title": "Where are you?",
+          "selectCountry": "Select your country",
+          "sweden": "Sweden (Lgr22)",
+          "uk": "United Kingdom",
+          "other": "Other"
+        },
+        "step3": {
+          "title": "Join your class",
+          "enterCode": "Enter the class code from your teacher",
+          "codePlaceholder": "e.g. MATH-9B-2026",
+          "join": "Join class",
+          "skip": "I'll join later"
+        },
+        "step4": {
+          "title": "Quick maths check",
+          "subtitle": "5 questions to help Alma understand where you are. This isn't graded.",
+          "start": "Start check",
+          "skip": "Skip for now"
+        },
+        "complete": {
+          "title": "You're all set!",
+          "subtitle": "Your dashboard is ready.",
+          "goToDashboard": "Go to my dashboard"
+        }
+      },
+      "teacher": {
+        "step1": {
+          "title": "Welcome, teacher!",
+          "subtitle": "Let's set up your first class.",
+          "createClass": "Create class"
+        },
+        "complete": {
+          "title": "Your class is ready!",
+          "classCode": "Share this code with your students:",
+          "goToDashboard": "Go to my dashboard"
+        }
+      }
+    },
+    "persona": {
+      "alma": {
+        "name": "Alma",
+        "subject": "Mathematics",
+        "description": "Patient, methodical maths teacher who guides you step by step"
+      }
+    },
+    "progress": {
+      "mastery": {
+        "beginning": "Beginning",
+        "developing": "Developing",
+        "proficient": "Proficient",
+        "advanced": "Advanced"
+      },
+      "blooms": {
+        "knowledge": "Knowledge",
+        "application": "Application",
+        "analysis": "Analysis",
+        "evaluation": "Evaluation",
+        "creation": "Creation",
+        "metacognition": "Metacognition"
+      }
+    }
+  }
+}

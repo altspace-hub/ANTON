@@ -1,0 +1,257 @@
+{
+  "modeToggle": {
+    "ariaLabel": "Växla mellan Arbetsläge och Skolläge",
+    "work": "Arbete",
+    "school": "Skola"
+  },
+  "school": {
+    "nav": {
+      "schoolMode": "Skolläge",
+      "dashboard": "Startsida",
+      "subjects": "Ämnen",
+      "study": "Studera",
+      "assignments": "Uppgifter",
+      "myClasses": "Mina klasser",
+      "createAssignment": "Skapa uppgift",
+      "students": "Elever",
+      "teacherTools": "Lärarverktyg",
+      "schoolSettings": "Skolinställningar",
+      "myProfile": "Min profil",
+      "backToWork": "Tillbaka till Arbetsläge",
+      "role": {
+        "student": "Elev",
+        "guardian": "Vårdnadshavare",
+        "teacher": "Lärare",
+        "school_admin": "Skoladmin"
+      }
+    },
+    "dashboard": {
+      "welcome": "Välkommen tillbaka, {{name}}!",
+      "thisWeek": "Den här veckan",
+      "myProgress": "Min framsteg",
+      "allSubjects": "Alla ämnen",
+      "quickQuestion": "Snabbfråga",
+      "quickQuestionPlaceholder": "Ställ en fråga...",
+      "quickQuestionHelp": "För snabba frågor som inte hör till ett specifikt ämne",
+      "continueStudying": "Fortsätt",
+      "startStudying": "Börja",
+      "progressLabel": "{{pct}}% klart",
+      "noClasses": "Du är inte inskriven i någon klass ännu.",
+      "enrollPrompt": "Be din lärare om en klasskod för att börja.",
+      "loading": "Laddar din startsida..."
+    },
+    "subject": {
+      "mathematics": "Matematik",
+      "algebra": "Algebra",
+      "geometry": "Geometri",
+      "statistics": "Statistik och sannolikhetslära",
+      "functions": "Funktioner",
+      "numberTheory": "Talteori"
+    },
+    "chat": {
+      "greeting": "Hej! Jag är {{persona}}. Vad jobbar du med idag?",
+      "taskTypes": {
+        "homework": "Hjälp med läxor",
+        "studying": "Studera",
+        "practice": "Övningsuppgifter"
+      },
+      "assistanceLevel": {
+        "L1": "Full vägledning",
+        "L2": "Måttlig hjälp",
+        "L3": "Övningsläge",
+        "L4": "Referensläge",
+        "label": "Hjälpnivå"
+      },
+      "placeholder": "Skriv din fråga här...",
+      "send": "Skicka",
+      "thinking": "Alma tänker...",
+      "uploadsAllowed": "Du kan ladda upp filer eller foton av ditt arbete",
+      "laxhjalpMode": "Fastnat? Låt oss lösa det",
+      "endSession": "Avsluta session"
+    },
+    "laxhjalp": {
+      "title": "Läxhjälp — Låt oss lösa det tillsammans",
+      "subtitle": "Alma hjälper dig hitta luckan och bygga en bro",
+      "phase": {
+        "identify": "Vad har du fastnat på?",
+        "traceBack": "Hittar fast mark",
+        "bridge": "Bygger förståelse",
+        "practice": "Övning",
+        "return": "Tillbaka till din uppgift",
+        "verify": "Kontrollera din förståelse"
+      },
+      "stuckPrompt": "Berätta exakt vad du fastnat på. Vad försökte du göra?",
+      "progress": "Fas {{current}} av {{total}}",
+      "resolved": "Bra jobbat! Du löste det.",
+      "continue": "Fortsätt med originaluppgiften"
+    },
+    "assessment": {
+      "multipleChoice": "Flervalsfrågor",
+      "shortAnswer": "Kort svar",
+      "calculation": "Beräkningar",
+      "checkAnswer": "Kontrollera mitt svar",
+      "nextQuestion": "Nästa fråga",
+      "submit": "Lämna in",
+      "score": "{{score}}%",
+      "correct": "Rätt!",
+      "incorrect": "Inte riktigt — låt oss titta på detta tillsammans",
+      "explanation": "Förklaring",
+      "timeRemaining": "{{minutes}} min kvar",
+      "completed": "Uppgiften är klar",
+      "resultsSummary": "Du fick {{score}}% på {{topic}}"
+    },
+    "teacher": {
+      "dashboard": {
+        "title": "Mina klasser",
+        "createClass": "Skapa klass",
+        "classCode": "Klasskod",
+        "copyCode": "Kopiera",
+        "codeCopied": "Kopierat!",
+        "studentsEnrolled": "{{count}} elever",
+        "viewProgress": "Visa framsteg",
+        "createAssignment": "Skapa uppgift",
+        "noClasses": "Du har inte skapat några klasser ännu.",
+        "setupFirst": "Sätt upp din första klass för att komma igång."
+      },
+      "classConfig": {
+        "title": "Klassinställningar",
+        "className": "Klassnamn",
+        "subject": "Ämne",
+        "tier": "Utbildningsnivå",
+        "assistanceLevels": "Hjälpnivåer",
+        "homeworkLevel": "Läxor",
+        "selfStudyLevel": "Självstudier",
+        "examPracticeLevel": "Provövning",
+        "referenceLevel": "Referens",
+        "defaultPersona": "Standardlärare",
+        "webSearch": "Tillåt webbsökning",
+        "save": "Spara inställningar",
+        "saved": "Sparat",
+        "uploadCurriculum": "Ladda upp kursplan",
+        "uploadHelp": "Ladda upp din skolas kursplan eller årsplanering (PDF, DOCX). Alma genererar en veckovis studieplan.",
+        "studyPlan": "Studieplan",
+        "generatePlan": "Generera studieplan",
+        "generating": "Genererar plan..."
+      },
+      "assignment": {
+        "title": "Skapa uppgift",
+        "assignmentTitle": "Titel",
+        "titlePlaceholder": "t.ex. Andragradsekvationer — Vecka 38",
+        "instructions": "Instruktioner",
+        "instructionsPlaceholder": "Vad ska eleverna göra?",
+        "type": "Typ",
+        "typeHomework": "Läxa",
+        "typeExam": "Prov",
+        "typePractice": "Övning",
+        "addQuestion": "Lägg till fråga",
+        "questionContent": "Fråga",
+        "questionType": "Typ",
+        "questionMarks": "Poäng",
+        "removeQuestion": "Ta bort",
+        "assistanceLevel": "Hjälpnivå",
+        "dueDate": "Inlämningsdatum",
+        "timeLimit": "Tidsgräns",
+        "timeLimitUnlimited": "Ingen gräns",
+        "retakes": "Tillåtna omtag",
+        "retakesNone": "Inga omtag",
+        "export": "Exportera som .anton",
+        "save": "Spara",
+        "rubricsSection": "Bedömningsmatris",
+        "addRubricCriteria": "Lägg till kriterium"
+      }
+    },
+    "guardian": {
+      "dashboard": {
+        "title": "{{name}}:s lärande",
+        "overallProgress": "Övergripande framsteg",
+        "recentActivity": "Senaste aktivitet",
+        "upcomingDeadlines": "Kommande deadlines",
+        "subjects": "Ämnen",
+        "timeThisWeek": "Studietid den här veckan",
+        "noData": "Ingen aktivitet den här veckan.",
+        "linkPrompt": "Länka ett elevkonto för att se deras framsteg."
+      },
+      "link": {
+        "title": "Länka till ett elevkonto",
+        "enterCode": "Ange inbjudningskoden från ditt barn eller deras lärare",
+        "codePlaceholder": "t.ex. MATH-9B-ANNA",
+        "link": "Länka konto",
+        "success": "Länkad till {{name}}:s konto!",
+        "error": "Ogiltig kod. Kontrollera med läraren.",
+        "privacyNote": "Du ser sammanfattningar av framsteg. Enskilda konversationer är privata för ditt barn."
+      }
+    },
+    "onboarding": {
+      "student": {
+        "step1": {
+          "title": "Välkommen till ANTON Skola!",
+          "subtitle": "Låt oss ställa in allt.",
+          "selectTier": "Vilket år går du?",
+          "tierT2": "Åk 7–9 (13–15 år)",
+          "tierT3": "Gymnasiet (16–18 år)",
+          "tierT4": "Universitetet (18+)"
+        },
+        "step2": {
+          "title": "Var befinner du dig?",
+          "selectCountry": "Välj land",
+          "sweden": "Sverige (Lgr22)",
+          "uk": "Storbritannien",
+          "other": "Annat"
+        },
+        "step3": {
+          "title": "Gå med i din klass",
+          "enterCode": "Ange klasskoden från din lärare",
+          "codePlaceholder": "t.ex. MATH-9B-2026",
+          "join": "Gå med",
+          "skip": "Gör det senare"
+        },
+        "step4": {
+          "title": "Snabb matematikkontroll",
+          "subtitle": "5 frågor för att hjälpa Alma förstå var du befinner dig. Det är inget prov.",
+          "start": "Börja",
+          "skip": "Hoppa över för nu"
+        },
+        "complete": {
+          "title": "Du är redo!",
+          "subtitle": "Din startsida är klar.",
+          "goToDashboard": "Gå till min startsida"
+        }
+      },
+      "teacher": {
+        "step1": {
+          "title": "Välkommen, lärare!",
+          "subtitle": "Låt oss ställa in din första klass.",
+          "createClass": "Skapa klass"
+        },
+        "complete": {
+          "title": "Din klass är klar!",
+          "classCode": "Dela denna kod med dina elever:",
+          "goToDashboard": "Gå till min startsida"
+        }
+      }
+    },
+    "persona": {
+      "alma": {
+        "name": "Alma",
+        "subject": "Matematik",
+        "description": "Tålmodig, metodisk mattelärare som guidar dig steg för steg"
+      }
+    },
+    "progress": {
+      "mastery": {
+        "beginning": "Nybörjare",
+        "developing": "Under utveckling",
+        "proficient": "Kunnig",
+        "advanced": "Avancerad"
+      },
+      "blooms": {
+        "knowledge": "Kunskap",
+        "application": "Tillämpning",
+        "analysis": "Analys",
+        "evaluation": "Värdering",
+        "creation": "Skapande",
+        "metacognition": "Metakognition"
+      }
+    }
+  }
+}

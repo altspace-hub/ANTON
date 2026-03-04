@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MainLayout from './components/layout/MainLayout';
 import { useAuthStore } from './stores/useAuthStore';
@@ -90,6 +90,15 @@ const TradesHubPage = lazy(() => import('./pages/TradesHubPage'));
 // PE/VC Hub + Innovation Radar
 const PEVCHubPage = lazy(() => import('./pages/PEVCHubPage'));
 const InnovationRadarPage = lazy(() => import('./pages/InnovationRadarPage'));
+
+// School Mode pages
+const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
+const SchoolChatPage = lazy(() => import('./pages/school/SchoolChatPage'));
+const TeacherDashboardPage = lazy(() => import('./pages/school/TeacherDashboardPage'));
+const TeacherClassConfigPage = lazy(() => import('./pages/school/TeacherClassConfigPage'));
+const GuardianDashboardPage = lazy(() => import('./pages/school/GuardianDashboardPage'));
+const AssignmentBuilderPage = lazy(() => import('./pages/school/AssignmentBuilderPage'));
+const SubmissionReviewerPage = lazy(() => import('./pages/school/SubmissionReviewerPage'));
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -265,6 +274,20 @@ export default function App() {
           <Route path="/pe-vc" element={<PEVCHubPage />} />
           <Route path="/innovation-radar" element={<InnovationRadarPage />} />
           <Route path="/settings" element={<Settings />} />
+        </Route>
+
+        {/* School Mode — own layout (SchoolLayout), no MainLayout wrapper */}
+        <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
+          <Route path="/school" element={<SchoolDashboardPage />} />
+          <Route path="/school/chat" element={<SchoolChatPage />} />
+          <Route path="/school/subjects" element={<SchoolDashboardPage />} />
+          <Route path="/school/assignments" element={<SchoolDashboardPage />} />
+          <Route path="/school/teacher" element={<TeacherDashboardPage />} />
+          <Route path="/school/teacher/classes/new" element={<TeacherClassConfigPage />} />
+          <Route path="/school/teacher/classes/:classId/settings" element={<TeacherClassConfigPage />} />
+          <Route path="/school/teacher/assignments/new" element={<AssignmentBuilderPage />} />
+          <Route path="/school/teacher/submissions/:submissionId" element={<SubmissionReviewerPage />} />
+          <Route path="/school/guardian" element={<GuardianDashboardPage />} />
         </Route>
       </Routes>
     </Suspense>

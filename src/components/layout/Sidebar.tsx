@@ -596,6 +596,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </NavLinkWithStar>
 
         <NavLinkWithStar
+          to="/school"
+          navId="school"
+          title={sidebarCollapsed ? t('nav.school', 'ANTON School') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('school')}
+          isHidden={hiddenNavItems.has('school')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <GraduationCap className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.school', 'ANTON School')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
           to="/innovation-radar"
           navId="innovation-radar"
           title={sidebarCollapsed ? t('nav.innovationRadar', 'Innovation Radar') : undefined}

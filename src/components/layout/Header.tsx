@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { BudgetIndicator } from '@/components/shared/BudgetIndicator';
 import PrivacyIndicator from '@/components/shared/PrivacyIndicator';
 import { NotificationDropdown } from '@/components/shared/NotificationDropdown';
+import ModeToggle from '@/components/school/ModeToggle';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -80,6 +81,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-4">
+        {/* Work ↔ School mode toggle */}
+        <ModeToggle className="hidden sm:flex" />
         {/* API Status */}
         <div className="flex items-center gap-2 text-xs">
           <Circle

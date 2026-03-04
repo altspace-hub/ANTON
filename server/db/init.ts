@@ -2239,6 +2239,289 @@ export function initDatabase(): Database.Database {
     );
   }
 
+  // ── School Mode tables ──────────────────────────────────────────────────────
+
+  // Add school_role + education_tier to users table
+  const userColsForSchool = db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+  const userColNamesForSchool = userColsForSchool.map((c) => c.name);
+  if (!userColNamesForSchool.includes('school_role')) {
+    db.exec("ALTER TABLE users ADD COLUMN school_role TEXT DEFAULT NULL");
+    console.log('[db] Added school_role column to users table');
+  }
+  if (!userColNamesForSchool.includes('education_tier')) {
+    db.exec("ALTER TABLE users ADD COLUMN education_tier TEXT DEFAULT NULL");
+    console.log('[db] Added education_tier column to users table');
+  }
+
+  // Schools / organisations
+  db.exec(`CREATE TABLE IF NOT EXISTS schools (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    country_code TEXT NOT NULL,
+    curriculum_id TEXT,
+    default_model TEXT DEFAULT 'claude-sonnet-4-5-20250929',
+    content_filter_tier TEXT DEFAULT 'T2',
+    settings TEXT DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Classes (teacher + students + subject + curriculum)
+  db.exec(`CREATE TABLE IF NOT EXISTS school_classes (
+    id TEXT PRIMARY KEY,
+    school_id TEXT REFERENCES schools(id),
+    teacher_user_id TEXT NOT NULL REFERENCES users(id),
+    name TEXT NOT NULL,
+    subject_id TEXT NOT NULL,
+    education_tier TEXT NOT NULL,
+    curriculum_doc_id TEXT,
+    study_plan TEXT DEFAULT '{}',
+    assistance_levels TEXT DEFAULT '{"homework":"L1","self_study":"L2","exam_practice":"L3","reference":"L4"}',
+    default_teacher_persona TEXT DEFAULT 'alma',
+    web_search_enabled INTEGER DEFAULT 1,
+    settings TEXT DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_school_classes_teacher ON school_classes(teacher_user_id)`);
+
+  // Student enrollment in classes
+  db.exec(`CREATE TABLE IF NOT EXISTS class_enrollments (
+    id TEXT PRIMARY KEY,
+    class_id TEXT NOT NULL REFERENCES school_classes(id),
+    student_user_id TEXT NOT NULL REFERENCES users(id),
+    enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'active',
+    UNIQUE(class_id, student_user_id)
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_enrollments_student ON class_enrollments(student_user_id)`);
+
+  // Guardian-Student relationship
+  db.exec(`CREATE TABLE IF NOT EXISTS guardian_student_links (
+    id TEXT PRIMARY KEY,
+    guardian_user_id TEXT NOT NULL REFERENCES users(id),
+    student_user_id TEXT NOT NULL REFERENCES users(id),
+    relationship TEXT DEFAULT 'guardian',
+    permissions TEXT DEFAULT 'view_progress',
+    status TEXT DEFAULT 'active',
+    linked_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(guardian_user_id, student_user_id)
+  )`);
+
+  // Per-student, per-subject progress
+  db.exec(`CREATE TABLE IF NOT EXISTS student_progress (
+    id TEXT PRIMARY KEY,
+    student_user_id TEXT NOT NULL REFERENCES users(id),
+    class_id TEXT NOT NULL REFERENCES school_classes(id),
+    subject_id TEXT NOT NULL,
+    current_block TEXT,
+    blocks_data TEXT DEFAULT '[]',
+    skills_data TEXT DEFAULT '{}',
+    blooms_data TEXT DEFAULT '{"knowledge":0,"application":0,"analysis":0,"evaluation":0,"creation":0,"metacognition":0}',
+    overall_progress_pct INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(student_user_id, class_id)
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_student_progress_user ON student_progress(student_user_id)`);
+
+  // Assessment results
+  db.exec(`CREATE TABLE IF NOT EXISTS assessment_results (
+    id TEXT PRIMARY KEY,
+    student_user_id TEXT NOT NULL REFERENCES users(id),
+    class_id TEXT REFERENCES school_classes(id),
+    assessment_type TEXT NOT NULL,
+    subject_id TEXT NOT NULL,
+    topic TEXT,
+    score_pct INTEGER,
+    blooms_levels TEXT DEFAULT '[]',
+    details TEXT DEFAULT '{}',
+    ai_feedback TEXT,
+    duration_seconds INTEGER,
+    assistance_level TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_assessment_results_user ON assessment_results(student_user_id)`);
+
+  // Läxhjälp sessions (deep focus homework help)
+  db.exec(`CREATE TABLE IF NOT EXISTS laxhjalp_sessions (
+    id TEXT PRIMARY KEY,
+    student_user_id TEXT NOT NULL REFERENCES users(id),
+    class_id TEXT REFERENCES school_classes(id),
+    subject_id TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    stuck_point TEXT,
+    resolution_approach TEXT,
+    status TEXT DEFAULT 'stuck',
+    phases_completed TEXT DEFAULT '[]',
+    duration_seconds INTEGER,
+    session_id TEXT REFERENCES sessions(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_laxhjalp_user ON laxhjalp_sessions(student_user_id)`);
+
+  // Student Growth Model profiles
+  db.exec(`CREATE TABLE IF NOT EXISTS student_growth_profiles (
+    id TEXT PRIMARY KEY,
+    student_user_id TEXT NOT NULL UNIQUE REFERENCES users(id),
+    stage TEXT DEFAULT 'S1',
+    session_count INTEGER DEFAULT 0,
+    preferred_explanation_style TEXT,
+    learning_speed TEXT DEFAULT '{}',
+    error_patterns TEXT DEFAULT '{}',
+    motivation_triggers TEXT DEFAULT '{}',
+    attention_patterns TEXT DEFAULT '{}',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Teacher-created assignments
+  db.exec(`CREATE TABLE IF NOT EXISTS teacher_assignments (
+    id TEXT PRIMARY KEY,
+    teacher_user_id TEXT NOT NULL REFERENCES users(id),
+    class_id TEXT REFERENCES school_classes(id),
+    title TEXT NOT NULL,
+    description TEXT,
+    assignment_type TEXT NOT NULL,
+    subject_id TEXT NOT NULL,
+    topic TEXT,
+    assistance_level TEXT DEFAULT 'L1',
+    time_limit_minutes INTEGER,
+    retakes_allowed INTEGER DEFAULT 0,
+    due_date DATETIME,
+    content TEXT NOT NULL DEFAULT '{}',
+    rubric TEXT DEFAULT '{}',
+    knowledge_sources TEXT DEFAULT '[]',
+    anton_bundle_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_assignments_teacher ON teacher_assignments(teacher_user_id)`);
+
+  // Student submissions against assignments
+  db.exec(`CREATE TABLE IF NOT EXISTS assignment_submissions (
+    id TEXT PRIMARY KEY,
+    assignment_id TEXT NOT NULL REFERENCES teacher_assignments(id),
+    student_user_id TEXT NOT NULL REFERENCES users(id),
+    status TEXT DEFAULT 'not_started',
+    started_at DATETIME,
+    submitted_at DATETIME,
+    duration_seconds INTEGER,
+    score_pct INTEGER,
+    ai_grade TEXT DEFAULT '{}',
+    teacher_grade TEXT DEFAULT '{}',
+    feedback TEXT,
+    learning_evidence_log TEXT DEFAULT '{}',
+    audit_anton_bundle_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_submissions_assignment ON assignment_submissions(assignment_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_submissions_student ON assignment_submissions(student_user_id)`);
+
+  // Uploaded/structured curricula per country
+  db.exec(`CREATE TABLE IF NOT EXISTS curricula (
+    id TEXT PRIMARY KEY,
+    country_code TEXT NOT NULL,
+    curriculum_name TEXT NOT NULL,
+    curriculum_authority TEXT,
+    source_url TEXT,
+    school_structure TEXT DEFAULT '{}',
+    grading_system TEXT DEFAULT '{}',
+    term_structure TEXT DEFAULT '{}',
+    subjects TEXT DEFAULT '{}',
+    last_updated DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Teacher personas for School Mode
+  db.exec(`CREATE TABLE IF NOT EXISTS teacher_personas (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    specialisation TEXT NOT NULL,
+    teaching_style TEXT,
+    personality TEXT,
+    tier_adaptations TEXT DEFAULT '{}',
+    expertise_depth TEXT,
+    cultural_context TEXT,
+    prompt_template TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Seed Alma persona if not exists
+  const almaExists = db.prepare("SELECT id FROM teacher_personas WHERE id = 'alma'").get();
+  if (!almaExists) {
+    db.prepare(`INSERT INTO teacher_personas
+      (id, name, specialisation, teaching_style, personality, tier_adaptations, prompt_template)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+      'alma',
+      'Alma',
+      'Mathematics',
+      'Patient, methodical, step-by-step. Uses visual analogies and concrete examples before abstract notation.',
+      'Warm, encouraging. Celebrates small wins. Never makes a student feel stupid for not knowing something.',
+      JSON.stringify({
+        T1: "Very simple language, stories about real-world counting and measuring, lots of emoji, 'Let's figure this out together!'",
+        T2: "Socratic questioning, 'What do you think happens if...?', builds from concrete to abstract",
+        T3: 'More direct, connects maths to real applications, exam technique focus',
+        T4: 'Collegial, academic tone, discusses proof strategies and mathematical elegance',
+      }),
+      `You are Alma, a mathematics teacher. Your approach:
+
+- You are patient and methodical. You never rush.
+- You always start from what the student already knows.
+- You use concrete examples before abstract notation.
+- When a student gets stuck, you don't just repeat the explanation — you try a completely different approach (visual, numerical, real-world example).
+- You celebrate progress: "Great thinking!" "You're getting it!"
+- You check understanding by asking the student to explain back to you.
+- If the student makes a mistake, you're curious about it: "Interesting — what made you think that?" Find the misconception, don't just correct the error.
+- You connect new topics to things the student has already mastered.
+- You speak Swedish with the student unless they write in another language.`
+    );
+    console.log('[db] Seeded Alma teacher persona');
+  }
+
+  // ── School Mode column migrations ────────────────────────────────────────
+  // Safe: only adds columns that do not already exist in the table.
+
+  const schoolClassCols = (db.prepare("PRAGMA table_info(school_classes)").all() as Array<{ name: string }>).map(c => c.name);
+  if (!schoolClassCols.includes('class_code'))
+    db.exec("ALTER TABLE school_classes ADD COLUMN class_code TEXT");
+  if (!schoolClassCols.includes('curriculum_id'))
+    db.exec("ALTER TABLE school_classes ADD COLUMN curriculum_id TEXT DEFAULT 'lgr22'");
+  if (!schoolClassCols.includes('default_assistance_level'))
+    db.exec("ALTER TABLE school_classes ADD COLUMN default_assistance_level TEXT DEFAULT 'L2'");
+  if (!schoolClassCols.includes('updated_at'))
+    db.exec("ALTER TABLE school_classes ADD COLUMN updated_at DATETIME");
+
+  const assignmentCols = (db.prepare("PRAGMA table_info(teacher_assignments)").all() as Array<{ name: string }>).map(c => c.name);
+  if (!assignmentCols.includes('questions'))
+    db.exec("ALTER TABLE teacher_assignments ADD COLUMN questions TEXT DEFAULT '[]'");
+  if (!assignmentCols.includes('total_marks'))
+    db.exec("ALTER TABLE teacher_assignments ADD COLUMN total_marks INTEGER DEFAULT 0");
+  if (!assignmentCols.includes('assistance_level_override'))
+    db.exec("ALTER TABLE teacher_assignments ADD COLUMN assistance_level_override TEXT");
+  if (!assignmentCols.includes('updated_at'))
+    db.exec("ALTER TABLE teacher_assignments ADD COLUMN updated_at DATETIME");
+
+  const submissionCols = (db.prepare("PRAGMA table_info(assignment_submissions)").all() as Array<{ name: string }>).map(c => c.name);
+  if (!submissionCols.includes('answers'))
+    db.exec("ALTER TABLE assignment_submissions ADD COLUMN answers TEXT DEFAULT '{}'");
+  if (!submissionCols.includes('teacher_feedback'))
+    db.exec("ALTER TABLE assignment_submissions ADD COLUMN teacher_feedback TEXT");
+  if (!submissionCols.includes('ai_feedback'))
+    db.exec("ALTER TABLE assignment_submissions ADD COLUMN ai_feedback TEXT");
+  if (!submissionCols.includes('graded_at'))
+    db.exec("ALTER TABLE assignment_submissions ADD COLUMN graded_at DATETIME");
+  if (!submissionCols.includes('updated_at'))
+    db.exec("ALTER TABLE assignment_submissions ADD COLUMN updated_at DATETIME");
+
+  const laxhjalpCols = (db.prepare("PRAGMA table_info(laxhjalp_sessions)").all() as Array<{ name: string }>).map(c => c.name);
+  if (!laxhjalpCols.includes('module_id'))
+    db.exec("ALTER TABLE laxhjalp_sessions ADD COLUMN module_id TEXT");
+  if (!laxhjalpCols.includes('resolved'))
+    db.exec("ALTER TABLE laxhjalp_sessions ADD COLUMN resolved INTEGER DEFAULT 0");
+  if (!laxhjalpCols.includes('updated_at'))
+    db.exec("ALTER TABLE laxhjalp_sessions ADD COLUMN updated_at DATETIME");
+
+  const userSchoolCols = (db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>).map(c => c.name);
+  if (!userSchoolCols.includes('guardian_invite_code'))
+    db.exec("ALTER TABLE users ADD COLUMN guardian_invite_code TEXT");
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }

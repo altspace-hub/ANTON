@@ -83,6 +83,7 @@ import { createConnectorTemplatesRoutes } from './routes/connector-templates.js'
 import { createIntegrationsRoutes } from './routes/integrations.js';
 import { createTradesRoutes } from './routes/trades.js';
 import { createPEVCRoutes } from './routes/pe-vc.js';
+import { createSchoolRoutes } from './routes/school.js';
 import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
@@ -321,6 +322,7 @@ app.use('/api/engagements', createEngagementsRoutes(db));
 app.use('/api', createApprenticeRoutes(db));
 app.use('/api', createTradesRoutes(db));
 app.use('/api', createPEVCRoutes(db));
+app.use('/api', createSchoolRoutes(db));
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));

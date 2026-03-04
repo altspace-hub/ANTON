@@ -1,0 +1,203 @@
+/**
+ * School Mode Prompt Builder
+ *
+ * Assembles the 7-layer prompt system for School Mode.
+ * Layer 1: System Foundation (school-system-foundation.md)
+ * Layer 2: Subject Context (areas/school/{subject}/area-context.md)
+ * Layer 3: Lesson Methodology (areas/school/{subject}/modules/{module}/system-prompt.md)
+ * Layer 4: Teacher Persona (personas/school/{personaId}-prompt.md)
+ * Layer 5: Pedagogical Skills (Socratic method, scaffolding — inline)
+ * Layer 6: Knowledge Sources (curriculum docs, textbooks)
+ * Layer 7: Assistance Level + Task Type (inline instruction)
+ */
+
+import fs from 'fs-extra';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_DIR = path.join(__dirname, '..');
+
+export interface SchoolPromptConfig {
+  educationTier: 'T1' | 'T2' | 'T3' | 'T4' | 'T5';
+  subjectId: string;          // 'mathematics'
+  moduleId?: string;          // 'algebra', 'geometry', etc.
+  topic?: string;             // Specific topic within module
+  teacherPersonaId: string;   // 'alma'
+  assistanceLevel: 'L1' | 'L2' | 'L3' | 'L4';
+  taskType: 'homework' | 'studying' | 'practice' | 'quick_question' | 'assessment';
+  curriculumId?: string;      // 'lgr22'
+  additionalContext?: string; // Uploaded docs, specific instructions
+}
+
+async function readPromptFile(filePath: string): Promise<string> {
+  try {
+    return await fs.readFile(filePath, 'utf-8');
+  } catch {
+    return '';
+  }
+}
+
+function interpolate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
+}
+
+export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<string> {
+  const layers: string[] = [];
+
+  // ── Layer 1: System Foundation ─────────────────────────────────────────────
+  const foundationTemplate = await readPromptFile(
+    path.join(SERVER_DIR, 'prompts', 'school-system-foundation.md')
+  );
+  if (foundationTemplate) {
+    const foundation = interpolate(foundationTemplate, {
+      tier: config.educationTier,
+      subject: config.subjectId,
+      topic: config.topic ?? 'general',
+      assistance_level: config.assistanceLevel,
+      persona_name: config.teacherPersonaId,
+      curriculum_name: config.curriculumId ?? 'lgr22',
+      task_type: config.taskType,
+    });
+    layers.push(foundation);
+  }
+
+  // ── Layer 2: Subject Context ───────────────────────────────────────────────
+  const areaContextPath = path.join(
+    SERVER_DIR, 'areas', 'school', config.subjectId, 'area-context.md'
+  );
+  const areaContext = await readPromptFile(areaContextPath);
+  if (areaContext) {
+    layers.push(`\n\n---\n\n${areaContext}`);
+  }
+
+  // ── Layer 3: Lesson Methodology ────────────────────────────────────────────
+  if (config.moduleId) {
+    const lessonPromptPath = path.join(
+      SERVER_DIR, 'areas', 'school', config.subjectId,
+      'modules', config.moduleId, 'system-prompt.md'
+    );
+    const lessonPrompt = await readPromptFile(lessonPromptPath);
+    if (lessonPrompt) {
+      layers.push(`\n\n---\n\n${lessonPrompt}`);
+    }
+  }
+
+  // ── Layer 4: Teacher Persona ───────────────────────────────────────────────
+  const personaPromptPath = path.join(
+    SERVER_DIR, 'personas', 'school', `${config.teacherPersonaId}-prompt.md`
+  );
+  const personaPrompt = await readPromptFile(personaPromptPath);
+  if (personaPrompt) {
+    layers.push(`\n\n---\n\n${personaPrompt}`);
+  }
+
+  // ── Layer 5: Pedagogical Skills ────────────────────────────────────────────
+  // Inline — specific to task type and assistance level
+  const layer5 = buildPedagogicalSkillsLayer(config);
+  if (layer5) layers.push(`\n\n---\n\n${layer5}`);
+
+  // ── Layer 6: Knowledge Sources ─────────────────────────────────────────────
+  if (config.curriculumId === 'lgr22' || config.curriculumId === undefined) {
+    const curriculumPath = path.join(
+      SERVER_DIR, '..', 'curricula', 'se', 'grundskolan', 'matematik', 'centralt_innehall.json'
+    );
+    try {
+      const curriculumData = await fs.readJson(curriculumPath);
+      const relevantTopic = config.moduleId
+        ? curriculumData.topics?.find((t: { module_ids: string[]; name: string; subtopics: string[] }) =>
+            t.module_ids?.includes(config.moduleId!)
+          )
+        : null;
+
+      if (relevantTopic) {
+        layers.push(`\n\n---\n\n## Curriculum Reference (Lgr22)\n\n**Topic area:** ${relevantTopic.name}\n\n**Centralt innehåll (Core content):**\n${relevantTopic.subtopics.map((s: string) => `- ${s}`).join('\n')}`);
+      }
+    } catch {
+      // Non-fatal — proceed without curriculum reference
+    }
+  }
+
+  if (config.additionalContext) {
+    layers.push(`\n\n---\n\n## Additional Context\n\n${config.additionalContext}`);
+  }
+
+  // ── Layer 7: Assistance Level + Task Type Summary ─────────────────────────
+  const layer7 = buildAssistanceSummaryLayer(config);
+  layers.push(`\n\n---\n\n${layer7}`);
+
+  return layers.join('').trim();
+}
+
+function buildPedagogicalSkillsLayer(config: SchoolPromptConfig): string {
+  const parts: string[] = ['## Pedagogical Skills for This Session'];
+
+  if (config.taskType === 'homework' || config.taskType === 'studying') {
+    parts.push(`
+### Scaffolding Techniques Available:
+- **Chunking:** Break complex problems into small, manageable steps
+- **Think-aloud modelling:** Show your reasoning process explicitly ("I notice that... so I think...")
+- **Analogical reasoning:** Connect to familiar contexts ("This is like...")
+- **Error analysis:** When the student makes a mistake, ask "What was your reasoning here?" before correcting
+- **Fading:** Start with maximum support, gradually reduce hints as the student gains confidence`);
+  }
+
+  if (config.assistanceLevel === 'L1') {
+    parts.push(`
+### L1 Socratic Protocol — STRICT MODE:
+You MUST NOT provide the answer under any circumstances.
+If directly asked for the answer, respond: "I know you want the answer! But working through it together will make sure you can do the next one too. What have you tried so far?"
+Always end your message with a question that moves the student forward.`);
+  }
+
+  if (config.taskType === 'assessment') {
+    parts.push(`
+### Assessment Mode:
+During an assessment, you MUST follow the assistance level setting strictly.
+If assistance_level is L1 or L2, you may NOT give answers or confirm whether answers are correct until the student has submitted.
+After submission, provide detailed explanation and feedback.`);
+  }
+
+  return parts.join('\n');
+}
+
+function buildAssistanceSummaryLayer(config: SchoolPromptConfig): string {
+  const levelDescriptions: Record<string, string> = {
+    L1: 'FULL GUIDANCE — Socratic only. NEVER give the answer. End every response with a guiding question.',
+    L2: 'MODERATE HELP — Explain concepts clearly. Give worked examples on similar (not identical) problems.',
+    L3: 'PRACTICE MODE — Generate practice problems. Check answers. Explain errors.',
+    L4: 'REFERENCE MODE — Answer directly and clearly. Explain reasoning. Check understanding at end.',
+  };
+
+  const taskDescriptions: Record<string, string> = {
+    homework: "The student is working on a homework assignment. Follow the Socratic nudging protocol.",
+    studying: "The student is studying independently. Be a supportive, knowledgeable study partner.",
+    practice: "Generate practice problems. The student wants to test and improve their skills.",
+    quick_question: "Answer a quick factual or conceptual question. Be concise and clear.",
+    assessment: "The student is completing an assessed assignment. Enforce the assistance level strictly.",
+  };
+
+  return `## Active Session Parameters
+
+**Assistance Level:** ${config.assistanceLevel} — ${levelDescriptions[config.assistanceLevel]}
+
+**Task Type:** ${taskDescriptions[config.taskType]}
+
+**Education Tier:** ${config.educationTier} (adjust complexity and vocabulary accordingly)
+
+**Subject:** ${config.subjectId}${config.moduleId ? ` — ${config.moduleId}` : ''}${config.topic ? ` — ${config.topic}` : ''}`;
+}
+
+/**
+ * Detect which mathematics module best matches a student's question or topic.
+ * Used when no explicit moduleId is provided.
+ */
+export function inferMathsModule(text: string): string {
+  const lower = text.toLowerCase();
+  if (/equat|algebra|linear|quadrat|ekvation|algebra/i.test(lower)) return 'algebra';
+  if (/triangle|circle|area|perimeter|pythag|geometr|geometri|area|omkrets/i.test(lower)) return 'geometry';
+  if (/statistic|probability|mean|median|mode|sannolikhet|statistik/i.test(lower)) return 'statistics';
+  if (/function|gradient|y=|kx|samband|funktion/i.test(lower)) return 'functions';
+  if (/fraction|decimal|percent|power|root|bråk|decimal|procent|potens/i.test(lower)) return 'number-theory';
+  return 'algebra'; // sensible default
+}
