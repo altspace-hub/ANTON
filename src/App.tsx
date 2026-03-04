@@ -100,8 +100,11 @@ const SchoolSettingsPage = lazy(() => import('./pages/school/SchoolSettingsPage'
 const SchoolProfilePage = lazy(() => import('./pages/school/SchoolProfilePage'));
 const SchoolCodingPage = lazy(() => import('./pages/school/SchoolCodingPage'));
 const SchoolCodingChatPage = lazy(() => import('./pages/school/SchoolCodingChatPage'));
+const SchoolOnboardingPage = lazy(() => import('./pages/school/SchoolOnboardingPage'));
 const TeacherDashboardPage = lazy(() => import('./pages/school/TeacherDashboardPage'));
 const TeacherClassConfigPage = lazy(() => import('./pages/school/TeacherClassConfigPage'));
+const TeacherStudentsPage = lazy(() => import('./pages/school/TeacherStudentsPage'));
+const TeacherClassProgressPage = lazy(() => import('./pages/school/TeacherClassProgressPage'));
 const GuardianDashboardPage = lazy(() => import('./pages/school/GuardianDashboardPage'));
 const AssignmentBuilderPage = lazy(() => import('./pages/school/AssignmentBuilderPage'));
 const SubmissionReviewerPage = lazy(() => import('./pages/school/SubmissionReviewerPage'));
@@ -285,6 +288,7 @@ export default function App() {
         {/* School Mode — own layout (SchoolLayout), no MainLayout wrapper */}
         <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
           <Route path="/school" element={<SchoolDashboardPage />} />
+          <Route path="/school/onboarding" element={<SchoolOnboardingPage />} />
           <Route path="/school/chat" element={<SchoolChatPage />} />
           <Route path="/school/subjects" element={<SubjectsPage />} />
           <Route path="/school/assignments" element={<StudentAssignmentsPage />} />
@@ -295,6 +299,8 @@ export default function App() {
           <Route path="/school/teacher" element={<TeacherDashboardPage />} />
           <Route path="/school/teacher/classes/new" element={<TeacherClassConfigPage />} />
           <Route path="/school/teacher/classes/:classId/settings" element={<TeacherClassConfigPage />} />
+          <Route path="/school/teacher/classes/:classId/progress" element={<TeacherClassProgressPage />} />
+          <Route path="/school/teacher/students" element={<TeacherStudentsPage />} />
           <Route path="/school/teacher/assignments/new" element={<AssignmentBuilderPage />} />
           <Route path="/school/teacher/submissions/:submissionId" element={<SubmissionReviewerPage />} />
           <Route path="/school/guardian" element={<GuardianDashboardPage />} />

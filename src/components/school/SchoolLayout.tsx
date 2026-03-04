@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { isOnboardingComplete } from '@/pages/school/SchoolOnboardingPage';
 import {
   GraduationCap,
   BookOpen,
@@ -98,6 +99,15 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
 
   // Determine school role from user profile (falls back to 'student')
   const schoolRole = ((user as Record<string, unknown> | null)?.school_role as string | undefined) ?? 'student';
+
+  // Redirect new students to onboarding (teachers skip onboarding)
+  useEffect(() => {
+    if (user && schoolRole === 'student' && !isOnboardingComplete(user.id)) {
+      if (location.pathname !== '/school/onboarding') {
+        navigate('/school/onboarding', { replace: true });
+      }
+    }
+  }, [user, schoolRole, location.pathname, navigate]);
 
   const navItems = schoolRole === 'teacher' || schoolRole === 'school_admin'
     ? [...STUDENT_NAV, ...TEACHER_NAV]
