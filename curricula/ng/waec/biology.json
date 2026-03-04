@@ -1,0 +1,10 @@
+{
+  "subject": "Biology",
+  "topics": {
+    "cellBiology": ["Cell structure and functions", "Cell division (mitosis/meiosis)", "Osmosis and diffusion", "Enzymes and their properties"],
+    "plantBiology": ["Photosynthesis and respiration", "Transport in plants (xylem/phloem)", "Reproduction in plants", "Plant hormones"],
+    "animalBiology": ["Nutrition and digestion", "Circulatory system (heart, blood)", "Excretion and osmoregulation", "Nervous and endocrine systems", "Reproduction in animals"],
+    "ecology": ["Ecological concepts (food chains/webs)", "Population ecology", "Pollution and conservation", "Soil science"],
+    "genetics": ["Mendelian genetics", "DNA and RNA", "Heredity and variation", "Evolution (Darwin)"]
+  }
+}

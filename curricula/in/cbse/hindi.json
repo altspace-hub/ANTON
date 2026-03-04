@@ -1,0 +1,10 @@
+{
+  "subject": "Hindi (Core/Elective)",
+  "texts": {
+    "class9": ["Kshitij (Kavita + Gadya)", "Kritika (Supplementary)"],
+    "class10": ["Kshitij Bhag 2", "Kritika Bhag 2"],
+    "class11": ["Antra", "Aroh"],
+    "class12": ["Antra Bhag 2", "Aroh Bhag 2", "Vitan"]
+  },
+  "skills": ["Gadya (Prose) comprehension", "Kavita (Poetry) interpretation", "Nibandh (Essay) writing", "Patra-lekhan (Letter writing)", "Vyakaran (Grammar): sandhi, samas, ras, alankar"]
+}

@@ -1,0 +1,14 @@
+{
+  "subject": "Computer Science / Information Practices",
+  "class11": {
+    "python": ["Data types, operators", "Control structures (if/elif/else, loops)", "Functions", "Lists, tuples, dictionaries", "File handling", "Exception handling"],
+    "cs": ["Computer system basics", "Number systems", "Boolean logic", "Problem solving methodology"],
+    "databases": ["Introduction to DBMS", "Relational model basics", "SQL basics (SELECT, INSERT, UPDATE, DELETE)"]
+  },
+  "class12": {
+    "python": ["OOP (classes, objects, inheritance)", "Recursion", "Sorting algorithms", "CSV/Binary file handling"],
+    "databases": ["Advanced SQL (joins, views, functions)", "Database connectivity (MySQL with Python)"],
+    "networking": ["Network fundamentals", "HTTP, FTP, TCP/IP basics", "Security threats and prevention"],
+    "algorithms": ["Stacks, queues (using lists)", "Searching: linear/binary", "Sorting: bubble/selection/insertion"]
+  }
+}

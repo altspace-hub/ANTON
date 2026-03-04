@@ -1,0 +1,9 @@
+{
+  "subject": "Chemistry",
+  "topics": {
+    "atomic": ["Atomic structure and bonding", "Periodic table trends", "Ionic, covalent, metallic bonds"],
+    "stoichiometry": ["Mole concept", "Chemical equations and calculations", "Concentration and molarity"],
+    "physical": ["States of matter", "Gas laws", "Thermochemistry", "Chemical kinetics and equilibrium", "Electrochemistry"],
+    "organic": ["Hydrocarbons (alkanes, alkenes, alkynes)", "Functional groups (alcohols, carboxylic acids, esters, amines)", "Polymers", "Reactions: addition, substitution, esterification"]
+  }
+}

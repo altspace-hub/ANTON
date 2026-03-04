@@ -1,0 +1,13 @@
+{
+  "subject": "Science (Integrated 6-10) / Physics-Chemistry-Biology (11-12)",
+  "integrated": {
+    "6-8": ["Living and Non-living", "Motion and Measurement", "Light, Shadows, Reflection", "Electricity and Circuits", "Magnets", "Air and Water", "Plant and Animal Kingdom", "Food and Nutrition"],
+    "9-10": ["Matter", "Atoms and Molecules", "Structure of Atom", "Chemical Reactions", "Acids, Bases, Salts", "Motion, Force, Work-Energy", "Sound and Light", "Life Processes", "Heredity and Evolution", "Environment"]
+  },
+  "senior": {
+    "physics": ["Physical World, Units & Measurement", "Kinematics", "Laws of Motion", "Work-Energy-Power", "Gravitation", "Thermodynamics", "Electrostatics", "Current Electricity", "Optics", "Modern Physics"],
+    "chemistry": ["Structure of Atom", "Chemical Bonding", "States of Matter", "Thermodynamics", "Equilibrium", "Redox Reactions", "Organic Chemistry (basics to named reactions)", "Polymers, Biomolecules"],
+    "biology": ["Cell Biology", "Plant Physiology", "Human Physiology", "Genetics & Evolution", "Ecology", "Biotechnology", "Reproduction"]
+  },
+  "neet": "NEET: Biology (90 Qs, 360 marks), Physics (45 Qs), Chemistry (45 Qs). Biology is most critical."
+}

@@ -498,7 +498,9 @@
     "completed": "Completed!"
   },
   "curriculum": {
-    "frBac": "French Baccalauréat"
+    "frBac": "French Baccalauréat",
+    "cbse": "CBSE (India)",
+    "waec": "WAEC/JAMB (Nigeria)"
   },
   "review": {
     "title": "Review Cards",

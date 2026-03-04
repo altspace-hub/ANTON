@@ -1,0 +1,10 @@
+{
+  "subject": "Physics",
+  "topics": {
+    "mechanics": ["Scalar and vector quantities", "Motion (velocity, acceleration)", "Newton's laws", "Work, energy, power", "Simple machines"],
+    "waves": ["Wave properties", "Sound waves", "Light (reflection, refraction, lenses, mirrors)", "Electromagnetic spectrum"],
+    "electricity": ["Static electricity", "Current, voltage, resistance (Ohm's law)", "Circuits (series and parallel)", "Electrical energy and power", "Electromagnetic induction"],
+    "nuclear": ["Structure of atom", "Radioactivity (alpha, beta, gamma)", "Half-life", "Nuclear reactions"],
+    "measurements": ["SI units", "Significant figures", "Errors and accuracy"]
+  }
+}

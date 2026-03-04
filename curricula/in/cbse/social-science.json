@@ -1,0 +1,9 @@
+{
+  "subject": "Social Science (6-10) / History/Geography/Political Science/Economics (11-12)",
+  "class9-10": {
+    "history": ["French Revolution", "Russian Revolution", "Rise of Nationalism", "Age of Industrialisation", "Print Culture", "Making of Global World"],
+    "geography": ["Resources & Development", "Forest & Wildlife", "Water Resources", "Agriculture", "Minerals & Energy", "Manufacturing Industries"],
+    "civics": ["Power Sharing", "Federalism", "Democracy and Diversity", "Political Parties", "Outcomes of Democracy"],
+    "economics": ["Development", "Sectors of Indian Economy", "Money and Credit", "Globalisation", "Consumer Rights"]
+  }
+}

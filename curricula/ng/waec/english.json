@@ -1,0 +1,11 @@
+{
+  "subject": "English Language",
+  "sections": {
+    "comprehension": "Passage reading + questions — 40 marks",
+    "summary": "Précis/summary of 250 words reduced to ~90 words",
+    "lexisAndStructure": ["Word choice", "Sentence types", "Punctuation", "Idioms and proverbs", "Word formation"],
+    "essay": "Formal letter / informal letter / report / narrative / argumentative / expository",
+    "oralEnglish": "Vowel/consonant sounds, stress, tone, intonation"
+  },
+  "waecFormat": "Paper 1: MCQ + Oral English (20+30 marks). Paper 2: Essay + Comprehension + Summary (250+100 marks)."
+}

@@ -229,6 +229,59 @@ You are talking with a child aged 7–12 years old. ALWAYS follow these rules:
     } catch { /* non-fatal */ }
   }
 
+  // ── Layer 6: in-cbse curriculum ────────────────────────────────────────
+  if (config.curriculumId === 'in-cbse') {
+    const cbseSubjectMap: Record<string, string> = {
+      mathematics: 'mathematics',
+      science: 'science',
+      physics: 'science',
+      chemistry: 'science',
+      biology: 'science',
+      english: 'english',
+      svenska: 'english',
+      'social-studies': 'social-science',
+      'computational-thinking': 'computer-science',
+    };
+    const cbseFile = cbseSubjectMap[config.subjectId] ?? config.subjectId;
+    try {
+      const cbsePath = path.join(SERVER_DIR, '..', 'curricula', 'in', 'cbse', `${cbseFile}.json`);
+      if (fs.existsSync(cbsePath)) {
+        const cbseData = JSON.parse(fs.readFileSync(cbsePath, 'utf8'));
+        layers.push(`\n\n---\n\n## Curriculum Reference (CBSE India)\n\n**Subject:** ${cbseData.subject}\n\n${JSON.stringify(cbseData, null, 2)}`);
+      } else {
+        layers.push(`\n\n---\n\n## Curriculum Reference (CBSE India)\n\nThis class follows the Central Board of Secondary Education (CBSE) curriculum. Align content with NCERT textbooks and CBSE board exam patterns for Classes 6-12.`);
+      }
+    } catch {
+      layers.push(`\n\n---\n\n## Curriculum Reference (CBSE India)\n\nThis class follows the CBSE curriculum. Reference NCERT textbooks and align with board exam patterns.`);
+    }
+  }
+
+  // ── Layer 6: ng-waec curriculum ────────────────────────────────────────
+  if (config.curriculumId === 'ng-waec') {
+    const waecSubjectMap: Record<string, string> = {
+      mathematics: 'mathematics',
+      science: 'biology',
+      biology: 'biology',
+      chemistry: 'chemistry',
+      physics: 'physics',
+      english: 'english',
+      svenska: 'english',
+      'social-studies': 'economics',
+    };
+    const waecFile = waecSubjectMap[config.subjectId] ?? config.subjectId;
+    try {
+      const waecPath = path.join(SERVER_DIR, '..', 'curricula', 'ng', 'waec', `${waecFile}.json`);
+      if (fs.existsSync(waecPath)) {
+        const waecData = JSON.parse(fs.readFileSync(waecPath, 'utf8'));
+        layers.push(`\n\n---\n\n## Curriculum Reference (WAEC/JAMB Nigeria)\n\n**Subject:** ${waecData.subject}\n\n${JSON.stringify(waecData, null, 2)}`);
+      } else {
+        layers.push(`\n\n---\n\n## Curriculum Reference (WAEC/JAMB Nigeria)\n\nThis class follows the West African Examinations Council (WAEC) syllabus and prepares for JAMB. Align content with WAEC approved topics and past question patterns.`);
+      }
+    } catch {
+      layers.push(`\n\n---\n\n## Curriculum Reference (WAEC/JAMB Nigeria)\n\nThis class follows the WAEC/JAMB curriculum. Focus on exam-pattern topics and past question practice.`);
+    }
+  }
+
   if (config.additionalContext) {
     layers.push(`\n\n---\n\n## Additional Context\n\n${config.additionalContext}`);
   }

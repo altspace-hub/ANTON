@@ -1,0 +1,9 @@
+{
+  "subject": "Commerce",
+  "topics": {
+    "trade": ["Retail and wholesale trade", "Types of market", "E-commerce basics", "Channels of distribution"],
+    "banking": ["Functions of commercial banks", "Central bank and monetary policy", "Types of accounts", "Bank instruments (cheque, draft)"],
+    "insurance": ["Principles of insurance", "Types of insurance (life, motor, fire, marine)"],
+    "businessManagement": ["Business organisations (sole trader, partnership, company)", "Management functions", "Human resources basics", "Business documents"]
+  }
+}
