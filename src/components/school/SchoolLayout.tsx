@@ -111,13 +111,18 @@ interface SchoolLayoutProps {
   children: React.ReactNode;
 }
 
+const RTL_LANGUAGES = ['ar', 'he', 'fa', 'ur'];
+
 export default function SchoolLayout({ children }: SchoolLayoutProps) {
-  const { t } = useTranslation('school');
+  const { t, i18n } = useTranslation('school');
   const location = useLocation();
   const navigate = useNavigate();
   const { setAppMode } = useSettingsStore();
   const { user } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // RTL support — apply dir attribute to school layout root
+  const isRtl = RTL_LANGUAGES.includes(i18n.language);
 
   // Determine school role from user profile (falls back to 'student')
   const schoolRole = ((user as Record<string, unknown> | null)?.school_role as string | undefined) ?? 'student';
@@ -230,8 +235,8 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Desktop sidebar */}
+    <div className="flex h-screen overflow-hidden bg-background" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* Desktop sidebar — uses logical border (border-e flips for RTL) */}
       <aside className="hidden w-60 shrink-0 border-e border-border lg:block">
         <SidebarContent />
       </aside>

@@ -1,0 +1,38 @@
+{
+  "subjectId": "matematikk",
+  "subjectName": "Matematikk",
+  "curriculumId": "lk20",
+  "coreElements": [
+    "Mathematical reasoning and problem solving",
+    "Modelling and applications",
+    "Abstraction and generalisation",
+    "Mathematical communication",
+    "Mathematical thinking"
+  ],
+  "competencyAims": {
+    "grade1-2": [
+      "Use counting, ordering and basic arithmetic in everyday situations",
+      "Explore and describe shapes and spatial relationships",
+      "Collect and sort data and read simple charts"
+    ],
+    "grade3-4": [
+      "Calculate with whole numbers using informal and formal methods",
+      "Use fractions in practical contexts",
+      "Measure and compare using standard units",
+      "Read and create bar charts and tables"
+    ],
+    "grade5-7": [
+      "Carry out arithmetic with whole numbers, fractions, decimals and negative numbers",
+      "Use variables and simple algebraic expressions",
+      "Explore properties of geometric figures and coordinate systems",
+      "Calculate probability in simple experiments"
+    ],
+    "grade8-10": [
+      "Work with linear equations, inequalities and functions",
+      "Use geometric reasoning including Pythagoras theorem",
+      "Apply statistics: mean, median, mode, standard deviation",
+      "Work with powers, roots and scientific notation",
+      "Understand and use proportionality and percentage in real contexts"
+    ]
+  }
+}

@@ -188,6 +188,7 @@ export default function SchoolOnboardingPage() {
           <div className="space-y-3">
             {[
               { value: 'se', label: t('onboarding.student.step2.sweden', 'Sweden (Lgr22)') },
+              { value: 'no', label: t('onboarding.student.step2.norway', 'Norway (LK20)') },
               { value: 'gb', label: t('onboarding.student.step2.uk', 'United Kingdom') },
               { value: 'other', label: t('onboarding.student.step2.other', 'Other') },
             ].map(({ value, label }) => (

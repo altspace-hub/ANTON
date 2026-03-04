@@ -176,6 +176,7 @@
       "examPracticeLevel": "Provövning",
       "referenceLevel": "Referens",
       "defaultPersona": "Standardlärare",
+      "curriculum": "Läroplan",
       "webSearch": "Tillåt webbsökning",
       "leaderboard": "Visa klasstopplista (topp 10 per XP, anonymiserad)",
       "save": "Spara inställningar",
@@ -291,6 +292,7 @@
         "title": "Var befinner du dig?",
         "selectCountry": "Välj land",
         "sweden": "Sverige (Lgr22)",
+        "norway": "Norge (LK20)",
         "uk": "Storbritannien",
         "other": "Annat"
       },

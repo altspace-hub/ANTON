@@ -11,6 +11,7 @@ interface ClassConfig {
   name: string;
   subjectId: string;
   educationTier: string;
+  curriculumId: string;
   defaultTeacherPersona: string;
   webSearchEnabled: boolean;
   leaderboardEnabled: boolean;
@@ -26,6 +27,7 @@ const DEFAULT_CONFIG: ClassConfig = {
   name: '',
   subjectId: 'mathematics',
   educationTier: 'T2',
+  curriculumId: 'lgr22',
   defaultTeacherPersona: 'alma',
   webSearchEnabled: true,
   leaderboardEnabled: false,
@@ -214,6 +216,23 @@ export default function TeacherClassConfigPage() {
                 <option value="T2">{t('onboarding.student.step1.tierT2')}</option>
                 <option value="T3">{t('onboarding.student.step1.tierT3')}</option>
                 <option value="T4">{t('onboarding.student.step1.tierT4')}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+                {t('teacher.classConfig.curriculum', 'Curriculum')}
+              </label>
+              <select
+                value={config.curriculumId}
+                onChange={(e) => setConfig((p) => ({ ...p, curriculumId: e.target.value }))}
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              >
+                <option value="lgr22">Sweden — Lgr22 (Grundskolan)</option>
+                <option value="lk20">Norway — LK20 (Fagfornyelsen)</option>
+                <option value="uk-ks3">UK — KS3 (Years 7–9)</option>
+                <option value="uk-ks4">UK — KS4 / GCSE (Years 10–11)</option>
+                <option value="other">Other / International</option>
               </select>
             </div>
           </div>

@@ -1,0 +1,26 @@
+{
+  "subjectId": "samfunnsfag",
+  "subjectName": "Samfunnsfag",
+  "curriculumId": "lk20",
+  "coreElements": [
+    "Social studies thinking",
+    "Exploring and problem solving",
+    "Civic engagement",
+    "Diverse communities"
+  ],
+  "competencyAims": {
+    "grade5-7": [
+      "Describe Norwegian geography: regions, settlement, industry, climate",
+      "Explain Norwegian political institutions: Stortinget, Regjering, Kommuner",
+      "Explore key events in Norwegian history: Viking Age, union with Denmark and Sweden, 1814, WWII",
+      "Discuss human rights and global inequality"
+    ],
+    "grade8-10": [
+      "Analyse causes and consequences of historical events (Industrial Revolution, world wars, decolonisation)",
+      "Explain how Norwegian democracy works and compare to other systems",
+      "Discuss economic systems: market economy, welfare state, globalisation",
+      "Explore identity, diversity and discrimination in Norwegian society",
+      "Analyse current events and global challenges (climate, conflict, migration)"
+    ]
+  }
+}

@@ -134,6 +134,36 @@ export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<str
     }
   }
 
+  if (config.curriculumId === 'lk20') {
+    // Norwegian LK20 — map subject to Norwegian curriculum file
+    const subjectFileMap: Record<string, string> = {
+      mathematics: 'matematikk',
+      'advanced-mathematics': 'matematikk',
+      science: 'naturfag',
+      biology: 'naturfag',
+      chemistry: 'naturfag',
+      physics: 'naturfag',
+      svenska: 'norsk',
+      english: 'norsk',
+      'social-studies': 'samfunnsfag',
+    };
+    const noSubject = subjectFileMap[config.subjectId] ?? config.subjectId;
+    const noPath = path.join(SERVER_DIR, '..', 'curricula', 'no', 'grunnskole', `${noSubject}.json`);
+    try {
+      const noData = await fs.readJson(noPath);
+      const tier = config.educationTier;
+      const gradeKey = tier === 'T1' ? 'grade1-2' : tier === 'T2' ? 'grade5-7' : 'grade8-10';
+      const aims = noData.competencyAims?.[gradeKey] as string[] | undefined;
+      if (aims) {
+        layers.push(`\n\n---\n\n## Curriculum Reference (LK20 — ${noData.subjectName})\n\n**Kompetansemål (${gradeKey}):**\n${aims.map((a: string) => `- ${a}`).join('\n')}${noData.note ? `\n\n**Note:** ${noData.note}` : ''}`);
+      } else {
+        layers.push(`\n\n---\n\n## Curriculum Reference (LK20 Norway)\n\nThis class follows the Norwegian national curriculum (Læreplanverket, LK20). Core elements: ${(noData.coreElements as string[] | undefined)?.join(', ') ?? 'see curriculum documentation'}.`);
+      }
+    } catch {
+      layers.push(`\n\n---\n\n## Curriculum Reference (LK20 Norway)\n\nThis class follows the Norwegian national curriculum (Læreplanverket, LK20 — Fagfornyelsen). Adapt content to Norwegian competency aims, emphasise deep learning, critical thinking, and interdisciplinary topics.`);
+    }
+  }
+
   if (config.additionalContext) {
     layers.push(`\n\n---\n\n## Additional Context\n\n${config.additionalContext}`);
   }

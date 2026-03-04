@@ -1,0 +1,39 @@
+{
+  "subjectId": "norsk",
+  "subjectName": "Norsk",
+  "curriculumId": "lk20",
+  "coreElements": [
+    "Oral communication",
+    "Reading",
+    "Writing",
+    "Language, literature and culture",
+    "Text in context"
+  ],
+  "competencyAims": {
+    "grade1-2": [
+      "Decode and read simple texts",
+      "Write letters and simple sentences",
+      "Participate in conversations and oral presentations"
+    ],
+    "grade3-4": [
+      "Read and understand different text types with increasing complexity",
+      "Write structured texts with beginning, middle and end",
+      "Explore Norwegian grammar: parts of speech, sentence structure",
+      "Listen to and discuss literature"
+    ],
+    "grade5-7": [
+      "Analyse and interpret literary texts, including themes and characters",
+      "Write argumentative, narrative and informational texts",
+      "Explore Norwegian language history (bokmål and nynorsk)",
+      "Discuss media texts and digital communication critically"
+    ],
+    "grade8-10": [
+      "Analyse texts from different periods and genres (including Ibsen, Bjørnson, Hamsun)",
+      "Write extended analytical and argumentative essays",
+      "Explore the development of Norwegian from Old Norse to modern Norwegian",
+      "Critically evaluate sources and persuasive techniques",
+      "Use both bokmål and nynorsk in writing"
+    ]
+  },
+  "note": "Norwegian students must write in both bokmål and nynorsk (Sidemål). This should be reflected in writing assignments."
+}

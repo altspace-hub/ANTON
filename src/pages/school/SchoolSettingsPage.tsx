@@ -15,6 +15,7 @@ const TEACHING_LANGUAGES = [
 const UI_LANGUAGES = [
   { code: 'sv', label: 'Svenska' },
   { code: 'en', label: 'English' },
+  { code: 'ar', label: 'العربية (RTL)' },
 ];
 
 export default function SchoolSettingsPage() {

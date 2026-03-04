@@ -1,0 +1,38 @@
+{
+  "subjectId": "naturfag",
+  "subjectName": "Naturfag",
+  "curriculumId": "lk20",
+  "coreElements": [
+    "Scientific investigation and hypotheses",
+    "Living things and the environment",
+    "Earth and the universe",
+    "Matter and energy",
+    "Technology and design"
+  ],
+  "competencyAims": {
+    "grade1-2": [
+      "Observe and describe living things and their environments",
+      "Explore materials and properties through hands-on investigation",
+      "Describe seasonal changes and weather"
+    ],
+    "grade3-4": [
+      "Investigate living things, cells and food webs",
+      "Describe the solar system and Earth's place in space",
+      "Explore forces and simple machines",
+      "Design and build simple technical solutions"
+    ],
+    "grade5-7": [
+      "Explain photosynthesis, cell division and reproduction",
+      "Describe ecosystems, biodiversity and human impact",
+      "Investigate physical and chemical properties of substances",
+      "Explain Earth's structure, plate tectonics and natural phenomena"
+    ],
+    "grade8-10": [
+      "Work with genetics, evolution and classification of organisms",
+      "Analyse human body systems and health",
+      "Explain chemical reactions, atoms and the periodic table",
+      "Work with energy, electricity and electromagnetic phenomena",
+      "Discuss technology, environment and sustainable development"
+    ]
+  }
+}

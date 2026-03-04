@@ -176,6 +176,7 @@
       "examPracticeLevel": "Exam practice",
       "referenceLevel": "Reference",
       "defaultPersona": "Default teacher",
+      "curriculum": "Curriculum",
       "webSearch": "Allow web search",
       "leaderboard": "Show class leaderboard (top 10 by XP, anonymised)",
       "save": "Save Settings",
@@ -291,6 +292,7 @@
         "title": "Where are you?",
         "selectCountry": "Select your country",
         "sweden": "Sweden (Lgr22)",
+        "norway": "Norway (LK20)",
         "uk": "United Kingdom",
         "other": "Other"
       },
