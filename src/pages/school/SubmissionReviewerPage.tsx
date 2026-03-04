@@ -106,7 +106,7 @@ export default function SubmissionReviewerPage() {
 
   if (isLoading) {
     return (
-      <SchoolLayout schoolRole="teacher">
+      <SchoolLayout>
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-adv-teal" />
         </div>
@@ -116,14 +116,14 @@ export default function SubmissionReviewerPage() {
 
   if (!submission) {
     return (
-      <SchoolLayout schoolRole="teacher">
+      <SchoolLayout>
         <p className="text-sm text-adv-gray">Submission not found.</p>
       </SchoolLayout>
     );
   }
 
   return (
-    <SchoolLayout schoolRole="teacher">
+    <SchoolLayout>
       <div className="mx-auto max-w-3xl space-y-6">
         {/* Header */}
         <div className="flex items-start gap-3">

@@ -51,7 +51,7 @@ export default function TeacherDashboardPage() {
   }
 
   return (
-    <SchoolLayout schoolRole="teacher">
+    <SchoolLayout>
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-adv-white">{t('teacher.dashboard.title')}</h1>
@@ -110,7 +110,7 @@ export default function TeacherDashboardPage() {
                   {cls.pendingSubmissions > 0 && (
                     <span className="flex items-center gap-1.5 text-adv-gold">
                       <ClipboardList className="h-3.5 w-3.5" />
-                      {cls.pendingSubmissions} {t('school.nav.assignments')} pending
+                      {cls.pendingSubmissions} {t('nav.assignments')} pending
                     </span>
                   )}
                 </div>

@@ -75,7 +75,7 @@ export default function GuardianDashboardPage() {
   }
 
   return (
-    <SchoolLayout schoolRole="guardian">
+    <SchoolLayout>
       <div className="mx-auto max-w-3xl space-y-6">
         {/* Link form */}
         {!isLoading && children.length === 0 && !showLinkForm && (

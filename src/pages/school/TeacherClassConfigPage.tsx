@@ -95,13 +95,39 @@ export default function TeacherClassConfigPage() {
     setIsGeneratingPlan(true);
     setError(null);
     try {
-      const form = new FormData();
-      form.append('file', curriculumFile);
-      form.append('classId', classId);
-      const res = await fetch('/api/school/curricula/upload', { method: 'POST', headers: getAuthHeader(), body: form });
+      // Read file text client-side
+      const curriculumText = await curriculumFile.text();
+      const res = await fetch('/api/school/curricula/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ classId, curriculumText }),
+      });
       if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      setStudyPlan(data.summary ?? 'Study plan generated successfully');
+      if (!res.body) throw new Error('No response stream');
+
+      // Collect SSE stream into full text
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(payload);
+            if (parsed.text) fullText += parsed.text;
+          } catch { /* ignore */ }
+        }
+      }
+      setStudyPlan(fullText || 'Study plan generated successfully');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -118,7 +144,7 @@ export default function TeacherClassConfigPage() {
 
   if (isLoading) {
     return (
-      <SchoolLayout schoolRole="teacher">
+      <SchoolLayout>
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-adv-teal" />
         </div>
@@ -127,7 +153,7 @@ export default function TeacherClassConfigPage() {
   }
 
   return (
-    <SchoolLayout schoolRole="teacher">
+    <SchoolLayout>
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-xl font-bold text-adv-white">
           {isNew ? t('teacher.classConfig.title') : config.name || t('teacher.classConfig.title')}

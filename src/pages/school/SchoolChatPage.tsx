@@ -74,7 +74,7 @@ export default function SchoolChatPage() {
 
   async function loadClassContext(id: string) {
     try {
-      const res = await fetch(`/api/school/classes/${id}`);
+      const res = await fetch(`/api/school/classes/${id}`, { headers: getAuthHeader() });
       if (res.ok) {
         const data = await res.json();
         setClassContext(data);

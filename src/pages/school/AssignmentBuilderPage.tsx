@@ -141,7 +141,7 @@ export default function AssignmentBuilderPage() {
   const totalMarks = draft.questions.reduce((sum, q) => sum + q.marks, 0);
 
   return (
-    <SchoolLayout schoolRole="teacher">
+    <SchoolLayout>
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-adv-white">{t('teacher.assignment.title')}</h1>

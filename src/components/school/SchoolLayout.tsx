@@ -29,25 +29,25 @@ interface SchoolNavItem {
 const STUDENT_NAV: SchoolNavItem[] = [
   {
     id: 'dashboard',
-    labelKey: 'school.nav.dashboard',
+    labelKey: 'nav.dashboard',
     icon: <LayoutDashboard className="h-4 w-4" />,
     path: '/school',
   },
   {
     id: 'subjects',
-    labelKey: 'school.nav.subjects',
+    labelKey: 'nav.subjects',
     icon: <BookOpen className="h-4 w-4" />,
     path: '/school/subjects',
   },
   {
     id: 'chat',
-    labelKey: 'school.nav.study',
+    labelKey: 'nav.study',
     icon: <MessageSquare className="h-4 w-4" />,
     path: '/school/chat',
   },
   {
     id: 'assignments',
-    labelKey: 'school.nav.assignments',
+    labelKey: 'nav.assignments',
     icon: <ClipboardList className="h-4 w-4" />,
     path: '/school/assignments',
   },
@@ -56,21 +56,21 @@ const STUDENT_NAV: SchoolNavItem[] = [
 const TEACHER_NAV: SchoolNavItem[] = [
   {
     id: 'teacher-dashboard',
-    labelKey: 'school.nav.myClasses',
+    labelKey: 'nav.myClasses',
     icon: <LayoutDashboard className="h-4 w-4" />,
     path: '/school/teacher',
     roles: ['teacher', 'school_admin'],
   },
   {
     id: 'create-assignment',
-    labelKey: 'school.nav.createAssignment',
+    labelKey: 'nav.createAssignment',
     icon: <ClipboardList className="h-4 w-4" />,
     path: '/school/teacher/assignments/new',
     roles: ['teacher', 'school_admin'],
   },
   {
     id: 'students',
-    labelKey: 'school.nav.students',
+    labelKey: 'nav.students',
     icon: <Users className="h-4 w-4" />,
     path: '/school/teacher/students',
     roles: ['teacher', 'school_admin'],
@@ -110,10 +110,10 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-adv-white truncate">
-            {t('school.nav.schoolMode', 'School Mode')}
+            {t('nav.schoolMode', 'School Mode')}
           </p>
           <p className="text-xs text-adv-gray-med capitalize">
-            {t(`school.nav.role.${schoolRole}`, schoolRole)}
+            {t(`nav.role.${schoolRole}`, schoolRole)}
           </p>
         </div>
         {/* Mobile close */}
@@ -154,7 +154,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
         {(schoolRole === 'teacher' || schoolRole === 'school_admin') && (
           <div className="mt-4 mb-2 px-3">
             <p className="text-xs font-medium uppercase tracking-widest text-adv-gray-med">
-              {t('school.nav.teacherTools', 'Teacher Tools')}
+              {t('nav.teacherTools', 'Teacher Tools')}
             </p>
           </div>
         )}
@@ -167,7 +167,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
           className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
         >
           <Settings className="h-4 w-4" />
-          {t('school.nav.schoolSettings', 'School Settings')}
+          {t('nav.schoolSettings', 'School Settings')}
         </Link>
 
         <Link
@@ -175,7 +175,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
           className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
         >
           <User className="h-4 w-4" />
-          {t('school.nav.myProfile', 'My Profile')}
+          {t('nav.myProfile', 'My Profile')}
         </Link>
 
         <button
@@ -184,7 +184,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
           className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
-          {t('school.nav.backToWork', 'Back to Work Mode')}
+          {t('nav.backToWork', 'Back to Work Mode')}
         </button>
       </div>
     </div>

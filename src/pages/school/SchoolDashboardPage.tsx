@@ -87,7 +87,7 @@ export default function SchoolDashboardPage() {
             {stats.assignmentsDue > 0 && (
               <div className="flex items-center gap-1.5 text-adv-gold">
                 <Star className="h-3.5 w-3.5" />
-                <span>{stats.assignmentsDue} {t('school.nav.assignments')}</span>
+                <span>{stats.assignmentsDue} {t('nav.assignments')}</span>
               </div>
             )}
           </div>
