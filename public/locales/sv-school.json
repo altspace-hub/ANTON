@@ -61,7 +61,15 @@
     "lifeSkills": "Livskunskap",
     "life-skills": "Livskunskap",
     "studySkills": "Studieteknik",
-    "study-skills": "Studieteknik"
+    "study-skills": "Studieteknik",
+    "advancedMathematics": "Avancerad matematik",
+    "advanced-mathematics": "Avancerad matematik",
+    "physics": "Fysik",
+    "chemistry": "Kemi",
+    "biology": "Biologi",
+    "swedishAdvanced": "Svenska (avancerad)",
+    "swedish-advanced": "Svenska (avancerad)",
+    "philosophy": "Filosofi"
   },
   "chat": {
     "greeting": "Hej! Jag är {{persona}}. Vad jobbar du med idag?",

@@ -61,7 +61,15 @@
     "lifeSkills": "Life Skills",
     "life-skills": "Life Skills",
     "studySkills": "Study Skills",
-    "study-skills": "Study Skills"
+    "study-skills": "Study Skills",
+    "advancedMathematics": "Advanced Mathematics",
+    "advanced-mathematics": "Advanced Mathematics",
+    "physics": "Physics",
+    "chemistry": "Chemistry",
+    "biology": "Biology",
+    "swedishAdvanced": "Swedish Advanced",
+    "swedish-advanced": "Swedish Advanced",
+    "philosophy": "Philosophy"
   },
   "chat": {
     "greeting": "Hi! I'm {{persona}}. What are you working on today?",

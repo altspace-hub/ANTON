@@ -62,6 +62,13 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
   technology: 'leo',
   'life-skills': 'mia',
   'study-skills': 'mia',
+  // T3 Gymnasiet subjects
+  'advanced-mathematics': 'alma',
+  physics: 'viktor',
+  chemistry: 'viktor',
+  biology: 'viktor',
+  'swedish-advanced': 'saga',
+  philosophy: 'erik',
 };
 
 function buildPromptConfig(

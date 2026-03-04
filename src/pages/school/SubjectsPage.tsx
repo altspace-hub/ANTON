@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain } from 'lucide-react';
+import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain, Atom, Dna, ScrollText, Lightbulb } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -107,6 +107,61 @@ const CATALOGUE = [
     tier: 'T2',
     modules: ['Note-Taking', 'Time Management', 'Exam Strategy', 'Memory Techniques'],
   },
+  // T3 Gymnasiet subjects
+  {
+    id: 'advanced-mathematics',
+    nameKey: 'subject.advancedMathematics',
+    name: 'Advanced Mathematics',
+    persona: 'Alma',
+    icon: <BookOpen className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Calculus', 'Linear Algebra', 'Complex Numbers', 'Advanced Probability'],
+  },
+  {
+    id: 'physics',
+    nameKey: 'subject.physics',
+    name: 'Physics (Fysik 1–2)',
+    persona: 'Viktor',
+    icon: <Atom className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Mechanics', 'Electricity & Magnetism', 'Waves & Optics', 'Quantum Physics'],
+  },
+  {
+    id: 'chemistry',
+    nameKey: 'subject.chemistry',
+    name: 'Chemistry (Kemi 1–2)',
+    persona: 'Viktor',
+    icon: <FlaskConical className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Organic Chemistry', 'Reactions & Equilibrium', 'Lab Methodology'],
+  },
+  {
+    id: 'biology',
+    nameKey: 'subject.biology',
+    name: 'Biology (Biologi 1–2)',
+    persona: 'Viktor',
+    icon: <Dna className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Genetics', 'Ecology', 'Human Biology', 'Evolution'],
+  },
+  {
+    id: 'swedish-advanced',
+    nameKey: 'subject.swedishAdvanced',
+    name: 'Swedish Advanced (Svenska 2–3)',
+    persona: 'Saga',
+    icon: <ScrollText className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Literary Analysis', 'Essay Writing', 'Rhetoric'],
+  },
+  {
+    id: 'philosophy',
+    nameKey: 'subject.philosophy',
+    name: 'Philosophy (Filosofi 1–2)',
+    persona: 'Erik',
+    icon: <Lightbulb className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Epistemology', 'Ethics', 'Logic', 'Political Philosophy'],
+  },
 ];
 
 export default function SubjectsPage() {
@@ -116,6 +171,7 @@ export default function SubjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [joinForm, setJoinForm] = useState<JoinForm>({ visible: false, code: '', loading: false, error: null });
   const [activeTab, setActiveTab] = useState<'mine' | 'browse'>('browse');
+  const [browseTier, setBrowseTier] = useState<'T2' | 'T3'>('T2');
 
   useEffect(() => {
     loadClasses();
@@ -258,10 +314,28 @@ export default function SubjectsPage() {
           </button>
         </div>
 
-        {/* Browse tab — static catalogue */}
+        {/* Browse tab — static catalogue with tier filter */}
         {activeTab === 'browse' && (
           <div className="space-y-3">
-            {CATALOGUE.map((subject) => (
+            {/* Tier sub-tabs */}
+            <div className="flex gap-1 rounded-lg border border-border bg-adv-dark p-1">
+              <button
+                type="button"
+                onClick={() => setBrowseTier('T2')}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T2' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+              >
+                {t('onboarding.student.step1.tierT2', 'Years 7–9')} (Grundskola)
+              </button>
+              <button
+                type="button"
+                onClick={() => setBrowseTier('T3')}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T3' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+              >
+                {t('onboarding.student.step1.tierT3', 'Years 10–12')} (Gymnasiet)
+              </button>
+            </div>
+
+            {CATALOGUE.filter((s) => s.tier === browseTier).map((subject) => (
               <div key={subject.id} className="rounded-xl border border-border bg-adv-card p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-adv-teal/10">
@@ -271,9 +345,6 @@ export default function SubjectsPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-adv-white">
                         {t(subject.nameKey, subject.name)}
-                      </span>
-                      <span className="rounded-full border border-adv-teal/20 px-1.5 py-0.5 text-xs text-adv-gray-med">
-                        {tierLabel(subject.tier)}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-adv-gray-med">
