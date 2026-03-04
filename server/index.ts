@@ -88,6 +88,8 @@ import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
 import { ensureWorkspacesRoot } from './services/workspace.js';
+import { createServer as createHttpServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -358,9 +360,48 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
-app.listen(PORT, () => {
+// ── HTTP server + Socket.IO (Study Rooms) ─────────────────────────────────
+const httpServer = createHttpServer(app);
+
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+  path: '/school-ws',
+});
+
+// Study room namespace
+const studyRooms = io.of('/study-rooms');
+studyRooms.on('connection', (socket) => {
+  const { roomId, displayName } = socket.handshake.query as { roomId?: string; displayName?: string };
+  if (!roomId) { socket.disconnect(); return; }
+
+  void socket.join(roomId);
+  studyRooms.to(roomId).emit('user:joined', { socketId: socket.id, displayName: displayName ?? 'Anonymous', timestamp: Date.now() });
+
+  socket.on('message', (payload: { text: string; displayName: string }) => {
+    studyRooms.to(roomId).emit('message', {
+      socketId: socket.id,
+      displayName: payload.displayName,
+      text: payload.text,
+      timestamp: Date.now(),
+    });
+  });
+
+  socket.on('focus:update', (payload: { subject: string; topic: string; displayName: string }) => {
+    studyRooms.to(roomId).emit('focus:update', { socketId: socket.id, ...payload, timestamp: Date.now() });
+  });
+
+  socket.on('disconnect', () => {
+    studyRooms.to(roomId).emit('user:left', { socketId: socket.id, displayName, timestamp: Date.now() });
+  });
+});
+
+httpServer.listen(PORT, () => {
   console.log(`ANTON by openEXPERT — server running on http://localhost:${PORT}`);
   console.log(`Claude API key configured: ${!!process.env.ANTHROPIC_API_KEY}`);
+  console.log(`Study Rooms WebSocket: ws://localhost:${PORT}/school-ws (namespace: /study-rooms)`);
 
   // Start background dataset cleanup (runs every hour)
   startDatasetCleanup(db);

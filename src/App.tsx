@@ -117,6 +117,8 @@ const SocraticExamPage = lazy(() => import('./pages/school/SocraticExamPage'));
 const ReviewPage = lazy(() => import('./pages/school/ReviewPage'));
 const ParentDashboardPage = lazy(() => import('./pages/school/ParentDashboardPage'));
 const UCASStatementPage = lazy(() => import('./pages/school/UCASStatementPage'));
+const StudyRoomsPage = lazy(() => import('./pages/school/StudyRoomsPage'));
+const StudyRoomPage = lazy(() => import('./pages/school/StudyRoomPage'));
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -323,6 +325,8 @@ export default function App() {
           <Route path="/school/review" element={<ReviewPage />} />
           <Route path="/school/parent" element={<ParentDashboardPage />} />
           <Route path="/school/ucas" element={<UCASStatementPage />} />
+          <Route path="/school/study-rooms" element={<StudyRoomsPage />} />
+          <Route path="/school/study-room/:roomId" element={<StudyRoomPage />} />
         </Route>
       </Routes>
     </Suspense>

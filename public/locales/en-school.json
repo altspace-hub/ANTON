@@ -30,7 +30,8 @@
       "teacher": "Teacher",
       "school_admin": "School Admin"
     },
-    "ucas": "UCAS Statement"
+    "ucas": "UCAS Statement",
+    "studyRooms": "Study Rooms"
   },
   "dashboard": {
     "welcome": "Welcome back, {{name}}!",
@@ -569,5 +570,28 @@
   "season": {
     "daysLeft": "{n} days left",
     "multiplier": "{n}× XP"
+  },
+  "studyRooms": {
+    "title": "Study Rooms",
+    "subtitle": "Study together in real time",
+    "create": "Create room",
+    "newRoom": "New study room",
+    "roomNamePlaceholder": "e.g. Maths exam prep — Year 11",
+    "codePlaceholder": "Enter 6-letter code...",
+    "join": "Join",
+    "createBtn": "Create",
+    "cancel": "Cancel",
+    "noRooms": "No active study rooms. Create one to get started!",
+    "invalidCode": "Room not found or expired.",
+    "joinError": "Could not join room."
+  },
+  "studyRoom": {
+    "connected": "Live",
+    "disconnected": "Disconnected",
+    "participants": "in room",
+    "leave": "Leave",
+    "empty": "No messages yet. Say hello!",
+    "placeholder": "Type a message...",
+    "connectingPlaceholder": "Connecting..."
   }
 }

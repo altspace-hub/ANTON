@@ -89,6 +89,12 @@ const STUDENT_NAV: SchoolNavItem[] = [
     icon: <BookMarked className="h-4 w-4" />,
     path: '/school/ucas',
   },
+  {
+    id: 'study-rooms',
+    labelKey: 'nav.studyRooms',
+    icon: <Users className="h-4 w-4" />,
+    path: '/school/study-rooms',
+  },
 ];
 
 const GUARDIAN_NAV: SchoolNavItem[] = [

@@ -94,6 +94,8 @@
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.0",
     "rss-parser": "^3.13.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "uuid": "^13.0.0",
     "zustand": "^5.0.3"
   },

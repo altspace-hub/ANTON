@@ -555,6 +555,8 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`CREATE TABLE IF NOT EXISTS review_cards (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, subject_id TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, source TEXT, due_date TEXT, interval_days INTEGER DEFAULT 1, ease_factor REAL DEFAULT 2.5, repetitions INTEGER DEFAULT 0, created_at DATETIME)`); } catch {}
   // Session H: student_avatars (cosmetic system)
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_avatars (student_user_id TEXT PRIMARY KEY, avatar_char TEXT DEFAULT '🦊', color_scheme TEXT DEFAULT 'teal', frame TEXT DEFAULT 'none', title TEXT DEFAULT '', unlocked_items TEXT DEFAULT '[]', updated_at DATETIME)`); } catch {}
+  // Session M: study_rooms
+  try { db.exec(`CREATE TABLE IF NOT EXISTS study_rooms (id TEXT PRIMARY KEY, name TEXT NOT NULL, subject_id TEXT, host_user_id TEXT NOT NULL, max_participants INTEGER DEFAULT 8, is_public INTEGER DEFAULT 1, join_code TEXT UNIQUE, created_at DATETIME, expires_at DATETIME)`); } catch {}
   // Session I: weekly XP snapshots + seasonal events
   try { db.exec(`CREATE TABLE IF NOT EXISTS weekly_xp_snapshots (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, class_id TEXT, week_start TEXT NOT NULL, week_xp INTEGER DEFAULT 0, updated_at DATETIME, UNIQUE(student_user_id, week_start))`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS xp_seasons (id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT DEFAULT '⭐', start_date TEXT NOT NULL, end_date TEXT NOT NULL, xp_multiplier REAL DEFAULT 1.0, description TEXT, active INTEGER DEFAULT 1)`); } catch {}
@@ -3001,6 +3003,102 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
     } catch (err) {
       console.error('[school/import-bundle]', err);
       return res.status(500).json({ error: 'Import failed' });
+    }
+  });
+
+  // ── GET /api/school/study-rooms ──────────────────────────────────────────
+  router.get('/school/study-rooms', (req, res) => {
+    try {
+      const { subject_id, limit = '20' } = req.query as Record<string, string>;
+      const now = new Date().toISOString();
+      const rooms = db.prepare(
+        `SELECT r.id, r.name, r.subject_id, r.max_participants, r.join_code, r.created_at,
+                COALESCE(u.display_name, u.username) as host_name
+         FROM study_rooms r
+         JOIN users u ON u.id = r.host_user_id
+         WHERE r.is_public = 1 AND (r.expires_at IS NULL OR r.expires_at > ?)
+         ${subject_id ? 'AND r.subject_id = ?' : ''}
+         ORDER BY r.created_at DESC
+         LIMIT ?`
+      ).all(...[now, ...(subject_id ? [subject_id] : []), parseInt(limit, 10) || 20]) as Record<string, unknown>[];
+      return res.json({ rooms });
+    } catch (err) {
+      console.error('[school/study-rooms GET]', err);
+      return res.status(500).json({ error: 'Internal error' });
+    }
+  });
+
+  // ── POST /api/school/study-rooms ─────────────────────────────────────────
+  router.post('/school/study-rooms', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+      const { name, subjectId, maxParticipants = 8, isPublic = true, expiresInHours = 4 } = req.body as Record<string, unknown>;
+      if (!name) return res.status(400).json({ error: 'name required' });
+
+      const id = crypto.randomUUID();
+      const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const now = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + (Number(expiresInHours) * 3_600_000)).toISOString();
+
+      db.prepare(
+        `INSERT INTO study_rooms (id, name, subject_id, host_user_id, max_participants, is_public, join_code, created_at, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(id, name, subjectId ?? null, userId, Number(maxParticipants), isPublic ? 1 : 0, joinCode, now, expiresAt);
+
+      return res.status(201).json({ id, joinCode, expiresAt });
+    } catch (err) {
+      console.error('[school/study-rooms POST]', err);
+      return res.status(500).json({ error: 'Internal error' });
+    }
+  });
+
+  // ── GET /api/school/study-rooms/:id ──────────────────────────────────────
+  router.get('/school/study-rooms/:id', (req, res) => {
+    try {
+      const room = db.prepare(
+        `SELECT r.*, COALESCE(u.display_name, u.username) as host_name
+         FROM study_rooms r JOIN users u ON u.id = r.host_user_id
+         WHERE r.id = ?`
+      ).get(req.params.id) as Record<string, unknown> | undefined;
+      if (!room) return res.status(404).json({ error: 'Room not found' });
+      return res.json(room);
+    } catch (err) {
+      console.error('[school/study-rooms GET/:id]', err);
+      return res.status(500).json({ error: 'Internal error' });
+    }
+  });
+
+  // ── POST /api/school/study-rooms/join ────────────────────────────────────
+  router.post('/school/study-rooms/join', (req, res) => {
+    try {
+      const { joinCode } = req.body as { joinCode?: string };
+      if (!joinCode) return res.status(400).json({ error: 'joinCode required' });
+      const now = new Date().toISOString();
+      const room = db.prepare(
+        `SELECT id, name, subject_id FROM study_rooms WHERE join_code = ? AND (expires_at IS NULL OR expires_at > ?)`
+      ).get(joinCode.toUpperCase(), now) as { id: string; name: string; subject_id: string } | undefined;
+      if (!room) return res.status(404).json({ error: 'Room not found or expired' });
+      return res.json({ roomId: room.id, name: room.name, subjectId: room.subject_id });
+    } catch (err) {
+      console.error('[school/study-rooms/join]', err);
+      return res.status(500).json({ error: 'Internal error' });
+    }
+  });
+
+  // ── DELETE /api/school/study-rooms/:id ───────────────────────────────────
+  router.delete('/school/study-rooms/:id', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+      const room = db.prepare(`SELECT host_user_id FROM study_rooms WHERE id = ?`).get(req.params.id) as { host_user_id: string } | undefined;
+      if (!room) return res.status(404).json({ error: 'Not found' });
+      if (room.host_user_id !== userId) return res.status(403).json({ error: 'Only the host can delete this room' });
+      db.prepare(`DELETE FROM study_rooms WHERE id = ?`).run(req.params.id);
+      return res.json({ ok: true });
+    } catch (err) {
+      console.error('[school/study-rooms DELETE]', err);
+      return res.status(500).json({ error: 'Internal error' });
     }
   });
 
