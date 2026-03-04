@@ -42,7 +42,9 @@
     "progressLabel": "{{pct}}% complete",
     "noClasses": "You're not enrolled in any classes yet.",
     "enrollPrompt": "Ask your teacher for a class code to get started.",
-    "loading": "Loading your dashboard..."
+    "loading": "Loading your dashboard...",
+    "streakShields": "Streak shields",
+    "shieldUsed": "Shield used — streak preserved!"
   },
   "subject": {
     "mathematics": "Mathematics",
@@ -98,6 +100,9 @@
     "uploadsAllowed": "You can upload files or photos of your work",
     "laxhjalpMode": "Stuck? Let's work through it",
     "endSession": "End session",
+    "attachFile": "Attach a document",
+    "fileAttached": "Document attached: {{filename}}",
+    "removeAttachment": "Remove attachment",
     "actions": {
       "practice": "Practice problems",
       "practiceMsg": "Give me 3 practice problems on what we've been discussing. Don't show the answers yet.",
@@ -294,6 +299,7 @@
         "sweden": "Sweden (Lgr22)",
         "norway": "Norway (LK20)",
         "uk": "United Kingdom",
+        "france": "France (Baccalauréat)",
         "other": "Other"
       },
       "step3": {
@@ -346,7 +352,12 @@
     "scratch": "Scratch",
     "codePlaceholder": "Paste your code here...",
     "goalPlaceholder": "What do you want to build?",
-    "errorPlaceholder": "Paste your code and the error message..."
+    "errorPlaceholder": "Paste your code and the error message...",
+    "sandbox": "Sandbox",
+    "run": "Run",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "clickRun": "Click Run to preview"
   },
   "persona": {
     "alma": {

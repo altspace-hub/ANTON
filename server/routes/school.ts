@@ -45,6 +45,10 @@ import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
 import { buildSchoolPrompt, inferMathsModule, inferSubjectModule, type SchoolPromptConfig } from '../services/school-prompt-builder.js';
 import { safeError } from '../lib/error-response.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs-extra';
+import { extractTextFromFile } from '../services/text-extractor.js';
 
 // ── Tier C — Ollama local model streaming ──────────────────────────────────
 
@@ -237,6 +241,7 @@ const ACHIEVEMENT_DEFS = [
   { id: 's4_reached',       label: 'Independent Learner', description: 'Advance to learning stage S4' },
   { id: 'radar_explorer',   label: 'Radar Explorer',      description: 'Visit My Radar for the first time' },
   { id: 'coding_first',     label: 'First Code',          description: 'Complete your first coding session' },
+  { id: 'shield_collector', label: 'Shield Collector',    description: 'Replenish streak shields to 3' },
 ] as const;
 
 // ── Growth model helpers ────────────────────────────────────────────────────
@@ -246,11 +251,12 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
 
   const profile = db.prepare(
-    `SELECT session_count, total_xp, xp_level, current_streak, longest_streak, last_active_date
+    `SELECT session_count, total_xp, xp_level, current_streak, longest_streak, last_active_date, streak_shields
      FROM student_growth_profiles WHERE student_user_id = ?`
   ).get(userId) as {
     session_count: number; total_xp: number; xp_level: number;
     current_streak: number; longest_streak: number; last_active_date: string | null;
+    streak_shields: number;
   } | undefined;
 
   const now = new Date().toISOString();
@@ -277,7 +283,7 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
   const count = (profile.session_count ?? 0) + 1;
   const stage = count >= 50 ? 'S4' : count >= 20 ? 'S3' : count >= 5 ? 'S2' : 'S1';
 
-  // Streak logic
+  // Streak logic (with shield protection)
   let newStreak = profile.current_streak ?? 0;
   let longestStreak = profile.longest_streak ?? 0;
   let streakXp = 0;
@@ -288,8 +294,21 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
     newStreak = newStreak + 1;
     if (newStreak > longestStreak) longestStreak = newStreak;
     streakXp = XP_VALUES['streak_day'] ?? 20;
+  } else if (profile.last_active_date && profile.last_active_date !== today) {
+    // Streak broken — check shields
+    const shields = (profile as unknown as Record<string, unknown>).streak_shields as number ?? 0;
+    if (shields > 0) {
+      // Shield absorbs the break — keep streak
+      db.prepare(`UPDATE student_growth_profiles SET streak_shields = streak_shields - 1 WHERE student_user_id = ?`).run(userId);
+      try {
+        db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, context, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
+          .run(crypto.randomUUID(), userId, 'shield_used', 0, 'Streak shield activated', now);
+      } catch {}
+    } else {
+      // No shields — reset streak
+      newStreak = 1;
+    }
   } else {
-    // Streak broken or first day
     newStreak = 1;
   }
 
@@ -315,6 +334,13 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
     }
   } catch { /* non-fatal */ }
   checkAndAwardAchievements(db, userId, { session_count: count, xp_level: newLevel, current_streak: newStreak, stage });
+
+  // Grant a shield when streak reaches 7
+  if (newStreak === 7) {
+    try {
+      db.prepare(`UPDATE student_growth_profiles SET streak_shields = MIN(3, streak_shields + 1) WHERE student_user_id = ?`).run(userId);
+    } catch {}
+  }
 }
 
 function checkAndAwardAchievements(
@@ -405,6 +431,7 @@ export function createSchoolRoutes(db: Database.Database) {
   // ── DB migrations (non-fatal) ─────────────────────────────────────────
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN streak_shields INTEGER DEFAULT 2`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
   try { db.exec(`ALTER TABLE teacher_assignments ADD COLUMN is_template INTEGER DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN total_xp INTEGER DEFAULT 0`); } catch {}
@@ -778,11 +805,12 @@ Provide a structured evaluation with these exact sections:
 
       // Growth profile — created on first interaction if missing
       const growthProfile = db.prepare(
-        `SELECT stage, session_count, total_xp, xp_level, current_streak, longest_streak
+        `SELECT stage, session_count, total_xp, xp_level, current_streak, longest_streak, streak_shields
          FROM student_growth_profiles WHERE student_user_id = ?`
       ).get(userId) as {
         stage: string; session_count: number;
         total_xp: number; xp_level: number; current_streak: number; longest_streak: number;
+        streak_shields: number;
       } | undefined;
 
       const sessionsThisWeek = db.prepare(
@@ -805,6 +833,7 @@ Provide a structured evaluation with these exact sections:
           nextLevelAt,
           currentStreak: growthProfile?.current_streak ?? 0,
           longestStreak: growthProfile?.longest_streak ?? 0,
+          streakShields: growthProfile?.streak_shields ?? 2,
         },
         stats: {
           assignmentsDue: assignments.length,
@@ -2087,6 +2116,31 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     } catch (err) {
       console.error('[school/lessons/:id/assign]', err);
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/school/upload-doc ────────────────────────────────────────
+  const schoolUpload = multer({
+    dest: process.env.UPLOAD_DIR || './uploads',
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (['.pdf', '.docx', '.txt', '.md'].includes(ext)) cb(null, true);
+      else cb(new Error('Unsupported file type'));
+    },
+  });
+
+  router.post('/school/upload-doc', schoolUpload.single('file'), async (req, res) => {
+    if (!req.user?.id) return res.status(401).json({ error: 'Unauthorised' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    try {
+      const text = await extractTextFromFile(req.file.path);
+      const wordCount = text.split(/\s+/).filter(Boolean).length;
+      // Clean up temp file
+      try { await fs.remove(req.file.path); } catch {}
+      return res.json({ text: text.slice(0, 80000), filename: req.file.originalname, wordCount });
+    } catch (err) {
+      return res.status(500).json({ error: safeError(err) });
     }
   });
 

@@ -43,7 +43,7 @@ export default function SchoolDashboardPage() {
   const [classes, setClasses] = useState<ClassCard[]>([]);
   const [stats, setStats] = useState<QuickStats>({ timeThisWeek: 0, assignmentsDue: 0, sessionsThisWeek: 0 });
   const [growthStage, setGrowthStage] = useState<string | null>(null);
-  const [xpData, setXpData] = useState<{ total: number; level: number; nextLevelAt: number | null; currentStreak: number; longestStreak: number } | null>(null);
+  const [xpData, setXpData] = useState<{ total: number; level: number; nextLevelAt: number | null; currentStreak: number; longestStreak: number; streakShields?: number } | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<{ id: string; title: string; due_date?: string; class_name?: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ enabled: boolean; entries: { rank: number; name: string; xp: number; level: number }[] } | null>(null);
   const [quickQuestion, setQuickQuestion] = useState('');
@@ -166,6 +166,16 @@ export default function SchoolDashboardPage() {
               <div className="flex items-center gap-1.5 rounded-full bg-adv-gold/10 px-3 py-1 text-xs font-semibold text-adv-gold">
                 <Flame className="h-3.5 w-3.5" />
                 {xpData.currentStreak} day{xpData.currentStreak !== 1 ? 's' : ''}
+              </div>
+            )}
+            {/* Streak shields chip */}
+            {typeof xpData.streakShields === 'number' && xpData.streakShields > 0 && (
+              <div
+                className="flex items-center gap-1 rounded-full bg-adv-blue/10 px-2.5 py-1 text-xs font-semibold text-adv-blue"
+                title={t('dashboard.streakShields', 'Streak shields')}
+              >
+                {'🛡️'.repeat(Math.min(xpData.streakShields, 3))}
+                {xpData.streakShields > 3 && ` ×${xpData.streakShields}`}
               </div>
             )}
           </div>

@@ -42,7 +42,9 @@
     "progressLabel": "{{pct}}% مكتمل",
     "noClasses": "لم تنضم إلى أي صف بعد.",
     "enrollPrompt": "اطلب من معلمك رمز الصف للبدء.",
-    "loading": "جارٍ تحميل لوحة التحكم..."
+    "loading": "جارٍ تحميل لوحة التحكم...",
+    "streakShields": "دروع السلسلة",
+    "shieldUsed": "تم استخدام الدرع — السلسلة محفوظة!"
   },
   "subject": {
     "mathematics": "الرياضيات",
@@ -76,7 +78,10 @@
     "placeholder": "اكتب سؤالك هنا...",
     "send": "إرسال",
     "thinking": "{{persona}} يفكر...",
-    "newSession": "بدء محادثة جديدة"
+    "newSession": "بدء محادثة جديدة",
+    "attachFile": "إرفاق مستند",
+    "fileAttached": "تم إرفاق المستند: {{filename}}",
+    "removeAttachment": "إزالة المرفق"
   },
   "onboarding": {
     "student": {
@@ -144,5 +149,12 @@
     "explanationStyle": "أسلوب الشرح",
     "save": "حفظ الإعدادات",
     "saved": "تم الحفظ!"
+  },
+  "coding": {
+    "sandbox": "بيئة التجربة",
+    "run": "تشغيل",
+    "copy": "نسخ",
+    "copied": "تم النسخ!",
+    "clickRun": "اضغط تشغيل للمعاينة"
   }
 }

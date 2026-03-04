@@ -42,7 +42,9 @@
     "progressLabel": "{{pct}}% klart",
     "noClasses": "Du är inte inskriven i någon klass ännu.",
     "enrollPrompt": "Be din lärare om en klasskod för att börja.",
-    "loading": "Laddar din startsida..."
+    "loading": "Laddar din startsida...",
+    "streakShields": "Streaksköldar",
+    "shieldUsed": "Sköld använd — streaken bevarad!"
   },
   "subject": {
     "mathematics": "Matematik",
@@ -98,6 +100,9 @@
     "uploadsAllowed": "Du kan ladda upp filer eller foton av ditt arbete",
     "laxhjalpMode": "Fastnat? Låt oss lösa det",
     "endSession": "Avsluta session",
+    "attachFile": "Bifoga ett dokument",
+    "fileAttached": "Dokument bifogat: {{filename}}",
+    "removeAttachment": "Ta bort bilaga",
     "actions": {
       "practice": "Övningsuppgifter",
       "practiceMsg": "Ge mig 3 övningsuppgifter om det vi har pratat om. Visa inte svaren än.",
@@ -294,6 +299,7 @@
         "sweden": "Sverige (Lgr22)",
         "norway": "Norge (LK20)",
         "uk": "Storbritannien",
+        "france": "Frankrike (Baccalauréat)",
         "other": "Annat"
       },
       "step3": {
@@ -346,7 +352,12 @@
     "scratch": "Scratch",
     "codePlaceholder": "Klistra in din kod här...",
     "goalPlaceholder": "Vad vill du bygga?",
-    "errorPlaceholder": "Klistra in din kod och felmeddelandet..."
+    "errorPlaceholder": "Klistra in din kod och felmeddelandet...",
+    "sandbox": "Sandlåda",
+    "run": "Kör",
+    "copy": "Kopiera",
+    "copied": "Kopierat!",
+    "clickRun": "Klicka Kör för förhandsgranskning"
   },
   "persona": {
     "alma": {

@@ -190,6 +190,7 @@ export default function SchoolOnboardingPage() {
               { value: 'se', label: t('onboarding.student.step2.sweden', 'Sweden (Lgr22)') },
               { value: 'no', label: t('onboarding.student.step2.norway', 'Norway (LK20)') },
               { value: 'gb', label: t('onboarding.student.step2.uk', 'United Kingdom') },
+              { value: 'fr', label: t('onboarding.student.step2.france', 'France (Baccalauréat)') },
               { value: 'other', label: t('onboarding.student.step2.other', 'Other') },
             ].map(({ value, label }) => (
               <button

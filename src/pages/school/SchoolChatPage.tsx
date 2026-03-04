@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Lightbulb,
   ClipboardList,
+  X,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import AssistanceLevelBadge from '@/components/school/AssistanceLevelBadge';
@@ -20,6 +21,7 @@ import TaskTypeSelector from '@/components/school/TaskTypeSelector';
 import LaxhjalpMode from '@/components/school/LaxhjalpMode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import CodeSandbox from '@/components/school/CodeSandbox';
 
 type TaskType = 'homework' | 'studying' | 'practice' | null;
 type AssistanceLevel = 'L1' | 'L2' | 'L3' | 'L4';
@@ -41,6 +43,19 @@ interface ClassContext {
   currentTopic?: string;
 }
 
+/** Extract code blocks with language tag from markdown string */
+function extractCodeBlocks(markdown: string): Array<{ lang: string; code: string }> {
+  const regex = /```(\w+)\n([\s\S]*?)```/g;
+  const blocks: Array<{ lang: string; code: string }> = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(markdown)) !== null) {
+    blocks.push({ lang: match[1].toLowerCase(), code: match[2] });
+  }
+  return blocks;
+}
+
+const SANDBOX_LANGS = ['html', 'css', 'javascript', 'js'];
+
 export default function SchoolChatPage() {
   const { t } = useTranslation('school');
   const [searchParams] = useSearchParams();
@@ -56,9 +71,12 @@ export default function SchoolChatPage() {
   const [error, setError] = useState<string | null>(null);
   const [showLaxhjalp, setShowLaxhjalp] = useState(false);
   const [isLoadingContext, setIsLoadingContext] = useState(!!classId);
+  const [attachedDoc, setAttachedDoc] = useState<{ text: string; filename: string } | null>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (classId) loadClassContext(classId);
@@ -91,6 +109,33 @@ export default function SchoolChatPage() {
     }
   }
 
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingDoc(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/school/upload-doc', {
+        method: 'POST',
+        headers: getAuthHeader(),
+        body: form,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAttachedDoc({ text: data.text, filename: data.filename });
+      } else {
+        setError('Could not read the file. Please try a PDF, DOCX, or TXT file.');
+      }
+    } catch {
+      setError('File upload failed. Please try again.');
+    } finally {
+      setIsUploadingDoc(false);
+      // Reset file input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
   const currentAssistanceLevel: AssistanceLevel = (() => {
     if (!classContext || !taskType) return 'L2';
     const levels = classContext.assistanceLevels;
@@ -107,10 +152,17 @@ export default function SchoolChatPage() {
     setInput('');
     setError(null);
 
+    // Build additionalContext including attached doc if any
+    let additionalContext: string | undefined;
+    if (attachedDoc) {
+      additionalContext = `\n\n[Attached document: ${attachedDoc.filename}]\n${attachedDoc.text}`;
+      setAttachedDoc(null); // consume after send
+    }
+
     const userMsg: Message = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: text,
+      content: text + (attachedDoc ? `\n\n📎 ${attachedDoc.filename}` : ''),
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMsg]);
@@ -144,6 +196,7 @@ export default function SchoolChatPage() {
           teacherPersonaId: classContext?.teacherPersona ?? 'alma',
           subjectId: classContext?.subjectId ?? urlSubjectId ?? 'mathematics',
           educationTier: classContext?.educationTier ?? 'T2',
+          additionalContext,
         }),
       });
 
@@ -190,7 +243,7 @@ export default function SchoolChatPage() {
       setIsStreaming(false);
       inputRef.current?.focus();
     }
-  }, [input, isStreaming, classId, taskType, currentAssistanceLevel, messages, classContext]);
+  }, [input, isStreaming, classId, taskType, currentAssistanceLevel, messages, classContext, attachedDoc]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -217,6 +270,16 @@ export default function SchoolChatPage() {
 
   return (
     <SchoolLayout>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.docx,.txt,.md"
+        className="hidden"
+        onChange={handleFileSelect}
+        aria-label={t('chat.attachFile', 'Attach a document')}
+      />
+
       <div className="flex h-[calc(100vh-3.5rem-2rem)] flex-col">
         {/* Context bar */}
         {classContext && (
@@ -256,30 +319,42 @@ export default function SchoolChatPage() {
             </div>
           )}
 
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+          {messages.map((msg) => {
+            const codeBlocks = msg.role === 'assistant' ? extractCodeBlocks(msg.content) : [];
+            const sandboxBlocks = codeBlocks.filter(b => SANDBOX_LANGS.includes(b.lang));
+            return (
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
-                  msg.role === 'user'
-                    ? 'rounded-br-sm bg-adv-teal text-adv-dark'
-                    : 'rounded-bl-sm border border-border bg-adv-card text-adv-off-white'
-                }`}
+                key={msg.id}
+                className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
               >
-                {msg.role === 'assistant' ? (
-                  <div className="prose prose-sm prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content || (isStreaming ? '▋' : '')}
-                    </ReactMarkdown>
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
+                    msg.role === 'user'
+                      ? 'rounded-br-sm bg-adv-teal text-adv-dark'
+                      : 'rounded-bl-sm border border-border bg-adv-card text-adv-off-white'
+                  }`}
+                >
+                  {msg.role === 'assistant' ? (
+                    <div className="prose prose-sm prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content || (isStreaming ? '▋' : '')}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p>{msg.content}</p>
+                  )}
+                </div>
+                {/* Show code sandbox for HTML/CSS/JS blocks in assistant messages */}
+                {msg.role === 'assistant' && sandboxBlocks.length > 0 && !isStreaming && (
+                  <div className="mt-2 max-w-[85%] w-full">
+                    {sandboxBlocks.map((block, i) => (
+                      <CodeSandbox key={i} code={block.code} language={block.lang as 'html' | 'css' | 'js'} />
+                    ))}
                   </div>
-                ) : (
-                  <p>{msg.content}</p>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {error && (
             <div className="flex items-center gap-2 rounded-lg border border-adv-red/20 bg-adv-red/10 px-4 py-3 text-sm text-adv-red">
@@ -344,6 +419,22 @@ export default function SchoolChatPage() {
           </div>
         )}
 
+        {/* Attached document chip */}
+        {attachedDoc && (
+          <div className="mb-2 flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/5 px-3 py-2 text-xs text-adv-teal">
+            <Paperclip className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{attachedDoc.filename}</span>
+            <button
+              type="button"
+              onClick={() => setAttachedDoc(null)}
+              className="ms-auto shrink-0 rounded-full p-0.5 hover:bg-adv-teal/20 transition-colors"
+              aria-label={t('chat.removeAttachment', 'Remove attachment')}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
         {/* Input area */}
         <div className="rounded-xl border border-border bg-adv-card p-3">
           <textarea
@@ -360,11 +451,17 @@ export default function SchoolChatPage() {
           <div className="flex items-center justify-between pt-2">
             <button
               type="button"
-              className="rounded-lg p-1.5 text-adv-gray hover:text-adv-off-white transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal"
-              aria-label={t('chat.uploadsAllowed')}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingDoc || isStreaming}
+              className="rounded-lg p-1.5 text-adv-gray hover:text-adv-off-white transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal disabled:opacity-40"
+              aria-label={t('chat.attachFile', 'Attach a document')}
               title={t('chat.uploadsAllowed')}
             >
-              <Paperclip className="h-4 w-4" />
+              {isUploadingDoc ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Paperclip className="h-4 w-4" />
+              )}
             </button>
             <button
               type="button"
