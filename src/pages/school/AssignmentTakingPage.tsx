@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getAuthHeader } from '@/lib/api';
@@ -11,6 +11,10 @@ import {
   Clock,
   ChevronRight,
   Send,
+  ShieldAlert,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from 'lucide-react';
 
 type QuestionType = 'multiple_choice' | 'short_answer' | 'calculation';
@@ -28,7 +32,7 @@ interface AssignmentDetail {
   id: string;
   title: string;
   instructions?: string;
-  assignment_type: 'homework' | 'exam' | 'practice';
+  assignment_type: 'homework' | 'exam' | 'practice' | 'socratic';
   subject_id?: string;
   topic?: string;
   assistance_level?: string;
@@ -36,7 +40,16 @@ interface AssignmentDetail {
   time_limit_minutes?: number | null;
   class_name?: string;
   class_id?: string;
+  adaptive?: boolean;
   questions: Question[];
+}
+
+const BLOOMS_DIFFICULTY = ['knowledge', 'application', 'analysis', 'evaluation', 'creation', 'metacognition'] as const;
+type BloomsDim = typeof BLOOMS_DIFFICULTY[number];
+
+function bloomsDiffIdx(b: string): number {
+  const idx = BLOOMS_DIFFICULTY.indexOf(b as BloomsDim);
+  return idx === -1 ? 0 : idx;
 }
 
 type AnswerMap = Record<string, string>; // questionId → answer text
@@ -73,6 +86,12 @@ export default function AssignmentTakingPage() {
   // Timer state
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Adaptive mode state
+  const [adaptiveOrder, setAdaptiveOrder] = useState<number[]>([]);
+  const [adaptivePos, setAdaptivePos] = useState(0);
+  const [selfRating, setSelfRating] = useState<'easy' | 'ok' | 'hard' | null>(null);
+  const [targetDifficulty, setTargetDifficulty] = useState(1); // index into BLOOMS_DIFFICULTY
 
   const handleSubmit = useCallback(async (currentAnswers: AnswerMap) => {
     if (!assignment) return;
@@ -119,6 +138,12 @@ export default function AssignmentTakingPage() {
           const secs = data.time_limit_minutes * 60;
           setSecondsLeft(secs);
         }
+        // Initialise adaptive order: sort by Bloom's difficulty (easiest first)
+        if (data.adaptive && data.questions.length > 0) {
+          const order = [...data.questions.keys()]
+            .sort((a, b) => bloomsDiffIdx(data.questions[a].blooms) - bloomsDiffIdx(data.questions[b].blooms));
+          setAdaptiveOrder(order);
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
@@ -150,6 +175,39 @@ export default function AssignmentTakingPage() {
   function setAnswer(questionId: string, value: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   }
+
+  function handleNextAdaptive() {
+    if (!selfRating || !assignment) return;
+    // Adjust target difficulty based on self-rating
+    const delta = selfRating === 'easy' ? 1 : selfRating === 'hard' ? -1 : 0;
+    const newTarget = Math.max(0, Math.min(BLOOMS_DIFFICULTY.length - 1, targetDifficulty + delta));
+    setTargetDifficulty(newTarget);
+    setSelfRating(null);
+
+    // Re-sort remaining (not-yet-shown) questions by distance from new target
+    const nextPos = adaptivePos + 1;
+    if (nextPos < adaptiveOrder.length) {
+      const remaining = adaptiveOrder.slice(nextPos);
+      remaining.sort((a, b) => {
+        const distA = Math.abs(bloomsDiffIdx(assignment.questions[a].blooms) - newTarget);
+        const distB = Math.abs(bloomsDiffIdx(assignment.questions[b].blooms) - newTarget);
+        return distA - distB;
+      });
+      setAdaptiveOrder([...adaptiveOrder.slice(0, nextPos), ...remaining]);
+    }
+    setAdaptivePos(nextPos);
+  }
+
+  const isExamMode = assignment?.assignment_type === 'exam';
+  const isAdaptive = !!assignment?.adaptive;
+
+  // For adaptive: the active question
+  const adaptiveQuestion = useMemo(
+    () => (isAdaptive && assignment && adaptiveOrder.length > 0 && adaptivePos < adaptiveOrder.length)
+      ? assignment.questions[adaptiveOrder[adaptivePos]]
+      : null,
+    [isAdaptive, assignment, adaptiveOrder, adaptivePos]
+  );
 
   const answeredCount = assignment
     ? assignment.questions.filter((q) => (answers[q.id] ?? '').trim().length > 0).length
@@ -214,6 +272,14 @@ export default function AssignmentTakingPage() {
 
         {assignment && (
           <>
+            {/* Exam mode banner */}
+            {isExamMode && (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-adv-red/40 bg-adv-red/10 px-4 py-2.5 text-sm font-semibold text-adv-red">
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                EXAM MODE — This is a timed examination. Do not leave this page.
+              </div>
+            )}
+
             {/* Assignment header */}
             <div className="rounded-xl border border-border bg-adv-card p-5">
               <div className="flex items-start justify-between gap-4">
@@ -269,7 +335,110 @@ export default function AssignmentTakingPage() {
               </div>
             </div>
 
-            {/* Questions */}
+            {/* Adaptive mode — one question at a time */}
+            {isAdaptive && adaptiveQuestion && (
+              <div className="space-y-4">
+                {/* Progress indicator */}
+                <div className="flex items-center justify-between text-xs text-adv-gray-med">
+                  <span>Question {adaptivePos + 1} of {assignment.questions.length}</span>
+                  <span className="text-adv-teal">Adaptive mode</span>
+                </div>
+
+                {/* Single question card */}
+                {(() => {
+                  const q = adaptiveQuestion;
+                  const answered = (answers[q.id] ?? '').trim().length > 0;
+                  const bloomsClass = BLOOMS_BADGE[q.blooms] ?? 'bg-adv-card text-adv-gray';
+                  return (
+                    <div className={`rounded-xl border bg-adv-card p-5 transition-colors ${answered ? 'border-adv-teal/30' : 'border-border'}`}>
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <p className="text-sm font-medium text-adv-off-white leading-snug">{q.content}</p>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${bloomsClass}`}>{q.blooms}</span>
+                          <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray-med">{q.marks} marks</span>
+                        </div>
+                      </div>
+
+                      {q.type === 'multiple_choice' && q.options && (
+                        <div className="space-y-2">
+                          {q.options.map((opt, optIdx) => {
+                            const isSelected = answers[q.id] === opt;
+                            return (
+                              <label key={optIdx} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${isSelected ? 'border-adv-teal/50 bg-adv-teal/5' : 'border-border hover:border-adv-gray hover:bg-adv-dark/50'}`}>
+                                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-xs ${isSelected ? 'border-adv-teal bg-adv-teal text-adv-dark' : 'border-adv-gray-med'}`}>{isSelected && '✓'}</span>
+                                <input type="radio" name={`adaptive-q`} value={opt} checked={isSelected} onChange={() => setAnswer(q.id, opt)} className="sr-only" />
+                                <span className="text-sm text-adv-off-white">{opt}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {(q.type === 'short_answer' || q.type === 'calculation') && (
+                        <textarea
+                          value={answers[q.id] ?? ''}
+                          onChange={(e) => setAnswer(q.id, e.target.value)}
+                          rows={3}
+                          placeholder="Write your answer here..."
+                          className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                        />
+                      )}
+
+                      {/* Self-rating — shown after answering */}
+                      {answered && (
+                        <div className="mt-4 pt-4 border-t border-border">
+                          <p className="text-xs text-adv-gray-med mb-2">How did that feel?</p>
+                          <div className="flex gap-2">
+                            {([
+                              { id: 'easy', label: 'Too Easy', icon: <TrendingUp className="h-3.5 w-3.5" /> },
+                              { id: 'ok',   label: 'Just Right', icon: <Minus className="h-3.5 w-3.5" /> },
+                              { id: 'hard', label: 'Too Hard', icon: <TrendingDown className="h-3.5 w-3.5" /> },
+                            ] as const).map(({ id, label, icon }) => (
+                              <button
+                                key={id}
+                                type="button"
+                                onClick={() => setSelfRating(id)}
+                                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${
+                                  selfRating === id ? 'border-adv-teal bg-adv-teal/10 text-adv-teal' : 'border-border text-adv-gray hover:border-adv-gray-med'
+                                }`}
+                              >
+                                {icon}{label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Next / Submit for adaptive */}
+                <div className="flex justify-end">
+                  {adaptivePos < assignment.questions.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={handleNextAdaptive}
+                      disabled={!selfRating || !(answers[adaptiveQuestion?.id ?? ''] ?? '').trim()}
+                      className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 transition-colors"
+                    >
+                      Next question <ChevronRight className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSubmit(answers)}
+                      disabled={isSubmitting || !(answers[adaptiveQuestion?.id ?? ''] ?? '').trim()}
+                      className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 transition-colors"
+                    >
+                      {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Submit assignment
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Standard mode — all questions at once */}
+            {!isAdaptive && (
             <div className="space-y-4">
               {assignment.questions.map((q, idx) => {
                 const answered = (answers[q.id] ?? '').trim().length > 0;
@@ -421,6 +590,7 @@ export default function AssignmentTakingPage() {
                 </p>
               )}
             </div>
+            )} {/* end !isAdaptive */}
           </>
         )}
       </div>
