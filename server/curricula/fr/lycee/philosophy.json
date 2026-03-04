@@ -1,0 +1,16 @@
+{
+  "subject": "Philosophie",
+  "level": "Terminale (toutes séries)",
+  "notions": [
+    "Le sujet (conscience, l'inconscient, autrui, le désir, la liberté)",
+    "La culture (le langage, l'art, le travail et la technique, la religion, l'histoire)",
+    "La raison et le réel (théorème, la matière et l'esprit, la nature, la vérité)",
+    "La politique (la société et les échanges, l'État, la justice, la loi)",
+    "La morale (la liberté, le devoir, le bonheur)"
+  ],
+  "auteurs": ["Platon", "Aristote", "Descartes", "Spinoza", "Kant", "Hegel", "Marx", "Nietzsche", "Freud", "Sartre", "Simone de Beauvoir"],
+  "exercices": {
+    "dissertation": "3h — développer une thèse philosophique argumentée sur une notion",
+    "explication": "3h — expliquer et discuter un texte d'auteur"
+  }
+}

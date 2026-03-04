@@ -439,5 +439,17 @@
       "creation": "Creation",
       "metacognition": "Metacognition"
     }
+  },
+  "quest": {
+    "dailyQuests": "Daily Quests",
+    "chatTurns": "Ask Alma {{target}} questions",
+    "completeAssignment": "Submit an assignment",
+    "reviewCard": "Review {{target}} flashcards",
+    "streakProtect": "Log in today",
+    "xpReward": "+{{xp}} XP",
+    "completed": "Completed!"
+  },
+  "curriculum": {
+    "frBac": "French Baccalauréat"
   }
 }

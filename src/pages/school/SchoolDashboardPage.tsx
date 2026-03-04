@@ -15,6 +15,7 @@ import {
   Zap,
   Flame,
   Trophy,
+  CheckCircle2,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -46,6 +47,7 @@ export default function SchoolDashboardPage() {
   const [xpData, setXpData] = useState<{ total: number; level: number; nextLevelAt: number | null; currentStreak: number; longestStreak: number; streakShields?: number } | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<{ id: string; title: string; due_date?: string; class_name?: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ enabled: boolean; entries: { rank: number; name: string; xp: number; level: number }[] } | null>(null);
+  const [dailyQuests, setDailyQuests] = useState<Array<{ id: string; quest_type: string; target: number; progress: number; completed: boolean; xp_reward: number }>>([]);
   const [quickQuestion, setQuickQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,6 +73,19 @@ export default function SchoolDashboardPage() {
           loadLeaderboard((data.classes as { id: string }[])[0].id);
         }
       }
+      // Load daily quests
+      try {
+        const questsRes = await fetch('/api/school/quests/today', { headers: { ...getAuthHeader() } });
+        if (questsRes.ok) {
+          const questsData = await questsRes.json();
+          if (Array.isArray(questsData.quests)) {
+            setDailyQuests(questsData.quests.map((q: { id: string; quest_type: string; target: number; progress: number; completed: number | boolean; xp_reward: number }) => ({
+              ...q,
+              completed: q.completed === 1 || q.completed === true,
+            })));
+          }
+        }
+      } catch { /* non-fatal */ }
     } catch {
       // Non-fatal: show empty dashboard
     } finally {
@@ -311,6 +326,43 @@ export default function SchoolDashboardPage() {
             </div>
           </section>
         )}
+        {/* Daily Quests */}
+        {dailyQuests.length > 0 && (
+          <section className="rounded-xl border border-border bg-adv-card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Star className="h-4 w-4 text-adv-gold" />
+              <h2 className="text-sm font-semibold text-adv-off-white">Daily Quests</h2>
+            </div>
+            <div className="space-y-3">
+              {dailyQuests.map(quest => {
+                const label: Record<string, string> = {
+                  chat_turns: 'Ask Alma 5 questions',
+                  complete_assignment: 'Submit an assignment',
+                  review_card: 'Review 3 flashcards',
+                  streak_protect: 'Log in today',
+                };
+                const pct = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+                return (
+                  <div key={quest.id} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs ${quest.completed ? 'text-adv-teal line-through' : 'text-adv-off-white'}`}>
+                          {label[quest.quest_type] ?? quest.quest_type}
+                        </span>
+                        <span className="text-xs text-adv-gold font-medium">+{quest.xp_reward} XP</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-adv-dark">
+                        <div className="h-1.5 rounded-full bg-adv-teal transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                    {quest.completed && <CheckCircle2 className="h-4 w-4 shrink-0 text-adv-teal" />}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Class leaderboard */}
         {leaderboard?.enabled && leaderboard.entries.length > 0 && (
           <section>

@@ -79,25 +79,23 @@ export default defineConfig({
     rollupOptions: {
       maxParallelFileOps: 3,
       output: {
-        manualChunks: {
+        manualChunks(id) {
+          // School pages — isolated chunk for better caching
+          if (id.includes('/pages/school/') || id.includes('\\pages\\school\\')) return 'school-pages';
           // React core — rarely changes
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) return 'vendor-react';
           // Heavy UI libs
-          'vendor-markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight'],
+          if (id.includes('node_modules/react-markdown') || id.includes('node_modules/remark-gfm') || id.includes('node_modules/rehype-highlight')) return 'vendor-markdown';
           // i18n (locale JSON now served from public/ — no longer bundled)
-          'vendor-i18n': ['react-i18next', 'i18next', 'i18next-http-backend'],
-          // Zustand stores
-          'stores': [
-            './src/stores/useSessionStore',
-            './src/stores/useSettingsStore',
-            './src/stores/useAuthStore',
-          ],
-          // Constants (large — 145+ modules)
-          'constants': ['./src/lib/constants'],
+          if (id.includes('node_modules/react-i18next') || id.includes('node_modules/i18next')) return 'vendor-i18n';
           // Charts (recharts is large — isolate for long-term caching)
-          'vendor-charts': ['recharts'],
+          if (id.includes('node_modules/recharts')) return 'vendor-charts';
           // Lucide icons — large tree of components
-          'vendor-icons': ['lucide-react'],
+          if (id.includes('node_modules/lucide-react')) return 'vendor-icons';
+          // Zustand stores
+          if (id.includes('/stores/useSessionStore') || id.includes('/stores/useSettingsStore') || id.includes('/stores/useAuthStore')) return 'stores';
+          // Constants (large — 145+ modules)
+          if (id.includes('/lib/constants')) return 'constants';
         },
       },
     },

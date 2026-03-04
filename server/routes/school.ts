@@ -211,6 +211,7 @@ const XP_VALUES: Record<string, number> = {
   assignment_perfect: 100,
   streak_day: 20,
   first_session: 25,
+  quest_complete: 50,
 };
 
 // Minimum XP to reach level N (index = level - 1)
@@ -425,6 +426,26 @@ function updateStudentProgress(
   }
 }
 
+// ── Daily Quest helpers ─────────────────────────────────────────────────────
+
+/** Deterministic daily quest generation — same 3 quests for same user+date */
+function generateDailyQuests(userId: string, date: string): Array<{ quest_type: string; target: number; xp_reward: number }> {
+  const QUEST_POOL = [
+    { quest_type: 'chat_turns', target: 5, xp_reward: 30 },
+    { quest_type: 'complete_assignment', target: 1, xp_reward: 75 },
+    { quest_type: 'review_card', target: 3, xp_reward: 40 },
+    { quest_type: 'streak_protect', target: 1, xp_reward: 20 },
+  ];
+  // Seed based on userId + date — deterministic selection of 3
+  let seed = 0;
+  for (const c of userId + date) seed = (seed * 31 + c.charCodeAt(0)) & 0xffffffff;
+  const shuffled = [...QUEST_POOL].sort((a, b) => {
+    seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+    return (seed & 1) ? 1 : -1;
+  });
+  return shuffled.slice(0, 3);
+}
+
 // ── Factory ────────────────────────────────────────────────────────────────
 
 export function createSchoolRoutes(db: Database.Database) {
@@ -443,6 +464,7 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_achievements (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, earned_at DATETIME, UNIQUE(student_user_id, achievement_id))`); } catch {}
   try { db.exec(`ALTER TABLE school_classes ADD COLUMN leaderboard_enabled INTEGER DEFAULT 0`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS school_admin_config (key TEXT PRIMARY KEY, value TEXT)`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS student_daily_quests (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, quest_type TEXT NOT NULL, quest_date TEXT NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed INTEGER DEFAULT 0, xp_reward INTEGER NOT NULL, created_at DATETIME, UNIQUE(student_user_id, quest_date, quest_type))`); } catch {}
   // Load persisted model-tier override (if any)
   try {
     const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
@@ -533,6 +555,16 @@ export function createSchoolRoutes(db: Database.Database) {
           }
           updateGrowthProfile(db, userId);
           if (resolvedClassId) updateStudentProgress(db, userId, resolvedClassId, resolvedSubjectId, resolvedTaskType);
+          // Daily quest: chat_turns
+          try {
+            const today = new Date().toISOString().split('T')[0];
+            const chatQuest = db.prepare(
+              `SELECT id FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ? AND quest_type = 'chat_turns' AND completed = 0`
+            ).get(userId, today) as { id: string } | undefined;
+            if (chatQuest) {
+              db.prepare(`UPDATE student_daily_quests SET progress = MIN(target, progress + 1), completed = CASE WHEN progress + 1 >= target THEN 1 ELSE 0 END WHERE id = ?`).run(chatQuest.id);
+            }
+          } catch {}
         } catch (e) {
           console.warn('[school/chat] onComplete error (non-fatal):', e);
         }
@@ -2142,6 +2174,64 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     } catch (err) {
       return res.status(500).json({ error: safeError(err) });
     }
+  });
+
+  // ── GET /api/school/quests/today ──────────────────────────────────────────
+  router.get('/school/quests/today', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+    const today = new Date().toISOString().split('T')[0];
+
+    // Check if today's quests already exist
+    const existing = db.prepare(
+      `SELECT * FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ?`
+    ).all(userId, today) as Array<{ id: string; quest_type: string; target: number; progress: number; completed: number; xp_reward: number }>;
+
+    if (existing.length >= 3) return res.json({ quests: existing, date: today });
+
+    // Generate quests for today
+    const questDefs = generateDailyQuests(userId, today);
+    const now = new Date().toISOString();
+    const quests = questDefs.map(def => {
+      const existingQuest = existing.find(e => e.quest_type === def.quest_type);
+      if (existingQuest) return existingQuest;
+      const id = crypto.randomUUID();
+      try {
+        db.prepare(
+          `INSERT OR IGNORE INTO student_daily_quests (id, student_user_id, quest_type, quest_date, target, progress, completed, xp_reward, created_at) VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)`
+        ).run(id, userId, def.quest_type, today, def.target, def.xp_reward, now);
+      } catch {}
+      return { id, quest_type: def.quest_type, target: def.target, progress: 0, completed: 0, xp_reward: def.xp_reward };
+    });
+
+    return res.json({ quests, date: today });
+  });
+
+  // ── POST /api/school/quests/:id/progress ──────────────────────────────────
+  router.post('/school/quests/:id/progress', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+    const quest = db.prepare(
+      `SELECT * FROM student_daily_quests WHERE id = ? AND student_user_id = ?`
+    ).get(req.params.id, userId) as { id: string; progress: number; target: number; completed: number; xp_reward: number; quest_date: string } | undefined;
+
+    if (!quest) return res.status(404).json({ error: 'Quest not found' });
+    if (quest.completed) return res.json({ quest, alreadyCompleted: true });
+
+    const newProgress = quest.progress + 1;
+    const nowComplete = newProgress >= quest.target ? 1 : 0;
+
+    db.prepare(
+      `UPDATE student_daily_quests SET progress = ?, completed = ? WHERE id = ?`
+    ).run(newProgress, nowComplete, quest.id);
+
+    if (nowComplete) {
+      updateGrowthProfile(db, userId, 'quest_complete');
+    }
+
+    return res.json({ progress: newProgress, completed: nowComplete === 1, xp_reward: quest.xp_reward });
   });
 
   return router;

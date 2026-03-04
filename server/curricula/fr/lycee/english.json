@@ -1,0 +1,8 @@
+{
+  "subject": "Anglais LV1",
+  "levels": {
+    "seconde": { "cefr": "B1-B2", "skills": ["Compréhension de l'oral", "Expression orale (interaction, monologue)", "Compréhension de l'écrit", "Expression écrite"] },
+    "premiere": { "cefr": "B2", "themes": ["Identités et échanges", "Espace privé et espace public", "Art et pouvoir"] },
+    "terminale": { "cefr": "B2+", "themes": ["Territoires", "Fictions et réalités", "Identités et échanges (approfondissement)"], "bac": "EO 10min + EE 2h" }
+  }
+}

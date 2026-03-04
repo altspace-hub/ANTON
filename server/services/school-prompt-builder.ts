@@ -201,6 +201,17 @@ export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<str
     }
   }
 
+  // ── Layer 6: fr-bac curriculum ─────────────────────────────────────────
+  if (config.curriculumId === 'fr-bac') {
+    try {
+      const curricPath = path.join(SERVER_DIR, '..', 'curricula', 'fr', 'lycee', `${config.subjectId}.json`);
+      if (fs.existsSync(curricPath)) {
+        const curricData = JSON.parse(fs.readFileSync(curricPath, 'utf8'));
+        layers.push(`\n\n---\n\n## Programme Baccalauréat (France)\n${JSON.stringify(curricData, null, 2)}`);
+      }
+    } catch { /* non-fatal */ }
+  }
+
   if (config.additionalContext) {
     layers.push(`\n\n---\n\n## Additional Context\n\n${config.additionalContext}`);
   }

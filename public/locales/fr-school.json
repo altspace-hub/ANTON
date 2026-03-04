@@ -442,5 +442,17 @@
       "creation": "Création",
       "metacognition": "Métacognition"
     }
+  },
+  "quest": {
+    "dailyQuests": "Quêtes du jour",
+    "chatTurns": "Poser {{target}} questions à Alma",
+    "completeAssignment": "Soumettre un devoir",
+    "reviewCard": "Réviser {{target}} fiches",
+    "streakProtect": "Se connecter aujourd'hui",
+    "xpReward": "+{{xp}} XP",
+    "completed": "Terminé !"
+  },
+  "curriculum": {
+    "frBac": "Baccalauréat Français"
   }
 }
