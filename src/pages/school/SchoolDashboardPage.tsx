@@ -12,6 +12,8 @@ import {
   Loader2,
   TrendingUp,
   Bell,
+  Zap,
+  Flame,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -40,6 +42,7 @@ export default function SchoolDashboardPage() {
   const [classes, setClasses] = useState<ClassCard[]>([]);
   const [stats, setStats] = useState<QuickStats>({ timeThisWeek: 0, assignmentsDue: 0, sessionsThisWeek: 0 });
   const [growthStage, setGrowthStage] = useState<string | null>(null);
+  const [xpData, setXpData] = useState<{ total: number; level: number; nextLevelAt: number | null; currentStreak: number; longestStreak: number } | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<{ id: string; title: string; due_date?: string; class_name?: string }[]>([]);
   const [quickQuestion, setQuickQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -59,6 +62,7 @@ export default function SchoolDashboardPage() {
         setClasses(data.classes ?? []);
         setStats(data.stats ?? { timeThisWeek: 0, assignmentsDue: 0, sessionsThisWeek: 0 });
         if (data.growthProfile?.stage) setGrowthStage(data.growthProfile.stage);
+        if (data.xp) setXpData(data.xp);
         if (Array.isArray(data.assignments)) setUpcomingAssignments(data.assignments);
       }
     } catch {
@@ -115,6 +119,41 @@ export default function SchoolDashboardPage() {
             })()}
           </div>
         </div>
+
+        {/* XP bar + streak chip */}
+        {xpData && (xpData.total > 0 || xpData.currentStreak > 0) && (
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3">
+            {/* XP progress */}
+            <div className="flex flex-1 min-w-[180px] items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-adv-teal shrink-0">
+                <Zap className="h-3.5 w-3.5" />
+                L{xpData.level}
+              </div>
+              <div className="flex-1">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-adv-dark">
+                  <div
+                    className="h-full rounded-full bg-adv-teal transition-all duration-700"
+                    style={{
+                      width: xpData.nextLevelAt
+                        ? `${Math.min(100, Math.round(((xpData.total - [0, 100, 300, 600, 1000][xpData.level - 1]) / (xpData.nextLevelAt - [0, 100, 300, 600, 1000][xpData.level - 1])) * 100))}%`
+                        : '100%',
+                    }}
+                  />
+                </div>
+              </div>
+              <span className="text-xs text-adv-gray-med shrink-0">
+                {xpData.total} XP{xpData.nextLevelAt ? ` / ${xpData.nextLevelAt}` : ''}
+              </span>
+            </div>
+            {/* Streak chip */}
+            {xpData.currentStreak > 0 && (
+              <div className="flex items-center gap-1.5 rounded-full bg-adv-gold/10 px-3 py-1 text-xs font-semibold text-adv-gold">
+                <Flame className="h-3.5 w-3.5" />
+                {xpData.currentStreak} day{xpData.currentStreak !== 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Due date notification strip */}
         {upcomingAssignments.length > 0 && (

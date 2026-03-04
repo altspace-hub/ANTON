@@ -87,24 +87,100 @@ function buildPromptConfig(
   };
 }
 
+// ── XP + Level constants ────────────────────────────────────────────────────
+
+const XP_VALUES: Record<string, number> = {
+  chat_turn: 5,
+  assignment_submitted: 50,
+  assignment_perfect: 100,
+  streak_day: 20,
+  first_session: 25,
+};
+
+// Minimum XP to reach level N (index = level - 1)
+const XP_THRESHOLDS = [0, 100, 300, 600, 1000];
+
+function computeXpLevel(xp: number): number {
+  for (let i = XP_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= XP_THRESHOLDS[i]) return i + 1;
+  }
+  return 1;
+}
+
 // ── Growth model helpers ────────────────────────────────────────────────────
 
-function updateGrowthProfile(db: Database.Database, userId: string): void {
+function updateGrowthProfile(db: Database.Database, userId: string, eventType = 'chat_turn'): void {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
+
   const profile = db.prepare(
-    'SELECT session_count FROM student_growth_profiles WHERE student_user_id = ?'
-  ).get(userId) as { session_count: number } | undefined;
+    `SELECT session_count, total_xp, xp_level, current_streak, longest_streak, last_active_date
+     FROM student_growth_profiles WHERE student_user_id = ?`
+  ).get(userId) as {
+    session_count: number; total_xp: number; xp_level: number;
+    current_streak: number; longest_streak: number; last_active_date: string | null;
+  } | undefined;
+
   const now = new Date().toISOString();
+
   if (!profile) {
+    const initXp = (XP_VALUES['first_session'] ?? 25) + (XP_VALUES[eventType] ?? 5);
     db.prepare(
-      `INSERT INTO student_growth_profiles (id, student_user_id, stage, session_count, updated_at) VALUES (?, ?, 'S1', 1, ?)`
-    ).run(crypto.randomUUID(), userId, now);
+      `INSERT INTO student_growth_profiles
+         (id, student_user_id, stage, session_count, total_xp, xp_level, current_streak, longest_streak, last_active_date, updated_at)
+       VALUES (?, ?, 'S1', 1, ?, 1, 1, 1, ?, ?)`
+    ).run(crypto.randomUUID(), userId, initXp, today, now);
+    try {
+      db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
+        .run(crypto.randomUUID(), userId, 'first_session', XP_VALUES['first_session'] ?? 25, now);
+      if (eventType !== 'first_session') {
+        db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
+          .run(crypto.randomUUID(), userId, eventType, XP_VALUES[eventType] ?? 5, now);
+      }
+    } catch { /* non-fatal */ }
     return;
   }
+
   const count = (profile.session_count ?? 0) + 1;
   const stage = count >= 50 ? 'S4' : count >= 20 ? 'S3' : count >= 5 ? 'S2' : 'S1';
+
+  // Streak logic
+  let newStreak = profile.current_streak ?? 0;
+  let longestStreak = profile.longest_streak ?? 0;
+  let streakXp = 0;
+
+  if (profile.last_active_date === today) {
+    // Already active today — preserve streak, no streak XP
+  } else if (profile.last_active_date === yesterday) {
+    newStreak = newStreak + 1;
+    if (newStreak > longestStreak) longestStreak = newStreak;
+    streakXp = XP_VALUES['streak_day'] ?? 20;
+  } else {
+    // Streak broken or first day
+    newStreak = 1;
+  }
+
+  const eventXp = XP_VALUES[eventType] ?? 5;
+  const newXp = (profile.total_xp ?? 0) + eventXp + streakXp;
+  const newLevel = computeXpLevel(newXp);
+
   db.prepare(
-    `UPDATE student_growth_profiles SET session_count = ?, stage = ?, updated_at = ? WHERE student_user_id = ?`
-  ).run(count, stage, now, userId);
+    `UPDATE student_growth_profiles
+     SET session_count = ?, stage = ?, total_xp = ?, xp_level = ?,
+         current_streak = ?, longest_streak = ?, last_active_date = ?, updated_at = ?
+     WHERE student_user_id = ?`
+  ).run(count, stage, newXp, newLevel, newStreak, longestStreak, today, now, userId);
+
+  try {
+    if (eventXp > 0) {
+      db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
+        .run(crypto.randomUUID(), userId, eventType, eventXp, now);
+    }
+    if (streakXp > 0) {
+      db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
+        .run(crypto.randomUUID(), userId, 'streak_day', streakXp, now);
+    }
+  } catch { /* non-fatal */ }
 }
 
 function updateStudentProgress(
@@ -150,6 +226,12 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
   try { db.exec(`ALTER TABLE teacher_assignments ADD COLUMN is_template INTEGER DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN total_xp INTEGER DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN xp_level INTEGER DEFAULT 1`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN current_streak INTEGER DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN longest_streak INTEGER DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN last_active_date TEXT`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS student_xp_events (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, event_type TEXT NOT NULL, xp_earned INTEGER NOT NULL, context TEXT, created_at DATETIME)`); } catch {}
 
   const router = Router();
 
@@ -390,19 +472,34 @@ export function createSchoolRoutes(db: Database.Database) {
 
       // Growth profile — created on first interaction if missing
       const growthProfile = db.prepare(
-        `SELECT stage, session_count FROM student_growth_profiles WHERE student_user_id = ?`
-      ).get(userId) as { stage: string; session_count: number } | undefined;
+        `SELECT stage, session_count, total_xp, xp_level, current_streak, longest_streak
+         FROM student_growth_profiles WHERE student_user_id = ?`
+      ).get(userId) as {
+        stage: string; session_count: number;
+        total_xp: number; xp_level: number; current_streak: number; longest_streak: number;
+      } | undefined;
 
       const sessionsThisWeek = db.prepare(
         `SELECT COUNT(*) AS cnt FROM laxhjalp_sessions
          WHERE student_user_id = ? AND created_at >= DATE('now', '-7 days')`
       ).get(userId) as { cnt: number } | undefined;
 
+      const xpTotal = growthProfile?.total_xp ?? 0;
+      const xpLevel = growthProfile?.xp_level ?? 1;
+      const nextLevelAt = xpLevel < XP_THRESHOLDS.length ? XP_THRESHOLDS[xpLevel] : null;
+
       res.json({
         role: 'student',
         classes,
         assignments,
         growthProfile: growthProfile ?? { stage: 'S1', session_count: 0 },
+        xp: {
+          total: xpTotal,
+          level: xpLevel,
+          nextLevelAt,
+          currentStreak: growthProfile?.current_streak ?? 0,
+          longestStreak: growthProfile?.longest_streak ?? 0,
+        },
         stats: {
           assignmentsDue: assignments.length,
           sessionsThisWeek: sessionsThisWeek?.cnt ?? 0,
