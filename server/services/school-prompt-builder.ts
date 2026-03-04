@@ -189,15 +189,61 @@ function buildAssistanceSummaryLayer(config: SchoolPromptConfig): string {
 }
 
 /**
- * Detect which mathematics module best matches a student's question or topic.
+ * Detect which module best matches a student's question for a given subject.
  * Used when no explicit moduleId is provided.
  */
 export function inferMathsModule(text: string): string {
+  return inferSubjectModule(text, 'mathematics');
+}
+
+export function inferSubjectModule(text: string, subjectId: string): string {
   const lower = text.toLowerCase();
-  if (/equat|algebra|linear|quadrat|ekvation|algebra/i.test(lower)) return 'algebra';
-  if (/triangle|circle|area|perimeter|pythag|geometr|geometri|area|omkrets/i.test(lower)) return 'geometry';
-  if (/statistic|probability|mean|median|mode|sannolikhet|statistik/i.test(lower)) return 'statistics';
-  if (/function|gradient|y=|kx|samband|funktion/i.test(lower)) return 'functions';
-  if (/fraction|decimal|percent|power|root|bråk|decimal|procent|potens/i.test(lower)) return 'number-theory';
-  return 'algebra'; // sensible default
+
+  switch (subjectId) {
+    case 'mathematics':
+      if (/equat|algebra|linear|quadrat|ekvation/i.test(lower)) return 'algebra';
+      if (/triangle|circle|area|perimeter|pythag|geometr|geometri|omkrets/i.test(lower)) return 'geometry';
+      if (/statistic|probability|mean|median|mode|sannolikhet|statistik/i.test(lower)) return 'statistics';
+      if (/function|gradient|y=|kx|samband|funktion/i.test(lower)) return 'functions';
+      if (/fraction|decimal|percent|power|root|bråk|procent|potens/i.test(lower)) return 'number-theory';
+      return 'algebra';
+
+    case 'svenska':
+      if (/läs|read|text|förstå|comprehend|passage|stycke/i.test(lower)) return 'reading-comprehension';
+      if (/skriv|write|essay|uppsats|berättel|text typ|berättande|argumenter/i.test(lower)) return 'writing';
+      if (/grammatik|grammar|ordklass|satsde|verb|substantiv|adjektiv|syntax/i.test(lower)) return 'grammar';
+      if (/litteratur|literature|bok|roman|berättare|tema|karaktär|analys/i.test(lower)) return 'literature';
+      if (/tala|prata|presentation|redovisning|muntlig|speaking|speech/i.test(lower)) return 'oral-skills';
+      return 'writing';
+
+    case 'english':
+      if (/read|text|passage|comprehension|understand/i.test(lower)) return 'reading';
+      if (/write|essay|email|letter|story|report|paragraph/i.test(lower)) return 'writing';
+      if (/word|vocabulary|meaning|definition|synonym|collocation/i.test(lower)) return 'vocabulary';
+      if (/grammar|tense|verb|article|preposition|sentence/i.test(lower)) return 'grammar';
+      if (/speak|talk|presentation|conversation|pronunciation/i.test(lower)) return 'speaking';
+      return 'writing';
+
+    case 'science':
+      if (/biology|biolog|cell|gene|eco|organism|evolution|organism|kropp|växt|djur/i.test(lower)) return 'biology';
+      if (/chemistry|kemi|atom|molecule|reaction|acid|base|periodic|element/i.test(lower)) return 'chemistry';
+      if (/physics|fysik|force|energy|electric|magnet|wave|light|motion|gravity/i.test(lower)) return 'physics';
+      if (/experiment|hypothesis|method|variable|lab|scientific|lab|rapport/i.test(lower)) return 'scientific-method';
+      return 'biology';
+
+    case 'social-studies':
+      if (/history|historia|war|krig|revolution|century|1[0-9]{3}|[0-9]{4}/i.test(lower)) return 'history';
+      if (/geography|geografi|country|country|climate|map|population|urban/i.test(lower)) return 'geography';
+      if (/civics|samhäll|democracy|politik|government|EU|human rights|election/i.test(lower)) return 'civics';
+      if (/religion|faith|church|mosque|temple|islam|christian|buddh|hindu|jewish|ethic/i.test(lower)) return 'religion';
+      return 'history';
+
+    case 'computational-thinking':
+      if (/explain|förstå|what does|vad gör|understand.*code/i.test(lower)) return 'code-explainer';
+      if (/debug|error|bug|fel|fungerar inte|doesn.*work|TypeError|SyntaxError/i.test(lower)) return 'debug-guide';
+      return 'code-mentor';
+
+    default:
+      return 'general';
+  }
 }

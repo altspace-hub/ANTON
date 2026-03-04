@@ -42,7 +42,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import type Database from 'better-sqlite3';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
-import { buildSchoolPrompt, inferMathsModule, type SchoolPromptConfig } from '../services/school-prompt-builder.js';
+import { buildSchoolPrompt, inferMathsModule, inferSubjectModule, type SchoolPromptConfig } from '../services/school-prompt-builder.js';
 import { safeError } from '../lib/error-response.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -52,16 +52,27 @@ function generateClassCode(): string {
 }
 
 /** Build a SchoolPromptConfig from the request body + resolved class row */
+const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
+  mathematics: 'alma',
+  svenska: 'saga',
+  english: 'saga',
+  science: 'viktor',
+  'social-studies': 'erik',
+  'computational-thinking': 'alma',
+};
+
 function buildPromptConfig(
   body: Record<string, unknown>,
   classRow: Record<string, unknown> | null
 ): SchoolPromptConfig {
+  const subjectId = (classRow?.subject_id as string) || (body.subjectId as string) || 'mathematics';
+  const defaultPersona = DEFAULT_PERSONA_FOR_SUBJECT[subjectId] ?? 'alma';
   return {
     educationTier: ((classRow?.education_tier as string) || (body.educationTier as string) || 'T2') as SchoolPromptConfig['educationTier'],
-    subjectId: (classRow?.subject_id as string) || (body.subjectId as string) || 'mathematics',
+    subjectId,
     moduleId: (body.moduleId as string) || undefined,
     topic: (body.topic as string) || undefined,
-    teacherPersonaId: (classRow?.default_teacher_persona as string) || (body.teacherPersonaId as string) || 'alma',
+    teacherPersonaId: (classRow?.default_teacher_persona as string) || (body.teacherPersonaId as string) || defaultPersona,
     assistanceLevel: ((body.assistanceLevel as string) || (classRow?.default_assistance_level as string) || 'L2') as SchoolPromptConfig['assistanceLevel'],
     taskType: ((body.taskType as string) || 'studying') as SchoolPromptConfig['taskType'],
     curriculumId: (classRow?.curriculum_id as string) || 'lgr22',
@@ -100,7 +111,8 @@ export function createSchoolRoutes(db: Database.Database) {
       const lastUserMsg = Array.isArray(messages) && messages.length > 0
         ? String((messages[messages.length - 1] as Record<string, unknown>)?.content ?? '')
         : '';
-      const resolvedModuleId = (req.body.moduleId as string) || inferMathsModule(lastUserMsg);
+      const subjectForInfer = (classRow?.subject_id as string) || (req.body.subjectId as string) || 'mathematics';
+      const resolvedModuleId = (req.body.moduleId as string) || inferSubjectModule(lastUserMsg, subjectForInfer);
 
       const promptConfig = buildPromptConfig(
         { ...req.body as Record<string, unknown>, moduleId: resolvedModuleId },
@@ -160,7 +172,8 @@ export function createSchoolRoutes(db: Database.Database) {
           .get(classId as string) as Record<string, unknown> | null;
       }
 
-      const resolvedModuleId = (moduleId as string) || inferMathsModule(String(stuckPoint || ''));
+      const subjectForLax = (classRow?.subject_id as string) || (req.body.subjectId as string) || 'mathematics';
+      const resolvedModuleId = (moduleId as string) || inferSubjectModule(String(stuckPoint || ''), subjectForLax);
 
       const promptConfig = buildPromptConfig(
         {

@@ -41,6 +41,7 @@ export default function SchoolChatPage() {
   const { t } = useTranslation('school');
   const [searchParams] = useSearchParams();
   const classId = searchParams.get('classId') || '';
+  const urlSubjectId = searchParams.get('subjectId') || '';
   const initialQuestion = searchParams.get('q') || '';
 
   const [classContext, setClassContext] = useState<ClassContext | null>(null);
@@ -137,7 +138,7 @@ export default function SchoolChatPage() {
           taskType: taskType ?? 'studying',
           assistanceLevel: currentAssistanceLevel,
           teacherPersonaId: classContext?.teacherPersona ?? 'alma',
-          subjectId: classContext?.subjectId ?? 'mathematics',
+          subjectId: classContext?.subjectId ?? urlSubjectId ?? 'mathematics',
           educationTier: classContext?.educationTier ?? 'T2',
         }),
       });
@@ -199,7 +200,7 @@ export default function SchoolChatPage() {
       <SchoolLayout>
         <LaxhjalpMode
           classId={classId}
-          subjectId={classContext?.subjectId ?? 'mathematics'}
+          subjectId={classContext?.subjectId ?? urlSubjectId ?? 'mathematics'}
           onClose={() => setShowLaxhjalp(false)}
           onResolved={(topic) => {
             setShowLaxhjalp(false);

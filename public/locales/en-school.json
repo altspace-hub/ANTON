@@ -47,7 +47,13 @@
     "geometry": "Geometry",
     "statistics": "Statistics & Probability",
     "functions": "Functions",
-    "numberTheory": "Number Theory"
+    "numberTheory": "Number Theory",
+    "svenska": "Svenska",
+    "english": "English",
+    "science": "Science (NO)",
+    "social-studies": "Social Studies (SO)",
+    "socialStudies": "Social Studies (SO)",
+    "computationalThinking": "Computational Thinking"
   },
   "chat": {
     "greeting": "Hi! I'm {{persona}}. What are you working on today?",
@@ -256,6 +262,21 @@
       "name": "Alma",
       "subject": "Mathematics",
       "description": "Patient, methodical maths teacher who guides you step by step"
+    },
+    "saga": {
+      "name": "Saga",
+      "subject": "Swedish & English",
+      "description": "Warm, literary language teacher who finds your voice"
+    },
+    "viktor": {
+      "name": "Viktor",
+      "subject": "Science",
+      "description": "Enthusiastic science teacher who starts every lesson with a mystery"
+    },
+    "erik": {
+      "name": "Erik",
+      "subject": "History & Social Studies",
+      "description": "Thoughtful, analytical teacher who teaches you to question sources"
     }
   },
   "progress": {

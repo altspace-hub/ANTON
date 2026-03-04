@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronRight, Loader2, GraduationCap, Users } from 'lucide-react';
+import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -23,12 +23,72 @@ interface JoinForm {
   error: string | null;
 }
 
+// Static subject catalogue — available without a class code
+const CATALOGUE = [
+  {
+    id: 'mathematics',
+    nameKey: 'subject.mathematics',
+    name: 'Mathematics',
+    persona: 'Alma',
+    icon: <BookOpen className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Algebra', 'Geometry', 'Statistics', 'Functions', 'Number Theory'],
+  },
+  {
+    id: 'svenska',
+    nameKey: 'subject.svenska',
+    name: 'Svenska',
+    persona: 'Saga',
+    icon: <MessageSquare className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Reading Comprehension', 'Writing', 'Grammar', 'Literature', 'Oral Skills'],
+  },
+  {
+    id: 'english',
+    nameKey: 'subject.english',
+    name: 'English',
+    persona: 'Saga',
+    icon: <Globe2 className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Reading', 'Writing', 'Vocabulary', 'Grammar', 'Speaking'],
+  },
+  {
+    id: 'science',
+    nameKey: 'subject.science',
+    name: 'Science (NO)',
+    persona: 'Viktor',
+    icon: <FlaskConical className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Biology', 'Chemistry', 'Physics', 'Scientific Method'],
+  },
+  {
+    id: 'social-studies',
+    nameKey: 'subject.socialStudies',
+    name: 'Social Studies (SO)',
+    persona: 'Erik',
+    icon: <Globe2 className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['History', 'Geography', 'Civics', 'Religion'],
+  },
+  {
+    id: 'computational-thinking',
+    nameKey: 'subject.computationalThinking',
+    name: 'Coding',
+    persona: 'Alma',
+    icon: <Code className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Code Explainer', 'Code Mentor', 'Debug Guide'],
+    codingHub: true,
+  },
+];
+
 export default function SubjectsPage() {
   const { t } = useTranslation('school');
   const navigate = useNavigate();
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [joinForm, setJoinForm] = useState<JoinForm>({ visible: false, code: '', loading: false, error: null });
+  const [activeTab, setActiveTab] = useState<'mine' | 'browse'>('browse');
 
   useEffect(() => {
     loadClasses();
@@ -39,7 +99,10 @@ export default function SubjectsPage() {
       const res = await fetch('/api/school/classes', { headers: getAuthHeader() });
       if (res.ok) {
         const data = await res.json();
-        setClasses(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setClasses(list);
+        // If they have classes, default to "My Classes" tab
+        if (list.length > 0) setActiveTab('mine');
       }
     } catch {
       // non-fatal
@@ -80,20 +143,28 @@ export default function SubjectsPage() {
     return tier;
   }
 
+  function handleStudySubject(subjectId: string, classId?: string) {
+    if (subjectId === 'computational-thinking') {
+      navigate('/school/coding');
+      return;
+    }
+    const url = classId
+      ? `/school/chat?classId=${classId}`
+      : `/school/chat?subjectId=${subjectId}`;
+    navigate(url);
+  }
+
   return (
     <SchoolLayout>
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-2xl space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-adv-white">{t('nav.subjects', 'Subjects')}</h1>
-            <p className="mt-0.5 text-sm text-adv-gray-med">
-              {t('dashboard.allSubjects', 'All Subjects')}
-            </p>
           </div>
           <button
             type="button"
-            onClick={() => setJoinForm((p) => ({ ...p, visible: true }))}
+            onClick={() => setJoinForm((p) => ({ ...p, visible: !p.visible }))}
             className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
           >
             <GraduationCap className="h-4 w-4" />
@@ -133,94 +204,144 @@ export default function SubjectsPage() {
                 {t('onboarding.student.step3.skip', 'Cancel')}
               </button>
             </div>
-            {joinForm.error && (
-              <p className="text-sm text-adv-red">{joinForm.error}</p>
-            )}
+            {joinForm.error && <p className="text-sm text-adv-red">{joinForm.error}</p>}
           </div>
         )}
 
-        {/* Loading */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-adv-teal" />
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!isLoading && classes.length === 0 && (
-          <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-adv-teal/10">
-              <BookOpen className="h-6 w-6 text-adv-teal" />
-            </div>
-            <p className="text-base font-semibold text-adv-white">
-              {t('dashboard.noClasses', "You're not enrolled in any classes yet.")}
-            </p>
-            <p className="mt-1.5 text-sm text-adv-gray-med">
-              {t('dashboard.enrollPrompt', 'Ask your teacher for a class code to get started.')}
-            </p>
-            <button
-              type="button"
-              onClick={() => setJoinForm((p) => ({ ...p, visible: true }))}
-              className="mt-4 flex items-center gap-1.5 mx-auto rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
-            >
-              <GraduationCap className="h-4 w-4" />
-              {t('onboarding.student.step3.join', 'Join a class')}
-            </button>
-          </div>
-        )}
-
-        {/* Class cards */}
-        {classes.map((cls) => (
-          <div
-            key={cls.id}
-            className="rounded-xl border border-border bg-adv-card p-5 space-y-4"
+        {/* Tabs */}
+        <div className="flex gap-1 rounded-lg border border-border bg-adv-card p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('browse')}
+            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === 'browse' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
           >
-            {/* Class header */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-adv-white truncate">{cls.name}</h2>
-                  <span className="shrink-0 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2 py-0.5 text-xs font-medium text-adv-teal">
-                    {tierLabel(cls.education_tier)}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-sm text-adv-gray capitalize">
-                  {t(`subject.${cls.subject_id}`, cls.subject_id)}
-                  {cls.student_count !== undefined && (
-                    <span className="ml-3 inline-flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {cls.student_count}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => navigate(`/school/chat?classId=${cls.id}`)}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
-              >
-                {t('dashboard.startStudying', 'Study')}
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            Browse Subjects
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('mine')}
+            className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${activeTab === 'mine' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+          >
+            My Classes
+            {classes.length > 0 && (
+              <span className="ml-1.5 rounded-full bg-adv-dark px-1.5 py-0.5 text-xs text-adv-gray-med">
+                {classes.length}
+              </span>
+            )}
+          </button>
+        </div>
 
-            {/* Progress bar */}
-            {cls.completion_pct !== undefined && (
-              <div>
-                <div className="mb-1 flex items-center justify-between text-xs text-adv-gray-med">
-                  <span>{cls.last_topic ?? t('subject.algebra', 'Algebra')}</span>
-                  <span>{t('dashboard.progressLabel', '{{pct}}% complete', { pct: Math.round(cls.completion_pct ?? 0) })}</span>
+        {/* Browse tab — static catalogue */}
+        {activeTab === 'browse' && (
+          <div className="space-y-3">
+            {CATALOGUE.map((subject) => (
+              <div key={subject.id} className="rounded-xl border border-border bg-adv-card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-adv-teal/10">
+                    {subject.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-adv-white">
+                        {t(subject.nameKey, subject.name)}
+                      </span>
+                      <span className="rounded-full border border-adv-teal/20 px-1.5 py-0.5 text-xs text-adv-gray-med">
+                        {tierLabel(subject.tier)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-adv-gray-med">
+                      with {subject.persona} · {subject.modules.join(', ')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleStudySubject(subject.id)}
+                    className="flex shrink-0 items-center gap-1 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                  >
+                    {t('dashboard.startStudying', 'Study')}
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-adv-dark">
-                  <div
-                    className="h-full rounded-full bg-adv-teal transition-all"
-                    style={{ width: `${cls.completion_pct ?? 0}%` }}
-                  />
-                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* My Classes tab */}
+        {activeTab === 'mine' && (
+          <>
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-adv-teal" />
               </div>
             )}
-          </div>
-        ))}
+
+            {!isLoading && classes.length === 0 && (
+              <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-adv-teal/10">
+                  <GraduationCap className="h-6 w-6 text-adv-teal" />
+                </div>
+                <p className="text-base font-semibold text-adv-white">
+                  {t('dashboard.noClasses', "You're not enrolled in any classes yet.")}
+                </p>
+                <p className="mt-1.5 text-sm text-adv-gray-med">
+                  {t('dashboard.enrollPrompt', 'Ask your teacher for a class code to get started.')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab('browse'); }}
+                  className="mt-4 flex items-center gap-1.5 mx-auto rounded-lg border border-adv-teal/30 px-5 py-2 text-sm text-adv-teal hover:bg-adv-teal/10 transition-colors"
+                >
+                  Browse subjects without a class
+                </button>
+              </div>
+            )}
+
+            {classes.map((cls) => (
+              <div key={cls.id} className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-adv-white truncate">{cls.name}</h2>
+                      <span className="shrink-0 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2 py-0.5 text-xs font-medium text-adv-teal">
+                        {tierLabel(cls.education_tier)}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-sm text-adv-gray capitalize">
+                      {t(`subject.${cls.subject_id}`, cls.subject_id)}
+                      {cls.student_count !== undefined && (
+                        <span className="ml-3 inline-flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          {cls.student_count}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleStudySubject(cls.subject_id, cls.id)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                  >
+                    {t('dashboard.startStudying', 'Study')}
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {cls.completion_pct !== undefined && (
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-xs text-adv-gray-med">
+                      <span>{cls.last_topic ?? t(`subject.${cls.subject_id}`, cls.subject_id)}</span>
+                      <span>{t('dashboard.progressLabel', '{{pct}}% complete', { pct: Math.round(cls.completion_pct ?? 0) })}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-adv-dark">
+                      <div className="h-full rounded-full bg-adv-teal transition-all" style={{ width: `${cls.completion_pct ?? 0}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </SchoolLayout>
   );

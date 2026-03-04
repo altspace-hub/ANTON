@@ -47,7 +47,13 @@
     "geometry": "Geometri",
     "statistics": "Statistik och sannolikhetslära",
     "functions": "Funktioner",
-    "numberTheory": "Talteori"
+    "numberTheory": "Talteori",
+    "svenska": "Svenska",
+    "english": "Engelska",
+    "science": "NO (Naturorienterande ämnen)",
+    "social-studies": "SO (Samhällsorienterande ämnen)",
+    "socialStudies": "SO (Samhällsorienterande ämnen)",
+    "computationalThinking": "Datalogiskt tänkande"
   },
   "chat": {
     "greeting": "Hej! Jag är {{persona}}. Vad jobbar du med idag?",
@@ -256,6 +262,21 @@
       "name": "Alma",
       "subject": "Matematik",
       "description": "Tålmodig, metodisk mattelärare som guidar dig steg för steg"
+    },
+    "saga": {
+      "name": "Saga",
+      "subject": "Svenska och engelska",
+      "description": "Varm, litterär språklärare som hittar din röst"
+    },
+    "viktor": {
+      "name": "Viktor",
+      "subject": "Naturvetenskap",
+      "description": "Entusiastisk NO-lärare som börjar varje lektion med ett mysterium"
+    },
+    "erik": {
+      "name": "Erik",
+      "subject": "Historia och samhällskunskap",
+      "description": "Eftertänksam SO-lärare som lär dig ifrågasätta källor"
     }
   },
   "progress": {

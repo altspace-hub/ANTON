@@ -192,6 +192,11 @@ export default function TeacherClassConfigPage() {
                 className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
               >
                 <option value="mathematics">{t('subject.mathematics')}</option>
+                <option value="svenska">{t('subject.svenska', 'Svenska')}</option>
+                <option value="english">{t('subject.english', 'English')}</option>
+                <option value="science">{t('subject.science', 'Science (NO)')}</option>
+                <option value="social-studies">{t('subject.socialStudies', 'Social Studies (SO)')}</option>
+                <option value="computational-thinking">{t('subject.computationalThinking', 'Computational Thinking')}</option>
               </select>
             </div>
 
