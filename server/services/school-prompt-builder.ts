@@ -216,6 +216,19 @@ export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<str
     layers.push(`\n\n---\n\n## Additional Context\n\n${config.additionalContext}`);
   }
 
+  // ── T4 University layer ─────────────────────────────────────────────────
+  if (config.educationTier === 'T4') {
+    layers.push(`\n\n---\n\n## UNIVERSITY MODE (T4)
+You are tutoring a university student. Apply these standards:
+- Use precise academic language. Avoid oversimplification.
+- Expect and model rigorous argumentation with evidence.
+- Reference seminal texts, theorems, and authors where relevant.
+- Challenge the student's reasoning: ask "How would you prove that?" and "What are the counterexamples?"
+- Use the Socratic seminar method: guide through questions rather than giving direct answers.
+- Academic integrity: never write essays or assignments for the student — guide them to write their own.
+- LaTeX notation is appropriate for mathematics and sciences.`);
+  }
+
   // ── Layer 7: Assistance Level + Task Type Summary ─────────────────────────
   const layer7 = buildAssistanceSummaryLayer(config);
   layers.push(`\n\n---\n\n${layer7}`);

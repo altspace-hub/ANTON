@@ -78,7 +78,17 @@
     "data-science": "Data Science",
     "modersmal": "Heritage Language (Modersmål)",
     "sfiBridge": "Swedish for Newcomers (SFI Bridge)",
-    "sfi-bridge": "Swedish for Newcomers (SFI Bridge)"
+    "sfi-bridge": "Swedish for Newcomers (SFI Bridge)",
+    "uni-mathematics": "Higher Mathematics / Calculus",
+    "uni-physics": "University Physics",
+    "uni-economics": "Microeconomics & Macroeconomics",
+    "uni-computer-science": "Computer Science & Algorithms",
+    "uni-law": "Introduction to Law",
+    "uni-psychology": "Psychology & Behavioural Science",
+    "uni-biology": "Cell Biology & Genetics",
+    "uni-chemistry": "Organic & Physical Chemistry",
+    "uni-philosophy": "Philosophy & Ethics",
+    "uni-statistics": "Applied Statistics & Data Analysis"
   },
   "chat": {
     "greeting": "Hi! I'm {{persona}}. What are you working on today?",
@@ -281,6 +291,20 @@
       "success": "Successfully linked to {{name}}'s account!",
       "error": "Invalid code. Please check with the teacher.",
       "privacyNote": "You'll see progress summaries. Individual conversations are private to your child."
+    },
+    "digest": {
+      "title": "Weekly Digest",
+      "period": "Past 7 days",
+      "sessionsCount": "{{count}} study sessions",
+      "xpEarned": "{{xp}} XP earned",
+      "streakDays": "{{count}}-day streak",
+      "stage": "Learning stage: {{stage}}",
+      "assignmentsSubmitted": "{{count}} assignments submitted",
+      "sendEmail": "Send digest to email",
+      "sending": "Sending...",
+      "sent": "Sent!",
+      "nextSend": "Next auto-digest: Monday 08:00",
+      "lastSent": "Last sent: {{date}}"
     }
   },
   "onboarding": {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain, Atom, Dna, ScrollText, Lightbulb, Languages, BarChart2 } from 'lucide-react';
+import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain, Atom, Dna, ScrollText, Lightbulb, Languages, BarChart2, Scale, Microscope } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -198,6 +198,97 @@ const CATALOGUE = [
     tier: 'T3',
     modules: ['Descriptive Statistics', 'Probability', 'Hypothesis Testing', 'Data Visualisation'],
   },
+  // T4 University subjects
+  {
+    id: 'uni-mathematics',
+    nameKey: 'subject.uni-mathematics',
+    name: 'Higher Mathematics / Calculus',
+    persona: 'Prof. Lindström',
+    icon: <BookOpen className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-physics',
+    nameKey: 'subject.uni-physics',
+    name: 'University Physics',
+    persona: 'Prof. Lindström',
+    icon: <Atom className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-economics',
+    nameKey: 'subject.uni-economics',
+    name: 'Microeconomics & Macroeconomics',
+    persona: 'Prof. Lindström',
+    icon: <BarChart2 className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-computer-science',
+    nameKey: 'subject.uni-computer-science',
+    name: 'Computer Science & Algorithms',
+    persona: 'Prof. Lindström',
+    icon: <Code className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-law',
+    nameKey: 'subject.uni-law',
+    name: 'Introduction to Law',
+    persona: 'Prof. Lindström',
+    icon: <Scale className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-psychology',
+    nameKey: 'subject.uni-psychology',
+    name: 'Psychology & Behavioural Science',
+    persona: 'Prof. Lindström',
+    icon: <Brain className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-biology',
+    nameKey: 'subject.uni-biology',
+    name: 'Cell Biology & Genetics',
+    persona: 'Prof. Lindström',
+    icon: <Microscope className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-chemistry',
+    nameKey: 'subject.uni-chemistry',
+    name: 'Organic & Physical Chemistry',
+    persona: 'Prof. Lindström',
+    icon: <FlaskConical className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-philosophy',
+    nameKey: 'subject.uni-philosophy',
+    name: 'Philosophy & Ethics',
+    persona: 'Prof. Lindström',
+    icon: <Lightbulb className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
+  {
+    id: 'uni-statistics',
+    nameKey: 'subject.uni-statistics',
+    name: 'Applied Statistics & Data Analysis',
+    persona: 'Nora',
+    icon: <BarChart2 className="h-5 w-5 text-adv-teal" />,
+    tier: 'T4',
+    modules: ['Foundations', 'Advanced', 'Research'],
+  },
 ];
 
 export default function SubjectsPage() {
@@ -207,7 +298,7 @@ export default function SubjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [joinForm, setJoinForm] = useState<JoinForm>({ visible: false, code: '', loading: false, error: null });
   const [activeTab, setActiveTab] = useState<'mine' | 'browse'>('browse');
-  const [browseTier, setBrowseTier] = useState<'T2' | 'T3'>('T2');
+  const [browseTier, setBrowseTier] = useState<'T2' | 'T3' | 'T4'>('T2');
 
   useEffect(() => {
     loadClasses();
@@ -368,6 +459,13 @@ export default function SubjectsPage() {
                 className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T3' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
               >
                 {t('onboarding.student.step1.tierT3', 'Years 10–12')} (Gymnasiet)
+              </button>
+              <button
+                type="button"
+                onClick={() => setBrowseTier('T4')}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${browseTier === 'T4' ? 'bg-adv-teal/10 text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}
+              >
+                {t('onboarding.student.step1.tierT4', 'University')}
               </button>
             </div>
 

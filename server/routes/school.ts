@@ -178,6 +178,17 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
   'data-science': 'nora',
   modersmal: 'saga',
   'sfi-bridge': 'saga',
+  // T4 University subjects
+  'uni-mathematics': 'professor-lindstrom',
+  'uni-physics': 'professor-lindstrom',
+  'uni-economics': 'professor-lindstrom',
+  'uni-computer-science': 'professor-lindstrom',
+  'uni-law': 'professor-lindstrom',
+  'uni-psychology': 'professor-lindstrom',
+  'uni-biology': 'professor-lindstrom',
+  'uni-chemistry': 'professor-lindstrom',
+  'uni-philosophy': 'professor-lindstrom',
+  'uni-statistics': 'nora',
 };
 
 function buildPromptConfig(
@@ -465,6 +476,8 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`ALTER TABLE school_classes ADD COLUMN leaderboard_enabled INTEGER DEFAULT 0`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS school_admin_config (key TEXT PRIMARY KEY, value TEXT)`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_daily_quests (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, quest_type TEXT NOT NULL, quest_date TEXT NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed INTEGER DEFAULT 0, xp_reward INTEGER NOT NULL, created_at DATETIME, UNIQUE(student_user_id, quest_date, quest_type))`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS guardian_digest_log (id TEXT PRIMARY KEY, guardian_user_id TEXT NOT NULL, student_user_id TEXT NOT NULL, sent_at DATETIME, digest_data TEXT)`); } catch {}
+  try { db.exec(`ALTER TABLE guardian_student_links ADD COLUMN email_digest INTEGER DEFAULT 1`); } catch {}
   // Load persisted model-tier override (if any)
   try {
     const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
@@ -1722,6 +1735,103 @@ Format with clear markdown headers.`;
       console.error('[school/guardian/link]', err);
       res.status(500).json({ error: safeError(err) });
     }
+  });
+
+  // ── GET /api/school/guardian/digest/:studentId ─────────────────────────
+  router.get('/school/guardian/digest/:studentId', (req, res) => {
+    const guardianId = req.user?.id;
+    if (!guardianId) return res.status(401).json({ error: 'Unauthorised' });
+
+    const studentId = req.params.studentId;
+
+    // Verify guardian link
+    const link = db.prepare(
+      `SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`
+    ).get(guardianId, studentId) as { id: string } | undefined;
+    if (!link) return res.status(403).json({ error: 'Not linked to this student' });
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+
+    // Sessions in past 7 days
+    const sessions = db.prepare(
+      `SELECT COUNT(*) as count FROM laxhjalp_sessions WHERE user_id = ? AND created_at >= ?`
+    ).get(studentId, sevenDaysAgo) as { count: number };
+
+    // Growth profile
+    const growth = db.prepare(
+      `SELECT stage, total_xp, current_streak FROM student_growth_profiles WHERE student_user_id = ?`
+    ).get(studentId) as { stage: string; total_xp: number; current_streak: number } | undefined;
+
+    // XP earned in past 7 days
+    const xpEarned = db.prepare(
+      `SELECT COALESCE(SUM(xp_earned), 0) as total FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`
+    ).get(studentId, sevenDaysAgo) as { total: number };
+
+    // Assignments submitted in past 7 days
+    const submissions = db.prepare(
+      `SELECT COUNT(*) as count FROM assignment_submissions WHERE student_user_id = ? AND submitted_at >= ?`
+    ).get(studentId, sevenDaysAgo) as { count: number };
+
+    // Student name
+    const student = db.prepare(`SELECT display_name, username FROM users WHERE id = ?`).get(studentId) as { display_name: string; username: string } | undefined;
+
+    // Next send time (Monday 08:00)
+    const now = new Date();
+    const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+    const nextMonday = new Date(now);
+    nextMonday.setDate(now.getDate() + daysUntilMonday);
+    nextMonday.setHours(8, 0, 0, 0);
+
+    // Last digest
+    const lastDigest = db.prepare(
+      `SELECT sent_at FROM guardian_digest_log WHERE guardian_user_id = ? AND student_user_id = ? ORDER BY sent_at DESC LIMIT 1`
+    ).get(guardianId, studentId) as { sent_at: string } | undefined;
+
+    return res.json({
+      student: { name: student?.display_name || student?.username || 'Student' },
+      period: '7 days',
+      sessionsCount: sessions.count,
+      xpEarned: xpEarned.total,
+      currentStreak: growth?.current_streak ?? 0,
+      growthStage: growth?.stage ?? 'S1',
+      assignmentsSubmitted: submissions.count,
+      lastSentAt: lastDigest?.sent_at ?? null,
+      nextSendAt: nextMonday.toISOString(),
+    });
+  });
+
+  // ── POST /api/school/guardian/digest/:studentId/send-email ─────────────
+  router.post('/school/guardian/digest/:studentId/send-email', async (req, res) => {
+    const guardianId = req.user?.id;
+    if (!guardianId) return res.status(401).json({ error: 'Unauthorised' });
+
+    const studentId = req.params.studentId;
+    const link = db.prepare(`SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`).get(guardianId, studentId);
+    if (!link) return res.status(403).json({ error: 'Not linked' });
+
+    // Build digest
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const growth = db.prepare(`SELECT stage, total_xp, current_streak FROM student_growth_profiles WHERE student_user_id = ?`).get(studentId) as { stage: string; total_xp: number; current_streak: number } | undefined;
+    const xpEarned = db.prepare(`SELECT COALESCE(SUM(xp_earned), 0) as total FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`).get(studentId, sevenDaysAgo) as { total: number };
+    const student = db.prepare(`SELECT display_name, username FROM users WHERE id = ?`).get(studentId) as { display_name: string; username: string } | undefined;
+    const guardian = db.prepare(`SELECT email FROM users WHERE id = ?`).get(guardianId) as { email: string } | undefined;
+
+    const digestData = { student: student?.display_name || student?.username || 'Student', xpEarned: xpEarned.total, stage: growth?.stage, streak: growth?.current_streak, sentAt: new Date().toISOString() };
+
+    const now = new Date().toISOString();
+    try {
+      db.prepare(`INSERT INTO guardian_digest_log (id, guardian_user_id, student_user_id, sent_at, digest_data) VALUES (?, ?, ?, ?, ?)`).run(crypto.randomUUID(), guardianId, studentId, now, JSON.stringify(digestData));
+    } catch {}
+
+    // Log to console (email sending requires Nodemailer setup — log if EMAIL_FROM not configured)
+    const emailFrom = process.env.EMAIL_FROM;
+    if (emailFrom && guardian?.email) {
+      console.log(`[digest] Would send email to ${guardian.email} for student ${digestData.student}`);
+    } else {
+      console.log(`[digest] Weekly digest generated for ${digestData.student}:`, digestData);
+    }
+
+    return res.json({ ok: true, digestData });
   });
 
   // ── POST /api/school/curricula/upload ─────────────────────────────────

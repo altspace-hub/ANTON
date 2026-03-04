@@ -81,7 +81,17 @@
     "french": "Français",
     "history": "Histoire",
     "geographie": "Géographie",
-    "svt": "Sciences de la vie et de la Terre"
+    "svt": "Sciences de la vie et de la Terre",
+    "uni-mathematics": "Mathématiques supérieures / Calcul",
+    "uni-physics": "Physique universitaire",
+    "uni-economics": "Microéconomie et macroéconomie",
+    "uni-computer-science": "Informatique et algorithmique",
+    "uni-law": "Introduction au droit",
+    "uni-psychology": "Psychologie et sciences comportementales",
+    "uni-biology": "Biologie cellulaire et génétique",
+    "uni-chemistry": "Chimie organique et physique",
+    "uni-philosophy": "Philosophie et éthique",
+    "uni-statistics": "Statistiques appliquées et analyse de données"
   },
   "chat": {
     "greeting": "Bonjour ! Je suis {{persona}}. Sur quoi travaillez-vous aujourd'hui ?",
@@ -284,6 +294,20 @@
       "success": "Lié avec succès au compte de {{name}} !",
       "error": "Code invalide. Veuillez vérifier avec l'enseignant.",
       "privacyNote": "Vous verrez les résumés de progression. Les conversations individuelles restent privées pour votre enfant."
+    },
+    "digest": {
+      "title": "Résumé hebdomadaire",
+      "period": "7 derniers jours",
+      "sessionsCount": "{{count}} sessions d'étude",
+      "xpEarned": "{{xp}} XP gagnés",
+      "streakDays": "Série de {{count}} jours",
+      "stage": "Niveau d'apprentissage : {{stage}}",
+      "assignmentsSubmitted": "{{count}} devoirs rendus",
+      "sendEmail": "Envoyer par e-mail",
+      "sending": "Envoi en cours...",
+      "sent": "Envoyé !",
+      "nextSend": "Prochain résumé automatique : lundi 08h00",
+      "lastSent": "Dernier envoi : {{date}}"
     }
   },
   "onboarding": {

@@ -9,6 +9,10 @@ import {
   Link2,
   CheckCircle2,
   AlertCircle,
+  Mail,
+  Flame,
+  Star,
+  ClipboardList,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -26,6 +30,137 @@ interface ChildProgress {
     dueDate: string;
     subject: string;
   }>;
+}
+
+interface DigestData {
+  student: { name: string };
+  period: string;
+  sessionsCount: number;
+  xpEarned: number;
+  currentStreak: number;
+  growthStage: string;
+  assignmentsSubmitted: number;
+  lastSentAt: string | null;
+  nextSendAt: string;
+}
+
+function WeeklyDigestSection({ studentId }: { studentId: string }) {
+  const { t } = useTranslation('school');
+  const [digest, setDigest] = useState<DigestData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+
+  useEffect(() => {
+    loadDigest();
+  }, [studentId]);
+
+  async function loadDigest() {
+    try {
+      const res = await fetch(`/api/school/guardian/digest/${studentId}`, {
+        headers: getAuthHeader(),
+      });
+      if (res.ok) setDigest(await res.json());
+    } catch { /* non-fatal */ }
+    finally { setLoading(false); }
+  }
+
+  async function handleSendEmail() {
+    setSendStatus('sending');
+    try {
+      const res = await fetch(`/api/school/guardian/digest/${studentId}/send-email`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) throw new Error('Send failed');
+      setSendStatus('sent');
+      loadDigest();
+      setTimeout(() => setSendStatus('idle'), 3000);
+    } catch {
+      setSendStatus('error');
+      setTimeout(() => setSendStatus('idle'), 3000);
+    }
+  }
+
+  if (loading) return null;
+  if (!digest) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-adv-off-white">
+          {t('guardian.digest.title', 'Weekly Digest')}
+        </h2>
+        <span className="text-xs text-adv-gray-med">
+          {t('guardian.digest.period', 'Past 7 days')}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
+          <div className="flex items-center gap-1.5">
+            <BookOpen className="h-3.5 w-3.5 text-adv-teal" />
+            <span className="text-xs text-adv-gray-med">{t('guardian.digest.sessionsCount', '{{count}} study sessions', { count: digest.sessionsCount })}</span>
+          </div>
+          <span className="text-lg font-bold text-adv-white">{digest.sessionsCount}</span>
+        </div>
+        <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
+          <div className="flex items-center gap-1.5">
+            <Star className="h-3.5 w-3.5 text-adv-gold" />
+            <span className="text-xs text-adv-gray-med">{t('guardian.digest.xpEarned', '{{xp}} XP earned', { xp: digest.xpEarned })}</span>
+          </div>
+          <span className="text-lg font-bold text-adv-white">{digest.xpEarned}</span>
+        </div>
+        <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
+          <div className="flex items-center gap-1.5">
+            <Flame className="h-3.5 w-3.5 text-adv-red" />
+            <span className="text-xs text-adv-gray-med">{t('guardian.digest.streakDays', '{{count}}-day streak', { count: digest.currentStreak })}</span>
+          </div>
+          <span className="text-lg font-bold text-adv-white">{digest.currentStreak}</span>
+        </div>
+        <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
+          <div className="flex items-center gap-1.5">
+            <ClipboardList className="h-3.5 w-3.5 text-adv-teal" />
+            <span className="text-xs text-adv-gray-med">{t('guardian.digest.assignmentsSubmitted', '{{count}} assignments submitted', { count: digest.assignmentsSubmitted })}</span>
+          </div>
+          <span className="text-lg font-bold text-adv-white">{digest.assignmentsSubmitted}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border pt-3">
+        <div className="text-xs text-adv-gray-med space-y-0.5">
+          <p>
+            {t('guardian.digest.nextSend', 'Next auto-digest: Monday 08:00')}
+          </p>
+          {digest.lastSentAt && (
+            <p>
+              {t('guardian.digest.lastSent', 'Last sent: {{date}}', {
+                date: new Date(digest.lastSentAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+              })}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleSendEmail}
+          disabled={sendStatus === 'sending' || sendStatus === 'sent'}
+          className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {sendStatus === 'sending' ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : sendStatus === 'sent' ? (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          ) : (
+            <Mail className="h-3.5 w-3.5" />
+          )}
+          {sendStatus === 'sending'
+            ? t('guardian.digest.sending', 'Sending...')
+            : sendStatus === 'sent'
+              ? t('guardian.digest.sent', 'Sent!')
+              : t('guardian.digest.sendEmail', 'Send digest to email')}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function GuardianDashboardPage() {
@@ -202,6 +337,9 @@ export default function GuardianDashboardPage() {
                   </div>
                 </div>
               )}
+
+              {/* Weekly Digest */}
+              <WeeklyDigestSection studentId={child.studentId} />
             </div>
           ))
         )}
