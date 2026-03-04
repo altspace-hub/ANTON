@@ -66,7 +66,8 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
 
 function buildPromptConfig(
   body: Record<string, unknown>,
-  classRow: Record<string, unknown> | null
+  classRow: Record<string, unknown> | null,
+  overrides?: { growthStage?: string; senMode?: string | null; explanationStyle?: string }
 ): SchoolPromptConfig {
   const subjectId = (classRow?.subject_id as string) || (body.subjectId as string) || 'mathematics';
   const defaultPersona = DEFAULT_PERSONA_FOR_SUBJECT[subjectId] ?? 'alma';
@@ -80,12 +81,74 @@ function buildPromptConfig(
     taskType: ((body.taskType as string) || 'studying') as SchoolPromptConfig['taskType'],
     curriculumId: (classRow?.curriculum_id as string) || 'lgr22',
     additionalContext: (body.additionalContext as string) || undefined,
+    growthStage: overrides?.growthStage,
+    senMode: overrides?.senMode ?? null,
+    explanationStyle: overrides?.explanationStyle,
   };
+}
+
+// ── Growth model helpers ────────────────────────────────────────────────────
+
+function updateGrowthProfile(db: Database.Database, userId: string): void {
+  const profile = db.prepare(
+    'SELECT session_count FROM student_growth_profiles WHERE student_user_id = ?'
+  ).get(userId) as { session_count: number } | undefined;
+  const now = new Date().toISOString();
+  if (!profile) {
+    db.prepare(
+      `INSERT INTO student_growth_profiles (id, student_user_id, stage, session_count, updated_at) VALUES (?, ?, 'S1', 1, ?)`
+    ).run(crypto.randomUUID(), userId, now);
+    return;
+  }
+  const count = (profile.session_count ?? 0) + 1;
+  const stage = count >= 50 ? 'S4' : count >= 20 ? 'S3' : count >= 5 ? 'S2' : 'S1';
+  db.prepare(
+    `UPDATE student_growth_profiles SET session_count = ?, stage = ?, updated_at = ? WHERE student_user_id = ?`
+  ).run(count, stage, now, userId);
+}
+
+function updateStudentProgress(
+  db: Database.Database,
+  userId: string,
+  classId: string,
+  subjectId: string,
+  taskType: string
+): void {
+  const existing = db.prepare(
+    'SELECT blooms_data, overall_progress_pct FROM student_progress WHERE student_user_id = ? AND class_id = ?'
+  ).get(userId, classId) as { blooms_data: string; overall_progress_pct: number } | undefined;
+  const blooms = existing?.blooms_data
+    ? JSON.parse(existing.blooms_data)
+    : { knowledge: 0, application: 0, analysis: 0, evaluation: 0, creation: 0, metacognition: 0 };
+  const bloomMap: Record<string, string[]> = {
+    homework: ['knowledge', 'application'],
+    studying: ['knowledge'],
+    practice: ['application', 'analysis'],
+    assessment: ['analysis', 'evaluation'],
+  };
+  for (const dim of (bloomMap[taskType] ?? ['knowledge'])) {
+    blooms[dim] = Math.min(100, (blooms[dim] ?? 0) + 2);
+  }
+  const newPct = Math.min(100, (existing?.overall_progress_pct ?? 0) + 1);
+  const now = new Date().toISOString();
+  if (existing) {
+    db.prepare(
+      `UPDATE student_progress SET blooms_data = ?, overall_progress_pct = ?, updated_at = ? WHERE student_user_id = ? AND class_id = ?`
+    ).run(JSON.stringify(blooms), newPct, now, userId, classId);
+  } else {
+    db.prepare(
+      `INSERT INTO student_progress (id, student_user_id, class_id, subject_id, blooms_data, overall_progress_pct, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(crypto.randomUUID(), userId, classId, subjectId, JSON.stringify(blooms), 1, now);
+  }
 }
 
 // ── Factory ────────────────────────────────────────────────────────────────
 
 export function createSchoolRoutes(db: Database.Database) {
+  // ── DB migrations (non-fatal) ─────────────────────────────────────────
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
+
   const router = Router();
 
   // ── POST /api/school/chat ──────────────────────────────────────────────
@@ -110,6 +173,11 @@ export function createSchoolRoutes(db: Database.Database) {
           .get(classId as string) as Record<string, unknown> | null;
       }
 
+      // Query growth profile for stage-adaptive prompting
+      const profile = db.prepare(
+        `SELECT stage, sen_mode, explanation_style FROM student_growth_profiles WHERE student_user_id = ?`
+      ).get(userId) as { stage: string; sen_mode: string | null; explanation_style: string } | undefined;
+
       // Auto-infer module from last user message if not supplied
       const lastUserMsg = Array.isArray(messages) && messages.length > 0
         ? String((messages[messages.length - 1] as Record<string, unknown>)?.content ?? '')
@@ -119,7 +187,8 @@ export function createSchoolRoutes(db: Database.Database) {
 
       const promptConfig = buildPromptConfig(
         { ...req.body as Record<string, unknown>, moduleId: resolvedModuleId },
-        classRow
+        classRow,
+        { growthStage: profile?.stage, senMode: profile?.sen_mode, explanationStyle: profile?.explanation_style }
       );
 
       const systemPrompt = await buildSchoolPrompt(promptConfig);
@@ -131,25 +200,31 @@ export function createSchoolRoutes(db: Database.Database) {
         })
       );
 
-      const onComplete = sessionId
-        ? (data: { text: string; outputTokens: number }) => {
-            try {
-              db.prepare(
-                `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
-                 VALUES (?, ?, 'assistant', ?, ?, ?)`
-              ).run(crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
-              db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?')
-                .run(new Date().toISOString(), sessionId as string, userId);
-            } catch (e) {
-              console.warn('[school/chat] persist error (non-fatal):', e);
-            }
+      const resolvedClassId = (classId as string) || '';
+      const resolvedSubjectId = (classRow?.subject_id as string) || (req.body.subjectId as string) || 'mathematics';
+      const resolvedTaskType = (req.body.taskType as string) || 'studying';
+
+      const onComplete = (data: { text: string; outputTokens: number }) => {
+        try {
+          if (sessionId) {
+            db.prepare(
+              `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
+               VALUES (?, ?, 'assistant', ?, ?, ?)`
+            ).run(crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+            db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?')
+              .run(new Date().toISOString(), sessionId as string, userId);
           }
-        : undefined;
+          updateGrowthProfile(db, userId);
+          if (resolvedClassId) updateStudentProgress(db, userId, resolvedClassId, resolvedSubjectId, resolvedTaskType);
+        } catch (e) {
+          console.warn('[school/chat] onComplete error (non-fatal):', e);
+        }
+      };
 
       await streamToResponse(
         { model: 'claude-sonnet-4-6', thinking: 'think', system: systemPrompt, messages: apiMessages, maxTokens: 4096 },
         res,
-        onComplete as Parameters<typeof streamToResponse>[2]
+        onComplete
       );
     } catch (err) {
       console.error('[school/chat]', err);
@@ -1082,6 +1157,117 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     } catch (err) {
       console.error('[school/personas]', err);
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/progress ──────────────────────────────────────────
+  router.get('/school/progress', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    try {
+      const rows = db.prepare(
+        `SELECT sp.class_id, sc.name AS class_name, sc.subject_id, sp.blooms_data, sp.overall_progress_pct
+         FROM student_progress sp JOIN school_classes sc ON sc.id = sp.class_id
+         WHERE sp.student_user_id = ?`
+      ).all(userId) as Record<string, unknown>[];
+      res.json(rows.map((r) => ({
+        classId: r.class_id, className: r.class_name, subjectId: r.subject_id,
+        overallProgressPct: r.overall_progress_pct,
+        blooms: r.blooms_data ? JSON.parse(r.blooms_data as string)
+          : { knowledge: 0, application: 0, analysis: 0, evaluation: 0, creation: 0, metacognition: 0 },
+      })));
+    } catch (err) {
+      console.error('[school/progress]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/settings ───────────────────────────────────────────
+  router.get('/school/settings', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    try {
+      const profile = db.prepare(
+        `SELECT sen_mode, explanation_style FROM student_growth_profiles WHERE student_user_id = ?`
+      ).get(userId) as { sen_mode: string | null; explanation_style: string } | undefined;
+      res.json({ senMode: profile?.sen_mode ?? null, explanationStyle: profile?.explanation_style ?? 'balanced' });
+    } catch (err) {
+      console.error('[school/settings GET]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── PATCH /api/school/settings ─────────────────────────────────────────
+  router.patch('/school/settings', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    try {
+      const { senMode, explanationStyle } = req.body as { senMode?: string | null; explanationStyle?: string };
+      const now = new Date().toISOString();
+      const existing = db.prepare('SELECT id FROM student_growth_profiles WHERE student_user_id = ?').get(userId) as { id: string } | undefined;
+      if (existing) {
+        db.prepare(
+          `UPDATE student_growth_profiles SET sen_mode = ?, explanation_style = ?, updated_at = ? WHERE student_user_id = ?`
+        ).run(senMode ?? null, explanationStyle ?? 'balanced', now, userId);
+      } else {
+        db.prepare(
+          `INSERT INTO student_growth_profiles (id, student_user_id, stage, session_count, sen_mode, explanation_style, updated_at) VALUES (?, ?, 'S1', 0, ?, ?, ?)`
+        ).run(crypto.randomUUID(), userId, senMode ?? null, explanationStyle ?? 'balanced', now);
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[school/settings PATCH]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── DELETE /api/school/learning-history ────────────────────────────────
+  router.delete('/school/learning-history', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    try {
+      db.prepare(`DELETE FROM messages WHERE session_id IN (SELECT id FROM sessions WHERE user_id = ? AND module_id LIKE 'school%')`).run(userId);
+      db.prepare(`DELETE FROM sessions WHERE user_id = ? AND module_id LIKE 'school%'`).run(userId);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[school/learning-history DELETE]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/radar ──────────────────────────────────────────────
+  const radarCache = new Map<string, { items: unknown[]; expiresAt: number }>();
+
+  router.get('/school/radar', async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    if (!isApiKeyConfigured()) return res.status(503).json({ error: 'API key not configured' });
+
+    const subjectId = (req.query.subjectId as string) || 'mathematics';
+    const personaId = DEFAULT_PERSONA_FOR_SUBJECT[subjectId] ?? 'alma';
+
+    const cached = radarCache.get(subjectId);
+    if (cached && cached.expiresAt > Date.now()) return res.json({ items: cached.items, personaId });
+
+    try {
+      const { default: Anthropic } = await import('@anthropic-ai/sdk');
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `Generate exactly 4 current real-world events/stories (sports, gaming, technology, science, culture, world events) that connect to the school subject "${subjectId}" (Swedish Lgr22, Year 7-9).\n\nReturn ONLY valid JSON, no markdown:\n{"items":[{"headline":"short headline max 12 words","category":"Sports|Gaming|Technology|Science|Culture|World","curriculumLink":"one sentence how this connects to ${subjectId}","discussionQuestion":"engaging open question max 20 words","chatPrompt":"I saw that [brief summary]. How does this connect to ${subjectId}?"}]}`,
+        }],
+      });
+      const text = (response.content[0] as { type: string; text: string }).text ?? '';
+      const match = text.match(/\{[\s\S]*\}/);
+      const parsed = match ? JSON.parse(match[0]) : { items: [] };
+      const items = Array.isArray(parsed.items) ? parsed.items : [];
+      radarCache.set(subjectId, { items, expiresAt: Date.now() + 6 * 60 * 60 * 1000 });
+      res.json({ items, personaId });
+    } catch (err) {
+      console.error('[school/radar]', err);
+      if (!res.headersSent) res.status(500).json({ error: safeError(err) });
     }
   });
 

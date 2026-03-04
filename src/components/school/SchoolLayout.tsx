@@ -16,6 +16,7 @@ import {
   User,
   Code,
   Route,
+  Newspaper,
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -65,6 +66,12 @@ const STUDENT_NAV: SchoolNavItem[] = [
     labelKey: 'nav.coding',
     icon: <Code className="h-4 w-4" />,
     path: '/school/coding',
+  },
+  {
+    id: 'radar',
+    labelKey: 'nav.radar',
+    icon: <Newspaper className="h-4 w-4" />,
+    path: '/school/radar',
   },
 ];
 

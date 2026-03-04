@@ -12,6 +12,7 @@
     "assignments": "Assignments",
     "coding": "Coding",
     "journey": "My Journey",
+    "radar": "My Radar",
     "myClasses": "My Classes",
     "createAssignment": "Create Assignment",
     "students": "Students",
@@ -312,7 +313,16 @@
   },
   "journey": {
     "title": "My Learning Journey",
-    "subtitle": "Track your progress through each subject"
+    "subtitle": "Track your progress through each subject",
+    "bloomsTitle": "Learning Dimensions"
+  },
+  "radar": {
+    "title": "My Radar",
+    "subtitle": "See how today's world connects to your studies",
+    "loading": "Finding connections...",
+    "refresh": "Refresh",
+    "exploreWith": "Explore with {{persona}}",
+    "noItems": "No connections found. Try refreshing or selecting another subject."
   },
   "progress": {
     "mastery": {

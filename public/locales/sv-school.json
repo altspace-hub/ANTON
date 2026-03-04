@@ -12,6 +12,7 @@
     "assignments": "Uppgifter",
     "coding": "Programmering",
     "journey": "Min resa",
+    "radar": "Min Radar",
     "myClasses": "Mina klasser",
     "createAssignment": "Skapa uppgift",
     "students": "Elever",
@@ -312,7 +313,16 @@
   },
   "journey": {
     "title": "Min läranderesa",
-    "subtitle": "Följ dina framsteg i varje ämne"
+    "subtitle": "Följ dina framsteg i varje ämne",
+    "bloomsTitle": "Inlärningsdimensioner"
+  },
+  "radar": {
+    "title": "Min Radar",
+    "subtitle": "Se hur omvärlden hänger ihop med dina studier",
+    "loading": "Hittar kopplingar...",
+    "refresh": "Uppdatera",
+    "exploreWith": "Utforska med {{persona}}",
+    "noItems": "Inga kopplingar hittades. Prova att uppdatera eller byt ämne."
   },
   "progress": {
     "mastery": {

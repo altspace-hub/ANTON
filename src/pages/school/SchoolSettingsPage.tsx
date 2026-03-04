@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Loader2, Bell, Globe, MessageSquare, Trash2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Bell, Globe, MessageSquare, Trash2, Accessibility } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -21,10 +21,23 @@ export default function SchoolSettingsPage() {
   const { t, i18n } = useTranslation('school');
   const [teachingLang, setTeachingLang] = useState('sv');
   const [dueDateReminders, setDueDateReminders] = useState(true);
+  const [senMode, setSenMode] = useState<string>('none');
+  const [explanationStyle, setExplanationStyle] = useState<string>('balanced');
   const [saving, setSaving] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
   const [clearingHistory, setClearingHistory] = useState(false);
   const [historyCleared, setHistoryCleared] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/school/settings', { headers: getAuthHeader() })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        setSenMode(data.senMode ?? 'none');
+        setExplanationStyle(data.explanationStyle ?? 'balanced');
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSave() {
     setSaving(true);
@@ -32,7 +45,12 @@ export default function SchoolSettingsPage() {
       await fetch('/api/school/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body: JSON.stringify({ teachingLanguage: teachingLang, dueDateReminders }),
+        body: JSON.stringify({
+          teachingLanguage: teachingLang,
+          dueDateReminders,
+          senMode: senMode === 'none' ? null : senMode,
+          explanationStyle,
+        }),
       });
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 2500);
@@ -139,6 +157,62 @@ export default function SchoolSettingsPage() {
           <p className="text-xs text-adv-gray-med">
             Alma adapts her teaching style to your assistance level, set by your teacher. If you don't have a class, the default is L2 (Moderate Help).
           </p>
+        </section>
+
+        {/* Learning Support */}
+        <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Accessibility className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-off-white">Learning Support</h2>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-2">
+              Accessibility Mode
+            </label>
+            <p className="mb-3 text-xs text-adv-gray-med">
+              Choose a mode that suits how you learn best. Alma will adapt her responses accordingly.
+            </p>
+            <div className="space-y-2">
+              {[
+                { value: 'none', label: 'Standard', desc: 'Default — no special adaptations' },
+                { value: 'dyslexia', label: 'Dyslexia-Friendly', desc: 'Short sentences, bullet points, bold key terms' },
+                { value: 'adhd', label: 'ADHD-Friendly', desc: 'Brief focused responses, one concept at a time, clear next steps' },
+              ].map((opt) => (
+                <label key={opt.value} className="flex items-start gap-3 cursor-pointer rounded-lg border border-border p-3 hover:border-adv-teal/30 transition-colors">
+                  <input
+                    type="radio"
+                    name="senMode"
+                    value={opt.value}
+                    checked={senMode === opt.value}
+                    onChange={() => setSenMode(opt.value)}
+                    className="mt-0.5 accent-adv-teal"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-adv-off-white">{opt.label}</p>
+                    <p className="text-xs text-adv-gray-med">{opt.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              Explanation Style
+            </label>
+            <select
+              value={explanationStyle}
+              onChange={(e) => setExplanationStyle(e.target.value)}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            >
+              <option value="balanced">Balanced (default)</option>
+              <option value="examples_first">Examples first, then theory</option>
+              <option value="theory_first">Theory first, then examples</option>
+              <option value="visual">Visual / step-by-step diagrams</option>
+              <option value="verbal">Conversational / storytelling</option>
+            </select>
+          </div>
         </section>
 
         {/* Privacy */}

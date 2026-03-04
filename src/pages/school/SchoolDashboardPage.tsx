@@ -92,12 +92,27 @@ export default function SchoolDashboardPage() {
                 {stats.sessionsThisWeek} session{stats.sessionsThisWeek !== 1 ? 's' : ''} this week
               </div>
             )}
-            {growthStage && (
-              <div className="flex items-center gap-1.5 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-xs font-semibold text-adv-teal">
-                <TrendingUp className="h-3 w-3" />
-                {growthStage}
-              </div>
-            )}
+            {growthStage && (() => {
+              const STAGE_INFO: Record<string, { label: string; target: number | null }> = {
+                S1: { label: 'Getting to Know', target: 5 },
+                S2: { label: 'Building Confidence', target: 20 },
+                S3: { label: 'Deepening Mastery', target: 50 },
+                S4: { label: 'Independent Learner', target: null },
+              };
+              const info = STAGE_INFO[growthStage] ?? { label: growthStage, target: null };
+              const sessionsLeft = info.target ? Math.max(0, info.target - (stats.sessionsThisWeek ?? 0)) : 0;
+              return (
+                <div className="flex flex-col items-end gap-0.5">
+                  <div className="flex items-center gap-1.5 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-xs font-semibold text-adv-teal">
+                    <TrendingUp className="h-3 w-3" />
+                    {growthStage} · {info.label}
+                  </div>
+                  {info.target !== null && sessionsLeft > 0 && (
+                    <span className="text-xs text-adv-gray-med">{sessionsLeft} to next stage</span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 

@@ -140,19 +140,39 @@ function getStudyLink(cls: ClassCard, topic: TopicModule): string {
   return `/school/chat?classId=${cls.id}&topic=${encodeURIComponent(topic.label)}`;
 }
 
+const BLOOMS_DIMS = [
+  { key: 'knowledge',     label: 'Knowledge',     color: 'bg-adv-blue' },
+  { key: 'application',   label: 'Application',   color: 'bg-adv-teal' },
+  { key: 'analysis',      label: 'Analysis',      color: 'bg-adv-green' },
+  { key: 'evaluation',    label: 'Evaluation',    color: 'bg-adv-gold' },
+  { key: 'creation',      label: 'Creation',      color: 'bg-adv-red' },
+  { key: 'metacognition', label: 'Metacognition', color: 'bg-purple-400' },
+];
+
 export default function CourseJourneyPage() {
   const { t } = useTranslation('school');
   const [classes, setClasses] = useState<ClassCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedClass, setExpandedClass] = useState<string | null>(null);
+  const [bloomsByClass, setBloomsByClass] = useState<Record<string, Record<string, number>>>({});
 
   useEffect(() => {
-    fetch('/api/school/dashboard', { headers: getAuthHeader() })
-      .then((r) => r.ok ? r.json() : { classes: [] })
-      .then((data) => {
-        const loaded: ClassCard[] = data.classes ?? [];
+    Promise.all([
+      fetch('/api/school/dashboard', { headers: getAuthHeader() }).then((r) => r.ok ? r.json() : { classes: [] }),
+      fetch('/api/school/progress', { headers: getAuthHeader() }).then((r) => r.ok ? r.json() : []),
+    ])
+      .then(([dashData, progressData]) => {
+        const loaded: ClassCard[] = dashData.classes ?? [];
         setClasses(loaded);
         if (loaded.length > 0) setExpandedClass(loaded[0].id);
+        // Build blooms map keyed by classId
+        const bloomsMap: Record<string, Record<string, number>> = {};
+        if (Array.isArray(progressData)) {
+          for (const row of progressData as { classId: string; blooms: Record<string, number> }[]) {
+            if (row.classId && row.blooms) bloomsMap[row.classId] = row.blooms;
+          }
+        }
+        setBloomsByClass(bloomsMap);
       })
       .catch(() => {})
       .finally(() => setIsLoading(false));
@@ -262,6 +282,7 @@ export default function CourseJourneyPage() {
 
                   <div className="space-y-2">
                     {modules.map((topic, idx) => {
+
                       const status = getTopicStatus(topic, modules, cls.currentTopic, cls.overallProgressPct);
                       const isLast = idx === modules.length - 1;
                       const studyLink = getStudyLink(cls, topic);
@@ -324,6 +345,37 @@ export default function CourseJourneyPage() {
                       );
                     })}
                   </div>
+
+                  {/* Bloom's Taxonomy progress bars */}
+                  {(() => {
+                    const blooms = bloomsByClass[cls.id];
+                    if (!blooms || !Object.values(blooms).some((v) => v > 0)) return null;
+                    return (
+                      <div className="mt-4 border-t border-border pt-4">
+                        <p className="mb-2.5 text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+                          {t('journey.bloomsTitle', 'Learning Dimensions')}
+                        </p>
+                        <div className="space-y-1.5">
+                          {BLOOMS_DIMS.map(({ key, label, color }) => (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className="w-24 shrink-0 text-xs text-adv-gray-med">
+                                {t(`progress.blooms.${key}`, label)}
+                              </span>
+                              <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-adv-dark">
+                                <div
+                                  className={`h-full rounded-full ${color} transition-all duration-700`}
+                                  style={{ width: `${blooms[key] ?? 0}%` }}
+                                />
+                              </div>
+                              <span className="w-7 shrink-0 text-right text-xs text-adv-gray-med">
+                                {blooms[key] ?? 0}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>

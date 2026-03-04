@@ -28,6 +28,9 @@ export interface SchoolPromptConfig {
   taskType: 'homework' | 'studying' | 'practice' | 'quick_question' | 'assessment';
   curriculumId?: string;      // 'lgr22'
   additionalContext?: string; // Uploaded docs, specific instructions
+  growthStage?: string;       // 'S1' | 'S2' | 'S3' | 'S4'
+  senMode?: string | null;    // 'dyslexia' | 'adhd' | null
+  explanationStyle?: string;  // 'balanced' | 'examples_first' | 'theory_first' | 'visual' | 'verbal'
 }
 
 async function readPromptFile(filePath: string): Promise<string> {
@@ -60,6 +63,19 @@ export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<str
       task_type: config.taskType,
     });
     layers.push(foundation);
+  }
+
+  // ── Layer 1.5: Student Growth Stage ──────────────────────────────────────
+  if (config.growthStage) {
+    const stageDesc: Record<string, string> = {
+      S1: 'This student is brand new to AI-assisted learning (Stage 1: Getting to Know). Use maximum scaffolding. Never assume prior knowledge. Celebrate every step. Keep responses short and encouraging.',
+      S2: 'This student is building confidence (Stage 2). Regular Socratic questioning. Connect new concepts to what they already know.',
+      S3: 'This student has a solid foundation (Stage 3: Deepening Mastery). Challenge with harder variations. Expect independent application. Ask "why" and "what if" questions.',
+      S4: 'This student is nearly independent (Stage 4). Minimal scaffolding. Treat as a near-peer. Focus on metacognition and self-directed learning.',
+    };
+    if (stageDesc[config.growthStage]) {
+      layers.push(`\n\n---\n\n## Student Growth Stage\n\n${stageDesc[config.growthStage]}`);
+    }
   }
 
   // ── Layer 2: Subject Context ───────────────────────────────────────────────
@@ -125,6 +141,13 @@ export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<str
   // ── Layer 7: Assistance Level + Task Type Summary ─────────────────────────
   const layer7 = buildAssistanceSummaryLayer(config);
   layers.push(`\n\n---\n\n${layer7}`);
+
+  // ── Layer 7.5: SEN Accommodations ────────────────────────────────────────
+  if (config.senMode === 'dyslexia') {
+    layers.push(`\n\n---\n\n## Accessibility: Dyslexia Mode\n\nALWAYS use:\n- Short sentences (max 15 words each)\n- Bullet points instead of dense paragraphs\n- Bold key terms on first use\n- Analogies over text-heavy explanations\n- Blank line between each idea`);
+  } else if (config.senMode === 'adhd') {
+    layers.push(`\n\n---\n\n## Accessibility: ADHD Mode\n\nALWAYS use:\n- Max 3 short paragraphs per response\n- One concept at a time\n- End with a single clear next step\n- Immediate positive reinforcement\n- "Does that make sense so far?" between ideas`);
+  }
 
   return layers.join('').trim();
 }
