@@ -1,0 +1,7 @@
+{
+  "subject": "A-Level Economics",
+  "microeconomics": ["Supply and demand", "Price elasticity", "Market structures (perfect competition, monopoly, oligopoly)", "Labour markets", "Market failure and government intervention"],
+  "macroeconomics": ["National income and economic growth", "Inflation and unemployment", "Balance of payments and exchange rates", "Fiscal and monetary policy", "International trade and globalisation"],
+  "skills": ["Diagram drawing and interpretation", "Data response and quantitative analysis", "Extended essay writing", "Evaluation of economic policies and theories"],
+  "examFormat": "3 papers × 2hr (AQA/Edexcel): Paper 1 Markets, Paper 2 National Economy, Paper 3 Synoptic Economic Problems"
+}

@@ -282,6 +282,36 @@ You are talking with a child aged 7–12 years old. ALWAYS follow these rules:
     }
   }
 
+  // ── Layer 6: uk-alevel curriculum ──────────────────────────────────────
+  if (config.curriculumId === 'uk-alevel') {
+    const alevelSubjectMap: Record<string, string> = {
+      mathematics: 'mathematics',
+      'advanced-mathematics': 'further-mathematics',
+      'further-mathematics': 'further-mathematics',
+      physics: 'physics',
+      chemistry: 'chemistry',
+      biology: 'biology',
+      english: 'english-literature',
+      'english-literature': 'english-literature',
+      history: 'history',
+      economics: 'economics',
+    };
+    const alevelFile = alevelSubjectMap[config.subjectId] ?? config.subjectId;
+    try {
+      const alevelPath = path.join(SERVER_DIR, '..', 'curricula', 'uk', 'alevel', `${alevelFile}.json`);
+      if (fs.existsSync(alevelPath)) {
+        const alevelData = JSON.parse(fs.readFileSync(alevelPath, 'utf8'));
+        const topicsKey = alevelData.topics ?? alevelData.pure ?? alevelData.corePure;
+        const topicLines = Array.isArray(topicsKey) ? topicsKey.slice(0, 6).map((t: string) => `- ${t}`) : [];
+        layers.push(`\n\n---\n\n## Curriculum Reference (UK A-Level)\n\n**Subject:** ${alevelData.subject}\n\n**Key topics:**\n${topicLines.join('\n')}${alevelData.examFormat ? `\n\n**Exam format:** ${alevelData.examFormat}` : ''}${alevelData.note ? `\n\n**Note:** ${alevelData.note}` : ''}`);
+      } else {
+        layers.push(`\n\n---\n\n## Curriculum Reference (UK A-Level)\n\nThis class follows the UK A-Level specification (Years 12–13). Align content with AQA/Edexcel/OCR A-Level specifications. Prepare students for linear exams and, where applicable, coursework and practical endorsement.`);
+      }
+    } catch {
+      layers.push(`\n\n---\n\n## Curriculum Reference (UK A-Level)\n\nThis class follows UK A-Level specifications for Year 12–13 sixth form students. Focus on exam technique, extended analytical writing, and deep subject knowledge.`);
+    }
+  }
+
   if (config.additionalContext) {
     layers.push(`\n\n---\n\n## Additional Context\n\n${config.additionalContext}`);
   }

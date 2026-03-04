@@ -82,6 +82,12 @@ const STUDENT_NAV: SchoolNavItem[] = [
     icon: <FlipHorizontal className="h-4 w-4" />,
     path: '/school/review',
   },
+  {
+    id: 'ucas',
+    labelKey: 'nav.ucas',
+    icon: <BookMarked className="h-4 w-4" />,
+    path: '/school/ucas',
+  },
 ];
 
 const GUARDIAN_NAV: SchoolNavItem[] = [

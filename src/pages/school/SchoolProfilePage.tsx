@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Edit2, CheckCircle2, Loader2, BookOpen, MessageSquare, Copy, Users, Lock, Trophy } from 'lucide-react';
+import { User, Edit2, CheckCircle2, Loader2, BookOpen, MessageSquare, Copy, Users, Lock, Trophy, Palette } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import SchoolLayout from '@/components/school/SchoolLayout';
+import AvatarDisplay, { AVATAR_CHARS, COLOR_SCHEMES, FRAMES, type AvatarConfig } from '@/components/school/AvatarDisplay';
 
 interface DashboardStats {
   sessionsThisWeek?: number;
@@ -39,6 +40,11 @@ export default function SchoolProfilePage() {
   const [achievements, setAchievements] = useState<AchievementDef[]>([]);
   const [earned, setEarned] = useState<Set<string>>(new Set());
 
+  // Avatar state
+  const [avatar, setAvatar] = useState<AvatarConfig>({ avatarChar: '🦊', colorScheme: 'teal', frame: 'none', title: '' });
+  const [showAvatarEditor, setShowAvatarEditor] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+
   const schoolRole = ((user as Record<string, unknown> | null)?.school_role as string | undefined) ?? 'student';
 
   useEffect(() => {
@@ -47,8 +53,32 @@ export default function SchoolProfilePage() {
       ?? '';
     setDisplayName(name);
     loadStats();
-    if (schoolRole === 'student') loadAchievements();
+    if (schoolRole === 'student') { loadAchievements(); loadAvatar(); }
   }, [user, schoolRole]);
+
+  async function loadAvatar() {
+    try {
+      const res = await fetch('/api/school/avatar', { headers: getAuthHeader() });
+      if (res.ok) {
+        const data = await res.json() as AvatarConfig;
+        setAvatar(data);
+      }
+    } catch { /* non-fatal */ }
+  }
+
+  async function saveAvatar(updated: AvatarConfig) {
+    setAvatarSaving(true);
+    try {
+      await fetch('/api/school/avatar', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify(updated),
+      });
+      setAvatar(updated);
+    } catch { /* non-fatal */ } finally {
+      setAvatarSaving(false);
+    }
+  }
 
   async function loadAchievements() {
     try {
@@ -135,8 +165,17 @@ export default function SchoolProfilePage() {
         <section className="rounded-xl border border-border bg-adv-card p-5 space-y-5">
           {/* Avatar + name */}
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-adv-teal/10">
-              <User className="h-6 w-6 text-adv-teal" />
+            <div className="relative shrink-0">
+              <AvatarDisplay avatar={avatar} size="lg" />
+              {schoolRole === 'student' && (
+                <button
+                  onClick={() => setShowAvatarEditor(v => !v)}
+                  className="absolute -bottom-1 -right-1 p-1 rounded-full bg-adv-card border border-white/20 text-adv-gray hover:text-adv-teal transition-colors"
+                  title="Edit avatar"
+                >
+                  <Palette className="w-3 h-3" />
+                </button>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               {isEditing ? (
@@ -257,6 +296,86 @@ export default function SchoolProfilePage() {
                   </div>
                 );
               })}
+            </div>
+          </section>
+        )}
+
+        {/* Avatar editor — only for students */}
+        {schoolRole === 'student' && showAvatarEditor && (
+          <section className="rounded-xl border border-adv-teal/30 bg-adv-card p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Palette className="h-4 w-4 text-adv-teal" />
+                <h2 className="text-sm font-semibold text-adv-off-white">{t('avatar.title', 'Customise your avatar')}</h2>
+              </div>
+              {avatarSaving && <Loader2 className="w-4 h-4 text-adv-teal animate-spin" />}
+            </div>
+
+            {/* Emoji picker */}
+            <div>
+              <p className="text-xs text-adv-gray mb-2">{t('avatar.chooseEmoji', 'Choose your emoji')}</p>
+              <div className="flex flex-wrap gap-2">
+                {AVATAR_CHARS.map(ch => (
+                  <button
+                    key={ch}
+                    onClick={() => saveAvatar({ ...avatar, avatarChar: ch })}
+                    className={`w-9 h-9 rounded-lg text-xl flex items-center justify-center transition-colors ${avatar.avatarChar === ch ? 'bg-adv-teal/30 ring-2 ring-adv-teal' : 'bg-adv-dark hover:bg-adv-teal/10'}`}
+                  >
+                    {ch}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Colour picker */}
+            <div>
+              <p className="text-xs text-adv-gray mb-2">{t('avatar.chooseColor', 'Colour scheme')}</p>
+              <div className="flex gap-2 flex-wrap">
+                {COLOR_SCHEMES.map(cs => (
+                  <button
+                    key={cs.id}
+                    onClick={() => saveAvatar({ ...avatar, colorScheme: cs.id })}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${avatar.colorScheme === cs.id ? 'border-adv-teal text-white' : 'border-white/10 text-adv-gray hover:text-white'}`}
+                  >
+                    <span className={`w-3 h-3 rounded-full ${cs.preview}`} />
+                    {cs.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Frame picker */}
+            <div>
+              <p className="text-xs text-adv-gray mb-2">{t('avatar.chooseFrame', 'Frame')}</p>
+              <div className="flex gap-2 flex-wrap">
+                {FRAMES.map(fr => (
+                  <button
+                    key={fr.id}
+                    onClick={() => saveAvatar({ ...avatar, frame: fr.id })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${avatar.frame === fr.id ? 'border-adv-teal text-white bg-adv-teal/10' : 'border-white/10 text-adv-gray hover:text-white'}`}
+                  >
+                    {fr.emoji ? `${fr.emoji} ` : ''}{fr.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Title input */}
+            <div>
+              <p className="text-xs text-adv-gray mb-2">{t('avatar.title', 'Display title (optional)')}</p>
+              <input
+                type="text"
+                value={avatar.title}
+                onChange={e => setAvatar(prev => ({ ...prev, title: e.target.value }))}
+                onBlur={() => saveAvatar(avatar)}
+                maxLength={30}
+                placeholder={t('avatar.titlePlaceholder', 'e.g. Maths Wizard, History Buff...')}
+                className="w-full bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+              />
+            </div>
+
+            <div className="flex items-center justify-center pt-2">
+              <AvatarDisplay avatar={avatar} size="xl" showTitle />
             </div>
           </section>
         )}

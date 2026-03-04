@@ -1,0 +1,8 @@
+{
+  "subject": "A-Level Mathematics",
+  "pure": ["Algebra and functions", "Coordinate geometry", "Sequences and series", "Trigonometry", "Exponentials and logarithms", "Differentiation", "Integration", "Proof", "Vectors"],
+  "statistics": ["Statistical sampling", "Probability", "Statistical distributions (binomial, normal)", "Hypothesis testing", "Correlation and regression"],
+  "mechanics": ["Kinematics", "Forces and Newton's laws", "Moments", "Projectiles"],
+  "examBoards": "AQA / Edexcel / OCR — same core topics, minor differences in applied modules",
+  "examFormat": "3 papers × 2hr (100 marks each): Paper 1 Pure, Paper 2 Pure, Paper 3 Applied (Statistics + Mechanics)"
+}

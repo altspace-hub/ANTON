@@ -515,6 +515,8 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`ALTER TABLE guardian_student_links ADD COLUMN email_digest INTEGER DEFAULT 1`); } catch {}
   // Session D: review_cards (SM-2 spaced repetition)
   try { db.exec(`CREATE TABLE IF NOT EXISTS review_cards (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, subject_id TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, source TEXT, due_date TEXT, interval_days INTEGER DEFAULT 1, ease_factor REAL DEFAULT 2.5, repetitions INTEGER DEFAULT 0, created_at DATETIME)`); } catch {}
+  // Session H: student_avatars (cosmetic system)
+  try { db.exec(`CREATE TABLE IF NOT EXISTS student_avatars (student_user_id TEXT PRIMARY KEY, avatar_char TEXT DEFAULT '🦊', color_scheme TEXT DEFAULT 'teal', frame TEXT DEFAULT 'none', title TEXT DEFAULT '', unlocked_items TEXT DEFAULT '[]', updated_at DATETIME)`); } catch {}
   // Load persisted model-tier override (if any)
   try {
     const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
@@ -2438,6 +2440,66 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     return res.json({ ok: true });
   });
 
+  // ── GET /api/school/avatar ────────────────────────────────────────────────
+  router.get('/school/avatar', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    const row = db.prepare(`SELECT * FROM student_avatars WHERE student_user_id = ?`).get(userId) as Record<string, unknown> | undefined;
+    if (!row) {
+      // Return defaults
+      return res.json({ avatarChar: '🦊', colorScheme: 'teal', frame: 'none', title: '', unlockedItems: [] });
+    }
+    return res.json({
+      avatarChar: row.avatar_char,
+      colorScheme: row.color_scheme,
+      frame: row.frame,
+      title: row.title,
+      unlockedItems: JSON.parse((row.unlocked_items as string) || '[]'),
+    });
+  });
+
+  // ── PATCH /api/school/avatar ───────────────────────────────────────────────
+  router.patch('/school/avatar', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    const { avatarChar, colorScheme, frame, title } = req.body as {
+      avatarChar?: string; colorScheme?: string; frame?: string; title?: string;
+    };
+    const now = new Date().toISOString();
+    const existing = db.prepare(`SELECT * FROM student_avatars WHERE student_user_id = ?`).get(userId) as Record<string, unknown> | undefined;
+    if (!existing) {
+      db.prepare(`INSERT INTO student_avatars (student_user_id, avatar_char, color_scheme, frame, title, unlocked_items, updated_at) VALUES (?, ?, ?, ?, ?, '[]', ?)`).run(
+        userId, avatarChar ?? '🦊', colorScheme ?? 'teal', frame ?? 'none', title ?? '', now
+      );
+    } else {
+      const updates: string[] = [];
+      const vals: unknown[] = [];
+      if (avatarChar !== undefined) { updates.push('avatar_char = ?'); vals.push(avatarChar); }
+      if (colorScheme !== undefined) { updates.push('color_scheme = ?'); vals.push(colorScheme); }
+      if (frame !== undefined) { updates.push('frame = ?'); vals.push(frame); }
+      if (title !== undefined) { updates.push('title = ?'); vals.push(title); }
+      if (updates.length > 0) {
+        updates.push('updated_at = ?'); vals.push(now); vals.push(userId);
+        db.prepare(`UPDATE student_avatars SET ${updates.join(', ')} WHERE student_user_id = ?`).run(...vals);
+      }
+    }
+    return res.json({ ok: true });
+  });
+
+  // ── POST /api/school/avatar/unlock ────────────────────────────────────────
+  router.post('/school/avatar/unlock', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    const { item } = req.body as { item: string };
+    if (!item) return res.status(400).json({ error: 'item required' });
+    const row = db.prepare(`SELECT unlocked_items FROM student_avatars WHERE student_user_id = ?`).get(userId) as { unlocked_items: string } | undefined;
+    const current: string[] = row ? JSON.parse(row.unlocked_items || '[]') : [];
+    if (!current.includes(item)) current.push(item);
+    const now = new Date().toISOString();
+    db.prepare(`INSERT INTO student_avatars (student_user_id, unlocked_items, updated_at) VALUES (?, ?, ?) ON CONFLICT(student_user_id) DO UPDATE SET unlocked_items = excluded.unlocked_items, updated_at = excluded.updated_at`).run(userId, JSON.stringify(current), now);
+    return res.json({ ok: true, unlockedItems: current });
+  });
+
   // ── GET /api/school/parent/child-summary/:childId ─────────────────────────
   router.get('/school/parent/child-summary/:childId', (req, res) => {
     const guardianId = req.user?.id;
@@ -2501,6 +2563,82 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
       .run(teacherLevelOverride ?? null, senOverride ?? null, req.params.classId, req.params.studentId);
 
     return res.json({ ok: true });
+  });
+
+  // ── POST /api/school/ucas/draft ──────────────────────────────────────────
+  // Generate a UCAS personal statement draft using streaming Claude
+  router.post('/school/ucas/draft', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const {
+        courseTitle,
+        universities,
+        subjectsSummary,
+        whyThisSubject,
+        workExperience,
+        extracurriculars,
+        futureGoals,
+        draftLength = 'standard',
+      } = req.body as Record<string, string>;
+
+      if (!courseTitle || !whyThisSubject) {
+        return res.status(400).json({ error: 'courseTitle and whyThisSubject are required' });
+      }
+
+      const wordTarget = draftLength === 'short' ? '300-350 words' : draftLength === 'long' ? '550-600 words' : '450-500 words';
+
+      const systemPrompt = `You are an experienced UCAS personal statement advisor who has helped thousands of UK students gain places at competitive universities. You write authentic, compelling personal statements that:
+- Open with a strong hook (NOT "From a young age...")
+- Demonstrate genuine intellectual passion for the subject
+- Show self-awareness and growth
+- Highlight specific skills and experiences
+- Connect past experiences to future ambitions
+- Close with a forward-looking statement
+- Stay within the UCAS 4,000 character / 47-line limit
+
+Write in the student's voice — authentic, specific, and confident. Avoid clichés. Every sentence must earn its place.`;
+
+      const userMessage = `Please write a UCAS personal statement draft for this student.
+
+**Course applying for:** ${courseTitle}
+${universities ? `**Target universities:** ${universities}` : ''}
+**A-Level subjects:** ${subjectsSummary || 'Not specified'}
+**Why this subject:** ${whyThisSubject}
+${workExperience ? `**Work experience / volunteering:** ${workExperience}` : ''}
+${extracurriculars ? `**Extracurricular activities:** ${extracurriculars}` : ''}
+${futureGoals ? `**Future goals / career aspirations:** ${futureGoals}` : ''}
+
+Write a complete personal statement draft of ${wordTarget}. After the draft, provide 3 specific improvement suggestions.`;
+
+      const model = 'claude-sonnet-4-5-20250929';
+
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const anthropic = new Anthropic();
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const stream = await anthropic.messages.stream({
+        model,
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+      });
+
+      for await (const chunk of stream) {
+        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+          res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`);
+        }
+      }
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } catch (err) {
+      console.error('UCAS draft error:', err);
+      if (!res.headersSent) res.status(500).json({ error: 'Failed to generate draft' });
+    }
   });
 
   return router;

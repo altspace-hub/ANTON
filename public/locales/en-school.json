@@ -29,7 +29,8 @@
       "guardian": "Guardian",
       "teacher": "Teacher",
       "school_admin": "School Admin"
-    }
+    },
+    "ucas": "UCAS Statement"
   },
   "dashboard": {
     "welcome": "Welcome back, {{name}}!",
@@ -52,7 +53,7 @@
     "mathematics": "Mathematics",
     "algebra": "Algebra",
     "geometry": "Geometry",
-    "statistics": "Statistics & Probability",
+    "statistics": "Statistics & Data Science",
     "functions": "Functions",
     "numberTheory": "Number Theory",
     "svenska": "Svenska",
@@ -76,7 +77,6 @@
     "philosophy": "Philosophy",
     "idrottHalsa": "Sports & Health",
     "idrott-halsa": "Sports & Health",
-    "statistics": "Statistics & Data Science",
     "data-science": "Data Science",
     "modersmal": "Heritage Language (Modersmål)",
     "sfiBridge": "Swedish for Newcomers (SFI Bridge)",
@@ -514,5 +514,50 @@
     "hard": "Hard",
     "good": "Good",
     "easy": "Easy"
+  },
+  "ucas": {
+    "title": "UCAS Personal Statement",
+    "subtitle": "AI-powered first draft for UK university applications",
+    "disclaimer": "This draft is a starting point. Personalise it heavily — admissions tutors read thousands of statements. Your unique voice and specific details are what make the difference.",
+    "formTitle": "Tell us about yourself",
+    "courseTitle": "Course you are applying for",
+    "coursePlaceholder": "e.g. Computer Science BSc, Medicine MBBS...",
+    "universities": "Target universities (optional)",
+    "universitiesPlaceholder": "e.g. Imperial, UCL, Edinburgh, Bristol, Manchester",
+    "subjects": "A-Level subjects",
+    "subjectsPlaceholder": "e.g. Mathematics A*, Physics A, Chemistry A",
+    "whySubject": "Why this subject? What sparked your interest?",
+    "whyPlaceholder": "Describe what drew you to this subject — a book, project, experiment, realisation...",
+    "moreDetails": "Add more details (recommended)",
+    "workExperience": "Work experience / volunteering",
+    "workPlaceholder": "Internships, shadowing, part-time work, volunteering...",
+    "extracurriculars": "Extracurricular activities",
+    "extrasPlaceholder": "Sports, music, clubs, competitions, achievements...",
+    "futureGoals": "Career goals / future plans",
+    "goalsPlaceholder": "Where do you see yourself after university?",
+    "draftLength": "Draft length",
+    "length": {
+      "short": "Short",
+      "standard": "Standard",
+      "long": "Long"
+    },
+    "errorRequired": "Course title and motivation are required.",
+    "generating": "Writing your draft...",
+    "generate": "Generate draft",
+    "regenerate": "Regenerate draft",
+    "draft": "Your draft",
+    "emptyState": "Fill in the form and click Generate to see your personal statement draft here.",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "nextSteps": "Next steps:",
+    "nextStepsText": "Edit the draft to add your own specific examples and voice. Remove anything that doesn't feel like you. Run it past your school's UCAS advisor before submitting."
+  },
+  "avatar": {
+    "title": "Customise your avatar",
+    "chooseEmoji": "Choose your emoji",
+    "chooseColor": "Colour scheme",
+    "chooseFrame": "Frame",
+    "titleLabel": "Display title (optional)",
+    "titlePlaceholder": "e.g. Maths Wizard, History Buff..."
   }
 }
