@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Loader2, Download, ChevronRight, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ClipboardList, Loader2, Download, ChevronRight, Clock, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -67,6 +67,25 @@ export default function StudentAssignmentsPage() {
       const a = document.createElement('a');
       a.href = url;
       a.download = `${title.replace(/\s+/g, '-').toLowerCase()}.anton`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // non-fatal
+    }
+  }
+
+  async function handleDownloadSubmissionLog(submissionId: string, title: string) {
+    try {
+      const res = await fetch(`/api/school/submissions/${submissionId}/export-anton`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.replace(/\s+/g, '-').toLowerCase()}-submission.anton`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -197,14 +216,24 @@ export default function StudentAssignmentsPage() {
                     type="button"
                     onClick={() => handleDownloadAnton(a.id, a.title)}
                     className="rounded-lg border border-border p-1.5 text-adv-gray hover:text-adv-off-white transition-colors"
-                    title={t('teacher.assignment.export', 'Export as .anton')}
+                    title={t('teacher.assignment.export', 'Export assignment as .anton')}
                   >
                     <Download className="h-3.5 w-3.5" />
                   </button>
+                  {a.submitted_at && a.submission_id && (
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadSubmissionLog(a.submission_id!, a.title)}
+                      className="rounded-lg border border-border p-1.5 text-adv-gray hover:text-adv-off-white transition-colors"
+                      title="Export submission audit log as .anton"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   {!a.submitted_at && (
                     <button
                       type="button"
-                      onClick={() => navigate(`/school/chat?classId=${a.class_id}&taskType=homework`)}
+                      onClick={() => navigate(`/school/assignments/${a.id}/take`)}
                       className="flex items-center gap-1 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
                     >
                       Start

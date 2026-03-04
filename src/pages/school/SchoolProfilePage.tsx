@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Edit2, CheckCircle2, Loader2, BookOpen, MessageSquare } from 'lucide-react';
+import { User, Edit2, CheckCircle2, Loader2, BookOpen, MessageSquare, Copy, Users } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import SchoolLayout from '@/components/school/SchoolLayout';
@@ -19,6 +19,11 @@ export default function SchoolProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({});
+
+  // Guardian invite code
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   const schoolRole = ((user as Record<string, unknown> | null)?.school_role as string | undefined) ?? 'student';
 
@@ -61,6 +66,31 @@ export default function SchoolProfilePage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleGenerateInviteCode() {
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/school/guardian/generate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInviteCode(data.code ?? data.invite_code ?? null);
+      }
+    } catch {
+      // non-fatal
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function handleCopyCode() {
+    if (!inviteCode) return;
+    await navigator.clipboard.writeText(inviteCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   }
 
   function roleBadgeClass(role: string) {
@@ -165,6 +195,59 @@ export default function SchoolProfilePage() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Guardian invite — only for students */}
+        {schoolRole === 'student' && (
+          <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-adv-teal" />
+              <h2 className="text-sm font-semibold text-adv-off-white">Guardian Access</h2>
+            </div>
+            <p className="text-xs text-adv-gray-med">
+              Generate an invite code and share it with your parent or guardian. They can use it to view your learning progress.
+            </p>
+
+            {inviteCode ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/5 px-4 py-3">
+                  <code className="flex-1 font-mono text-base font-bold tracking-widest text-adv-teal">
+                    {inviteCode}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-adv-gray hover:text-adv-off-white transition-colors"
+                  >
+                    {copiedCode ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-adv-green" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    {copiedCode ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-xs text-adv-gray-med">This code expires in 48 hours. Generate a new one any time.</p>
+                <button
+                  type="button"
+                  onClick={handleGenerateInviteCode}
+                  className="text-xs text-adv-gray hover:text-adv-off-white transition-colors"
+                >
+                  Generate new code
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleGenerateInviteCode}
+                disabled={isGenerating}
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-adv-gray hover:border-adv-teal hover:text-adv-teal disabled:opacity-40 transition-colors"
+              >
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+                Generate guardian invite code
+              </button>
+            )}
           </section>
         )}
       </div>

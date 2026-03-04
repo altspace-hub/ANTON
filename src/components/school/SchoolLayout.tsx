@@ -15,6 +15,7 @@ import {
   Settings,
   User,
   Code,
+  Route,
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -52,6 +53,12 @@ const STUDENT_NAV: SchoolNavItem[] = [
     labelKey: 'nav.assignments',
     icon: <ClipboardList className="h-4 w-4" />,
     path: '/school/assignments',
+  },
+  {
+    id: 'journey',
+    labelKey: 'nav.journey',
+    icon: <Route className="h-4 w-4" />,
+    path: '/school/journey',
   },
   {
     id: 'coding',
