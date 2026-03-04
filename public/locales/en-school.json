@@ -593,5 +593,22 @@
     "empty": "No messages yet. Say hello!",
     "placeholder": "Type a message...",
     "connectingPlaceholder": "Connecting..."
+  },
+  "login": {
+    "title": "ANTON School",
+    "subtitle": "Sign in with your school account",
+    "googleBtn": "Continue with Google",
+    "microsoftBtn": "Continue with Microsoft",
+    "orLocal": "or sign in with username",
+    "username": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "signIn": "Sign in",
+    "failed": "Login failed",
+    "oauthFailed": "Login failed",
+    "oauthError": "Login failed — could not exchange auth code.",
+    "backToWork": "Back to Work Mode",
+    "privacy": "Your conversations are private and stored locally on this device."
   }
 }

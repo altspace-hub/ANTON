@@ -149,11 +149,18 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { setAppMode } = useSettingsStore();
-  const { user } = useAuthStore();
+  const { user, isTeamMode } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // RTL support — apply dir attribute to school layout root
   const isRtl = RTL_LANGUAGES.includes(i18n.language);
+
+  // In team mode, unauthenticated users go to the school login page (not the work-mode login)
+  useEffect(() => {
+    if (isTeamMode && !user) {
+      navigate('/school/login', { replace: true });
+    }
+  }, [isTeamMode, user, navigate]);
 
   // Determine school role from user profile (falls back to 'student')
   const schoolRole = ((user as Record<string, unknown> | null)?.school_role as string | undefined) ?? 'student';

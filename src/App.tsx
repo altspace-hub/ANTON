@@ -119,6 +119,7 @@ const ParentDashboardPage = lazy(() => import('./pages/school/ParentDashboardPag
 const UCASStatementPage = lazy(() => import('./pages/school/UCASStatementPage'));
 const StudyRoomsPage = lazy(() => import('./pages/school/StudyRoomsPage'));
 const StudyRoomPage = lazy(() => import('./pages/school/StudyRoomPage'));
+const SchoolLoginPage = lazy(() => import('./pages/school/SchoolLoginPage'));
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -295,6 +296,9 @@ export default function App() {
           <Route path="/innovation-radar" element={<InnovationRadarPage />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
+
+        {/* School Mode login — public, no auth required */}
+        <Route path="/school/login" element={<SchoolLoginPage />} />
 
         {/* School Mode — own layout (SchoolLayout), no MainLayout wrapper */}
         <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>

@@ -57,6 +57,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
     const params = new URLSearchParams(window.location.search);
     const authCode = params.get('auth_code');
     const authError = params.get('auth_error');
+    const fromParam = params.get('from');
     if (authCode) {
       // Exchange the one-time code for a JWT — clean the URL immediately
       window.history.replaceState({}, '', '/');
@@ -65,7 +66,12 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
         .then((data: { token?: string; error?: string }) => {
           if (data.token) {
             localStorage.setItem('openexpert-token', data.token);
-            window.location.reload();
+            // If the OAuth was initiated from School Mode, navigate there after auth
+            if (fromParam === 'school') {
+              window.location.replace('/school');
+            } else {
+              window.location.reload();
+            }
           } else {
             setError('OAuth login failed: invalid or expired auth code');
           }

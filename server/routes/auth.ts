@@ -263,11 +263,14 @@ export function createAuthRoutes(db: Database) {
   // ─── Google OAuth ──────────────────────────────────────────────────────────
 
   // GET /api/auth/google — redirect to Google consent screen
-  router.get('/auth/google', (_req, res) => {
+  // Optional: ?from=school — causes callback to redirect to /school after auth
+  router.get('/auth/google', (req, res) => {
     if (!GOOGLE_CLIENT_ID) {
       res.status(501).json({ error: 'Google OAuth not configured' });
       return;
     }
+    const fromParam = (req.query as { from?: string }).from || '';
+    const state = fromParam === 'school' ? 'school' : '';
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
       redirect_uri: `${process.env.BASE_URL || 'http://localhost:3001'}/api/auth/google/callback`,
@@ -276,6 +279,7 @@ export function createAuthRoutes(db: Database) {
       access_type: 'offline',
       prompt: 'select_account',
     });
+    if (state) params.set('state', state);
     res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
   });
 
@@ -285,11 +289,12 @@ export function createAuthRoutes(db: Database) {
       res.redirect('/?auth_error=not_configured');
       return;
     }
-    const { code } = req.query as { code?: string };
+    const { code, state } = req.query as { code?: string; state?: string };
     if (!code) {
       res.redirect('/?auth_error=no_code');
       return;
     }
+    const redirectBase = state === 'school' ? '/?from=school&auth_code=' : '/?auth_code=';
     try {
       // Exchange code for tokens
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -312,7 +317,7 @@ export function createAuthRoutes(db: Database) {
       const googleUser = await userRes.json() as { email: string; name: string; picture?: string };
 
       const token = await findOrCreateOAuthUser(db, googleUser.email, googleUser.name, 'google');
-      res.redirect(`/?auth_code=${createExchangeCode(token)}`);
+      res.redirect(`${redirectBase}${createExchangeCode(token)}`);
     } catch (err) {
       console.error('[auth] Google OAuth error:', err);
       res.redirect('/?auth_error=oauth_failed');
@@ -411,7 +416,8 @@ export function createAuthRoutes(db: Database) {
   });
 
   // GET /api/auth/oidc/start — redirect user to the identity provider login page
-  router.get('/auth/oidc/start', async (_req, res) => {
+  // Optional: ?from=school — encodes 'from' in OIDC state so callback can redirect back
+  router.get('/auth/oidc/start', async (req, res) => {
     if (!OIDC_ISSUER_URL || !OIDC_CLIENT_ID) {
       res.status(501).json({ error: 'Enterprise SSO not configured' });
       return;
@@ -419,7 +425,10 @@ export function createAuthRoutes(db: Database) {
     try {
       pruneOidcStates();
       const config = await getOidcConfig();
-      const state = oidcClient.randomState();
+      const fromParam = (req.query as { from?: string }).from || '';
+      const stateRandom = oidcClient.randomState();
+      // Encode 'from' context in state using a separator that survives URL round-trips
+      const state = fromParam === 'school' ? `school:${stateRandom}` : stateRandom;
       const nonce = oidcClient.randomNonce();
       oidcStateStore.set(state, { nonce, createdAt: Date.now() });
 
@@ -487,8 +496,10 @@ export function createAuthRoutes(db: Database) {
       }
       const name = (claims.name as string | undefined) || (claims.preferred_username as string | undefined) || email.split('@')[0];
 
+      const isFromSchool = state?.startsWith('school:') === true;
       const token = await findOrCreateOAuthUser(db, email, name, 'oidc');
-      res.redirect(`/?auth_code=${createExchangeCode(token)}`);
+      const redirectBase = isFromSchool ? '/?from=school&auth_code=' : '/?auth_code=';
+      res.redirect(`${redirectBase}${createExchangeCode(token)}`);
     } catch (err) {
       console.error('[auth] OIDC callback error:', err);
       res.redirect('/?auth_error=oidc_callback_failed');
