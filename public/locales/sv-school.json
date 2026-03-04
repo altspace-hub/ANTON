@@ -123,7 +123,17 @@
     "explanation": "Förklaring",
     "timeRemaining": "{{minutes}} min kvar",
     "completed": "Uppgiften är klar",
-    "resultsSummary": "Du fick {{score}}% på {{topic}}"
+    "resultsSummary": "Du fick {{score}}% på {{topic}}",
+    "socraticExam": "Sokratisk examination",
+    "endExam": "Avsluta examination",
+    "endExamConfirm": "Avsluta examinationen?",
+    "endExamNote": "AI:n utvärderar samtalet och genererar din rapport. Det kan inte ångras.",
+    "examinerThinking": "Examinatorn tänker...",
+    "socraticPlaceholder": "Skriv ditt svar... (Enter för att skicka, Shift+Enter för ny rad)",
+    "evaluationReport": "Examinationsrapport",
+    "generating": "Genererar utvärdering...",
+    "backToAssignments": "Tillbaka till uppgifter",
+    "startSocratic": "Starta examination"
   },
   "teacher": {
     "dashboard": {
@@ -209,6 +219,10 @@
       "typeHomework": "Läxa",
       "typeExam": "Prov",
       "typePractice": "Övning",
+      "typeSocratic": "Sokratisk examination",
+      "socraticObjectives": "Lärandemål",
+      "socraticObjectivesPlaceholder": "Lista de lärandemål som AI-examinatorn ska bedöma. Ett per rad.",
+      "socraticHelp": "AI-examinatorn genomför en muntlig dialog för att bedöma dessa mål. Ingen frågelista behövs.",
       "addQuestion": "Lägg till fråga",
       "questionContent": "Fråga",
       "questionType": "Typ",

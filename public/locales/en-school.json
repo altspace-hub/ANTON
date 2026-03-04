@@ -123,7 +123,17 @@
     "explanation": "Explanation",
     "timeRemaining": "{{minutes}}m remaining",
     "completed": "Assessment complete",
-    "resultsSummary": "You scored {{score}}% on {{topic}}"
+    "resultsSummary": "You scored {{score}}% on {{topic}}",
+    "socraticExam": "Socratic Examination",
+    "endExam": "End Examination",
+    "endExamConfirm": "End the examination?",
+    "endExamNote": "The AI will evaluate the conversation and generate your report. This cannot be undone.",
+    "examinerThinking": "Examiner is thinking...",
+    "socraticPlaceholder": "Type your answer... (Enter to send, Shift+Enter for new line)",
+    "evaluationReport": "Examination Report",
+    "generating": "Generating evaluation...",
+    "backToAssignments": "Back to Assignments",
+    "startSocratic": "Start Examination"
   },
   "teacher": {
     "dashboard": {
@@ -209,6 +219,10 @@
       "typeHomework": "Homework",
       "typeExam": "Exam",
       "typePractice": "Practice",
+      "typeSocratic": "Socratic Examination",
+      "socraticObjectives": "Learning Objectives",
+      "socraticObjectivesPlaceholder": "List the learning objectives the AI examiner should assess. One per line.",
+      "socraticHelp": "The AI examiner will conduct an oral-style dialogue to assess these objectives. No question list required.",
       "addQuestion": "Add question",
       "questionContent": "Question",
       "questionType": "Type",

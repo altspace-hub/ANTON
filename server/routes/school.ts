@@ -495,6 +495,115 @@ export function createSchoolRoutes(db: Database.Database) {
     }
   });
 
+  // ── POST /api/school/socratic-chat ────────────────────────────────────
+  router.post('/school/socratic-chat', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+      if (!isApiKeyConfigured()) return res.status(503).json({ error: 'API key not configured' });
+
+      const { assignmentId, messages = [], subjectId = 'mathematics' } = req.body as {
+        assignmentId?: string;
+        messages: { role: 'user' | 'assistant'; content: string }[];
+        subjectId?: string;
+      };
+
+      // Load objectives from assignment instructions
+      let objectivesText = '';
+      if (assignmentId) {
+        try {
+          const assignment = db.prepare('SELECT title, instructions FROM teacher_assignments WHERE id = ?')
+            .get(assignmentId) as { title: string; instructions: string } | null;
+          if (assignment) {
+            objectivesText = `\nExamination: "${assignment.title}"\nLearning objectives to assess:\n${assignment.instructions}`;
+          }
+        } catch { /* non-fatal */ }
+      }
+
+      const systemPrompt = `You are an AI examiner conducting an oral-style examination in ${subjectId}. Your role is to assess the student's understanding through dialogue — not to teach.
+${objectivesText}
+
+EXAMINATION RULES:
+1. Ask ONE clear, focused question at a time
+2. Listen carefully and ask follow-up questions to probe reasoning and depth
+3. NEVER confirm correctness or give away answers during the examination
+4. Cover all the stated objectives through your questions
+5. If the student is stuck, you may rephrase a question — but never explain
+6. Maintain a calm, professional, encouraging tone
+7. When you have sufficiently assessed all objectives, signal that the examination is complete
+
+Begin by briefly introducing yourself and asking your first question.`;
+
+      await streamToResponse(
+        { model: 'claude-sonnet-4-6', messages, system: systemPrompt, maxTokens: 800 },
+        res
+      );
+    } catch (err) {
+      console.error('[school/socratic-chat]', err);
+      if (!res.headersSent) res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/school/assignments/:id/socratic-evaluate ────────────────
+  router.post('/school/assignments/:id/socratic-evaluate', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+      if (!isApiKeyConfigured()) return res.status(503).json({ error: 'API key not configured' });
+
+      const { conversation = [] } = req.body as {
+        conversation: { role: string; content: string }[];
+      };
+
+      const assignment = db.prepare('SELECT title, instructions FROM teacher_assignments WHERE id = ?')
+        .get(req.params.id) as { title: string; instructions: string } | null;
+
+      const objectives = assignment?.instructions ?? 'General subject knowledge and reasoning';
+      const title = assignment?.title ?? 'Oral Examination';
+
+      const evaluationPrompt = `Review this oral examination conversation and provide a structured evaluation.
+
+Examination: "${title}"
+Learning Objectives:
+${objectives}
+
+Conversation transcript:
+${conversation.map(m => `${m.role === 'user' ? 'Student' : 'Examiner'}: ${m.content}`).join('\n\n')}
+
+Provide a structured evaluation with these exact sections:
+
+## Overall Assessment
+[2–3 sentences summarising the student's performance]
+
+## Score
+[Single integer 0–100]
+
+## Objectives Coverage
+[For each objective listed: ✓ Met / ~ Partially Met / ✗ Not Met with brief justification]
+
+## Strengths
+- [bullet point 1]
+- [bullet point 2]
+- [bullet point 3]
+
+## Areas for Improvement
+- [bullet point 1]
+- [bullet point 2]
+- [bullet point 3]
+
+## Suggested Grade
+[A / B / C / D / E / F — with one sentence of justification]`;
+
+      await streamToResponse(
+        { model: 'claude-sonnet-4-6', messages: [{ role: 'user', content: evaluationPrompt }], maxTokens: 1500 },
+        res
+      );
+    } catch (err) {
+      console.error('[school/socratic-evaluate]', err);
+      if (!res.headersSent) res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── GET /api/school/dashboard ──────────────────────────────────────────
   router.get('/school/dashboard', (req, res) => {
     try {

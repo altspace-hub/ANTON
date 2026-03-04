@@ -113,6 +113,7 @@ const CourseJourneyPage = lazy(() => import('./pages/school/CourseJourneyPage'))
 const SubmissionReviewerPage = lazy(() => import('./pages/school/SubmissionReviewerPage'));
 const LessonLibraryPage = lazy(() => import('./pages/school/LessonLibraryPage'));
 const LessonBuilderPage = lazy(() => import('./pages/school/LessonBuilderPage'));
+const SocraticExamPage = lazy(() => import('./pages/school/SocraticExamPage'));
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -308,6 +309,7 @@ export default function App() {
           <Route path="/school/teacher/students" element={<TeacherStudentsPage />} />
           <Route path="/school/teacher/assignments/new" element={<AssignmentBuilderPage />} />
           <Route path="/school/assignments/:id/take" element={<AssignmentTakingPage />} />
+          <Route path="/school/assignments/:id/socratic" element={<SocraticExamPage />} />
           <Route path="/school/journey" element={<CourseJourneyPage />} />
           <Route path="/school/radar" element={<MyRadarPage />} />
           <Route path="/school/teacher/submissions/:submissionId" element={<SubmissionReviewerPage />} />

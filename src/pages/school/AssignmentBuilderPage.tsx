@@ -28,7 +28,7 @@ interface Question {
 interface AssignmentDraft {
   title: string;
   instructions: string;
-  assignmentType: 'homework' | 'exam' | 'practice';
+  assignmentType: 'homework' | 'exam' | 'practice' | 'socratic';
   subjectId: string;
   topic: string;
   assistanceLevel: AssistanceLevel;
@@ -150,7 +150,7 @@ export default function AssignmentBuilderPage() {
             <button
               type="button"
               onClick={handleSave}
-              disabled={isSaving || !draft.title || draft.questions.length === 0}
+              disabled={isSaving || !draft.title || (draft.assignmentType !== 'socratic' && draft.questions.length === 0)}
               className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-adv-gray hover:border-adv-teal hover:text-adv-teal disabled:opacity-40 transition-colors"
             >
               {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -159,7 +159,7 @@ export default function AssignmentBuilderPage() {
             <button
               type="button"
               onClick={handleExportAnton}
-              disabled={isExporting || !draft.title || draft.questions.length === 0}
+              disabled={isExporting || !draft.title || (draft.assignmentType !== 'socratic' && draft.questions.length === 0)}
               className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 transition-colors"
             >
               {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
@@ -192,15 +192,26 @@ export default function AssignmentBuilderPage() {
 
           <div>
             <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
-              {t('teacher.assignment.instructions')}
+              {draft.assignmentType === 'socratic'
+                ? t('teacher.assignment.socraticObjectives', 'Learning Objectives')
+                : t('teacher.assignment.instructions')}
             </label>
             <textarea
               value={draft.instructions}
               onChange={(e) => setDraft((p) => ({ ...p, instructions: e.target.value }))}
-              placeholder={t('teacher.assignment.instructionsPlaceholder')}
-              rows={3}
+              placeholder={
+                draft.assignmentType === 'socratic'
+                  ? t('teacher.assignment.socraticObjectivesPlaceholder', 'List the learning objectives the AI examiner should assess. One per line.')
+                  : t('teacher.assignment.instructionsPlaceholder')
+              }
+              rows={draft.assignmentType === 'socratic' ? 5 : 3}
               className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
             />
+            {draft.assignmentType === 'socratic' && (
+              <p className="mt-1 text-xs text-adv-teal">
+                {t('teacher.assignment.socraticHelp', 'The AI examiner will conduct an oral-style dialogue to assess these objectives. No question list required.')}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -216,6 +227,7 @@ export default function AssignmentBuilderPage() {
                 <option value="homework">{t('teacher.assignment.typeHomework')}</option>
                 <option value="exam">{t('teacher.assignment.typeExam')}</option>
                 <option value="practice">{t('teacher.assignment.typePractice')}</option>
+                <option value="socratic">{t('teacher.assignment.typeSocratic', 'Socratic Examination')}</option>
               </select>
             </div>
 
@@ -263,8 +275,13 @@ export default function AssignmentBuilderPage() {
           </span>
         </label>
 
-        {/* Questions */}
-        <section className="space-y-3">
+        {/* Questions — hidden for Socratic type */}
+        {draft.assignmentType === 'socratic' && (
+          <div className="rounded-xl border border-adv-teal/20 bg-adv-teal/5 px-4 py-3 text-sm text-adv-teal">
+            {t('teacher.assignment.socraticHelp', 'The AI examiner will conduct an oral-style dialogue to assess the objectives above. Save to create this examination.')}
+          </div>
+        )}
+        <section className={`space-y-3 ${draft.assignmentType === 'socratic' ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-adv-off-white">
