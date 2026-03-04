@@ -54,7 +54,12 @@
     "science": "Science (NO)",
     "social-studies": "Social Studies (SO)",
     "socialStudies": "Social Studies (SO)",
-    "computationalThinking": "Computational Thinking"
+    "computationalThinking": "Computational Thinking",
+    "technology": "Technology & Digital Skills",
+    "lifeSkills": "Life Skills",
+    "life-skills": "Life Skills",
+    "studySkills": "Study Skills",
+    "study-skills": "Study Skills"
   },
   "chat": {
     "greeting": "Hi! I'm {{persona}}. What are you working on today?",
@@ -75,7 +80,17 @@
     "thinking": "Alma is thinking...",
     "uploadsAllowed": "You can upload files or photos of your work",
     "laxhjalpMode": "Stuck? Let's work through it",
-    "endSession": "End session"
+    "endSession": "End session",
+    "actions": {
+      "practice": "Practice problems",
+      "practiceMsg": "Give me 3 practice problems on what we've been discussing. Don't show the answers yet.",
+      "quiz": "Quiz me",
+      "quizMsg": "Quiz me with one question on this topic. Wait for my answer before telling me if I'm right.",
+      "hint": "Give me a hint",
+      "hintMsg": "I'm a bit stuck. Can you give me a hint without revealing the full answer?",
+      "summarise": "Summarise session",
+      "summariseMsg": "Can you summarise the key things we've covered in this session?"
+    }
   },
   "laxhjalp": {
     "title": "Stuck Point — Let's Figure This Out",
@@ -278,7 +293,26 @@
       "name": "Erik",
       "subject": "History & Social Studies",
       "description": "Thoughtful, analytical teacher who teaches you to question sources"
+    },
+    "leo": {
+      "name": "Leo",
+      "subject": "Technology & Digital Skills",
+      "description": "Enthusiastic tech teacher who demystifies the digital world"
+    },
+    "freja": {
+      "name": "Freja",
+      "subject": "Art & Music",
+      "description": "Creative arts teacher who values process over product"
+    },
+    "mia": {
+      "name": "Mia",
+      "subject": "Life Skills & Study Techniques",
+      "description": "Practical coach for adult life skills and evidence-based study habits"
     }
+  },
+  "journey": {
+    "title": "My Learning Journey",
+    "subtitle": "Track your progress through each subject"
   },
   "progress": {
     "mastery": {

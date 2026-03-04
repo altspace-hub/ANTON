@@ -10,6 +10,8 @@ import {
   Star,
   Clock,
   Loader2,
+  TrendingUp,
+  Bell,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -37,6 +39,8 @@ export default function SchoolDashboardPage() {
 
   const [classes, setClasses] = useState<ClassCard[]>([]);
   const [stats, setStats] = useState<QuickStats>({ timeThisWeek: 0, assignmentsDue: 0, sessionsThisWeek: 0 });
+  const [growthStage, setGrowthStage] = useState<string | null>(null);
+  const [upcomingAssignments, setUpcomingAssignments] = useState<{ id: string; title: string; due_date?: string; class_name?: string }[]>([]);
   const [quickQuestion, setQuickQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,6 +58,8 @@ export default function SchoolDashboardPage() {
         const data = await res.json();
         setClasses(data.classes ?? []);
         setStats(data.stats ?? { timeThisWeek: 0, assignmentsDue: 0, sessionsThisWeek: 0 });
+        if (data.growthProfile?.stage) setGrowthStage(data.growthProfile.stage);
+        if (Array.isArray(data.assignments)) setUpcomingAssignments(data.assignments);
       }
     } catch {
       // Non-fatal: show empty dashboard
@@ -78,20 +84,51 @@ export default function SchoolDashboardPage() {
             </p>
           </div>
 
-          {/* Quick stats */}
-          <div className="hidden sm:flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1.5 text-adv-gray">
-              <Clock className="h-3.5 w-3.5" />
-              <span>{Math.round(stats.timeThisWeek / 60)}h {t('guardian.dashboard.timeThisWeek')}</span>
-            </div>
-            {stats.assignmentsDue > 0 && (
-              <div className="flex items-center gap-1.5 text-adv-gold">
-                <Star className="h-3.5 w-3.5" />
-                <span>{stats.assignmentsDue} {t('nav.assignments')}</span>
+          {/* Right: growth stage + session count */}
+          <div className="flex items-center gap-3">
+            {stats.sessionsThisWeek > 0 && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-adv-gray">
+                <Clock className="h-3.5 w-3.5" />
+                {stats.sessionsThisWeek} session{stats.sessionsThisWeek !== 1 ? 's' : ''} this week
+              </div>
+            )}
+            {growthStage && (
+              <div className="flex items-center gap-1.5 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-xs font-semibold text-adv-teal">
+                <TrendingUp className="h-3 w-3" />
+                {growthStage}
               </div>
             )}
           </div>
         </div>
+
+        {/* Due date notification strip */}
+        {upcomingAssignments.length > 0 && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-adv-gold/20 bg-adv-gold/5 px-4 py-3">
+            <Bell className="h-4 w-4 shrink-0 text-adv-gold mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-adv-gold mb-1.5">
+                {upcomingAssignments.length} upcoming assignment{upcomingAssignments.length !== 1 ? 's' : ''}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {upcomingAssignments.map((a) => (
+                  <Link
+                    key={a.id}
+                    to="/school/assignments"
+                    className="flex items-center gap-1.5 rounded-lg border border-adv-gold/20 bg-adv-dark px-2.5 py-1 text-xs text-adv-off-white hover:border-adv-gold/40 transition-colors"
+                  >
+                    <Star className="h-3 w-3 text-adv-gold" />
+                    <span className="truncate max-w-[120px]">{a.title}</span>
+                    {a.due_date && (
+                      <span className="text-adv-gold shrink-0">
+                        · {new Date(a.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Question bar */}
         <div className="rounded-xl border border-border bg-adv-card p-4">

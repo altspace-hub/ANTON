@@ -59,6 +59,9 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
   science: 'viktor',
   'social-studies': 'erik',
   'computational-thinking': 'alma',
+  technology: 'leo',
+  'life-skills': 'mia',
+  'study-skills': 'mia',
 };
 
 function buildPromptConfig(
@@ -291,7 +294,26 @@ export function createSchoolRoutes(db: Database.Database) {
          LIMIT 5`
       ).all(userId) as Record<string, unknown>[];
 
-      res.json({ role: 'student', classes, assignments });
+      // Growth profile — created on first interaction if missing
+      const growthProfile = db.prepare(
+        `SELECT stage, session_count FROM student_growth_profiles WHERE student_user_id = ?`
+      ).get(userId) as { stage: string; session_count: number } | undefined;
+
+      const sessionsThisWeek = db.prepare(
+        `SELECT COUNT(*) AS cnt FROM laxhjalp_sessions
+         WHERE student_user_id = ? AND created_at >= DATE('now', '-7 days')`
+      ).get(userId) as { cnt: number } | undefined;
+
+      res.json({
+        role: 'student',
+        classes,
+        assignments,
+        growthProfile: growthProfile ?? { stage: 'S1', session_count: 0 },
+        stats: {
+          assignmentsDue: assignments.length,
+          sessionsThisWeek: sessionsThisWeek?.cnt ?? 0,
+        },
+      });
     } catch (err) {
       console.error('[school/dashboard]', err);
       res.status(500).json({ error: safeError(err) });

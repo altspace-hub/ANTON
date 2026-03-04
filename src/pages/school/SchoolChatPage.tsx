@@ -9,6 +9,10 @@ import {
   Info,
   Loader2,
   AlertCircle,
+  Dumbbell,
+  HelpCircle,
+  Lightbulb,
+  ClipboardList,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import AssistanceLevelBadge from '@/components/school/AssistanceLevelBadge';
@@ -298,6 +302,45 @@ export default function SchoolChatPage() {
               <Info className="h-4 w-4" />
               {t('chat.laxhjalpMode')}
             </button>
+          </div>
+        )}
+
+        {/* Contextual action bar — shown after first AI response */}
+        {messages.some((m) => m.role === 'assistant') && !isStreaming && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {[
+              {
+                icon: <Dumbbell className="h-3.5 w-3.5" />,
+                label: t('chat.actions.practice', 'Practice problems'),
+                message: t('chat.actions.practiceMsg', 'Give me 3 practice problems on what we\'ve been discussing. Don\'t show the answers yet.'),
+              },
+              {
+                icon: <HelpCircle className="h-3.5 w-3.5" />,
+                label: t('chat.actions.quiz', 'Quiz me'),
+                message: t('chat.actions.quizMsg', 'Quiz me with one question on this topic. Wait for my answer before telling me if I\'m right.'),
+              },
+              {
+                icon: <Lightbulb className="h-3.5 w-3.5" />,
+                label: t('chat.actions.hint', 'Give me a hint'),
+                message: t('chat.actions.hintMsg', 'I\'m a bit stuck. Can you give me a hint without revealing the full answer?'),
+              },
+              {
+                icon: <ClipboardList className="h-3.5 w-3.5" />,
+                label: t('chat.actions.summarise', 'Summarise session'),
+                message: t('chat.actions.summariseMsg', 'Can you summarise the key things we\'ve covered in this session?'),
+              },
+            ].map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                onClick={() => handleSend(action.message)}
+                disabled={isStreaming}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-gray hover:border-adv-teal/50 hover:text-adv-teal disabled:opacity-40 transition-colors"
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            ))}
           </div>
         )}
 

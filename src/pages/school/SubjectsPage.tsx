@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code } from 'lucide-react';
+import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -79,6 +79,33 @@ const CATALOGUE = [
     tier: 'T2',
     modules: ['Code Explainer', 'Code Mentor', 'Debug Guide'],
     codingHub: true,
+  },
+  {
+    id: 'technology',
+    nameKey: 'subject.technology',
+    name: 'Technology & Digital Skills',
+    persona: 'Leo',
+    icon: <Monitor className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Web Literacy', 'Digital Citizenship', 'Data Handling', 'Creative Tech'],
+  },
+  {
+    id: 'life-skills',
+    nameKey: 'subject.lifeSkills',
+    name: 'Life Skills',
+    persona: 'Mia',
+    icon: <Briefcase className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Personal Finance', 'Career Exploration', 'Digital Presence', 'Home Essentials'],
+  },
+  {
+    id: 'study-skills',
+    nameKey: 'subject.studySkills',
+    name: 'Study Skills',
+    persona: 'Mia',
+    icon: <Brain className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Note-Taking', 'Time Management', 'Exam Strategy', 'Memory Techniques'],
   },
 ];
 

@@ -17,6 +17,9 @@ import {
   Globe2,
   MessageSquare,
   Code,
+  Monitor,
+  Briefcase,
+  Brain,
 } from 'lucide-react';
 
 interface ClassCard {
@@ -76,6 +79,24 @@ const SUBJECT_MODULES: Record<string, TopicModule[]> = {
     { id: 'code-mentor', label: 'Code Mentor', description: 'Build projects with guidance' },
     { id: 'debug-guide', label: 'Debug Guide', description: 'Find and fix errors' },
   ],
+  technology: [
+    { id: 'web-literacy', label: 'Web Literacy', description: 'How websites work and source evaluation' },
+    { id: 'digital-citizenship', label: 'Digital Citizenship', description: 'Privacy, safety, and rights online' },
+    { id: 'data-handling', label: 'Data Handling', description: 'Spreadsheets and data visualisation' },
+    { id: 'creative-tech', label: 'Creative Technology', description: 'Image, video, audio, and design' },
+  ],
+  'life-skills': [
+    { id: 'personal-finance', label: 'Personal Finance', description: 'Budgeting, tax, and banking' },
+    { id: 'career-exploration', label: 'Career Exploration', description: 'CV writing, interviews, and job search' },
+    { id: 'digital-presence', label: 'Digital Presence', description: 'LinkedIn, portfolio, and professional email' },
+    { id: 'home-essentials', label: 'Home Essentials', description: 'Housing, cooking, and healthcare' },
+  ],
+  'study-skills': [
+    { id: 'note-taking', label: 'Note-Taking', description: 'Cornell method and active recall' },
+    { id: 'time-management', label: 'Time Management', description: 'Planning, Pomodoro, and procrastination' },
+    { id: 'exam-strategy', label: 'Exam Strategy', description: 'Revision planning and exam technique' },
+    { id: 'memory-techniques', label: 'Memory Techniques', description: 'Spaced repetition and retrieval practice' },
+  ],
 };
 
 const SUBJECT_ICONS: Record<string, React.ReactNode> = {
@@ -85,6 +106,9 @@ const SUBJECT_ICONS: Record<string, React.ReactNode> = {
   science: <FlaskConical className="h-4 w-4 text-adv-teal" />,
   'social-studies': <Globe2 className="h-4 w-4 text-adv-teal" />,
   'computational-thinking': <Code className="h-4 w-4 text-adv-teal" />,
+  technology: <Monitor className="h-4 w-4 text-adv-teal" />,
+  'life-skills': <Briefcase className="h-4 w-4 text-adv-teal" />,
+  'study-skills': <Brain className="h-4 w-4 text-adv-teal" />,
 };
 
 function getTopicStatus(

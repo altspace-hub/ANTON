@@ -54,7 +54,12 @@
     "science": "NO (Naturorienterande ämnen)",
     "social-studies": "SO (Samhällsorienterande ämnen)",
     "socialStudies": "SO (Samhällsorienterande ämnen)",
-    "computationalThinking": "Datalogiskt tänkande"
+    "computationalThinking": "Datalogiskt tänkande",
+    "technology": "Teknik och digital kompetens",
+    "lifeSkills": "Livskunskap",
+    "life-skills": "Livskunskap",
+    "studySkills": "Studieteknik",
+    "study-skills": "Studieteknik"
   },
   "chat": {
     "greeting": "Hej! Jag är {{persona}}. Vad jobbar du med idag?",
@@ -75,7 +80,17 @@
     "thinking": "Alma tänker...",
     "uploadsAllowed": "Du kan ladda upp filer eller foton av ditt arbete",
     "laxhjalpMode": "Fastnat? Låt oss lösa det",
-    "endSession": "Avsluta session"
+    "endSession": "Avsluta session",
+    "actions": {
+      "practice": "Övningsuppgifter",
+      "practiceMsg": "Ge mig 3 övningsuppgifter om det vi har pratat om. Visa inte svaren än.",
+      "quiz": "Testa mig",
+      "quizMsg": "Ställ en fråga om det här ämnet till mig. Vänta på mitt svar innan du berättar om jag har rätt.",
+      "hint": "Ge mig en ledtråd",
+      "hintMsg": "Jag har lite fastnat. Kan du ge mig en ledtråd utan att avslöja hela svaret?",
+      "summarise": "Sammanfatta sessionen",
+      "summariseMsg": "Kan du sammanfatta det viktigaste vi har gått igenom under den här sessionen?"
+    }
   },
   "laxhjalp": {
     "title": "Läxhjälp — Låt oss lösa det tillsammans",
@@ -278,7 +293,26 @@
       "name": "Erik",
       "subject": "Historia och samhällskunskap",
       "description": "Eftertänksam SO-lärare som lär dig ifrågasätta källor"
+    },
+    "leo": {
+      "name": "Leo",
+      "subject": "Teknik och digital kompetens",
+      "description": "Entusiastisk tekniklärare som avmystifierar den digitala världen"
+    },
+    "freja": {
+      "name": "Freja",
+      "subject": "Bild och musik",
+      "description": "Kreativ ämneslärare som värdesätter processen mer än resultatet"
+    },
+    "mia": {
+      "name": "Mia",
+      "subject": "Livskunskap och studieteknik",
+      "description": "Praktisk coach för vuxenlivets färdigheter och evidensbaserade studiemetoder"
     }
+  },
+  "journey": {
+    "title": "Min läranderesa",
+    "subtitle": "Följ dina framsteg i varje ämne"
   },
   "progress": {
     "mastery": {
