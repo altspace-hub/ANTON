@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Loader2, Bell, Globe, MessageSquare, Trash2, Accessibility } from 'lucide-react';
+import { CheckCircle2, Loader2, Bell, Globe, MessageSquare, Trash2, Accessibility, Server } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const TEACHING_LANGUAGES = [
   { code: 'sv', label: 'Svenska' },
@@ -20,6 +21,9 @@ const UI_LANGUAGES = [
 
 export default function SchoolSettingsPage() {
   const { t, i18n } = useTranslation('school');
+  const { user } = useAuthStore();
+  const isAdmin = ((user as Record<string, unknown> | null)?.school_role as string | undefined) === 'school_admin';
+
   const [teachingLang, setTeachingLang] = useState('sv');
   const [dueDateReminders, setDueDateReminders] = useState(true);
   const [senMode, setSenMode] = useState<string>('none');
@@ -28,6 +32,12 @@ export default function SchoolSettingsPage() {
   const [savedOk, setSavedOk] = useState(false);
   const [clearingHistory, setClearingHistory] = useState(false);
   const [historyCleared, setHistoryCleared] = useState(false);
+
+  // Admin: local model tier
+  const [modelTier, setModelTier] = useState<'A' | 'C'>('A');
+  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
+  const [savingTier, setSavingTier] = useState(false);
+  const [tierSaved, setTierSaved] = useState(false);
 
   useEffect(() => {
     fetch('/api/school/settings', { headers: getAuthHeader() })
@@ -38,7 +48,18 @@ export default function SchoolSettingsPage() {
         setExplanationStyle(data.explanationStyle ?? 'balanced');
       })
       .catch(() => {});
-  }, []);
+
+    if (isAdmin) {
+      fetch('/api/school/admin/model-tier', { headers: getAuthHeader() })
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (!data) return;
+          setModelTier(data.modelTier ?? 'A');
+          setOllamaUrl(data.ollamaUrl ?? 'http://localhost:11434');
+        })
+        .catch(() => {});
+    }
+  }, [isAdmin]);
 
   async function handleSave() {
     setSaving(true);
@@ -59,6 +80,23 @@ export default function SchoolSettingsPage() {
       // non-fatal
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveTier() {
+    setSavingTier(true);
+    try {
+      await fetch('/api/school/admin/model-tier', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ modelTier }),
+      });
+      setTierSaved(true);
+      setTimeout(() => setTierSaved(false), 2500);
+    } catch {
+      // non-fatal
+    } finally {
+      setSavingTier(false);
     }
   }
 
@@ -215,6 +253,66 @@ export default function SchoolSettingsPage() {
             </select>
           </div>
         </section>
+
+        {/* Admin: Local AI Model (school_admin only) */}
+        {isAdmin && (
+          <section className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Server className="h-4 w-4 text-adv-teal" />
+              <h2 className="text-sm font-semibold text-adv-off-white">Local AI Model (Admin)</h2>
+            </div>
+            <p className="text-xs text-adv-gray-med">
+              Run ANTON school chat on a local AI model via Ollama instead of the cloud.
+              Requires Ollama running at <code className="text-adv-teal">{ollamaUrl}</code> with <code className="text-adv-teal">mistral:7b</code> pulled.
+              If the local model is unavailable, ANTON automatically falls back to the cloud.
+            </p>
+
+            <div className="space-y-2">
+              {[
+                { value: 'A' as const, label: 'Cloud (Anthropic Claude)', desc: 'Default — highest quality, requires internet' },
+                { value: 'C' as const, label: 'Local Model (Ollama)', desc: 'Privacy-first — runs entirely on this machine' },
+              ].map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex items-start gap-3 cursor-pointer rounded-lg border p-3 transition-colors ${
+                    modelTier === opt.value ? 'border-adv-teal bg-adv-teal/5' : 'border-border hover:border-adv-teal/30'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="modelTier"
+                    value={opt.value}
+                    checked={modelTier === opt.value}
+                    onChange={() => setModelTier(opt.value)}
+                    className="mt-0.5 accent-adv-teal"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-adv-off-white">{opt.label}</p>
+                    <p className="text-xs text-adv-gray-med">{opt.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {tierSaved && (
+                <span className="flex items-center gap-1.5 text-sm text-adv-teal">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Saved
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveTier}
+                disabled={savingTier}
+                className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {savingTier ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                Apply Model Setting
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Privacy */}
         <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">

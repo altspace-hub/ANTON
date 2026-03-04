@@ -1,0 +1,29 @@
+{
+  "subjectId": "mathematics",
+  "subjectName": "GCSE Mathematics",
+  "curriculumId": "uk-ks4",
+  "tiers": {
+    "foundation": {
+      "grades": "1-5",
+      "topics": [
+        "Number: fractions, decimals, percentages, ratio, proportion, standard form",
+        "Algebra: linear equations, graphs, sequences, simultaneous equations (basic)",
+        "Geometry: angles, area, volume, Pythagoras, basic trigonometry (SOH CAH TOA)",
+        "Statistics: mean, median, mode, range, cumulative frequency, box plots",
+        "Probability: basic probability, tree diagrams, Venn diagrams"
+      ]
+    },
+    "higher": {
+      "grades": "4-9",
+      "additionalTopics": [
+        "Algebra: quadratic equations, completing the square, functions, surds",
+        "Geometry: circle theorems, vectors, exact trigonometric values",
+        "Statistics: histograms with unequal class widths, conditional probability",
+        "Calculus: rate of change from gradients (basic)"
+      ]
+    }
+  },
+  "examStructure": "Three papers: Paper 1 (non-calculator), Paper 2 (calculator), Paper 3 (calculator). Each 1h30m.",
+  "examBoards": ["AQA", "Edexcel", "OCR"],
+  "commandWords": ["Calculate", "Show that", "Prove", "Estimate", "Explain why", "Draw", "Sketch", "Describe fully"]
+}

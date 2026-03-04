@@ -164,6 +164,43 @@ export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<str
     }
   }
 
+  if (config.curriculumId === 'uk-ks3' || config.curriculumId === 'uk-ks4') {
+    const ksDir = config.curriculumId === 'uk-ks3' ? 'ks3' : 'ks4';
+    const ukSubjectMap: Record<string, string> = {
+      mathematics: config.curriculumId === 'uk-ks4' ? 'mathematics-gcse' : 'mathematics',
+      science: config.curriculumId === 'uk-ks4' ? 'science-gcse' : 'science',
+      english: 'english',
+      svenska: 'english',
+      biology: config.curriculumId === 'uk-ks4' ? 'science-gcse' : 'science',
+      chemistry: config.curriculumId === 'uk-ks4' ? 'science-gcse' : 'science',
+      physics: config.curriculumId === 'uk-ks4' ? 'science-gcse' : 'science',
+    };
+    const ukFile = ukSubjectMap[config.subjectId] ?? config.subjectId;
+    const ukPath = path.join(SERVER_DIR, '..', 'curricula', 'uk', ksDir, `${ukFile}.json`);
+    try {
+      const ukData = await fs.readJson(ukPath);
+      const ksLabel = config.curriculumId === 'uk-ks3' ? 'KS3 (Years 7–9)' : 'KS4 / GCSE (Years 10–11)';
+      // Flatten topics from programmesOfStudy or tiers
+      const topicLines: string[] = [];
+      if (ukData.programmesOfStudy) {
+        for (const [area, items] of Object.entries(ukData.programmesOfStudy)) {
+          topicLines.push(`**${area}:** ${(items as string[]).join('; ')}`);
+        }
+      } else if (ukData.tiers) {
+        if (ukData.tiers.foundation) topicLines.push(`**Foundation (grades 1-5):** ${ukData.tiers.foundation.topics?.join('; ')}`);
+        if (ukData.tiers.higher?.additionalTopics) topicLines.push(`**Higher additional:** ${ukData.tiers.higher.additionalTopics.join('; ')}`);
+      }
+      if (ukData.biology) topicLines.push(`**Biology:** ${(ukData.biology.topics as string[]).slice(0, 3).join('; ')} (and more)`);
+      if (ukData.chemistry) topicLines.push(`**Chemistry:** ${(ukData.chemistry.topics as string[]).slice(0, 3).join('; ')} (and more)`);
+      if (ukData.physics) topicLines.push(`**Physics:** ${(ukData.physics.topics as string[]).slice(0, 3).join('; ')} (and more)`);
+
+      layers.push(`\n\n---\n\n## Curriculum Reference (UK National Curriculum — ${ksLabel})\n\n**Subject:** ${ukData.subjectName}\n\n${topicLines.map(l => `- ${l}`).join('\n')}${ukData.examStructure ? `\n\n**Exam structure:** ${ukData.examStructure}` : ''}`);
+    } catch {
+      const ksLabel = config.curriculumId === 'uk-ks3' ? 'KS3 (Years 7–9)' : 'GCSE KS4 (Years 10–11)';
+      layers.push(`\n\n---\n\n## Curriculum Reference (UK National Curriculum — ${ksLabel})\n\nThis class follows the UK National Curriculum for ${ksLabel}. Align content with DfE programmes of study. For GCSE subjects, refer to AQA/Edexcel/OCR specifications as appropriate.`);
+    }
+  }
+
   if (config.additionalContext) {
     layers.push(`\n\n---\n\n## Additional Context\n\n${config.additionalContext}`);
   }

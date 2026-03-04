@@ -1,0 +1,28 @@
+{
+  "subjectId": "mathematics",
+  "subjectName": "Mathematics",
+  "curriculumId": "uk-ks3",
+  "programmesOfStudy": {
+    "numberAlgebra": [
+      "Work with integers, decimals, fractions, percentages and indices",
+      "Use ratio and proportion",
+      "Understand and use algebraic notation, expressions, equations and formulae",
+      "Solve linear equations and inequalities",
+      "Plot and interpret graphs of linear functions"
+    ],
+    "geometry": [
+      "Use geometric properties of triangles, quadrilaterals and other polygons",
+      "Use Pythagoras' theorem and trigonometry in right-angled triangles",
+      "Calculate area and volume of 2D and 3D shapes",
+      "Describe and perform transformations: translation, reflection, rotation, enlargement",
+      "Use coordinates in all four quadrants"
+    ],
+    "statisticsProbability": [
+      "Collect, represent and interpret data using charts, graphs and tables",
+      "Calculate and interpret mean, median, mode and range",
+      "Understand and use probability including mutually exclusive events"
+    ]
+  },
+  "examBoards": ["AQA", "Edexcel", "OCR"],
+  "gcseNote": "KS3 content feeds directly into GCSE Mathematics. Foundation and Higher tier GCSE papers require all KS3 content plus additional topics."
+}

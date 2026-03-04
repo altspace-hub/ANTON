@@ -1,0 +1,32 @@
+{
+  "subjectId": "english",
+  "subjectName": "English Language and Literature",
+  "curriculumId": "uk-ks3",
+  "programmesOfStudy": {
+    "reading": [
+      "Read a wide range of fiction, poetry, drama and non-fiction",
+      "Understand and respond to texts from different periods and cultures",
+      "Analyse authors' language choices, structure and form",
+      "Evaluate texts critically and support responses with textual evidence"
+    ],
+    "writing": [
+      "Write for a range of purposes and audiences with appropriate register",
+      "Plan, draft and revise extended writing",
+      "Use grammar, punctuation and spelling accurately (sentence types, cohesion, complex sentences)",
+      "Write narrative, descriptive, persuasive, analytical and informational texts"
+    ],
+    "spokenLanguage": [
+      "Participate in formal and informal discussion and debate",
+      "Deliver presentations with appropriate vocabulary, tone and intonation",
+      "Listen and respond to the ideas of others"
+    ],
+    "grammarVocabulary": [
+      "Use vocabulary precisely and in context",
+      "Understand sentence structures, clauses and phrases",
+      "Punctuation: comma, colon, semicolon, apostrophe, inverted commas"
+    ]
+  },
+  "canonicalTexts": [
+    "Shakespeare (at least one play), 19th-century fiction, modern fiction, pre-20th century poetry, contemporary poetry"
+  ]
+}

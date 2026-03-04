@@ -1,0 +1,46 @@
+{
+  "subjectId": "science",
+  "subjectName": "GCSE Combined Science (Trilogy) / Separate Sciences",
+  "curriculumId": "uk-ks4",
+  "options": {
+    "combinedScience": "Two GCSEs (grades e.g. 6-6) covering all three sciences at reduced depth",
+    "separateSciences": "Three GCSEs (Biology, Chemistry, Physics) at greater depth"
+  },
+  "biology": {
+    "topics": [
+      "Cell biology: cell structure, transport (diffusion, osmosis, active transport), cell division",
+      "Organisation: digestive system, blood and circulatory system, health and disease",
+      "Infection and response: communicable diseases, immune response, vaccination, drugs",
+      "Bioenergetics: photosynthesis, aerobic/anaerobic respiration",
+      "Homeostasis: nervous system, hormonal system, reproduction",
+      "Inheritance: DNA, RNA, protein synthesis, genetic diagrams, evolution, classification",
+      "Ecology: ecosystems, food chains, nutrient cycles, biodiversity"
+    ]
+  },
+  "chemistry": {
+    "topics": [
+      "Atomic structure and the periodic table",
+      "Bonding, structure and properties of matter",
+      "Quantitative chemistry: moles, concentration, yield",
+      "Chemical changes: reactivity series, electrolysis, acids and bases",
+      "Energy changes: exothermic/endothermic, bond energies",
+      "Rate of reaction and equilibrium",
+      "Organic chemistry: crude oil, polymers, alcohols, carboxylic acids",
+      "Chemical analysis: chromatography, flame tests, gas tests",
+      "Chemistry of the atmosphere and using resources"
+    ]
+  },
+  "physics": {
+    "topics": [
+      "Energy: stores, transfers, power, efficiency, renewable/non-renewable sources",
+      "Electricity: current, voltage, resistance, domestic circuits, static, mains supply",
+      "Particle model of matter: states, changes of state, gas pressure and temperature",
+      "Atomic structure: atomic model, radioactivity, nuclear equations, half-life, uses",
+      "Forces: contact/non-contact, pressure, Newton's laws, momentum, stopping distances",
+      "Waves: wave properties, electromagnetic spectrum, sound, light, lenses",
+      "Magnetism: magnets, electromagnetism, motors, transformers"
+    ]
+  },
+  "required_practicals": 8,
+  "examStructure": "Combined Science: 6 papers (2 bio, 2 chem, 2 phys), each 1h15m. Separate Sciences: 2 papers per subject, each 1h45m."
+}

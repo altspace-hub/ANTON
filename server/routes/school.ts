@@ -41,9 +41,108 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import type Database from 'better-sqlite3';
+import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
 import { buildSchoolPrompt, inferMathsModule, inferSubjectModule, type SchoolPromptConfig } from '../services/school-prompt-builder.js';
 import { safeError } from '../lib/error-response.js';
+
+// ── Tier C — Ollama local model streaming ──────────────────────────────────
+
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? 'mistral:7b';
+
+// Runtime override for Tier C (persisted in DB, loaded on startup, toggled via PATCH /admin/model-tier)
+let _ollamaTierEnabled: boolean = process.env.SCHOOL_MODEL_TIER === 'C';
+
+/**
+ * Stream a response from Ollama's OpenAI-compatible API (/v1/chat/completions).
+ * Emits SSE text_delta events matching the format used by streamToResponse().
+ * On failure, returns false — caller should fallback to Claude.
+ */
+async function streamOllamaToResponse(
+  system: string,
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  res: Response,
+  onComplete?: (data: { text: string; outputTokens: number }) => void
+): Promise<boolean> {
+  try {
+    const body = JSON.stringify({
+      model: OLLAMA_MODEL,
+      messages: [
+        { role: 'system', content: system },
+        ...messages,
+      ],
+      stream: true,
+    });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5s connect timeout
+
+    let fetchRes: globalThis.Response;
+    try {
+      fetchRes = await fetch(`${OLLAMA_BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!fetchRes.ok) return false;
+
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+
+    const sendEvent = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+
+    let fullText = '';
+    const reader = fetchRes.body?.getReader();
+    if (!reader) return false;
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+        const jsonStr = trimmed.startsWith('data: ') ? trimmed.slice(6) : trimmed;
+        try {
+          const chunk = JSON.parse(jsonStr) as { choices?: Array<{ delta?: { content?: string } }> };
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullText += delta;
+            sendEvent({ type: 'text_delta', content: delta });
+          }
+        } catch { /* skip malformed chunks */ }
+      }
+    }
+
+    sendEvent({ type: 'done', text: fullText, inputTokens: 0, outputTokens: Math.ceil(fullText.length / 4) });
+    res.end();
+    onComplete?.({ text: fullText, outputTokens: Math.ceil(fullText.length / 4) });
+    return true;
+  } catch {
+    return false; // Ollama unreachable — caller falls back to Claude
+  }
+}
+
+/** Returns true when Tier C (Ollama) is active — set via env var or runtime toggle */
+function isOllamaTierEnabled(): boolean {
+  return _ollamaTierEnabled;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -316,6 +415,12 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_xp_events (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, event_type TEXT NOT NULL, xp_earned INTEGER NOT NULL, context TEXT, created_at DATETIME)`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_achievements (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, earned_at DATETIME, UNIQUE(student_user_id, achievement_id))`); } catch {}
   try { db.exec(`ALTER TABLE school_classes ADD COLUMN leaderboard_enabled INTEGER DEFAULT 0`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS school_admin_config (key TEXT PRIMARY KEY, value TEXT)`); } catch {}
+  // Load persisted model-tier override (if any)
+  try {
+    const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
+    if (cfgRow) _ollamaTierEnabled = cfgRow.value === 'C';
+  } catch {}
 
   const router = Router();
 
@@ -405,6 +510,14 @@ export function createSchoolRoutes(db: Database.Database) {
           console.warn('[school/chat] onComplete error (non-fatal):', e);
         }
       };
+
+      // Tier C: try Ollama first; fall back to Claude on failure
+      if (isOllamaTierEnabled()) {
+        const ollamaOk = await streamOllamaToResponse(systemPrompt, apiMessages, res, onComplete);
+        if (ollamaOk) return;
+        // Fall-through: Ollama unreachable — continue to Claude
+        console.warn('[school/chat] Ollama unreachable — falling back to Claude Sonnet');
+      }
 
       await streamToResponse(
         { model: 'claude-sonnet-4-6', thinking: 'think', system: systemPrompt, messages: apiMessages, maxTokens: 4096 },
@@ -1670,6 +1783,34 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
       res.json({ ok: true });
     } catch (err) {
       console.error('[school/settings PATCH]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/admin/model-tier ──────────────────────────────────
+  router.get('/school/admin/model-tier', (req, res) => {
+    if (req.user?.school_role !== 'school_admin') return res.status(403).json({ error: 'Forbidden' });
+    res.json({
+      modelTier: _ollamaTierEnabled ? 'C' : 'A',
+      ollamaUrl: OLLAMA_BASE_URL,
+      ollamaModel: OLLAMA_MODEL,
+    });
+  });
+
+  // ── PATCH /api/school/admin/model-tier ─────────────────────────────────
+  router.patch('/school/admin/model-tier', (req, res) => {
+    if (req.user?.school_role !== 'school_admin') return res.status(403).json({ error: 'Forbidden' });
+    const { modelTier } = req.body as { modelTier?: 'C' | 'A' };
+    const tier = modelTier === 'C' ? 'C' : 'A';
+    try {
+      db.prepare(
+        `INSERT INTO school_admin_config (key, value) VALUES ('model_tier', ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+      ).run(tier);
+      _ollamaTierEnabled = tier === 'C';
+      res.json({ ok: true, modelTier: tier, ollamaUrl: tier === 'C' ? OLLAMA_BASE_URL : null });
+    } catch (err) {
+      console.error('[school/admin/model-tier PATCH]', err);
       res.status(500).json({ error: safeError(err) });
     }
   });

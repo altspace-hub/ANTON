@@ -1,0 +1,11 @@
+{
+  "id": "uk-ks3",
+  "name": "UK National Curriculum — Key Stage 3",
+  "country": "United Kingdom",
+  "language": "en",
+  "yearRange": "7-9",
+  "ageRange": "11-14",
+  "description": "The statutory National Curriculum for England, Key Stage 3 (Years 7–9). Sets out the programmes of study and attainment targets for each subject. Schools must teach the required content but have flexibility in how they organise and deliver it.",
+  "subjects": ["mathematics", "english", "science", "history", "geography", "art", "music", "pe", "computing", "languages", "citizenship"],
+  "assessmentNote": "KS3 does not have national standardised tests. Assessment is at teacher and school discretion. Students progress to GCSE (KS4) at Year 10."
+}
