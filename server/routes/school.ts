@@ -148,6 +148,7 @@ export function createSchoolRoutes(db: Database.Database) {
   // ── DB migrations (non-fatal) ─────────────────────────────────────────
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
 
   const router = Router();
 
@@ -165,6 +166,7 @@ export function createSchoolRoutes(db: Database.Database) {
         sessionId,
         classId,
         messages = [],
+        lessonId,
       } = req.body as Record<string, unknown>;
 
       let classRow: Record<string, unknown> | null = null;
@@ -185,8 +187,24 @@ export function createSchoolRoutes(db: Database.Database) {
       const subjectForInfer = (classRow?.subject_id as string) || (req.body.subjectId as string) || 'mathematics';
       const resolvedModuleId = (req.body.moduleId as string) || inferSubjectModule(lastUserMsg, subjectForInfer);
 
+      // Load lesson content when lessonId provided — overrides Layer 3 module context
+      let lessonContext: string | undefined;
+      if (lessonId) {
+        const lesson = db.prepare('SELECT * FROM teacher_lessons WHERE id = ?')
+          .get(lessonId as string) as Record<string, unknown> | null;
+        if (lesson) {
+          const objectives: string[] = lesson.learning_objectives ? JSON.parse(lesson.learning_objectives as string) : [];
+          const blocks: Array<{ type: string; content: string; durationMins?: number }> = lesson.content_blocks ? JSON.parse(lesson.content_blocks as string) : [];
+          lessonContext = `## TEACHER-DESIGNED LESSON: ${lesson.title}\n\n**Learning Objectives:**\n${objectives.length ? objectives.map((o, i) => `${i + 1}. ${o}`).join('\n') : '(none specified)'}\n\n**Lesson Content (deliver in sequence, one block at a time):**\n${blocks.length ? blocks.map((b, i) => `### Block ${i + 1} [${b.type.toUpperCase()}]${b.durationMins ? ` ~${b.durationMins} min` : ''}\n${b.content}`).join('\n\n') : '(no content blocks defined)'}\n\nDeliver this lesson conversationally. Work through each block with the student, checking understanding before moving to the next. Never skip ahead — let the student guide the pace.`;
+        }
+      }
+
       const promptConfig = buildPromptConfig(
-        { ...req.body as Record<string, unknown>, moduleId: resolvedModuleId },
+        {
+          ...req.body as Record<string, unknown>,
+          moduleId: resolvedModuleId,
+          ...(lessonContext ? { additionalContext: lessonContext } : {}),
+        },
         classRow,
         { growthStage: profile?.stage, senMode: profile?.sen_mode, explanationStyle: profile?.explanation_style }
       );
@@ -1321,6 +1339,178 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     } catch (err) {
       console.error('[school/coding-chat]', err);
       if (!res.headersSent) res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/lessons ───────────────────────────────────────────
+  router.get('/school/lessons', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const lessons = db.prepare(
+        'SELECT * FROM teacher_lessons WHERE teacher_user_id = ? ORDER BY created_at DESC'
+      ).all(userId) as Record<string, unknown>[];
+
+      res.json(lessons.map(l => ({
+        id: l.id,
+        title: l.title,
+        subjectId: l.subject_id,
+        tier: l.tier,
+        classId: l.class_id,
+        isTemplate: Boolean(l.is_template),
+        createdAt: l.created_at,
+        updatedAt: l.updated_at,
+        learningObjectives: l.learning_objectives ? JSON.parse(l.learning_objectives as string) : [],
+        blockCount: l.content_blocks ? (JSON.parse(l.content_blocks as string) as unknown[]).length : 0,
+      })));
+    } catch (err) {
+      console.error('[school/lessons GET]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/school/lessons ──────────────────────────────────────────
+  router.post('/school/lessons', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const {
+        title, subjectId = 'mathematics', tier = 'T2',
+        learningObjectives = [], contentBlocks = [],
+        classId, isTemplate = false,
+      } = req.body as Record<string, unknown>;
+
+      if (!title) return res.status(400).json({ error: 'title required' });
+
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+
+      db.prepare(
+        `INSERT INTO teacher_lessons
+           (id, teacher_user_id, class_id, title, subject_id, learning_objectives, content_blocks, tier, is_template, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        id, userId,
+        (classId as string) || null,
+        title as string,
+        subjectId as string,
+        JSON.stringify(learningObjectives),
+        JSON.stringify(contentBlocks),
+        tier as string,
+        isTemplate ? 1 : 0,
+        now, now
+      );
+
+      res.status(201).json({ id, title, subjectId, tier });
+    } catch (err) {
+      console.error('[school/lessons POST]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/lessons/:id ───────────────────────────────────────
+  router.get('/school/lessons/:id', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const lesson = db.prepare('SELECT * FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?')
+        .get(req.params.id, userId) as Record<string, unknown> | null;
+      if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+
+      res.json({
+        id: lesson.id,
+        title: lesson.title,
+        subjectId: lesson.subject_id,
+        tier: lesson.tier,
+        classId: lesson.class_id,
+        isTemplate: Boolean(lesson.is_template),
+        createdAt: lesson.created_at,
+        updatedAt: lesson.updated_at,
+        learningObjectives: lesson.learning_objectives ? JSON.parse(lesson.learning_objectives as string) : [],
+        contentBlocks: lesson.content_blocks ? JSON.parse(lesson.content_blocks as string) : [],
+      });
+    } catch (err) {
+      console.error('[school/lessons/:id GET]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── PUT /api/school/lessons/:id ───────────────────────────────────────
+  router.put('/school/lessons/:id', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const exists = db.prepare('SELECT 1 FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?')
+        .get(req.params.id, userId);
+      if (!exists) return res.status(404).json({ error: 'Lesson not found or access denied' });
+
+      const { title, subjectId, tier, learningObjectives, contentBlocks, isTemplate } = req.body as Record<string, unknown>;
+      const now = new Date().toISOString();
+
+      db.prepare(
+        `UPDATE teacher_lessons SET
+           title = COALESCE(?, title),
+           subject_id = COALESCE(?, subject_id),
+           tier = COALESCE(?, tier),
+           learning_objectives = COALESCE(?, learning_objectives),
+           content_blocks = COALESCE(?, content_blocks),
+           is_template = COALESCE(?, is_template),
+           updated_at = ?
+         WHERE id = ?`
+      ).run(
+        title ?? null,
+        subjectId ?? null,
+        tier ?? null,
+        learningObjectives !== undefined ? JSON.stringify(learningObjectives) : null,
+        contentBlocks !== undefined ? JSON.stringify(contentBlocks) : null,
+        isTemplate !== undefined ? (isTemplate ? 1 : 0) : null,
+        now, req.params.id
+      );
+
+      const updated = db.prepare('SELECT * FROM teacher_lessons WHERE id = ?')
+        .get(req.params.id) as Record<string, unknown>;
+      res.json({
+        id: updated.id,
+        title: updated.title,
+        subjectId: updated.subject_id,
+        tier: updated.tier,
+        learningObjectives: updated.learning_objectives ? JSON.parse(updated.learning_objectives as string) : [],
+        contentBlocks: updated.content_blocks ? JSON.parse(updated.content_blocks as string) : [],
+      });
+    } catch (err) {
+      console.error('[school/lessons/:id PUT]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/school/lessons/:id/assign ──────────────────────────────
+  router.post('/school/lessons/:id/assign', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const { classId } = req.body as { classId: string };
+      if (!classId) return res.status(400).json({ error: 'classId required' });
+
+      const lesson = db.prepare('SELECT 1 FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?')
+        .get(req.params.id, userId);
+      if (!lesson) return res.status(404).json({ error: 'Lesson not found or access denied' });
+
+      const classRow = db.prepare('SELECT 1 FROM school_classes WHERE id = ? AND teacher_user_id = ?')
+        .get(classId, userId);
+      if (!classRow) return res.status(403).json({ error: 'Class not found or access denied' });
+
+      db.prepare('UPDATE teacher_lessons SET class_id = ?, updated_at = ? WHERE id = ?')
+        .run(classId, new Date().toISOString(), req.params.id);
+
+      res.json({ ok: true, lessonId: req.params.id, classId });
+    } catch (err) {
+      console.error('[school/lessons/:id/assign]', err);
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

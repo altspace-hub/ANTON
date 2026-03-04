@@ -17,6 +17,7 @@ import {
   Code,
   Route,
   Newspaper,
+  BookMarked,
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -88,6 +89,13 @@ const TEACHER_NAV: SchoolNavItem[] = [
     labelKey: 'nav.createAssignment',
     icon: <ClipboardList className="h-4 w-4" />,
     path: '/school/teacher/assignments/new',
+    roles: ['teacher', 'school_admin'],
+  },
+  {
+    id: 'lessons',
+    labelKey: 'nav.lessons',
+    icon: <BookMarked className="h-4 w-4" />,
+    path: '/school/teacher/lessons',
     roles: ['teacher', 'school_admin'],
   },
   {
