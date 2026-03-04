@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { cacheDashboard, getCachedDashboard } from '@/lib/school-db';
 
 interface ClassCard {
   id: string;
@@ -61,6 +62,21 @@ export default function SchoolDashboardPage() {
   async function loadDashboard() {
     try {
       setIsLoading(true);
+
+      // Try cache first if offline
+      if (!navigator.onLine) {
+        const cached = await getCachedDashboard();
+        if (cached) {
+          const data = cached as Record<string, unknown>;
+          setClasses((data.classes as ClassCard[]) ?? []);
+          setStats((data.stats as QuickStats) ?? { timeThisWeek: 0, assignmentsDue: 0, sessionsThisWeek: 0 });
+          if ((data.growthProfile as { stage?: string } | undefined)?.stage) setGrowthStage((data.growthProfile as { stage: string }).stage);
+          if (data.xp) setXpData(data.xp as typeof xpData);
+        }
+        setIsLoading(false);
+        return;
+      }
+
       const res = await fetch('/api/school/dashboard', {
         headers: { ...getAuthHeader() },
       });
@@ -75,6 +91,8 @@ export default function SchoolDashboardPage() {
         if (Array.isArray(data.classes) && data.classes.length > 0) {
           loadLeaderboard((data.classes as { id: string }[])[0].id);
         }
+        // Cache dashboard data for offline use
+        cacheDashboard(data);
       }
       // Load daily quests
       try {

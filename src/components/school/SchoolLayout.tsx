@@ -24,6 +24,7 @@ import {
 import Header from '@/components/layout/Header';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import OfflineBanner from '@/components/school/OfflineBanner';
 
 interface SchoolNavItem {
   id: string;
@@ -284,6 +285,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
+        <OfflineBanner />
         <main className="flex-1 overflow-auto p-4 lg:p-6">
           {children}
         </main>

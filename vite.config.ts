@@ -40,6 +40,25 @@ export default defineConfig({
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },
+          {
+            // School locale files — stale-while-revalidate so offline still works
+            urlPattern: /\/locales\/.*-school\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'school-locales',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
+          {
+            // School dashboard and non-mutating API — NetworkFirst with offline fallback
+            urlPattern: /\/api\/school\/dashboard/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'school-api',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 30 },
+            },
+          },
         ],
       },
     }),
