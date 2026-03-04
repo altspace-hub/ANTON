@@ -10,6 +10,7 @@
     "subjects": "Ämnen",
     "study": "Studera",
     "assignments": "Uppgifter",
+    "coding": "Programmering",
     "myClasses": "Mina klasser",
     "createAssignment": "Skapa uppgift",
     "students": "Elever",
@@ -17,6 +18,7 @@
     "schoolSettings": "Skolinställningar",
     "myProfile": "Min profil",
     "backToWork": "Tillbaka till Arbetsläge",
+    "close": "Stäng",
     "role": {
       "student": "Elev",
       "guardian": "Vårdnadshavare",
@@ -228,6 +230,26 @@
         "goToDashboard": "Gå till min startsida"
       }
     }
+  },
+  "coding": {
+    "title": "Datalogiskt tänkande",
+    "subtitle": "Lär dig programmera med Almas vägledning",
+    "explainerTitle": "Kodförklarare",
+    "explainerDesc": "Klistra in kod och förstå den steg för steg",
+    "explainerExample": "t.ex. \"Vad gör den här Python-loopen?\"",
+    "mentorTitle": "Kodmentor",
+    "mentorDesc": "Beskriv vad du vill bygga och Alma guidar dig",
+    "mentorExample": "t.ex. \"Hjälp mig bygga ett gissningsspel\"",
+    "debugTitle": "Felsökningsguide",
+    "debugDesc": "Visa din trasiga kod och hitta felet tillsammans",
+    "debugExample": "t.ex. \"Jag får ett TypeError på rad 5 — varför?\"",
+    "language": "Programmeringsspråk",
+    "python": "Python",
+    "javascript": "JavaScript",
+    "scratch": "Scratch",
+    "codePlaceholder": "Klistra in din kod här...",
+    "goalPlaceholder": "Vad vill du bygga?",
+    "errorPlaceholder": "Klistra in din kod och felmeddelandet..."
   },
   "persona": {
     "alma": {

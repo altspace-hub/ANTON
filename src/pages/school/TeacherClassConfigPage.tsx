@@ -123,7 +123,7 @@ export default function TeacherClassConfigPage() {
           if (payload === '[DONE]') break;
           try {
             const parsed = JSON.parse(payload);
-            if (parsed.text) fullText += parsed.text;
+            if (parsed.type === 'text_delta' && parsed.content) fullText += parsed.content;
           } catch { /* ignore */ }
         }
       }

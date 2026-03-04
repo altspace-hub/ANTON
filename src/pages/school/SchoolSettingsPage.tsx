@@ -1,0 +1,195 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { CheckCircle2, Loader2, Bell, Globe, MessageSquare, Trash2 } from 'lucide-react';
+import { getAuthHeader } from '@/lib/api';
+import SchoolLayout from '@/components/school/SchoolLayout';
+
+const TEACHING_LANGUAGES = [
+  { code: 'sv', label: 'Svenska' },
+  { code: 'en', label: 'English' },
+  { code: 'no', label: 'Norsk' },
+  { code: 'da', label: 'Dansk' },
+  { code: 'fi', label: 'Suomi' },
+];
+
+const UI_LANGUAGES = [
+  { code: 'sv', label: 'Svenska' },
+  { code: 'en', label: 'English' },
+];
+
+export default function SchoolSettingsPage() {
+  const { t, i18n } = useTranslation('school');
+  const [teachingLang, setTeachingLang] = useState('sv');
+  const [dueDateReminders, setDueDateReminders] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
+  const [clearingHistory, setClearingHistory] = useState(false);
+  const [historyCleared, setHistoryCleared] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await fetch('/api/school/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ teachingLanguage: teachingLang, dueDateReminders }),
+      });
+      setSavedOk(true);
+      setTimeout(() => setSavedOk(false), 2500);
+    } catch {
+      // non-fatal
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleClearHistory() {
+    if (!window.confirm('This will delete all your school learning conversation history. Are you sure?')) return;
+    setClearingHistory(true);
+    try {
+      await fetch('/api/school/learning-history', {
+        method: 'DELETE',
+        headers: getAuthHeader(),
+      });
+      setHistoryCleared(true);
+    } catch {
+      // non-fatal
+    } finally {
+      setClearingHistory(false);
+    }
+  }
+
+  return (
+    <SchoolLayout>
+      <div className="mx-auto max-w-xl space-y-6">
+        <h1 className="text-xl font-bold text-adv-white">
+          {t('nav.schoolSettings', 'School Settings')}
+        </h1>
+
+        {/* Language */}
+        <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-off-white">Language</h2>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              App Language
+            </label>
+            <select
+              value={i18n.language}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            >
+              {UI_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>{lang.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              Teaching Language
+            </label>
+            <p className="mb-2 text-xs text-adv-gray-med">The language Alma uses when responding to you</p>
+            <select
+              value={teachingLang}
+              onChange={(e) => setTeachingLang(e.target.value)}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            >
+              {TEACHING_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>{lang.label}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        {/* Notifications */}
+        <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-off-white">Notifications</h2>
+          </div>
+
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-sm text-adv-off-white">Due date reminders</p>
+              <p className="text-xs text-adv-gray-med">Remind me when assignments are due soon</p>
+            </div>
+            <div
+              role="switch"
+              aria-checked={dueDateReminders}
+              onClick={() => setDueDateReminders((p) => !p)}
+              className={`relative flex h-6 w-11 cursor-pointer items-center rounded-full transition-colors ${dueDateReminders ? 'bg-adv-teal' : 'bg-adv-dark'}`}
+            >
+              <span
+                className={`absolute h-4 w-4 rounded-full bg-white shadow transition-transform ${dueDateReminders ? 'translate-x-6' : 'translate-x-1'}`}
+              />
+            </div>
+          </label>
+        </section>
+
+        {/* Conversation */}
+        <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-off-white">Conversation Style</h2>
+          </div>
+          <p className="text-xs text-adv-gray-med">
+            Alma adapts her teaching style to your assistance level, set by your teacher. If you don't have a class, the default is L2 (Moderate Help).
+          </p>
+        </section>
+
+        {/* Privacy */}
+        <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-4 w-4 text-adv-red" />
+            <h2 className="text-sm font-semibold text-adv-off-white">Privacy</h2>
+          </div>
+
+          {historyCleared ? (
+            <div className="flex items-center gap-2 rounded-lg border border-adv-teal/20 bg-adv-teal/5 px-4 py-3 text-sm text-adv-teal">
+              <CheckCircle2 className="h-4 w-4" />
+              Learning history cleared.
+            </div>
+          ) : (
+            <div>
+              <p className="mb-3 text-xs text-adv-gray-med">
+                Clear all your school chat history. This cannot be undone.
+              </p>
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                disabled={clearingHistory}
+                className="flex items-center gap-1.5 rounded-lg border border-adv-red/30 px-4 py-2 text-sm text-adv-red hover:bg-adv-red/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {clearingHistory ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Clear my school learning history
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* Save */}
+        <div className="flex items-center justify-end gap-3">
+          {savedOk && (
+            <span className="flex items-center gap-1.5 text-sm text-adv-teal">
+              <CheckCircle2 className="h-4 w-4" />
+              {t('teacher.classConfig.saved', 'Saved')}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+            {t('teacher.classConfig.save', 'Save Settings')}
+          </button>
+        </div>
+      </div>
+    </SchoolLayout>
+  );
+}

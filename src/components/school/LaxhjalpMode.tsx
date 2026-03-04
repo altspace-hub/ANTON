@@ -89,10 +89,10 @@ export default function LaxhjalpMode({ classId, subjectId, onClose, onResolved }
           if (payload === '[DONE]') break;
           try {
             const parsed = JSON.parse(payload);
-            if (parsed.text) {
+            if (parsed.type === 'text_delta' && parsed.content) {
               setMessages((prev) =>
                 prev.map((m) =>
-                  m.id === assistantId ? { ...m, content: m.content + parsed.text } : m
+                  m.id === assistantId ? { ...m, content: m.content + parsed.content } : m
                 )
               );
             }

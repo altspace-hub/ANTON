@@ -10,6 +10,7 @@
     "subjects": "Subjects",
     "study": "Study",
     "assignments": "Assignments",
+    "coding": "Coding",
     "myClasses": "My Classes",
     "createAssignment": "Create Assignment",
     "students": "Students",
@@ -17,6 +18,7 @@
     "schoolSettings": "School Settings",
     "myProfile": "My Profile",
     "backToWork": "Back to Work Mode",
+    "close": "Close",
     "role": {
       "student": "Student",
       "guardian": "Guardian",
@@ -228,6 +230,26 @@
         "goToDashboard": "Go to my dashboard"
       }
     }
+  },
+  "coding": {
+    "title": "Computational Thinking",
+    "subtitle": "Learn to code with Alma's guidance",
+    "explainerTitle": "Code Explainer",
+    "explainerDesc": "Paste code and understand it step by step",
+    "explainerExample": "e.g. \"What does this Python loop do?\"",
+    "mentorTitle": "Code Mentor",
+    "mentorDesc": "Describe what you want to build and Alma guides you",
+    "mentorExample": "e.g. \"Help me build a number guessing game\"",
+    "debugTitle": "Debug Guide",
+    "debugDesc": "Show your broken code and find the fix together",
+    "debugExample": "e.g. \"I get a TypeError on line 5 — why?\"",
+    "language": "Programming language",
+    "python": "Python",
+    "javascript": "JavaScript",
+    "scratch": "Scratch",
+    "codePlaceholder": "Paste your code here...",
+    "goalPlaceholder": "What do you want to build?",
+    "errorPlaceholder": "Paste your code and the error message..."
   },
   "persona": {
     "alma": {

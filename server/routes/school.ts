@@ -238,7 +238,7 @@ export function createSchoolRoutes(db: Database.Database) {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const schoolRole = (req.user as Record<string, unknown>)?.school_role as string | undefined;
+      const schoolRole = req.user?.school_role;
 
       if (schoolRole === 'teacher' || schoolRole === 'school_admin') {
         const classes = db.prepare(
@@ -442,7 +442,7 @@ export function createSchoolRoutes(db: Database.Database) {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const schoolRole = (req.user as Record<string, unknown>)?.school_role as string | undefined;
+      const schoolRole = req.user?.school_role;
       const classId = req.query.classId as string | undefined;
 
       if (schoolRole === 'teacher' || schoolRole === 'school_admin') {
@@ -663,7 +663,7 @@ export function createSchoolRoutes(db: Database.Database) {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const schoolRole = (req.user as Record<string, unknown>)?.school_role as string | undefined;
+      const schoolRole = req.user?.school_role;
       const assignmentId = req.query.assignmentId as string | undefined;
 
       if (schoolRole === 'teacher' || schoolRole === 'school_admin') {
@@ -1047,6 +1047,59 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     } catch (err) {
       console.error('[school/personas]', err);
       res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/school/coding-chat ──────────────────────────────────────
+  router.post('/school/coding-chat', async (req, res) => {
+    try {
+      if (!isApiKeyConfigured()) {
+        return res.status(503).json({ error: 'API key not configured' });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const {
+        module: moduleId = 'code-mentor',
+        language = 'python',
+        messages = [],
+        assistanceLevel = 'L2',
+        educationTier = 'T2',
+      } = req.body as Record<string, unknown>;
+
+      const promptConfig: SchoolPromptConfig = {
+        educationTier: (educationTier as SchoolPromptConfig['educationTier']) || 'T2',
+        subjectId: 'computational-thinking',
+        moduleId: moduleId as string,
+        teacherPersonaId: 'alma',
+        assistanceLevel: (assistanceLevel as SchoolPromptConfig['assistanceLevel']) || 'L2',
+        taskType: 'studying',
+        additionalContext: `## Programming Language\nThe student is working in **${language}**. All code examples must use ${language}. Adapt your vocabulary and concepts to ${language} conventions.`,
+      };
+
+      const systemPrompt = await buildSchoolPrompt(promptConfig);
+
+      const apiMessages = (Array.isArray(messages) ? messages : []).map(
+        (m: Record<string, unknown>) => ({
+          role: (m.role as 'user' | 'assistant') || 'user',
+          content: String(m.content || ''),
+        })
+      );
+
+      await streamToResponse(
+        {
+          model: 'claude-sonnet-4-6',
+          thinking: 'think',
+          system: systemPrompt,
+          messages: apiMessages,
+          maxTokens: 4096,
+        },
+        res
+      );
+    } catch (err) {
+      console.error('[school/coding-chat]', err);
+      if (!res.headersSent) res.status(500).json({ error: safeError(err) });
     }
   });
 

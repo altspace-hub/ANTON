@@ -94,6 +94,12 @@ const InnovationRadarPage = lazy(() => import('./pages/InnovationRadarPage'));
 // School Mode pages
 const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
 const SchoolChatPage = lazy(() => import('./pages/school/SchoolChatPage'));
+const SubjectsPage = lazy(() => import('./pages/school/SubjectsPage'));
+const StudentAssignmentsPage = lazy(() => import('./pages/school/StudentAssignmentsPage'));
+const SchoolSettingsPage = lazy(() => import('./pages/school/SchoolSettingsPage'));
+const SchoolProfilePage = lazy(() => import('./pages/school/SchoolProfilePage'));
+const SchoolCodingPage = lazy(() => import('./pages/school/SchoolCodingPage'));
+const SchoolCodingChatPage = lazy(() => import('./pages/school/SchoolCodingChatPage'));
 const TeacherDashboardPage = lazy(() => import('./pages/school/TeacherDashboardPage'));
 const TeacherClassConfigPage = lazy(() => import('./pages/school/TeacherClassConfigPage'));
 const GuardianDashboardPage = lazy(() => import('./pages/school/GuardianDashboardPage'));
@@ -280,8 +286,12 @@ export default function App() {
         <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
           <Route path="/school" element={<SchoolDashboardPage />} />
           <Route path="/school/chat" element={<SchoolChatPage />} />
-          <Route path="/school/subjects" element={<SchoolDashboardPage />} />
-          <Route path="/school/assignments" element={<SchoolDashboardPage />} />
+          <Route path="/school/subjects" element={<SubjectsPage />} />
+          <Route path="/school/assignments" element={<StudentAssignmentsPage />} />
+          <Route path="/school/settings" element={<SchoolSettingsPage />} />
+          <Route path="/school/profile" element={<SchoolProfilePage />} />
+          <Route path="/school/coding" element={<SchoolCodingPage />} />
+          <Route path="/school/coding/:module" element={<SchoolCodingChatPage />} />
           <Route path="/school/teacher" element={<TeacherDashboardPage />} />
           <Route path="/school/teacher/classes/new" element={<TeacherClassConfigPage />} />
           <Route path="/school/teacher/classes/:classId/settings" element={<TeacherClassConfigPage />} />
