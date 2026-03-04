@@ -69,7 +69,14 @@
     "biology": "Biologi",
     "swedishAdvanced": "Svenska (avancerad)",
     "swedish-advanced": "Svenska (avancerad)",
-    "philosophy": "Filosofi"
+    "philosophy": "Filosofi",
+    "idrottHalsa": "Idrott & Hälsa",
+    "idrott-halsa": "Idrott & Hälsa",
+    "statistics": "Statistik & datavetenskap",
+    "data-science": "Datavetenskap",
+    "modersmal": "Modersmål",
+    "sfiBridge": "SFI-brygga (Svenska för nyanlända)",
+    "sfi-bridge": "SFI-brygga (Svenska för nyanlända)"
   },
   "chat": {
     "greeting": "Hej! Jag är {{persona}}. Vad jobbar du med idag?",
@@ -374,6 +381,21 @@
       "name": "Mia",
       "subject": "Livskunskap och studieteknik",
       "description": "Praktisk coach för vuxenlivets färdigheter och evidensbaserade studiemetoder"
+    },
+    "oscar": {
+      "name": "Oscar",
+      "subject": "Idrott & Hälsa",
+      "description": "Energisk idrottslärare som kopplar fysisk aktivitet till vetenskap och välmående"
+    },
+    "nora": {
+      "name": "Nora",
+      "subject": "Statistik & datavetenskap",
+      "description": "Analytisk dataläärare som alltid börjar med riktiga dataset och visualisering"
+    },
+    "professor-lindstrom": {
+      "name": "Professor Lindström",
+      "subject": "Akademisk forskning",
+      "description": "Senior akademiker för universitetsstudenter med sokratisk seminarmetod"
     }
   },
   "journey": {

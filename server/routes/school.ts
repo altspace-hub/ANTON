@@ -69,6 +69,12 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
   biology: 'viktor',
   'swedish-advanced': 'saga',
   philosophy: 'erik',
+  // P9 new subjects
+  'idrott-halsa': 'oscar',
+  statistics: 'nora',
+  'data-science': 'nora',
+  modersmal: 'saga',
+  'sfi-bridge': 'saga',
 };
 
 function buildPromptConfig(

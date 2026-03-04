@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain, Atom, Dna, ScrollText, Lightbulb } from 'lucide-react';
+import { BookOpen, ChevronRight, Loader2, GraduationCap, Users, FlaskConical, Globe2, MessageSquare, Code, Monitor, Briefcase, Brain, Atom, Dna, ScrollText, Lightbulb, Languages, BarChart2 } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -107,6 +107,24 @@ const CATALOGUE = [
     tier: 'T2',
     modules: ['Note-Taking', 'Time Management', 'Exam Strategy', 'Memory Techniques'],
   },
+  {
+    id: 'modersmal',
+    nameKey: 'subject.modersmal',
+    name: 'Modersmål (Heritage Language)',
+    persona: 'Saga',
+    icon: <Languages className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Oral Communication', 'Reading Comprehension', 'Creative Writing'],
+  },
+  {
+    id: 'sfi-bridge',
+    nameKey: 'subject.sfiBridge',
+    name: 'SFI Bridge (Swedish for Newcomers)',
+    persona: 'Saga',
+    icon: <Globe2 className="h-5 w-5 text-adv-teal" />,
+    tier: 'T2',
+    modules: ['Language Bridge', 'School Vocabulary', 'Everyday Swedish'],
+  },
   // T3 Gymnasiet subjects
   {
     id: 'advanced-mathematics',
@@ -161,6 +179,24 @@ const CATALOGUE = [
     icon: <Lightbulb className="h-5 w-5 text-adv-teal" />,
     tier: 'T3',
     modules: ['Epistemology', 'Ethics', 'Logic', 'Political Philosophy'],
+  },
+  {
+    id: 'idrott-halsa',
+    nameKey: 'subject.idrottHalsa',
+    name: 'Idrott & Hälsa (Sports & Health)',
+    persona: 'Oscar',
+    icon: <Brain className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Exercise Physiology', 'Training Science', 'Health & Wellbeing', 'Mental Health & Sport'],
+  },
+  {
+    id: 'statistics',
+    nameKey: 'subject.statistics',
+    name: 'Statistics & Data Science',
+    persona: 'Nora',
+    icon: <BarChart2 className="h-5 w-5 text-adv-teal" />,
+    tier: 'T3',
+    modules: ['Descriptive Statistics', 'Probability', 'Hypothesis Testing', 'Data Visualisation'],
   },
 ];
 
