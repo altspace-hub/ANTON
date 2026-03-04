@@ -62,6 +62,7 @@ export default function AssignmentBuilderPage() {
   const [draft, setDraft] = useState<AssignmentDraft>(DEFAULT_DRAFT);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isTemplate, setIsTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function addQuestion(type: QuestionType) {
@@ -94,7 +95,7 @@ export default function AssignmentBuilderPage() {
       const res = await fetch('/api/school/assignments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body: JSON.stringify({ ...draft, classId }),
+        body: JSON.stringify({ ...draft, classId, isTemplate }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
@@ -114,7 +115,7 @@ export default function AssignmentBuilderPage() {
       const saveRes = await fetch('/api/school/assignments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body: JSON.stringify({ ...draft, classId }),
+        body: JSON.stringify({ ...draft, classId, isTemplate }),
       });
       if (!saveRes.ok) throw new Error(await saveRes.text());
       const { id } = await saveRes.json();
@@ -248,6 +249,19 @@ export default function AssignmentBuilderPage() {
             </div>
           </div>
         </section>
+
+        {/* Save as template */}
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isTemplate}
+            onChange={e => setIsTemplate(e.target.checked)}
+            className="h-4 w-4 rounded border-border accent-adv-teal"
+          />
+          <span className="text-sm text-adv-gray">
+            {t('teacher.assignment.saveAsTemplate', 'Save as template (reusable across classes)')}
+          </span>
+        </label>
 
         {/* Questions */}
         <section className="space-y-3">

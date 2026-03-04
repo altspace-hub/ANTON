@@ -136,7 +136,9 @@
       "viewProgress": "View Progress",
       "createAssignment": "Create Assignment",
       "noClasses": "You haven't created any classes yet.",
-      "setupFirst": "Set up your first class to get started."
+      "setupFirst": "Set up your first class to get started.",
+      "templates": "Assignment Templates",
+      "useTemplate": "Use template"
     },
     "classConfig": {
       "title": "Class Settings",
@@ -219,6 +221,7 @@
       "retakesNone": "No retakes",
       "export": "Export as .anton",
       "save": "Save",
+      "saveAsTemplate": "Save as template (reusable across classes)",
       "rubricsSection": "Grading rubric",
       "addRubricCriteria": "Add criteria"
     }

@@ -35,6 +35,7 @@ interface ClassDetail {
   teacherPersona: string;
   currentTopic?: string;
   students: StudentProgress[];
+  averageBlooms?: Record<string, number>;
 }
 
 const BLOOMS_LABELS: Record<string, string> = {
@@ -187,6 +188,39 @@ export default function TeacherClassProgressPage() {
                   />
                 </div>
               </div>
+
+              {/* Class-average Bloom's bars */}
+              {classDetail.averageBlooms && Object.values(classDetail.averageBlooms).some(v => v > 0) && (
+                <div className="mt-5 pt-4 border-t border-border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <BookOpen className="h-4 w-4 text-adv-teal" />
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-adv-gray-med">
+                      Class Average — Bloom's Dimensions
+                    </h3>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {Object.entries(classDetail.averageBlooms).map(([key, value]) => {
+                      const pct = Math.round(value);
+                      const label = BLOOMS_LABELS[key] ?? key;
+                      const color = BLOOMS_COLORS[key] ?? 'bg-adv-teal';
+                      return (
+                        <div key={key}>
+                          <div className="mb-1 flex justify-between text-xs">
+                            <span className="text-adv-off-white">{label}</span>
+                            <span className="text-adv-gray-med">{pct}%</span>
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-adv-dark">
+                            <div
+                              className={`h-full rounded-full transition-all ${color}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Two-column: student list + detail */}

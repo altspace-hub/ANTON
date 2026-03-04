@@ -149,6 +149,7 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
+  try { db.exec(`ALTER TABLE teacher_assignments ADD COLUMN is_template INTEGER DEFAULT 0`); } catch {}
 
   const router = Router();
 
@@ -494,7 +495,24 @@ export function createSchoolRoutes(db: Database.Database) {
           ).all(req.params.id)
         : [];
 
-      res.json({ ...classRow, students });
+      // Compute class-average Bloom's across all enrolled students' progress rows
+      const progressRows = db.prepare(
+        `SELECT sp.blooms_data FROM student_progress sp
+         JOIN class_enrollments ce ON ce.student_user_id = sp.student_user_id
+         WHERE ce.class_id = ?`
+      ).all(req.params.id) as { blooms_data: string }[];
+
+      const BLOOMS_DIMS = ['knowledge', 'application', 'analysis', 'evaluation', 'creation', 'metacognition'];
+      const averageBlooms: Record<string, number> = Object.fromEntries(BLOOMS_DIMS.map(d => [d, 0]));
+      if (progressRows.length > 0) {
+        for (const row of progressRows) {
+          const b = row.blooms_data ? JSON.parse(row.blooms_data) as Record<string, number> : {};
+          for (const dim of BLOOMS_DIMS) averageBlooms[dim] += b[dim] ?? 0;
+        }
+        for (const dim of BLOOMS_DIMS) averageBlooms[dim] = Math.round(averageBlooms[dim] / progressRows.length);
+      }
+
+      res.json({ ...classRow, students, averageBlooms });
     } catch (err) {
       console.error('[school/classes/:id GET]', err);
       res.status(500).json({ error: safeError(err) });
@@ -624,7 +642,7 @@ export function createSchoolRoutes(db: Database.Database) {
       const {
         classId, title, description = '', questions = [],
         dueDate, totalMarks = 0, assistanceLevelOverride,
-        assignmentType = 'homework', subjectId,
+        assignmentType = 'homework', subjectId, isTemplate = false,
       } = req.body as Record<string, unknown>;
 
       if (!classId || !title) return res.status(400).json({ error: 'classId and title required' });
@@ -640,20 +658,89 @@ export function createSchoolRoutes(db: Database.Database) {
       db.prepare(
         `INSERT INTO teacher_assignments
            (id, teacher_user_id, class_id, title, description, assignment_type, subject_id,
-            questions, total_marks, assistance_level_override, due_date, content, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            questions, total_marks, assistance_level_override, due_date, content, is_template, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).run(
         id, userId, classId as string, title as string, description as string,
         assignmentType as string, resolvedSubjectId,
         JSON.stringify(questions), totalMarks as number,
         (assistanceLevelOverride as string) || null,
         (dueDate as string) || null,
-        '{}', now, now
+        '{}', isTemplate ? 1 : 0, now, now
       );
 
       res.status(201).json({ id, classId, title });
     } catch (err) {
       console.error('[school/assignments POST]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/assignments/templates ─────────────────────────────
+  router.get('/school/assignments/templates', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const templates = db.prepare(
+        `SELECT ta.*, sc.name AS class_name
+         FROM teacher_assignments ta
+         JOIN school_classes sc ON sc.id = ta.class_id
+         WHERE ta.teacher_user_id = ? AND ta.is_template = 1
+         ORDER BY ta.created_at DESC`
+      ).all(userId) as Record<string, unknown>[];
+
+      res.json(templates.map(a => ({
+        ...a,
+        questions: a.questions ? JSON.parse(a.questions as string) : [],
+      })));
+    } catch (err) {
+      console.error('[school/assignments/templates]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /api/school/assignments/:id/duplicate ─────────────────────────
+  router.post('/school/assignments/:id/duplicate', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const original = db.prepare(
+        `SELECT ta.* FROM teacher_assignments ta
+         JOIN school_classes sc ON sc.id = ta.class_id
+         WHERE ta.id = ? AND sc.teacher_user_id = ?`
+      ).get(req.params.id, userId) as Record<string, unknown> | null;
+
+      if (!original) return res.status(404).json({ error: 'Assignment not found or access denied' });
+
+      const newId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const newTitle = `${original.title} (copy)`;
+
+      db.prepare(
+        `INSERT INTO teacher_assignments
+           (id, teacher_user_id, class_id, title, description, assignment_type, subject_id,
+            questions, total_marks, assistance_level_override, due_date, content, is_template, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
+      ).run(
+        newId, userId,
+        original.class_id as string,
+        newTitle,
+        (original.description as string) || '',
+        (original.assignment_type as string) || 'homework',
+        (original.subject_id as string) || 'mathematics',
+        (original.questions as string) || '[]',
+        (original.total_marks as number) || 0,
+        (original.assistance_level_override as string) || null,
+        null,
+        (original.content as string) || '{}',
+        now, now
+      );
+
+      res.status(201).json({ id: newId, title: newTitle });
+    } catch (err) {
+      console.error('[school/assignments/:id/duplicate]', err);
       res.status(500).json({ error: safeError(err) });
     }
   });

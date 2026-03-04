@@ -136,7 +136,9 @@
       "viewProgress": "Visa framsteg",
       "createAssignment": "Skapa uppgift",
       "noClasses": "Du har inte skapat några klasser ännu.",
-      "setupFirst": "Sätt upp din första klass för att komma igång."
+      "setupFirst": "Sätt upp din första klass för att komma igång.",
+      "templates": "Uppgiftsmallar",
+      "useTemplate": "Använd mall"
     },
     "classConfig": {
       "title": "Klassinställningar",
@@ -219,6 +221,7 @@
       "retakesNone": "Inga omtag",
       "export": "Exportera som .anton",
       "save": "Spara",
+      "saveAsTemplate": "Spara som mall (återanvändbar för alla klasser)",
       "rubricsSection": "Bedömningsmatris",
       "addRubricCriteria": "Lägg till kriterium"
     }

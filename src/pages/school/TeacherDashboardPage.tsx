@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuthHeader } from '@/lib/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -11,6 +11,8 @@ import {
   BookOpen,
   Settings,
   Loader2,
+  FileText,
+  ArrowRight,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 
@@ -24,22 +26,52 @@ interface SchoolClass {
   pendingSubmissions: number;
 }
 
+interface AssignmentTemplate {
+  id: string;
+  title: string;
+  subject_id: string;
+  assignment_type: string;
+  class_name: string;
+}
+
 export default function TeacherDashboardPage() {
   const { t } = useTranslation('school');
   const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [templates, setTemplates] = useState<AssignmentTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadClasses();
+    loadData();
   }, []);
 
-  async function loadClasses() {
+  async function loadData() {
     try {
-      const res = await fetch('/api/school/classes', { headers: getAuthHeader() });
-      if (res.ok) setClasses(await res.json());
+      const [classRes, templateRes] = await Promise.all([
+        fetch('/api/school/classes', { headers: getAuthHeader() }),
+        fetch('/api/school/assignments/templates', { headers: getAuthHeader() }),
+      ]);
+      if (classRes.ok) setClasses(await classRes.json());
+      if (templateRes.ok) setTemplates(await templateRes.json());
     } catch { /* non-fatal */ }
     finally { setIsLoading(false); }
+  }
+
+  async function useTemplate(templateId: string) {
+    setDuplicating(templateId);
+    try {
+      const res = await fetch(`/api/school/assignments/${templateId}/duplicate`, {
+        method: 'POST',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        navigate('/school/teacher/assignments/new');
+      }
+    } catch { /* non-fatal */ }
+    finally { setDuplicating(null); }
   }
 
   async function copyClassCode(code: string) {
@@ -150,6 +182,44 @@ export default function TeacherDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Assignment Templates section */}
+        {templates.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-adv-teal" />
+              <h2 className="text-sm font-semibold text-adv-white">
+                {t('teacher.dashboard.templates', 'Assignment Templates')}
+              </h2>
+              <span className="rounded-full bg-adv-teal/10 px-2 py-0.5 text-xs text-adv-teal">
+                {templates.length}
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {templates.map(tmpl => (
+                <div key={tmpl.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-adv-card p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-adv-off-white truncate">{tmpl.title}</p>
+                    <p className="text-xs text-adv-gray-med mt-0.5">
+                      {t(`subject.${tmpl.subject_id}`, tmpl.subject_id)} · {tmpl.assignment_type}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => useTemplate(tmpl.id)}
+                    disabled={duplicating === tmpl.id}
+                    className="flex items-center gap-1.5 rounded-lg bg-adv-teal/10 px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-50 transition-colors shrink-0"
+                  >
+                    {duplicating === tmpl.id
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <ArrowRight className="h-3.5 w-3.5" />}
+                    {t('teacher.dashboard.useTemplate', 'Use template')}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
