@@ -293,6 +293,39 @@ const ACHIEVEMENT_DEFS = [
 
 // ── Growth model helpers ────────────────────────────────────────────────────
 
+/** Returns the XP multiplier for any active season today, or 1.0 if none. */
+function getActiveSeasonMultiplier(db: Database.Database): number {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const season = db.prepare(
+      `SELECT xp_multiplier FROM xp_seasons WHERE active = 1 AND start_date <= ? AND end_date >= ? LIMIT 1`
+    ).get(today, today) as { xp_multiplier: number } | undefined;
+    return season?.xp_multiplier ?? 1.0;
+  } catch {
+    return 1.0;
+  }
+}
+
+/** Record (or update) the student's XP earned in the current ISO week. */
+function updateWeeklySnapshot(db: Database.Database, userId: string, xpEarned: number): void {
+  try {
+    // ISO week start = Monday of current week
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    const weekStart = monday.toISOString().split('T')[0];
+    const updatedAt = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO weekly_xp_snapshots (id, student_user_id, week_start, week_xp, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(student_user_id, week_start)
+       DO UPDATE SET week_xp = week_xp + excluded.week_xp, updated_at = excluded.updated_at`
+    ).run(crypto.randomUUID(), userId, weekStart, xpEarned, updatedAt);
+  } catch { /* non-fatal */ }
+}
+
 function updateGrowthProfile(db: Database.Database, userId: string, eventType = 'chat_turn'): void {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
@@ -359,7 +392,9 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
     newStreak = 1;
   }
 
-  const eventXp = XP_VALUES[eventType] ?? 5;
+  const baseEventXp = XP_VALUES[eventType] ?? 5;
+  const seasonMult = getActiveSeasonMultiplier(db);
+  const eventXp = Math.round(baseEventXp * seasonMult);
   const newXp = (profile.total_xp ?? 0) + eventXp + streakXp;
   const newLevel = computeXpLevel(newXp);
 
@@ -380,6 +415,8 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
         .run(crypto.randomUUID(), userId, 'streak_day', streakXp, now);
     }
   } catch { /* non-fatal */ }
+  // Update weekly snapshot for leaderboard
+  updateWeeklySnapshot(db, userId, eventXp + streakXp);
   checkAndAwardAchievements(db, userId, { session_count: count, xp_level: newLevel, current_streak: newStreak, stage });
 
   // Grant a shield when streak reaches 7
@@ -517,6 +554,25 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`CREATE TABLE IF NOT EXISTS review_cards (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, subject_id TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, source TEXT, due_date TEXT, interval_days INTEGER DEFAULT 1, ease_factor REAL DEFAULT 2.5, repetitions INTEGER DEFAULT 0, created_at DATETIME)`); } catch {}
   // Session H: student_avatars (cosmetic system)
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_avatars (student_user_id TEXT PRIMARY KEY, avatar_char TEXT DEFAULT '🦊', color_scheme TEXT DEFAULT 'teal', frame TEXT DEFAULT 'none', title TEXT DEFAULT '', unlocked_items TEXT DEFAULT '[]', updated_at DATETIME)`); } catch {}
+  // Session I: weekly XP snapshots + seasonal events
+  try { db.exec(`CREATE TABLE IF NOT EXISTS weekly_xp_snapshots (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, class_id TEXT, week_start TEXT NOT NULL, week_xp INTEGER DEFAULT 0, updated_at DATETIME, UNIQUE(student_user_id, week_start))`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS xp_seasons (id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT DEFAULT '⭐', start_date TEXT NOT NULL, end_date TEXT NOT NULL, xp_multiplier REAL DEFAULT 1.0, description TEXT, active INTEGER DEFAULT 1)`); } catch {}
+  // Seed 4 default seasons (non-fatal if already seeded)
+  try {
+    const existingSeasons = db.prepare(`SELECT COUNT(*) as cnt FROM xp_seasons`).get() as { cnt: number };
+    if (existingSeasons.cnt === 0) {
+      const seasons = [
+        { id: 'season-autumn-2026', name: 'Autumn Challenge', emoji: '🍂', start: '2026-09-01', end: '2026-11-30', mult: 1.5, desc: 'Back to school season — earn 50% bonus XP on all activities!' },
+        { id: 'season-winter-2026', name: 'Winter Sprint',   emoji: '❄️', start: '2026-12-01', end: '2027-02-28', mult: 2.0, desc: 'Winter double XP event — all XP doubled during the Christmas break study sprint!' },
+        { id: 'season-spring-2027', name: 'Spring Bloom',   emoji: '🌸', start: '2027-03-01', end: '2027-05-31', mult: 1.5, desc: 'Exam prep season — bonus XP for every practice session and review card!' },
+        { id: 'season-summer-2027', name: 'Summer Quest',   emoji: '☀️', start: '2027-06-01', end: '2027-08-31', mult: 1.25, desc: 'Keep learning through summer — 25% XP boost to stay sharp!' },
+      ];
+      for (const s of seasons) {
+        db.prepare(`INSERT OR IGNORE INTO xp_seasons (id, name, emoji, start_date, end_date, xp_multiplier, description, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`)
+          .run(s.id, s.name, s.emoji, s.start, s.end, s.mult, s.desc);
+      }
+    }
+  } catch { /* non-fatal */ }
   // Load persisted model-tier override (if any)
   try {
     const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
@@ -2438,6 +2494,98 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     db.prepare(`DELETE FROM review_cards WHERE id = ? AND student_user_id = ?`).run(req.params.id, userId);
     return res.json({ ok: true });
+  });
+
+  // ── GET /api/school/seasons/active ────────────────────────────────────────
+  router.get('/school/seasons/active', (req, res) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const season = db.prepare(
+        `SELECT id, name, emoji, start_date, end_date, xp_multiplier, description FROM xp_seasons WHERE active = 1 AND start_date <= ? AND end_date >= ? LIMIT 1`
+      ).get(today, today) as Record<string, unknown> | undefined;
+
+      if (!season) return res.json({ season: null });
+
+      const endDate = new Date(season.end_date as string);
+      const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / 86_400_000));
+      return res.json({ season: { ...season, daysLeft } });
+    } catch (err) {
+      console.error('[school/seasons/active]', err);
+      return res.status(500).json({ error: 'Internal error' });
+    }
+  });
+
+  // ── GET /api/school/leaderboard ───────────────────────────────────────────
+  // period=all_time|weekly. If class_id provided, scoped to that class.
+  router.get('/school/leaderboard', (req, res) => {
+    try {
+      const { period = 'weekly', class_id, limit = '10' } = req.query as Record<string, string>;
+      const lim = Math.min(parseInt(limit, 10) || 10, 50);
+
+      let entries: Array<{ student_user_id: string; display_name: string; total_xp: number; rank: number }>;
+
+      if (period === 'weekly') {
+        // ISO week start = Monday
+        const now = new Date();
+        const day = now.getDay();
+        const diffToMonday = day === 0 ? -6 : 1 - day;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + diffToMonday);
+        const weekStart = monday.toISOString().split('T')[0];
+
+        if (class_id) {
+          entries = db.prepare(`
+            SELECT w.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
+                   COALESCE(w.week_xp, 0) as total_xp
+            FROM student_class_enrollments e
+            JOIN weekly_xp_snapshots w ON w.student_user_id = e.student_user_id AND w.week_start = ?
+            JOIN users u ON u.id = e.student_user_id
+            WHERE e.class_id = ?
+            ORDER BY total_xp DESC
+            LIMIT ?
+          `).all(weekStart, class_id, lim) as typeof entries;
+        } else {
+          entries = db.prepare(`
+            SELECT w.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
+                   COALESCE(w.week_xp, 0) as total_xp
+            FROM weekly_xp_snapshots w
+            JOIN users u ON u.id = w.student_user_id
+            WHERE w.week_start = ?
+            ORDER BY total_xp DESC
+            LIMIT ?
+          `).all(weekStart, lim) as typeof entries;
+        }
+      } else {
+        // All-time (use student_growth_profiles)
+        if (class_id) {
+          entries = db.prepare(`
+            SELECT g.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
+                   COALESCE(g.total_xp, 0) as total_xp
+            FROM student_class_enrollments e
+            JOIN student_growth_profiles g ON g.student_user_id = e.student_user_id
+            JOIN users u ON u.id = e.student_user_id
+            WHERE e.class_id = ?
+            ORDER BY total_xp DESC
+            LIMIT ?
+          `).all(class_id, lim) as typeof entries;
+        } else {
+          entries = db.prepare(`
+            SELECT g.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
+                   COALESCE(g.total_xp, 0) as total_xp
+            FROM student_growth_profiles g
+            JOIN users u ON u.id = g.student_user_id
+            ORDER BY total_xp DESC
+            LIMIT ?
+          `).all(lim) as typeof entries;
+        }
+      }
+
+      const ranked = entries.map((e, i) => ({ ...e, rank: i + 1 }));
+      return res.json({ period, entries: ranked });
+    } catch (err) {
+      console.error('[school/leaderboard]', err);
+      return res.status(500).json({ error: 'Internal error' });
+    }
   });
 
   // ── GET /api/school/avatar ────────────────────────────────────────────────

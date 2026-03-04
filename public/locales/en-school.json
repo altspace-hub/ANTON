@@ -559,5 +559,15 @@
     "chooseFrame": "Frame",
     "titleLabel": "Display title (optional)",
     "titlePlaceholder": "e.g. Maths Wizard, History Buff..."
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "weekly": "This Week",
+    "allTime": "All Time",
+    "noWeeklyData": "No activity yet this week. Start studying to appear here!"
+  },
+  "season": {
+    "daysLeft": "{n} days left",
+    "multiplier": "{n}× XP"
   }
 }

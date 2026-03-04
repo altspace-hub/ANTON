@@ -47,6 +47,9 @@ export default function SchoolDashboardPage() {
   const [xpData, setXpData] = useState<{ total: number; level: number; nextLevelAt: number | null; currentStreak: number; longestStreak: number; streakShields?: number } | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<{ id: string; title: string; due_date?: string; class_name?: string }[]>([]);
   const [leaderboard, setLeaderboard] = useState<{ enabled: boolean; entries: { rank: number; name: string; xp: number; level: number }[] } | null>(null);
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<{ rank: number; display_name: string; total_xp: number }[]>([]);
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState<'all_time' | 'weekly'>('weekly');
+  const [activeSeason, setActiveSeason] = useState<{ name: string; emoji: string; xp_multiplier: number; description: string; daysLeft: number } | null>(null);
   const [dailyQuests, setDailyQuests] = useState<Array<{ id: string; quest_type: string; target: number; progress: number; completed: boolean; xp_reward: number }>>([]);
   const [quickQuestion, setQuickQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +87,22 @@ export default function SchoolDashboardPage() {
               completed: q.completed === 1 || q.completed === true,
             })));
           }
+        }
+      } catch { /* non-fatal */ }
+      // Load active season
+      try {
+        const seasonRes = await fetch('/api/school/seasons/active', { headers: { ...getAuthHeader() } });
+        if (seasonRes.ok) {
+          const seasonData = await seasonRes.json();
+          if (seasonData.season) setActiveSeason(seasonData.season);
+        }
+      } catch { /* non-fatal */ }
+      // Load weekly leaderboard
+      try {
+        const weeklyRes = await fetch('/api/school/leaderboard?period=weekly&limit=5', { headers: { ...getAuthHeader() } });
+        if (weeklyRes.ok) {
+          const weeklyData = await weeklyRes.json();
+          if (Array.isArray(weeklyData.entries)) setWeeklyLeaderboard(weeklyData.entries);
         }
       } catch { /* non-fatal */ }
     } catch {
@@ -363,31 +382,73 @@ export default function SchoolDashboardPage() {
           </section>
         )}
 
-        {/* Class leaderboard */}
-        {leaderboard?.enabled && leaderboard.entries.length > 0 && (
+        {/* Active season banner */}
+        {activeSeason && (
+          <div className="rounded-xl border border-adv-gold/30 bg-adv-gold/5 p-4 flex items-start gap-3">
+            <span className="text-2xl shrink-0">{activeSeason.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-adv-gold text-sm">{activeSeason.name}</span>
+                <span className="text-xs bg-adv-gold/20 text-adv-gold px-2 py-0.5 rounded-full">
+                  {activeSeason.xp_multiplier}× XP
+                </span>
+                <span className="text-xs text-adv-gray">{activeSeason.daysLeft} days left</span>
+              </div>
+              <p className="text-xs text-adv-off-white mt-1">{activeSeason.description}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Leaderboard (class all-time + weekly toggle) */}
+        {((leaderboard?.enabled && leaderboard.entries.length > 0) || weeklyLeaderboard.length > 0) && (
           <section>
-            <div className="flex items-center gap-2 mb-3">
-              <Trophy className="h-4 w-4 text-adv-gold" />
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-adv-gray-med">
-                Class Leaderboard
-              </h2>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-adv-gold" />
+                <h2 className="text-sm font-semibold uppercase tracking-widest text-adv-gray-med">
+                  {t('leaderboard.title', { defaultValue: 'Leaderboard' })}
+                </h2>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setLeaderboardPeriod('weekly')}
+                  className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${leaderboardPeriod === 'weekly' ? 'bg-adv-teal text-adv-dark font-semibold' : 'text-adv-gray hover:text-white'}`}
+                >
+                  {t('leaderboard.weekly', { defaultValue: 'This Week' })}
+                </button>
+                <button
+                  onClick={() => setLeaderboardPeriod('all_time')}
+                  className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${leaderboardPeriod === 'all_time' ? 'bg-adv-teal text-adv-dark font-semibold' : 'text-adv-gray hover:text-white'}`}
+                >
+                  {t('leaderboard.allTime', { defaultValue: 'All Time' })}
+                </button>
+              </div>
             </div>
             <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
-              {leaderboard.entries.map((entry, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-3 px-4 py-2.5 ${i < leaderboard.entries.length - 1 ? 'border-b border-border' : ''}`}
-                >
+              {leaderboardPeriod === 'weekly' && weeklyLeaderboard.map((entry, i) => (
+                <div key={entry.student_user_id} className={`flex items-center gap-3 px-4 py-2.5 ${i < weeklyLeaderboard.length - 1 ? 'border-b border-border' : ''}`}>
                   <span className={`w-6 text-center text-xs font-bold shrink-0 ${
-                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-adv-gray' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray-med'
-                  }`}>
-                    {entry.rank}
-                  </span>
+                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray-med'
+                  }`}>{entry.rank}</span>
+                  <span className="flex-1 text-sm text-adv-off-white">{entry.display_name}</span>
+                  <span className="text-xs font-semibold text-adv-teal shrink-0">{entry.total_xp} XP</span>
+                </div>
+              ))}
+              {leaderboardPeriod === 'all_time' && leaderboard?.enabled && leaderboard.entries.map((entry, i) => (
+                <div key={i} className={`flex items-center gap-3 px-4 py-2.5 ${i < leaderboard.entries.length - 1 ? 'border-b border-border' : ''}`}>
+                  <span className={`w-6 text-center text-xs font-bold shrink-0 ${
+                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray-med'
+                  }`}>{entry.rank}</span>
                   <span className="flex-1 text-sm text-adv-off-white">{entry.name}</span>
                   <span className="text-xs text-adv-gray-med shrink-0">L{entry.level}</span>
                   <span className="text-xs font-semibold text-adv-teal shrink-0">{entry.xp} XP</span>
                 </div>
               ))}
+              {leaderboardPeriod === 'weekly' && weeklyLeaderboard.length === 0 && (
+                <div className="px-4 py-6 text-center text-adv-gray text-sm">
+                  {t('leaderboard.noWeeklyData', { defaultValue: 'No activity yet this week. Start studying to appear here!' })}
+                </div>
+              )}
             </div>
           </section>
         )}
