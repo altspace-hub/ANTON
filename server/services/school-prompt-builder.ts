@@ -31,6 +31,7 @@ export interface SchoolPromptConfig {
   growthStage?: string;       // 'S1' | 'S2' | 'S3' | 'S4'
   senMode?: string | null;    // 'dyslexia' | 'adhd' | null
   explanationStyle?: string;  // 'balanced' | 'examples_first' | 'theory_first' | 'visual' | 'verbal'
+  teacherLevelOverride?: string; // set by teacher for specific student
 }
 
 async function readPromptFile(filePath: string): Promise<string> {
@@ -307,9 +308,11 @@ function buildAssistanceSummaryLayer(config: SchoolPromptConfig): string {
     assessment: "The student is completing an assessed assignment. Enforce the assistance level strictly.",
   };
 
+  const effectiveLevel = config.teacherLevelOverride ?? config.assistanceLevel;
+
   return `## Active Session Parameters
 
-**Assistance Level:** ${config.assistanceLevel} — ${levelDescriptions[config.assistanceLevel]}
+**Assistance Level:** ${effectiveLevel} — ${levelDescriptions[effectiveLevel] ?? levelDescriptions[config.assistanceLevel]}
 
 **Task Type:** ${taskDescriptions[config.taskType]}
 

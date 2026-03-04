@@ -2438,5 +2438,70 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     return res.json({ ok: true });
   });
 
+  // ── GET /api/school/parent/child-summary/:childId ─────────────────────────
+  router.get('/school/parent/child-summary/:childId', (req, res) => {
+    const guardianId = req.user?.id;
+    if (!guardianId) return res.status(401).json({ error: 'Unauthorised' });
+    const childId = req.params.childId;
+
+    // Verify guardian link
+    const link = db.prepare(`SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`).get(guardianId, childId);
+    if (!link) return res.status(403).json({ error: 'Not linked' });
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const today = new Date().toISOString().split('T')[0];
+
+    const growth = db.prepare(`SELECT stage, total_xp, current_streak, last_active_date FROM student_growth_profiles WHERE student_user_id = ?`).get(childId) as { stage: string; total_xp: number; current_streak: number; last_active_date: string } | undefined;
+    const student = db.prepare(`SELECT display_name, username FROM users WHERE id = ?`).get(childId) as { display_name: string; username: string } | undefined;
+
+    // Sessions count (use XP events as proxy)
+    const sessions = db.prepare(`SELECT COUNT(*) as count FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`).get(childId, sevenDaysAgo) as { count: number };
+
+    // Review cards due
+    let reviewCardsDue = 0;
+    try {
+      const rc = db.prepare(`SELECT COUNT(*) as count FROM review_cards WHERE student_user_id = ? AND due_date <= ?`).get(childId, today) as { count: number };
+      reviewCardsDue = rc.count;
+    } catch {}
+
+    // Subjects from progress
+    let subjects: string[] = [];
+    try {
+      const progressRows = db.prepare(`SELECT subject_id FROM student_progress WHERE student_user_id = ?`).all(childId) as { subject_id: string }[];
+      subjects = progressRows.map(r => r.subject_id);
+    } catch {}
+
+    return res.json({
+      name: student?.display_name || student?.username || 'Student',
+      sessionsThisWeek: sessions.count,
+      totalXp: growth?.total_xp ?? 0,
+      currentStreak: growth?.current_streak ?? 0,
+      growthStage: growth?.stage ?? 'S1',
+      subjects,
+      reviewCardsDue,
+      lastActive: growth?.last_active_date ?? null,
+    });
+  });
+
+  // ── PATCH /api/school/classes/:classId/students/:studentId/settings ───────
+  router.patch('/school/classes/:classId/students/:studentId/settings', (req, res) => {
+    const teacherId = req.user?.id;
+    if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
+    const { teacherLevelOverride, senOverride } = req.body as Record<string, string>;
+
+    // Verify teacher owns this class
+    const cls = db.prepare(`SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`).get(req.params.classId, teacherId);
+    if (!cls) return res.status(403).json({ error: 'Forbidden' });
+
+    // Store override in student_class_enrollments (add columns if needed)
+    try { db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN teacher_level_override TEXT`); } catch {}
+    try { db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN sen_override TEXT`); } catch {}
+
+    db.prepare(`UPDATE student_class_enrollments SET teacher_level_override = ?, sen_override = ? WHERE class_id = ? AND student_user_id = ?`)
+      .run(teacherLevelOverride ?? null, senOverride ?? null, req.params.classId, req.params.studentId);
+
+    return res.json({ ok: true });
+  });
+
   return router;
 }

@@ -23,6 +23,7 @@
     "backToWork": "Back to Work Mode",
     "close": "Close",
     "review": "Review",
+    "parentView": "Parent View",
     "role": {
       "student": "Student",
       "guardian": "Guardian",
@@ -280,6 +281,14 @@
     }
   },
   "guardian": {
+    "parent": {
+      "title": "Parent View",
+      "sessionsThisWeek": "Sessions this week",
+      "streak": "Streak",
+      "stage": "Stage",
+      "subjectsStudied": "Subjects studied this week",
+      "cardsDue": "review cards due today"
+    },
     "dashboard": {
       "title": "{{name}}'s Learning",
       "overallProgress": "Overall Progress",

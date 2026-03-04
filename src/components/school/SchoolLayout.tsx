@@ -19,6 +19,7 @@ import {
   Newspaper,
   BookMarked,
   FlipHorizontal,
+  Heart,
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -80,6 +81,16 @@ const STUDENT_NAV: SchoolNavItem[] = [
     labelKey: 'nav.review',
     icon: <FlipHorizontal className="h-4 w-4" />,
     path: '/school/review',
+  },
+];
+
+const GUARDIAN_NAV: SchoolNavItem[] = [
+  {
+    id: 'parent-view',
+    labelKey: 'nav.parentView',
+    icon: <Heart className="h-4 w-4" />,
+    path: '/school/parent',
+    roles: ['guardian'],
   },
 ];
 
@@ -145,6 +156,8 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
 
   const navItems = schoolRole === 'teacher' || schoolRole === 'school_admin'
     ? [...STUDENT_NAV, ...TEACHER_NAV]
+    : schoolRole === 'guardian'
+    ? [...STUDENT_NAV, ...GUARDIAN_NAV]
     : STUDENT_NAV;
 
   function handleExitSchoolMode() {
