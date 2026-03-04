@@ -22,6 +22,7 @@ import LaxhjalpMode from '@/components/school/LaxhjalpMode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeSandbox from '@/components/school/CodeSandbox';
+import PythonSandbox from '@/components/school/PythonSandbox';
 
 type TaskType = 'homework' | 'studying' | 'practice' | null;
 type AssistanceLevel = 'L1' | 'L2' | 'L3' | 'L4';
@@ -352,6 +353,17 @@ export default function SchoolChatPage() {
                     ))}
                   </div>
                 )}
+                {/* Show Python sandbox for python code blocks */}
+                {msg.role === 'assistant' && !isStreaming && (() => {
+                  const pythonBlocks = extractCodeBlocks(msg.content).filter(b => b.lang === 'python');
+                  const isCodingSubject = ['computational-thinking', 'uni-computer-science', 'uni-statistics', 'mathematics', 'uni-mathematics'].includes(classContext?.subjectId ?? urlSubjectId ?? '');
+                  if (pythonBlocks.length === 0 || !isCodingSubject) return null;
+                  return (
+                    <div className="mt-2 max-w-[85%] w-full">
+                      {pythonBlocks.map((block, i) => <PythonSandbox key={`py-${i}`} code={block.code} />)}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

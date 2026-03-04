@@ -150,6 +150,34 @@ function isOllamaTierEnabled(): boolean {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+/** SM-2 spaced repetition algorithm */
+function sm2Update(
+  interval: number, ease: number, repetitions: number, quality: number
+): { interval: number; ease: number; repetitions: number; dueDate: string } {
+  let newInterval: number;
+  const newEase = Math.max(1.3, ease + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  let newReps: number;
+
+  if (quality < 3) {
+    newInterval = 1;
+    newReps = 0;
+  } else {
+    if (repetitions === 0) newInterval = 1;
+    else if (repetitions === 1) newInterval = 6;
+    else newInterval = Math.round(interval * ease);
+    newReps = repetitions + 1;
+  }
+
+  const due = new Date();
+  due.setDate(due.getDate() + newInterval);
+  return {
+    interval: newInterval,
+    ease: newEase,
+    repetitions: newReps,
+    dueDate: due.toISOString().split('T')[0],
+  };
+}
+
 function generateClassCode(): string {
   return crypto.randomBytes(3).toString('hex').toUpperCase();
 }
@@ -478,6 +506,8 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_daily_quests (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, quest_type TEXT NOT NULL, quest_date TEXT NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed INTEGER DEFAULT 0, xp_reward INTEGER NOT NULL, created_at DATETIME, UNIQUE(student_user_id, quest_date, quest_type))`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS guardian_digest_log (id TEXT PRIMARY KEY, guardian_user_id TEXT NOT NULL, student_user_id TEXT NOT NULL, sent_at DATETIME, digest_data TEXT)`); } catch {}
   try { db.exec(`ALTER TABLE guardian_student_links ADD COLUMN email_digest INTEGER DEFAULT 1`); } catch {}
+  // Session D: review_cards (SM-2 spaced repetition)
+  try { db.exec(`CREATE TABLE IF NOT EXISTS review_cards (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, subject_id TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, source TEXT, due_date TEXT, interval_days INTEGER DEFAULT 1, ease_factor REAL DEFAULT 2.5, repetitions INTEGER DEFAULT 0, created_at DATETIME)`); } catch {}
   // Load persisted model-tier override (if any)
   try {
     const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
@@ -2342,6 +2372,63 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     }
 
     return res.json({ progress: newProgress, completed: nowComplete === 1, xp_reward: quest.xp_reward });
+  });
+
+  // ── GET /api/school/review-cards ──────────────────────────────────────────
+  router.get('/school/review-cards', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    const today = new Date().toISOString().split('T')[0];
+    const cards = db.prepare(
+      `SELECT * FROM review_cards WHERE student_user_id = ? AND (due_date IS NULL OR due_date <= ?) ORDER BY due_date ASC LIMIT 20`
+    ).all(userId, today);
+    return res.json({ cards, date: today });
+  });
+
+  // ── POST /api/school/review-cards ─────────────────────────────────────────
+  router.post('/school/review-cards', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    const { subjectId = 'mathematics', front, back, source = 'manual' } = req.body as Record<string, string>;
+    if (!front || !back) return res.status(400).json({ error: 'front and back required' });
+    const id = crypto.randomUUID();
+    const today = new Date().toISOString().split('T')[0];
+    db.prepare(
+      `INSERT INTO review_cards (id, student_user_id, subject_id, front, back, source, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, userId, subjectId, front, back, source, today, new Date().toISOString());
+    return res.status(201).json({ id });
+  });
+
+  // ── PATCH /api/school/review-cards/:id/review ─────────────────────────────
+  router.patch('/school/review-cards/:id/review', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    const card = db.prepare(`SELECT * FROM review_cards WHERE id = ? AND student_user_id = ?`).get(req.params.id, userId) as {
+      id: string; interval_days: number; ease_factor: number; repetitions: number;
+    } | undefined;
+    if (!card) return res.status(404).json({ error: 'Card not found' });
+    const quality = Number(req.body.quality ?? 3);
+    const updated = sm2Update(card.interval_days, card.ease_factor, card.repetitions, quality);
+    db.prepare(
+      `UPDATE review_cards SET interval_days = ?, ease_factor = ?, repetitions = ?, due_date = ? WHERE id = ?`
+    ).run(updated.interval, updated.ease, updated.repetitions, updated.dueDate, card.id);
+    // Quest progress for review_card
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const reviewQuest = db.prepare(`SELECT id FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ? AND quest_type = 'review_card' AND completed = 0`).get(userId, today) as { id: string } | undefined;
+      if (reviewQuest) {
+        db.prepare(`UPDATE student_daily_quests SET progress = MIN(target, progress + 1), completed = CASE WHEN progress + 1 >= target THEN 1 ELSE 0 END WHERE id = ?`).run(reviewQuest.id);
+      }
+    } catch {}
+    return res.json({ ok: true, ...updated });
+  });
+
+  // ── DELETE /api/school/review-cards/:id ───────────────────────────────────
+  router.delete('/school/review-cards/:id', (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+    db.prepare(`DELETE FROM review_cards WHERE id = ? AND student_user_id = ?`).run(req.params.id, userId);
+    return res.json({ ok: true });
   });
 
   return router;

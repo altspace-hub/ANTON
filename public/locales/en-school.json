@@ -22,6 +22,7 @@
     "myProfile": "My Profile",
     "backToWork": "Back to Work Mode",
     "close": "Close",
+    "review": "Review",
     "role": {
       "student": "Student",
       "guardian": "Guardian",
@@ -381,7 +382,12 @@
     "run": "Run",
     "copy": "Copy",
     "copied": "Copied!",
-    "clickRun": "Click Run to preview"
+    "clickRun": "Click Run to preview",
+    "runPython": "Run Python",
+    "runningPython": "Running...",
+    "loadingPyodide": "Loading Python environment (first run)...",
+    "pythonOutput": "Output",
+    "pythonError": "Error"
   },
   "persona": {
     "alma": {
@@ -475,5 +481,18 @@
   },
   "curriculum": {
     "frBac": "French Baccalauréat"
+  },
+  "review": {
+    "title": "Review Cards",
+    "noCards": "No cards due today",
+    "noCardsHint": "Cards are created automatically as you chat with Alma.",
+    "done": "Done for today!",
+    "cardsReviewed": "cards reviewed",
+    "answer": "Answer",
+    "tapToFlip": "Tap to reveal",
+    "blackout": "Blackout",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy"
   }
 }
