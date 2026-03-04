@@ -48,6 +48,7 @@ import { safeError } from '../lib/error-response.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
+import AdmZip from 'adm-zip';
 import { extractTextFromFile } from '../services/text-extractor.js';
 
 // ── Tier C — Ollama local model streaming ──────────────────────────────────
@@ -2786,6 +2787,220 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
     } catch (err) {
       console.error('UCAS draft error:', err);
       if (!res.headersSent) res.status(500).json({ error: 'Failed to generate draft' });
+    }
+  });
+
+  // ── POST /api/school/export-bundle/:type ──────────────────────────────────
+  // Export a school .anton bundle. Supported types: lesson-plan, study-pack, assessment-bank
+  router.post('/school/export-bundle/:type', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const bundleType = req.params.type as 'lesson-plan' | 'study-pack' | 'assessment-bank';
+      if (!['lesson-plan', 'study-pack', 'assessment-bank'].includes(bundleType)) {
+        return res.status(400).json({ error: `Unsupported bundle type: ${bundleType}` });
+      }
+
+      const zip = new AdmZip();
+      const now = new Date().toISOString();
+      let contentCount = 0;
+
+      if (bundleType === 'lesson-plan') {
+        // Export teacher lesson from teacher_lessons table
+        const { lessonId } = req.body as { lessonId?: string };
+        if (!lessonId) return res.status(400).json({ error: 'lessonId required' });
+
+        const lesson = db.prepare(`SELECT * FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?`).get(lessonId, userId) as Record<string, unknown> | undefined;
+        if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+
+        const manifest = {
+          format_version: '1.0.0',
+          bundle_type: 'lesson-plan',
+          package: {
+            id: `com.openexpert.lesson.${lessonId}`,
+            name: lesson.title as string,
+            version: '1.0.0',
+            author: { name: (lesson.teacher_user_id as string) ?? userId },
+            created_at: now,
+            tags: ['school', 'lesson-plan'],
+            target_areas: ['school'],
+            languages: ['en'],
+            min_platform_version: '2.0.0',
+          },
+          contents: { lesson_plans: 1 },
+        };
+        zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
+        zip.addFile('contents/lesson-plans/lesson.json', Buffer.from(JSON.stringify({
+          bundle_type: 'lesson-plan',
+          lesson: {
+            id: lesson.id,
+            title: lesson.title,
+            subject_id: lesson.subject_id,
+            education_tier: lesson.tier,
+            learning_objectives: JSON.parse((lesson.learning_objectives as string) || '[]'),
+            content_blocks: JSON.parse((lesson.content_blocks as string) || '[]'),
+          },
+        }, null, 2)));
+        contentCount = 1;
+
+      } else if (bundleType === 'study-pack') {
+        // Export student's review cards for a subject
+        const { subjectId } = req.body as { subjectId?: string };
+        const cards = db.prepare(
+          `SELECT * FROM review_cards WHERE student_user_id = ?${subjectId ? ' AND subject_id = ?' : ''} ORDER BY created_at ASC`
+        ).all(...[userId, ...(subjectId ? [subjectId] : [])]) as Record<string, unknown>[];
+
+        const manifest = {
+          format_version: '1.0.0',
+          bundle_type: 'study-pack',
+          package: {
+            id: `com.openexpert.studypack.${userId}.${Date.now()}`,
+            name: subjectId ? `Study Pack — ${subjectId}` : 'My Study Pack',
+            version: '1.0.0',
+            author: { name: userId },
+            created_at: now,
+            tags: ['school', 'study-pack', 'review-cards'],
+            target_areas: ['school'],
+            languages: ['en'],
+            min_platform_version: '2.0.0',
+          },
+          contents: { study_packs: 1, review_cards: cards.length },
+        };
+        zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
+        zip.addFile('contents/study-packs/review-cards.json', Buffer.from(JSON.stringify({
+          bundle_type: 'study-pack',
+          subject_id: subjectId ?? 'mixed',
+          cards: cards.map(c => ({ front: c.front, back: c.back, subject_id: c.subject_id, source: c.source })),
+        }, null, 2)));
+        contentCount = cards.length;
+
+      } else if (bundleType === 'assessment-bank') {
+        // Export assessment questions from teacher_lessons content_blocks of type 'quiz'
+        const { classId } = req.body as { classId?: string };
+        const lessons = db.prepare(
+          classId
+            ? `SELECT * FROM teacher_lessons WHERE teacher_user_id = ? AND class_id = ?`
+            : `SELECT * FROM teacher_lessons WHERE teacher_user_id = ?`
+        ).all(...[userId, ...(classId ? [classId] : [])]) as Record<string, unknown>[];
+
+        const questions: unknown[] = [];
+        for (const lesson of lessons) {
+          const blocks = JSON.parse((lesson.content_blocks as string) || '[]') as Array<{ type: string; questions?: unknown[] }>;
+          for (const block of blocks) {
+            if (block.type === 'quiz' && Array.isArray(block.questions)) {
+              questions.push(...block.questions);
+            }
+          }
+        }
+
+        const manifest = {
+          format_version: '1.0.0',
+          bundle_type: 'assessment-bank',
+          package: {
+            id: `com.openexpert.assessmentbank.${userId}.${Date.now()}`,
+            name: 'Assessment Question Bank',
+            version: '1.0.0',
+            author: { name: userId },
+            created_at: now,
+            tags: ['school', 'assessment-bank', 'questions'],
+            target_areas: ['school'],
+            languages: ['en'],
+            min_platform_version: '2.0.0',
+          },
+          contents: { assessment_banks: 1, questions: questions.length },
+        };
+        zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2)));
+        zip.addFile('contents/assessment-banks/questions.json', Buffer.from(JSON.stringify({
+          bundle_type: 'assessment-bank',
+          questions,
+        }, null, 2)));
+        contentCount = questions.length;
+      }
+
+      const buf = zip.toBuffer();
+      const filename = `${bundleType}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('X-Anton-Bundle-Type', bundleType);
+      res.setHeader('X-Anton-Item-Count', String(contentCount));
+      return res.send(buf);
+    } catch (err) {
+      console.error('[school/export-bundle]', err);
+      return res.status(500).json({ error: 'Export failed' });
+    }
+  });
+
+  // ── POST /api/school/import-bundle ────────────────────────────────────────
+  // Import a .anton education bundle (multipart file upload)
+  const antonUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+  router.post('/school/import-bundle', antonUpload.single('bundle'), (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      // multer should have handled the file — access via req.file
+      const file = (req as unknown as { file?: { buffer: Buffer; originalname: string } }).file;
+      if (!file) return res.status(400).json({ error: 'No file uploaded' });
+
+      const zip = new AdmZip(file.buffer);
+      const manifestEntry = zip.getEntry('manifest.json');
+      if (!manifestEntry) return res.status(400).json({ error: 'Invalid .anton file: missing manifest.json' });
+
+      const manifest = JSON.parse(manifestEntry.getData().toString('utf8')) as {
+        format_version: string;
+        bundle_type: string;
+        package?: { name?: string };
+        contents?: Record<string, number>;
+      };
+
+      if (!manifest.format_version || !manifest.bundle_type) {
+        return res.status(400).json({ error: 'Invalid .anton manifest' });
+      }
+
+      const bundleType = manifest.bundle_type;
+      const imported: { type: string; count: number; message: string } = { type: bundleType, count: 0, message: '' };
+
+      if (bundleType === 'study-pack') {
+        // Import review cards from study pack
+        const cardsEntry = zip.getEntry('contents/study-packs/review-cards.json');
+        if (!cardsEntry) return res.status(400).json({ error: 'study-pack missing review-cards.json' });
+
+        const packData = JSON.parse(cardsEntry.getData().toString('utf8')) as {
+          cards?: Array<{ front: string; back: string; subject_id?: string; source?: string }>;
+        };
+        const cards = packData.cards ?? [];
+        const now = new Date().toISOString();
+        const today = now.split('T')[0];
+
+        for (const card of cards) {
+          if (!card.front || !card.back) continue;
+          db.prepare(
+            `INSERT OR IGNORE INTO review_cards (id, student_user_id, subject_id, front, back, source, due_date, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          ).run(crypto.randomUUID(), userId, card.subject_id ?? 'mixed', card.front, card.back, card.source ?? 'imported', today, now);
+          imported.count++;
+        }
+        imported.message = `Imported ${imported.count} review cards`;
+
+      } else if (bundleType === 'lesson-plan') {
+        // Lesson plans are read-only reference — just acknowledge receipt
+        imported.count = manifest.contents?.['lesson_plans'] ?? 1;
+        imported.message = `Lesson plan "${manifest.package?.name ?? 'Unknown'}" received (read-only reference)`;
+
+      } else if (bundleType === 'assessment-bank') {
+        // Assessment banks are read-only reference
+        imported.count = manifest.contents?.['questions'] ?? 0;
+        imported.message = `Assessment bank with ${imported.count} questions received`;
+
+      } else {
+        return res.status(400).json({ error: `Unsupported bundle type for school import: ${bundleType}` });
+      }
+
+      return res.json({ ok: true, imported });
+    } catch (err) {
+      console.error('[school/import-bundle]', err);
+      return res.status(500).json({ error: 'Import failed' });
     }
   });
 

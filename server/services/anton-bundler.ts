@@ -39,7 +39,10 @@ export type AntonBundleType =
   | 'output-chain'
   | 'review-panel'
   | 'project-template'
-  | 'audience-profile';
+  | 'audience-profile'
+  | 'lesson-plan'
+  | 'study-pack'
+  | 'assessment-bank';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -68,6 +71,9 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'review-panel':                 { label: 'Review Panel',               description: 'Expert review perspective configuration',           contentsKey: 'review_panels',        primaryContentDir: 'review-panels' },
   'project-template':             { label: 'Project Template',           description: 'Complete project setup with all components',        contentsKey: 'project_templates',    primaryContentDir: 'project-templates' },
   'audience-profile':             { label: 'Audience Profile',           description: 'Stakeholder communication adaptation profile',      contentsKey: 'audience_profiles',    primaryContentDir: 'audience-profiles' },
+  'lesson-plan':                  { label: 'Lesson Plan',                description: 'Teacher-authored lesson plan for School Mode',       contentsKey: 'lesson_plans',         primaryContentDir: 'lesson-plans' },
+  'study-pack':                   { label: 'Study Pack',                 description: 'Student study material bundle with review cards',    contentsKey: 'study_packs',          primaryContentDir: 'study-packs' },
+  'assessment-bank':              { label: 'Assessment Bank',            description: 'Question bank for School Mode assessments',          contentsKey: 'assessment_banks',     primaryContentDir: 'assessment-banks' },
 };
 
 interface ModuleExportData {
