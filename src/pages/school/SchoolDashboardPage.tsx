@@ -14,6 +14,7 @@ import {
   Bell,
   Zap,
   Flame,
+  Trophy,
 } from 'lucide-react';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -44,6 +45,7 @@ export default function SchoolDashboardPage() {
   const [growthStage, setGrowthStage] = useState<string | null>(null);
   const [xpData, setXpData] = useState<{ total: number; level: number; nextLevelAt: number | null; currentStreak: number; longestStreak: number } | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<{ id: string; title: string; due_date?: string; class_name?: string }[]>([]);
+  const [leaderboard, setLeaderboard] = useState<{ enabled: boolean; entries: { rank: number; name: string; xp: number; level: number }[] } | null>(null);
   const [quickQuestion, setQuickQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -64,12 +66,26 @@ export default function SchoolDashboardPage() {
         if (data.growthProfile?.stage) setGrowthStage(data.growthProfile.stage);
         if (data.xp) setXpData(data.xp);
         if (Array.isArray(data.assignments)) setUpcomingAssignments(data.assignments);
+        // Load leaderboard for first enrolled class that has it enabled
+        if (Array.isArray(data.classes) && data.classes.length > 0) {
+          loadLeaderboard((data.classes as { id: string }[])[0].id);
+        }
       }
     } catch {
       // Non-fatal: show empty dashboard
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function loadLeaderboard(classId: string) {
+    try {
+      const res = await fetch(`/api/school/classes/${classId}/leaderboard`, { headers: { ...getAuthHeader() } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.enabled) setLeaderboard(data);
+      }
+    } catch { /* non-fatal */ }
   }
 
   const displayName = user?.display_name || user?.username || '';
@@ -280,6 +296,34 @@ export default function SchoolDashboardPage() {
                       aria-label={t('dashboard.progressLabel', { pct: cls.overallProgressPct })}
                     />
                   </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {/* Class leaderboard */}
+        {leaderboard?.enabled && leaderboard.entries.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="h-4 w-4 text-adv-gold" />
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-adv-gray-med">
+                Class Leaderboard
+              </h2>
+            </div>
+            <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
+              {leaderboard.entries.map((entry, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-3 px-4 py-2.5 ${i < leaderboard.entries.length - 1 ? 'border-b border-border' : ''}`}
+                >
+                  <span className={`w-6 text-center text-xs font-bold shrink-0 ${
+                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-adv-gray' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray-med'
+                  }`}>
+                    {entry.rank}
+                  </span>
+                  <span className="flex-1 text-sm text-adv-off-white">{entry.name}</span>
+                  <span className="text-xs text-adv-gray-med shrink-0">L{entry.level}</span>
+                  <span className="text-xs font-semibold text-adv-teal shrink-0">{entry.xp} XP</span>
                 </div>
               ))}
             </div>

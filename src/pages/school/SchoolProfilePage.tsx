@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Edit2, CheckCircle2, Loader2, BookOpen, MessageSquare, Copy, Users } from 'lucide-react';
+import { User, Edit2, CheckCircle2, Loader2, BookOpen, MessageSquare, Copy, Users, Lock, Trophy } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import SchoolLayout from '@/components/school/SchoolLayout';
@@ -9,6 +9,17 @@ interface DashboardStats {
   sessionsThisWeek?: number;
   messagesThisWeek?: number;
   classes?: { id: string; name: string; subject_id: string }[];
+}
+
+interface AchievementDef {
+  id: string;
+  label: string;
+  description: string;
+}
+
+interface EarnedAchievement {
+  achievement_id: string;
+  earned_at: string;
 }
 
 export default function SchoolProfilePage() {
@@ -25,6 +36,9 @@ export default function SchoolProfilePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
+  const [achievements, setAchievements] = useState<AchievementDef[]>([]);
+  const [earned, setEarned] = useState<Set<string>>(new Set());
+
   const schoolRole = ((user as Record<string, unknown> | null)?.school_role as string | undefined) ?? 'student';
 
   useEffect(() => {
@@ -33,7 +47,19 @@ export default function SchoolProfilePage() {
       ?? '';
     setDisplayName(name);
     loadStats();
-  }, [user]);
+    if (schoolRole === 'student') loadAchievements();
+  }, [user, schoolRole]);
+
+  async function loadAchievements() {
+    try {
+      const res = await fetch('/api/school/achievements', { headers: getAuthHeader() });
+      if (res.ok) {
+        const data = await res.json() as { achievements: AchievementDef[]; earned: EarnedAchievement[] };
+        setAchievements(data.achievements ?? []);
+        setEarned(new Set((data.earned ?? []).map(e => e.achievement_id)));
+      }
+    } catch { /* non-fatal */ }
+  }
 
   async function loadStats() {
     try {
@@ -194,6 +220,43 @@ export default function SchoolProfilePage() {
                   <span className="text-adv-gray-med capitalize">· {t(`subject.${cls.subject_id}`, cls.subject_id)}</span>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Achievement badges — only for students */}
+        {schoolRole === 'student' && achievements.length > 0 && (
+          <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-adv-teal" />
+              <h2 className="text-sm font-semibold text-adv-off-white">Achievements</h2>
+              <span className="rounded-full bg-adv-teal/10 px-2 py-0.5 text-xs text-adv-teal">
+                {earned.size} / {achievements.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2.5">
+              {achievements.map((ach) => {
+                const isEarned = earned.has(ach.id);
+                return (
+                  <div
+                    key={ach.id}
+                    title={ach.description}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all ${
+                      isEarned
+                        ? 'border-adv-teal/40 bg-adv-teal/10 shadow-[0_0_12px_rgba(45,212,168,0.15)]'
+                        : 'border-border bg-adv-dark opacity-50'
+                    }`}
+                  >
+                    {isEarned
+                      ? <CheckCircle2 className="h-5 w-5 text-adv-teal" />
+                      : <Lock className="h-5 w-5 text-adv-gray-med" />
+                    }
+                    <span className={`text-xs font-medium leading-tight ${isEarned ? 'text-adv-off-white' : 'text-adv-gray-med'}`}>
+                      {ach.label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

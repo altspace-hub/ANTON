@@ -152,6 +152,7 @@
       "referenceLevel": "Referens",
       "defaultPersona": "Standardlärare",
       "webSearch": "Tillåt webbsökning",
+      "leaderboard": "Visa klasstopplista (topp 10 per XP, anonymiserad)",
       "save": "Spara inställningar",
       "saved": "Sparat",
       "uploadCurriculum": "Ladda upp kursplan",

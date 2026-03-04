@@ -13,6 +13,7 @@ interface ClassConfig {
   educationTier: string;
   defaultTeacherPersona: string;
   webSearchEnabled: boolean;
+  leaderboardEnabled: boolean;
   assistanceLevels: {
     homework: AssistanceLevel;
     self_study: AssistanceLevel;
@@ -27,6 +28,7 @@ const DEFAULT_CONFIG: ClassConfig = {
   educationTier: 'T2',
   defaultTeacherPersona: 'alma',
   webSearchEnabled: true,
+  leaderboardEnabled: false,
   assistanceLevels: {
     homework: 'L1',
     self_study: 'L2',
@@ -226,6 +228,19 @@ export default function TeacherClassConfigPage() {
             />
             <label htmlFor="web-search" className="text-sm text-adv-off-white">
               {t('teacher.classConfig.webSearch')}
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              id="leaderboard"
+              type="checkbox"
+              checked={config.leaderboardEnabled}
+              onChange={(e) => setConfig((p) => ({ ...p, leaderboardEnabled: e.target.checked }))}
+              className="h-4 w-4 rounded border-border bg-adv-dark text-adv-teal focus:ring-adv-teal"
+            />
+            <label htmlFor="leaderboard" className="text-sm text-adv-off-white">
+              {t('teacher.classConfig.leaderboard', 'Show class leaderboard (top 10 by XP, anonymised)')}
             </label>
           </div>
         </section>

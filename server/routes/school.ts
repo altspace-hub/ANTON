@@ -107,6 +107,26 @@ function computeXpLevel(xp: number): number {
   return 1;
 }
 
+// ── Achievement definitions ────────────────────────────────────────────────
+
+const ACHIEVEMENT_DEFS = [
+  { id: 'first_session',    label: 'First Step',          description: 'Complete your first study session' },
+  { id: 'three_day_streak', label: '3-Day Streak',        description: 'Study 3 days in a row' },
+  { id: 'five_day_streak',  label: '5-Day Streak',        description: 'Study 5 days in a row' },
+  { id: 'ten_day_streak',   label: '10-Day Streak',       description: 'Study 10 days in a row' },
+  { id: 'level_2',          label: 'Level 2',             description: 'Reach XP Level 2' },
+  { id: 'level_3',          label: 'Level 3',             description: 'Reach XP Level 3' },
+  { id: 'level_5',          label: 'Level 5',             description: 'Reach XP Level 5' },
+  { id: 'ten_sessions',     label: '10 Sessions',         description: 'Complete 10 study sessions' },
+  { id: 'fifty_sessions',   label: '50 Sessions',         description: 'Complete 50 study sessions' },
+  { id: 'bloom_any_50',     label: 'Half Way There',      description: 'Reach 50% in any learning dimension' },
+  { id: 'bloom_any_100',    label: 'Bloom Master',        description: 'Master any learning dimension' },
+  { id: 's2_reached',       label: 'Building Confidence', description: 'Advance to learning stage S2' },
+  { id: 's4_reached',       label: 'Independent Learner', description: 'Advance to learning stage S4' },
+  { id: 'radar_explorer',   label: 'Radar Explorer',      description: 'Visit My Radar for the first time' },
+  { id: 'coding_first',     label: 'First Code',          description: 'Complete your first coding session' },
+] as const;
+
 // ── Growth model helpers ────────────────────────────────────────────────────
 
 function updateGrowthProfile(db: Database.Database, userId: string, eventType = 'chat_turn'): void {
@@ -138,6 +158,7 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
           .run(crypto.randomUUID(), userId, eventType, XP_VALUES[eventType] ?? 5, now);
       }
     } catch { /* non-fatal */ }
+    checkAndAwardAchievements(db, userId, { session_count: 1, xp_level: 1, current_streak: 1, stage: 'S1' });
     return;
   }
 
@@ -180,6 +201,54 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
       db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
         .run(crypto.randomUUID(), userId, 'streak_day', streakXp, now);
     }
+  } catch { /* non-fatal */ }
+  checkAndAwardAchievements(db, userId, { session_count: count, xp_level: newLevel, current_streak: newStreak, stage });
+}
+
+function checkAndAwardAchievements(
+  db: Database.Database,
+  userId: string,
+  profile: { session_count: number; xp_level: number; current_streak: number; stage: string }
+): void {
+  try {
+    const now = new Date().toISOString();
+    const earned = new Set(
+      (db.prepare('SELECT achievement_id FROM student_achievements WHERE student_user_id = ?')
+        .all(userId) as { achievement_id: string }[]).map(r => r.achievement_id)
+    );
+
+    function award(id: string) {
+      if (earned.has(id)) return;
+      earned.add(id);
+      try {
+        db.prepare('INSERT OR IGNORE INTO student_achievements (id, student_user_id, achievement_id, earned_at) VALUES (?, ?, ?, ?)')
+          .run(crypto.randomUUID(), userId, id, now);
+      } catch { /* ignore */ }
+    }
+
+    if (profile.session_count >= 1)  award('first_session');
+    if (profile.current_streak >= 3)  award('three_day_streak');
+    if (profile.current_streak >= 5)  award('five_day_streak');
+    if (profile.current_streak >= 10) award('ten_day_streak');
+    if (profile.xp_level >= 2) award('level_2');
+    if (profile.xp_level >= 3) award('level_3');
+    if (profile.xp_level >= 5) award('level_5');
+    if (profile.session_count >= 10)  award('ten_sessions');
+    if (profile.session_count >= 50)  award('fifty_sessions');
+    if (['S2', 'S3', 'S4'].includes(profile.stage)) award('s2_reached');
+    if (profile.stage === 'S4') award('s4_reached');
+
+    // bloom_any_50 / bloom_any_100 — check all progress rows
+    try {
+      const rows = db.prepare('SELECT blooms_data FROM student_progress WHERE student_user_id = ?')
+        .all(userId) as { blooms_data: string }[];
+      for (const row of rows) {
+        if (!row.blooms_data) continue;
+        const vals = Object.values(JSON.parse(row.blooms_data) as Record<string, number>);
+        if (vals.some(v => v >= 50))  award('bloom_any_50');
+        if (vals.some(v => v >= 100)) award('bloom_any_100');
+      }
+    } catch { /* ignore */ }
   } catch { /* non-fatal */ }
 }
 
@@ -232,6 +301,8 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN longest_streak INTEGER DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN last_active_date TEXT`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS student_xp_events (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, event_type TEXT NOT NULL, xp_earned INTEGER NOT NULL, context TEXT, created_at DATETIME)`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS student_achievements (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, earned_at DATETIME, UNIQUE(student_user_id, achievement_id))`); } catch {}
+  try { db.exec(`ALTER TABLE school_classes ADD COLUMN leaderboard_enabled INTEGER DEFAULT 0`); } catch {}
 
   const router = Router();
 
@@ -511,6 +582,23 @@ export function createSchoolRoutes(db: Database.Database) {
     }
   });
 
+  // ── GET /api/school/achievements ───────────────────────────────────────
+  router.get('/school/achievements', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const earned = db.prepare(
+        'SELECT achievement_id, earned_at FROM student_achievements WHERE student_user_id = ? ORDER BY earned_at ASC'
+      ).all(userId) as { achievement_id: string; earned_at: string }[];
+
+      res.json({ achievements: ACHIEVEMENT_DEFS, earned });
+    } catch (err) {
+      console.error('[school/achievements]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── GET /api/school/classes ────────────────────────────────────────────
   router.get('/school/classes', (req, res) => {
     try {
@@ -626,7 +714,7 @@ export function createSchoolRoutes(db: Database.Database) {
         .get(req.params.id, userId);
       if (!exists) return res.status(404).json({ error: 'Class not found or access denied' });
 
-      const { name, subject, educationTier, curriculumId, defaultAssistanceLevel, webSearchEnabled } = req.body as Record<string, unknown>;
+      const { name, subject, educationTier, curriculumId, defaultAssistanceLevel, webSearchEnabled, leaderboardEnabled } = req.body as Record<string, unknown>;
 
       db.prepare(
         `UPDATE school_classes SET
@@ -636,18 +724,59 @@ export function createSchoolRoutes(db: Database.Database) {
            curriculum_id = COALESCE(?, curriculum_id),
            default_assistance_level = COALESCE(?, default_assistance_level),
            web_search_enabled = COALESCE(?, web_search_enabled),
+           leaderboard_enabled = COALESCE(?, leaderboard_enabled),
            updated_at = ?
          WHERE id = ?`
       ).run(
         name ?? null, subject ?? null, educationTier ?? null,
         curriculumId ?? null, defaultAssistanceLevel ?? null,
         webSearchEnabled !== undefined ? (webSearchEnabled ? 1 : 0) : null,
+        leaderboardEnabled !== undefined ? (leaderboardEnabled ? 1 : 0) : null,
         new Date().toISOString(), req.params.id
       );
 
       res.json(db.prepare('SELECT * FROM school_classes WHERE id = ?').get(req.params.id));
     } catch (err) {
       console.error('[school/classes/:id PUT]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── GET /api/school/classes/:id/leaderboard ────────────────────────────
+  router.get('/school/classes/:id/leaderboard', (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const classRow = db.prepare(
+        'SELECT leaderboard_enabled FROM school_classes WHERE id = ?'
+      ).get(req.params.id) as { leaderboard_enabled: number } | null;
+
+      if (!classRow) return res.status(404).json({ error: 'Class not found' });
+      if (!classRow.leaderboard_enabled) return res.json({ enabled: false, entries: [] });
+
+      const rows = db.prepare(
+        `SELECT u.display_name, u.username, COALESCE(sgp.total_xp, 0) AS total_xp, COALESCE(sgp.xp_level, 1) AS xp_level
+         FROM class_enrollments ce
+         JOIN users u ON u.id = ce.student_user_id
+         LEFT JOIN student_growth_profiles sgp ON sgp.student_user_id = ce.student_user_id
+         WHERE ce.class_id = ?
+         ORDER BY total_xp DESC
+         LIMIT 10`
+      ).all(req.params.id) as { display_name: string | null; username: string; total_xp: number; xp_level: number }[];
+
+      // Anonymise: first name + last initial
+      const entries = rows.map((e, i) => {
+        const name = (e.display_name || e.username || '').trim();
+        const parts = name.split(/\s+/);
+        const first = parts[0] ?? '?';
+        const last = parts.length > 1 ? `${parts[parts.length - 1][0]}.` : '';
+        return { rank: i + 1, name: last ? `${first} ${last}` : first, xp: e.total_xp, level: e.xp_level };
+      });
+
+      res.json({ enabled: true, entries });
+    } catch (err) {
+      console.error('[school/classes/:id/leaderboard]', err);
       res.status(500).json({ error: safeError(err) });
     }
   });

@@ -152,6 +152,7 @@
       "referenceLevel": "Reference",
       "defaultPersona": "Default teacher",
       "webSearch": "Allow web search",
+      "leaderboard": "Show class leaderboard (top 10 by XP, anonymised)",
       "save": "Save Settings",
       "saved": "Saved",
       "uploadCurriculum": "Upload curriculum document",
