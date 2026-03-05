@@ -1,0 +1,119 @@
+{
+  "formatVersion": "1.0",
+  "id": "crypto-risk-assessment",
+  "label": "Crypto & VASP Risk Assessment",
+  "shortLabel": "Crypto Risk",
+  "icon": "BarChart3",
+  "description": "ML/TF risk assessments for CASPs and VASPs aligned with FATF Recommendation 15, EBA Guidelines on crypto ML/TF risk factors, and FATF VA Guidance. Covers all crypto-specific risk dimensions: customer, product/service, geographic, transaction channel, DeFi exposure, NFT activity, and VASP due diligence scoring.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Risk assessments that understate residual risk create regulatory and legal exposure. Opus 4.6 strongly recommended."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["maturity-assessment", "detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "FATF VA guidance, EBA crypto ML/TF risk factors, ACAMS crypto risk frameworks, VASP due diligence standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "assessment_scope",
+      "type": "select",
+      "label": "Assessment Scope",
+      "required": true,
+      "options": [
+        { "value": "bwra", "label": "Business-Wide Risk Assessment (BWRA) — full entity" },
+        { "value": "product", "label": "Product / service risk assessment" },
+        { "value": "segment", "label": "Customer segment risk assessment" },
+        { "value": "vasp-dd", "label": "VASP due diligence — assess a counterparty VASP" },
+        { "value": "control-maturity", "label": "AML/CFT control maturity assessment only" }
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity Type",
+      "description": "The entity type determines the primary inherent risk profile.",
+      "required": true,
+      "options": [
+        { "value": "cex", "label": "Centralised exchange (CEX)" },
+        { "value": "p2p", "label": "P2P exchange / marketplace" },
+        { "value": "otc", "label": "OTC broker / institutional desk" },
+        { "value": "nft-marketplace", "label": "NFT marketplace" },
+        { "value": "defi-aggregator", "label": "DeFi aggregator / front-end" },
+        { "value": "crypto-atm", "label": "Crypto ATM operator" },
+        { "value": "staking-yield", "label": "Staking / yield platform" },
+        { "value": "bank-crypto", "label": "Bank / FI with crypto services" }
+      ]
+    },
+    {
+      "id": "crypto_assets",
+      "type": "chips",
+      "label": "Crypto-Asset Types Offered",
+      "description": "Different asset types carry different inherent risk levels.",
+      "options": [
+        { "value": "btc-eth", "label": "BTC / ETH (major assets)" },
+        { "value": "stablecoins", "label": "Stablecoins (USDT, USDC, EUROC)" },
+        { "value": "privacy-coins", "label": "Privacy coins (XMR, ZEC, DASH)" },
+        { "value": "altcoins", "label": "Altcoins / long tail" },
+        { "value": "nfts", "label": "NFTs" },
+        { "value": "defi-tokens", "label": "DeFi protocol tokens" },
+        { "value": "rwa-tokens", "label": "Tokenised real-world assets (RWA)" }
+      ]
+    },
+    {
+      "id": "geographic_exposure",
+      "type": "chips",
+      "label": "Geographic Exposure",
+      "description": "Where are clients / counterparty VASPs located?",
+      "options": [
+        { "value": "eu-eea", "label": "EU / EEA" },
+        { "value": "uk", "label": "UK" },
+        { "value": "us", "label": "US" },
+        { "value": "fatf-grey", "label": "FATF grey-listed jurisdictions" },
+        { "value": "fatf-black", "label": "FATF black-listed (DPRK, Iran, Myanmar)" },
+        { "value": "russia-sanctioned", "label": "Russia (sanctions exposure)" },
+        { "value": "apac", "label": "Asia-Pacific" },
+        { "value": "latam", "label": "Latin America" }
+      ]
+    },
+    {
+      "id": "special_features",
+      "type": "chips",
+      "label": "Special Risk Features",
+      "description": "Flag features that require specific risk assessment treatment.",
+      "options": [
+        { "value": "unhosted-wallets", "label": "Significant unhosted wallet volume" },
+        { "value": "defi", "label": "DeFi protocol interactions" },
+        { "value": "nested-vasps", "label": "Nested / embedded VASP clients" },
+        { "value": "institutional", "label": "Institutional / B2B client base" },
+        { "value": "retail-mass", "label": "Mass retail (high client volume)" },
+        { "value": "high-volume", "label": "Very high transaction volume" }
+      ]
+    },
+    {
+      "id": "current_assessment",
+      "type": "textarea",
+      "label": "Existing Risk Assessment / Current Maturity",
+      "description": "If you have an existing risk assessment, paste key findings or describe the current control maturity level. This helps identify gaps rather than starting from scratch.",
+      "placeholder": "e.g. Current BWRA was last updated 2023. Uses a simple 3x3 risk matrix. Customer risk dimension covered but DeFi/NFT exposure not assessed. TM rules not updated since 2022..."
+    }
+  ],
+  "recommendedPersonas": ["crypto-blockchain-expert", "fcp-expert"],
+  "tags": ["crypto-risk", "vasp-risk", "bwra", "risk-assessment", "fatf", "ml-tf", "defi-risk", "nft-risk"]
+}

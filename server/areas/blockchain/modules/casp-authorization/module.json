@@ -1,0 +1,125 @@
+{
+  "formatVersion": "1.0",
+  "id": "casp-authorization",
+  "label": "CASP Authorization & Licensing",
+  "shortLabel": "CASP Auth",
+  "icon": "FileCheck",
+  "description": "Structure and review CASP authorization applications under MiCA Title V. Covers programme of operations, governance documentation, prudential capital calculation, whitepaper content, client asset safeguarding, AML/CFT programme requirements, and NCA submission preparation.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Authorization applications are high-stakes regulatory submissions. Opus 4.6 recommended."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": ["policy-document", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "MiCA Title V authorization requirements, ESMA CASP guidelines, NCA-specific application guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "auth_stage",
+      "type": "select",
+      "label": "Where are you in the authorization process?",
+      "required": true,
+      "options": [
+        { "value": "preparing", "label": "Preparing — drafting application from scratch" },
+        { "value": "reviewing", "label": "Reviewing — application drafted, want a quality check" },
+        { "value": "pre-app", "label": "Pre-application meeting with NCA — need to prepare" },
+        { "value": "transitional", "label": "Transitioning under grandfathering — assessing gaps" },
+        { "value": "extending", "label": "Extending an existing MiCA license (new service)" }
+      ]
+    },
+    {
+      "id": "casp_services",
+      "type": "multi-select",
+      "label": "CASP Services Sought",
+      "description": "Which services will be covered by the authorisation? Each service has specific requirements.",
+      "required": true,
+      "options": [
+        { "value": "custody", "label": "Custody & administration" },
+        { "value": "trading-platform", "label": "Trading platform operation" },
+        { "value": "exchange-fiat", "label": "Exchange crypto ↔ fiat" },
+        { "value": "exchange-crypto", "label": "Exchange crypto ↔ crypto" },
+        { "value": "order-execution", "label": "Order execution" },
+        { "value": "placing", "label": "Placing of crypto-assets" },
+        { "value": "rto", "label": "RTO (reception & transmission)" },
+        { "value": "advice", "label": "Crypto-asset advice" },
+        { "value": "portfolio-mgmt", "label": "Portfolio management" },
+        { "value": "transfer", "label": "Transfer services" }
+      ]
+    },
+    {
+      "id": "entity_background",
+      "type": "select",
+      "label": "Entity Background",
+      "description": "Does the entity hold any existing regulated financial services authorisations?",
+      "required": false,
+      "options": [
+        { "value": "new-entity", "label": "New entity — no existing authorisations" },
+        { "value": "existing-emi", "label": "Existing EMI / payment institution" },
+        { "value": "existing-bank", "label": "Bank / credit institution" },
+        { "value": "existing-mifid", "label": "MiFID investment firm" },
+        { "value": "national-crypto", "label": "National crypto register / licence (pre-MiCA)" }
+      ]
+    },
+    {
+      "id": "nca_jurisdiction",
+      "type": "select",
+      "label": "Target NCA",
+      "description": "Which member state's NCA will receive the application?",
+      "required": false,
+      "options": [
+        { "value": "de", "label": "Germany — BaFin" },
+        { "value": "fr", "label": "France — AMF / ACPR" },
+        { "value": "nl", "label": "Netherlands — AFM / DNB" },
+        { "value": "se", "label": "Sweden — Finansinspektionen" },
+        { "value": "fi", "label": "Finland — FIN-FSA" },
+        { "value": "ie", "label": "Ireland — Central Bank of Ireland" },
+        { "value": "lu", "label": "Luxembourg — CSSF" },
+        { "value": "mt", "label": "Malta — MFSA" },
+        { "value": "lt", "label": "Lithuania — Bank of Lithuania" },
+        { "value": "other", "label": "Other EU member state" }
+      ]
+    },
+    {
+      "id": "focus_section",
+      "type": "chips",
+      "label": "Application Section to Focus On",
+      "description": "Which section of the application needs the most attention right now?",
+      "options": [
+        { "value": "governance", "label": "Governance & management body" },
+        { "value": "capital", "label": "Prudential capital calculation" },
+        { "value": "whitepaper", "label": "Whitepaper / service disclosures" },
+        { "value": "aml", "label": "AML/CFT programme" },
+        { "value": "custody", "label": "Client asset safeguarding" },
+        { "value": "bcp", "label": "Business continuity & ICT" },
+        { "value": "outsourcing", "label": "Outsourcing arrangements" },
+        { "value": "conflicts", "label": "Conflicts of interest policy" }
+      ]
+    },
+    {
+      "id": "specific_question",
+      "type": "textarea",
+      "label": "Specific Question or Challenge",
+      "description": "What specific aspect of the application or process do you need help with?",
+      "placeholder": "e.g. We need to calculate the required own funds for custody + exchange services combined; or: our management body has two members without crypto experience — is this a problem for BaFin?"
+    }
+  ],
+  "recommendedPersonas": ["crypto-blockchain-expert", "legal-expert", "fsa-regulator"],
+  "tags": ["mica", "casp", "authorisation", "licensing", "whitepaper", "governance", "prudential"]
+}

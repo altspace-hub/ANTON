@@ -1,0 +1,128 @@
+{
+  "formatVersion": "1.0",
+  "id": "mica-gap-analysis",
+  "label": "MiCA Gap Analysis",
+  "shortLabel": "MiCA Gap",
+  "icon": "SearchCheck",
+  "description": "Comprehensive compliance gap assessment against EU MiCA (Regulation 2023/1114). Covers CASPs (Title V), EMT issuers (Title IV), ART issuers (Title III), and utility token offerors (Title II). Produces RAG-rated gap matrix, prioritised remediation roadmap, and board-ready executive summary.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "MiCA article citations must be accurate. Opus 4.6 strongly recommended."
+  },
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": ["gap-scoring-matrix", "executive-summary", "action-plan"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "MiCA Regulation 2023/1114, ESMA/EBA MiCA RTS and ITS, ESMA Q&A, NCA guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Entity Type",
+      "description": "What type of entity is this assessment for? This determines which MiCA titles apply.",
+      "required": true,
+      "options": [
+        { "value": "casp", "label": "Crypto-Asset Service Provider (CASP) — Title V" },
+        { "value": "emt-issuer", "label": "E-Money Token (EMT) Issuer — Title IV" },
+        { "value": "art-issuer", "label": "Asset-Referenced Token (ART) Issuer — Title III" },
+        { "value": "utility-token", "label": "Utility / Other Token Offeror — Title II" },
+        { "value": "multi", "label": "Multiple entity types (CASP + issuer)" },
+        { "value": "bank-casp", "label": "Bank / Credit Institution acting as CASP" }
+      ]
+    },
+    {
+      "id": "current_status",
+      "type": "select",
+      "label": "Current Regulatory Status",
+      "description": "Is this entity already authorised, transitioning, or preparing for first authorisation?",
+      "required": true,
+      "options": [
+        { "value": "new-entrant", "label": "New entrant — preparing MiCA authorisation application" },
+        { "value": "transitional", "label": "Transitioning — operating under national grandfathering" },
+        { "value": "authorised", "label": "Already MiCA-authorised — ongoing compliance review" },
+        { "value": "pre-launch", "label": "Pre-launch — product/service in development" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Home Member State (NCA)",
+      "description": "The EU member state where the entity is or plans to be authorised. Different NCAs have different application processes and supplementary guidance.",
+      "required": false,
+      "options": [
+        { "value": "de", "label": "Germany (BaFin)" },
+        { "value": "fr", "label": "France (AMF/ACPR)" },
+        { "value": "nl", "label": "Netherlands (AFM/DNB)" },
+        { "value": "se", "label": "Sweden (FI)" },
+        { "value": "fi", "label": "Finland (FIN-FSA)" },
+        { "value": "dk", "label": "Denmark (FSA)" },
+        { "value": "ie", "label": "Ireland (CBI)" },
+        { "value": "lu", "label": "Luxembourg (CSSF)" },
+        { "value": "mt", "label": "Malta (MFSA)" },
+        { "value": "lt", "label": "Lithuania (LB)" },
+        { "value": "other-eu", "label": "Other EU member state" }
+      ]
+    },
+    {
+      "id": "casp_services",
+      "type": "multi-select",
+      "label": "CASP Services in Scope (if CASP)",
+      "description": "Which MiCA-defined CASP services does the entity provide or plan to provide?",
+      "options": [
+        { "value": "custody", "label": "Custody & administration of crypto-assets" },
+        { "value": "trading-platform", "label": "Operation of a trading platform" },
+        { "value": "exchange-fiat", "label": "Exchange for fiat (on/off ramp)" },
+        { "value": "exchange-crypto", "label": "Exchange crypto-for-crypto" },
+        { "value": "order-execution", "label": "Execution of orders on behalf of clients" },
+        { "value": "placing", "label": "Placing of crypto-assets" },
+        { "value": "rto", "label": "Reception & transmission of orders (RTO)" },
+        { "value": "advice", "label": "Providing advice on crypto-assets" },
+        { "value": "portfolio-mgmt", "label": "Portfolio management of crypto-assets" },
+        { "value": "transfer", "label": "Transfer services" }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "chips",
+      "label": "Priority Areas for This Assessment",
+      "description": "Select the MiCA themes you want the analysis to prioritise. Leave blank to cover all areas.",
+      "options": [
+        { "value": "authorization", "label": "Authorisation requirements" },
+        { "value": "whitepaper", "label": "Whitepaper obligations" },
+        { "value": "governance", "label": "Governance & management body" },
+        { "value": "prudential", "label": "Prudential capital / own funds" },
+        { "value": "client-assets", "label": "Client asset safeguarding & custody" },
+        { "value": "aml-cft", "label": "AML/CFT & Travel Rule" },
+        { "value": "market-integrity", "label": "Market integrity & abuse prevention" },
+        { "value": "reserves", "label": "Reserve assets (ART/EMT)" },
+        { "value": "significant", "label": "Significant token / enhanced requirements" },
+        { "value": "ict-dora", "label": "ICT / DORA intersection" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Specific Concerns",
+      "description": "Describe any known gaps, prior regulatory feedback, specific areas of concern, or upcoming deadlines.",
+      "placeholder": "e.g. NCA pre-application meeting flagged weak governance documentation; whitepaper not yet drafted; transitional period expires June 2026..."
+    }
+  ],
+  "recommendedPersonas": ["crypto-blockchain-expert", "fcp-expert", "legal-expert"],
+  "tags": ["mica", "casp", "crypto", "gap-analysis", "authorisation", "emt", "art", "micas", "digital-assets"]
+}

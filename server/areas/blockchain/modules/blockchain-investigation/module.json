@@ -1,0 +1,122 @@
+{
+  "formatVersion": "1.0",
+  "id": "blockchain-investigation",
+  "label": "Blockchain Transaction Investigation",
+  "shortLabel": "Blockchain Invest.",
+  "icon": "Network",
+  "description": "Structure and document blockchain transaction investigations for compliance teams and FIUs. Interpret blockchain analytics outputs (Chainalysis, Elliptic, TRM Labs), identify ML/TF typologies (mixing, peel chains, darknet exposure, ransomware, sanctions), map VASP counterparty risk, and build SAR-ready narrative packages.",
+  "color": "adv-teal",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Investigation quality directly affects SAR quality and law enforcement outcomes. Opus 4.6 recommended."
+  },
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": ["problem-solution", "detailed-findings"],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": false,
+        "description": "Crypto ML/TF typologies, FATF VA typologies report, blockchain analytics methodology, SAR narrative standards"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "investigation_trigger",
+      "type": "select",
+      "label": "What triggered this investigation?",
+      "required": true,
+      "options": [
+        { "value": "tm-alert", "label": "Transaction monitoring alert" },
+        { "value": "sanctions-hit", "label": "Sanctions / screening hit" },
+        { "value": "le-request", "label": "Law enforcement request (MLA, court order)" },
+        { "value": "client-inquiry", "label": "Client inquiry or explanation request" },
+        { "value": "suspicious-withdrawal", "label": "Suspicious withdrawal pattern" },
+        { "value": "analytics-risk", "label": "High risk score from blockchain analytics tool" },
+        { "value": "peer-referral", "label": "Referral from another VASP / bank" },
+        { "value": "proactive", "label": "Proactive review (periodic, thematic)" }
+      ]
+    },
+    {
+      "id": "blockchain_networks",
+      "type": "chips",
+      "label": "Blockchain Networks Involved",
+      "required": false,
+      "options": [
+        { "value": "bitcoin", "label": "Bitcoin (BTC)" },
+        { "value": "ethereum", "label": "Ethereum (ETH)" },
+        { "value": "tron", "label": "Tron (TRX/USDT-TRC20)" },
+        { "value": "solana", "label": "Solana (SOL)" },
+        { "value": "monero", "label": "Monero (XMR) — privacy coin" },
+        { "value": "zcash", "label": "Zcash (ZEC) — privacy coin" },
+        { "value": "bnb", "label": "BNB Chain" },
+        { "value": "other", "label": "Other / multi-chain" }
+      ]
+    },
+    {
+      "id": "suspected_typology",
+      "type": "multi-select",
+      "label": "Suspected Typology(ies)",
+      "description": "Select the typology(ies) you suspect. This focuses the analysis framework.",
+      "options": [
+        { "value": "mixing", "label": "Mixing / tumbling service use" },
+        { "value": "peel-chain", "label": "Peel chain / fan-out layering" },
+        { "value": "chain-hopping", "label": "Chain hopping / cross-chain bridge" },
+        { "value": "darknet", "label": "Darknet market exposure" },
+        { "value": "ransomware", "label": "Ransomware payment" },
+        { "value": "sanctions", "label": "Sanctions wallet exposure (OFAC/EU)" },
+        { "value": "nested-vasp", "label": "Nested / high-risk exchange routing" },
+        { "value": "nft-wash", "label": "NFT wash trading" },
+        { "value": "fraud", "label": "Investment fraud / scam proceeds" },
+        { "value": "p2p-cash", "label": "P2P cash-equivalent layering" }
+      ]
+    },
+    {
+      "id": "analytics_platform",
+      "type": "chips",
+      "label": "Blockchain Analytics Platform Available",
+      "description": "Which tools do you have access to? This helps tailor advice on evidence collection.",
+      "options": [
+        { "value": "chainalysis", "label": "Chainalysis (KYT / Reactor)" },
+        { "value": "elliptic", "label": "Elliptic" },
+        { "value": "trm", "label": "TRM Labs" },
+        { "value": "crystal", "label": "Crystal Blockchain" },
+        { "value": "arkham", "label": "Arkham Intelligence" },
+        { "value": "none", "label": "No analytics tool" }
+      ]
+    },
+    {
+      "id": "output_purpose",
+      "type": "select",
+      "label": "What will this investigation output be used for?",
+      "required": true,
+      "options": [
+        { "value": "internal-sar-decision", "label": "Internal SAR/STR filing decision" },
+        { "value": "sar-narrative", "label": "SAR/STR narrative drafting" },
+        { "value": "le-package", "label": "Law enforcement information package" },
+        { "value": "regulatory-response", "label": "Response to regulatory inquiry" },
+        { "value": "offboarding", "label": "Client offboarding justification" },
+        { "value": "freeze-decision", "label": "Asset freeze / account restriction decision" }
+      ]
+    },
+    {
+      "id": "case_summary",
+      "type": "textarea",
+      "label": "Case Summary",
+      "description": "Paste blockchain analytics findings, transaction IDs, wallet addresses, amounts, client explanations, and any other relevant facts. The more detail, the better the investigation structure.",
+      "placeholder": "e.g. Client wallet 0x... received 15 ETH from Tornado Cash mixer on 2024-03-15. Client claims funds are from DeFi yield. TRM risk score: 87/100 (high). Previous account activity shows..."
+    }
+  ],
+  "recommendedPersonas": ["crypto-blockchain-expert", "fcp-expert"],
+  "tags": ["blockchain-investigation", "sar", "analytics", "chainalysis", "elliptic", "typologies", "mixing", "darknet", "ransomware", "sanctions"]
+}
