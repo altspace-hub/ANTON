@@ -882,7 +882,7 @@ EXAMINATION RULES:
 Begin by briefly introducing yourself and asking your first question.`;
 
       await streamToResponse(
-        { model: 'claude-sonnet-4-6', messages, system: systemPrompt, maxTokens: 800 },
+        { model: 'claude-sonnet-4-6', thinking: 'quick', messages, system: systemPrompt, maxTokens: 800 },
         res
       );
     } catch (err) {
@@ -942,7 +942,7 @@ Provide a structured evaluation with these exact sections:
 [A / B / C / D / E / F — with one sentence of justification]`;
 
       await streamToResponse(
-        { model: 'claude-sonnet-4-6', messages: [{ role: 'user', content: evaluationPrompt }], maxTokens: 1500 },
+        { model: 'claude-sonnet-4-6', thinking: 'quick', system: '', messages: [{ role: 'user', content: evaluationPrompt }], maxTokens: 1500 },
         res
       );
     } catch (err) {
@@ -2434,7 +2434,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     if (!req.user?.id) return res.status(401).json({ error: 'Unauthorised' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     try {
-      const text = await extractTextFromFile(req.file.path);
+      const text = (await extractTextFromFile(req.file.path)) ?? '';
       const wordCount = text.split(/\s+/).filter(Boolean).length;
       // Clean up temp file
       try { await fs.remove(req.file.path); } catch {}
@@ -3281,14 +3281,16 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   // POST /api/school/lessons/generate — AI generates a lesson
   router.post('/school/lessons/generate', async (req, res) => {
     try {
-      if (!anthropic) return res.status(503).json({ error: 'Anthropic client not available' });
+      if (!isApiKeyConfigured()) return res.status(503).json({ error: 'Anthropic client not available' });
       const { subject_id, topic, tier, learning_objectives } = req.body as { subject_id: string; topic: string; tier?: string; learning_objectives?: string[] };
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const stream = await anthropic.messages.create({
+      const { default: Anthropic } = await import('@anthropic-ai/sdk');
+      const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const stream = await anthropicClient.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         stream: true,

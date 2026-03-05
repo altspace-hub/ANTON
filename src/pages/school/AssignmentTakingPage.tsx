@@ -439,7 +439,7 @@ export default function AssignmentTakingPage() {
 
             {/* Standard mode — all questions at once */}
             {!isAdaptive && (
-            <div className="space-y-4">
+            <><div className="space-y-4">
               {assignment.questions.map((q, idx) => {
                 const answered = (answers[q.id] ?? '').trim().length > 0;
                 const bloomsClass = BLOOMS_BADGE[q.blooms] ?? 'bg-adv-card text-adv-gray';
@@ -590,7 +590,7 @@ export default function AssignmentTakingPage() {
                 </p>
               )}
             </div>
-            )} {/* end !isAdaptive */}
+            </> )} {/* end !isAdaptive */}
           </>
         )}
       </div>
