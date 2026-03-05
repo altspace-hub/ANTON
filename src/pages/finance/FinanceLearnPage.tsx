@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, ChevronRight, X, CheckCircle, Circle, Loader2 } from 'lucide-react';
+import { BookOpen, ChevronRight, X, CheckCircle, Circle, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getAuthHeader } from '@/lib/api';
@@ -238,6 +238,15 @@ export default function FinanceLearnPage() {
       </div>
 
       <div className="flex-1 px-6 py-6 space-y-3">
+        {/* Disclaimer */}
+        <div className="flex items-start gap-3 rounded-xl border border-adv-gold/30 bg-adv-gold/5 px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-adv-gold" />
+          <p className="text-xs text-adv-gold leading-relaxed">
+            <span className="font-semibold">Educational content only — not financial advice.</span>{' '}
+            These explanations are for learning purposes. Consult a qualified financial advisor before making any financial decisions.
+          </p>
+        </div>
+
         {TOPICS.map((topic) => {
           const isActive = activeTopic?.id === topic.id;
           const isDone = progress[topic.id];
@@ -278,7 +287,7 @@ export default function FinanceLearnPage() {
                         </div>
                       )}
                       {(explanation || isStreaming) && (
-                        <div className="prose prose-invert prose-sm max-w-none text-adv-off-white">
+                        <div aria-live="polite" className="prose prose-invert prose-sm max-w-none text-adv-off-white">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>{explanation}</ReactMarkdown>
                           {isStreaming && <span className="animate-pulse text-adv-teal">▊</span>}
                         </div>

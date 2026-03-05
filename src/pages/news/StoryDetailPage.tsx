@@ -115,10 +115,16 @@ export default function StoryDetailPage() {
   const [explainerOpen, setExplainerOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Cleanup: abort any in-flight SSE stream on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/news/stories/${id}`)
+    const controller = new AbortController();
+    fetch(`/api/news/stories/${id}`, { signal: controller.signal })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<Story>;
@@ -128,9 +134,12 @@ export default function StoryDetailPage() {
         setLoading(false);
       })
       .catch((err: Error) => {
-        setError(err.message);
-        setLoading(false);
+        if ((err as Error).name !== 'AbortError') {
+          setError(err.message);
+          setLoading(false);
+        }
       });
+    return () => controller.abort();
   }, [id]);
 
   // ── AI Explainer ──────────────────────────────────────────────────────────
@@ -493,7 +502,7 @@ export default function StoryDetailPage() {
                   <span className="text-sm">Generating explainer...</span>
                 </div>
               ) : explainerText ? (
-                <div className="prose prose-invert prose-sm max-w-none text-adv-off-white">
+                <div aria-live="polite" className="prose prose-invert prose-sm max-w-none text-adv-off-white">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{explainerText}</ReactMarkdown>
                   {explainerLoading && (
                     <span className="animate-pulse text-adv-teal">▊</span>

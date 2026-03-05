@@ -305,7 +305,11 @@ export default function SchoolLessonPage() {
             </div>
             {block.content && <p className="text-sm text-adv-off-white mb-3">{block.content}</p>}
             {aiResponses[index] && (
-              <div className="mb-3 rounded-lg bg-adv-dark p-3 text-sm text-adv-off-white whitespace-pre-wrap">
+              <div
+                aria-live="polite"
+                aria-label="Alma's response"
+                className="mb-3 rounded-lg bg-adv-dark p-3 text-sm text-adv-off-white whitespace-pre-wrap"
+              >
                 {aiResponses[index]}
               </div>
             )}

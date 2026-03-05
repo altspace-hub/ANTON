@@ -3,7 +3,7 @@
  * Categories as tabs, new post modal, threaded replies inline.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare, ChevronLeft, Plus, X, ChevronDown, ChevronUp, Globe } from 'lucide-react';
 import { getAuthHeader } from '../../lib/api';
@@ -140,7 +140,7 @@ function ReplyForm({ forumId, parentId, onReplied, onCancel }: { forumId: string
   );
 }
 
-function PostCard({ post, forumId, depth, onRefresh }: { post: ForumPost; forumId: string; depth: number; onRefresh: () => void }) {
+const PostCard = memo(function PostCard({ post, forumId, depth, onRefresh }: { post: ForumPost; forumId: string; depth: number; onRefresh: () => void }) {
   const [replying, setReplying] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const hasReplies = (post.replies?.length ?? 0) > 0;
@@ -177,7 +177,7 @@ function PostCard({ post, forumId, depth, onRefresh }: { post: ForumPost; forumI
       ))}
     </div>
   );
-}
+});
 
 export default function CommunityForumPage() {
   const navigate = useNavigate();

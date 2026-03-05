@@ -82,6 +82,14 @@ export function createCommunityRoutes(db: Database.Database) {
       if (!display_name || !contact_hash || !public_key) {
         return res.status(400).json({ error: 'display_name, contact_hash, and public_key required' });
       }
+      // Validate contact_hash format: ANTON-XXXX-XXXX-XXXX-XXXX (hex groups)
+      if (!/^ANTON-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/i.test(contact_hash)) {
+        return res.status(400).json({ error: 'Invalid contact_hash format. Expected ANTON-XXXX-XXXX-XXXX-XXXX' });
+      }
+      // Validate display name length
+      if (display_name.trim().length > 50) {
+        return res.status(400).json({ error: 'display_name must be 50 characters or fewer' });
+      }
 
       const existing = db.prepare("SELECT id FROM community_identity WHERE user_id = 'default'").get();
       if (existing) return res.status(409).json({ error: 'Identity already activated' });

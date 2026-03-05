@@ -282,6 +282,19 @@ export default function TravelCountryGuidePage() {
       </div>
 
       <div className="flex-1 px-6 py-6 space-y-5">
+        {/* Travel advisory disclaimer */}
+        <div className="flex items-start gap-3 rounded-xl border border-adv-gold/30 bg-adv-gold/5 px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-adv-gold" />
+          <p className="text-xs text-adv-gold leading-relaxed">
+            <span className="font-semibold">Travel advisories change frequently.</span>{' '}
+            Always verify current safety status before departure through your government's official source:{' '}
+            <a href="https://www.gov.uk/foreign-travel-advice" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">UK FCO</a>,{' '}
+            <a href="https://travel.state.gov" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">US State Dept</a>,{' '}
+            <a href="https://www.swedenabroad.se/reseinfo" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80">UD Sweden</a>.
+            Guide generated: {new Date(guide.generated_at).toLocaleDateString()}
+          </p>
+        </div>
+
         {/* Safety level */}
         <div className={`flex items-start gap-3 rounded-xl border p-4 ${SAFETY_COLORS[guide.safety_level]}`}>
           <Shield className="mt-0.5 h-5 w-5 shrink-0" />

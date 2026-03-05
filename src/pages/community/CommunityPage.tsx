@@ -51,13 +51,10 @@ async function generateKeyPair(): Promise<{ publicKeyHex: string; privateKeyHex:
       Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     return { publicKeyHex: toHex(pubRaw), privateKeyHex: toHex(privRaw) };
   } catch {
-    // Fallback: random hex mock keypair for environments without Ed25519
-    const pub = new Uint8Array(32);
-    const priv = new Uint8Array(64);
-    window.crypto.getRandomValues(pub);
-    window.crypto.getRandomValues(priv);
-    const toHex = (arr: Uint8Array) => Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-    return { publicKeyHex: toHex(pub), privateKeyHex: toHex(priv) };
+    // Ed25519 is not supported in this browser — refuse to generate insecure keys
+    throw new Error(
+      'Your browser does not support Ed25519 encryption. Community features require a modern browser (Chrome 117+, Firefox 120+, Safari 17+).'
+    );
   }
 }
 

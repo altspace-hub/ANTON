@@ -3,7 +3,7 @@
  * Drag-and-drop lesson builder for teachers.
  * Located at /school/lesson-builder (new) or /school/teacher/lessons/new (existing route)
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Save, Eye, Loader2,
@@ -72,6 +72,8 @@ export default function SchoolLessonBuilderPage() {
   const [searchParams] = useSearchParams();
   const lessonId = searchParams.get('id');
   const [saving, setSaving] = useState(false);
+  const isDirtyRef = useRef(false);
+  const formChangeCountRef = useRef(0);
   const [form, setForm] = useState<LessonForm>({
     subject_id: '',
     title: '',
@@ -100,6 +102,25 @@ export default function SchoolLessonBuilderPage() {
       })
       .catch(() => {});
   }, [lessonId]);
+
+  // Track dirty state: skip initial render + one server-load update
+  useEffect(() => {
+    formChangeCountRef.current += 1;
+    const skipsNeeded = lessonId ? 2 : 1;
+    if (formChangeCountRef.current <= skipsNeeded) return;
+    isDirtyRef.current = true;
+  }, [form]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Warn before navigating away with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!isDirtyRef.current) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
 
   function addBlock(type: string) {
     setForm(prev => ({ ...prev, content_blocks: [...prev.content_blocks, defaultBlock(type)] }));
@@ -148,6 +169,7 @@ export default function SchoolLessonBuilderPage() {
         navigate(`/school/lesson-builder?id=${data.id}`, { replace: true });
       }
     }
+    isDirtyRef.current = false;
     setSaving(false);
   }
 

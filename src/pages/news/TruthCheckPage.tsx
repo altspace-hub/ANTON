@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
+  AlertTriangle,
   MinusCircle,
   HelpCircle,
   Clock,
@@ -218,6 +219,15 @@ export default function TruthCheckPage() {
       {/* Main content */}
       <div className="flex-1 overflow-y-auto px-6 py-8">
         <div className="max-w-2xl mx-auto space-y-6">
+
+          {/* AI Disclaimer */}
+          <div className="flex items-start gap-3 rounded-xl border border-adv-gold/30 bg-adv-gold/5 px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-adv-gold" />
+            <p className="text-xs text-adv-gold leading-relaxed">
+              <span className="font-semibold">AI analysis — not professional fact-checking.</span>{' '}
+              This uses AI to analyse claims and is not a substitute for professional journalism or expert fact-checkers (Snopes, AFP Fact Check, Reuters Fact Check). Always verify important claims through multiple authoritative sources. Confidence scores reflect model certainty, not claim probability.
+            </p>
+          </div>
 
           {/* Input card */}
           <div className="rounded-xl border border-border bg-adv-card p-6">
