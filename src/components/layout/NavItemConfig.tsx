@@ -36,6 +36,9 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'finance', label: 'Finance', category: 'tools' },
   { id: 'travel', label: 'Travel', category: 'tools' },
   { id: 'community', label: 'Community', category: 'tools' },
+  { id: 'community-groups', label: 'Groups', category: 'tools' },
+  { id: 'community-mail', label: 'Community Mail', category: 'tools' },
+  { id: 'community-calendar', label: 'Community Calendar', category: 'tools' },
 
   // Tools
   { id: 'ngo', label: 'NGO & Social Impact', category: 'tools' },

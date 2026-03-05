@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Lock, Shield, Zap, Globe, Copy, Check,
   MessageCircle, Fingerprint, MessageSquare, ArrowRight, ChevronRight,
+  Users2, Mail, CalendarDays,
 } from 'lucide-react';
 import { getAuthHeader } from '../../lib/api';
 
@@ -217,12 +218,21 @@ function OnboardingScreen({ onActivated }: { onActivated: () => void }) {
 function ActivatedHub({ identity }: { identity: NonNullable<CommunityStatus['identity']> }) {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   function copyHash() {
     navigator.clipboard.writeText(identity.contact_hash);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  // Fetch unread mail count for badge
+  useEffect(() => {
+    fetch('/api/community/mail/folders/counts', { headers: getAuthHeader() })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { inbox: number } | null) => { if (d) setUnreadCount(d.inbox); })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -247,6 +257,27 @@ function ActivatedHub({ identity }: { identity: NonNullable<CommunityStatus['ide
 
       {/* Nav cards */}
       <div className="flex flex-col gap-3">
+        <HubNavCard
+          icon={<Users2 className="h-5 w-5" />}
+          label="Groups"
+          description="Private invite-only group spaces"
+          to="/community/groups"
+          onClick={navigate}
+        />
+        <HubNavCard
+          icon={<Mail className="h-5 w-5" />}
+          label={unreadCount > 0 ? `Mail (${unreadCount} unread)` : 'Mail'}
+          description="Async threaded internal mail — no SMTP"
+          to="/community/mail"
+          onClick={navigate}
+        />
+        <HubNavCard
+          icon={<CalendarDays className="h-5 w-5" />}
+          label="Calendar"
+          description="Shared events with RSVP and .ics export"
+          to="/community/calendar"
+          onClick={navigate}
+        />
         <HubNavCard
           icon={<Users className="h-5 w-5" />}
           label="Contacts"

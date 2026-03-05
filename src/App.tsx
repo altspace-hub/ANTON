@@ -107,6 +107,9 @@ const FinanceMarketPage = lazy(() => import('./pages/finance/FinanceMarketPage')
 const FinanceWatchlistPage = lazy(() => import('./pages/finance/FinanceWatchlistPage'));
 const FinanceGoalsPage = lazy(() => import('./pages/finance/FinanceGoalsPage'));
 
+// Life Platform hub
+const LifePage = lazy(() => import('./pages/LifePage'));
+
 // Travel Tab pages
 const TravelPage = lazy(() => import('./pages/travel/TravelPage'));
 const TravelTripsPage = lazy(() => import('./pages/travel/TravelTripsPage'));
@@ -120,6 +123,12 @@ const CommunityContactsPage = lazy(() => import('./pages/community/CommunityCont
 const CommunityMessagesPage = lazy(() => import('./pages/community/CommunityMessagesPage'));
 const CommunityForumPage = lazy(() => import('./pages/community/CommunityForumPage'));
 const CommunityIdentityPage = lazy(() => import('./pages/community/CommunityIdentityPage'));
+const CommunityGroupsPage = lazy(() => import('./pages/community/CommunityGroupsPage'));
+const CommunityGroupPage = lazy(() => import('./pages/community/CommunityGroupPage'));
+const CommunityJoinPage = lazy(() => import('./pages/community/CommunityJoinPage'));
+const CommunityMailPage = lazy(() => import('./pages/community/CommunityMailPage'));
+const CommunityCalendarPage = lazy(() => import('./pages/community/CommunityCalendarPage'));
+const CommunityEventPage = lazy(() => import('./pages/community/CommunityEventPage'));
 
 // School Mode pages
 const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
@@ -320,6 +329,8 @@ export default function App() {
           {/* Engagement Task */}
           <Route path="/engagements" element={<EngagementListPage />} />
           <Route path="/engagements/:id" element={<EngagementWorkspacePage />} />
+          {/* Life Platform hub */}
+          <Route path="/life" element={<LifePage />} />
           {/* News Tab */}
           <Route path="/news" element={<NewsPage />} />
           <Route path="/news/feed" element={<NewsFeedPage />} />
@@ -346,6 +357,12 @@ export default function App() {
           <Route path="/community/messages" element={<CommunityMessagesPage />} />
           <Route path="/community/forum" element={<CommunityForumPage />} />
           <Route path="/community/identity" element={<CommunityIdentityPage />} />
+          <Route path="/community/groups" element={<CommunityGroupsPage />} />
+          <Route path="/community/groups/:id" element={<CommunityGroupPage />} />
+          <Route path="/community/join" element={<CommunityJoinPage />} />
+          <Route path="/community/mail" element={<CommunityMailPage />} />
+          <Route path="/community/calendar" element={<CommunityCalendarPage />} />
+          <Route path="/community/events/:id" element={<CommunityEventPage />} />
           {/* NGO & Social Impact Hub */}
           <Route path="/ngo" element={<NGOHubPage />} />
           {/* Trades & Service Workers Hub */}

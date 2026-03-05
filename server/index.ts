@@ -87,7 +87,7 @@ import { createSchoolRoutes } from './routes/school.js';
 import { createNewsRoutes } from './routes/news.js';
 import { createFinanceRoutes } from './routes/finance.js';
 import { createTravelRoutes } from './routes/travel.js';
-import { createCommunityRoutes } from './routes/community.js';
+import { createCommunityRoutes, setCommunitySocketNS } from './routes/community.js';
 import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
@@ -406,10 +406,27 @@ studyRooms.on('connection', (socket) => {
   });
 });
 
+// Community namespace — personal notification rooms + group chat relay
+const communityNS = io.of('/community');
+setCommunitySocketNS(communityNS);
+communityNS.on('connection', (socket) => {
+  const { contactHash } = socket.handshake.query as { contactHash?: string };
+  if (contactHash) void socket.join(`user:${contactHash}`);
+
+  socket.on('join:group', (gid: string) => { void socket.join(`group:${gid}`); });
+  socket.on('leave:group', (gid: string) => { void socket.leave(`group:${gid}`); });
+
+  // Group chat relay (wired for future Group Chat page)
+  socket.on('chat:message', (payload: { groupId: string; text: string; displayName: string }) => {
+    communityNS.to(`group:${payload.groupId}`).emit('chat:message', { ...payload, timestamp: Date.now() });
+  });
+});
+
 httpServer.listen(PORT, () => {
   console.log(`ANTON by openEXPERT — server running on http://localhost:${PORT}`);
   console.log(`Claude API key configured: ${!!process.env.ANTHROPIC_API_KEY}`);
   console.log(`Study Rooms WebSocket: ws://localhost:${PORT}/school-ws (namespace: /study-rooms)`);
+  console.log(`Community WebSocket: ws://localhost:${PORT}/school-ws (namespace: /community)`);
 
   // Start background dataset cleanup (runs every hour)
   startDatasetCleanup(db);

@@ -73,12 +73,13 @@ function applyThemeToDOM(theme: Theme) {
 }
 
 type DeploymentMode = 'solo' | 'team';
-export type AppMode = 'work' | 'school';
+export type AppMode = 'work' | 'school' | 'life';
 
 function getInitialAppMode(): AppMode {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('openexpert-app-mode');
     if (saved === 'school') return 'school';
+    if (saved === 'life') return 'life';
   }
   return 'work';
 }
