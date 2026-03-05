@@ -4,27 +4,48 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 ---
 
+## Before you start — read the whitepaper
+
+The whitepaper **"ANTON by openEXPERT"** is included in this folder as a PDF (`ANTON by openEXPERT whitepaper.pdf`). It explains the thinking behind ANTON, how AI and the platform work together, and lays the groundwork for understanding what you're setting up. If you're new to ANTON or AI tools in general, reading it first will make everything below make much more sense.
+
+Once the app is running you can also open it at [http://localhost:3001/ANTON%20by%20openEXPERT%20whitepaper.pdf](http://localhost:3001/ANTON%20by%20openEXPERT%20whitepaper.pdf).
+
+---
+
 ## Quick Start
 
-### Option A — Windows launcher (easiest)
+### Option A — Windows launcher (recommended for most users)
 
-**Prerequisites (one-time, manual):**
+#### Step 1 — Install Git
 
-Install **Node.js 22+** from [nodejs.org](https://nodejs.org) (choose the LTS installer).
-Already have Node but on an older version? Upgrade in a terminal:
-```
-winget upgrade OpenJS.NodeJS.LTS
-```
-Close and reopen the terminal afterwards. Confirm with `node --version` — should show v20 or higher.
+Git is the tool used to download and update ANTON from GitHub. **If you're not sure whether you have it, you probably don't.** Download and install it from:
 
-**One-time setup — clone and run the setup script:**
+> **[https://git-scm.com/download/win](https://git-scm.com/download/win)**
+
+Run the installer with all default options — just keep clicking Next.
+
+#### Step 2 — Install Node.js
+
+Node.js is the engine that runs ANTON. Download and install **Node.js 22 LTS** from:
+
+> **[https://nodejs.org](https://nodejs.org)** (choose the "LTS" button)
+
+Run the installer with all default options.
+
+#### Step 3 — Restart your computer
+
+**This step is important.** After installing both Git and Node.js, restart your computer before continuing. The installers register themselves with Windows during restart — skipping this is the most common reason setup fails and things aren't recognised.
+
+#### Step 4 — Clone and set up ANTON
+
+Open a terminal (search for **"Command Prompt"** or **"PowerShell"** in the Start menu), then run:
 
 ```bash
 git clone https://github.com/altspace-hub/ANTON.git
 cd ANTON
 ```
 
-Then double-click **`setup-anton.bat`** (or run it in a terminal).
+Then double-click **`setup-anton.bat`** in the ANTON folder (or run it in the terminal).
 
 The script handles everything automatically:
 - Checks your Node.js version
@@ -34,13 +55,43 @@ The script handles everything automatically:
 
 Get your API key at [console.anthropic.com](https://console.anthropic.com).
 
-**Every time you want to run ANTON:**
+#### Step 5 — Run ANTON
 
-Double-click **`start-anton.bat`**.
+Double-click **`start-anton.bat`** every time you want to use ANTON.
 
 ANTON starts and your browser opens automatically at [http://localhost:3001](http://localhost:3001).
 
-To stop: press `Ctrl+C` in the terminal window.
+To stop: press `Ctrl+C` in the terminal window, or just close it.
+
+---
+
+### Troubleshooting
+
+#### `'pnpm' is not recognized` / `command not found: pnpm`
+
+This means pnpm isn't on your PATH yet. Try in order:
+
+1. **Close the terminal and open a new one** — sometimes just reopening is enough after the setup script ran.
+2. If that doesn't work, run this in the terminal:
+   ```
+   npm install -g pnpm
+   ```
+   Then close and reopen the terminal and try again.
+3. If `npm` itself isn't recognised, your Node.js installation didn't register properly — **restart your computer** and try again.
+
+#### `'git' is not recognized`
+
+Git wasn't installed or hasn't registered yet. Download it from [git-scm.com](https://git-scm.com/download/win), install with defaults, then **restart your computer**.
+
+#### `'node' is not recognized`
+
+Same as above for Node.js — download from [nodejs.org](https://nodejs.org), install with defaults, then **restart your computer**.
+
+#### Setup script ran but the app won't start
+
+1. Make sure you ran `setup-anton.bat` first (not just `start-anton.bat`).
+2. Check that your `.env` file exists in the ANTON folder and contains your API key (`ANTHROPIC_API_KEY=sk-ant-...`).
+3. Try running `pnpm run build` in the terminal from the ANTON folder, then try `start-anton.bat` again.
 
 ---
 
@@ -50,8 +101,8 @@ To stop: press `Ctrl+C` in the terminal window.
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url>
-cd openexpert
+git clone https://github.com/altspace-hub/ANTON.git
+cd ANTON
 
 # 2. Set your Anthropic API key
 echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
@@ -75,8 +126,8 @@ Data (sessions, uploads) persists in named Docker volumes across restarts.
 
 ```bash
 # 1. Clone and install
-git clone <repo-url>
-cd openexpert
+git clone https://github.com/altspace-hub/ANTON.git
+cd ANTON
 pnpm install
 
 # 2. Configure environment
@@ -118,7 +169,7 @@ Copy `.env.example` to `.env` and configure:
 ## Project Structure
 
 ```
-openexpert/
+ANTON/
 ├── server/                    # Express API server (TypeScript)
 │   ├── index.ts               # Entry point
 │   ├── routes/                # API routes (claude, files, folders, export, modules)
