@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 // Web Worker — loads Pyodide from CDN, executes Python code, returns result
 // This file is intentionally a Web Worker entry point
 

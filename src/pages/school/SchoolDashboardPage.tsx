@@ -444,7 +444,7 @@ export default function SchoolDashboardPage() {
             </div>
             <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
               {leaderboardPeriod === 'weekly' && weeklyLeaderboard.map((entry, i) => (
-                <div key={entry.student_user_id} className={`flex items-center gap-3 px-4 py-2.5 ${i < weeklyLeaderboard.length - 1 ? 'border-b border-border' : ''}`}>
+                <div key={`${entry.rank}-${i}`} className={`flex items-center gap-3 px-4 py-2.5 ${i < weeklyLeaderboard.length - 1 ? 'border-b border-border' : ''}`}>
                   <span className={`w-6 text-center text-xs font-bold shrink-0 ${
                     entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray-med'
                   }`}>{entry.rank}</span>

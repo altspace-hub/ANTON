@@ -77,8 +77,8 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function parseTo() { return to.split(',').map(s => s.trim()).filter(Boolean); }
-  function parseCc() { return cc.split(',').map(s => s.trim()).filter(Boolean); }
+  function parseTo() { return to.split(',').map((s: string) => s.trim()).filter(Boolean); }
+  function parseCc() { return cc.split(',').map((s: string) => s.trim()).filter(Boolean); }
 
   async function handleSend(draft = false) {
     if (!draft && parseTo().length === 0) { setError('At least one recipient required'); return; }
