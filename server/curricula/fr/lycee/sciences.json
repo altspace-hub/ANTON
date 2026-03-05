@@ -1,0 +1,17 @@
+{
+  "subject": "Sciences",
+  "tracks": {
+    "physique-chimie": {
+      "premiere": ["Mécanique (cinématique, dynamique)", "Ondes et signaux", "Constitution et transformations de la matière"],
+      "terminale": ["Mécanique newtonienne avancée", "Thermodynamique", "Électromagnétisme", "Chimie organique avancée"]
+    },
+    "svt": {
+      "premiere": ["La Terre, la vie et l'organisation du vivant", "Génétique et évolution", "Corps humain et santé"],
+      "terminale": ["Transmission, variation et expression du patrimoine génétique", "Écosystèmes et activités humaines", "Neurones et communication nerveuse"]
+    },
+    "numerique-sciences-informatiques": {
+      "premiere": ["Représentation des données", "Traitement des données", "Algorithmique et programmation (Python)"],
+      "terminale": ["Structures de données", "Bases de données (SQL)", "Architectures des machines", "Systèmes d'exploitation"]
+    }
+  }
+}

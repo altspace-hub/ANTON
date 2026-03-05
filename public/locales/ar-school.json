@@ -1,0 +1,160 @@
+{
+  "modeToggle": {
+    "ariaLabel": "التبديل بين وضع العمل والمدرسة",
+    "work": "عمل",
+    "school": "مدرسة"
+  },
+  "nav": {
+    "schoolMode": "وضع المدرسة",
+    "dashboard": "لوحة التحكم",
+    "subjects": "المواد",
+    "study": "الدراسة",
+    "assignments": "الواجبات",
+    "coding": "البرمجة",
+    "journey": "رحلتي التعليمية",
+    "radar": "رادار التقدم",
+    "myClasses": "صفوفي",
+    "createAssignment": "إنشاء واجب",
+    "lessons": "الدروس",
+    "students": "الطلاب",
+    "teacherTools": "أدوات المعلم",
+    "schoolSettings": "إعدادات المدرسة",
+    "myProfile": "ملفي الشخصي",
+    "backToWork": "العودة إلى وضع العمل",
+    "close": "إغلاق",
+    "role": {
+      "student": "طالب",
+      "guardian": "ولي أمر",
+      "teacher": "معلم",
+      "school_admin": "مسؤول المدرسة"
+    }
+  },
+  "dashboard": {
+    "welcome": "مرحباً بعودتك، {{name}}!",
+    "thisWeek": "هذا الأسبوع",
+    "myProgress": "تقدمي",
+    "allSubjects": "جميع المواد",
+    "quickQuestion": "سؤال سريع",
+    "quickQuestionPlaceholder": "اسأل أي شيء...",
+    "quickQuestionHelp": "للأسئلة السريعة التي لا تنتمي إلى مادة معينة",
+    "continueStudying": "متابعة",
+    "startStudying": "ابدأ",
+    "progressLabel": "{{pct}}% مكتمل",
+    "noClasses": "لم تنضم إلى أي صف بعد.",
+    "enrollPrompt": "اطلب من معلمك رمز الصف للبدء.",
+    "loading": "جارٍ تحميل لوحة التحكم...",
+    "streakShields": "دروع السلسلة",
+    "shieldUsed": "تم استخدام الدرع — السلسلة محفوظة!"
+  },
+  "subject": {
+    "mathematics": "الرياضيات",
+    "svenska": "السويدية",
+    "english": "الإنجليزية",
+    "science": "العلوم",
+    "social-studies": "الدراسات الاجتماعية",
+    "computationalThinking": "التفكير الحاسوبي",
+    "technology": "التكنولوجيا والمهارات الرقمية",
+    "lifeSkills": "مهارات الحياة",
+    "studySkills": "مهارات الدراسة",
+    "advancedMathematics": "رياضيات متقدمة",
+    "physics": "الفيزياء",
+    "chemistry": "الكيمياء",
+    "biology": "الأحياء",
+    "swedishAdvanced": "السويدية المتقدمة",
+    "philosophy": "الفلسفة",
+    "idrottHalsa": "الرياضة والصحة",
+    "statistics": "الإحصاء وعلم البيانات",
+    "modersmal": "اللغة الأم",
+    "sfiBridge": "السويدية للوافدين الجدد"
+  },
+  "chat": {
+    "greeting": "مرحباً! أنا {{persona}}. بماذا تريد أن تبدأ اليوم؟",
+    "taskTypes": {
+      "homework": "مساعدة في الواجب",
+      "studying": "دراسة مادة",
+      "practice": "تمارين وممارسة",
+      "quick_question": "سؤال سريع"
+    },
+    "placeholder": "اكتب سؤالك هنا...",
+    "send": "إرسال",
+    "thinking": "{{persona}} يفكر...",
+    "newSession": "بدء محادثة جديدة",
+    "attachFile": "إرفاق مستند",
+    "fileAttached": "تم إرفاق المستند: {{filename}}",
+    "removeAttachment": "إزالة المرفق"
+  },
+  "onboarding": {
+    "student": {
+      "title": "مرحباً بك في أنتون للمدارس",
+      "subtitle": "دعنا نضبط تجربتك التعليمية",
+      "step1": {
+        "title": "ما مستواك الدراسي؟",
+        "tierT1": "الصفوف 1-3 (سنوات أولى)",
+        "tierT2": "الصفوف 7-9 (مرحلة متوسطة)",
+        "tierT3": "الصفوف 10-12 (الثانوية)",
+        "tierT4": "الجامعة"
+      },
+      "step2": {
+        "title": "اختر مادتك الأولى"
+      },
+      "step3": {
+        "title": "هل لديك رمز صف؟",
+        "enterCode": "أدخل رمز الصف من معلمك",
+        "codePlaceholder": "مثال: MATH-9B-2026",
+        "join": "انضم",
+        "skip": "تخطي"
+      }
+    },
+    "complete": "اكتمل الإعداد!"
+  },
+  "assignment": {
+    "title": "عنوان الواجب",
+    "subject": "المادة",
+    "dueDate": "تاريخ التسليم",
+    "submit": "تسليم الواجب",
+    "submitted": "تم التسليم",
+    "grade": "الدرجة",
+    "feedback": "التقييم",
+    "noAssignments": "لا توجد واجبات حالياً",
+    "questionsCount": "{{count}} سؤال"
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "لوحة تحكم المعلم",
+      "myClasses": "صفوفي",
+      "recentActivity": "النشاط الأخير",
+      "createClass": "إنشاء صف جديد",
+      "noClasses": "لم تنشئ أي صفوف بعد",
+      "studentsCount": "{{count}} طالب"
+    }
+  },
+  "growth": {
+    "stage": {
+      "S1": "بداية الرحلة",
+      "S2": "بناء الثقة",
+      "S3": "إتقان المهارات",
+      "S4": "الاستقلالية"
+    },
+    "xp": "نقاط الخبرة",
+    "level": "المستوى",
+    "streak": "أيام متتالية",
+    "achievements": "الإنجازات"
+  },
+  "settings": {
+    "title": "إعدادات المدرسة",
+    "language": "اللغة",
+    "appLanguage": "لغة التطبيق",
+    "teachingLanguage": "لغة التدريس",
+    "senMode": "وضع الدعم التعليمي الخاص",
+    "explanationStyle": "أسلوب الشرح",
+    "save": "حفظ الإعدادات",
+    "saved": "تم الحفظ!"
+  },
+  "coding": {
+    "sandbox": "بيئة التجربة",
+    "run": "تشغيل",
+    "copy": "نسخ",
+    "copied": "تم النسخ!",
+    "clickRun": "اضغط تشغيل للمعاينة"
+  }
+}

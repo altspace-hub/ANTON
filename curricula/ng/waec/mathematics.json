@@ -1,0 +1,11 @@
+{
+  "subject": "Mathematics",
+  "topics": {
+    "number": ["Number bases (binary, octal, hexadecimal)", "Fractions and decimals", "Ratios and percentages", "Logarithms and indices", "Standard form"],
+    "algebra": ["Equations (linear, simultaneous, quadratic)", "Inequalities", "Matrices and determinants", "Sequence and series", "Variation"],
+    "geometry": ["Angles and polygons", "Circles and chords", "Trigonometry (SOHCAHTOA, sine/cosine rules)", "Vectors", "Coordinate geometry"],
+    "statistics": ["Frequency tables and histograms", "Mean, median, mode", "Probability (simple and compound)", "Permutations and combinations"],
+    "calculus": ["Differentiation (basic rules)", "Integration (basic rules)", "Application of differentiation and integration"]
+  },
+  "waecFormat": "Paper 1: Objective (50 MCQ, 50 marks, 1hr 15min). Paper 2: Theory (6 of 10 questions, 100 marks, 2hr 30min)."
+}

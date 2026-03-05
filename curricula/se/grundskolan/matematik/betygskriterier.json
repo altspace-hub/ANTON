@@ -1,0 +1,36 @@
+{
+  "subject": "Matematik",
+  "curriculum": "Lgr22",
+  "year_range": "7-9",
+  "grading_criteria": {
+    "E": {
+      "label": "Godkänt / Pass",
+      "description": "Eleven har grundläggande kunskaper om matematiska begrepp och visar det genom att använda dem i välkända sammanhang på ett till övervägande del fungerande sätt. Eleven kan välja och använda i huvudsak fungerande matematiska metoder för att göra beräkningar och lösa rutinuppgifter med tillfredsställande resultat.",
+      "bloom_levels": ["knowledge", "application"]
+    },
+    "C": {
+      "label": "Väl godkänt / Developing",
+      "description": "Eleven har goda kunskaper om matematiska begrepp och visar det genom att använda dem i bekanta sammanhang på ett relativt väl fungerande sätt. Eleven kan välja och använda ändamålsenliga matematiska metoder för att göra beräkningar och lösa uppgifter med gott resultat. Eleven kan använda matematisk problemlösning och matematiska resonemang för att göra välgrundade slutledningar.",
+      "bloom_levels": ["knowledge", "application", "analysis"]
+    },
+    "A": {
+      "label": "Mycket väl godkänt / High Achievement",
+      "description": "Eleven har mycket goda kunskaper om matematiska begrepp och visar det genom att använda dem i nya sammanhang på ett väl fungerande sätt. Eleven kan välja och använda väl lämpade matematiska metoder för att göra beräkningar och lösa uppgifter med mycket gott resultat. Eleven kan använda matematisk problemlösning och matematiska resonemang för att formulera egna hypoteser och göra välgrundade och nyanserade slutledningar.",
+      "bloom_levels": ["knowledge", "application", "analysis", "evaluation", "creation"]
+    }
+  },
+  "assessment_types": {
+    "calculation": {
+      "description": "Beräkningsuppgifter med visad uträkning",
+      "grading_notes": "Poäng för metod (visad uträkning) + poäng för svar. Rätt metod, fel räknefel = poäng för metod."
+    },
+    "problem_solving": {
+      "description": "Problemlösningsuppgifter med matematisk modellering",
+      "grading_notes": "Bedömning av val av strategi, genomförande och rimlighetsbedömning."
+    },
+    "reasoning": {
+      "description": "Resonemang och argumentation",
+      "grading_notes": "Bedömning av matematisk kommunikation, bevis och generaliseringar."
+    }
+  }
+}

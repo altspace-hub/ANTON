@@ -1,0 +1,7 @@
+{
+  "subject": "A-Level Further Mathematics",
+  "corePure": ["Complex numbers", "Matrices and linear transformations", "Further algebra and functions", "Further calculus (reduction formulae, improper integrals)", "Polar coordinates", "Hyperbolic functions", "Differential equations (second order, coupled)", "Proof by induction"],
+  "optionalModules": ["Further Statistics (hypothesis testing, distributions, regression)", "Further Mechanics (momentum, circular motion, moments)", "Decision Mathematics (algorithms, graphs, linear programming, game theory)", "Further Pure (number theory, groups, differential geometry)"],
+  "examFormat": "4 papers × 1hr 30min (AQA): Papers 1 & 2 Core Pure, Papers 3 & 4 from optional modules",
+  "note": "Taken alongside A-Level Mathematics. Significantly extends the pure and applied content. Highly recommended for students intending to study Mathematics, Physics, Engineering, or Computer Science at university."
+}

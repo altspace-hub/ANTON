@@ -1,0 +1,88 @@
+{
+  "subject": "Matematik",
+  "curriculum": "Lgr22",
+  "tier": "T2",
+  "year_range": "7-9",
+  "source": "Skolverket",
+  "topics": [
+    {
+      "id": "taluppfattning",
+      "name": "Taluppfattning och tals användning",
+      "year_range": "7-9",
+      "subtopics": [
+        "Reella tal och deras egenskaper samt hur tal kan delas upp och hur de används för att ange del och helhet",
+        "Rationella tal i bråk- och decimalform med betonade på begreppens innebörd",
+        "Tal i procentform och procent som förändringsfaktor",
+        "Potenser med heltalsexponent och standardform",
+        "Konstruktion av talföljder samt utforskande av mönster och relationer i talföljder",
+        "Likhetstecknets innebörd och likformiga proportioner"
+      ],
+      "module_ids": ["number-theory"]
+    },
+    {
+      "id": "algebra",
+      "name": "Algebra",
+      "year_range": "7-9",
+      "subtopics": [
+        "Variablers användning i algebraiska uttryck, formler och ekvationer",
+        "Algebraiska uttryck, formler och samband samt användning och simplifiering av dessa",
+        "Metoder för ekvationslösning",
+        "Linjära ekvationssystem med två okända och metoder för att lösa dem",
+        "Andragradsekvationer utan koefficient framför den kvadrerade variabeln"
+      ],
+      "module_ids": ["algebra"]
+    },
+    {
+      "id": "geometri",
+      "name": "Geometri",
+      "year_range": "7-9",
+      "subtopics": [
+        "Grundläggande geometriska objekt, däribland punkt, linje, stråle, linjestycke, vinkel, polygon och cirkel",
+        "Metoder för beräkning av area, omkrets och volym hos geometriska figurer och kroppar",
+        "Geometriska satser och formler och deras härledningar",
+        "Likheter och kongruens samt deras egenskaper",
+        "Skala vid förstoring och förminskning av tvådimensionella figurer",
+        "Pythagoras sats och dess bevis",
+        "Koordinatsystem och grafer för att beskriva samband och förändringar"
+      ],
+      "module_ids": ["geometry"]
+    },
+    {
+      "id": "statistik",
+      "name": "Statistik och sannolikhet",
+      "year_range": "7-9",
+      "subtopics": [
+        "Statistiska metoder för att samla in, bearbeta, tolka och presentera data",
+        "Lägesmått, spridningsmått och deras tillämpning",
+        "Sannolikhet vid slumpmässiga försök och händelser",
+        "Begreppen oberoende och beroende händelser",
+        "Kombinatoriska principer och metoder"
+      ],
+      "module_ids": ["statistics"]
+    },
+    {
+      "id": "samband",
+      "name": "Samband och förändring",
+      "year_range": "7-9",
+      "subtopics": [
+        "Proportionalitet och hur det kan användas för att uttrycka sig om samband och förändringar",
+        "Hur linjära och exponentiella samband kan beskrivas, jämföras och representeras",
+        "Grafer och deras egenskaper",
+        "Hur förändring, förändringsfaktor och procent hänger samman"
+      ],
+      "module_ids": ["functions"]
+    },
+    {
+      "id": "problemlosning",
+      "name": "Problemlösning",
+      "year_range": "7-9",
+      "subtopics": [
+        "Strategier för problemlösning i vardagliga situationer och inom olika ämnesområden",
+        "Matematisk formulering av frågeställningar utifrån vardagliga situationer och olika ämnesområden",
+        "Hur algoritmer och regler kan konstrueras, kommuniceras och tillämpas",
+        "Rimlighetsbedömning vid uppskattningar och beräkningar"
+      ],
+      "module_ids": ["algebra", "geometry", "statistics", "functions", "number-theory"]
+    }
+  ]
+}

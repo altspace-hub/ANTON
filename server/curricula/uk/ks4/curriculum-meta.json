@@ -1,0 +1,13 @@
+{
+  "id": "uk-ks4",
+  "name": "UK National Curriculum — Key Stage 4 (GCSE)",
+  "country": "United Kingdom",
+  "language": "en",
+  "yearRange": "10-11",
+  "ageRange": "14-16",
+  "description": "Key Stage 4 culminates in GCSE examinations (General Certificate of Secondary Education). Most subjects offer Foundation tier (grades 1–5) and Higher tier (grades 4–9). GCSEs are taken at age 15–16.",
+  "gradeScale": "9 (highest) → 1 (lowest). Grade 4 = standard pass. Grade 5 = strong pass.",
+  "mandatorySubjects": ["english-language", "english-literature", "mathematics", "science"],
+  "examBoards": ["AQA", "Edexcel", "OCR", "WJEC", "Cambridge Assessment"],
+  "assessmentNote": "GCSEs are primarily assessed by written examinations in summer of Year 11, with some coursework/controlled assessment components for certain subjects."
+}

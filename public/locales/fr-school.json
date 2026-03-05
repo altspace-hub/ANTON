@@ -1,0 +1,482 @@
+{
+  "modeToggle": {
+    "ariaLabel": "Basculer entre le mode Travail et le mode École",
+    "work": "Travail",
+    "school": "École"
+  },
+  "nav": {
+    "schoolMode": "Mode École",
+    "dashboard": "Tableau de bord",
+    "subjects": "Matières",
+    "study": "Étudier",
+    "assignments": "Devoirs",
+    "coding": "Programmation",
+    "journey": "Mon parcours",
+    "radar": "Mon Radar",
+    "myClasses": "Mes classes",
+    "createAssignment": "Créer un devoir",
+    "lessons": "Leçons",
+    "students": "Élèves",
+    "teacherTools": "Outils enseignant",
+    "schoolSettings": "Paramètres école",
+    "myProfile": "Mon profil",
+    "backToWork": "Retour au mode Travail",
+    "close": "Fermer",
+    "role": {
+      "student": "Élève",
+      "guardian": "Parent / Tuteur",
+      "teacher": "Enseignant",
+      "school_admin": "Admin école"
+    }
+  },
+  "dashboard": {
+    "welcome": "Bon retour, {{name}} !",
+    "thisWeek": "Cette semaine",
+    "myProgress": "Ma progression",
+    "allSubjects": "Toutes les matières",
+    "quickQuestion": "Question rapide",
+    "quickQuestionPlaceholder": "Posez votre question...",
+    "quickQuestionHelp": "Pour les questions rapides qui n'appartiennent pas à une matière spécifique",
+    "continueStudying": "Continuer",
+    "startStudying": "Commencer",
+    "progressLabel": "{{pct}}% terminé",
+    "noClasses": "Vous n'êtes inscrit à aucune classe pour l'instant.",
+    "enrollPrompt": "Demandez à votre enseignant un code de classe pour commencer.",
+    "loading": "Chargement de votre tableau de bord...",
+    "streakShields": "Boucliers de série",
+    "shieldUsed": "Bouclier utilisé — série préservée !"
+  },
+  "subject": {
+    "mathematics": "Mathématiques",
+    "algebra": "Algèbre",
+    "geometry": "Géométrie",
+    "statistics": "Statistiques et probabilités",
+    "functions": "Fonctions",
+    "numberTheory": "Théorie des nombres",
+    "svenska": "Suédois",
+    "english": "Anglais",
+    "science": "Sciences",
+    "social-studies": "Sciences sociales",
+    "socialStudies": "Sciences sociales",
+    "computationalThinking": "Pensée computationnelle",
+    "technology": "Technologie et compétences numériques",
+    "lifeSkills": "Compétences de vie",
+    "life-skills": "Compétences de vie",
+    "studySkills": "Méthodes de travail",
+    "study-skills": "Méthodes de travail",
+    "advancedMathematics": "Mathématiques avancées",
+    "advanced-mathematics": "Mathématiques avancées",
+    "physics": "Physique",
+    "chemistry": "Chimie",
+    "biology": "Biologie",
+    "swedishAdvanced": "Suédois avancé",
+    "swedish-advanced": "Suédois avancé",
+    "philosophy": "Philosophie",
+    "idrottHalsa": "Sport et santé",
+    "idrott-halsa": "Sport et santé",
+    "data-science": "Science des données",
+    "modersmal": "Langue d'origine (Modersmål)",
+    "sfiBridge": "Suédois pour nouveaux arrivants",
+    "sfi-bridge": "Suédois pour nouveaux arrivants",
+    "french": "Français",
+    "history": "Histoire",
+    "geographie": "Géographie",
+    "svt": "Sciences de la vie et de la Terre",
+    "uni-mathematics": "Mathématiques supérieures / Calcul",
+    "uni-physics": "Physique universitaire",
+    "uni-economics": "Microéconomie et macroéconomie",
+    "uni-computer-science": "Informatique et algorithmique",
+    "uni-law": "Introduction au droit",
+    "uni-psychology": "Psychologie et sciences comportementales",
+    "uni-biology": "Biologie cellulaire et génétique",
+    "uni-chemistry": "Chimie organique et physique",
+    "uni-philosophy": "Philosophie et éthique",
+    "uni-statistics": "Statistiques appliquées et analyse de données"
+  },
+  "chat": {
+    "greeting": "Bonjour ! Je suis {{persona}}. Sur quoi travaillez-vous aujourd'hui ?",
+    "taskTypes": {
+      "homework": "Aide aux devoirs",
+      "studying": "Révisions",
+      "practice": "Exercices pratiques"
+    },
+    "assistanceLevel": {
+      "L1": "Guidage complet",
+      "L2": "Aide modérée",
+      "L3": "Mode entraînement",
+      "L4": "Mode référence",
+      "label": "Niveau d'aide"
+    },
+    "placeholder": "Écrivez votre question ici...",
+    "send": "Envoyer",
+    "thinking": "Alma réfléchit...",
+    "uploadsAllowed": "Vous pouvez joindre des fichiers ou des photos de votre travail",
+    "laxhjalpMode": "Bloqué ? Travaillons-y ensemble",
+    "endSession": "Terminer la session",
+    "attachFile": "Joindre un document",
+    "fileAttached": "Document joint : {{filename}}",
+    "removeAttachment": "Supprimer la pièce jointe",
+    "actions": {
+      "practice": "Exercices pratiques",
+      "practiceMsg": "Donne-moi 3 exercices pratiques sur ce dont nous avons parlé. Ne montre pas les réponses pour l'instant.",
+      "quiz": "Teste-moi",
+      "quizMsg": "Pose-moi une question sur ce sujet. Attends ma réponse avant de me dire si j'ai raison.",
+      "hint": "Donne-moi un indice",
+      "hintMsg": "Je suis un peu bloqué. Peux-tu me donner un indice sans révéler la réponse complète ?",
+      "summarise": "Résumer la session",
+      "summariseMsg": "Peux-tu résumer les points clés que nous avons couverts pendant cette session ?"
+    }
+  },
+  "laxhjalp": {
+    "title": "Point de blocage — Trouvons la solution",
+    "subtitle": "Alma vous aide à identifier la lacune et à construire un pont",
+    "phase": {
+      "identify": "Sur quoi êtes-vous bloqué ?",
+      "traceBack": "Trouver un point d'appui solide",
+      "bridge": "Construire la compréhension",
+      "practice": "Entraînement",
+      "return": "Retour au problème",
+      "verify": "Vérifier votre compréhension"
+    },
+    "stuckPrompt": "Dites-moi exactement ce qui vous bloque. Qu'essayiez-vous de faire ?",
+    "progress": "Phase {{current}} sur {{total}}",
+    "resolved": "Excellent travail ! Vous avez résolu le problème.",
+    "continue": "Continuer avec le problème initial"
+  },
+  "assessment": {
+    "multipleChoice": "Choix multiple",
+    "shortAnswer": "Réponse courte",
+    "calculation": "Calcul",
+    "checkAnswer": "Vérifier ma réponse",
+    "nextQuestion": "Question suivante",
+    "submit": "Soumettre",
+    "score": "{{score}}%",
+    "correct": "Correct !",
+    "incorrect": "Pas tout à fait — regardons ça ensemble",
+    "explanation": "Explication",
+    "timeRemaining": "{{minutes}} min restantes",
+    "completed": "Évaluation terminée",
+    "resultsSummary": "Vous avez obtenu {{score}}% sur {{topic}}",
+    "socraticExam": "Examen socratique",
+    "endExam": "Terminer l'examen",
+    "endExamConfirm": "Terminer l'examen ?",
+    "endExamNote": "L'IA évaluera la conversation et générera votre rapport. Cette action est irréversible.",
+    "examinerThinking": "L'examinateur réfléchit...",
+    "socraticPlaceholder": "Tapez votre réponse... (Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne)",
+    "evaluationReport": "Rapport d'examen",
+    "generating": "Génération de l'évaluation...",
+    "backToAssignments": "Retour aux devoirs",
+    "startSocratic": "Commencer l'examen"
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "Mes classes",
+      "createClass": "Créer une classe",
+      "classCode": "Code de classe",
+      "copyCode": "Copier",
+      "codeCopied": "Copié !",
+      "studentsEnrolled": "{{count}} élèves",
+      "viewProgress": "Voir la progression",
+      "createAssignment": "Créer un devoir",
+      "noClasses": "Vous n'avez pas encore créé de classes.",
+      "setupFirst": "Créez votre première classe pour commencer.",
+      "templates": "Modèles de devoirs",
+      "useTemplate": "Utiliser le modèle"
+    },
+    "classConfig": {
+      "title": "Paramètres de la classe",
+      "className": "Nom de la classe",
+      "subject": "Matière",
+      "tier": "Niveau scolaire",
+      "assistanceLevels": "Niveaux d'aide",
+      "homeworkLevel": "Devoirs",
+      "selfStudyLevel": "Révisions",
+      "examPracticeLevel": "Entraînement examens",
+      "referenceLevel": "Référence",
+      "defaultPersona": "Enseignant par défaut",
+      "curriculum": "Programme",
+      "webSearch": "Autoriser la recherche web",
+      "leaderboard": "Afficher le classement de la classe (top 10 par XP, anonymisé)",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "uploadCurriculum": "Télécharger le programme",
+      "uploadHelp": "Téléchargez le programme scolaire ou le plan annuel (PDF, DOCX). Alma générera un plan d'étude semaine par semaine.",
+      "studyPlan": "Plan d'étude",
+      "generatePlan": "Générer un plan d'étude",
+      "generating": "Génération en cours..."
+    },
+    "lesson": {
+      "libraryTitle": "Bibliothèque de leçons",
+      "newLesson": "Nouvelle leçon",
+      "newTitle": "Créer une leçon",
+      "editTitle": "Modifier la leçon",
+      "titleLabel": "Titre de la leçon",
+      "titlePlaceholder": "ex. Introduction aux équations du second degré",
+      "objectives": "Objectifs pédagogiques",
+      "objectivesHelp": "Que doivent savoir ou pouvoir faire les élèves à la fin ?",
+      "objectivePlaceholder": "ex. Résoudre des équations du second degré à l'aide de la formule",
+      "addObjective": "Ajouter un objectif",
+      "contentBlocks": "Contenu de la leçon",
+      "contentBlocksHelp": "Structurez votre leçon en blocs. Alma les livrera dans cet ordre.",
+      "blockType": "Type",
+      "duration": "Durée (min)",
+      "blockContent": "Contenu / Instructions",
+      "explanationPlaceholder": "Expliquez le concept, la formule ou la théorie...",
+      "activityPlaceholder": "Décrivez l'exercice ou le problème à résoudre...",
+      "discussionPlaceholder": "Rédigez la question ou l'invitation à la discussion...",
+      "addBlock": "Ajouter un bloc de contenu",
+      "assignTo": "Attribuer à une classe",
+      "optional": "optionnel",
+      "noClass": "Non attribué à une classe",
+      "save": "Enregistrer la leçon",
+      "saving": "Enregistrement...",
+      "edit": "Modifier",
+      "assignToClass": "Attribuer à une classe",
+      "assign": "Attribuer",
+      "cancel": "Annuler",
+      "assigned": "Attribué !",
+      "selectClass": "Sélectionner une classe...",
+      "blocks": "blocs",
+      "obj": "Obj :",
+      "assignedClass": "Attribué",
+      "noLessons": "Vous n'avez pas encore créé de leçons.",
+      "noLessonsHelp": "Créez des leçons structurées qu'Alma livrera de façon conversationnelle à vos élèves.",
+      "buildFirst": "Créer votre première leçon"
+    },
+    "assignment": {
+      "title": "Créer un devoir",
+      "assignmentTitle": "Titre",
+      "titlePlaceholder": "ex. Équations du second degré — Semaine 38",
+      "instructions": "Instructions",
+      "instructionsPlaceholder": "Que doivent faire les élèves ?",
+      "type": "Type",
+      "typeHomework": "Devoirs",
+      "typeExam": "Examen",
+      "typePractice": "Entraînement",
+      "typeSocratic": "Examen socratique",
+      "socraticObjectives": "Objectifs pédagogiques",
+      "socraticObjectivesPlaceholder": "Listez les objectifs pédagogiques que l'examinateur IA doit évaluer. Un par ligne.",
+      "socraticHelp": "L'examinateur IA conduira un dialogue de style oral pour évaluer ces objectifs. Pas de liste de questions requise.",
+      "addQuestion": "Ajouter une question",
+      "questionContent": "Question",
+      "questionType": "Type",
+      "questionMarks": "Points",
+      "removeQuestion": "Supprimer",
+      "assistanceLevel": "Niveau d'aide",
+      "dueDate": "Date limite",
+      "timeLimit": "Limite de temps",
+      "timeLimitUnlimited": "Pas de limite",
+      "retakes": "Reprises autorisées",
+      "retakesNone": "Pas de reprise",
+      "export": "Exporter en .anton",
+      "save": "Enregistrer",
+      "saveAsTemplate": "Enregistrer comme modèle (réutilisable entre les classes)",
+      "rubricsSection": "Grille d'évaluation",
+      "addRubricCriteria": "Ajouter un critère"
+    }
+  },
+  "guardian": {
+    "dashboard": {
+      "title": "L'apprentissage de {{name}}",
+      "overallProgress": "Progression globale",
+      "recentActivity": "Activité récente",
+      "upcomingDeadlines": "Prochaines échéances",
+      "subjects": "Matières",
+      "timeThisWeek": "Temps d'étude cette semaine",
+      "noData": "Pas d'activité cette semaine.",
+      "linkPrompt": "Liez un compte élève pour voir sa progression."
+    },
+    "link": {
+      "title": "Lier à un compte élève",
+      "enterCode": "Entrez le code d'invitation de votre enfant ou de son enseignant",
+      "codePlaceholder": "ex. MATH-9B-ANNA",
+      "link": "Lier le compte",
+      "success": "Lié avec succès au compte de {{name}} !",
+      "error": "Code invalide. Veuillez vérifier avec l'enseignant.",
+      "privacyNote": "Vous verrez les résumés de progression. Les conversations individuelles restent privées pour votre enfant."
+    },
+    "digest": {
+      "title": "Résumé hebdomadaire",
+      "period": "7 derniers jours",
+      "sessionsCount": "{{count}} sessions d'étude",
+      "xpEarned": "{{xp}} XP gagnés",
+      "streakDays": "Série de {{count}} jours",
+      "stage": "Niveau d'apprentissage : {{stage}}",
+      "assignmentsSubmitted": "{{count}} devoirs rendus",
+      "sendEmail": "Envoyer par e-mail",
+      "sending": "Envoi en cours...",
+      "sent": "Envoyé !",
+      "nextSend": "Prochain résumé automatique : lundi 08h00",
+      "lastSent": "Dernier envoi : {{date}}"
+    }
+  },
+  "onboarding": {
+    "student": {
+      "step1": {
+        "title": "Bienvenue sur ANTON École !",
+        "subtitle": "Configurons votre compte.",
+        "selectTier": "En quelle année êtes-vous ?",
+        "tierT2": "Collège (13–15 ans)",
+        "tierT3": "Lycée (16–18 ans)",
+        "tierT4": "Université (18+)"
+      },
+      "step2": {
+        "title": "Où êtes-vous ?",
+        "selectCountry": "Sélectionnez votre pays",
+        "sweden": "Suède (Lgr22)",
+        "norway": "Norvège (LK20)",
+        "uk": "Royaume-Uni",
+        "france": "France (Baccalauréat)",
+        "other": "Autre"
+      },
+      "step3": {
+        "title": "Rejoindre votre classe",
+        "enterCode": "Entrez le code de classe de votre enseignant",
+        "codePlaceholder": "ex. MATH-9B-2026",
+        "join": "Rejoindre",
+        "skip": "Je le ferai plus tard"
+      },
+      "step4": {
+        "title": "Vérification rapide en maths",
+        "subtitle": "5 questions pour aider Alma à comprendre votre niveau. Ce n'est pas noté.",
+        "start": "Commencer",
+        "skip": "Passer pour l'instant"
+      },
+      "complete": {
+        "title": "Vous êtes prêt !",
+        "subtitle": "Votre tableau de bord est prêt.",
+        "goToDashboard": "Aller à mon tableau de bord"
+      }
+    },
+    "teacher": {
+      "step1": {
+        "title": "Bienvenue, enseignant !",
+        "subtitle": "Créons votre première classe.",
+        "createClass": "Créer une classe"
+      },
+      "complete": {
+        "title": "Votre classe est prête !",
+        "classCode": "Partagez ce code avec vos élèves :",
+        "goToDashboard": "Aller à mon tableau de bord"
+      }
+    }
+  },
+  "coding": {
+    "title": "Pensée computationnelle",
+    "subtitle": "Apprenez à coder avec les conseils d'Alma",
+    "explainerTitle": "Explicateur de code",
+    "explainerDesc": "Collez du code et comprenez-le étape par étape",
+    "explainerExample": "ex. « Que fait cette boucle Python ? »",
+    "mentorTitle": "Mentor de code",
+    "mentorDesc": "Décrivez ce que vous voulez construire et Alma vous guide",
+    "mentorExample": "ex. « Aide-moi à créer un jeu de devinette »",
+    "debugTitle": "Guide de débogage",
+    "debugDesc": "Montrez votre code cassé et trouvez la correction ensemble",
+    "debugExample": "ex. « J'ai une TypeError à la ligne 5 — pourquoi ? »",
+    "language": "Langage de programmation",
+    "python": "Python",
+    "javascript": "JavaScript",
+    "scratch": "Scratch",
+    "codePlaceholder": "Collez votre code ici...",
+    "goalPlaceholder": "Que voulez-vous construire ?",
+    "errorPlaceholder": "Collez votre code et le message d'erreur...",
+    "sandbox": "Bac à sable",
+    "run": "Exécuter",
+    "copy": "Copier",
+    "copied": "Copié !",
+    "clickRun": "Cliquez sur Exécuter pour prévisualiser"
+  },
+  "persona": {
+    "alma": {
+      "name": "Alma",
+      "subject": "Mathématiques",
+      "description": "Professeure de maths patiente et méthodique qui vous guide pas à pas"
+    },
+    "saga": {
+      "name": "Saga",
+      "subject": "Suédois et Anglais",
+      "description": "Professeure de langues chaleureuse et littéraire qui révèle votre voix"
+    },
+    "viktor": {
+      "name": "Viktor",
+      "subject": "Sciences",
+      "description": "Professeur de sciences enthousiaste qui commence chaque cours par un mystère"
+    },
+    "erik": {
+      "name": "Erik",
+      "subject": "Histoire et Sciences sociales",
+      "description": "Professeur réfléchi et analytique qui vous apprend à questionner les sources"
+    },
+    "leo": {
+      "name": "Leo",
+      "subject": "Technologie et compétences numériques",
+      "description": "Professeur de tech enthousiaste qui démystifie le monde numérique"
+    },
+    "freja": {
+      "name": "Freja",
+      "subject": "Art et Musique",
+      "description": "Professeure d'arts créative qui valorise le processus plus que le résultat"
+    },
+    "mia": {
+      "name": "Mia",
+      "subject": "Compétences de vie et méthodes d'étude",
+      "description": "Coach pratique pour les compétences de vie et les méthodes d'étude basées sur des preuves"
+    },
+    "oscar": {
+      "name": "Oscar",
+      "subject": "Sport et Santé",
+      "description": "Coach sportif dynamique qui relie l'activité physique aux sciences et au bien-être"
+    },
+    "nora": {
+      "name": "Nora",
+      "subject": "Statistiques et Science des données",
+      "description": "Éducatrice analytique en données qui commence toujours avec des jeux de données réels"
+    },
+    "professor-lindstrom": {
+      "name": "Professeur Lindström",
+      "subject": "Études universitaires",
+      "description": "Académicien chevronné pour étudiants universitaires utilisant la méthode du séminaire socratique"
+    }
+  },
+  "journey": {
+    "title": "Mon parcours d'apprentissage",
+    "subtitle": "Suivez votre progression dans chaque matière",
+    "bloomsTitle": "Dimensions d'apprentissage"
+  },
+  "radar": {
+    "title": "Mon Radar",
+    "subtitle": "Découvrez comment l'actualité se connecte à vos études",
+    "loading": "Recherche de connexions...",
+    "refresh": "Actualiser",
+    "exploreWith": "Explorer avec {{persona}}",
+    "noItems": "Aucune connexion trouvée. Essayez d'actualiser ou de sélectionner une autre matière."
+  },
+  "progress": {
+    "mastery": {
+      "beginning": "Débutant",
+      "developing": "En développement",
+      "proficient": "Compétent",
+      "advanced": "Avancé"
+    },
+    "blooms": {
+      "knowledge": "Connaissance",
+      "application": "Application",
+      "analysis": "Analyse",
+      "evaluation": "Évaluation",
+      "creation": "Création",
+      "metacognition": "Métacognition"
+    }
+  },
+  "quest": {
+    "dailyQuests": "Quêtes du jour",
+    "chatTurns": "Poser {{target}} questions à Alma",
+    "completeAssignment": "Soumettre un devoir",
+    "reviewCard": "Réviser {{target}} fiches",
+    "streakProtect": "Se connecter aujourd'hui",
+    "xpReward": "+{{xp}} XP",
+    "completed": "Terminé !"
+  },
+  "curriculum": {
+    "frBac": "Baccalauréat Français"
+  }
+}

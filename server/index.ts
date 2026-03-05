@@ -83,10 +83,17 @@ import { createConnectorTemplatesRoutes } from './routes/connector-templates.js'
 import { createIntegrationsRoutes } from './routes/integrations.js';
 import { createTradesRoutes } from './routes/trades.js';
 import { createPEVCRoutes } from './routes/pe-vc.js';
+import { createSchoolRoutes } from './routes/school.js';
+import { createNewsRoutes } from './routes/news.js';
+import { createFinanceRoutes } from './routes/finance.js';
+import { createTravelRoutes } from './routes/travel.js';
+import { createCommunityRoutes, setCommunitySocketNS } from './routes/community.js';
 import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
 import { ensureWorkspacesRoot } from './services/workspace.js';
+import { createServer as createHttpServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -321,6 +328,11 @@ app.use('/api/engagements', createEngagementsRoutes(db));
 app.use('/api', createApprenticeRoutes(db));
 app.use('/api', createTradesRoutes(db));
 app.use('/api', createPEVCRoutes(db));
+app.use('/api', createSchoolRoutes(db));
+app.use('/api', createNewsRoutes(db, anthropic));
+app.use('/api', createFinanceRoutes(db, anthropic));
+app.use('/api', createTravelRoutes(db, anthropic));
+app.use('/api', createCommunityRoutes(db));
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));
@@ -356,9 +368,65 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
-app.listen(PORT, () => {
+// ── HTTP server + Socket.IO (Study Rooms) ─────────────────────────────────
+const httpServer = createHttpServer(app);
+
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+  path: '/school-ws',
+});
+
+// Study room namespace
+const studyRooms = io.of('/study-rooms');
+studyRooms.on('connection', (socket) => {
+  const { roomId, displayName } = socket.handshake.query as { roomId?: string; displayName?: string };
+  if (!roomId) { socket.disconnect(); return; }
+
+  void socket.join(roomId);
+  studyRooms.to(roomId).emit('user:joined', { socketId: socket.id, displayName: displayName ?? 'Anonymous', timestamp: Date.now() });
+
+  socket.on('message', (payload: { text: string; displayName: string }) => {
+    studyRooms.to(roomId).emit('message', {
+      socketId: socket.id,
+      displayName: payload.displayName,
+      text: payload.text,
+      timestamp: Date.now(),
+    });
+  });
+
+  socket.on('focus:update', (payload: { subject: string; topic: string; displayName: string }) => {
+    studyRooms.to(roomId).emit('focus:update', { socketId: socket.id, ...payload, timestamp: Date.now() });
+  });
+
+  socket.on('disconnect', () => {
+    studyRooms.to(roomId).emit('user:left', { socketId: socket.id, displayName, timestamp: Date.now() });
+  });
+});
+
+// Community namespace — personal notification rooms + group chat relay
+const communityNS = io.of('/community');
+setCommunitySocketNS(communityNS);
+communityNS.on('connection', (socket) => {
+  const { contactHash } = socket.handshake.query as { contactHash?: string };
+  if (contactHash) void socket.join(`user:${contactHash}`);
+
+  socket.on('join:group', (gid: string) => { void socket.join(`group:${gid}`); });
+  socket.on('leave:group', (gid: string) => { void socket.leave(`group:${gid}`); });
+
+  // Group chat relay (wired for future Group Chat page)
+  socket.on('chat:message', (payload: { groupId: string; text: string; displayName: string }) => {
+    communityNS.to(`group:${payload.groupId}`).emit('chat:message', { ...payload, timestamp: Date.now() });
+  });
+});
+
+httpServer.listen(PORT, () => {
   console.log(`ANTON by openEXPERT — server running on http://localhost:${PORT}`);
   console.log(`Claude API key configured: ${!!process.env.ANTHROPIC_API_KEY}`);
+  console.log(`Study Rooms WebSocket: ws://localhost:${PORT}/school-ws (namespace: /study-rooms)`);
+  console.log(`Community WebSocket: ws://localhost:${PORT}/school-ws (namespace: /community)`);
 
   // Start background dataset cleanup (runs every hour)
   startDatasetCleanup(db);

@@ -7,10 +7,21 @@ i18n
   .use(initReactI18next)
   .init({
     backend: {
-      loadPath: '/locales/{{lng}}.json',
+      // Handles both default namespace (translation) and school namespace
+      loadPath: (lng: string[], ns: string[]) => {
+        const namespace = ns[0];
+        if (namespace === 'school') {
+          // Languages with dedicated school translations; fall back to English for others
+          const schoolLng = ['en', 'sv', 'ar', 'fr', 'ur', 'hi'].includes(lng[0]) ? lng[0] : 'en';
+          return `/locales/${schoolLng}-school.json`;
+        }
+        return `/locales/${lng[0]}.json`;
+      },
     },
     lng: localStorage.getItem('openexpert-language') ?? 'en',
     fallbackLng: 'en',
+    ns: ['translation', 'school'],
+    defaultNS: 'translation',
     supportedLngs: [
       'en', 'sv', 'fr', 'de', 'it', 'es', 'hi', 'pt', 'pl', 'ur',
       'zh', 'ar', 'bn', 'uk', 'id', 'ja', 'tr', 'vi', 'ko', 'th',

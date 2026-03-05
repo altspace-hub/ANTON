@@ -1,0 +1,101 @@
+{
+  "curriculumId": "gy11",
+  "type": "common-core",
+  "name": "Gymnasiegemensamma ämnen",
+  "description": "Subjects all students take regardless of programme (800 points total)",
+  "subjects": {
+    "engelska": {
+      "courses": ["Engelska 5 (100p)", "Engelska 6 (100p)"],
+      "competencies": [
+        "Communicate in complex spoken and written English",
+        "Analyse English texts critically",
+        "Use English in academic and professional contexts",
+        "Understand diverse accents and registers"
+      ],
+      "examFormat": "Written national test (nationellt prov)"
+    },
+    "historia": {
+      "courses": ["Historia 1a1 (50p) or 1b (100p)"],
+      "competencies": [
+        "Analyse historical change and continuity",
+        "Use historical sources critically",
+        "Understand 20th century history",
+        "Connect history to present-day issues"
+      ],
+      "keyContent": [
+        "World Wars",
+        "Cold War",
+        "Decolonisation",
+        "Swedish 20th century history",
+        "Holocaust and genocide"
+      ]
+    },
+    "idrottOchHalsa": {
+      "courses": ["Idrott och hälsa 1 (100p)"],
+      "competencies": [
+        "Physical fitness and health knowledge",
+        "Sports techniques and tactics",
+        "Friluftsliv (outdoor education)",
+        "Design personal training programmes",
+        "Understand health promotion and injury prevention"
+      ],
+      "note": "All students regardless of programme"
+    },
+    "matematik": {
+      "courses": {
+        "1a": "Yrkesförberedande programs (50-100p, applied focus)",
+        "1b": "Samhälls/Ekonomi/Estetiska (100p)",
+        "1c": "Natur/Teknik/Naturbruk (100p, theoretical focus)"
+      },
+      "competencies": [
+        "Problem solving and mathematical reasoning",
+        "Algebra and functions",
+        "Statistics and probability",
+        "Geometry"
+      ],
+      "note": "Level depends on programme — 1c leads to higher mathematics courses"
+    },
+    "naturkunskap": {
+      "courses": ["Naturkunskap 1a1 (50p)", "Naturkunskap 1b (100p)"],
+      "competencies": [
+        "Understanding of natural science methods",
+        "Environmental and sustainability issues",
+        "Biology, chemistry, physics overview",
+        "Critical evaluation of scientific claims"
+      ],
+      "note": "Natural science and technology programmes study their programme subjects instead"
+    },
+    "religionskunskap": {
+      "courses": ["Religionskunskap 1 (50p)"],
+      "competencies": [
+        "World religions comparison (Christianity, Islam, Judaism, Buddhism, Hinduism)",
+        "Secular worldviews (humanism, existentialism)",
+        "Ethics and moral philosophy",
+        "Religion in Swedish society"
+      ]
+    },
+    "samhallskunskap": {
+      "courses": ["Samhällskunskap 1a1 (50p) or 1b (100p)"],
+      "competencies": [
+        "Swedish and EU political systems",
+        "Legal system overview",
+        "Economics basics (national and international)",
+        "Media and democracy",
+        "Human rights"
+      ],
+      "examFormat": "Written national test"
+    },
+    "svenska": {
+      "courses": ["Svenska 1 (100p)", "Svenska 2 (100p)", "Svenska 3 (100p)"],
+      "competencies": [
+        "Advanced reading of diverse text types",
+        "Academic and professional writing",
+        "Rhetoric and presentation",
+        "Literary analysis",
+        "Swedish language history and variation"
+      ],
+      "examFormat": "Written national test for Svenska 3",
+      "note": "Students with another first language take Svenska som andraspråk (SAS) instead"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "subject": "Français",
+  "levels": {
+    "seconde": {
+      "name": "Seconde",
+      "topics": ["Lecture cursive", "Textes littéraires (roman, poésie, théâtre)", "Dissertation initiation", "Oral: présentation d'une oeuvre"]
+    },
+    "premiere": {
+      "name": "Première — EAF (Épreuve anticipée de Français)",
+      "texts": ["Un genre littéraire au programme (roman, théâtre, poésie, littérature d'idées)", "3 oeuvres intégrales + 12 textes"],
+      "competencies": ["Commentaire littéraire", "Dissertation", "Contraction de texte", "Essai", "Expression orale (Grand oral préparation)"]
+    },
+    "methodes": {
+      "dissertation": "Introduction (accroche, problématique, plan) → développement (3 parties, 3 arguments, exemples) → conclusion",
+      "commentaire": "Introduction → lecture analytique (3 axes) → conclusion",
+      "contraction": "Réduire au 1/4 sans dénaturer le propos"
+    }
+  }
+}

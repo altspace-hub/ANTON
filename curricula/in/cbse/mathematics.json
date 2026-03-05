@@ -1,0 +1,10 @@
+{
+  "subject": "Mathematics",
+  "classes": {
+    "6-8": ["Number System", "Fractions and Decimals", "Algebra (introduction)", "Basic Geometry", "Mensuration", "Data Handling"],
+    "9-10": ["Number Systems", "Polynomials", "Coordinate Geometry", "Linear Equations", "Triangles & Circles", "Surface Areas & Volumes", "Statistics & Probability"],
+    "11-12": ["Sets and Functions", "Trigonometry", "Algebra (sequences, complex numbers)", "Calculus (limits, derivatives, integrals)", "Vectors & 3D Geometry", "Linear Programming", "Probability (advanced)"]
+  },
+  "boardExam": "CBSE Class 10 Board (3hr, 80 marks) + Class 12 Board (3hr, 80 marks)",
+  "jee": "JEE Main: Algebra, Calculus, Coordinate Geometry, Vectors (equal weight). JEE Advanced: same + proof-based problems."
+}

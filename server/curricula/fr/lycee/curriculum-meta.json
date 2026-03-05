@@ -1,0 +1,9 @@
+{
+  "id": "fr-bac",
+  "name": "Baccalauréat Général / Technologique",
+  "country": "France",
+  "language": "fr",
+  "yearRange": "10-12",
+  "ageRange": "15-18",
+  "description": "Programme officiel du Baccalauréat français — tronc commun + spécialités"
+}

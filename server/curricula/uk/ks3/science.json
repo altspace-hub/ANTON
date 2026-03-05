@@ -1,0 +1,35 @@
+{
+  "subjectId": "science",
+  "subjectName": "Science",
+  "curriculumId": "uk-ks3",
+  "programmesOfStudy": {
+    "biology": [
+      "Cells: cell structure (plant vs animal), cell division, specialised cells",
+      "Organisation: tissues, organs and organ systems (digestive, respiratory, circulatory)",
+      "Infection and response: pathogens, immune system, vaccination",
+      "Bioenergetics: photosynthesis, respiration",
+      "Homeostasis: nervous system, hormonal coordination",
+      "Inheritance: DNA, genes, evolution, natural selection"
+    ],
+    "chemistry": [
+      "Atomic structure: atoms, elements, compounds, the periodic table",
+      "Bonding, structure and properties: ionic, covalent, metallic bonding",
+      "Quantitative chemistry: balancing equations, moles (introduction)",
+      "Chemical changes: acids, bases, neutralisation, displacement reactions, electrolysis",
+      "Energy changes: exothermic/endothermic reactions"
+    ],
+    "physics": [
+      "Energy: stores and transfers, efficiency, renewable and non-renewable resources",
+      "Electricity: current, voltage, resistance, series and parallel circuits",
+      "Particle model: states of matter, changes of state, gas pressure",
+      "Atomic structure: atoms, radioactivity, nuclear equations (introduction)",
+      "Forces: contact and non-contact forces, pressure, speed, acceleration"
+    ]
+  },
+  "workingScientifically": [
+    "Planning experiments: variables, control, fair testing",
+    "Data collection: accuracy, precision, reliability, anomalous results",
+    "Analysis: graphs, patterns, relationships",
+    "Evaluation: limitations, improvements, conclusions"
+  ]
+}

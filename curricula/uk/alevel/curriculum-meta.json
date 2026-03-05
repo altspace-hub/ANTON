@@ -1,0 +1,9 @@
+{
+  "id": "uk-alevel",
+  "name": "UK A-Level (16–18)",
+  "country": "United Kingdom",
+  "yearRange": "12-13",
+  "ageRange": "16-18",
+  "language": "en",
+  "description": "UK A-Level qualifications for Years 12-13 (sixth form). Covers major exam boards: AQA, OCR, Edexcel."
+}

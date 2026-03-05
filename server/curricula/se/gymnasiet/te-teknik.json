@@ -1,0 +1,52 @@
+{
+  "curriculumId": "gy11",
+  "programCode": "TE",
+  "programName": "Teknikprogrammet",
+  "focus": "Engineering, product development, and technology",
+  "totalPoints": 2500,
+  "universityCertificate": true,
+  "programSpecificSubjects": {
+    "core": [
+      { "subject": "Matematik 1c", "points": 100 },
+      { "subject": "Matematik 2c", "points": 100 },
+      { "subject": "Matematik 3c", "points": 100 },
+      { "subject": "Teknik 1", "points": 150 },
+      { "subject": "Fysik 1b1+1b2", "points": 200 },
+      { "subject": "Kemi 1", "points": 150 }
+    ],
+    "specialisations": {
+      "Design och produktutveckling": [
+        "Konstruktion 1+2",
+        "CAD",
+        "Produktionsutveckling"
+      ],
+      "Informations- och medieteknik": [
+        "Programmering 1+2",
+        "Webbutveckling",
+        "Nätverksteknik"
+      ],
+      "Samhällsbyggande och miljö": [
+        "Husbyggnad",
+        "Geoteknik",
+        "Miljö och energiteknik"
+      ],
+      "Industriell teknik": [
+        "Industriell teknik 1+2",
+        "CNC-teknik",
+        "Automation"
+      ]
+    }
+  },
+  "programCourses": {
+    "programmering1": "Python/Java basics, algorithms, data structures",
+    "teknik1": "Technology development process, materials, technical drawing, project work",
+    "ellara": "Circuits, Ohm's law, AC/DC, basic electronics",
+    "konstruktion1": "Design process, CAD, technical analysis, prototype making"
+  },
+  "typicalCareerPaths": [
+    "Engineering university (KTH, Chalmers, LTH)",
+    "Computer science",
+    "Architecture"
+  ],
+  "teachingFocus": "Practical problem-solving, design thinking, programming, mathematics, team projects"
+}

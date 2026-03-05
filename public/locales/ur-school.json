@@ -1,0 +1,132 @@
+{
+  "modeToggle": {
+    "ariaLabel": "ورک موڈ اور اسکول موڈ کے درمیان سوئچ کریں",
+    "work": "کام",
+    "school": "اسکول"
+  },
+  "nav": {
+    "schoolMode": "اسکول موڈ",
+    "dashboard": "ڈیش بورڈ",
+    "subjects": "مضامین",
+    "study": "مطالعہ",
+    "assignments": "اسائنمنٹس",
+    "coding": "کوڈنگ",
+    "journey": "میرا سفر",
+    "radar": "میرا ریڈار",
+    "myClasses": "میری کلاسیں",
+    "createAssignment": "اسائنمنٹ بنائیں",
+    "lessons": "اسباق",
+    "students": "طالب علم",
+    "teacherTools": "استاد کے ٹولز",
+    "schoolSettings": "اسکول کی ترتیبات",
+    "myProfile": "میری پروفائل",
+    "backToWork": "ورک موڈ پر واپس جائیں",
+    "close": "بند کریں",
+    "review": "مراجعہ",
+    "parentView": "والدین کا نظارہ",
+    "ucas": "UCAS بیان",
+    "role": {
+      "student": "طالب علم",
+      "guardian": "سرپرست",
+      "teacher": "استاد",
+      "school_admin": "اسکول منتظم"
+    }
+  },
+  "dashboard": {
+    "welcome": "خوش آمدید، {{name}}!",
+    "level": "سطح {{level}}",
+    "streak": "{{count}} دن کی لگاتار پڑھائی",
+    "xp": "{{total}} XP",
+    "startStudying": "پڑھائی شروع کریں",
+    "myClasses": "میری کلاسیں",
+    "noClasses": "ابھی تک کوئی کلاس نہیں۔",
+    "upcomingAssignments": "آنے والے اسائنمنٹس",
+    "noAssignments": "کوئی آنے والا اسائنمنٹ نہیں"
+  },
+  "chat": {
+    "placeholder": "اپنا سوال یہاں لکھیں...",
+    "send": "بھیجیں",
+    "thinking": "سوچ رہا ہوں...",
+    "greeting": "ہیلو! آج میں آپ کی کیا مدد کر سکتا ہوں؟",
+    "assistanceLevel": "مدد کی سطح"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "ANTON اسکول موڈ میں خوش آمدید",
+      "subtitle": "آئیے آپ کا تعلیمی تجربہ ترتیب دیں",
+      "start": "شروع کریں"
+    },
+    "student": {
+      "title": "اپنی تعلیم کی سطح منتخب کریں",
+      "step1": {
+        "title": "آپ کس کلاس میں ہیں؟",
+        "tierT1": "ابتدائی اسکول (عمر 6–12)",
+        "tierT2": "مڈل اسکول (عمر 13–15)",
+        "tierT3": "ہائی اسکول (عمر 16–18)",
+        "tierT4": "یونیورسٹی"
+      },
+      "step2": {
+        "title": "آپ کا ملک/نصاب؟",
+        "sweden": "سویڈن",
+        "norway": "ناروے",
+        "uk": "برطانیہ",
+        "france": "فرانس",
+        "india": "ہندوستان (CBSE)",
+        "nigeria": "نائجیریا (WAEC)",
+        "pakistan": "پاکستان",
+        "other": "دیگر"
+      }
+    }
+  },
+  "subject": {
+    "mathematics": "ریاضی",
+    "svenska": "اردو / زبان",
+    "english": "انگریزی",
+    "science": "سائنس",
+    "history": "تاریخ",
+    "geography": "جغرافیہ",
+    "biology": "حیاتیات",
+    "chemistry": "کیمیا",
+    "physics": "طبیعیات",
+    "social-studies": "معاشرتی علوم",
+    "computer-science": "کمپیوٹر سائنس",
+    "art-music": "آرٹ اور موسیقی",
+    "home-economics": "گھریلو معیشت",
+    "primary-mathematics": "ابتدائی ریاضی",
+    "primary-reading": "ابتدائی پڑھنا",
+    "primary-writing": "ابتدائی لکھنا",
+    "primary-science": "ابتدائی سائنس",
+    "primary-english": "ابتدائی انگریزی",
+    "primary-art": "ابتدائی آرٹ"
+  },
+  "review": {
+    "title": "مراجعہ کریں",
+    "noCards": "آج کے لیے کوئی کارڈ نہیں۔ بعد میں دوبارہ آئیں!",
+    "done": "آج کا مراجعہ مکمل ہو گیا!",
+    "cardsReviewed": "{{n}} کارڈز کا مراجعہ کیا",
+    "answer": "جواب دکھائیں",
+    "tapToFlip": "جواب دیکھنے کے لیے کلک کریں",
+    "blackout": "بھول گیا",
+    "hard": "مشکل",
+    "good": "ٹھیک",
+    "easy": "آسان"
+  },
+  "leaderboard": {
+    "title": "لیڈر بورڈ",
+    "weekly": "اس ہفتے",
+    "allTime": "ہر وقت",
+    "noWeeklyData": "اس ہفتے ابھی تک کوئی سرگرمی نہیں۔ یہاں آنے کے لیے پڑھنا شروع کریں!"
+  },
+  "progress": {
+    "title": "میری پیشرفت",
+    "stage": "مرحلہ {{stage}}",
+    "xpToNextLevel": "اگلے سطح تک {{xp}} XP",
+    "streak": "{{n}} دن کی لگاتار پڑھائی",
+    "totalSessions": "{{n}} کل سیشن"
+  },
+  "quest": {
+    "title": "آج کے اہداف",
+    "noQuests": "آج کے لیے کوئی ہدف نہیں",
+    "complete": "مکمل!"
+  }
+}

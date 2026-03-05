@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MainLayout from './components/layout/MainLayout';
 import { useAuthStore } from './stores/useAuthStore';
@@ -90,6 +90,78 @@ const TradesHubPage = lazy(() => import('./pages/TradesHubPage'));
 // PE/VC Hub + Innovation Radar
 const PEVCHubPage = lazy(() => import('./pages/PEVCHubPage'));
 const InnovationRadarPage = lazy(() => import('./pages/InnovationRadarPage'));
+
+// News Tab pages
+const NewsPage = lazy(() => import('./pages/news/NewsPage'));
+const NewsFeedPage = lazy(() => import('./pages/news/NewsFeedPage'));
+const StoryDetailPage = lazy(() => import('./pages/news/StoryDetailPage'));
+const TruthCheckPage = lazy(() => import('./pages/news/TruthCheckPage'));
+const NewsSourcesPage = lazy(() => import('./pages/news/NewsSourcesPage'));
+const MyBiasPage = lazy(() => import('./pages/news/MyBiasPage'));
+
+// Finance Tab pages
+const FinancePage = lazy(() => import('./pages/finance/FinancePage'));
+const FinanceLearnPage = lazy(() => import('./pages/finance/FinanceLearnPage'));
+const FinanceCalculatorsPage = lazy(() => import('./pages/finance/FinanceCalculatorsPage'));
+const FinanceMarketPage = lazy(() => import('./pages/finance/FinanceMarketPage'));
+const FinanceWatchlistPage = lazy(() => import('./pages/finance/FinanceWatchlistPage'));
+const FinanceGoalsPage = lazy(() => import('./pages/finance/FinanceGoalsPage'));
+
+// Life Platform hub
+const LifePage = lazy(() => import('./pages/LifePage'));
+
+// Travel Tab pages
+const TravelPage = lazy(() => import('./pages/travel/TravelPage'));
+const TravelTripsPage = lazy(() => import('./pages/travel/TravelTripsPage'));
+const TravelPlannerPage = lazy(() => import('./pages/travel/TravelPlannerPage'));
+const TravelCountryGuidePage = lazy(() => import('./pages/travel/TravelCountryGuidePage'));
+const TravelExplorePage = lazy(() => import('./pages/travel/TravelExplorePage'));
+
+// Community Tab pages
+const CommunityPage = lazy(() => import('./pages/community/CommunityPage'));
+const CommunityContactsPage = lazy(() => import('./pages/community/CommunityContactsPage'));
+const CommunityMessagesPage = lazy(() => import('./pages/community/CommunityMessagesPage'));
+const CommunityForumPage = lazy(() => import('./pages/community/CommunityForumPage'));
+const CommunityIdentityPage = lazy(() => import('./pages/community/CommunityIdentityPage'));
+const CommunityGroupsPage = lazy(() => import('./pages/community/CommunityGroupsPage'));
+const CommunityGroupPage = lazy(() => import('./pages/community/CommunityGroupPage'));
+const CommunityJoinPage = lazy(() => import('./pages/community/CommunityJoinPage'));
+const CommunityMailPage = lazy(() => import('./pages/community/CommunityMailPage'));
+const CommunityCalendarPage = lazy(() => import('./pages/community/CommunityCalendarPage'));
+const CommunityEventPage = lazy(() => import('./pages/community/CommunityEventPage'));
+
+// School Mode pages
+const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
+const SchoolChatPage = lazy(() => import('./pages/school/SchoolChatPage'));
+const SubjectsPage = lazy(() => import('./pages/school/SubjectsPage'));
+const StudentAssignmentsPage = lazy(() => import('./pages/school/StudentAssignmentsPage'));
+const SchoolSettingsPage = lazy(() => import('./pages/school/SchoolSettingsPage'));
+const SchoolProfilePage = lazy(() => import('./pages/school/SchoolProfilePage'));
+const SchoolCodingPage = lazy(() => import('./pages/school/SchoolCodingPage'));
+const SchoolCodingChatPage = lazy(() => import('./pages/school/SchoolCodingChatPage'));
+const SchoolOnboardingPage = lazy(() => import('./pages/school/SchoolOnboardingPage'));
+const MyRadarPage = lazy(() => import('./pages/school/MyRadarPage'));
+const TeacherDashboardPage = lazy(() => import('./pages/school/TeacherDashboardPage'));
+const TeacherClassConfigPage = lazy(() => import('./pages/school/TeacherClassConfigPage'));
+const TeacherStudentsPage = lazy(() => import('./pages/school/TeacherStudentsPage'));
+const TeacherClassProgressPage = lazy(() => import('./pages/school/TeacherClassProgressPage'));
+const GuardianDashboardPage = lazy(() => import('./pages/school/GuardianDashboardPage'));
+const AssignmentBuilderPage = lazy(() => import('./pages/school/AssignmentBuilderPage'));
+const AssignmentTakingPage = lazy(() => import('./pages/school/AssignmentTakingPage'));
+const CourseJourneyPage = lazy(() => import('./pages/school/CourseJourneyPage'));
+const SubmissionReviewerPage = lazy(() => import('./pages/school/SubmissionReviewerPage'));
+const LessonLibraryPage = lazy(() => import('./pages/school/LessonLibraryPage'));
+const LessonBuilderPage = lazy(() => import('./pages/school/LessonBuilderPage'));
+const SocraticExamPage = lazy(() => import('./pages/school/SocraticExamPage'));
+const ReviewPage = lazy(() => import('./pages/school/ReviewPage'));
+const ParentDashboardPage = lazy(() => import('./pages/school/ParentDashboardPage'));
+const UCASStatementPage = lazy(() => import('./pages/school/UCASStatementPage'));
+const StudyRoomsPage = lazy(() => import('./pages/school/StudyRoomsPage'));
+const StudyRoomPage = lazy(() => import('./pages/school/StudyRoomPage'));
+const SchoolLoginPage = lazy(() => import('./pages/school/SchoolLoginPage'));
+const SchoolCurriculumPage = lazy(() => import('./pages/school/SchoolCurriculumPage'));
+const SchoolLessonPage = lazy(() => import('./pages/school/SchoolLessonPage'));
+const SchoolLessonBuilderPage = lazy(() => import('./pages/school/SchoolLessonBuilderPage'));
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -257,6 +329,40 @@ export default function App() {
           {/* Engagement Task */}
           <Route path="/engagements" element={<EngagementListPage />} />
           <Route path="/engagements/:id" element={<EngagementWorkspacePage />} />
+          {/* Life Platform hub */}
+          <Route path="/life" element={<LifePage />} />
+          {/* News Tab */}
+          <Route path="/news" element={<NewsPage />} />
+          <Route path="/news/feed" element={<NewsFeedPage />} />
+          <Route path="/news/story/:id" element={<StoryDetailPage />} />
+          <Route path="/news/truth-check" element={<TruthCheckPage />} />
+          <Route path="/news/sources" element={<NewsSourcesPage />} />
+          <Route path="/news/my-bias" element={<MyBiasPage />} />
+          {/* Finance Tab */}
+          <Route path="/finance" element={<FinancePage />} />
+          <Route path="/finance/learn" element={<FinanceLearnPage />} />
+          <Route path="/finance/calculators" element={<FinanceCalculatorsPage />} />
+          <Route path="/finance/market" element={<FinanceMarketPage />} />
+          <Route path="/finance/watchlist" element={<FinanceWatchlistPage />} />
+          <Route path="/finance/goals" element={<FinanceGoalsPage />} />
+          {/* Travel Tab */}
+          <Route path="/travel" element={<TravelPage />} />
+          <Route path="/travel/trips" element={<TravelTripsPage />} />
+          <Route path="/travel/planner" element={<TravelPlannerPage />} />
+          <Route path="/travel/country/:code" element={<TravelCountryGuidePage />} />
+          <Route path="/travel/explore" element={<TravelExplorePage />} />
+          {/* Community Tab */}
+          <Route path="/community" element={<CommunityPage />} />
+          <Route path="/community/contacts" element={<CommunityContactsPage />} />
+          <Route path="/community/messages" element={<CommunityMessagesPage />} />
+          <Route path="/community/forum" element={<CommunityForumPage />} />
+          <Route path="/community/identity" element={<CommunityIdentityPage />} />
+          <Route path="/community/groups" element={<CommunityGroupsPage />} />
+          <Route path="/community/groups/:id" element={<CommunityGroupPage />} />
+          <Route path="/community/join" element={<CommunityJoinPage />} />
+          <Route path="/community/mail" element={<CommunityMailPage />} />
+          <Route path="/community/calendar" element={<CommunityCalendarPage />} />
+          <Route path="/community/events/:id" element={<CommunityEventPage />} />
           {/* NGO & Social Impact Hub */}
           <Route path="/ngo" element={<NGOHubPage />} />
           {/* Trades & Service Workers Hub */}
@@ -265,6 +371,45 @@ export default function App() {
           <Route path="/pe-vc" element={<PEVCHubPage />} />
           <Route path="/innovation-radar" element={<InnovationRadarPage />} />
           <Route path="/settings" element={<Settings />} />
+        </Route>
+
+        {/* School Mode login — public, no auth required */}
+        <Route path="/school/login" element={<SchoolLoginPage />} />
+
+        {/* School Mode — own layout (SchoolLayout), no MainLayout wrapper */}
+        <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
+          <Route path="/school" element={<SchoolDashboardPage />} />
+          <Route path="/school/onboarding" element={<SchoolOnboardingPage />} />
+          <Route path="/school/chat" element={<SchoolChatPage />} />
+          <Route path="/school/subjects" element={<SubjectsPage />} />
+          <Route path="/school/assignments" element={<StudentAssignmentsPage />} />
+          <Route path="/school/settings" element={<SchoolSettingsPage />} />
+          <Route path="/school/profile" element={<SchoolProfilePage />} />
+          <Route path="/school/coding" element={<SchoolCodingPage />} />
+          <Route path="/school/coding/:module" element={<SchoolCodingChatPage />} />
+          <Route path="/school/teacher" element={<TeacherDashboardPage />} />
+          <Route path="/school/teacher/classes/new" element={<TeacherClassConfigPage />} />
+          <Route path="/school/teacher/classes/:classId/settings" element={<TeacherClassConfigPage />} />
+          <Route path="/school/teacher/classes/:classId/progress" element={<TeacherClassProgressPage />} />
+          <Route path="/school/teacher/students" element={<TeacherStudentsPage />} />
+          <Route path="/school/teacher/assignments/new" element={<AssignmentBuilderPage />} />
+          <Route path="/school/assignments/:id/take" element={<AssignmentTakingPage />} />
+          <Route path="/school/assignments/:id/socratic" element={<SocraticExamPage />} />
+          <Route path="/school/journey" element={<CourseJourneyPage />} />
+          <Route path="/school/radar" element={<MyRadarPage />} />
+          <Route path="/school/teacher/submissions/:submissionId" element={<SubmissionReviewerPage />} />
+          <Route path="/school/teacher/lessons" element={<LessonLibraryPage />} />
+          <Route path="/school/teacher/lessons/new" element={<LessonBuilderPage />} />
+          <Route path="/school/teacher/lessons/:lessonId/edit" element={<LessonBuilderPage />} />
+          <Route path="/school/guardian" element={<GuardianDashboardPage />} />
+          <Route path="/school/review" element={<ReviewPage />} />
+          <Route path="/school/parent" element={<ParentDashboardPage />} />
+          <Route path="/school/ucas" element={<UCASStatementPage />} />
+          <Route path="/school/study-rooms" element={<StudyRoomsPage />} />
+          <Route path="/school/study-room/:roomId" element={<StudyRoomPage />} />
+          <Route path="/school/curriculum" element={<SchoolCurriculumPage />} />
+          <Route path="/school/lesson/:lessonId" element={<SchoolLessonPage />} />
+          <Route path="/school/lesson-builder" element={<SchoolLessonBuilderPage />} />
         </Route>
       </Routes>
     </Suspense>

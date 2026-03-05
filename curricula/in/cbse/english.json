@@ -1,0 +1,10 @@
+{
+  "subject": "English (Core/Elective)",
+  "texts": {
+    "class9-10": ["First Flight (Reader)", "Footprints Without Feet (Supplementary)", "Beehive"],
+    "class11": ["Hornbill (Prose + Poetry)", "Snapshots (Supplementary)"],
+    "class12": ["Flamingo (Prose + Poetry)", "Vistas (Supplementary)"]
+  },
+  "skills": ["Reading Comprehension", "Note-making", "Letter Writing (formal/informal)", "Article & Report Writing", "Debate & Speech", "Grammar (tenses, voice, narration, clauses)"],
+  "boardFormat": "Class 10: Reading (20) + Writing (30) + Grammar (10) + Literature (40). Class 12: Reading (22) + Creative Writing (18) + Literature (40) + Grammar (10)."
+}

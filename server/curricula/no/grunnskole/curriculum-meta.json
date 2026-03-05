@@ -1,0 +1,34 @@
+{
+  "id": "lk20",
+  "name": "Læreplanverket (LK20)",
+  "country": "Norway",
+  "language": "no",
+  "year": 2020,
+  "description": "Norwegian national curriculum framework — Fagfornyelsen (The Subject Renewal). Emphasises deep learning, interdisciplinary topics, and core values (democracy, sustainability, public health, life mastery).",
+  "gradeSpan": "1-10",
+  "coreValues": [
+    "Democracy and participation",
+    "Ethical standards and values",
+    "Identity and cultural diversity",
+    "Critical thinking and scientific approach",
+    "Creativity and innovation",
+    "Sustainability"
+  ],
+  "interdisciplinaryTopics": [
+    "Democracy and citizenship",
+    "Sustainable development",
+    "Public health and life mastery"
+  ],
+  "subjects": [
+    "matematikk",
+    "norsk",
+    "engelsk",
+    "naturfag",
+    "samfunnsfag",
+    "krle",
+    "kunst-og-handverk",
+    "musikk",
+    "kroppsøving",
+    "mat-og-helse"
+  ]
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   SearchCheck, FileText, Shield, Radar, GraduationCap, Database, BarChart3, Search,
   Home, MessageSquare, Workflow, Handshake, Rocket, Presentation, FlaskConical,
@@ -33,6 +33,8 @@ import {
   Database as DatabaseIcon,
   // Mobile close button
   X as XIcon,
+  // Community sub-nav
+  Users2, Mail, CalendarDays,
 } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -120,6 +122,11 @@ const AREA_COLORS: Record<string, { dot: string; text: string; active: string }>
   'mobile-money':         { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
   microfinance:           { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
   government:             { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
+  // Life Platform Tabs
+  news:                   { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
+  finance:                { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
+  travel:                 { dot: 'bg-adv-gold',    text: 'text-adv-gold',    active: 'bg-adv-gold/10 text-adv-gold' },
+  community:              { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
   // NGO & Social Impact hub
   ngo:                    { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
   // Trades & Service Workers hub
@@ -208,7 +215,9 @@ function DeadlinesNavLink({ sidebarCollapsed, collapsedLinkClass, linkClass }: D
 export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { sidebarCollapsed, toggleSidebar } = useSettingsStore();
+  const { pathname } = useLocation();
+  const isLifeMode = ['/life', '/news', '/finance', '/travel', '/community'].some(r => pathname.startsWith(r));
+  const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
   const { user: authUser, isTeamMode } = useAuthStore();
   const isAdmin = authUser?.role === 'admin' || !isTeamMode;
   // Track which areas are expanded — FCP open by default
@@ -359,6 +368,166 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-auto px-2 py-4">
+        {/* ── Life Platform sidebar ─────────────────────────────────────── */}
+        {isLifeMode && (
+          <>
+            {/* Back to Work + header */}
+            {!sidebarCollapsed ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-gray-med">Life Platform</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Life Hub */}
+            <NavLink
+              to="/life"
+              end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Life Hub' : undefined}
+            >
+              <Globe className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Life Hub'}
+            </NavLink>
+
+            {/* ── News ── */}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider" style={{ color: '#3498DB' }}>
+                News
+              </div>
+            )}
+            <NavLink
+              to="/news"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'News' : undefined}
+            >
+              <Newspaper className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Overview'}
+            </NavLink>
+            {!sidebarCollapsed && (
+              <div className="mb-3 ml-4 flex flex-col gap-0.5 border-l pl-3" style={{ borderColor: '#3498DB30' }}>
+                <NavLink to="/news/feed" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#3498DB]' : 'text-adv-gray hover:text-adv-off-white'}`}>Feed</NavLink>
+                <NavLink to="/news/truth-check" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#3498DB]' : 'text-adv-gray hover:text-adv-off-white'}`}>Truth Check</NavLink>
+                <NavLink to="/news/sources" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#3498DB]' : 'text-adv-gray hover:text-adv-off-white'}`}>Sources</NavLink>
+                <NavLink to="/news/my-bias" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#3498DB]' : 'text-adv-gray hover:text-adv-off-white'}`}>My Bias</NavLink>
+              </div>
+            )}
+
+            {/* ── Finance ── */}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            {!sidebarCollapsed && (
+              <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider" style={{ color: '#2DD4A8' }}>
+                Finance
+              </div>
+            )}
+            <NavLink
+              to="/finance"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Finance' : undefined}
+            >
+              <Wallet className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Overview'}
+            </NavLink>
+            {!sidebarCollapsed && (
+              <div className="mb-3 ml-4 flex flex-col gap-0.5 border-l pl-3" style={{ borderColor: '#2DD4A830' }}>
+                <NavLink to="/finance/learn" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}>Learn</NavLink>
+                <NavLink to="/finance/calculators" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}>Calculators</NavLink>
+                <NavLink to="/finance/market" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}>Markets</NavLink>
+                <NavLink to="/finance/goals" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-adv-teal' : 'text-adv-gray hover:text-adv-off-white'}`}>Goals</NavLink>
+              </div>
+            )}
+
+            {/* ── Travel ── */}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            {!sidebarCollapsed && (
+              <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider" style={{ color: '#F5A623' }}>
+                Travel
+              </div>
+            )}
+            <NavLink
+              to="/travel"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Travel' : undefined}
+            >
+              <Map className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Overview'}
+            </NavLink>
+            {!sidebarCollapsed && (
+              <div className="mb-3 ml-4 flex flex-col gap-0.5 border-l pl-3" style={{ borderColor: '#F5A62330' }}>
+                <NavLink to="/travel/trips" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-adv-gold' : 'text-adv-gray hover:text-adv-off-white'}`}>My Trips</NavLink>
+                <NavLink to="/travel/planner" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-adv-gold' : 'text-adv-gray hover:text-adv-off-white'}`}>Trip Planner</NavLink>
+                <NavLink to="/travel/explore" className={({ isActive }) => `flex items-center rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-adv-gold' : 'text-adv-gray hover:text-adv-off-white'}`}>Country Guide</NavLink>
+              </div>
+            )}
+
+            {/* ── Community ── */}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            {!sidebarCollapsed && (
+              <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9B59B6' }}>
+                Community
+              </div>
+            )}
+            <NavLink
+              to="/community"
+              end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive || pathname.startsWith('/community/')) : linkClass(isActive || pathname.startsWith('/community/'))}
+              title={sidebarCollapsed ? 'Community' : undefined}
+            >
+              <MessageCircle className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Hub'}
+            </NavLink>
+            {!sidebarCollapsed && (
+              <div className="mb-2 ml-4 flex flex-col gap-0.5 border-l pl-3" style={{ borderColor: '#9B59B630' }}>
+                <NavLink
+                  to="/community/groups"
+                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive || pathname.startsWith('/community/groups') ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
+                >
+                  <Users2 className="h-3.5 w-3.5 shrink-0" />
+                  Groups
+                </NavLink>
+                <NavLink
+                  to="/community/mail"
+                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
+                >
+                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  Mail
+                </NavLink>
+                <NavLink
+                  to="/community/calendar"
+                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive || pathname.startsWith('/community/events') ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
+                >
+                  <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                  Calendar
+                </NavLink>
+                <NavLink
+                  to="/community/forum"
+                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
+                >
+                  <MessageCircle className="h-3.5 w-3.5 shrink-0" />
+                  Forum
+                </NavLink>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Work sidebar (hidden while on Life Platform routes) ─────── */}
+        {!isLifeMode && (<>
         {/* Favorites section — only show if there are favorited items and sidebar is expanded */}
         {!sidebarCollapsed && favoriteNavItems.size > 0 && (
           <>
@@ -428,6 +597,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'governance': { to: '/governance', icon: Shield, label: t('nav.governance') },
                 'compare': { to: '/compare', icon: GitCompare, label: t('nav.compare') },
                 'marketplace': { to: '/marketplace', icon: Rocket, label: t('nav.marketplace') },
+                'news': { to: '/news', icon: Newspaper, label: 'News' },
+                'finance': { to: '/finance', icon: Wallet, label: 'Finance' },
+                'travel': { to: '/travel', icon: Map, label: 'Travel' },
+                'community': { to: '/community', icon: MessageCircle, label: 'Community' },
               }[item.id];
 
               if (!navConfig) return null;
@@ -593,6 +766,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <TrendingUp className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.peVc', 'PE/VC')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/school"
+          navId="school"
+          title={sidebarCollapsed ? t('nav.school', 'ANTON School') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('school')}
+          isHidden={hiddenNavItems.has('school')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <GraduationCap className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.school', 'ANTON School')}
         </NavLinkWithStar>
 
         <NavLinkWithStar
@@ -1267,6 +1454,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         })}
 
         {/* Recent Sessions removed from nav — available on Dashboard and My Work */}
+        </>)}
       </nav>
 
       {/* Profile mini-summary */}

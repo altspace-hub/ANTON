@@ -1,0 +1,18 @@
+{
+  "subject": "Histoire-Géographie",
+  "levels": {
+    "seconde": {
+      "history": ["La Méditerranée antique", "L'Occident médiéval", "Les Temps Modernes (XVe-XVIIIe)"],
+      "geography": ["Sociétés et développement durable", "L'urbanisation du monde", "Les mobilités humaines"]
+    },
+    "premiere": {
+      "history": ["L'Europe entre guerres (1914-1945)", "La Guerre Froide", "La décolonisation", "La Ve République"],
+      "geography": ["Mers et océans", "L'Afrique australe", "Les dynamiques territoriales de la France"]
+    },
+    "terminale": {
+      "history": ["Fragilités des démocraties (1930-1945)", "La Guerre Froide (1947-1991)", "Le monde depuis 1989", "La France sous la Ve République"],
+      "geography": ["Les dynamiques de la mondialisation", "Les territoires dans la mondialisation", "La France dans l'Union Européenne"]
+    }
+  },
+  "methods": ["Analyse de documents", "Composition (dissertation)", "Croquis cartographique"]
+}

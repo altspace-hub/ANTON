@@ -1,0 +1,132 @@
+{
+  "modeToggle": {
+    "ariaLabel": "वर्क मोड और स्कूल मोड के बीच स्विच करें",
+    "work": "काम",
+    "school": "स्कूल"
+  },
+  "nav": {
+    "schoolMode": "स्कूल मोड",
+    "dashboard": "डैशबोर्ड",
+    "subjects": "विषय",
+    "study": "अध्ययन",
+    "assignments": "असाइनमेंट",
+    "coding": "कोडिंग",
+    "journey": "मेरी यात्रा",
+    "radar": "मेरा रडार",
+    "myClasses": "मेरी कक्षाएं",
+    "createAssignment": "असाइनमेंट बनाएं",
+    "lessons": "पाठ",
+    "students": "छात्र",
+    "teacherTools": "शिक्षक उपकरण",
+    "schoolSettings": "स्कूल सेटिंग्स",
+    "myProfile": "मेरी प्रोफाइल",
+    "backToWork": "वर्क मोड पर वापस जाएं",
+    "close": "बंद करें",
+    "review": "समीक्षा",
+    "parentView": "अभिभावक दृश्य",
+    "ucas": "UCAS वक्तव्य",
+    "role": {
+      "student": "छात्र",
+      "guardian": "अभिभावक",
+      "teacher": "शिक्षक",
+      "school_admin": "स्कूल प्रशासक"
+    }
+  },
+  "dashboard": {
+    "welcome": "स्वागत है, {{name}}!",
+    "level": "स्तर {{level}}",
+    "streak": "{{count}} दिन की लगातार पढ़ाई",
+    "xp": "{{total}} XP",
+    "startStudying": "पढ़ाई शुरू करें",
+    "myClasses": "मेरी कक्षाएं",
+    "noClasses": "अभी तक कोई कक्षा नहीं।",
+    "upcomingAssignments": "आगामी असाइनमेंट",
+    "noAssignments": "कोई आगामी असाइनमेंट नहीं"
+  },
+  "chat": {
+    "placeholder": "अपना प्रश्न यहाँ लिखें...",
+    "send": "भेजें",
+    "thinking": "सोच रहा हूँ...",
+    "greeting": "नमस्ते! आज मैं आपकी कैसे मदद कर सकता हूँ?",
+    "assistanceLevel": "सहायता स्तर"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "ANTON स्कूल मोड में आपका स्वागत है",
+      "subtitle": "आइए आपका शैक्षिक अनुभव सेट करें",
+      "start": "शुरू करें"
+    },
+    "student": {
+      "title": "अपनी शिक्षा का स्तर चुनें",
+      "step1": {
+        "title": "आप किस कक्षा में हैं?",
+        "tierT1": "प्राथमिक स्कूल (उम्र 6–12)",
+        "tierT2": "माध्यमिक स्कूल (उम्र 13–15)",
+        "tierT3": "हाई स्कूल (उम्र 16–18)",
+        "tierT4": "विश्वविद्यालय"
+      },
+      "step2": {
+        "title": "आपका देश/पाठ्यक्रम?",
+        "sweden": "स्वीडन",
+        "norway": "नॉर्वे",
+        "uk": "यूके",
+        "france": "फ्रांस",
+        "india": "भारत (CBSE)",
+        "nigeria": "नाइजीरिया (WAEC)",
+        "pakistan": "पाकिस्तान",
+        "other": "अन्य"
+      }
+    }
+  },
+  "subject": {
+    "mathematics": "गणित",
+    "svenska": "हिंदी / भाषा",
+    "english": "अंग्रेज़ी",
+    "science": "विज्ञान",
+    "history": "इतिहास",
+    "geography": "भूगोल",
+    "biology": "जीव विज्ञान",
+    "chemistry": "रसायन विज्ञान",
+    "physics": "भौतिकी",
+    "social-studies": "सामाजिक अध्ययन",
+    "computer-science": "कंप्यूटर विज्ञान",
+    "art-music": "कला और संगीत",
+    "home-economics": "गृह अर्थशास्त्र",
+    "primary-mathematics": "प्राथमिक गणित",
+    "primary-reading": "प्राथमिक पठन",
+    "primary-writing": "प्राथमिक लेखन",
+    "primary-science": "प्राथमिक विज्ञान",
+    "primary-english": "प्राथमिक अंग्रेज़ी",
+    "primary-art": "प्राथमिक कला"
+  },
+  "review": {
+    "title": "समीक्षा करें",
+    "noCards": "आज के लिए कोई कार्ड नहीं। बाद में आएं!",
+    "done": "आज की समीक्षा पूरी हो गई!",
+    "cardsReviewed": "{{n}} कार्ड की समीक्षा की",
+    "answer": "उत्तर दिखाएं",
+    "tapToFlip": "उत्तर देखने के लिए क्लिक करें",
+    "blackout": "भूल गया",
+    "hard": "कठिन",
+    "good": "ठीक",
+    "easy": "आसान"
+  },
+  "leaderboard": {
+    "title": "लीडरबोर्ड",
+    "weekly": "इस सप्ताह",
+    "allTime": "सर्वकालिक",
+    "noWeeklyData": "इस सप्ताह अभी तक कोई गतिविधि नहीं। यहाँ आने के लिए पढ़ना शुरू करें!"
+  },
+  "progress": {
+    "title": "मेरी प्रगति",
+    "stage": "चरण {{stage}}",
+    "xpToNextLevel": "अगले स्तर तक {{xp}} XP",
+    "streak": "{{n}} दिन की लगातार पढ़ाई",
+    "totalSessions": "{{n}} कुल सत्र"
+  },
+  "quest": {
+    "title": "आज के लक्ष्य",
+    "noQuests": "आज के लिए कोई लक्ष्य नहीं",
+    "complete": "पूरा!"
+  }
+}

@@ -17,6 +17,7 @@ export interface AuthUser {
   username: string;
   role: 'admin' | 'analyst' | 'viewer';
   display_name?: string;
+  school_role?: string;
 }
 
 declare global {
@@ -52,7 +53,13 @@ export function createAuthMiddleware(db: Database) {
       }
       // Update last_seen
       db.prepare('UPDATE user_sessions SET last_seen = CURRENT_TIMESTAMP WHERE token = ?').run(token);
-      req.user = payload;
+      req.user = {
+        id: payload.id,
+        username: payload.username,
+        role: payload.role,
+        display_name: payload.display_name,
+        school_role: payload.school_role,
+      };
       next();
     } catch {
       res.status(401).json({ error: 'Invalid token' });

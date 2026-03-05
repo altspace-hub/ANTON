@@ -1,0 +1,9 @@
+{
+  "id": "ng-waec",
+  "name": "WAEC / JAMB",
+  "country": "Nigeria",
+  "yearRange": "10-12",
+  "ageRange": "15-18",
+  "language": "en",
+  "description": "West African Examinations Council and Joint Admissions and Matriculation Board curriculum for Nigerian secondary school students"
+}

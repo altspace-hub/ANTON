@@ -1,0 +1,42 @@
+{
+  "curriculumId": "gy11",
+  "programCode": "HU",
+  "programName": "Humanistiska programmet",
+  "focus": "Languages, humanities, culture, and philosophy",
+  "totalPoints": 2500,
+  "universityCertificate": true,
+  "programSpecificSubjects": {
+    "core": [
+      { "subject": "Svenska 3", "points": 100 },
+      { "subject": "Filosofi 1", "points": 50 },
+      { "subject": "Historia 2a+2b", "points": 100 },
+      { "subject": "Engelska 7", "points": 100 }
+    ],
+    "specialisations": {
+      "Kultur": [
+        "Kulturhistoria",
+        "Estetik och kulturteori",
+        "Konstkunskap"
+      ],
+      "Språk": [
+        "Moderna språk (French/German/Spanish level 4+5)",
+        "Klassiska språk (Latin/Greek)",
+        "Lingvistik"
+      ],
+      "Retorik och kommunikation": [
+        "Retorik 1+2",
+        "Skrivande för medier",
+        "Debatt och argumentation"
+      ]
+    }
+  },
+  "typicalCareerPaths": [
+    "Languages at university",
+    "Literature",
+    "Philosophy",
+    "Teaching",
+    "Journalism",
+    "Cultural sector"
+  ],
+  "teachingFocus": "Deep reading, critical analysis, creative and academic writing, rhetoric, cultural history, language learning"
+}

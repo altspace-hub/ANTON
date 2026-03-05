@@ -1,0 +1,45 @@
+{
+  "curriculumId": "gy11",
+  "programCode": "SA",
+  "programName": "Samhällsvetenskapsprogrammet",
+  "focus": "Social sciences, law, media, and civics",
+  "totalPoints": 2500,
+  "universityCertificate": true,
+  "programSpecificSubjects": {
+    "core": [
+      { "subject": "Samhällskunskap 1b", "points": 100 },
+      { "subject": "Matematik 1b", "points": 100 },
+      { "subject": "Historia 1b", "points": 100 }
+    ],
+    "specialisations": {
+      "Beteendevetenskap": [
+        "Psykologi 1+2a",
+        "Sociologi",
+        "Barn och fritidsprogrammets psykologi"
+      ],
+      "Medier, information och kommunikation": [
+        "Medieproduktion 1+2",
+        "Journalistik",
+        "Medier och demokrati"
+      ],
+      "Politik och internationella relationer": [
+        "Internationella relationer",
+        "Politisk organisation"
+      ],
+      "Juridik": [
+        "Juridik 1+2",
+        "Affärsjuridik",
+        "Konstitutionell rätt"
+      ]
+    }
+  },
+  "typicalCareerPaths": [
+    "Law (Juridicum)",
+    "Political science",
+    "Social work",
+    "Journalism",
+    "Psychology",
+    "Public sector"
+  ],
+  "teachingFocus": "Text analysis, argumentation, societal analysis, democratic processes, Swedish and international law, research methods"
+}

@@ -1,0 +1,6 @@
+{
+  "subject": "Economics",
+  "microeconomics": ["Demand and supply", "Elasticity", "Consumer theory", "Market structures (perfect competition, monopoly, oligopoly)", "Factor markets"],
+  "macroeconomics": ["National income and GDP", "Inflation and deflation", "Money and banking", "Fiscal and monetary policy", "Balance of payments and exchange rates"],
+  "development": ["Economic growth vs development", "Population and resources", "Agriculture in developing economies", "Industrialisation", "International trade (comparative advantage)"]
+}

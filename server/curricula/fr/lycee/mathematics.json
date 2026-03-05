@@ -1,0 +1,22 @@
+{
+  "subject": "Mathématiques",
+  "levels": {
+    "seconde": {
+      "name": "Seconde (Year 10)",
+      "topics": ["Nombres et calcul", "Fonctions", "Géométrie", "Statistiques et probabilités", "Algorithmique"]
+    },
+    "premiere": {
+      "name": "Première (Year 11) — Tronc commun",
+      "topics": ["Fonctions du second degré", "Suites", "Trigonométrie", "Dérivation", "Probabilités conditionnelles"]
+    },
+    "terminale_specialite": {
+      "name": "Terminale — Spécialité Mathématiques",
+      "topics": ["Analyse (limites, continuité, intégration)", "Algèbre linéaire (matrices)", "Probabilités avancées (loi normale)", "Arithmétique", "Géométrie dans l'espace"]
+    },
+    "terminale_complementaire": {
+      "name": "Terminale — Mathématiques Complémentaires",
+      "topics": ["Approfondissement du calcul", "Statistiques et probabilités appliquées", "Raisonnement mathématique"]
+    }
+  },
+  "examFormat": "Bac terminal: 4h épreuve écrite. Spécialité: 4h (50%), Tronc commun: 3h (50%)."
+}
