@@ -97,7 +97,14 @@
     "primary-writing": "Writing",
     "primary-science": "Science",
     "primary-english": "English",
-    "primary-art": "Art & Creativity"
+    "primary-art": "Art & Creativity",
+    "gymnasiet-economics": "Economics & Business",
+    "gymnasiet-technology": "Technology & Engineering",
+    "uni-industriell-ekonomi": "Industrial Economics",
+    "uni-datateknik": "Computer Science & Engineering",
+    "uni-kemiteknik": "Chemical Engineering",
+    "uni-maskinteknik": "Mechanical Engineering",
+    "uni-elektroteknik": "Electrical Engineering"
   },
   "chat": {
     "greeting": "Hi! I'm {{persona}}. What are you working on today?",
@@ -346,6 +353,13 @@
         "nigeria": "Nigeria (WAEC)",
         "other": "Other"
       },
+      "step2b": {
+        "gymnasietTitle": "What programme are you in?",
+        "universityTitle": "What are you studying?",
+        "gymnasietSubtitle": "Your Gymnasiet programme (linje)",
+        "universitySubtitle": "Your university programme",
+        "skip": "Skip — I'll set this later"
+      },
       "step3": {
         "title": "Join your class",
         "enterCode": "Enter the class code from your teacher",
@@ -593,6 +607,12 @@
     "empty": "No messages yet. Say hello!",
     "placeholder": "Type a message...",
     "connectingPlaceholder": "Connecting..."
+  },
+  "settings": {
+    "programmeSection": "Programme / Linje",
+    "gymnasietProgramme": "Gymnasiet Programme",
+    "universityProgramme": "University Programme",
+    "changeProgramme": "Change programme"
   },
   "login": {
     "title": "ANTON School",

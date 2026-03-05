@@ -1,0 +1,45 @@
+{
+  "curriculumId": "gy11",
+  "programCode": "NA",
+  "programName": "Naturvetenskapsprogrammet",
+  "focus": "University preparation in natural sciences and mathematics",
+  "totalPoints": 2500,
+  "universityCertificate": true,
+  "programSpecificSubjects": {
+    "core": [
+      { "subject": "Matematik 1c", "points": 100 },
+      { "subject": "Matematik 2c", "points": 100 },
+      { "subject": "Matematik 3c", "points": 100 },
+      { "subject": "Naturkunskap 2", "points": 100 }
+    ],
+    "specialisations": {
+      "NB (Naturvetenskap-Biologi)": [
+        { "subject": "Biologi 1+2", "points": 300 },
+        { "subject": "Kemi 1", "points": 150 }
+      ],
+      "NK (Naturvetenskap-Kemi)": [
+        { "subject": "Kemi 1+2", "points": 300 },
+        { "subject": "Fysik 1a", "points": 150 }
+      ],
+      "NF (Naturvetenskap-Fysik)": [
+        { "subject": "Fysik 1b1+1b2 or 2", "points": 300 },
+        { "subject": "Matematik 4", "points": 100 }
+      ]
+    }
+  },
+  "typicalCareerPaths": [
+    "Medicine",
+    "Engineering",
+    "Natural sciences research",
+    "Pharmacy",
+    "Dentistry",
+    "Veterinary science"
+  ],
+  "universityCourses": [
+    "Physics 1+2",
+    "Chemistry 1+2",
+    "Biology 1+2",
+    "Mathematics 1c-4/5"
+  ],
+  "teachingFocus": "Deep conceptual understanding, laboratory work, mathematical modelling, scientific method, university preparation"
+}

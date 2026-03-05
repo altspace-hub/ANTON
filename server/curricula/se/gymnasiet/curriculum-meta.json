@@ -1,0 +1,34 @@
+{
+  "id": "gy11",
+  "name": "Swedish Upper Secondary (Gymnasieskolan Gy11/Gy25)",
+  "country": "Sweden",
+  "language": "sv",
+  "yearRange": "10-12",
+  "ageRange": "16-19",
+  "authority": "Skolverket",
+  "description": "Swedish gymnasieskola: 3-year upper secondary education with 18 national programmes. Each programme consists of gymnasiegemensamma ämnen (common core), programgemensamma ämnen (programme-specific), and inriktningskurser (specialisation courses).",
+  "programmes": {
+    "NA": { "name": "Naturvetenskapsprogrammet", "focus": "Natural sciences, mathematics, research preparation" },
+    "TE": { "name": "Teknikprogrammet", "focus": "Technology, engineering, product development" },
+    "EK": { "name": "Ekonomiprogrammet", "focus": "Business economics, marketing, accounting" },
+    "SA": { "name": "Samhällsvetenskapsprogrammet", "focus": "Social sciences, law, media, civics" },
+    "HU": { "name": "Humanistiska programmet", "focus": "Languages, humanities, culture, philosophy" },
+    "VO": { "name": "Vård- och omsorgsprogrammet", "focus": "Healthcare, social care, elderly care" },
+    "BA": { "name": "Bygg- och anläggningsprogrammet", "focus": "Construction, civil engineering, infrastructure" },
+    "EE": { "name": "El- och energiprogrammet", "focus": "Electrical installation, energy, automation" },
+    "IN": { "name": "Industritekniska programmet", "focus": "Manufacturing, industrial processes, automation" }
+  },
+  "commonCore": {
+    "description": "Gymnasiegemensamma ämnen — all programmes",
+    "subjects": [
+      { "subject": "Engelska 5+6", "points": 200 },
+      { "subject": "Historia 1a1/1b", "points": 50 },
+      { "subject": "Idrott och hälsa 1", "points": 100 },
+      { "subject": "Matematik 1a/1b/1c", "points": 100 },
+      { "subject": "Naturkunskap 1a1/1a2/1b/2", "points": 50 },
+      { "subject": "Religionskunskap 1", "points": 50 },
+      { "subject": "Samhällskunskap 1a1/1b", "points": 50 },
+      { "subject": "Svenska/Svenska som andraspråk 1+2+3", "points": 300 }
+    ]
+  }
+}

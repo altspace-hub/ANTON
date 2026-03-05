@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Loader2, Bell, Globe, MessageSquare, Trash2, Accessibility, Server } from 'lucide-react';
+import { BookOpen, CheckCircle2, Loader2, Bell, Globe, MessageSquare, Trash2, Accessibility, Server } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 import SchoolLayout from '@/components/school/SchoolLayout';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -34,6 +34,8 @@ export default function SchoolSettingsPage() {
   const [dueDateReminders, setDueDateReminders] = useState(true);
   const [senMode, setSenMode] = useState<string>('none');
   const [explanationStyle, setExplanationStyle] = useState<string>('balanced');
+  const [gymnasietProgram, setGymnasietProgram] = useState<string>('');
+  const [universityProgram, setUniversityProgram] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
   const [clearingHistory, setClearingHistory] = useState(false);
@@ -52,6 +54,8 @@ export default function SchoolSettingsPage() {
         if (!data) return;
         setSenMode(data.senMode ?? 'none');
         setExplanationStyle(data.explanationStyle ?? 'balanced');
+        setGymnasietProgram(data.gymnasietProgram ?? '');
+        setUniversityProgram(data.universityProgram ?? '');
       })
       .catch(() => {});
 
@@ -78,6 +82,8 @@ export default function SchoolSettingsPage() {
           dueDateReminders,
           senMode: senMode === 'none' ? null : senMode,
           explanationStyle,
+          gymnasietProgram: gymnasietProgram || undefined,
+          universityProgram: universityProgram || undefined,
         }),
       });
       setSavedOk(true);
@@ -128,6 +134,63 @@ export default function SchoolSettingsPage() {
         <h1 className="text-xl font-bold text-adv-white">
           {t('nav.schoolSettings', 'School Settings')}
         </h1>
+
+        {/* Programme / Linje */}
+        <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-off-white">
+              {t('settings.programmeSection', 'Programme / Linje')}
+            </h2>
+          </div>
+          <p className="text-xs text-adv-gray-med">
+            Setting your programme helps ANTON tailor explanations to your curriculum track.
+          </p>
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              {t('settings.gymnasietProgramme', 'Gymnasiet Programme')}
+            </label>
+            <select
+              value={gymnasietProgram}
+              onChange={(e) => setGymnasietProgram(e.target.value)}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            >
+              <option value="">— Not set —</option>
+              <option value="NA">Naturvetenskapsprogrammet (Science)</option>
+              <option value="TE">Teknikprogrammet (Technology & Engineering)</option>
+              <option value="EK">Ekonomiprogrammet (Business & Economics)</option>
+              <option value="SA">Samhällsvetenskapsprogrammet (Social Sciences)</option>
+              <option value="HU">Humanistiska programmet (Humanities)</option>
+              <option value="VO">Vård- och omsorgsprogrammet (Healthcare)</option>
+              <option value="BA">Bygg- och anläggningsprogrammet (Construction)</option>
+              <option value="EE">El- och energiprogrammet (Electrical & Energy)</option>
+              <option value="IN">Industritekniska programmet (Industrial)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              {t('settings.universityProgramme', 'University Programme')}
+            </label>
+            <select
+              value={universityProgram}
+              onChange={(e) => setUniversityProgram(e.target.value)}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            >
+              <option value="">— Not set —</option>
+              <option value="industriell-ekonomi">Industriell Ekonomi (KTH/Chalmers)</option>
+              <option value="datateknik">Datateknik / Computer Science</option>
+              <option value="kemiteknik">Kemiteknik / Chemical Engineering</option>
+              <option value="maskinteknik">Maskinteknik / Mechanical Engineering</option>
+              <option value="elektroteknik">Elektroteknik / Electrical Engineering</option>
+              <option value="medicine">Medicine / Läkarprogrammet</option>
+              <option value="law">Law / Juridikprogrammet</option>
+              <option value="business">Business Administration</option>
+              <option value="architecture">Architecture</option>
+            </select>
+          </div>
+        </section>
 
         {/* Language */}
         <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">

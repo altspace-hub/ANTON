@@ -32,6 +32,8 @@ export interface SchoolPromptConfig {
   senMode?: string | null;    // 'dyslexia' | 'adhd' | null
   explanationStyle?: string;  // 'balanced' | 'examples_first' | 'theory_first' | 'visual' | 'verbal'
   teacherLevelOverride?: string; // set by teacher for specific student
+  gymnasietProgram?: string;  // 'NA' | 'TE' | 'EK' | 'SA' | 'HU' | 'VO' | 'BA' | 'EE' | 'IN'
+  universityProgram?: string; // 'industriell-ekonomi' | 'datateknik' | 'kemiteknik' | 'maskinteknik' | 'elektroteknik' | etc.
 }
 
 async function readPromptFile(filePath: string): Promise<string> {
@@ -130,7 +132,99 @@ You are talking with a child aged 7–12 years old. ALWAYS follow these rules:
   const layer5 = buildPedagogicalSkillsLayer(config);
   if (layer5) layers.push(`\n\n---\n\n${layer5}`);
 
+  // ── Layer 5.5: Gymnasiet Program Line Context ────────────────────────────
+  if (config.educationTier === 'T3' && config.gymnasietProgram) {
+    const programNames: Record<string, string> = {
+      NA: 'Naturvetenskapsprogrammet (Science)',
+      TE: 'Teknikprogrammet (Technology & Engineering)',
+      EK: 'Ekonomiprogrammet (Business & Economics)',
+      SA: 'Samhällsvetenskapsprogrammet (Social Sciences)',
+      HU: 'Humanistiska programmet (Humanities & Languages)',
+      VO: 'Vård- och omsorgsprogrammet (Healthcare)',
+      BA: 'Bygg- och anläggningsprogrammet (Construction)',
+      EE: 'El- och energiprogrammet (Electrical & Energy)',
+      IN: 'Industritekniska programmet (Industrial Technology)',
+    };
+    const programContexts: Record<string, string> = {
+      NA: 'This student is in Naturvetenskapsprogrammet. They take Matematik 1c–4/5, Physics 1+2, Chemistry 1+2, Biology 1+2. They are preparing for university studies in natural sciences, medicine, or engineering. Emphasise mathematical rigour, laboratory methodology, and scientific reasoning.',
+      TE: 'This student is in Teknikprogrammet. They take Matematik 1c–3c, Physics 1, Chemistry 1, Teknik 1, and programme-specific courses (Programming, Electronics, CAD, Construction). They are preparing for engineering university (KTH/Chalmers/LTH). Emphasise practical problem-solving, design thinking, and the link between mathematics and engineering.',
+      EK: 'This student is in Ekonomiprogrammet. They take Matematik 1b–2, Företagsekonomi 1+2, and specialise in Redovisning (accounting) or Marknadsföring (marketing). Connect topics to real business cases, entrepreneurship, and the Swedish/EU economy.',
+      SA: 'This student is in Samhällsvetenskapsprogrammet. They take social sciences, law, media, and humanities. They are preparing for law, political science, social work, or journalism. Emphasise text analysis, argumentation, and societal connections.',
+      HU: 'This student is in Humanistiska programmet. They focus on languages, literature, philosophy, and cultural studies. Emphasise deep reading, rhetorical analysis, and interdisciplinary humanities approaches.',
+      VO: 'This student is in Vård- och omsorgsprogrammet, preparing for healthcare and social care work. Connect academic subjects to practical healthcare contexts. Emphasise person-centred care, anatomy/physiology, and professional Swedish.',
+      BA: 'This student is in Bygg- och anläggningsprogrammet, studying construction and civil engineering. Connect mathematics and physics to practical construction calculations. Emphasise technical drawing, materials, and building standards.',
+      EE: 'This student is in El- och energiprogrammet, studying electrical installation and energy systems. Connect physics and mathematics to electrical circuits, power systems, and renewable energy. Emphasise practical safety and Swedish electrical standards (NEC/SEK).',
+      IN: 'This student is in Industritekniska programmet, studying manufacturing and industrial processes. Connect mathematics and physics to CNC machining, automation, and industrial production. Emphasise quality systems (ISO) and Swedish manufacturing context.',
+    };
+    const programName = programNames[config.gymnasietProgram] ?? config.gymnasietProgram;
+    const programContext = programContexts[config.gymnasietProgram] ?? '';
+    layers.push(`\n\n---\n\n## Gymnasiet Programme Context\n\n**Programme:** ${programName}\n\n${programContext}`);
+
+    // Load Gy11 curriculum for this programme
+    try {
+      const programFileMap: Record<string, string> = {
+        NA: 'na-naturvetenskap',
+        TE: 'te-teknik',
+        EK: 'ek-ekonomi',
+        SA: 'sa-samhall',
+        HU: 'hu-humaniora',
+      };
+      const programFile = programFileMap[config.gymnasietProgram];
+      if (programFile) {
+        const gy11Path = path.join(SERVER_DIR, '..', 'curricula', 'se', 'gymnasiet', `${programFile}.json`);
+        if (fs.existsSync(gy11Path)) {
+          const gy11Data = JSON.parse(fs.readFileSync(gy11Path, 'utf8'));
+          const programSubjects = gy11Data.programSpecificSubjects?.core?.map((s: {subject: string; points: number}) => s.subject).join(', ');
+          if (programSubjects) {
+            layers.push(`\n\n**Programme-specific core subjects:** ${programSubjects}`);
+          }
+        }
+      }
+    } catch { /* non-fatal */ }
+  }
+
+  // ── Layer 5.5: University Programme Context ──────────────────────────────
+  if (config.educationTier === 'T4' && config.universityProgram) {
+    const programNames: Record<string, string> = {
+      'industriell-ekonomi': 'Industriell Ekonomi / Industrial Engineering & Management (KTH/Chalmers style)',
+      'datateknik': 'Datateknik / Computer Science & Engineering (KTH/Chalmers)',
+      'kemiteknik': 'Kemiteknik / Chemical Engineering (KTH/Chalmers)',
+      'maskinteknik': 'Maskinteknik / Mechanical Engineering (KTH/Chalmers)',
+      'elektroteknik': 'Elektroteknik / Electrical Engineering (KTH/Chalmers)',
+      'medicine': 'Medicine (MD programme)',
+      'law': 'Law (Juridikprogrammet)',
+      'business': 'Business Administration (Handelshögskolan/SSE)',
+      'architecture': 'Architecture (KTH/Chalmers)',
+    };
+    const programContexts: Record<string, string> = {
+      'industriell-ekonomi': 'This student studies Industriell Ekonomi — the programme that combines engineering sciences with management, operations research, and economics. Core tensions: optimisation vs. strategy, quantitative models vs. qualitative judgement. Key courses include Operations Management, Operations Research (LP/network models), Corporate Finance, and Strategic Management. Swedish context: many graduates work at McKinsey, Volvo, Ericsson, or start tech companies.',
+      'datateknik': 'This student studies Datateknik (CS engineering). Strong theoretical and practical program covering algorithms, systems, networks, and software engineering. They work with formal methods, have strong mathematics background (discrete math, linear algebra, probability), and code in C/C++/Java/Python. Swedish context: graduates work at Spotify, King, Klarna, Ericsson, or in research at KTH/Chalmers.',
+      'kemiteknik': 'This student studies Kemiteknik (Chemical Engineering). Strong physical chemistry and process engineering background. They work with thermodynamics, transport phenomena, reaction engineering, and process design. Emphasis on safety and sustainability. Swedish context: graduates work at AkzoNobel, Perstorp, SSAB, Neste, or in pharma (AstraZeneca).',
+      'maskinteknik': 'This student studies Maskinteknik (Mechanical Engineering). Core areas: solid mechanics, fluid mechanics, thermodynamics, manufacturing. Strong CAD/FEM skills. Swedish context: major employers include Volvo Cars, Volvo Trucks, Scania, Atlas Copco, SKF, Sandvik.',
+      'elektroteknik': 'This student studies Elektroteknik (Electrical Engineering). Core areas: circuit theory, signal processing, power systems, control theory, electromagnetics. Strong mathematics background (Laplace/Fourier transforms, linear algebra). Swedish context: major employers include Ericsson, ABB, Vattenfall, Saab.',
+    };
+    const programName = programNames[config.universityProgram] ?? config.universityProgram;
+    const programContext = programContexts[config.universityProgram] ?? `This student is studying ${config.universityProgram} at university level.`;
+    layers.push(`\n\n---\n\n## University Programme Context\n\n**Programme:** ${programName}\n\n${programContext}`);
+  }
+
   // ── Layer 6: Knowledge Sources ─────────────────────────────────────────────
+  if (config.curriculumId === 'gy11') {
+    // Try to load common core + programme-specific subjects
+    try {
+      const commonCorePath = path.join(SERVER_DIR, '..', 'curricula', 'se', 'gymnasiet', 'common-core.json');
+      if (fs.existsSync(commonCorePath)) {
+        const coreData = JSON.parse(fs.readFileSync(commonCorePath, 'utf8'));
+        const coreSubjects = Object.keys(coreData.subjects ?? {}).map((k: string) => coreData.subjects[k].courses?.[0] ?? k).join(', ');
+        layers.push(`\n\n---\n\n## Curriculum Reference (Swedish Gymnasieskolan Gy11/Gy25)\n\n**Gymnasiegemensamma ämnen (common core for all programmes):** ${coreSubjects}\n\nAlign content with the Swedish Gy11/Gy25 curriculum (Skolverket). For mathematics, follow the Matematik 1c/2c/3c/4/5 progression. Assess using the A-F grading scale (A=Excellent, C=Proficient, E=Pass, F=Fail).`);
+      } else {
+        layers.push(`\n\n---\n\n## Curriculum Reference (Swedish Gymnasieskolan Gy11)\n\nThis class follows the Swedish upper secondary curriculum (Gy11/Gy25, Skolverket). Use the A-F grading scale. Subjects follow Gy11 course plans (kursplaner).`);
+      }
+    } catch {
+      layers.push(`\n\n---\n\n## Curriculum Reference (Gy11)\n\nFollows Swedish Gy11/Gy25 curriculum (Skolverket). A-F grading scale.`);
+    }
+  }
+
   if (config.curriculumId === 'lgr22' || config.curriculumId === undefined) {
     const curriculumPath = path.join(
       SERVER_DIR, '..', 'curricula', 'se', 'grundskolan', 'matematik', 'centralt_innehall.json'

@@ -14,12 +14,14 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-type Step = 1 | 2 | 3 | 4 | 'complete';
+type Step = 1 | 2 | '2b' | 3 | 4 | 'complete';
 
 interface OnboardingState {
   tier: string;
   country: string;
   classCode: string;
+  gymnasietProgram: string;
+  universityProgram: string;
 }
 
 function getOnboardingKey(userId: string) {
@@ -40,7 +42,7 @@ export default function SchoolOnboardingPage() {
   const { user } = useAuthStore();
 
   const [step, setStep] = useState<Step>(1);
-  const [state, setState] = useState<OnboardingState>({ tier: '', country: '', classCode: '' });
+  const [state, setState] = useState<OnboardingState>({ tier: '', country: '', classCode: '', gymnasietProgram: '', universityProgram: '' });
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joinedClass, setJoinedClass] = useState<string | null>(null);
@@ -58,7 +60,24 @@ export default function SchoolOnboardingPage() {
   }
 
   function selectCountry(country: string) {
-    setState((p) => ({ ...p, country }));
+    const newState = { ...state, country };
+    setState(newState);
+    // Show program selector for Swedish T3 students (Gymnasiet) or all T4 students
+    if (newState.tier === 'T3' && country === 'se') {
+      setStep('2b');
+    } else if (newState.tier === 'T4') {
+      setStep('2b');
+    } else {
+      setStep(3);
+    }
+  }
+
+  function selectProgram(program: string) {
+    if (state.tier === 'T3') {
+      setState((p) => ({ ...p, gymnasietProgram: program }));
+    } else {
+      setState((p) => ({ ...p, universityProgram: program }));
+    }
     setStep(3);
   }
 
@@ -91,7 +110,20 @@ export default function SchoolOnboardingPage() {
     setStep(4);
   }
 
-  function finishOnboarding() {
+  async function finishOnboarding() {
+    // Save program selection if applicable
+    if (state.gymnasietProgram || state.universityProgram) {
+      try {
+        await fetch('/api/school/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({
+            gymnasietProgram: state.gymnasietProgram || undefined,
+            universityProgram: state.universityProgram || undefined,
+          }),
+        });
+      } catch { /* non-fatal */ }
+    }
     if (user) markOnboardingComplete(user.id);
     setStep('complete');
   }
@@ -100,7 +132,7 @@ export default function SchoolOnboardingPage() {
     navigate('/school', { replace: true });
   }
 
-  const progressSteps = [1, 2, 3, 4];
+  const progressSteps = [1, 2, '2b', 3, 4] as const;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-adv-dark px-4 py-12">
@@ -119,11 +151,14 @@ export default function SchoolOnboardingPage() {
       {step !== 'complete' && (
         <div className="mb-8 flex items-center gap-2">
           {progressSteps.map((s) => {
-            const done = typeof step === 'number' && s < step;
+            const stepOrder = [1, 2, '2b', 3, 4] as const;
+            const currentIdx = stepOrder.indexOf(step as typeof stepOrder[number]);
+            const sIdx = stepOrder.indexOf(s);
+            const done = currentIdx > sIdx;
             const active = step === s;
             return (
               <div
-                key={s}
+                key={String(s)}
                 className={`h-2 rounded-full transition-all ${
                   done
                     ? 'w-4 bg-adv-teal'
@@ -209,6 +244,86 @@ export default function SchoolOnboardingPage() {
                 <ChevronRight className="ml-auto h-4 w-4 text-adv-gray-med" />
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 2b — Programme / Linje selection */}
+      {step === '2b' && (
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-adv-white">
+              {state.tier === 'T3'
+                ? t('onboarding.student.step2b.gymnasietTitle', 'What programme are you in?')
+                : t('onboarding.student.step2b.universityTitle', 'What are you studying?')}
+            </h1>
+            <p className="mt-2 text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+              {state.tier === 'T3'
+                ? t('onboarding.student.step2b.gymnasietSubtitle', 'Your Gymnasiet programme (linje)')
+                : t('onboarding.student.step2b.universitySubtitle', 'Your university programme')}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {state.tier === 'T3' ? (
+              // Gymnasiet programmes
+              [
+                { value: 'NA', label: 'Naturvetenskapsprogrammet', desc: 'Science, Maths, Physics, Chemistry, Biology' },
+                { value: 'TE', label: 'Teknikprogrammet', desc: 'Engineering, Tech, Programming, Electronics' },
+                { value: 'EK', label: 'Ekonomiprogrammet', desc: 'Business, Marketing, Accounting, Economics' },
+                { value: 'SA', label: 'Samhällsvetenskapsprogrammet', desc: 'Social Science, Law, Media, Civics' },
+                { value: 'HU', label: 'Humanistiska programmet', desc: 'Languages, Literature, Philosophy, Culture' },
+                { value: 'VO', label: 'Vård- och omsorgsprogrammet', desc: 'Healthcare, Social Care, Nursing' },
+                { value: 'BA', label: 'Bygg- och anläggningsprogrammet', desc: 'Construction, Civil Engineering' },
+                { value: 'EE', label: 'El- och energiprogrammet', desc: 'Electrical, Energy, Automation' },
+                { value: 'IN', label: 'Industritekniska programmet', desc: 'Manufacturing, Industrial Processes' },
+              ].map(({ value, label, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => selectProgram(value)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-adv-off-white">{label}</p>
+                    <p className="text-xs text-adv-gray-med">{desc}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-adv-gray-med" />
+                </button>
+              ))
+            ) : (
+              // University programmes
+              [
+                { value: 'industriell-ekonomi', label: 'Industriell Ekonomi', desc: 'Engineering + Management + OR (KTH/Chalmers)' },
+                { value: 'datateknik', label: 'Datateknik / Computer Science', desc: 'CS Theory, Systems, Software Eng. (KTH/Chalmers)' },
+                { value: 'kemiteknik', label: 'Kemiteknik', desc: 'Chemical Engineering & Process Technology' },
+                { value: 'maskinteknik', label: 'Maskinteknik', desc: 'Mechanical Engineering, Design, Manufacturing' },
+                { value: 'elektroteknik', label: 'Elektroteknik', desc: 'Circuits, Signal Processing, Power, Control' },
+                { value: 'medicine', label: 'Medicine / Läkarprogrammet', desc: 'MD programme' },
+                { value: 'law', label: 'Law / Juridikprogrammet', desc: 'Law school' },
+                { value: 'business', label: 'Business Administration', desc: 'Handelshögskolan / SSE' },
+                { value: 'architecture', label: 'Architecture', desc: 'KTH/Chalmers arkitektur' },
+              ].map(({ value, label, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => selectProgram(value)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-adv-off-white">{label}</p>
+                    <p className="text-xs text-adv-gray-med">{desc}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-adv-gray-med" />
+                </button>
+              ))
+            )}
+            <button
+              type="button"
+              onClick={() => setStep(3)}
+              className="w-full text-center text-sm text-adv-gray-med hover:text-adv-gray transition-colors pt-1"
+            >
+              {t('onboarding.student.step2b.skip', "Skip — I'll set this later")}
+            </button>
           </div>
         </div>
       )}

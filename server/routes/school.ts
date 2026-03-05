@@ -214,6 +214,9 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
   'primary-science': 'viktor',
   'primary-english': 'alma',
   'primary-art': 'alma',
+  // T3 new subjects
+  'gymnasiet-economics': 'nora',
+  'gymnasiet-technology': 'leo',
   // T4 University subjects
   'uni-mathematics': 'professor-lindstrom',
   'uni-physics': 'professor-lindstrom',
@@ -225,12 +228,18 @@ const DEFAULT_PERSONA_FOR_SUBJECT: Record<string, string> = {
   'uni-chemistry': 'professor-lindstrom',
   'uni-philosophy': 'professor-lindstrom',
   'uni-statistics': 'nora',
+  // T4 new program-specific subjects
+  'uni-industriell-ekonomi': 'professor-lindstrom',
+  'uni-datateknik': 'leo',
+  'uni-kemiteknik': 'viktor',
+  'uni-maskinteknik': 'professor-lindstrom',
+  'uni-elektroteknik': 'professor-lindstrom',
 };
 
 function buildPromptConfig(
   body: Record<string, unknown>,
   classRow: Record<string, unknown> | null,
-  overrides?: { growthStage?: string; senMode?: string | null; explanationStyle?: string }
+  overrides?: { growthStage?: string; senMode?: string | null; explanationStyle?: string; gymnasietProgram?: string; universityProgram?: string }
 ): SchoolPromptConfig {
   const subjectId = (classRow?.subject_id as string) || (body.subjectId as string) || 'mathematics';
   const defaultPersona = DEFAULT_PERSONA_FOR_SUBJECT[subjectId] ?? 'alma';
@@ -247,6 +256,8 @@ function buildPromptConfig(
     growthStage: overrides?.growthStage,
     senMode: overrides?.senMode ?? null,
     explanationStyle: overrides?.explanationStyle,
+    gymnasietProgram: overrides?.gymnasietProgram,
+    universityProgram: overrides?.universityProgram,
   };
 }
 
@@ -537,6 +548,8 @@ export function createSchoolRoutes(db: Database.Database) {
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN streak_shields INTEGER DEFAULT 2`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN gymnasiet_program TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN university_program TEXT`); } catch {}
   try { db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
   try { db.exec(`ALTER TABLE teacher_assignments ADD COLUMN is_template INTEGER DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN total_xp INTEGER DEFAULT 0`); } catch {}
@@ -609,8 +622,8 @@ export function createSchoolRoutes(db: Database.Database) {
 
       // Query growth profile for stage-adaptive prompting
       const profile = db.prepare(
-        `SELECT stage, sen_mode, explanation_style FROM student_growth_profiles WHERE student_user_id = ?`
-      ).get(userId) as { stage: string; sen_mode: string | null; explanation_style: string } | undefined;
+        `SELECT stage, sen_mode, explanation_style, gymnasiet_program, university_program FROM student_growth_profiles WHERE student_user_id = ?`
+      ).get(userId) as { stage: string; sen_mode: string | null; explanation_style: string; gymnasiet_program: string | null; university_program: string | null } | undefined;
 
       // Auto-infer module from last user message if not supplied
       const lastUserMsg = Array.isArray(messages) && messages.length > 0
@@ -638,7 +651,7 @@ export function createSchoolRoutes(db: Database.Database) {
           ...(lessonContext ? { additionalContext: lessonContext } : {}),
         },
         classRow,
-        { growthStage: profile?.stage, senMode: profile?.sen_mode, explanationStyle: profile?.explanation_style }
+        { growthStage: profile?.stage, senMode: profile?.sen_mode, explanationStyle: profile?.explanation_style, gymnasietProgram: profile?.gymnasiet_program ?? undefined, universityProgram: profile?.university_program ?? undefined }
       );
 
       const systemPrompt = await buildSchoolPrompt(promptConfig);
@@ -2023,9 +2036,14 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     try {
       const profile = db.prepare(
-        `SELECT sen_mode, explanation_style FROM student_growth_profiles WHERE student_user_id = ?`
-      ).get(userId) as { sen_mode: string | null; explanation_style: string } | undefined;
-      res.json({ senMode: profile?.sen_mode ?? null, explanationStyle: profile?.explanation_style ?? 'balanced' });
+        `SELECT sen_mode, explanation_style, gymnasiet_program, university_program FROM student_growth_profiles WHERE student_user_id = ?`
+      ).get(userId) as { sen_mode: string | null; explanation_style: string; gymnasiet_program: string | null; university_program: string | null } | undefined;
+      res.json({
+        senMode: profile?.sen_mode ?? null,
+        explanationStyle: profile?.explanation_style ?? 'balanced',
+        gymnasietProgram: profile?.gymnasiet_program ?? null,
+        universityProgram: profile?.university_program ?? null,
+      });
     } catch (err) {
       console.error('[school/settings GET]', err);
       res.status(500).json({ error: safeError(err) });
@@ -2037,17 +2055,21 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     try {
-      const { senMode, explanationStyle } = req.body as { senMode?: string | null; explanationStyle?: string };
+      const { senMode, explanationStyle, gymnasietProgram, universityProgram } = req.body as { senMode?: string | null; explanationStyle?: string; gymnasietProgram?: string; universityProgram?: string };
       const now = new Date().toISOString();
       const existing = db.prepare('SELECT id FROM student_growth_profiles WHERE student_user_id = ?').get(userId) as { id: string } | undefined;
       if (existing) {
-        db.prepare(
-          `UPDATE student_growth_profiles SET sen_mode = ?, explanation_style = ?, updated_at = ? WHERE student_user_id = ?`
-        ).run(senMode ?? null, explanationStyle ?? 'balanced', now, userId);
+        // Build dynamic update — only update program fields if explicitly provided
+        const updates: string[] = ['sen_mode = ?', 'explanation_style = ?', 'updated_at = ?'];
+        const params: unknown[] = [senMode ?? null, explanationStyle ?? 'balanced', now];
+        if (gymnasietProgram !== undefined) { updates.push('gymnasiet_program = ?'); params.push(gymnasietProgram); }
+        if (universityProgram !== undefined) { updates.push('university_program = ?'); params.push(universityProgram); }
+        params.push(userId);
+        db.prepare(`UPDATE student_growth_profiles SET ${updates.join(', ')} WHERE student_user_id = ?`).run(...params);
       } else {
         db.prepare(
-          `INSERT INTO student_growth_profiles (id, student_user_id, stage, session_count, sen_mode, explanation_style, updated_at) VALUES (?, ?, 'S1', 0, ?, ?, ?)`
-        ).run(crypto.randomUUID(), userId, senMode ?? null, explanationStyle ?? 'balanced', now);
+          `INSERT INTO student_growth_profiles (id, student_user_id, stage, session_count, sen_mode, explanation_style, gymnasiet_program, university_program, updated_at) VALUES (?, ?, 'S1', 0, ?, ?, ?, ?, ?)`
+        ).run(crypto.randomUUID(), userId, senMode ?? null, explanationStyle ?? 'balanced', gymnasietProgram ?? null, universityProgram ?? null, now);
       }
       res.json({ ok: true });
     } catch (err) {

@@ -1,0 +1,42 @@
+{
+  "curriculumId": "gy11",
+  "programCode": "EK",
+  "programName": "Ekonomiprogrammet",
+  "focus": "Business economics, marketing, and accounting",
+  "totalPoints": 2500,
+  "universityCertificate": true,
+  "programSpecificSubjects": {
+    "core": [
+      { "subject": "Matematik 1b", "points": 100 },
+      { "subject": "Matematik 2a/2b", "points": 100 },
+      { "subject": "Företagsekonomi 1", "points": 100 },
+      { "subject": "Företagsekonomi 2", "points": 100 }
+    ],
+    "specialisations": {
+      "Ekonomi": [
+        { "subject": "Redovisning 1+2", "points": 200 },
+        { "subject": "Nationalekonomi", "points": 100 },
+        { "subject": "Juridik 1", "points": 100 }
+      ],
+      "Marknadsföring": [
+        { "subject": "Marknadsföring 1+2", "points": 200 },
+        { "subject": "Entreprenörskap och företagande", "points": 100 },
+        { "subject": "Handel och service 1", "points": 100 }
+      ]
+    }
+  },
+  "keyCourses": {
+    "foretagsekonomi1": "Business fundamentals, organisational forms, simple budgeting, basic accounting",
+    "foretagsekonomi2": "Investment calculation, product costing, financial ratios, business development",
+    "redovisning1": "Double-entry bookkeeping, year-end procedures, simple annual report",
+    "marknadsföring1": "Market analysis, marketing mix, consumer behaviour, digital marketing",
+    "nationalekonomi": "Microeconomics (supply/demand), macroeconomics (GDP/inflation/unemployment), EU economy"
+  },
+  "typicalCareerPaths": [
+    "Business schools (Handelshögskolan, SSE)",
+    "Law",
+    "Public administration",
+    "Marketing/communications"
+  ],
+  "teachingFocus": "Real business cases, entrepreneurship, practical accounting, Swedish business law, Excel/financial tools"
+}
