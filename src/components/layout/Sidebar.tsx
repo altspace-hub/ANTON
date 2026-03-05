@@ -120,6 +120,11 @@ const AREA_COLORS: Record<string, { dot: string; text: string; active: string }>
   'mobile-money':         { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
   microfinance:           { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
   government:             { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
+  // Life Platform Tabs
+  news:                   { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
+  finance:                { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
+  travel:                 { dot: 'bg-adv-gold',    text: 'text-adv-gold',    active: 'bg-adv-gold/10 text-adv-gold' },
+  community:              { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
   // NGO & Social Impact hub
   ngo:                    { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
   // Trades & Service Workers hub
@@ -428,6 +433,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'governance': { to: '/governance', icon: Shield, label: t('nav.governance') },
                 'compare': { to: '/compare', icon: GitCompare, label: t('nav.compare') },
                 'marketplace': { to: '/marketplace', icon: Rocket, label: t('nav.marketplace') },
+                'news': { to: '/news', icon: Newspaper, label: 'News' },
+                'finance': { to: '/finance', icon: Wallet, label: 'Finance' },
+                'travel': { to: '/travel', icon: Map, label: 'Travel' },
+                'community': { to: '/community', icon: MessageCircle, label: 'Community' },
               }[item.id];
 
               if (!navConfig) return null;
@@ -551,6 +560,63 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <Presentation className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.presentations')}
+        </NavLinkWithStar>
+
+        {/* ── Life Platform Tabs ─────────────────────────────────────── */}
+        <NavLinkWithStar
+          to="/news"
+          navId="news"
+          title={sidebarCollapsed ? 'News' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive, 'news')}
+          isFavorite={favoriteNavItems.has('news')}
+          isHidden={hiddenNavItems.has('news')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Newspaper className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'News'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/finance"
+          navId="finance"
+          title={sidebarCollapsed ? 'Finance' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive, 'finance')}
+          isFavorite={favoriteNavItems.has('finance')}
+          isHidden={hiddenNavItems.has('finance')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Wallet className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Finance'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/travel"
+          navId="travel"
+          title={sidebarCollapsed ? 'Travel' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive, 'travel')}
+          isFavorite={favoriteNavItems.has('travel')}
+          isHidden={hiddenNavItems.has('travel')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Map className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Travel'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/community"
+          navId="community"
+          title={sidebarCollapsed ? 'Community' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive, 'community')}
+          isFavorite={favoriteNavItems.has('community')}
+          isHidden={hiddenNavItems.has('community')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <MessageCircle className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Community'}
         </NavLinkWithStar>
 
         <NavLinkWithStar

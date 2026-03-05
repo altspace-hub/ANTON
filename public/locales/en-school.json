@@ -31,7 +31,8 @@
       "school_admin": "School Admin"
     },
     "ucas": "UCAS Statement",
-    "studyRooms": "Study Rooms"
+    "studyRooms": "Study Rooms",
+    "lessonLibrary": "Lesson Library"
   },
   "dashboard": {
     "welcome": "Welcome back, {{name}}!",

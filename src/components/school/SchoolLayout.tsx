@@ -95,6 +95,12 @@ const STUDENT_NAV: SchoolNavItem[] = [
     icon: <Users className="h-4 w-4" />,
     path: '/school/study-rooms',
   },
+  {
+    id: 'curriculum',
+    labelKey: 'nav.lessonLibrary',
+    icon: <BookOpen className="h-4 w-4" />,
+    path: '/school/curriculum',
+  },
 ];
 
 const GUARDIAN_NAV: SchoolNavItem[] = [

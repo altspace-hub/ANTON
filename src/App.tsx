@@ -91,6 +91,36 @@ const TradesHubPage = lazy(() => import('./pages/TradesHubPage'));
 const PEVCHubPage = lazy(() => import('./pages/PEVCHubPage'));
 const InnovationRadarPage = lazy(() => import('./pages/InnovationRadarPage'));
 
+// News Tab pages
+const NewsPage = lazy(() => import('./pages/news/NewsPage'));
+const NewsFeedPage = lazy(() => import('./pages/news/NewsFeedPage'));
+const StoryDetailPage = lazy(() => import('./pages/news/StoryDetailPage'));
+const TruthCheckPage = lazy(() => import('./pages/news/TruthCheckPage'));
+const NewsSourcesPage = lazy(() => import('./pages/news/NewsSourcesPage'));
+const MyBiasPage = lazy(() => import('./pages/news/MyBiasPage'));
+
+// Finance Tab pages
+const FinancePage = lazy(() => import('./pages/finance/FinancePage'));
+const FinanceLearnPage = lazy(() => import('./pages/finance/FinanceLearnPage'));
+const FinanceCalculatorsPage = lazy(() => import('./pages/finance/FinanceCalculatorsPage'));
+const FinanceMarketPage = lazy(() => import('./pages/finance/FinanceMarketPage'));
+const FinanceWatchlistPage = lazy(() => import('./pages/finance/FinanceWatchlistPage'));
+const FinanceGoalsPage = lazy(() => import('./pages/finance/FinanceGoalsPage'));
+
+// Travel Tab pages
+const TravelPage = lazy(() => import('./pages/travel/TravelPage'));
+const TravelTripsPage = lazy(() => import('./pages/travel/TravelTripsPage'));
+const TravelPlannerPage = lazy(() => import('./pages/travel/TravelPlannerPage'));
+const TravelCountryGuidePage = lazy(() => import('./pages/travel/TravelCountryGuidePage'));
+const TravelExplorePage = lazy(() => import('./pages/travel/TravelExplorePage'));
+
+// Community Tab pages
+const CommunityPage = lazy(() => import('./pages/community/CommunityPage'));
+const CommunityContactsPage = lazy(() => import('./pages/community/CommunityContactsPage'));
+const CommunityMessagesPage = lazy(() => import('./pages/community/CommunityMessagesPage'));
+const CommunityForumPage = lazy(() => import('./pages/community/CommunityForumPage'));
+const CommunityIdentityPage = lazy(() => import('./pages/community/CommunityIdentityPage'));
+
 // School Mode pages
 const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
 const SchoolChatPage = lazy(() => import('./pages/school/SchoolChatPage'));
@@ -120,6 +150,9 @@ const UCASStatementPage = lazy(() => import('./pages/school/UCASStatementPage'))
 const StudyRoomsPage = lazy(() => import('./pages/school/StudyRoomsPage'));
 const StudyRoomPage = lazy(() => import('./pages/school/StudyRoomPage'));
 const SchoolLoginPage = lazy(() => import('./pages/school/SchoolLoginPage'));
+const SchoolCurriculumPage = lazy(() => import('./pages/school/SchoolCurriculumPage'));
+const SchoolLessonPage = lazy(() => import('./pages/school/SchoolLessonPage'));
+const SchoolLessonBuilderPage = lazy(() => import('./pages/school/SchoolLessonBuilderPage'));
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -287,6 +320,32 @@ export default function App() {
           {/* Engagement Task */}
           <Route path="/engagements" element={<EngagementListPage />} />
           <Route path="/engagements/:id" element={<EngagementWorkspacePage />} />
+          {/* News Tab */}
+          <Route path="/news" element={<NewsPage />} />
+          <Route path="/news/feed" element={<NewsFeedPage />} />
+          <Route path="/news/story/:id" element={<StoryDetailPage />} />
+          <Route path="/news/truth-check" element={<TruthCheckPage />} />
+          <Route path="/news/sources" element={<NewsSourcesPage />} />
+          <Route path="/news/my-bias" element={<MyBiasPage />} />
+          {/* Finance Tab */}
+          <Route path="/finance" element={<FinancePage />} />
+          <Route path="/finance/learn" element={<FinanceLearnPage />} />
+          <Route path="/finance/calculators" element={<FinanceCalculatorsPage />} />
+          <Route path="/finance/market" element={<FinanceMarketPage />} />
+          <Route path="/finance/watchlist" element={<FinanceWatchlistPage />} />
+          <Route path="/finance/goals" element={<FinanceGoalsPage />} />
+          {/* Travel Tab */}
+          <Route path="/travel" element={<TravelPage />} />
+          <Route path="/travel/trips" element={<TravelTripsPage />} />
+          <Route path="/travel/planner" element={<TravelPlannerPage />} />
+          <Route path="/travel/country/:code" element={<TravelCountryGuidePage />} />
+          <Route path="/travel/explore" element={<TravelExplorePage />} />
+          {/* Community Tab */}
+          <Route path="/community" element={<CommunityPage />} />
+          <Route path="/community/contacts" element={<CommunityContactsPage />} />
+          <Route path="/community/messages" element={<CommunityMessagesPage />} />
+          <Route path="/community/forum" element={<CommunityForumPage />} />
+          <Route path="/community/identity" element={<CommunityIdentityPage />} />
           {/* NGO & Social Impact Hub */}
           <Route path="/ngo" element={<NGOHubPage />} />
           {/* Trades & Service Workers Hub */}
@@ -331,6 +390,9 @@ export default function App() {
           <Route path="/school/ucas" element={<UCASStatementPage />} />
           <Route path="/school/study-rooms" element={<StudyRoomsPage />} />
           <Route path="/school/study-room/:roomId" element={<StudyRoomPage />} />
+          <Route path="/school/curriculum" element={<SchoolCurriculumPage />} />
+          <Route path="/school/lesson/:lessonId" element={<SchoolLessonPage />} />
+          <Route path="/school/lesson-builder" element={<SchoolLessonBuilderPage />} />
         </Route>
       </Routes>
     </Suspense>

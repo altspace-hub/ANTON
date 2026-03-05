@@ -22,6 +22,11 @@
     "myProfile": "Min profil",
     "backToWork": "Tillbaka till Arbetsläge",
     "close": "Stäng",
+    "review": "Repetitionskort",
+    "parentView": "Föräldravy",
+    "ucas": "UCAS-ansökan",
+    "studyRooms": "Studierum",
+    "lessonLibrary": "Lektionsbibliotek",
     "role": {
       "student": "Elev",
       "guardian": "Vårdnadshavare",

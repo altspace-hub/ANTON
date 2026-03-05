@@ -589,6 +589,44 @@ export function createSchoolRoutes(db: Database.Database) {
       }
     }
   } catch { /* non-fatal */ }
+  // School Enhancements: rich curriculum + lesson system
+  try { db.exec(`CREATE TABLE IF NOT EXISTS school_curricula (
+    id TEXT PRIMARY KEY,
+    subject_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    tier TEXT DEFAULT 'T2',
+    language TEXT DEFAULT 'en',
+    units TEXT DEFAULT '[]',
+    created_by TEXT DEFAULT 'system',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS school_lessons (
+    id TEXT PRIMARY KEY,
+    curriculum_id TEXT,
+    subject_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    content_blocks TEXT DEFAULT '[]',
+    estimated_minutes INTEGER DEFAULT 30,
+    bloom_level TEXT DEFAULT 'understand',
+    tier TEXT DEFAULT 'T2',
+    published INTEGER DEFAULT 0,
+    created_by TEXT DEFAULT 'teacher',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS school_lesson_progress (
+    id TEXT PRIMARY KEY,
+    lesson_id TEXT NOT NULL,
+    student_user_id TEXT NOT NULL,
+    status TEXT DEFAULT 'not_started',
+    completed_blocks TEXT DEFAULT '[]',
+    score INTEGER,
+    time_spent_seconds INTEGER DEFAULT 0,
+    started_at DATETIME,
+    completed_at DATETIME,
+    UNIQUE(lesson_id, student_user_id)
+  )`); } catch {}
   // Load persisted model-tier override (if any)
   try {
     const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
@@ -3122,6 +3160,177 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       console.error('[school/study-rooms DELETE]', err);
       return res.status(500).json({ error: 'Internal error' });
     }
+  });
+
+  // ── Lesson/Curriculum endpoints (School Enhancements) ────────────────────
+
+  // GET /api/school/curricula
+  router.get('/school/curricula', (req, res) => {
+    try {
+      const { subject_id } = req.query;
+      let sql = 'SELECT * FROM school_curricula';
+      const params: unknown[] = [];
+      if (subject_id) { sql += ' WHERE subject_id = ?'; params.push(subject_id); }
+      sql += ' ORDER BY created_at DESC';
+      res.json(db.prepare(sql).all(...params));
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
+  // POST /api/school/curricula
+  router.post('/school/curricula', (req, res) => {
+    try {
+      const body = req.body as Record<string, unknown>;
+      const id = `cur_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      db.prepare(`INSERT INTO school_curricula (id, subject_id, title, description, tier, language, units, created_by) VALUES (?,?,?,?,?,?,?,?)`).run(
+        id, body.subject_id || '', body.title || 'Untitled Curriculum', body.description || null,
+        body.tier || 'T2', body.language || 'en', JSON.stringify(body.units || []), body.created_by || 'teacher'
+      );
+      res.json({ id, ok: true });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
+  // GET /api/school/lessons
+  router.get('/school/lessons', (req, res) => {
+    try {
+      const { subject_id, curriculum_id } = req.query;
+      let sql = 'SELECT * FROM school_lessons';
+      const params: unknown[] = [];
+      const conditions: string[] = [];
+      if (subject_id) { conditions.push('subject_id = ?'); params.push(subject_id); }
+      if (curriculum_id) { conditions.push('curriculum_id = ?'); params.push(curriculum_id); }
+      if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+      sql += ' ORDER BY created_at DESC';
+      const rows = db.prepare(sql).all(...params) as Record<string, unknown>[];
+      res.json(rows.map(r => ({ ...r, content_blocks: JSON.parse((r.content_blocks as string) || '[]') })));
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
+  // GET /api/school/lessons/:id
+  router.get('/school/lessons/:id', (req, res) => {
+    try {
+      const row = db.prepare('SELECT * FROM school_lessons WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+      if (!row) return res.status(404).json({ error: 'Lesson not found' });
+      return res.json({ ...row, content_blocks: JSON.parse((row.content_blocks as string) || '[]') });
+    } catch (e) { return res.status(500).json({ error: String(e) }); }
+  });
+
+  // POST /api/school/lessons
+  router.post('/school/lessons', (req, res) => {
+    try {
+      const body = req.body as Record<string, unknown>;
+      const id = `lesson_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      db.prepare(`INSERT INTO school_lessons (id, curriculum_id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier, published, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(
+        id, body.curriculum_id || null, body.subject_id || '',
+        body.title || 'Untitled Lesson', body.description || null,
+        JSON.stringify(body.content_blocks || []),
+        body.estimated_minutes || 30, body.bloom_level || 'understand',
+        body.tier || 'T2', body.published ? 1 : 0, body.created_by || 'teacher'
+      );
+      res.json({ id, ok: true });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
+  // PATCH /api/school/lessons/:id
+  router.patch('/school/lessons/:id', (req, res) => {
+    try {
+      const body = req.body as Record<string, unknown>;
+      const fields: string[] = [];
+      const values: unknown[] = [];
+      if (body.title !== undefined) { fields.push('title = ?'); values.push(body.title); }
+      if (body.description !== undefined) { fields.push('description = ?'); values.push(body.description); }
+      if (body.content_blocks !== undefined) { fields.push('content_blocks = ?'); values.push(JSON.stringify(body.content_blocks)); }
+      if (body.estimated_minutes !== undefined) { fields.push('estimated_minutes = ?'); values.push(body.estimated_minutes); }
+      if (body.bloom_level !== undefined) { fields.push('bloom_level = ?'); values.push(body.bloom_level); }
+      if (body.published !== undefined) { fields.push('published = ?'); values.push(body.published ? 1 : 0); }
+      if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
+      values.push(req.params.id);
+      db.prepare(`UPDATE school_lessons SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+      return res.json({ ok: true });
+    } catch (e) { return res.status(500).json({ error: String(e) }); }
+  });
+
+  // DELETE /api/school/lessons/:id
+  router.delete('/school/lessons/:id', (req, res) => {
+    try {
+      db.prepare('DELETE FROM school_lessons WHERE id = ?').run(req.params.id);
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
+  // POST /api/school/lessons/:id/progress — track student progress through lesson
+  router.post('/school/lessons/:id/progress', (req, res) => {
+    try {
+      const body = req.body as { student_user_id?: string; completed_block?: string; status?: string; score?: number; time_spent_seconds?: number };
+      const studentId = body.student_user_id || 'default';
+      const existing = db.prepare('SELECT * FROM school_lesson_progress WHERE lesson_id = ? AND student_user_id = ?').get(req.params.id, studentId) as Record<string, unknown> | undefined;
+      const completed = existing ? JSON.parse((existing.completed_blocks as string) || '[]') : [];
+      if (body.completed_block && !completed.includes(body.completed_block)) completed.push(body.completed_block);
+      const id = existing ? (existing.id as string) : `lp_${Date.now()}`;
+      const status = body.status || (existing?.status as string) || 'in_progress';
+      db.prepare(`INSERT OR REPLACE INTO school_lesson_progress (id, lesson_id, student_user_id, status, completed_blocks, score, time_spent_seconds, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?)`).run(
+        id, req.params.id, studentId, status, JSON.stringify(completed),
+        body.score ?? (existing?.score as number ?? null),
+        (body.time_spent_seconds ?? 0) + ((existing?.time_spent_seconds as number) ?? 0),
+        existing?.started_at || new Date().toISOString(),
+        status === 'completed' ? new Date().toISOString() : (existing?.completed_at || null)
+      );
+      res.json({ ok: true, completed_blocks: completed, status });
+    } catch (e) { res.status(500).json({ error: String(e) }); }
+  });
+
+  // POST /api/school/lessons/generate — AI generates a lesson
+  router.post('/school/lessons/generate', async (req, res) => {
+    try {
+      if (!anthropic) return res.status(503).json({ error: 'Anthropic client not available' });
+      const { subject_id, topic, tier, learning_objectives } = req.body as { subject_id: string; topic: string; tier?: string; learning_objectives?: string[] };
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const stream = await anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        stream: true,
+        messages: [{
+          role: 'user',
+          content: `Generate a structured lesson on "${topic}" for ${subject_id} (tier: ${tier || 'T2'}).
+${learning_objectives?.length ? `Learning objectives: ${learning_objectives.join(', ')}` : ''}
+
+Return a JSON lesson structure with content_blocks array. Each block has type and content:
+- type "text": {content: "markdown text"}
+- type "exercise": {content: "exercise instructions", solution: "solution hint"}
+- type "quiz": {question: "...", options: ["A","B","C","D"], correct: 0, explanation: "..."}
+- type "video": {provider: "youtube", search_query: "search terms to find relevant video", title: "suggested title"}
+- type "key_concepts": {concepts: [{term: "...", definition: "..."}]}
+
+Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief description", "estimated_minutes": 30, "bloom_level": "understand|apply|analyze", "content_blocks": [...]}`
+        }]
+      });
+
+      let fullText = '';
+      for await (const chunk of stream) {
+        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+          fullText += chunk.delta.text;
+          res.write(`data: ${JSON.stringify({ type: 'text_delta', content: chunk.delta.text })}\n\n`);
+        }
+      }
+
+      // Try to save the generated lesson
+      try {
+        const parsed = JSON.parse(fullText.replace(/```json\n?|\n?```/g, '').trim()) as Record<string, unknown>;
+        const id = `lesson_${Date.now()}_gen`;
+        db.prepare(`INSERT INTO school_lessons (id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier) VALUES (?,?,?,?,?,?,?,?)`).run(
+          id, subject_id, parsed.title || topic, parsed.description || null,
+          JSON.stringify(parsed.content_blocks || []),
+          parsed.estimated_minutes || 30, parsed.bloom_level || 'understand', tier || 'T2'
+        );
+        res.write(`data: ${JSON.stringify({ type: 'lesson_id', content: id })}\n\n`);
+      } catch {}
+
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   return router;
