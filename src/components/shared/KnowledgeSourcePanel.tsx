@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Brain, Link, FolderOpen, Combine, ChevronDown, ChevronRight, Globe, Plus, X, Search, RefreshCw, Loader2, Database, CheckCircle2 } from 'lucide-react';
+import { Brain, Link, FolderOpen, Combine, ChevronDown, ChevronRight, Globe, Plus, X, Search, RefreshCw, Loader2, Database, CheckCircle2, Package, ArrowRight, Zap } from 'lucide-react';
 import type { KnowledgeSourceConfig, RagIndexedFolder, RagCollection, KnowledgeLibraryEntry } from '@/lib/types';
 import { fetchRagFolders, indexRagFolder, fetchRagCollections } from '@/lib/api';
 import HelpTooltip from './HelpTooltip';
@@ -463,6 +463,162 @@ export default function KnowledgeSourcePanel({ config, onChange }: KnowledgeSour
           }
         />
       </SourceCard>
+
+      {/* Mode 6: Regulatory Knowledge Packs */}
+      <RegulatoryPacksCard />
+    </div>
+  );
+}
+
+// ── RegulatoryPacksCard sub-component ─────────────────────────
+
+interface PackSummary {
+  id: string;
+  display_name: string;
+  version: string;
+  jurisdiction: string | null;
+  entity_count: number;
+  relationship_count: number;
+  status: 'installed' | 'active' | 'deactivated' | 'error';
+}
+
+function RegulatoryPacksCard() {
+  const [packs, setPacks] = useState<PackSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  const authHdr = () => ({ Authorization: `Bearer ${localStorage.getItem('openexpert-token')}` });
+
+  const loadPacks = useCallback(async () => {
+    try {
+      const res = await fetch('/api/knowledge-packs', { headers: authHdr() });
+      if (res.ok) {
+        const data = await res.json();
+        setPacks(data.packs || []);
+      }
+    } catch {
+      // API not available
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadPacks(); }, [loadPacks]);
+
+  const activePacks = packs.filter((p) => p.status === 'active');
+  const isEnabled = activePacks.length > 0;
+
+  const togglePack = async (pack: PackSummary) => {
+    setToggling(pack.id);
+    try {
+      const action = pack.status === 'active' ? 'deactivate' : 'activate';
+      const res = await fetch(`/api/knowledge-packs/${pack.id}/${action}`, {
+        method: 'PATCH',
+        headers: authHdr(),
+      });
+      if (res.ok) await loadPacks();
+    } catch {
+      // toggle failed
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  return (
+    <div
+      className={`rounded-lg border transition-colors ${
+        isEnabled ? 'border-adv-teal/30 bg-adv-teal-soft/30' : 'border-border bg-adv-card'
+      }`}
+    >
+      <button
+        onClick={() => { if (packs.length > 0) setExpanded((e) => !e); }}
+        className="flex w-full items-center gap-3 p-3 text-left"
+      >
+        <div className={isEnabled ? 'text-adv-teal' : 'text-adv-gray-med'}>
+          <Package className="h-4 w-4" />
+        </div>
+        <div className="flex-1">
+          <div className={`text-xs font-medium ${isEnabled ? 'text-adv-white' : 'text-adv-gray'}`}>
+            Regulatory Knowledge Packs
+            <span className="ml-2 inline-block rounded bg-adv-teal-dim px-1.5 py-0.5 text-[9px] font-normal text-adv-teal">
+              Mode 6
+            </span>
+          </div>
+          <div className="text-[11px] text-adv-gray-med">
+            {loading
+              ? 'Loading packs…'
+              : activePacks.length > 0
+              ? `${activePacks.length} pack${activePacks.length > 1 ? 's' : ''} active — curated regulatory entities injected into every prompt`
+              : packs.length > 0
+              ? `${packs.length} pack${packs.length > 1 ? 's' : ''} installed — activate to inject into analysis`
+              : 'Pre-built regulatory intelligence. Install packs in Knowledge Base → Regulatory Packs.'}
+          </div>
+        </div>
+        {packs.length > 0 &&
+          (expanded ? (
+            <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med" />
+          ))}
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border/50 px-3 pb-3 pt-2 space-y-2">
+          {packs.map((pack) => {
+            const isActive = pack.status === 'active';
+            const isLoading = toggling === pack.id;
+            return (
+              <div
+                key={pack.id}
+                className={`flex items-center gap-2.5 rounded-lg border p-2.5 transition-colors ${
+                  isActive
+                    ? 'border-adv-teal/30 bg-adv-teal-dim/40'
+                    : 'border-border bg-adv-dark'
+                }`}
+              >
+                {isActive && <Zap className="h-3.5 w-3.5 text-adv-teal shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-medium text-adv-off-white">{pack.display_name}</span>
+                    <span className="text-[10px] text-adv-gray-med">v{pack.version}</span>
+                    {pack.jurisdiction && (
+                      <span className="text-[10px] px-1 py-0.5 rounded bg-adv-dark-2 border border-border text-adv-gray">
+                        {pack.jurisdiction}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-adv-gray-med mt-0.5">
+                    {pack.entity_count} entities · {pack.relationship_count} relationships
+                    {isActive && <span className="ml-2 text-adv-teal font-medium">Active</span>}
+                  </div>
+                </div>
+                <button
+                  onClick={() => togglePack(pack)}
+                  disabled={isLoading}
+                  className={`shrink-0 rounded px-2.5 py-1 text-[10px] font-medium border transition-colors ${
+                    isLoading
+                      ? 'opacity-50 cursor-not-allowed border-border text-adv-gray-med'
+                      : isActive
+                      ? 'border-adv-teal/30 bg-adv-teal-dim text-adv-teal hover:border-adv-red/30 hover:bg-red-900/20 hover:text-adv-red'
+                      : 'border-border bg-adv-dark-2 text-adv-gray hover:border-adv-teal/30 hover:bg-adv-teal-dim hover:text-adv-teal'
+                  }`}
+                >
+                  {isLoading ? '…' : isActive ? 'Deactivate' : 'Activate'}
+                </button>
+              </div>
+            );
+          })}
+
+          <button
+            onClick={() => { window.location.href = '/knowledge-base?tab=regulatory-packs'; }}
+            className="flex items-center gap-1.5 text-[10px] text-adv-gray-med hover:text-adv-teal transition-colors mt-1"
+          >
+            <ArrowRight className="h-3 w-3" />
+            Manage packs in Knowledge Base
+          </button>
+        </div>
+      )}
     </div>
   );
 }
