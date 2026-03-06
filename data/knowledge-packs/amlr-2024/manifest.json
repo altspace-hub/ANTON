@@ -9,5 +9,8 @@
   "jurisdiction": "European Union",
   "regulatory_area": "AML/CFT",
   "regulation_ids": ["AMLR", "Regulation (EU) 2024/1624", "AMLD6", "AMLA"],
-  "tier": 1
+  "tier": 1,
+  "entity_count": 132,
+  "relationship_count": 272,
+  "alias_entry_count": 106
 }

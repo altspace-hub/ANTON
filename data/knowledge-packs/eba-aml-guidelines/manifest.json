@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "eba-aml-guidelines",
+  "display_name": "EBA AML/CFT Guidelines — Risk Factors, Governance & Supervision",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EBA AML/CFT guidelines including EBA/GL/2021/02 (Risk Factors), EBA/GL/2021/05 (Internal Governance), EBA supervisory convergence guidelines, SREP AML/CFT add-on, and the transition of guideline function to AMLA.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "AML/CFT Supervisory Guidance",
+  "regulation_ids": ["EBA/GL/2021/02", "EBA/GL/2021/05", "EBA/GL/2022/05", "EBA/GL/2023/04"],
+  "tier": 1,
+  "entity_count": 28,
+  "relationship_count": 52,
+  "alias_entry_count": 28
+}

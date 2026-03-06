@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "nordic-aml-laws",
+  "display_name": "Nordic AML Laws — Sweden, Finland, Norway & Denmark",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for national AML/CFT legislation across the Nordic countries: Swedish Penningtvättslagen (2017:630), Finnish ML Act (444/2017), Norwegian Hvitvaskingsloven (2018), and Danish Hvidvaskloven. Covers supervisory authorities, FIUs, key chapter structures, and AMLR supersession timeline.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Sweden / Finland / Norway / Denmark",
+  "regulatory_area": "National AML/CFT Transposition (Nordic)",
+  "regulation_ids": ["Penningtvättslagen 2017:630", "Finnish ML Act 444/2017", "Hvitvaskingsloven 2018", "Hvidvaskloven"],
+  "tier": 1,
+  "entity_count": 42,
+  "relationship_count": 77,
+  "alias_entry_count": 31
+}

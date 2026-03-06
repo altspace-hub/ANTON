@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "amla-amld6",
+  "display_name": "AMLA & AMLD6 — New EU AML Authority & 6th Directive",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for Regulation (EU) 2024/1620 (AMLA) and Directive (EU) 2024/1640 (AMLD6). Covers AMLA's organisational structure, direct supervision mandate, RTS/ITS pipeline, and AMLD6 criminal law harmonisation.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "AML/CFT Institutional Framework",
+  "regulation_ids": ["AMLA Regulation (EU) 2024/1620", "AMLD6 Directive (EU) 2024/1640"],
+  "tier": 1,
+  "entity_count": 37,
+  "relationship_count": 68,
+  "alias_entry_count": 36
+}

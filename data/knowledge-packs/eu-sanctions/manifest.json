@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "eu-sanctions",
+  "display_name": "EU Sanctions Regime — EU, UN & OFAC Frameworks",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EU autonomous sanctions, UN targeted financial sanctions, and OFAC frameworks. Covers asset freezes, designation processes, sanctions screening, licensing, and cross-references to AMLR, FATF R.6/R.7, and MiCA.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union / International",
+  "regulatory_area": "Sanctions / Targeted Financial Sanctions",
+  "regulation_ids": ["EU Sanctions Regulation", "CFSP", "UN Security Council Resolutions", "OFAC SDN", "EU 269/2014", "EU 833/2014", "EC 2271/96"],
+  "tier": 1,
+  "entity_count": 64,
+  "relationship_count": 93,
+  "alias_entry_count": 50
+}
