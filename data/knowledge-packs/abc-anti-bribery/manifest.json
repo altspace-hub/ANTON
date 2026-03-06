@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "abc-anti-bribery",
+  "display_name": "Anti-Bribery & Corruption — UKBA, FCPA, UNCAC & OECD",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for anti-bribery and corruption (ABC) compliance. Covers UK Bribery Act 2010 (Sections 1/2/6/7 and the adequate procedures defence), US Foreign Corrupt Practices Act 1977 (anti-bribery + accounting provisions), OECD Anti-Bribery Convention, UNCAC, and the proposed EU Anti-Corruption Directive. Includes ISO 37001, the Six Principles, third-party due diligence, gifts & hospitality, DPAs, self-reporting, and cross-references to AMLR, FATF, CSRD, and sanctions.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Global — UK, US, EU, International",
+  "regulatory_area": "Anti-Bribery & Corruption / Financial Crime",
+  "regulation_ids": ["UK Bribery Act 2010", "FCPA 1977", "OECD Anti-Bribery Convention 1997", "UNCAC 2003", "EU Anti-Corruption Directive 2023", "ISO 37001"],
+  "tier": 2,
+  "entity_count": 55,
+  "relationship_count": 93,
+  "alias_entry_count": 55
+}
