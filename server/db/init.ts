@@ -22,6 +22,13 @@ export function initDatabase(): Database.Database {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf-8');
   db.exec(schema);
 
+  // Run strategic improvements migration (003)
+  const migration003Path = path.join(__dirname, 'migrations', '003_strategic_improvements.sql');
+  if (fs.existsSync(migration003Path)) {
+    const migration003 = fs.readFileSync(migration003Path, 'utf-8');
+    db.exec(migration003);
+  }
+
   // Safe column migrations — SQLite doesn't support IF NOT EXISTS on ALTER TABLE
   const existingCols = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
   const colNames = existingCols.map((c) => c.name);

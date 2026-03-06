@@ -965,6 +965,23 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           {!sidebarCollapsed && t('nav.workflows')}
         </NavLinkWithStar>
 
+        {/* Event Triggers sub-nav (under Workflows) */}
+        {!sidebarCollapsed && pathname.startsWith('/workflows') && (
+          <NavLink
+            to="/workflows/triggers"
+            className={({ isActive }) =>
+              `ml-6 flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                isActive
+                  ? 'bg-adv-teal/15 text-adv-teal'
+                  : 'text-adv-gray hover:text-adv-off-white hover:bg-white/5'
+              }`
+            }
+          >
+            <Zap className="h-3.5 w-3.5 shrink-0" />
+            Event Triggers
+          </NavLink>
+        )}
+
         <NavLinkWithStar
           to="/datasets"
           navId="datasets"

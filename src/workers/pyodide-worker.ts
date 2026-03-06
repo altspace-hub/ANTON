@@ -7,7 +7,6 @@ declare const self: DedicatedWorkerGlobalScope;
 let pyodidePromise: Promise<unknown> | null = null;
 
 async function loadPyodideInstance() {
-  // @ts-expect-error — importScripts not typed in module context
   importScripts('https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js');
   // @ts-expect-error — loadPyodide is injected by the script above
   return await (globalThis as Record<string, unknown>).loadPyodide();

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { BudgetIndicator } from '@/components/shared/BudgetIndicator';
 import PrivacyIndicator from '@/components/shared/PrivacyIndicator';
 import { NotificationDropdown } from '@/components/shared/NotificationDropdown';
+import { InsightsBell } from '@/components/shared/InsightsBell';
 import ModeToggle from '@/components/school/ModeToggle';
 
 interface HeaderProps {
@@ -134,6 +135,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </button>
 
         {/* Notification Bell */}
+        <InsightsBell />
         <NotificationDropdown />
 
         {/* Theme Toggle */}

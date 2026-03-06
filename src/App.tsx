@@ -22,6 +22,7 @@ const ModulePage = lazy(() => import('./pages/ModulePage'));
 const PromptPage = lazy(() => import('./pages/PromptPage'));
 const WorkflowsPage = lazy(() => import('./pages/WorkflowsPage'));
 const WorkflowBuilder = lazy(() => import('./pages/WorkflowBuilder'));
+const EventTriggersPage = lazy(() => import('./pages/EventTriggersPage'));
 const BuildYourOwnWorkflow = lazy(() => import('./pages/BuildYourOwnWorkflow'));
 const DatasetsPage = lazy(() => import('./pages/DatasetsPage'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -282,6 +283,7 @@ export default function App() {
           <Route path="/workflows/builder" element={<WorkflowBuilder />} />
           <Route path="/workflows/builder/:id" element={<WorkflowBuilder />} />
           <Route path="/workflows/build-ai" element={<BuildYourOwnWorkflow />} />
+          <Route path="/workflows/triggers" element={<EventTriggersPage />} />
           <Route path="/datasets" element={<DatasetsPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/build-module" element={<BuildYourOwnModule />} />

@@ -330,6 +330,12 @@ const AREA_FALLBACK_MAP: Record<string, ModuleSuggestion[]> = {
     { moduleId: 'job-quote-builder', label: 'Job Quote Builder', reason: 'Write a professional quote for an upcoming job.' },
     { moduleId: 'customer-comms', label: 'Customer Message', reason: 'Write a quick message to your customer.' },
   ],
+  // Crypto & Blockchain Compliance
+  blockchain: [
+    { moduleId: 'mica-gap-analysis', label: 'MiCA Gap Analysis', reason: 'A natural starting point for any crypto compliance assessment — map your gaps against MiCA.' },
+    { moduleId: 'crypto-aml-cft', label: 'Crypto AML/CFT & Travel Rule', reason: 'Ensure AML/CFT and Travel Rule compliance for your CASP or VASP.' },
+    { moduleId: 'crypto-risk-assessment', label: 'Crypto & VASP Risk Assessment', reason: 'Assess ML/TF risk across all crypto-specific dimensions.' },
+  ],
 };
 
 /**

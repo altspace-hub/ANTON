@@ -88,6 +88,11 @@ import { createNewsRoutes } from './routes/news.js';
 import { createFinanceRoutes } from './routes/finance.js';
 import { createTravelRoutes } from './routes/travel.js';
 import { createCommunityRoutes, setCommunitySocketNS } from './routes/community.js';
+import { createTriggersRoutes } from './routes/triggers.js';
+import { createWebhooksPublicRoutes } from './routes/webhooks.js';
+import { createSessionResumeRoutes } from './routes/session-resume.js';
+import { createInsightsRoutes } from './routes/insights.js';
+import { createOrgContextRoutes } from './routes/org-context.js';
 import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
@@ -333,6 +338,12 @@ app.use('/api', createNewsRoutes(db, anthropic));
 app.use('/api', createFinanceRoutes(db, anthropic));
 app.use('/api', createTravelRoutes(db, anthropic));
 app.use('/api', createCommunityRoutes(db));
+// Strategic Improvements + Event-Driven Triggers
+app.use('/api', createTriggersRoutes(db));          // RBAC-protected trigger management
+app.use('/', createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth)
+app.use('/api', createSessionResumeRoutes(db));      // Session Resume (snapshots)
+app.use('/api', createInsightsRoutes(db));           // Proactive Intelligence
+app.use('/api', createOrgContextRoutes(db));         // Org Context Layer (prompt layer 2a)
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));

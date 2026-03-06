@@ -9,6 +9,7 @@ import { PHASE4_GLOBAL_SOUTH_MODULES } from './area-patches/phase4-global-south-
 import { PHASE4_BOP_MODULES } from './area-patches/phase4-bop-patch';
 import { CODING_MODULES } from './area-patches/coding-patch';
 import { PE_VC_MODULES } from './area-patches/pe-vc-patch';
+import { BLOCKCHAIN_MODULES } from './area-patches/blockchain-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -3228,6 +3229,19 @@ export const AREAS = [
       'fund-reporting', 'deal-structure', 'team-assessment',
     ],
   },
+  // ── Area 35: Crypto & Blockchain Compliance ────────────────────────────────
+  {
+    id: 'blockchain',
+    label: 'Crypto & Blockchain Compliance',
+    shortLabel: 'Blockchain',
+    icon: 'Blocks',
+    color: 'adv-teal',
+    moduleIds: [
+      'mica-gap-analysis', 'casp-authorization', 'stablecoin-compliance',
+      'crypto-aml-cft', 'blockchain-investigation', 'crypto-risk-assessment',
+      'defi-regulatory',
+    ],
+  },
 ] as const;
 
 export const MODELS: ModelInfo[] = [
@@ -3449,6 +3463,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...PHASE4_BOP_MODULES,
     ...CODING_MODULES,
     ...PE_VC_MODULES,
+    ...BLOCKCHAIN_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {
