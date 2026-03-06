@@ -12,6 +12,8 @@ interface EntityNode {
   interaction_count: number;
   first_seen: string;
   last_seen: string;
+  source?: 'workflow' | 'pack' | 'manual';
+  pack_id?: string | null;
 }
 
 interface MergeLogEntry {
@@ -34,6 +36,7 @@ export default function KnowledgeGraphPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [mergeModalOpen, setMergeModalOpen] = useState(false);
   const [entityMenuOpen, setEntityMenuOpen] = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'workflow' | 'pack' | 'manual'>('all');
 
   useEffect(() => {
     fetchTopEntities();
@@ -158,10 +161,17 @@ export default function KnowledgeGraphPage() {
     }
   }
 
-  const filteredEntities = (topEntities || []).filter(e =>
-    e.canonical_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.entity_type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEntities = (topEntities || []).filter(e => {
+    const matchesSearch =
+      e.canonical_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.entity_type.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSource =
+      sourceFilter === 'all' ||
+      (e.source ?? 'workflow') === sourceFilter;
+    return matchesSearch && matchesSource;
+  });
+
+  const packEntityCount = (topEntities || []).filter((e) => e.source === 'pack').length;
 
   return (
     <div className="flex flex-col h-full">
@@ -239,16 +249,33 @@ export default function KnowledgeGraphPage() {
       <div className="grid grid-cols-12 gap-4 flex-1 min-h-0">
         {/* Left sidebar: Entity list */}
         <div className="col-span-2 flex flex-col gap-4 overflow-hidden">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-adv-gray" />
-            <input
-              type="text"
-              placeholder="Search entities..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-adv-card border border-adv-gray/20 rounded text-adv-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
-            />
+          {/* Search + Source filter */}
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-adv-gray" />
+              <input
+                type="text"
+                placeholder="Search entities..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-adv-card border border-adv-gray/20 rounded text-adv-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+              />
+            </div>
+            <div className="flex gap-1">
+              {(['all', 'workflow', 'pack', 'manual'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setSourceFilter(f)}
+                  className={`flex-1 px-2 py-1 text-xs rounded transition-colors ${
+                    sourceFilter === f
+                      ? 'bg-adv-teal text-white'
+                      : 'bg-adv-card text-adv-gray hover:text-adv-off-white border border-adv-gray/20'
+                  }`}
+                >
+                  {f === 'all' ? 'All' : f === 'workflow' ? 'Workflow' : f === 'pack' ? `Pack${packEntityCount > 0 ? ` (${packEntityCount})` : ''}` : 'Manual'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Top entities */}
@@ -268,7 +295,12 @@ export default function KnowledgeGraphPage() {
                       : 'hover:bg-adv-dark-2 text-adv-gray'
                   }`}
                 >
-                  <div className="font-medium text-sm">{entity.canonical_name}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-sm">{entity.canonical_name}</span>
+                    {entity.source === 'pack' && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-adv-teal/15 text-adv-teal rounded border border-adv-teal/20 flex-shrink-0">Pack</span>
+                    )}
+                  </div>
                   <div className="text-xs opacity-70 flex items-center justify-between mt-1">
                     <span className="capitalize">{entity.entity_type}</span>
                     <span>{entity.interaction_count} interactions</span>

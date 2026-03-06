@@ -65,6 +65,47 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
     }
   });
 
+  // ── Get pack relationships (preview) ──────────────────────────────────────
+  router.get('/knowledge-packs/:id/relationships', (req: Request, res: Response) => {
+    try {
+      const pack = svc.getPack(String(req.params.id));
+      if (!pack) return res.status(404).json({ error: 'Pack not found' });
+      const limit = Math.min(parseInt(String(req.query.limit ?? '100')), 500);
+      const offset = parseInt(String(req.query.offset ?? '0'));
+      const relationships = svc.getPackRelationships(String(req.params.id), limit, offset);
+      res.json({ relationships, total: pack.relationship_count });
+    } catch (err) {
+      console.error('[knowledge-packs] relationships error:', err);
+      res.status(500).json({ error: 'Failed to get relationships' });
+    }
+  });
+
+  // ── List bundled packs (ship with ANTON in data/knowledge-packs/) ──────────
+  // MUST be before /:id to avoid route shadowing
+  router.get('/knowledge-packs/bundled/list', (_req: Request, res: Response) => {
+    try {
+      const packs = svc.listBundledPacks();
+      res.json({ packs });
+    } catch (err) {
+      console.error('[knowledge-packs] bundled list error:', err);
+      res.status(500).json({ error: 'Failed to list bundled packs' });
+    }
+  });
+
+  // ── Install a bundled pack ─────────────────────────────────────────────────
+  router.post('/knowledge-packs/bundled/:slug/install', (req: Request, res: Response) => {
+    try {
+      const slug = String(req.params.slug).replace(/[^a-z0-9-]/gi, ''); // sanitise
+      const userId = getUserId(req);
+      const pack = svc.installBundledPack(slug, userId);
+      res.status(201).json({ pack, message: `Pack '${pack.display_name}' installed with ${pack.entity_count} entities` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Install failed';
+      console.error('[knowledge-packs] bundled install error:', err);
+      res.status(400).json({ error: msg });
+    }
+  });
+
   // ── Summary (for prompt layer) — MUST be before /:id to avoid route shadowing ──
   router.get('/knowledge-packs/meta/active-summary', (_req: Request, res: Response) => {
     try {
@@ -136,8 +177,11 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
       svc.deletePack(String(req.params.id));
       res.json({ deleted: true });
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Delete failed';
       console.error('[knowledge-packs] delete error:', err);
-      res.status(500).json({ error: 'Failed to delete pack' });
+      // 409 Conflict if pack is still active
+      const status = msg.includes('currently active') ? 409 : 500;
+      res.status(status).json({ error: msg });
     }
   });
 

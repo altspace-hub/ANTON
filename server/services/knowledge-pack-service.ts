@@ -15,7 +15,14 @@
 import AdmZip from 'adm-zip';
 import crypto from 'crypto';
 import { randomUUID } from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import type Database from 'better-sqlite3';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Bundled packs live two levels up from server/services/ → project root/data/knowledge-packs/
+const BUNDLED_PACKS_DIR = path.resolve(__dirname, '../../data/knowledge-packs');
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -142,6 +149,13 @@ export function createKnowledgePackService(db: Database.Database) {
   const MAX_ALIASES         = 10_000;
   const MAX_FIELD_LENGTH    = 2_000;            // canonical_name, description, entity_id
 
+  // Valid entity types — must match the 11 types defined in entity_nodes schema
+  const VALID_ENTITY_TYPES = new Set([
+    'client', 'regulation', 'control', 'risk', 'person',
+    'system', 'product', 'geography', 'organization', 'process',
+    'document', 'obligation', 'authority', 'concept', 'threshold', 'institution',
+  ]);
+
   function validateField(value: unknown, fieldName: string): string {
     if (typeof value !== 'string') throw new Error(`Entity field '${fieldName}' must be a string`);
     if (value.length > MAX_FIELD_LENGTH) throw new Error(`Entity field '${fieldName}' exceeds max length (${MAX_FIELD_LENGTH})`);
@@ -201,13 +215,17 @@ export function createKnowledgePackService(db: Database.Database) {
     if (rawAliases.length > MAX_ALIASES)
       throw new Error(`Pack contains ${rawAliases.length} alias entries, max allowed is ${MAX_ALIASES}`);
 
-    // Validate entity shape and field lengths
+    // Validate entity shape, field lengths, and entity_type whitelist
     const entities: EntityDef[] = rawEntities.map((e: unknown, i: number) => {
       if (typeof e !== 'object' || e === null) throw new Error(`entities[${i}]: must be an object`);
       const obj = e as Record<string, unknown>;
+      const entity_type = validateField(obj.entity_type, `entities[${i}].entity_type`);
+      if (!VALID_ENTITY_TYPES.has(entity_type)) {
+        throw new Error(`entities[${i}].entity_type '${entity_type}' is not a recognised type. Valid types: ${[...VALID_ENTITY_TYPES].join(', ')}`);
+      }
       return {
         ref_id:         validateField(obj.ref_id, `entities[${i}].ref_id`),
-        entity_type:    validateField(obj.entity_type, `entities[${i}].entity_type`),
+        entity_type,
         entity_id:      validateField(obj.entity_id, `entities[${i}].entity_id`),
         canonical_name: validateField(obj.canonical_name, `entities[${i}].canonical_name`),
         description:    typeof obj.description === 'string' ? obj.description.slice(0, 4_000) : undefined,
@@ -376,10 +394,14 @@ export function createKnowledgePackService(db: Database.Database) {
   // Removes pack record and pack-only entities/relationships/aliases.
   // Nodes that were shared (originally workflow-sourced, enriched by pack) are
   // reverted to 'workflow' source rather than deleted.
+  // Pack must be deactivated first to prevent removing context mid-session.
 
   function deletePack(id: string): boolean {
     const pack = getPack(id);
     if (!pack) return false;
+    if (pack.status === 'active') {
+      throw new Error(`Pack '${pack.display_name}' is currently active. Deactivate it before deleting.`);
+    }
 
     const deleteTx = db.transaction(() => {
       // Revert shared nodes back to workflow source
@@ -421,13 +443,96 @@ export function createKnowledgePackService(db: Database.Database) {
     return `## REGULATORY KNOWLEDGE PACKS (ACTIVE)\nThe following structured regulatory knowledge packs are available:\n${lines.join('\n')}`;
   }
 
-  // ── Entity lookup helpers ──────────────────────────────────────────────────
+  // ── Entity / Relationship preview helpers ─────────────────────────────────
 
   function getPackEntities(packId: string, limit = 100, offset = 0): Record<string, unknown>[] {
     return db.prepare(
       `SELECT entity_type, entity_id, canonical_name, metadata
        FROM entity_nodes WHERE pack_id=? ORDER BY entity_type, canonical_name LIMIT ? OFFSET ?`
     ).all(packId, limit, offset) as Record<string, unknown>[];
+  }
+
+  function getPackRelationships(packId: string, limit = 100, offset = 0): Record<string, unknown>[] {
+    return db.prepare(
+      `SELECT source_type, source_id, target_type, target_id, relationship_type, strength
+       FROM entity_relationships WHERE pack_id=?
+       ORDER BY relationship_type, source_id LIMIT ? OFFSET ?`
+    ).all(packId, limit, offset) as Record<string, unknown>[];
+  }
+
+  // ── Bundled packs (ship with ANTON in data/knowledge-packs/) ──────────────
+
+  interface BundledPackInfo {
+    slug: string;
+    display_name: string;
+    version: string;
+    description: string | null;
+    regulatory_area: string | null;
+    regulation_ids: string[];
+    entity_count: number;
+    relationship_count: number;
+    alias_count: number;
+    tier: number;
+    installed_pack_id: string | null; // null = not yet imported into DB
+    status: 'available' | 'installed' | 'active' | 'deactivated';
+  }
+
+  function listBundledPacks(): BundledPackInfo[] {
+    if (!fs.existsSync(BUNDLED_PACKS_DIR)) return [];
+    const results: BundledPackInfo[] = [];
+
+    const dirs = fs.readdirSync(BUNDLED_PACKS_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory());
+
+    for (const dir of dirs) {
+      const manifestPath = path.join(BUNDLED_PACKS_DIR, dir.name, 'manifest.json');
+      if (!fs.existsSync(manifestPath)) continue;
+      try {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as PackManifest & {
+          entity_count?: number; relationship_count?: number; alias_count?: number;
+        };
+        if (manifest.bundle_type !== 'regulatory-knowledge-pack') continue;
+
+        // Check if this slug is already imported (match by name + version)
+        const existing = db.prepare(
+          `SELECT id, status FROM knowledge_packs WHERE name=? AND version=? LIMIT 1`
+        ).get(manifest.name, manifest.version) as { id: string; status: string } | undefined;
+
+        results.push({
+          slug: dir.name,
+          display_name: manifest.display_name ?? manifest.name,
+          version: manifest.version,
+          description: manifest.description ?? null,
+          regulatory_area: manifest.regulatory_area ?? null,
+          regulation_ids: manifest.regulation_ids ?? [],
+          entity_count: manifest.entity_count ?? 0,
+          relationship_count: manifest.relationship_count ?? 0,
+          alias_count: manifest.alias_count ?? 0,
+          tier: manifest.tier ?? 2,
+          installed_pack_id: existing?.id ?? null,
+          status: existing
+            ? (existing.status as BundledPackInfo['status'])
+            : 'available',
+        });
+      } catch {
+        // Skip malformed manifests
+      }
+    }
+
+    return results.sort((a, b) => a.tier - b.tier || a.display_name.localeCompare(b.display_name));
+  }
+
+  function installBundledPack(slug: string, userId: string): KnowledgePack {
+    const packDir = path.join(BUNDLED_PACKS_DIR, slug);
+    if (!fs.existsSync(packDir)) throw new Error(`Bundled pack '${slug}' not found`);
+
+    // Prefer the pre-built .anton file; fall back to building from JSON sources
+    const antonFile = path.join(packDir, `${slug}.anton`);
+    if (!fs.existsSync(antonFile)) {
+      throw new Error(`Bundled pack '${slug}' is missing its .anton file. Run: node data/knowledge-packs/build-pack.mjs ${slug}`);
+    }
+    const buffer = fs.readFileSync(antonFile);
+    return importBundle(buffer, userId);
   }
 
   return {
@@ -439,5 +544,8 @@ export function createKnowledgePackService(db: Database.Database) {
     deletePack,
     getActivePacksSummary,
     getPackEntities,
+    getPackRelationships,
+    listBundledPacks,
+    installBundledPack,
   };
 }

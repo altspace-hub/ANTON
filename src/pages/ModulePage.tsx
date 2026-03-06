@@ -123,6 +123,7 @@ export default function ModulePage() {
   const [reviewUpdating, setReviewUpdating] = useState(false);
   const [suggestedSkillsDismissed, setSuggestedSkillsDismissed] = useState(false);
   const [suggestedLibraryEntries, setSuggestedLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
+  const [activePacks, setActivePacks] = useState<Array<{ display_name: string; entity_count: number; relationship_count: number }>>([]);
   const [myWayActive, setMyWayActive] = useState(false);
   const [learnOffered, setLearnOffered] = useState(false);
   const [learnSaving, setLearnSaving] = useState(false);
@@ -132,6 +133,14 @@ export default function ModulePage() {
   // Also depends on uploadedFileIds.length so this re-runs after clearSession() resets
   // the store to [] — ensuring files are re-synced even when the user navigates away
   // and back to the same module (which calls clearSession again).
+  // Fetch active knowledge packs once for the context indicator
+  useEffect(() => {
+    fetch('/api/knowledge-packs', { headers: { Authorization: `Bearer ${localStorage.getItem('openexpert-token')}` } })
+      .then((r) => r.ok ? r.json() : { packs: [] })
+      .then((d) => setActivePacks((d.packs || []).filter((p: { status: string }) => p.status === 'active')))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const completedIds = files.filter((f) => f.status === 'done').map((f) => f.id);
     setUploadedFileIds(completedIds);
@@ -729,6 +738,17 @@ export default function ModulePage() {
 
           {/* Knowledge Sources */}
           <KnowledgeSourcePanel config={knowledgeSources} onChange={setKnowledgeSources} />
+          {activePacks.length > 0 && (
+            <div className="mt-1 px-3 py-2 bg-adv-teal-soft border border-adv-teal/20 rounded flex items-start gap-2">
+              <span className="text-adv-teal mt-0.5 flex-shrink-0">⚡</span>
+              <span className="text-xs text-adv-off-white">
+                <span className="text-adv-teal font-medium">{activePacks.length === 1 ? activePacks[0].display_name : `${activePacks.length} regulatory packs`}</span>{' '}
+                active —{' '}
+                {activePacks.reduce((s, p) => s + p.entity_count, 0).toLocaleString()} entities and{' '}
+                {activePacks.reduce((s, p) => s + p.relationship_count, 0).toLocaleString()} relationships available to Claude.
+              </span>
+            </div>
+          )}
           {suggestedLibraryEntries.length > 0 && (
             <div className="mt-2 px-3 py-2 bg-adv-teal-soft border border-adv-teal/20 rounded flex items-start justify-between gap-2">
               <span className="text-xs text-adv-off-white">
