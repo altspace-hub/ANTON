@@ -1,0 +1,21 @@
+[
+  {"ref_id": "REG-SOL2",       "aliases": ["Solvency II", "Solvency 2", "Directive 2009/138", "insurance capital regulation", "EU insurance regulation", "SII"]},
+  {"ref_id": "REG-SOL2-REV",  "aliases": ["Solvency II Review", "Solvency II 2023", "Solvency II reform", "new Solvency II"]},
+  {"ref_id": "DEF-SCR",       "aliases": ["SCR", "Solvency Capital Requirement", "capital requirement insurance", "insurance SCR", "risk-based capital insurance"]},
+  {"ref_id": "DEF-MCR",       "aliases": ["MCR", "Minimum Capital Requirement", "minimum capital insurance", "insurance MCR"]},
+  {"ref_id": "DEF-ORSA",      "aliases": ["ORSA", "Own Risk and Solvency Assessment", "insurance risk assessment", "Solvency II ORSA", "Art 45 Solvency II"]},
+  {"ref_id": "DEF-SFCR",      "aliases": ["SFCR", "Solvency and Financial Condition Report", "insurance disclosure", "Solvency II disclosure", "SFCR report"]},
+  {"ref_id": "DEF-INSUR-AML", "aliases": ["life insurance AML", "insurance obliged entity", "insurance AML obligation", "life insurer AMLR", "life insurance CDD"]},
+  {"ref_id": "DEF-BENEF-INSUR","aliases": ["insurance beneficiary", "policy beneficiary", "beneficiary CDD insurance", "life insurance beneficiary screening"]},
+  {"ref_id": "DEF-UNIT-LINKED","aliases": ["unit-linked insurance", "unit-linked", "investment-linked insurance", "variable annuity EU", "IBIP"]},
+  {"ref_id": "DEF-REINSURE",  "aliases": ["reinsurance", "reinsurer", "reinsurance AML", "reinsurance ML risk"]},
+  {"ref_id": "DEF-INT-MODEL", "aliases": ["internal model", "Solvency II internal model", "insurance internal model", "IM Solvency II"]},
+  {"ref_id": "ART-SOL2-GOV", "aliases": ["Solvency II governance", "Art 41 Solvency II", "system of governance Solvency II", "insurance governance requirements"]},
+  {"ref_id": "DEF-FOUR-FUNC","aliases": ["four key functions", "Solvency II functions", "insurance key functions", "risk compliance audit actuarial"]},
+  {"ref_id": "XREF-SOL2-AMLR","aliases": ["Solvency II AML", "insurance AML intersection", "insurance AMLR", "life insurance money laundering"]},
+  {"ref_id": "XREF-SOL2-CSRD","aliases": ["Solvency II ESG", "insurance CSRD", "ORSA sustainability", "Solvency II climate risk"]},
+  {"ref_id": "ORG-EIOPA",     "aliases": ["EIOPA", "European Insurance Authority", "insurance supervisor EU", "EU insurance regulator", "EIOPA guidelines"]},
+  {"ref_id": "DEF-PRIIPS",    "aliases": ["PRIIPs", "PRIIPs KID", "Key Information Document", "packaged insurance product", "investment-based insurance PRIIPs"]},
+  {"ref_id": "DEF-AML-INSUR-PROC","aliases": ["insurance CDD process", "life insurance due diligence", "insurer AML process", "policyholder CDD insurance"]},
+  {"ref_id": "DEF-INSUR-RING","aliases": ["insurance ML typology", "premium manipulation", "early surrender ML", "insurance fraud ML", "policy assignment ML"]}
+]

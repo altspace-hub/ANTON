@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "solvency-ii-insurance-aml",
+  "display_name": "Solvency II & Insurance AML — Insurance Prudential & Financial Crime",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for Solvency II (Directive 2009/138/EC) and insurance-specific AML obligations under AMLR. Covers SCR, MCR, ORSA, governance functions, life insurance CDD, and cross-references to CSRD and GDPR.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Insurance / Reinsurance",
+  "regulation_ids": ["Solvency II 2009/138/EC", "AMLR 2024/1624 Art.3", "PRIIPs 1286/2014"],
+  "tier": 2,
+  "entity_count": 20,
+  "relationship_count": 32,
+  "alias_entry_count": 19
+}

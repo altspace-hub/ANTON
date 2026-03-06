@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "emir-sftr",
+  "display_name": "EMIR & SFTR — Derivatives & Securities Financing",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EMIR (Regulation 648/2012), EMIR REFIT (2019/834), EMIR 3.0, and SFTR (Regulation 2365/2015). Covers CCPs, clearing obligations, margin, repo reporting, and cross-references to AMLR, DORA, and MiFIR.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Financial Market Infrastructure / Derivatives",
+  "regulation_ids": ["EMIR 648/2012", "EMIR REFIT 2019/834", "EMIR 3.0", "SFTR 2365/2015"],
+  "tier": 2,
+  "entity_count": 23,
+  "relationship_count": 39,
+  "alias_entry_count": 22
+}

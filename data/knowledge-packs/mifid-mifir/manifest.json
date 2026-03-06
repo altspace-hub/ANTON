@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "mifid-mifir",
+  "display_name": "MiFID II/MiFIR — Markets in Financial Instruments",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for MiFID II (Directive 2014/65/EU) and MiFIR (Regulation 600/2014). Covers investment firm obligations, trading venues, transaction reporting, suitability, and cross-references to AMLR, MAR, and DORA.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Capital Markets / Investment Services",
+  "regulation_ids": ["MiFID II 2014/65/EU", "MiFIR 600/2014", "MAR 596/2014"],
+  "tier": 2,
+  "entity_count": 28,
+  "relationship_count": 44,
+  "alias_entry_count": 24
+}

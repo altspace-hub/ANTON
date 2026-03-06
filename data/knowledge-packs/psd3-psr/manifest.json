@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "psd3-psr",
+  "display_name": "PSD3 & PSR — Payment Services Directive 3 & Regulation",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for PSD3 (proposed), PSR (proposed), PSD2 (Directive 2015/2366), and TFR (Regulation 2023/1113 Travel Rule). Covers PSP obligations, SCA, open banking, IBAN verification, and Travel Rule compliance.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Payment Services",
+  "regulation_ids": ["PSD2 2015/2366", "PSD3 proposed", "PSR proposed", "TFR 2023/1113"],
+  "tier": 2,
+  "entity_count": 24,
+  "relationship_count": 39,
+  "alias_entry_count": 24
+}
