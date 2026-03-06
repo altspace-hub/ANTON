@@ -54,6 +54,8 @@ interface RelationshipDef {
   to_ref: string;
   relationship_type: string; // e.g. 'references', 'supersedes', 'implements', 'requires'
   strength?: number;         // 0.0–1.0, default 1.0
+  description?: string;      // human-readable explanation of the relationship
+  metadata?: Record<string, unknown>; // arbitrary key/value annotations
 }
 
 interface AliasDef {
@@ -241,6 +243,8 @@ export function createKnowledgePackService(db: Database.Database) {
         to_ref:            validateField(obj.to_ref, `relationships[${i}].to_ref`),
         relationship_type: validateField(obj.relationship_type, `relationships[${i}].relationship_type`),
         strength:          typeof obj.strength === 'number' ? Math.min(1, Math.max(0, obj.strength)) : 1.0,
+        description:       typeof obj.description === 'string' ? obj.description.slice(0, 2_000) : undefined,
+        metadata:          typeof obj.metadata === 'object' && obj.metadata !== null ? obj.metadata as Record<string, unknown> : undefined,
       };
     });
 
@@ -320,24 +324,34 @@ export function createKnowledgePackService(db: Database.Database) {
       // Where duplicates exist, keep the highest strength value.
       const insertRel = db.prepare(`
         INSERT OR IGNORE INTO entity_relationships
-          (id, source_type, source_id, target_type, target_id, relationship_type, strength, source, pack_id)
-        VALUES (lower(hex(randomblob(8))), ?, ?, ?, ?, ?, ?, 'pack', ?)
+          (id, source_type, source_id, target_type, target_id, relationship_type, strength, description, metadata, source, pack_id)
+        VALUES (lower(hex(randomblob(8))), ?, ?, ?, ?, ?, ?, ?, ?, 'pack', ?)
       `);
 
-      const seenRels = new Map<string, number>(); // key → best strength
+      type RelData = { strength: number; description?: string; metadata?: Record<string, unknown> };
+      const seenRels = new Map<string, RelData>(); // key → best entry by strength
       for (const r of relationships) {
         const from = refMap.get(r.from_ref);
         const to = refMap.get(r.to_ref);
         if (!from || !to) continue; // skip broken references
         const key = `${from.entity_type}|${from.entity_id}|${to.entity_type}|${to.entity_id}|${r.relationship_type}`;
-        const best = seenRels.get(key) ?? -1;
-        if ((r.strength ?? 1.0) > best) seenRels.set(key, r.strength ?? 1.0);
+        const strength = r.strength ?? 1.0;
+        const best = seenRels.get(key);
+        if (!best || strength > best.strength) {
+          seenRels.set(key, { strength, description: r.description, metadata: r.metadata });
+        }
       }
 
       let relCount = 0;
-      for (const [key, strength] of seenRels) {
+      for (const [key, data] of seenRels) {
         const [sourceType, sourceId, targetType, targetId, relType] = key.split('|');
-        insertRel.run(sourceType, sourceId, targetType, targetId, relType, strength, packId);
+        insertRel.run(
+          sourceType, sourceId, targetType, targetId, relType,
+          data.strength,
+          data.description ?? null,
+          data.metadata ? JSON.stringify(data.metadata) : null,
+          packId,
+        );
         relCount++;
       }
 
@@ -454,7 +468,7 @@ export function createKnowledgePackService(db: Database.Database) {
 
   function getPackRelationships(packId: string, limit = 100, offset = 0): Record<string, unknown>[] {
     return db.prepare(
-      `SELECT source_type, source_id, target_type, target_id, relationship_type, strength
+      `SELECT source_type, source_id, target_type, target_id, relationship_type, strength, description, metadata
        FROM entity_relationships WHERE pack_id=?
        ORDER BY relationship_type, source_id LIMIT ? OFFSET ?`
     ).all(packId, limit, offset) as Record<string, unknown>[];

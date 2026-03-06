@@ -43,6 +43,18 @@ export function initDatabase(): Database.Database {
     }
   }
 
+  // Migration 006b: Add description + metadata columns to entity_relationships
+  // (added in Phase 4 of Knowledge Packs — stores per-relationship annotations)
+  const relDescColExists = db.prepare(
+    "SELECT COUNT(*) as c FROM pragma_table_info('entity_relationships') WHERE name='description'"
+  ).get() as { c: number };
+  if (relDescColExists.c === 0) {
+    db.exec(`
+      ALTER TABLE entity_relationships ADD COLUMN description TEXT;
+      ALTER TABLE entity_relationships ADD COLUMN metadata TEXT;
+    `);
+  }
+
   // Seed pre-built event-driven workflow definitions (from event-triggers spec)
   try {
     const eventWfCount = db.prepare(

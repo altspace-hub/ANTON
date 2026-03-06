@@ -6,7 +6,19 @@
 import { Router, Request, Response } from 'express';
 import type Database from 'better-sqlite3';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
+
+// Rate limit bundle imports to 10 per 15 minutes per IP.
+// Importing a pack parses a ZIP, validates thousands of entities, and runs
+// a bulk-insert transaction — expensive enough to warrant throttling.
+const importRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many pack imports — try again in 15 minutes.' },
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -93,7 +105,7 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Install a bundled pack ─────────────────────────────────────────────────
-  router.post('/knowledge-packs/bundled/:slug/install', (req: Request, res: Response) => {
+  router.post('/knowledge-packs/bundled/:slug/install', importRateLimit, (req: Request, res: Response) => {
     try {
       const slug = String(req.params.slug).replace(/[^a-z0-9-]/gi, ''); // sanitise
       const userId = getUserId(req);
@@ -118,7 +130,7 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Import pack from .anton bundle ─────────────────────────────────────────
-  router.post('/knowledge-packs/import', upload.single('bundle'), (req: Request, res: Response) => {
+  router.post('/knowledge-packs/import', importRateLimit, upload.single('bundle'), (req: Request, res: Response) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'No bundle file uploaded (field: bundle)' });
       const userId = getUserId(req);

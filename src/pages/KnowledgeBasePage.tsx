@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus, Trash2, FileText, Database as DatabaseIcon, AlertCircle, RefreshCw,
   Package, Upload, CheckCircle, XCircle, Globe, ToggleLeft, ToggleRight, Eye,
@@ -904,7 +905,9 @@ function RegulatoryPacksTab() {
 type Tab = 'collections' | 'regulatory-packs';
 
 export default function KnowledgeBasePage() {
-  const [activeTab, setActiveTab] = useState<Tab>('collections');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') as Tab) ?? 'collections';
+  const setActiveTab = (tab: Tab) => setSearchParams({ tab });
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'collections', label: 'Collections', icon: <DatabaseIcon className="h-4 w-4" /> },
