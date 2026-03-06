@@ -145,8 +145,25 @@ export default function OrchestrationDashboard() {
       if (insRes.status === 'fulfilled') setInsights(insRes.value.insights ?? []);
       if (unreadRes.status === 'fulfilled') setUnreadCount(unreadRes.value.count ?? 0);
       if (profRes.status === 'fulfilled') setProfiles(profRes.value.profiles ?? []);
-      if (trigRes.status === 'fulfilled') setTriggerSummary(trigRes.value ?? null);
-      if (sessRes.status === 'fulfilled') setRecentSessions(sessRes.value.sessions ?? []);
+      if (trigRes.status === 'fulfilled' && Array.isArray(trigRes.value?.summary)) {
+        // Compute aggregate stats from the per-trigger summary array
+        const items = trigRes.value.summary as Array<{
+          status: string;
+          metrics: { events_received: number; events_triggered: number };
+        }>;
+        setTriggerSummary({
+          active: items.filter(t => t.status === 'active').length,
+          paused: items.filter(t => t.status === 'paused').length,
+          error: items.filter(t => t.status === 'error').length,
+          events_24h: items.reduce((sum, t) => sum + (t.metrics?.events_received ?? 0), 0),
+          triggered_24h: items.reduce((sum, t) => sum + (t.metrics?.events_triggered ?? 0), 0),
+        });
+      }
+      if (sessRes.status === 'fulfilled') {
+        // Sessions API returns a raw array (not wrapped) — handle both shapes defensively
+        const sessData = sessRes.value;
+        setRecentSessions(Array.isArray(sessData) ? sessData : (sessData?.sessions ?? []));
+      }
     } finally {
       setLoading(false);
       setLastRefresh(new Date());

@@ -219,21 +219,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
     }
   });
 
-  // ── Metrics ────────────────────────────────────────────────────────────────
-  router.get('/triggers/:id/metrics', (req: Request, res: Response) => {
-    try {
-      const trigger = listener.getTrigger(String(req.params.id));
-      if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
-
-      const hours = parseInt(String(String(req.query.hours) || '24'));
-      const metrics = listener.getTriggerMetrics(String(req.params.id), hours);
-      res.json({ metrics });
-    } catch (err) {
-      console.error('[triggers] metrics error:', err);
-      res.status(500).json({ error: 'Failed to get metrics' });
-    }
-  });
-
+  // ── Metrics (summary MUST be before /:id/metrics to avoid route shadowing) ──
   router.get('/triggers/metrics/summary', (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
@@ -249,6 +235,20 @@ export function createTriggersRoutes(db: Database.Database): Router {
     } catch (err) {
       console.error('[triggers] summary metrics error:', err);
       res.status(500).json({ error: 'Failed to get metrics summary' });
+    }
+  });
+
+  router.get('/triggers/:id/metrics', (req: Request, res: Response) => {
+    try {
+      const trigger = listener.getTrigger(String(req.params.id));
+      if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
+
+      const hours = parseInt(String(req.query.hours || '24'), 10) || 24;
+      const metrics = listener.getTriggerMetrics(String(req.params.id), hours);
+      res.json({ metrics });
+    } catch (err) {
+      console.error('[triggers] metrics error:', err);
+      res.status(500).json({ error: 'Failed to get metrics' });
     }
   });
 

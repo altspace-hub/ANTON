@@ -149,6 +149,8 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 CREATE INDEX IF NOT EXISTS idx_webhook_events_trigger ON webhook_events(trigger_id, received_at DESC);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_dedup ON webhook_events(trigger_id, dedup_signature);
+-- Covering index for rate-limit checks (trigger_id + status + received_at avoids post-filter scan)
+CREATE INDEX IF NOT EXISTS idx_webhook_events_rate_limit ON webhook_events(trigger_id, status, received_at DESC);
 
 CREATE TABLE IF NOT EXISTS webhook_trigger_metrics (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

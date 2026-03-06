@@ -64,14 +64,17 @@ export function createOrgContextService(db: Database) {
 
     if (existing) return parseOrgContext(existing);
 
-    // Create empty default context
+    // Create empty default context — use INSERT OR IGNORE then fetch directly
+    // (no recursion: another process may have already inserted between our SELECT and INSERT)
     const now = new Date().toISOString();
     db.prepare(`
       INSERT OR IGNORE INTO org_context (id, user_id, updated_at)
       VALUES (?, ?, ?)
     `).run(CONTEXT_ID, userId, now);
 
-    return getContext(userId);
+    const created = db.prepare('SELECT * FROM org_context WHERE id = ?').get(CONTEXT_ID) as RawOrgContextRow | undefined;
+    if (!created) throw new Error('Failed to initialise org context');
+    return parseOrgContext(created);
   }
 
   /**

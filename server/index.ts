@@ -31,6 +31,7 @@ import { createAdminRoutes } from './routes/admin.js';
 import { createAnalyticsRouter } from './routes/analytics.js';
 import { createScheduleRoutes } from './routes/schedules.js';
 import { initScheduler } from './services/scheduler.js';
+import { startEventWorkflowProcessor } from './services/event-workflow-processor.js';
 import { createVersionsRoutes } from './routes/versions.js';
 import { createConnectionsRoutes } from './routes/connections.js';
 import { createBridgePublicRoutes, createBridgeRoutes } from './routes/bridges.js';
@@ -211,6 +212,9 @@ const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: proces
 
 // Initialize workflow scheduler
 initScheduler(db);
+
+// Initialize event-driven workflow processor (picks up pending webhook-triggered runs)
+startEventWorkflowProcessor(db);
 
 // Initialize pattern detection background job (runs every hour)
 const patternDetection = createPatternDetection(db);

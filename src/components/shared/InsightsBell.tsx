@@ -102,9 +102,10 @@ export function InsightsBell() {
   }
 
   async function handleDismiss(insightId: string) {
+    // Capture wasUnread BEFORE removing from state (stale-closure fix)
+    const wasUnread = insights.find((i) => i.id === insightId)?.read === false;
     await fetch(`/api/insights/${insightId}/dismiss`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     setInsights((prev) => prev.filter((i) => i.id !== insightId));
-    const wasUnread = insights.find((i) => i.id === insightId)?.read === false;
     if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
   }
 
@@ -132,7 +133,11 @@ export function InsightsBell() {
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-96 max-h-[480px] overflow-y-auto bg-adv-card border border-white/10 rounded-xl shadow-2xl z-50">
+        <div
+          role="region"
+          aria-label="Proactive insights panel"
+          className="absolute right-0 top-full mt-2 w-96 max-h-[480px] overflow-y-auto bg-adv-card border border-white/10 rounded-xl shadow-2xl z-50"
+        >
           <div className="sticky top-0 bg-adv-card border-b border-white/10 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-adv-teal" />
@@ -141,7 +146,7 @@ export function InsightsBell() {
                 <span className="text-xs bg-adv-teal/20 text-adv-teal px-2 py-0.5 rounded-full">{unreadCount} new</span>
               )}
             </div>
-            <button onClick={() => setOpen(false)} className="text-adv-gray hover:text-adv-off-white">
+            <button onClick={() => setOpen(false)} aria-label="Close insights panel" className="text-adv-gray hover:text-adv-off-white">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -186,7 +191,7 @@ export function InsightsBell() {
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDismiss(insight.id); }}
                       className="shrink-0 opacity-50 hover:opacity-100 transition-opacity"
-                      title="Dismiss"
+                      aria-label={`Dismiss: ${insight.title}`}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>

@@ -6,6 +6,7 @@ import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-eng
 import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
+import { buildOrgContextLayer, buildResumeContextLayer } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import { runMultiAgent } from '../services/multi-agent-orchestrator.js';
 import { writeAuditEntry } from '../services/auditLogger.js';
@@ -424,6 +425,10 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       // Prompt) can be marked with cache_control and cached by Anthropic between API calls,
       // reducing costs ~90% on those tokens. Dynamic layers (output format instructions,
       // knowledge additions, reference documents, etc.) are sent in a second uncached block.
+      // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
+      const orgContextPrompt = buildOrgContextLayer(db, (req as any).user?.id || 'default');
+      const resumeContextPrompt = sessionId ? buildResumeContextLayer(db, String(sessionId)) : '';
+
       const promptComposerConfig = {
         moduleId,
         areaId,
@@ -448,6 +453,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         knowledgeContextDocuments: resolved.contextDocuments,
         userProfile: userProfile || null,
         businessContext: businessContext || null,
+        orgContextPrompt: orgContextPrompt || undefined,
+        resumeContextPrompt: resumeContextPrompt || undefined,
       } as const;
 
       // Use the split composer for Anthropic models (supports caching); plain for others.

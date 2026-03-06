@@ -108,6 +108,10 @@ export interface PromptComposerConfig {
   userProfile?: UserProfileData | null;
   /** Trades: My Way of Working — business identity, template, and process pattern enrichment */
   businessContext?: string | null;
+  /** Layer 2a: Org-wide context (jurisdiction, priorities, risk appetite) — built by buildOrgContextLayer() */
+  orgContextPrompt?: string;
+  /** Layer 4a: Session resume context (snapshot summary, decisions, next steps) — built by buildResumeContextLayer() */
+  resumeContextPrompt?: string;
 }
 
 // ── Main Compose Function ──────────────────────────────────
@@ -293,6 +297,9 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   // Layer 2: ANTON Ground Work Prompt
   parts.push(getFoundationPrompt());
 
+  // Layer 2a: Organisational Context — org-wide settings injected after foundation
+  if (config.orgContextPrompt?.trim()) parts.push(config.orgContextPrompt.trim());
+
   // Layer 3: Area Context — domain landscape, regulatory framework, terminology
   const areaId = config.areaId;
   if (areaId) {
@@ -309,6 +316,9 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
     modulePrompt = (await getModuleSystemPrompt(config.moduleId)) ?? '';
   }
   if (modulePrompt) parts.push(modulePrompt);
+
+  // Layer 4a: Session Resume Context — restores paused-session state after module prompt
+  if (config.resumeContextPrompt?.trim()) parts.push(config.resumeContextPrompt.trim());
 
   // Layer 5: Expert Personas (single or multi-select)
   // Personas run before Skills so the character/role shapes how skills are applied.
@@ -406,6 +416,9 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
   // Layer 2: ANTON Ground Work Prompt
   staticParts.push(getFoundationPrompt());
 
+  // Layer 2a: Organisational Context
+  if (config.orgContextPrompt?.trim()) staticParts.push(config.orgContextPrompt.trim());
+
   // Layer 3: Area Context
   if (config.areaId) {
     const areaContext = await getAreaContext(config.areaId);
@@ -420,6 +433,9 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
     modulePrompt = (await getModuleSystemPrompt(config.moduleId)) ?? '';
   }
   if (modulePrompt) staticParts.push(modulePrompt);
+
+  // Layer 4a: Session Resume Context
+  if (config.resumeContextPrompt?.trim()) staticParts.push(config.resumeContextPrompt.trim());
 
   const staticPart = staticParts.filter(Boolean).join(SEP);
 
