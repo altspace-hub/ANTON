@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "wolfsberg-principles",
+  "display_name": "Wolfsberg Group Principles — Industry AML Standards",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for Wolfsberg Group AML industry standards. Covers Wolfsberg CBR Principles, CBDDQ (Correspondent Banking Due Diligence Questionnaire), Private Banking Principles, Trade Finance Principles, Sanctions Screening Guidance, Payment Transparency Standards, negative news screening, TBML, PEP screening, and source of wealth verification.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Global",
+  "regulatory_area": "Industry Self-Regulation / AML Best Practice",
+  "regulation_ids": ["Wolfsberg CBR Principles 2014", "Wolfsberg CBDDQ", "Wolfsberg Private Banking Principles 2012", "Wolfsberg Trade Finance Principles", "Wolfsberg Sanctions Screening Guidance", "Wolfsberg Payment Transparency Standards"],
+  "tier": 3,
+  "entity_count": 18,
+  "relationship_count": 25,
+  "alias_entry_count": 18
+}

@@ -1,0 +1,21 @@
+[
+  {"ref_id": "MSG-MT103",     "aliases": ["MT103", "SWIFT MT103", "customer credit transfer", "wire transfer message", "single customer credit transfer", "Field 50 Field 59", "originator beneficiary SWIFT"]},
+  {"ref_id": "MSG-MT202",     "aliases": ["MT202", "SWIFT MT202", "bank-to-bank transfer", "financial institution transfer", "general financial institution transfer", "interbank transfer SWIFT"]},
+  {"ref_id": "MSG-MT202COV",  "aliases": ["MT202 COV", "MT202COV", "cover payment message", "SWIFT cover payment", "cover payment transfer", "MT202 cover"]},
+  {"ref_id": "MSG-MT199",     "aliases": ["MT199", "SWIFT MT199", "free format message", "SWIFT inquiry message", "payment investigation SWIFT"]},
+  {"ref_id": "MSG-PACS008",   "aliases": ["pacs.008", "pacs008", "ISO 20022 credit transfer", "FIToFI customer credit transfer", "ISO 20022 MT103 equivalent", "SWIFT ISO 20022 customer payment"]},
+  {"ref_id": "MSG-PACS009",   "aliases": ["pacs.009", "pacs009", "ISO 20022 bank-to-bank transfer", "FI credit transfer ISO 20022", "SWIFT ISO 20022 MT202 equivalent"]},
+  {"ref_id": "MSG-CAMT053",   "aliases": ["camt.053", "camt053", "bank-to-customer statement", "ISO 20022 account statement", "end-of-day statement ISO 20022"]},
+  {"ref_id": "DEF-SWIFT",     "aliases": ["SWIFT", "Society for Worldwide Interbank Financial Telecommunication", "SWIFT network", "SWIFT messaging", "SWIFT system", "financial messaging network"]},
+  {"ref_id": "DEF-BIC-SWIFT", "aliases": ["BIC", "SWIFT code", "Bank Identifier Code", "SWIFT BIC", "bank code SWIFT", "institution identifier SWIFT"]},
+  {"ref_id": "DEF-LEI-SWIFT", "aliases": ["LEI payments", "Legal Entity Identifier ISO 20022", "LEI in pacs.008", "GLEIF payments", "legal entity identifier SWIFT", "LEI cross-border payment"]},
+  {"ref_id": "DEF-SWIFT-GPI", "aliases": ["SWIFT gpi", "global payments innovation", "gpi", "SWIFT gpi tracking", "cross-border payment tracking", "SWIFT same-day processing"]},
+  {"ref_id": "DEF-UETR",      "aliases": ["UETR", "Unique End-to-End Transaction Reference", "UUID payment", "payment tracking reference", "gpi tracking number", "end-to-end transaction reference"]},
+  {"ref_id": "DEF-ISO20022",  "aliases": ["ISO 20022", "ISO20022", "financial messaging standard", "SWIFT migration ISO 20022", "structured payment data", "rich payment data standard", "November 2025 SWIFT migration"]},
+  {"ref_id": "DEF-COVER-PAY", "aliases": ["cover payment", "cover payment structure", "MT103 MT202 cover", "serial vs cover", "cover leg payment", "cover payment AML risk"]},
+  {"ref_id": "DEF-FIELD50",   "aliases": ["Field 50", "SWIFT field 50", "ordering customer field", "originator field MT103", "field 50F", "field 50K", "field 50a", "TFR originator field SWIFT"]},
+  {"ref_id": "DEF-FIELD59",   "aliases": ["Field 59", "SWIFT field 59", "beneficiary field", "beneficiary customer MT103", "field 59F", "TFR beneficiary field SWIFT", "field 59a"]},
+  {"ref_id": "DEF-SWIFT-SANC-CHECK", "aliases": ["SWIFT sanctions screening", "payment sanctions screening", "SWIFT filter", "sanctions payment filter", "pre-send sanctions screening", "OFAC payment screening", "EU sanctions payment check"]},
+  {"ref_id": "XREF-SWIFT-TFR","aliases": ["SWIFT Travel Rule", "TFR SWIFT fields", "Travel Rule payment fields", "originator beneficiary TFR", "Wire Transfer Regulation SWIFT", "Regulation 2023/1113 SWIFT", "payment chain information SWIFT"]},
+  {"ref_id": "XREF-SWIFT-SANC","aliases": ["SWIFT Russia sanctions", "SWIFT Iran exclusion", "SWIFT disconnection sanctions", "Russia SWIFT ban", "SWIFT exclusion", "sanctions SWIFT network", "SWIFT enforcement tool"]}
+]

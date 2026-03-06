@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "nordic-supervisors",
+  "display_name": "Nordic Financial Supervisors — FI, Finanstilsynet, FIN-FSA & FIUs",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for Nordic financial supervisory authorities and FIUs. Covers Finansinspektionen (SE), FIN-FSA (FI), Finanstilsynet (NO and DK), and the four Nordic FIUs (Finanspolisen, KRP, Økokrim, Hvidvasksekretariatet). Includes supervisory guidance, AML inspection methodology, enforcement powers, SAR filing processes, FATF mutual evaluations, and AMLA college participation.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Nordic — Sweden, Finland, Norway, Denmark",
+  "regulatory_area": "Nordic Regulatory Supervision / AML/CFT",
+  "regulation_ids": ["Finansinspektionen FFFS", "Finanstilsynet Rundskriv", "Hvitvaskingsloven NO", "EBA/GL/2021/02 Nordic adoption", "FATF Mutual Evaluations Nordic"],
+  "tier": 3,
+  "entity_count": 19,
+  "relationship_count": 34,
+  "alias_entry_count": 19
+}

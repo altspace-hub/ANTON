@@ -1,0 +1,23 @@
+[
+  {"ref_id": "REG-AMLR-MANDATE", "aliases": ["AMLR RTS mandate", "AMLR technical standards", "AMLA mandated RTS", "AMLR 2024/1624 RTS", "AMLA mandates", "AMLR delegated acts"]},
+  {"ref_id": "RTS-001-RISK",     "aliases": ["RTS risk factors", "AMLA risk factors RTS", "SDD EDD RTS", "simplified due diligence RTS", "enhanced due diligence criteria", "risk factors technical standard", "AMLR Art.28 RTS", "AMLR Art.29 RTS"]},
+  {"ref_id": "RTS-002-CDD",      "aliases": ["RTS CDD standard", "CDD technical standard", "customer identification RTS", "identity verification RTS", "AMLR Art.22 RTS", "verification methods RTS"]},
+  {"ref_id": "RTS-003-REMOTE",   "aliases": ["remote onboarding RTS", "digital onboarding RTS", "video ID RTS", "eIDAS AML RTS", "non-face-to-face RTS", "AMLR Art.23 RTS", "liveness detection RTS"]},
+  {"ref_id": "RTS-004-BO",       "aliases": ["beneficial ownership RTS", "BO verification RTS", "UBO RTS", "beneficial owner verification technical standard", "AMLR Art.50 RTS", "complex structure BO RTS"]},
+  {"ref_id": "RTS-005-GROUP",    "aliases": ["group policy RTS", "group-wide AML RTS", "group AML procedures RTS", "AMLR Art.15 RTS", "group AML technical standard"]},
+  {"ref_id": "RTS-006-EDD-HRTC", "aliases": ["EDD high-risk third countries RTS", "HRTC RTS", "FATF blacklist EDD RTS", "FATF greylist EDD RTS", "AMLR Art.35 RTS", "high-risk jurisdiction EDD"]},
+  {"ref_id": "RTS-007-CBR",      "aliases": ["correspondent banking RTS", "CBR EDD RTS", "respondent bank RTS", "AMLR Art.38 RTS", "correspondent banking technical standard"]},
+  {"ref_id": "RTS-008-PEP",      "aliases": ["PEP list RTS", "PEP functions RTS", "politically exposed persons RTS", "AMLR Art.44 RTS", "PEP status criteria RTS", "prominent public functions RTS"]},
+  {"ref_id": "RTS-009-TM",       "aliases": ["transaction monitoring RTS", "TM system RTS", "alert management RTS", "AMLR Art.59 RTS", "monitoring scenario RTS"]},
+  {"ref_id": "RTS-010-SAR",      "aliases": ["SAR format RTS", "suspicious activity report RTS", "SAR harmonisation RTS", "goAML RTS", "AMLR Art.69 RTS", "SAR template EU"]},
+  {"ref_id": "ITS-001-SUP-METH", "aliases": ["supervisory methodology ITS", "AML supervisory ITS", "AMLA supervisory convergence ITS", "inspection methodology ITS", "supervisory benchmarks ITS"]},
+  {"ref_id": "ITS-002-DATA",     "aliases": ["AMLA data reporting ITS", "AML database ITS", "SAR statistics ITS", "AMLA central database", "AMLA Art.11 ITS"]},
+  {"ref_id": "ITS-003-DSE",      "aliases": ["DSE selection ITS", "direct supervision selection", "AMLA DSE methodology", "directly supervised entity selection", "AMLA Art.13 ITS", "40 DSEs AMLA"]},
+  {"ref_id": "GL-AMLA-001",      "aliases": ["AMLA internal governance guidelines", "MLRO guidelines AMLA", "AML/CFT function guidelines", "management body AML AMLA", "AMLR Art.9 guidelines"]},
+  {"ref_id": "GL-AMLA-002",      "aliases": ["staff screening guidelines AMLA", "MLRO fit proper AMLA", "AMLR Art.10 guidelines", "background check AML guidelines"]},
+  {"ref_id": "STATUS-CONSULT",   "aliases": ["consultation period RTS", "public consultation AMLA", "RTS consultation", "AMLA consultation paper", "AML technical standard consultation"]},
+  {"ref_id": "STATUS-FINAL",     "aliases": ["final draft RTS", "AMLA final draft", "Commission endorsement RTS", "submitted to Commission RTS", "adopted RTS draft"]},
+  {"ref_id": "STATUS-OJ",        "aliases": ["published Official Journal", "OJ publication RTS", "legally binding RTS", "entered into force RTS", "EU Official Journal AML standard"]},
+  {"ref_id": "XREF-RTS-AMLR",   "aliases": ["RTS AMLR cross-reference", "technical standard AMLR article mapping", "AMLR mandate tracker", "RTS article mapping", "AMLA standards AMLR mapping"]},
+  {"ref_id": "XREF-RTS-EBA",    "aliases": ["EBA transitional standards", "EBA AMLA transition", "EBA GL AMLA replacement", "transitional AML standards", "EBA standards remain in force", "AMLA Art.87 transition"]}
+]

@@ -1,0 +1,21 @@
+[
+  {"ref_id": "ORG-FI-SE",       "aliases": ["Finansinspektionen", "FI", "Swedish FSA", "Swedish financial supervisor", "Finansinspektionen Sverige", "Swedish financial supervisory authority"]},
+  {"ref_id": "ORG-FIN-FSA-FI",  "aliases": ["FIN-FSA", "Finanssivalvonta", "Finnish FSA", "Finnish financial supervisor", "Finnish financial supervisory authority", "FIVA"]},
+  {"ref_id": "ORG-FT-NO",       "aliases": ["Finanstilsynet Norway", "Finanstilsynet NO", "Norwegian FSA", "Norwegian financial supervisor", "Norwegian financial supervisory authority"]},
+  {"ref_id": "ORG-FT-DK",       "aliases": ["Finanstilsynet Denmark", "Finanstilsynet DK", "Danish FSA", "Danish financial supervisor", "Danish financial supervisory authority"]},
+  {"ref_id": "ORG-FINPOL",      "aliases": ["Finanspolisen", "Swedish FIU", "Swedish financial intelligence unit", "FIPO", "Polismyndigheten FIU", "SE FIU"]},
+  {"ref_id": "ORG-KRP-FI-FIU",  "aliases": ["KRP FIU", "Finnish FIU", "Keskusrikospoliisi FIU", "Finland financial intelligence unit", "FIVA FIU", "FI FIU"]},
+  {"ref_id": "ORG-OKOKRIM",     "aliases": ["Økokrim", "Norwegian FIU", "Norwegian economic crime unit", "Økokrims hvitvaskingsenhet", "NO FIU"]},
+  {"ref_id": "ORG-HVVL-DK-FIU", "aliases": ["Hvidvasksekretariatet", "Danish FIU", "SØIK FIU", "DK FIU", "Danish financial intelligence unit", "Statsadvokaten hvidvask"]},
+  {"ref_id": "ORG-AMLA-NORDIC", "aliases": ["AMLA Nordic college", "Nordic supervisory college AMLA", "AMLA colleges Nordic", "Nordic AMLA participation", "Scandinavian AMLA colleges"]},
+  {"ref_id": "GUID-FI-AML",     "aliases": ["FI AML guidance", "Finansinspektionen AML", "FFFS AML", "FI supervisory guidance AML", "Swedish AML supervisory guidance", "FI Sweden AML inspection"]},
+  {"ref_id": "GUID-FT-NO-AML",  "aliases": ["Finanstilsynet AML Norway", "NO AML supervisory guidance", "Finanstilsynet rundskriv AML", "Norwegian AML supervisory circular"]},
+  {"ref_id": "GUID-FT-DK-AML",  "aliases": ["Finanstilsynet AML Denmark", "DK AML supervisory guidance", "Danish AML supervision", "Finanstilsynet hvidvask", "Danske Bank AML case"]},
+  {"ref_id": "PROC-FI-INSPECT", "aliases": ["FI inspection", "Finansinspektionen inspection", "Swedish AML inspection", "FI on-site inspection", "FI supervisory review", "FI AML examination"]},
+  {"ref_id": "PROC-NORDIC-SAR", "aliases": ["Nordic SAR filing", "Nordic STR", "misstankerapport Sweden", "goAML Finland", "HVITVASK portal Norway", "Hvidvasksekretariatet report", "suspicious transaction report Nordic"]},
+  {"ref_id": "XREF-NORDIC-AMLR","aliases": ["Nordic AMLR supersession", "AMLR Nordic implementation", "penningtvättslagen AMLR", "Hvidvaskloven AMLR", "Nordic AML law AMLR 2027", "AMLR July 2027 Nordic"]},
+  {"ref_id": "XREF-NORDIC-EBA", "aliases": ["Nordic EBA guidelines", "Nordic EBA risk factors", "Finansinspektionen EBA", "Nordic supervisory convergence EBA", "EBA GL Nordic adoption"]},
+  {"ref_id": "XREF-NORDIC-FATF","aliases": ["Nordic FATF evaluation", "Nordic FATF mutual evaluation", "Sweden FATF 2017", "Finland FATF 2019", "Norway FATF evaluation", "Denmark FATF 2017"]},
+  {"ref_id": "DEF-FI-SANCTION", "aliases": ["FI sanction", "Finansinspektionen fine", "Swedish AML fine", "sanktionsavgift FI", "FI licence revocation", "FI warning AML", "Swedbank fine", "SEB fine"]},
+  {"ref_id": "DEF-NORDIC-BWRA", "aliases": ["Nordic BWRA", "Nordic business-wide risk assessment", "verksamhetsriskbedömning Nordic", "Nordic AML risk assessment", "BWRA Nordic supervisor expectation"]}
+]

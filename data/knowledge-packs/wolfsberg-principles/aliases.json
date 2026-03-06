@@ -1,0 +1,20 @@
+[
+  {"ref_id": "ORG-WOLFSBERG",   "aliases": ["Wolfsberg Group", "Wolfsberg", "Wolfsberg banks", "Wolfsberg association", "Wolfsberg thirteen banks", "industry AML standard setter"]},
+  {"ref_id": "PRINC-CBR",       "aliases": ["Wolfsberg CBR Principles", "Wolfsberg Correspondent Banking Principles", "correspondent banking AML principles", "Wolfsberg CBR", "CBR due diligence principles Wolfsberg"]},
+  {"ref_id": "PRINC-CBDDQ",     "aliases": ["CBDDQ", "Wolfsberg CBDDQ", "Correspondent Banking Due Diligence Questionnaire", "CBR questionnaire", "respondent bank questionnaire", "due diligence questionnaire correspondent banking", "KY3P questionnaire"]},
+  {"ref_id": "PRINC-PRIV-BANK", "aliases": ["Wolfsberg Private Banking Principles", "Wolfsberg private banking AML", "private banking KYC Wolfsberg", "Wolfsberg HNW principles", "HNW AML Wolfsberg"]},
+  {"ref_id": "PRINC-TRADE-FIN", "aliases": ["Wolfsberg Trade Finance Principles", "Wolfsberg trade finance AML", "trade finance AML principles", "TBML Wolfsberg", "documentary credit AML Wolfsberg"]},
+  {"ref_id": "PRINC-SANC",      "aliases": ["Wolfsberg Sanctions Screening Guidance", "Wolfsberg sanctions", "Wolfsberg sanctions guidance", "sanctions screening Wolfsberg", "Wolfsberg false positive sanctions"]},
+  {"ref_id": "PRINC-PAYMENT",   "aliases": ["Wolfsberg Payment Transparency Standards", "Wolfsberg payment transparency", "payment message transparency Wolfsberg", "SWIFT field population Wolfsberg", "Wolfsberg TFR alignment"]},
+  {"ref_id": "PRINC-NEG-NEWS",  "aliases": ["negative news screening", "adverse media screening", "negative news Wolfsberg", "adverse media Wolfsberg", "negative media screening AML", "NAMs screening"]},
+  {"ref_id": "DEF-RISK-APP-ST", "aliases": ["risk appetite statement AML", "RAS AML", "Wolfsberg risk appetite", "ML risk appetite statement", "AML risk appetite", "risk appetite Wolfsberg framing"]},
+  {"ref_id": "DEF-PEP-SCREEN",  "aliases": ["PEP screening Wolfsberg", "politically exposed person screening", "PEP identification Wolfsberg", "PEP database screening", "PEP commercial database"]},
+  {"ref_id": "DEF-TBML",        "aliases": ["TBML", "trade-based money laundering", "trade based money laundering", "over-invoicing", "under-invoicing", "phantom shipments", "falsely described goods AML", "trade finance money laundering"]},
+  {"ref_id": "DEF-SOW",         "aliases": ["source of wealth", "SoW verification", "source of wealth verification", "wealth accumulation verification", "SoW private banking", "source of wealth PEP"]},
+  {"ref_id": "XREF-WOLF-FATF",  "aliases": ["Wolfsberg FATF alignment", "Wolfsberg FATF R.13", "Wolfsberg R.16 FATF", "Wolfsberg FATF consistency", "Wolfsberg FATF correspondent banking"]},
+  {"ref_id": "XREF-WOLF-AMLR",  "aliases": ["Wolfsberg AMLR cross-reference", "Wolfsberg AMLR Art.38", "Wolfsberg AML Regulation", "Wolfsberg EU AML link", "Wolfsberg industry standard AMLR"]},
+  {"ref_id": "XREF-WOLF-EBA",   "aliases": ["Wolfsberg EBA guidelines", "Wolfsberg EBA GL/2021/02", "EBA risk factors Wolfsberg", "Wolfsberg self-regulation EBA", "EBA correspondent banking Wolfsberg"]},
+  {"ref_id": "PROC-CBDDQ-PROC", "aliases": ["CBDDQ completion process", "CBDDQ submission", "CBDDQ annual update", "correspondent bank questionnaire process", "CBDDQ platform", "KY3P process"]},
+  {"ref_id": "PROC-NEG-NEWS-PROC","aliases": ["negative news process", "adverse media process", "negative news screening procedure", "adverse media review", "negative news hit review"]},
+  {"ref_id": "DEF-WOLF-TYPOL",  "aliases": ["Wolfsberg typologies", "Wolfsberg red flags", "Wolfsberg typology papers", "AML red flags Wolfsberg", "transaction monitoring Wolfsberg typologies", "Wolfsberg sector red flags"]}
+]

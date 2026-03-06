@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "swift-standards",
+  "display_name": "SWIFT Standards & ISO 20022 — Payment Messaging",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for SWIFT messaging standards (MT103, MT202, MT202COV, MT199) and ISO 20022 equivalents (pacs.008, pacs.009, camt.053). Covers SWIFT gpi, UETR, BIC, LEI, cover payments, Travel Rule field mapping, and sanctions screening in cross-border payments.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Global",
+  "regulatory_area": "Payment Infrastructure / AML Compliance",
+  "regulation_ids": ["SWIFT MT Standards", "ISO 20022", "TFR Regulation 2023/1113", "SWIFT gpi"],
+  "tier": 3,
+  "entity_count": 19,
+  "relationship_count": 32,
+  "alias_entry_count": 19
+}

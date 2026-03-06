@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "amla-rts-tracker",
+  "display_name": "AMLA RTS/ITS Tracker — Mandated Technical Standards",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph tracking AMLA's mandated Regulatory Technical Standards (RTS) and Implementing Technical Standards (ITS) under AMLR 2024/1624 and AMLA Regulation 2024/1620. Covers RTS on risk factors, CDD, remote onboarding, beneficial ownership, group policies, EDD for HRTCs, correspondent banking, PEPs, transaction monitoring, SAR format, plus supervisory methodology ITS and lifecycle status tracking.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "AML/CFT Technical Standards",
+  "regulation_ids": ["AMLR 2024/1624", "AMLA Regulation 2024/1620"],
+  "tier": 3,
+  "entity_count": 21,
+  "relationship_count": 35,
+  "alias_entry_count": 21
+}
