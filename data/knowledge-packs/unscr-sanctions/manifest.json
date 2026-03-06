@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "unscr-sanctions",
+  "display_name": "UN Security Council Sanctions Regimes",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for UN Security Council sanctions regimes: UNSCR 1267/1989/2253 (Al-Qaeda/ISIS), UNSCR 1718 (DPRK), UNSCR 1737 (Iran nuclear), UNSCR 2140 (Yemen), UNSCR 1970 (Libya). Covers proliferation financing, listing/delisting, and FATF R.6/R.7 alignment.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "International / UN",
+  "regulatory_area": "International Sanctions / Proliferation Financing",
+  "regulation_ids": ["UNSCR 1267/1989/2253", "UNSCR 1718", "UNSCR 1737/2231", "UNSCR 2140", "FATF R.6/R.7"],
+  "tier": 1,
+  "entity_count": 20,
+  "relationship_count": 32,
+  "alias_entry_count": 20
+}

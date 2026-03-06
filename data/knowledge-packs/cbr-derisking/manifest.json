@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "cbr-derisking",
+  "display_name": "Correspondent Banking & De-risking — FATF, BIS & EU Guidance",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph covering correspondent banking EDD obligations (AMLR Art. 38, FATF R.13), de-risking and financial inclusion impacts, SWIFT network, Wolfsberg CBR Principles, and CBDDQ questionnaire.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "International / European Union",
+  "regulatory_area": "Correspondent Banking / Financial Inclusion",
+  "regulation_ids": ["AMLR Art. 38", "FATF R.13", "BCBS 264", "Wolfsberg CBR Principles"],
+  "tier": 1,
+  "entity_count": 23,
+  "relationship_count": 32,
+  "alias_entry_count": 23
+}

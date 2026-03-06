@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "mar-csmad",
+  "display_name": "Market Abuse — MAR & CSMAD",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for MAR (Regulation 596/2014) and CSMAD (Directive 2014/57/EU). Covers insider dealing, market manipulation (wash trading, spoofing, layering, pump-and-dump), STR/SAR dual reporting for investment firms, and MiCA market abuse extension.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Market Integrity / Financial Crime",
+  "regulation_ids": ["MAR 596/2014", "CSMAD 2014/57/EU", "MiCA 2023/1114 Art.76-92"],
+  "tier": 2,
+  "entity_count": 22,
+  "relationship_count": 33,
+  "alias_entry_count": 22
+}

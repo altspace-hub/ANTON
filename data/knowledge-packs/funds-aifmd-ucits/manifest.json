@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "funds-aifmd-ucits",
+  "display_name": "Investment Funds — AIFMD, UCITS & PRIIPs",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for AIFMD (Directive 2011/61/EU), AIFMD II (2024/927), UCITS (Directive 2009/65/EC), and PRIIPs (1286/2014). Covers AIFMs, depositaries, fund distributor AML obligations, nominee look-through, and SFDR cross-references.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Asset Management / Investment Funds",
+  "regulation_ids": ["AIFMD 2011/61/EU", "AIFMD II 2024/927", "UCITS 2009/65/EC", "PRIIPs 1286/2014"],
+  "tier": 2,
+  "entity_count": 20,
+  "relationship_count": 32,
+  "alias_entry_count": 20
+}

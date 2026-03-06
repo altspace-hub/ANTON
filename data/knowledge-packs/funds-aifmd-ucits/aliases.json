@@ -1,0 +1,22 @@
+[
+  {"ref_id": "REG-AIFMD",     "aliases": ["AIFMD", "Alternative Investment Fund Managers Directive", "Directive 2011/61", "hedge fund directive", "EU fund manager regulation"]},
+  {"ref_id": "REG-AIFMD2",   "aliases": ["AIFMD II", "AIFMD 2", "Directive 2024/927", "AIFMD reform", "loan originating funds"]},
+  {"ref_id": "REG-UCITS",    "aliases": ["UCITS", "Undertakings for Collective Investment", "UCITS directive", "Directive 2009/65", "retail fund directive"]},
+  {"ref_id": "REG-PRIIPS",   "aliases": ["PRIIPs", "PRIIPs KID", "KID packaged products", "Regulation 1286/2014", "packaged investment products"]},
+  {"ref_id": "DEF-AIF",      "aliases": ["AIF", "alternative investment fund", "hedge fund", "private equity fund EU", "alternative fund"]},
+  {"ref_id": "DEF-AIFM",     "aliases": ["AIFM", "alternative investment fund manager", "fund manager", "hedge fund manager EU", "AIF manager"]},
+  {"ref_id": "DEF-UCITS-MGMT","aliases": ["UCITS management company", "UCITS ManCo", "fund management company", "collective investment manager"]},
+  {"ref_id": "DEF-DEPOSITARY","aliases": ["depositary", "fund depositary", "custodian fund", "prime broker depositary", "depositary bank"]},
+  {"ref_id": "DEF-UCITS-KID","aliases": ["UCITS KIID", "Key Investor Information Document", "KIID", "UCITS disclosure", "fund factsheet"]},
+  {"ref_id": "DEF-DIST-AML", "aliases": ["fund distributor AML", "distributor AML", "distribution channel AML", "fund selling AML"]},
+  {"ref_id": "DEF-NOMINEE",  "aliases": ["nominee structure", "omnibus account", "nominee fund investment", "fund omnibus AML", "look-through funds"]},
+  {"ref_id": "DEF-OFFSHORE-FUND","aliases": ["offshore fund", "Cayman fund", "BVI fund", "offshore AIF", "offshore investment vehicle"]},
+  {"ref_id": "DEF-PE-FUND",  "aliases": ["private equity fund", "PE fund", "venture capital fund", "buyout fund", "VC fund AML"]},
+  {"ref_id": "DEF-LEVERAGE", "aliases": ["fund leverage", "AIF leverage", "AIFMD leverage limits", "fund borrowing"]},
+  {"ref_id": "XREF-AIFMD-AMLR","aliases": ["AIFMD AML", "fund AML", "investment fund AMLR", "fund manager AMLR", "AIF obliged entity"]},
+  {"ref_id": "XREF-AIFMD-SFDR","aliases": ["AIFMD SFDR", "fund sustainability", "ESG fund disclosure", "Article 8 9 fund"]},
+  {"ref_id": "XREF-UCITS-MIFID","aliases": ["UCITS MiFID", "fund distribution MiFID", "UCITS sales regulation"]},
+  {"ref_id": "ORG-ESMA-FUNDS","aliases": ["ESMA funds", "ESMA AIFMD", "ESMA UCITS", "EU fund supervisor"]},
+  {"ref_id": "PROC-FUND-CDD","aliases": ["fund CDD", "investor CDD", "fund due diligence AML", "subscription AML", "KYC fund investor"]},
+  {"ref_id": "DEF-ERDF",     "aliases": ["ELTIF", "European Long-Term Investment Fund", "ELTIF 2.0", "long-term fund EU"]}
+]

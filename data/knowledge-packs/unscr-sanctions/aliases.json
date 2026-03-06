@@ -1,0 +1,22 @@
+[
+  {"ref_id": "REG-UNSCR-1267B","aliases": ["UNSCR 1267", "1267 sanctions", "Al-Qaeda sanctions UN", "ISIS UN sanctions", "ISIL UN sanctions", "1267 Committee list", "Al-Qaida UN list"]},
+  {"ref_id": "REG-UNSCR-1718B","aliases": ["UNSCR 1718", "DPRK sanctions UN", "North Korea UN sanctions", "1718 Committee", "DPRK UN regime"]},
+  {"ref_id": "REG-UNSCR-1737B","aliases": ["UNSCR 1737", "Iran nuclear UN sanctions", "Iran UN sanctions", "1737 Committee", "JCPOA UN sanctions"]},
+  {"ref_id": "REG-UNSCR-2140","aliases": ["UNSCR 2140", "Yemen sanctions UN", "Yemen UN regime", "2140 Committee"]},
+  {"ref_id": "REG-UNSCR-1970","aliases": ["UNSCR 1970", "Libya sanctions UN", "Libya UN regime", "1970 Libya arms embargo"]},
+  {"ref_id": "DEF-UN-AFREEZE","aliases": ["UN asset freeze", "UN targeted financial sanctions", "UNSCR asset freeze", "UN TFS freeze"]},
+  {"ref_id": "DEF-UN-TRAVEL", "aliases": ["UN travel ban", "UNSCR travel restriction", "UN entry ban", "UN travel prohibition"]},
+  {"ref_id": "DEF-UN-ARMS",  "aliases": ["UN arms embargo", "UNSCR arms embargo", "UN weapons ban", "arms prohibition UN"]},
+  {"ref_id": "DEF-PROLIF-FIN","aliases": ["proliferation financing", "CPF", "WMD financing", "proliferation funding", "nuclear financing", "DPRK financing", "Iran WMD finance"]},
+  {"ref_id": "DEF-WMD",      "aliases": ["WMD", "weapons of mass destruction", "nuclear weapons", "CBRN", "DPRK weapons", "Iran nuclear programme"]},
+  {"ref_id": "DEF-UN-LISTING","aliases": ["UN listing", "UN delisting", "UNSCR designation", "UN sanctions listing process", "1267 listing"]},
+  {"ref_id": "DEF-OMBUDSPERSON","aliases": ["Ombudsperson", "1267 Ombudsperson", "UN delisting mechanism", "UNSCR 1904 Ombudsperson"]},
+  {"ref_id": "DEF-NATL-IMPL","aliases": ["national implementation UN sanctions", "transposing UN sanctions", "implementing UNSCR", "UNSCR national law"]},
+  {"ref_id": "REG-FATF-R6-UN","aliases": ["FATF R6", "FATF Recommendation 6", "TFS terrorism FATF", "without delay sanctions", "same-day sanctions implementation"]},
+  {"ref_id": "REG-FATF-R7-UN","aliases": ["FATF R7", "FATF Recommendation 7", "CPF FATF", "proliferation sanctions FATF", "DPRK FATF", "Iran FATF R7"]},
+  {"ref_id": "XREF-UN-EU-IMPL","aliases": ["EU implements UN sanctions", "EU UN sanctions", "UNSCR EU regulation", "EU transposition UN"]},
+  {"ref_id": "XREF-UN-FATF", "aliases": ["UN FATF link", "UNSCR FATF", "TFS FATF alignment", "FATF UN sanctions"]},
+  {"ref_id": "XREF-UN-AMLR","aliases": ["UNSCR AMLR", "UN sanctions AMLR", "UN TFS AML obligation", "Art 6 AMLR UN"]},
+  {"ref_id": "DEF-DPRK-PROLIFERATE","aliases": ["DPRK evasion", "North Korea sanctions evasion", "Lazarus Group", "DPRK crypto theft", "ship to ship transfer DPRK"]},
+  {"ref_id": "DEF-IRAN-EVASION","aliases": ["Iran sanctions evasion", "Iran front company", "oil tanker identity fraud", "Iran SWIFT evasion", "Iran petrodollar"]}
+]
