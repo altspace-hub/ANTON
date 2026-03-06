@@ -184,7 +184,15 @@ app.use('/api/auth/reset-password', authLimiter);
 app.use('/api/claude/message', claudeLimiter);
 app.use('/api/claude/message-sync', claudeLimiter);
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({
+  limit: '50mb',
+  // Capture raw body bytes for HMAC-SHA256 webhook signature verification.
+  // Stored on req.rawBody so the inbound webhook handler can verify signatures
+  // against the original bytes rather than re-serialised JSON (which loses whitespace).
+  verify: (req: import('express').Request & { rawBody?: Buffer }, _res, buf) => {
+    req.rawBody = buf;
+  },
+}));
 // URL-encoded body parsing for Slack slash commands (application/x-www-form-urlencoded)
 app.use('/api/integrations/slack/commands', express.urlencoded({ extended: true }));
 

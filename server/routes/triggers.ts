@@ -111,8 +111,12 @@ export function createTriggersRoutes(db: Database.Database): Router {
   // ── Update trigger ─────────────────────────────────────────────────────────
   router.put('/triggers/:id', (req: Request, res: Response) => {
     try {
+      const userId = getUserId(req);
       const trigger = listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
+      if (trigger.user_id !== userId && userId !== 'default') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
 
       const { name, description, filter_config, payload_mapping, rate_limit_max, rate_limit_window_seconds, cooldown_seconds } = req.body as {
         name?: string; description?: string;
@@ -150,8 +154,12 @@ export function createTriggersRoutes(db: Database.Database): Router {
   // ── Activate / pause trigger ───────────────────────────────────────────────
   router.patch('/triggers/:id/status', (req: Request, res: Response) => {
     try {
+      const userId = getUserId(req);
       const trigger = listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
+      if (trigger.user_id !== userId && userId !== 'default') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
 
       const { status } = req.body as { status: 'active' | 'paused' };
       if (!['active', 'paused'].includes(status)) {
@@ -169,6 +177,12 @@ export function createTriggersRoutes(db: Database.Database): Router {
   // ── Delete trigger ─────────────────────────────────────────────────────────
   router.delete('/triggers/:id', (req: Request, res: Response) => {
     try {
+      const userId = getUserId(req);
+      const trigger = listener.getTrigger(String(req.params.id));
+      if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
+      if (trigger.user_id !== userId && userId !== 'default') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
       const deleted = listener.deleteTrigger(String(req.params.id));
       if (!deleted) return res.status(404).json({ error: 'Trigger not found' });
       res.json({ deleted: true });

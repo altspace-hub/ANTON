@@ -23,6 +23,7 @@ import StructureReference from '@/components/shared/StructureReference';
 import ReferenceOutputPanel from '@/components/shared/ReferenceOutputPanel';
 import FileUploader from '@/components/shared/FileUploader';
 import ConversationThread from '@/components/shared/ConversationThread';
+import { ResumePanel } from '@/components/shared/ResumePanel';
 import StatusIndicator from '@/components/shared/StatusIndicator';
 import ExportBar from '@/components/shared/ExportBar';
 import ContextBudgetBar from '@/components/shared/ContextBudgetBar';
@@ -972,6 +973,13 @@ export default function ModulePage() {
             isStreaming={isStreaming}
           />
         </div>
+
+        {/* Session Resume Panel — shown when resuming a paused session */}
+        {sessionId && messages.length === 0 && !isStreaming && (
+          <div className="shrink-0 pb-3">
+            <ResumePanel sessionId={sessionId} />
+          </div>
+        )}
 
         {/* Scrollable output area — everything flows naturally */}
         <div className="flex-1 overflow-auto space-y-3">

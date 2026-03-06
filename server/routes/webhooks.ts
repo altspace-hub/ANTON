@@ -42,9 +42,14 @@ export function createWebhooksPublicRoutes(db: Database.Database): Router {
         return res.status(413).json({ error: 'Payload too large (max 1MB)' });
       }
 
-      // Get raw body — Express json middleware has already parsed it,
-      // but we need the raw string for HMAC verification
-      const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
+      // Get raw body for HMAC signature verification.
+      // Prefer req.rawBody (set by the express.json verify option) which contains the
+      // exact original bytes — necessary for correct HMAC-SHA256 matching against
+      // GitHub/GitLab/Slack signatures. Fall back to re-serialised JSON if not available.
+      const rawBodyExt = req as Request & { rawBody?: Buffer };
+      const rawBody = rawBodyExt.rawBody
+        ? rawBodyExt.rawBody.toString('utf8')
+        : typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
       const parsedPayload = typeof req.body === 'object' && req.body !== null ? req.body as Record<string, unknown> : {};
 
       // Build headers map for auth
