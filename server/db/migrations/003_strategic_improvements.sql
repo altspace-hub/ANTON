@@ -166,3 +166,9 @@ CREATE TABLE IF NOT EXISTS webhook_trigger_metrics (
 );
 
 CREATE INDEX IF NOT EXISTS idx_webhook_metrics_trigger ON webhook_trigger_metrics(trigger_id, window_start DESC);
+
+-- ── P2: Additional composite indexes for query performance ─────────────────
+-- Continuity profiles: fast lookup by user + status (active/transitioning/archived)
+CREATE INDEX IF NOT EXISTS idx_continuity_profiles_user_status ON continuity_profiles(user_id, status);
+-- Proactive insights: covering index for the common unread-active query
+CREATE INDEX IF NOT EXISTS idx_proactive_insights_active ON proactive_insights(user_id, dismissed, read, created_at DESC);
