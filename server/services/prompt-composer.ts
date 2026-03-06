@@ -110,6 +110,8 @@ export interface PromptComposerConfig {
   businessContext?: string | null;
   /** Layer 2a: Org-wide context (jurisdiction, priorities, risk appetite) — built by buildOrgContextLayer() */
   orgContextPrompt?: string;
+  /** Layer 2b: Active regulatory knowledge pack summary — built by buildKnowledgePackLayer() */
+  knowledgePackPrompt?: string;
   /** Layer 4a: Session resume context (snapshot summary, decisions, next steps) — built by buildResumeContextLayer() */
   resumeContextPrompt?: string;
 }
@@ -300,6 +302,9 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   // Layer 2a: Organisational Context — org-wide settings injected after foundation
   if (config.orgContextPrompt?.trim()) parts.push(config.orgContextPrompt.trim());
 
+  // Layer 2b: Active Regulatory Knowledge Packs — structured regulatory entity context
+  if (config.knowledgePackPrompt?.trim()) parts.push(config.knowledgePackPrompt.trim());
+
   // Layer 3: Area Context — domain landscape, regulatory framework, terminology
   const areaId = config.areaId;
   if (areaId) {
@@ -418,6 +423,9 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
 
   // Layer 2a: Organisational Context
   if (config.orgContextPrompt?.trim()) staticParts.push(config.orgContextPrompt.trim());
+
+  // Layer 2b: Active Regulatory Knowledge Packs
+  if (config.knowledgePackPrompt?.trim()) staticParts.push(config.knowledgePackPrompt.trim());
 
   // Layer 3: Area Context
   if (config.areaId) {

@@ -29,6 +29,20 @@ export function initDatabase(): Database.Database {
     db.exec(migration003);
   }
 
+  // Run regulatory knowledge packs migration (006)
+  // Guard: check if the `source` column exists on entity_nodes (the last ALTER TABLE in 006).
+  // This correctly handles partial migration runs (table created but ALTERs not applied).
+  const sourceColExists = db.prepare(
+    "SELECT COUNT(*) as c FROM pragma_table_info('entity_nodes') WHERE name='source'"
+  ).get() as { c: number };
+  if (sourceColExists.c === 0) {
+    const migration006Path = path.join(__dirname, 'migrations', '006_add_knowledge_packs.sql');
+    if (fs.existsSync(migration006Path)) {
+      const migration006 = fs.readFileSync(migration006Path, 'utf-8');
+      db.exec(migration006);
+    }
+  }
+
   // Seed pre-built event-driven workflow definitions (from event-triggers spec)
   try {
     const eventWfCount = db.prepare(

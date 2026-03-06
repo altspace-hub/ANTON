@@ -1,0 +1,13 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "amlr-2024",
+  "display_name": "AMLR 2024 — EU Anti-Money Laundering Regulation",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for Regulation (EU) 2024/1624 — the EU Anti-Money Laundering Regulation. Covers obligations, key articles, defined terms, supervisory authorities, and cross-references to AMLD6 and AMLA.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "AML/CFT",
+  "regulation_ids": ["AMLR", "Regulation (EU) 2024/1624", "AMLD6", "AMLA"],
+  "tier": 1
+}

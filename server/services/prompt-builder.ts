@@ -332,6 +332,41 @@ export function buildResumeContextLayer(
   }
 }
 
+/**
+ * Layer 2b: Inject active regulatory knowledge pack summary.
+ * Surfaces structured regulatory entity knowledge from installed + active packs.
+ * Short-circuits if no packs are active (common case — zero cost).
+ */
+export function buildKnowledgePackLayer(
+  db: import('better-sqlite3').Database,
+): string {
+  try {
+    // Lightweight check: any active packs at all?
+    const count = db.prepare(
+      "SELECT COUNT(*) as c FROM knowledge_packs WHERE status='active'"
+    ).get() as { c: number } | undefined;
+    if (!count || count.c === 0) return '';
+
+    const rows = db.prepare(
+      `SELECT display_name, regulatory_area, regulation_ids, entity_count
+       FROM knowledge_packs WHERE status='active' ORDER BY tier ASC, display_name ASC`
+    ).all() as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
+
+    if (rows.length === 0) return '';
+
+    const lines: string[] = ['## ACTIVE REGULATORY KNOWLEDGE PACKS'];
+    lines.push('The following structured regulatory knowledge packs are active for this session. Use them to ground entity names, article references, and obligation details:');
+    for (const r of rows) {
+      let regs: string[] = [];
+      try { regs = JSON.parse(r.regulation_ids || '[]'); } catch { /* ignore */ }
+      lines.push(`- **${r.display_name}** (${r.regulatory_area ?? 'General'}, ${r.entity_count} entities${regs.length ? `, covers: ${regs.join(', ')}` : ''})`);
+    }
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
+
 export function getStructureReferenceInstruction(structureRef: { mode: string; description: string; fileName?: string }): string {
   if (!structureRef || structureRef.mode === 'none') return '';
 

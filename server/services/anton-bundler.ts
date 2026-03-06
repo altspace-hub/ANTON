@@ -42,7 +42,8 @@ export type AntonBundleType =
   | 'audience-profile'
   | 'lesson-plan'
   | 'study-pack'
-  | 'assessment-bank';
+  | 'assessment-bank'
+  | 'regulatory-knowledge-pack';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -74,6 +75,7 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'lesson-plan':                  { label: 'Lesson Plan',                description: 'Teacher-authored lesson plan for School Mode',       contentsKey: 'lesson_plans',         primaryContentDir: 'lesson-plans' },
   'study-pack':                   { label: 'Study Pack',                 description: 'Student study material bundle with review cards',    contentsKey: 'study_packs',          primaryContentDir: 'study-packs' },
   'assessment-bank':              { label: 'Assessment Bank',            description: 'Question bank for School Mode assessments',          contentsKey: 'assessment_banks',     primaryContentDir: 'assessment-banks' },
+  'regulatory-knowledge-pack':   { label: 'Regulatory Knowledge Pack',  description: 'Pre-structured regulatory entity graph for FCP modules', contentsKey: 'knowledge_packs',    primaryContentDir: 'knowledge-packs' },
 };
 
 interface ModuleExportData {

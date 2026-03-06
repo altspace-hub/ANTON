@@ -94,6 +94,7 @@ import { createWebhooksPublicRoutes } from './routes/webhooks.js';
 import { createSessionResumeRoutes } from './routes/session-resume.js';
 import { createInsightsRoutes } from './routes/insights.js';
 import { createOrgContextRoutes } from './routes/org-context.js';
+import { createKnowledgePacksRoutes } from './routes/knowledge-packs.js';
 import { createContinuityRoutes } from './routes/continuity.js';
 import { createWebhookListener } from './services/webhook-listener.js';
 import { setEventEmitter } from './services/event-emitter.js';
@@ -362,6 +363,7 @@ app.use('/api', createSessionResumeRoutes(db));      // Session Resume (snapshot
 app.use('/api', createInsightsRoutes(db));           // Proactive Intelligence
 app.use('/api', createOrgContextRoutes(db));         // Org Context Layer (prompt layer 2a)
 app.use('/api', createContinuityRoutes(db));         // Org Continuity (key-person risk)
+app.use('/api', createKnowledgePacksRoutes(db));     // Regulatory Knowledge Packs
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));

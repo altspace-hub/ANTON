@@ -3,7 +3,13 @@ dist/
 .env
 uploads/
 outputs/
-data/
+# Ignore runtime data but keep bundled knowledge-pack source files
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/*.db
+data/.vault-key
+data/user-knowledge-packs/
 *.log
 .DS_Store
 Thumbs.db
