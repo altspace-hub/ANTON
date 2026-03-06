@@ -29,6 +29,84 @@ export function initDatabase(): Database.Database {
     db.exec(migration003);
   }
 
+  // Seed pre-built event-driven workflow definitions (from event-triggers spec)
+  try {
+    const eventWfCount = db.prepare(
+      "SELECT COUNT(*) as c FROM workflow_definitions WHERE id LIKE 'wfd-event-%'"
+    ).get() as { c: number };
+
+    if (eventWfCount.c === 0) {
+      const seedWf = db.prepare(`
+        INSERT OR IGNORE INTO workflow_definitions (id, name, description, trigger_type, steps, config, status, user_id)
+        VALUES (?, ?, ?, 'event', ?, ?, 'active', 'system')
+      `);
+
+      seedWf.run(
+        'wfd-event-code-review',
+        'Continuous Code Review',
+        'Triggered on git push. Runs an AI review, posts findings, and alerts Slack on critical issues.',
+        JSON.stringify([
+          { type: 'llm', name: 'AI Code Review', config: { prompt: 'Review the changed files for bugs, security issues, and code quality. Be concise and actionable.' } },
+          { type: 'conditional', name: 'Critical Issues?', config: { condition: 'findings.critical > 0' } },
+          { type: 'messaging_notification', name: 'Alert Slack', config: { channel: '#code-review', message: 'Critical issues found' } },
+        ]),
+        JSON.stringify({ event_sources: ['git_push'] }),
+      );
+
+      seedWf.run(
+        'wfd-event-incident-response',
+        'Incident Response Escalation',
+        'Triggered by compliance rule violations. Classifies severity, generates a report, and escalates.',
+        JSON.stringify([
+          { type: 'llm', name: 'Classify Incident', config: { prompt: 'Classify this compliance violation by severity and suggest immediate actions.' } },
+          { type: 'llm', name: 'Generate Incident Report', config: { prompt: 'Write a concise incident report: what happened, impact, immediate actions, and remediation.' } },
+          { type: 'messaging_notification', name: 'Notify Compliance Team', config: { channel: '#compliance-incidents', message: 'New compliance incident detected' } },
+        ]),
+        JSON.stringify({ event_sources: ['compliance_rules'] }),
+      );
+
+      seedWf.run(
+        'wfd-event-regulatory-change',
+        'Regulatory Change Auto-Response',
+        'Triggered when Regulatory Radar scores a high-relevance item. Produces briefing and impact assessment.',
+        JSON.stringify([
+          { type: 'llm', name: 'Regulatory Briefing', config: { prompt: 'Write a briefing: what changed, why it matters, and who is affected.' } },
+          { type: 'llm', name: 'Impact Assessment', config: { prompt: 'Assess impact across: regulatory perimeter, operations, technology, timeline, and budget.' } },
+          { type: 'export', name: 'Save as PDF', config: { format: 'pdf', filename: 'regulatory-change' } },
+        ]),
+        JSON.stringify({ event_sources: ['regulatory_radar'] }),
+      );
+
+      seedWf.run(
+        'wfd-event-compliance-violation',
+        'Compliance Violation Escalation',
+        'Triggered by critical/high severity violations. Generates remediation guidance and escalates for approval.',
+        JSON.stringify([
+          { type: 'llm', name: 'Remediation Guidance', config: { prompt: 'Provide root cause analysis, immediate remediation steps, and long-term controls.' } },
+          { type: 'approval', name: 'Compliance Officer Review', config: { approvers: ['compliance-lead'], timeout_hours: 24 } },
+          { type: 'messaging_notification', name: 'Confirmation Notice', config: { channel: '#compliance', message: 'Violation reviewed and remediation approved' } },
+        ]),
+        JSON.stringify({ event_sources: ['compliance_rules'] }),
+      );
+
+      seedWf.run(
+        'wfd-event-client-doc-intake',
+        'Client Document Intake',
+        'Triggered via webhook when client uploads documents. Extracts key data, runs quality checks, queues for review.',
+        JSON.stringify([
+          { type: 'extract', name: 'Extract Document Data', config: { fields: ['entity_name', 'document_type', 'date', 'jurisdiction'] } },
+          { type: 'llm', name: 'Quality & Completeness Check', config: { prompt: 'Check this document for completeness, consistency, and red flags. List any missing required fields.' } },
+          { type: 'review', name: 'Queue for Analyst Review', config: { queue: 'document-review', priority: 'normal' } },
+        ]),
+        JSON.stringify({ event_sources: ['webhook'] }),
+      );
+
+      console.log('[db] Seeded 5 event-driven workflow definitions');
+    }
+  } catch (e) {
+    console.warn('[db] Event workflow seeding skipped (safe to ignore):', e);
+  }
+
   // Safe column migrations — SQLite doesn't support IF NOT EXISTS on ALTER TABLE
   const existingCols = db.prepare("PRAGMA table_info(sessions)").all() as Array<{ name: string }>;
   const colNames = existingCols.map((c) => c.name);

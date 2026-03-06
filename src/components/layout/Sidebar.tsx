@@ -35,6 +35,8 @@ import {
   X as XIcon,
   // Community sub-nav
   Users2, Mail, CalendarDays,
+  // Orchestration Dashboard
+  LayoutDashboard,
 } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -572,6 +574,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'ab-test': { to: '/ab-test', icon: FlaskConical, label: t('nav.abPromptTesting') },
                 'council': { to: '/council', icon: Users, label: t('nav.aiCouncil') },
                 'workflows': { to: '/workflows', icon: Workflow, label: t('nav.workflows') },
+                'orchestration': { to: '/orchestration', icon: LayoutDashboard, label: 'Orchestration' },
                 'datasets': { to: '/datasets', icon: Database, label: t('nav.savedDatasets') },
                 'coworkers': { to: '/coworkers', icon: Bot, label: t('nav.coworkers') },
                 'projects': { to: '/projects', icon: FolderOpen, label: t('nav.projects') },
@@ -981,6 +984,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             Event Triggers
           </NavLink>
         )}
+
+        <NavLinkWithStar
+          to="/orchestration"
+          navId="orchestration"
+          title={sidebarCollapsed ? 'Orchestration' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('orchestration')}
+          isHidden={hiddenNavItems.has('orchestration')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <LayoutDashboard className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Orchestration'}
+        </NavLinkWithStar>
 
         <NavLinkWithStar
           to="/datasets"

@@ -251,6 +251,87 @@ export async function buildProjectContextSummary(
   }
 }
 
+/**
+ * Layer 2a: Inject organisational context into system prompt.
+ * Called by the claude route when building the full system prompt.
+ */
+export function buildOrgContextLayer(
+  db: import('better-sqlite3').Database,
+  userId: string = 'default',
+): string {
+  try {
+    const row = db.prepare('SELECT * FROM org_context WHERE id = ?').get('default') as Record<string, unknown> | undefined;
+    if (!row) return '';
+
+    const orgName = row['org_name'] as string | null;
+    const jurisdiction = row['jurisdiction'] as string | null;
+    const riskAppetite = row['risk_appetite'] as string | null;
+    const customContext = row['custom_context'] as string | null;
+    const priorities = JSON.parse((row['current_priorities'] as string) || '[]') as string[];
+
+    if (!orgName && !jurisdiction && priorities.length === 0 && !customContext) return '';
+
+    const lines: string[] = ['## ORGANISATIONAL CONTEXT'];
+    if (orgName) {
+      const orgType = row['org_type'] as string | null;
+      lines.push(`**Organisation:** ${orgName}${orgType ? ` (${orgType})` : ''}`);
+    }
+    if (jurisdiction) lines.push(`**Jurisdiction:** ${jurisdiction}`);
+    const regPerimeter = JSON.parse((row['regulatory_perimeter'] as string) || '[]') as string[];
+    if (regPerimeter.length > 0) lines.push(`**Regulatory Perimeter:** ${regPerimeter.join(', ')}`);
+    if (riskAppetite) lines.push(`**Risk Appetite:** ${riskAppetite}`);
+    if (priorities.length > 0) {
+      lines.push(`**Current Priorities:** ${priorities.slice(0, 3).join('; ')}`);
+    }
+    if (customContext) lines.push(`**Additional Context:** ${customContext}`);
+    lines.push('\nTailor analysis and recommendations to this organisation\'s specific situation and regulatory perimeter.');
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Layer 4a: Inject session resume context.
+ * Called when resuming a paused session — restores full context.
+ */
+export function buildResumeContextLayer(
+  db: import('better-sqlite3').Database,
+  sessionId: string,
+): string {
+  try {
+    const snapshot = db.prepare(`
+      SELECT * FROM session_snapshots WHERE session_id = ? ORDER BY created_at DESC LIMIT 1
+    `).get(sessionId) as Record<string, unknown> | undefined;
+
+    if (!snapshot) return '';
+
+    const lines: string[] = ['## SESSION RESUME CONTEXT'];
+    lines.push(`This session was paused. Resume from where it left off.\n`);
+    lines.push(`**Summary:** ${snapshot['summary'] as string}`);
+
+    const keyDecisions = JSON.parse((snapshot['key_decisions'] as string) || '[]') as string[];
+    if (keyDecisions.length > 0) {
+      lines.push(`\n**Key Decisions Made:**\n${keyDecisions.map((d, i) => `${i + 1}. ${d}`).join('\n')}`);
+    }
+
+    const openQs = JSON.parse((snapshot['open_questions'] as string) || '[]') as string[];
+    if (openQs.length > 0) {
+      lines.push(`\n**Open Questions:**\n${openQs.map((q, i) => `${i + 1}. ${q}`).join('\n')}`);
+    }
+
+    const nextSteps = JSON.parse((snapshot['next_steps'] as string) || '[]') as string[];
+    if (nextSteps.length > 0) {
+      lines.push(`\n**Planned Next Steps:**\n${nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`);
+    }
+
+    lines.push('\nDo not repeat completed work. Reference the above context as needed.');
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
+
 export function getStructureReferenceInstruction(structureRef: { mode: string; description: string; fileName?: string }): string {
   if (!structureRef || structureRef.mode === 'none') return '';
 

@@ -93,6 +93,9 @@ import { createWebhooksPublicRoutes } from './routes/webhooks.js';
 import { createSessionResumeRoutes } from './routes/session-resume.js';
 import { createInsightsRoutes } from './routes/insights.js';
 import { createOrgContextRoutes } from './routes/org-context.js';
+import { createContinuityRoutes } from './routes/continuity.js';
+import { createWebhookListener } from './services/webhook-listener.js';
+import { setEventEmitter } from './services/event-emitter.js';
 import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
@@ -339,11 +342,14 @@ app.use('/api', createFinanceRoutes(db, anthropic));
 app.use('/api', createTravelRoutes(db, anthropic));
 app.use('/api', createCommunityRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
-app.use('/api', createTriggersRoutes(db));          // RBAC-protected trigger management
+const webhookListenerInstance = createWebhookListener(db);
+setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton
+app.use('/api', createTriggersRoutes(db));           // RBAC-protected trigger management
 app.use('/', createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth)
 app.use('/api', createSessionResumeRoutes(db));      // Session Resume (snapshots)
 app.use('/api', createInsightsRoutes(db));           // Proactive Intelligence
 app.use('/api', createOrgContextRoutes(db));         // Org Context Layer (prompt layer 2a)
+app.use('/api', createContinuityRoutes(db));         // Org Continuity (key-person risk)
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));

@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3';
+import { emitInternalEvent } from './event-emitter.js';
 
 export function createRegulatoryRadar(db: Database.Database) {
 
@@ -104,6 +105,18 @@ export function createRegulatoryRadar(db: Database.Database) {
       SET relevance_score = ?, urgency_score = ?, ai_summary = ?, impact_areas = ?, ai_scored = 1
       WHERE id = ?
     `).run(relevanceScore, urgencyScore, aiSummary, JSON.stringify(impactAreas), id);
+
+    // Emit internal event for high-relevance items so event triggers can fire
+    if (relevanceScore >= 0.7 || urgencyScore >= 0.8) {
+      void emitInternalEvent('regulatory_radar', {
+        event_type: 'item_scored',
+        radar_item_id: id,
+        relevance_score: relevanceScore,
+        urgency_score: urgencyScore,
+        severity: urgencyScore >= 0.9 ? 'critical' : urgencyScore >= 0.7 ? 'high' : 'medium',
+        impact_areas: impactAreas,
+      });
+    }
   }
 
   async function ingestManualItem(params: {
@@ -123,6 +136,16 @@ export function createRegulatoryRadar(db: Database.Database) {
     `).run(id, params.sourceId, extId, params.title, params.summary,
            params.url ?? null, params.itemType ?? 'publication',
            params.publishedAt ?? new Date().toISOString());
+
+    void emitInternalEvent('regulatory_radar', {
+      event_type: 'item_ingested',
+      radar_item_id: id,
+      title: params.title,
+      source_id: params.sourceId,
+      item_type: params.itemType ?? 'publication',
+      severity: 'medium',
+    });
+
     return id;
   }
 

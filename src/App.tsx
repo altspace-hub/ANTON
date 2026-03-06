@@ -92,6 +92,9 @@ const TradesHubPage = lazy(() => import('./pages/TradesHubPage'));
 const PEVCHubPage = lazy(() => import('./pages/PEVCHubPage'));
 const InnovationRadarPage = lazy(() => import('./pages/InnovationRadarPage'));
 
+// Strategic Improvements — Orchestration
+const OrchestrationDashboard = lazy(() => import('./pages/OrchestrationDashboard'));
+
 // News Tab pages
 const NewsPage = lazy(() => import('./pages/news/NewsPage'));
 const NewsFeedPage = lazy(() => import('./pages/news/NewsFeedPage'));
@@ -284,6 +287,7 @@ export default function App() {
           <Route path="/workflows/builder/:id" element={<WorkflowBuilder />} />
           <Route path="/workflows/build-ai" element={<BuildYourOwnWorkflow />} />
           <Route path="/workflows/triggers" element={<EventTriggersPage />} />
+          <Route path="/orchestration" element={<OrchestrationDashboard />} />
           <Route path="/datasets" element={<DatasetsPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/build-module" element={<BuildYourOwnModule />} />

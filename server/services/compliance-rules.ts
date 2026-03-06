@@ -1,4 +1,5 @@
 import type { Database } from 'better-sqlite3';
+import { emitInternalEvent } from './event-emitter.js';
 
 export interface ComplianceRule {
   id: number;
@@ -135,6 +136,17 @@ export function createComplianceRulesService(db: Database) {
             'open'
           );
         }
+
+        // Emit internal event so event triggers can fire workflows on violations
+        void emitInternalEvent('compliance_rules', {
+          event_type: 'violation_detected',
+          rule_id: ruleId,
+          rule_code: rule.rule_code,
+          severity: rule.severity,
+          category: rule.category,
+          violation_count: evaluationResult.findings.length,
+          findings: evaluationResult.findings.slice(0, 5), // truncate for payload
+        });
       }
 
       return db.prepare('SELECT * FROM rule_executions WHERE id = ?').get(executionId) as RuleExecution;
