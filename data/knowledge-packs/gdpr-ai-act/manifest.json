@@ -1,0 +1,22 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "gdpr-ai-act",
+  "display_name": "GDPR & EU AI Act — Data Protection & Artificial Intelligence",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for GDPR (Regulation (EU) 2016/679) and the EU AI Act (Regulation (EU) 2024/1689). Covers lawful processing bases, data subject rights, DPO, DPIA, cross-border transfers, AI risk classification, prohibited AI, high-risk AI system requirements, GPAI models, and conformity assessment. Cross-references to AML, DORA and CSRD.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Data Protection / AI Governance",
+  "regulation_ids": [
+    "GDPR",
+    "Regulation (EU) 2016/679",
+    "EU AI Act",
+    "Regulation (EU) 2024/1689",
+    "AI Act"
+  ],
+  "tier": 1,
+  "entity_count": 46,
+  "relationship_count": 72,
+  "alias_entry_count": 43
+}

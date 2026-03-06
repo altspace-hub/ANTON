@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "dora-nis2",
+  "display_name": "DORA & NIS2 — Digital Operational Resilience & Network Security",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for Regulation (EU) 2022/2554 (DORA) and Directive (EU) 2022/2555 (NIS2). Covers ICT risk management, incident reporting, TLPT, third-party risk, oversight framework, and cross-references to AMLR and CRR.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Digital Resilience / Cybersecurity",
+  "regulation_ids": ["DORA", "Regulation (EU) 2022/2554", "NIS2", "Directive (EU) 2022/2555"],
+  "tier": 1,
+  "entity_count": 70,
+  "relationship_count": 113,
+  "alias_entry_count": 57
+}

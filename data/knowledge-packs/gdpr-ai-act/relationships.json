@@ -1,0 +1,533 @@
+[
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a5",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.5 — the seven core data processing principles"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a6",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.6 — lawful bases for processing personal data"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a9",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.9 — prohibition and conditions for special category data"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a13",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.13 — transparency obligations at data collection"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a17",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.17 — right to erasure"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a22",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.22 — right against automated decision-making"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a25",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.25 — data protection by design and default"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a28",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.28 — data processing agreements with processors"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a30",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.30 — records of processing activities (ROPA)"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a32",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.32 — security of processing obligations"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a33",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.33 — 72-hour breach notification to supervisory authority"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a35",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.35 — DPIA requirement for high-risk processing"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a37",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.37 — mandatory DPO appointment"
+  },
+  {
+    "from_ref": "gdpr",
+    "to_ref": "gdpr-a46",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "GDPR contains Art.46 — appropriate safeguards for third-country transfers"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a5",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.5 — prohibited AI practices list"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a6",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.6 — high-risk AI classification criteria"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a9",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.9 — risk management system for high-risk AI"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a10",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.10 — data governance requirements for high-risk AI"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a11",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.11 — technical documentation obligations"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a13",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.13 — transparency and logging for high-risk AI"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a14",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.14 — human oversight of high-risk AI"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a26",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.26 — deployer obligations for high-risk AI"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a43",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.43 — conformity assessment process"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a51",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.51 — EU database registration of high-risk AI"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a53",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.53 — GPAI model provider obligations"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-a55",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Art.55 — additional obligations for GPAI models with systemic risk"
+  },
+  {
+    "from_ref": "eu-ai-act",
+    "to_ref": "ai-act-annex-iii",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "AI Act contains Annex III defining eight high-risk AI application areas"
+  },
+  {
+    "from_ref": "gdpr-a5",
+    "to_ref": "gdpr-a6",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "Lawfulness principle (Art.5(1)(a)) requires a lawful basis to be identified under Art.6"
+  },
+  {
+    "from_ref": "gdpr-a5",
+    "to_ref": "gdpr-a30",
+    "relationship_type": "supported_by",
+    "strength": 0.8,
+    "description": "Accountability principle (Art.5(2)) is demonstrated through ROPA records (Art.30)"
+  },
+  {
+    "from_ref": "gdpr-a5",
+    "to_ref": "gdpr-a35",
+    "relationship_type": "triggers",
+    "strength": 0.7,
+    "description": "Principles (storage limitation, security) trigger DPIA requirement when high-risk processing planned"
+  },
+  {
+    "from_ref": "gdpr-a6",
+    "to_ref": "gdpr-a9",
+    "relationship_type": "must_also_satisfy",
+    "strength": 0.9,
+    "description": "Processing special categories must satisfy both Art.6 lawful basis AND Art.9 conditions"
+  },
+  {
+    "from_ref": "gdpr-a17",
+    "to_ref": "gdpr-a6",
+    "relationship_type": "limited_by",
+    "strength": 0.8,
+    "description": "Right to erasure (Art.17) is limited where processing is based on legal obligation (Art.6(1)(c)) — AML records cannot be erased"
+  },
+  {
+    "from_ref": "gdpr-a22",
+    "to_ref": "ai-act-a14",
+    "relationship_type": "reinforced_by",
+    "strength": 0.8,
+    "description": "GDPR Art.22 right against automated decisions is reinforced by AI Act Art.14 human oversight requirement for high-risk AI",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "gdpr-a25",
+    "to_ref": "ai-act-a10",
+    "relationship_type": "parallels",
+    "strength": 0.7,
+    "description": "GDPR privacy by design (Art.25) parallels AI Act data governance (Art.10) — both require built-in protections",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "gdpr-a28",
+    "to_ref": "concept-processor",
+    "relationship_type": "governs",
+    "strength": 1,
+    "description": "GDPR Art.28 DPA requirements govern all data processor relationships"
+  },
+  {
+    "from_ref": "gdpr-a32",
+    "to_ref": "gdpr-a33",
+    "relationship_type": "informs",
+    "strength": 0.8,
+    "description": "Security measures (Art.32) determine severity of breaches and notification need (Art.33)"
+  },
+  {
+    "from_ref": "gdpr-a35",
+    "to_ref": "gdpr-a37",
+    "relationship_type": "requires_consultation_with",
+    "strength": 0.9,
+    "description": "DPIA must be consulted with DPO (Art.35(2)) before being conducted"
+  },
+  {
+    "from_ref": "gdpr-a37",
+    "to_ref": "gdpr-a35",
+    "relationship_type": "consulted_on",
+    "strength": 0.8,
+    "description": "DPO must be consulted on DPIA and informs when to conduct prior supervisory authority consultation"
+  },
+  {
+    "from_ref": "ai-act-a6",
+    "to_ref": "ai-act-annex-iii",
+    "relationship_type": "references",
+    "strength": 1,
+    "description": "AI Act Art.6 high-risk classification uses Annex III list of high-risk AI areas"
+  },
+  {
+    "from_ref": "ai-act-a9",
+    "to_ref": "ai-act-a6",
+    "relationship_type": "applies_to",
+    "strength": 1,
+    "description": "Risk management system (Art.9) applies to all AI systems classified as high-risk per Art.6"
+  },
+  {
+    "from_ref": "ai-act-a10",
+    "to_ref": "ai-act-a6",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "Data governance requirements (Art.10) apply to high-risk AI systems"
+  },
+  {
+    "from_ref": "ai-act-a11",
+    "to_ref": "ai-act-a43",
+    "relationship_type": "supports",
+    "strength": 0.9,
+    "description": "Technical documentation (Art.11) is the basis for conformity assessment (Art.43)"
+  },
+  {
+    "from_ref": "ai-act-a13",
+    "to_ref": "ai-act-a14",
+    "relationship_type": "enables",
+    "strength": 0.8,
+    "description": "Transparency and logging (Art.13) enables effective human oversight (Art.14)"
+  },
+  {
+    "from_ref": "ai-act-a43",
+    "to_ref": "ai-act-a51",
+    "relationship_type": "precedes",
+    "strength": 0.9,
+    "description": "Conformity assessment (Art.43) must be completed before registration (Art.51)"
+  },
+  {
+    "from_ref": "ai-act-a53",
+    "to_ref": "ai-act-a55",
+    "relationship_type": "base_requirement_for",
+    "strength": 0.9,
+    "description": "Art.53 GPAI obligations are the base; Art.55 adds additional requirements for systemic risk models"
+  },
+  {
+    "from_ref": "ai-act-a26",
+    "to_ref": "gdpr-a35",
+    "relationship_type": "triggers",
+    "strength": 0.8,
+    "description": "AI Act Art.26 deployer obligations include DPIA where GDPR applies — deployers must check GDPR DPIA need",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "concept-ai-provider",
+    "to_ref": "ai-act-a9",
+    "relationship_type": "responsible_for",
+    "strength": 1,
+    "description": "AI providers are responsible for establishing the risk management system required by Art.9"
+  },
+  {
+    "from_ref": "concept-ai-provider",
+    "to_ref": "ai-act-a11",
+    "relationship_type": "responsible_for",
+    "strength": 1,
+    "description": "AI providers are responsible for technical documentation under Art.11"
+  },
+  {
+    "from_ref": "concept-ai-provider",
+    "to_ref": "ai-act-a43",
+    "relationship_type": "responsible_for",
+    "strength": 1,
+    "description": "AI providers are responsible for conformity assessment under Art.43"
+  },
+  {
+    "from_ref": "concept-ai-deployer",
+    "to_ref": "ai-act-a26",
+    "relationship_type": "subject_to",
+    "strength": 1,
+    "description": "AI deployers are subject to the obligations in AI Act Art.26"
+  },
+  {
+    "from_ref": "concept-ai-deployer",
+    "to_ref": "concept-fundamental-rights-ia",
+    "relationship_type": "must_conduct",
+    "strength": 0.8,
+    "description": "AI deployers in scope (public bodies, credit scoring, insurance) must conduct FRIA under Art.26(9)"
+  },
+  {
+    "from_ref": "concept-gpai",
+    "to_ref": "ai-act-a53",
+    "relationship_type": "subject_to",
+    "strength": 1,
+    "description": "GPAI models are subject to Art.53 obligations"
+  },
+  {
+    "from_ref": "concept-gpai",
+    "to_ref": "ai-act-a55",
+    "relationship_type": "may_be_subject_to",
+    "strength": 0.8,
+    "description": "GPAI models with systemic risk (≥10^25 FLOPs) are additionally subject to Art.55"
+  },
+  {
+    "from_ref": "concept-controller",
+    "to_ref": "gdpr-a5",
+    "relationship_type": "accountable_for",
+    "strength": 1,
+    "description": "Data controller is accountable for compliance with all GDPR Art.5 principles"
+  },
+  {
+    "from_ref": "concept-controller",
+    "to_ref": "gdpr-a30",
+    "relationship_type": "must_maintain",
+    "strength": 0.9,
+    "description": "Data controller must maintain ROPA under Art.30"
+  },
+  {
+    "from_ref": "concept-controller",
+    "to_ref": "gdpr-a35",
+    "relationship_type": "must_conduct",
+    "strength": 0.9,
+    "description": "Data controller must conduct DPIA for high-risk processing under Art.35"
+  },
+  {
+    "from_ref": "concept-processor",
+    "to_ref": "gdpr-a28",
+    "relationship_type": "governed_by",
+    "strength": 1,
+    "description": "Data processor is governed by the DPA under Art.28"
+  },
+  {
+    "from_ref": "concept-processor",
+    "to_ref": "gdpr-a32",
+    "relationship_type": "responsible_for",
+    "strength": 0.8,
+    "description": "Data processor is also responsible for security of processing under Art.32"
+  },
+  {
+    "from_ref": "gdpr-proc-dpia",
+    "to_ref": "gdpr-a35",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "DPIA Process implements the GDPR Art.35 requirement"
+  },
+  {
+    "from_ref": "gdpr-proc-sar",
+    "to_ref": "gdpr-a17",
+    "relationship_type": "handles",
+    "strength": 0.8,
+    "description": "SAR Process handles erasure requests under Art.17"
+  },
+  {
+    "from_ref": "gdpr-proc-breach",
+    "to_ref": "gdpr-a33",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "Data Breach Management Process implements Art.33 notification within 72 hours"
+  },
+  {
+    "from_ref": "org-edpb",
+    "to_ref": "gdpr",
+    "relationship_type": "oversees_consistency_of",
+    "strength": 0.9,
+    "description": "EDPB ensures consistent application of GDPR across Member States"
+  },
+  {
+    "from_ref": "org-dpa",
+    "to_ref": "gdpr",
+    "relationship_type": "enforces",
+    "strength": 1,
+    "description": "National DPAs enforce GDPR in their Member State"
+  },
+  {
+    "from_ref": "org-dpa",
+    "to_ref": "eu-ai-act",
+    "relationship_type": "acts_as_market_surveillance_for",
+    "strength": 0.8,
+    "description": "National DPAs act as market surveillance authorities for AI Act for most high-risk AI"
+  },
+  {
+    "from_ref": "org-ai-office",
+    "to_ref": "ai-act-a53",
+    "relationship_type": "oversees",
+    "strength": 1,
+    "description": "EU AI Office oversees GPAI model compliance with Art.53 obligations"
+  },
+  {
+    "from_ref": "org-ai-office",
+    "to_ref": "ai-act-a55",
+    "relationship_type": "enforces",
+    "strength": 1,
+    "description": "EU AI Office enforces GPAI systemic risk obligations under Art.55"
+  },
+  {
+    "from_ref": "cross-gdpr-ai-act",
+    "to_ref": "gdpr",
+    "relationship_type": "links",
+    "strength": 0.8,
+    "description": "GDPR × AI Act cross-reference documents overlapping obligations",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-gdpr-ai-act",
+    "to_ref": "eu-ai-act",
+    "relationship_type": "links",
+    "strength": 0.8,
+    "description": "GDPR × AI Act cross-reference documents overlapping obligations",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-gdpr-amlr",
+    "to_ref": "gdpr",
+    "relationship_type": "links",
+    "strength": 0.9,
+    "description": "GDPR × AMLR cross-reference documents tensions between AML obligations and data protection",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-gdpr-dora",
+    "to_ref": "gdpr",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "GDPR × DORA cross-reference documents overlapping security and incident reporting obligations",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-ai-act-amlr",
+    "to_ref": "eu-ai-act",
+    "relationship_type": "links",
+    "strength": 0.8,
+    "description": "AI Act × AMLR cross-reference documents AI systems used in AML compliance",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "gdpr-a35",
+    "to_ref": "ai-act-a26",
+    "relationship_type": "parallels",
+    "strength": 0.8,
+    "description": "GDPR DPIA (Art.35) and AI Act FRIA (Art.26) should be conducted together for AI systems processing personal data",
+    "metadata": {
+      "cross_area": true
+    }
+  }
+]

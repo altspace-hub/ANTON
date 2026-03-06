@@ -1,0 +1,25 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "crr-crd-mica",
+  "display_name": "Banking Prudential & Crypto — CRR3, CRD6 & MiCA",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EU banking prudential framework (CRR3/Regulation (EU) 2024/1623 and CRD6/Directive 2024/1619) and EU crypto-asset regulation (MiCA/Regulation (EU) 2023/1114). Covers Basel III final reforms, own funds, IRRBB, CSRBB, ESG risk, third-country branch rules, crypto-asset service provider authorisation, stablecoin regulation, and AML/CFT links.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "Banking Prudential / Crypto-Asset Regulation",
+  "regulation_ids": [
+    "CRR3",
+    "Regulation (EU) 2024/1623",
+    "CRD6",
+    "Directive (EU) 2024/1619",
+    "CRR",
+    "CRD",
+    "MiCA",
+    "Regulation (EU) 2023/1114"
+  ],
+  "tier": 1,
+  "entity_count": 35,
+  "relationship_count": 48,
+  "alias_entry_count": 35
+}

@@ -1,0 +1,572 @@
+[
+  {
+    "ref_id": "gdpr",
+    "description": "General Data Protection Regulation (Regulation (EU) 2016/679). Applies since 25 May 2018. Establishes rights of data subjects and obligations of controllers and processors for personal data. Extra-territorial scope (Art.3). Maximum fines: €20M or 4% global annual turnover for serious infringements.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2016/679",
+      "short_name": "GDPR",
+      "applies_from": "2018-05-25",
+      "max_fine_tier1": "€10M or 2%",
+      "max_fine_tier2": "€20M or 4%",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "gdpr",
+    "canonical_name": "GDPR"
+  },
+  {
+    "ref_id": "eu-ai-act",
+    "description": "Regulation (EU) 2024/1689 on Artificial Intelligence. World's first comprehensive AI regulation. Risk-based approach: unacceptable risk (prohibited), high-risk, limited risk, minimal risk. Applies to providers, deployers, importers and distributors. GPAI model obligations from August 2025. High-risk AI requirements from August 2026.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2024/1689",
+      "short_name": "AI Act",
+      "gpai_applies": "2025-08-02",
+      "high_risk_applies": "2026-08-02",
+      "max_fine_prohibited": "€35M or 7%",
+      "max_fine_high_risk": "€15M or 3%",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "eu-ai-act",
+    "canonical_name": "EU AI Act"
+  },
+  {
+    "ref_id": "gdpr-a5",
+    "description": "Seven core principles: (1) Lawfulness, fairness, transparency; (2) Purpose limitation; (3) Data minimisation; (4) Accuracy; (5) Storage limitation; (6) Integrity and confidentiality (security); (7) Accountability. Controller must be able to demonstrate compliance (accountability principle).",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 5,
+      "topic": "processing-principles"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a5",
+    "canonical_name": "GDPR Article 5 — Principles of Processing"
+  },
+  {
+    "ref_id": "gdpr-a6",
+    "description": "Processing is lawful only if at least one basis applies: (a) Consent; (b) Contract; (c) Legal obligation; (d) Vital interests; (e) Public task; (f) Legitimate interests (not applicable to public authorities). For AML/KYC processing: typically Art.6(1)(c) legal obligation and Art.6(1)(f) legitimate interests.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 6,
+      "topic": "lawful-basis",
+      "aml_relevance": "Art.6(1)(c) covers AMLR/CDD obligations; Art.6(1)(f) for fraud prevention"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a6",
+    "canonical_name": "GDPR Article 6 — Lawful Bases for Processing"
+  },
+  {
+    "ref_id": "gdpr-a9",
+    "description": "Processing of racial/ethnic origin, political opinions, religious beliefs, trade union membership, genetic/biometric data, health data, sex life/sexual orientation data is prohibited unless specific conditions apply. Relevant for PEP screening (political opinions), biometric identity verification, and health data in insurance AML.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 9,
+      "topic": "special-categories",
+      "aml_relevance": "PEP screening may involve political opinions data"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a9",
+    "canonical_name": "GDPR Article 9 — Special Categories of Data"
+  },
+  {
+    "ref_id": "gdpr-a13",
+    "description": "When personal data is collected directly from the data subject, controller must provide: identity/contact details, DPO contact, purposes and legal basis, legitimate interests (if applicable), recipients, transfers, retention period, data subject rights, right to withdraw consent, right to lodge complaint.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 13,
+      "topic": "transparency-direct"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a13",
+    "canonical_name": "GDPR Article 13 — Transparency: Direct Collection"
+  },
+  {
+    "ref_id": "gdpr-a17",
+    "description": "Data subjects have the right to erasure ('right to be forgotten') when: data no longer necessary, consent withdrawn, data unlawfully processed, legal obligation requires erasure. Does NOT apply when processing necessary for legal obligation (Art.17(3)(b)) — relevant for AML record retention requirements.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 17,
+      "topic": "right-to-erasure",
+      "aml_conflict": "AML 5-year record retention overrides erasure requests"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a17",
+    "canonical_name": "GDPR Article 17 — Right to Erasure"
+  },
+  {
+    "ref_id": "gdpr-a22",
+    "description": "Data subjects have the right not to be subject to solely automated decisions with legal or significant effects. Exceptions: necessity for contract, legal authorisation, explicit consent. Where allowed, controller must implement safeguards: human oversight, right to contest, express point of view. Relevant for AI-based transaction monitoring and credit scoring.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 22,
+      "topic": "automated-decisions",
+      "ai_relevance": "Intersects with EU AI Act high-risk AI classification for credit scoring and fraud detection"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a22",
+    "canonical_name": "GDPR Article 22 — Automated Decision-Making & Profiling"
+  },
+  {
+    "ref_id": "gdpr-a25",
+    "description": "Controllers must implement data protection by design (technical and organisational measures at design stage) and by default (only minimum necessary data processed by default). Relevant for AML system development and AI system deployment.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 25,
+      "topic": "privacy-by-design"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a25",
+    "canonical_name": "GDPR Article 25 — Data Protection by Design and Default"
+  },
+  {
+    "ref_id": "gdpr-a28",
+    "description": "Processing by a processor must be governed by a Data Processing Agreement (DPA). DPA must specify: subject matter, duration, nature and purpose, type of personal data, categories of data subjects, controller's obligations and rights. Mandatory clauses specified in Art.28(3).",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 28,
+      "topic": "dpa-processor"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a28",
+    "canonical_name": "GDPR Article 28 — Processor Agreements (DPA)"
+  },
+  {
+    "ref_id": "gdpr-a30",
+    "description": "Controllers with ≥250 employees (or high-risk processing) must maintain records of processing activities (ROPA). ROPA must include: controller identity, purposes, categories of data subjects and data, recipients, transfers, retention periods, security measures.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 30,
+      "topic": "ropa",
+      "threshold": "≥250 employees or high-risk processing"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a30",
+    "canonical_name": "GDPR Article 30 — Records of Processing Activities (ROPA)"
+  },
+  {
+    "ref_id": "gdpr-a32",
+    "description": "Controllers and processors must implement appropriate technical and organisational measures (TOMs) to ensure security appropriate to risk. Measures include: pseudonymisation, encryption, resilience, backup and recovery, regular testing. Risk-based approach. Overlaps with DORA ICT security requirements for financial entities.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 32,
+      "topic": "security-processing"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a32",
+    "canonical_name": "GDPR Article 32 — Security of Processing"
+  },
+  {
+    "ref_id": "gdpr-a33",
+    "description": "Controllers must notify supervisory authority of personal data breach within 72 hours unless breach unlikely to result in risk. Notification must include: nature of breach, categories/numbers of data subjects, contact details, likely consequences, measures taken/proposed.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 33,
+      "topic": "breach-notification-authority",
+      "deadline": "72 hours"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a33",
+    "canonical_name": "GDPR Article 33 — Data Breach Notification to Authority"
+  },
+  {
+    "ref_id": "gdpr-a35",
+    "description": "DPIA required when processing likely results in high risk. Mandatory for: systematic and extensive profiling, large-scale special categories processing, systematic public monitoring. DPIA must include: description, necessity assessment, risk assessment, measures. Consult DPO before conducting.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 35,
+      "topic": "dpia"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a35",
+    "canonical_name": "GDPR Article 35 — Data Protection Impact Assessment (DPIA)"
+  },
+  {
+    "ref_id": "gdpr-a37",
+    "description": "DPO is mandatory for: public authorities, large-scale systematic monitoring, large-scale special categories processing. Financial institutions typically required to appoint DPO. DPO must be expert in data protection law and practice. Must have resources, access to senior management, and independence.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 37,
+      "topic": "dpo",
+      "financial_entities": "typically mandatory"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a37",
+    "canonical_name": "GDPR Article 37 — Data Protection Officer (DPO)"
+  },
+  {
+    "ref_id": "gdpr-a46",
+    "description": "Transfers to third countries without adequacy decision require appropriate safeguards: Standard Contractual Clauses (SCCs), Binding Corporate Rules (BCRs), approved codes of conduct/certification schemes. Relevant for cross-border AML data sharing with non-EU FIUs and correspondent banking.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 46,
+      "topic": "cross-border-transfers",
+      "aml_relevance": "Cross-border SAR sharing and FIU data exchanges"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a46",
+    "canonical_name": "GDPR Article 46 — Transfers to Third Countries"
+  },
+  {
+    "ref_id": "gdpr-a85",
+    "description": "Member States may provide exemptions from certain GDPR provisions for processing for journalistic, academic, artistic or literary purposes where necessary to reconcile privacy with freedom of expression.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_number": 85,
+      "topic": "journalism-research-exemption"
+    },
+    "entity_type": "obligation",
+    "entity_id": "gdpr-a85",
+    "canonical_name": "GDPR Article 85 — Processing for Journalistic/Academic/Research Purposes"
+  },
+  {
+    "ref_id": "ai-act-a5",
+    "description": "Prohibited AI systems include: subliminal manipulation, exploitation of vulnerabilities, social scoring by public authorities, real-time biometric surveillance in public spaces (with narrow exceptions), AI inferring emotions in workplace/education, biometric categorisation revealing sensitive attributes, and predictive policing based on profiling.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 5,
+      "topic": "prohibited-ai",
+      "applies_from": "2025-02-02"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a5",
+    "canonical_name": "AI Act Article 5 — Prohibited AI Practices"
+  },
+  {
+    "ref_id": "ai-act-a6",
+    "description": "AI systems are high-risk if they: (a) are a safety component of a product covered by sectoral legislation (Annex I) and require third-party conformity assessment; or (b) are listed in Annex III (standalone high-risk AI areas). Deployers may reclassify as not high-risk if significant safety risk is demonstrably absent.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 6,
+      "topic": "high-risk-classification"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a6",
+    "canonical_name": "AI Act Article 6 — Classification as High-Risk AI"
+  },
+  {
+    "ref_id": "ai-act-a9",
+    "description": "High-risk AI providers must establish, implement and maintain a risk management system throughout the AI system lifecycle. Must identify and analyse known and foreseeable risks, estimate and evaluate risks, adopt risk mitigation measures, test residual risk. Iterative process throughout development.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 9,
+      "topic": "ai-risk-management"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a9",
+    "canonical_name": "AI Act Article 9 — Risk Management System"
+  },
+  {
+    "ref_id": "ai-act-a10",
+    "description": "High-risk AI training, validation and testing data must meet quality criteria: relevant, representative, free from errors, complete. Data governance practices required: examination for biases, data gaps, protection of special categories. Documentation of data sources, collection, processing and preparation.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 10,
+      "topic": "ai-data-governance"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a10",
+    "canonical_name": "AI Act Article 10 — Data Governance"
+  },
+  {
+    "ref_id": "ai-act-a11",
+    "description": "Providers of high-risk AI must draw up technical documentation before placing on market. Must include: system description, design, development process, risk management, testing, conformity assessment. Documentation must be maintained and updated. Annex IV specifies required content.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 11,
+      "topic": "technical-documentation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a11",
+    "canonical_name": "AI Act Article 11 — Technical Documentation"
+  },
+  {
+    "ref_id": "ai-act-a13",
+    "description": "High-risk AI systems must be designed and developed with sufficient transparency to enable deployers to interpret output and use appropriately. Must include automatic logging (logs) of operations throughout lifetime. Instructions for use (IFU) must be provided to deployers.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 13,
+      "topic": "transparency-logging"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a13",
+    "canonical_name": "AI Act Article 13 — Transparency & Logging"
+  },
+  {
+    "ref_id": "ai-act-a14",
+    "description": "High-risk AI systems must enable effective human oversight. Deployers must assign qualified humans who can monitor the AI, intervene or interrupt, understand AI capabilities and limitations, and not follow biased or erroneous AI outputs. Human oversight measures built in by provider and/or implemented by deployer.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 14,
+      "topic": "human-oversight"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a14",
+    "canonical_name": "AI Act Article 14 — Human Oversight"
+  },
+  {
+    "ref_id": "ai-act-a26",
+    "description": "Deployers of high-risk AI must: use AI per instructions for use; assign human oversight to qualified persons; monitor AI operation; notify provider/authority of incidents; conduct fundamental rights impact assessment (FRIA) for public body deployers or regulated private bodies. Perform DPIA under GDPR if applicable.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 26,
+      "topic": "deployer-obligations"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a26",
+    "canonical_name": "AI Act Article 26 — Obligations of Deployers"
+  },
+  {
+    "ref_id": "ai-act-a43",
+    "description": "High-risk AI systems must undergo conformity assessment before market placement. Most high-risk AI: internal conformity assessment by provider. Biometric and critical infrastructure AI: third-party assessment by notified body. CE marking and EU declaration of conformity required.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 43,
+      "topic": "conformity-assessment"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a43",
+    "canonical_name": "AI Act Article 43 — Conformity Assessment"
+  },
+  {
+    "ref_id": "ai-act-a51",
+    "description": "Providers and deployers (public bodies) must register high-risk AI systems in EU database before market placement or putting into service. GPAI models with systemic risk also registered. Database publicly accessible.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 51,
+      "topic": "ai-registration"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a51",
+    "canonical_name": "AI Act Article 51 — Registration of High-Risk AI"
+  },
+  {
+    "ref_id": "ai-act-a53",
+    "description": "General-purpose AI (GPAI) model providers must: draw up technical documentation, make information available to downstream providers, publish summary of training data, comply with copyright law, develop policy to comply with copyright. Training on publicly available data: only if Copyright Directive exception applies.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 53,
+      "topic": "gpai-obligations",
+      "applies_from": "2025-08-02"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a53",
+    "canonical_name": "AI Act Article 53 — GPAI Model Obligations"
+  },
+  {
+    "ref_id": "ai-act-a55",
+    "description": "GPAI models with systemic risk (training compute ≥10^25 FLOPs or designated by Commission) have additional obligations: adversarial testing (red-teaming), incident reporting to Commission within 2 weeks, cybersecurity protection, energy efficiency reporting.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_number": 55,
+      "topic": "gpai-systemic-risk",
+      "threshold": "≥10^25 FLOPs training compute"
+    },
+    "entity_type": "obligation",
+    "entity_id": "ai-act-a55",
+    "canonical_name": "AI Act Article 55 — GPAI Models with Systemic Risk"
+  },
+  {
+    "ref_id": "ai-act-annex-iii",
+    "description": "Eight areas of standalone high-risk AI: (1) Biometric ID and categorisation; (2) Critical infrastructure; (3) Education and vocational training; (4) Employment and worker management; (5) Essential private/public services (credit scoring, creditworthiness, life/health insurance risk assessment); (6) Law enforcement; (7) Migration, asylum, border control; (8) Justice and democratic processes.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "aml_relevance": "Area 5 includes credit scoring and fraud detection AI used by financial institutions"
+    },
+    "entity_type": "document",
+    "entity_id": "ai-act-annex-iii",
+    "canonical_name": "AI Act Annex III — High-Risk AI Areas"
+  },
+  {
+    "ref_id": "gdpr-proc-dpia",
+    "description": "Required for high-risk processing under GDPR Art.35. Steps: identify processing type requiring DPIA, describe processing and necessity, assess risks to rights/freedoms, mitigating measures, DPO consultation, supervisory authority prior consultation if high residual risk. Also required when deploying high-risk AI (AI Act Art.26 + GDPR overlap).",
+    "metadata": {
+      "regulation": "GDPR / EU AI Act",
+      "process_type": "assessment"
+    },
+    "entity_type": "process",
+    "entity_id": "gdpr-proc-dpia",
+    "canonical_name": "Data Protection Impact Assessment (DPIA) Process"
+  },
+  {
+    "ref_id": "gdpr-proc-sar",
+    "description": "Process for handling data subject rights requests under GDPR. Includes: verification of identity, review of applicable processing activities, assess exemptions (e.g. AML record retention, tipping-off prohibition), draft response, meet 30-day deadline (extendable by 2 months for complex cases). AML special rules: SAR response may conflict with tipping-off prohibition.",
+    "metadata": {
+      "regulation": "GDPR",
+      "process_type": "compliance",
+      "deadline": "30 days (extendable to 3 months)"
+    },
+    "entity_type": "process",
+    "entity_id": "gdpr-proc-sar",
+    "canonical_name": "Subject Access Request (SAR) Process"
+  },
+  {
+    "ref_id": "gdpr-proc-breach",
+    "description": "72-hour breach notification process under GDPR Art.33. Includes: detect and contain breach, assess likelihood and severity of risk, notify supervisory authority (if risk), notify affected data subjects (if high risk, Art.34), document all breaches in breach register. Intersects with DORA Art.18 ICT incident reporting for financial entities.",
+    "metadata": {
+      "regulation": "GDPR",
+      "process_type": "incident-management",
+      "authority_deadline": "72 hours"
+    },
+    "entity_type": "process",
+    "entity_id": "gdpr-proc-breach",
+    "canonical_name": "Data Breach Management Process"
+  },
+  {
+    "ref_id": "concept-controller",
+    "description": "Natural or legal person who determines the purposes and means of processing personal data (GDPR Art.4(7)). Bears primary GDPR accountability. In financial services: the bank/institution is controller for customer data. Joint controller arrangements arise in data sharing consortia (e.g. financial crime utilities).",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_basis": "Art.4(7)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-controller",
+    "canonical_name": "Data Controller"
+  },
+  {
+    "ref_id": "concept-processor",
+    "description": "Natural or legal person who processes personal data on behalf of a controller (GDPR Art.4(8)). Bound by Data Processing Agreement (Art.28). Must process only on controller's instructions. Common in financial services: cloud providers, KYC screening platforms, AML analytics vendors.",
+    "metadata": {
+      "regulation": "GDPR",
+      "article_basis": "Art.4(8)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-processor",
+    "canonical_name": "Data Processor"
+  },
+  {
+    "ref_id": "concept-ai-provider",
+    "description": "Entity that develops or has an AI system developed and places it on the EU market or puts it into service under its own name/trademark (AI Act Art.3(3)). Providers bear primary AI Act obligations: conformity assessment, technical documentation, CE marking, registration. Distinction from deployer is crucial for compliance allocation.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_basis": "Art.3(3)"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-ai-provider",
+    "canonical_name": "AI System Provider (AI Act)"
+  },
+  {
+    "ref_id": "concept-ai-deployer",
+    "description": "Entity that uses an AI system under its authority (AI Act Art.3(4)), except for personal non-professional use. Deployers bear obligations under Art.26: human oversight, FRIA (for public bodies and certain private bodies), monitoring. Financial institutions using third-party AI for credit scoring or AML are deployers.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_basis": "Art.3(4)",
+      "financial_relevance": "Banks using vendor AML/credit AI are deployers"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-ai-deployer",
+    "canonical_name": "AI System Deployer (AI Act)"
+  },
+  {
+    "ref_id": "concept-gpai",
+    "description": "AI model trained on large amounts of data using self-supervision at scale, displaying significant generality and capable of being used for diverse downstream tasks (AI Act Art.3(63)). Examples: large language models (LLMs), foundation models. Subject to Art.53 obligations. Those with systemic risk (≥10^25 FLOPs) also subject to Art.55.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_basis": "Art.3(63)",
+      "examples": "GPT-4, Claude, Gemini, Llama — if placed on EU market"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-gpai",
+    "canonical_name": "General-Purpose AI (GPAI) Model"
+  },
+  {
+    "ref_id": "concept-fundamental-rights-ia",
+    "description": "AI Act Art.26(9) requires deployers that are public bodies, or private bodies providing public services, or deploying AI in areas of credit scoring and life/health insurance risk assessment, to conduct a FRIA before deploying high-risk AI. FRIA covers: description of deployment, fundamental rights risks, safeguards, role of DPO.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "article_basis": "Art.26(9)",
+      "financial_relevance": "Credit scoring AI deployers must conduct FRIA"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-fundamental-rights-ia",
+    "canonical_name": "Fundamental Rights Impact Assessment (FRIA)"
+  },
+  {
+    "ref_id": "cross-gdpr-ai-act",
+    "description": "GDPR and AI Act obligations overlap significantly for AI systems processing personal data. Key intersections: (1) DPIA (GDPR Art.35) + FRIA (AI Act Art.26) — may need to be conducted together; (2) Automated decision-making (GDPR Art.22) applies to high-risk AI decisions; (3) Privacy by design (GDPR Art.25) aligns with AI Act Art.10 data governance; (4) Data processor agreements for AI vendors.",
+    "metadata": {
+      "regulations": [
+        "GDPR",
+        "EU AI Act"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-gdpr-ai-act",
+    "canonical_name": "GDPR × EU AI Act cross-reference"
+  },
+  {
+    "ref_id": "cross-gdpr-amlr",
+    "description": "Key tensions and overlaps: (1) AML record retention (5 years, AMLR Art.77) vs GDPR storage limitation (Art.5(1)(e)) — resolved by Art.6(1)(c) legal obligation; (2) Tipping-off prohibition prevents full SAR response; (3) PEP screening involves processing of politically sensitive data (GDPR Art.9 borderline); (4) STR/SAR filing is lawful under Art.6(1)(c) and Art.23(1)(d) restriction of rights.",
+    "metadata": {
+      "regulations": [
+        "GDPR",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-gdpr-amlr",
+    "canonical_name": "GDPR × AMLR cross-reference"
+  },
+  {
+    "ref_id": "cross-gdpr-dora",
+    "description": "Overlapping incident reporting: ICT incident involving personal data triggers both GDPR Art.33 (72h authority breach notification) and DORA Art.18 (major ICT incident 3-stage reporting). Security measures: GDPR Art.32 TOMs complement DORA Art.9 ICT security controls. DORA threat-intel sharing (Art.45) subject to GDPR constraints on personal data in threat feeds.",
+    "metadata": {
+      "regulations": [
+        "GDPR",
+        "DORA"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-gdpr-dora",
+    "canonical_name": "GDPR × DORA cross-reference"
+  },
+  {
+    "ref_id": "cross-ai-act-amlr",
+    "description": "AI-based transaction monitoring (TM) systems used for AML may be high-risk AI under Annex III area 5 (fraud detection). AML AI deployers must: assign human oversight (Art.14), conduct FRIA if in scope (Art.26), register system (Art.51). AMLR risk-based approach aligns with AI Act risk management (Art.9). AI-generated SAR narratives raise new accountability questions.",
+    "metadata": {
+      "regulations": [
+        "EU AI Act",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-ai-act-amlr",
+    "canonical_name": "EU AI Act × AMLR cross-reference"
+  },
+  {
+    "ref_id": "org-edpb",
+    "description": "Independent EU body ensuring consistent application of GDPR. Issues binding decisions in cross-border cases, guidelines, recommendations and opinions. Composed of heads of national supervisory authorities (DPAs) and EDPS. Key guidelines: AI (2024), biometrics, legitimate interests (Art.6(1)(f)), consent, international transfers.",
+    "metadata": {
+      "regulation": "GDPR",
+      "role": "GDPR consistency mechanism, guidelines, binding decisions"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-edpb",
+    "canonical_name": "European Data Protection Board (EDPB)"
+  },
+  {
+    "ref_id": "org-ai-office",
+    "description": "EU body within European Commission responsible for oversight of GPAI models with systemic risk, coordinating AI governance, and developing guidelines under the AI Act. Established within DG CNECT. Lead enforcer for GPAI model obligations.",
+    "metadata": {
+      "regulation": "EU AI Act",
+      "role": "GPAI oversight, AI Act coordination"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-ai-office",
+    "canonical_name": "EU AI Office"
+  },
+  {
+    "ref_id": "org-dpa",
+    "description": "Supervisory authorities in each Member State responsible for GDPR enforcement. Also act as market surveillance authorities for AI Act enforcement for most high-risk AI. Leading authority in cross-border cases determined by one-stop-shop mechanism (GDPR Art.56). Examples: ICO (UK, post-Brexit), IMY (Sweden), Datatilsynet (Norway/Denmark), Tietosuojavaltuutettu (Finland).",
+    "metadata": {
+      "regulation": "GDPR / EU AI Act",
+      "role": "GDPR enforcement, AI Act market surveillance"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-dpa",
+    "canonical_name": "National Data Protection Authorities (DPAs)"
+  }
+]

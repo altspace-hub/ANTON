@@ -1,0 +1,16 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "esg-csrd-sfdr",
+  "display_name": "ESG — CSRD, SFDR, EU Taxonomy & CSDDD",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for EU ESG regulatory framework: Corporate Sustainability Reporting Directive (CSRD/Directive 2022/2464), Sustainable Finance Disclosure Regulation (SFDR/Regulation 2019/2088), EU Taxonomy Regulation (2020/852), and Corporate Sustainability Due Diligence Directive (CSDDD/Directive 2024/1760). Covers disclosure obligations, taxonomy alignment, double materiality, and value-chain due diligence.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "European Union",
+  "regulatory_area": "ESG / Sustainable Finance",
+  "regulation_ids": ["CSRD", "Directive 2022/2464", "SFDR", "Regulation (EU) 2019/2088", "EU Taxonomy", "Regulation (EU) 2020/852", "CSDDD", "Directive 2024/1760"],
+  "tier": 1,
+  "entity_count": 54,
+  "relationship_count": 79,
+  "alias_entry_count": 52
+}

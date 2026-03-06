@@ -1,0 +1,542 @@
+[
+  {
+    "ref_id": "fatf-40",
+    "description": "The global AML/CFT/CPF standard adopted by FATF (Financial Action Task Force). 40 Recommendations covering: AML/CFT policies and coordination (R.1-2), money laundering and confiscation (R.3-4), terrorist financing and proliferation (R.5-8), preventive measures for financial institutions and DNFBPs (R.9-23), transparency and beneficial ownership (R.24-25), powers and responsibilities of competent authorities (R.26-35), and international cooperation (R.36-40). Last updated 2023.",
+    "metadata": {
+      "body": "FATF",
+      "adopted": "2012",
+      "last_updated": "2023",
+      "recommendation_count": 40,
+      "interpretive_note_count": 24,
+      "jurisdiction": "Global"
+    },
+    "entity_type": "document",
+    "entity_id": "fatf-40",
+    "canonical_name": "FATF 40 Recommendations"
+  },
+  {
+    "ref_id": "fatf-r1",
+    "description": "Countries must identify, assess and understand ML/TF/PF risks and apply a risk-based approach (RBA). Higher risk → enhanced measures; lower risk → simplified measures. National risk assessment (NRA) required. Financial institutions must conduct institutional risk assessment. Designate authority to coordinate RBA implementation.",
+    "metadata": {
+      "fatf_number": 1,
+      "topic": "risk-based-approach",
+      "eu_implementation": "AMLR Chapter II"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r1",
+    "canonical_name": "FATF R.1 — Assessing and Applying a Risk-Based Approach"
+  },
+  {
+    "ref_id": "fatf-r2",
+    "description": "Countries must have national AML/CFT policies informed by risk assessments and a designated authority or mechanism to coordinate implementation. Cooperation between competent authorities — financial intelligence, law enforcement, prosecution, supervisors.",
+    "metadata": {
+      "fatf_number": 2,
+      "topic": "national-coordination"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r2",
+    "canonical_name": "FATF R.2 — National Cooperation and Coordination"
+  },
+  {
+    "ref_id": "fatf-r3",
+    "description": "Countries must criminalise ML based on UNTOC. All serious offences (21 FATF predicate offence categories) must be predicate offences for ML. ML offence applies to all property directly/indirectly from crime. Self-laundering must be criminalised.",
+    "metadata": {
+      "fatf_number": 3,
+      "topic": "ml-offence",
+      "predicate_categories": 21
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r3",
+    "canonical_name": "FATF R.3 — Money Laundering Offence"
+  },
+  {
+    "ref_id": "fatf-r4",
+    "description": "Countries must adopt measures to confiscate: proceeds of crime, instrumentalities, property of corresponding value. Non-conviction-based confiscation and civil forfeiture should be enabled. Provisional measures (freezing, seizing) before conviction.",
+    "metadata": {
+      "fatf_number": 4,
+      "topic": "confiscation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r4",
+    "canonical_name": "FATF R.4 — Confiscation and Provisional Measures"
+  },
+  {
+    "ref_id": "fatf-r5",
+    "description": "Countries must criminalise TF (financing of terrorist acts, terrorist organisations, individual terrorists) in line with the Terrorist Financing Convention. All aspects: collection, provision of funds, regardless of whether ML offence committed. Attempt and conspiracy must also be criminal.",
+    "metadata": {
+      "fatf_number": 5,
+      "topic": "tf-offence"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r5",
+    "canonical_name": "FATF R.5 — Terrorist Financing Offence"
+  },
+  {
+    "ref_id": "fatf-r6",
+    "description": "Countries must implement UN Security Council targeted financial sanctions (TFS) regimes without delay for TF (UNSCR 1267, 1373 and successors). Must freeze assets, prevent funds/services to designated persons, implement domestic designation and de-listing processes.",
+    "metadata": {
+      "fatf_number": 6,
+      "topic": "tfs-terrorist-financing",
+      "unscr": [
+        "1267",
+        "1373"
+      ]
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r6",
+    "canonical_name": "FATF R.6 — Targeted Financial Sanctions (TF)"
+  },
+  {
+    "ref_id": "fatf-r7",
+    "description": "Countries must implement UN Security Council targeted financial sanctions (TFS) for WMD proliferation financing (UNSCR 1718, 1737 and successors — DPRK, Iran). Without delay means within hours, not days. Applies to all persons, financial institutions and DNFBPs.",
+    "metadata": {
+      "fatf_number": 7,
+      "topic": "tfs-proliferation-financing",
+      "unscr": [
+        "1718",
+        "1737"
+      ]
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r7",
+    "canonical_name": "FATF R.7 — Targeted Financial Sanctions (WMD Proliferation)"
+  },
+  {
+    "ref_id": "fatf-r10",
+    "description": "Financial institutions (FIs) must apply CDD measures: identify and verify customer identity; identify and verify beneficial owner; understand business relationship purpose; ongoing monitoring. CDD must be applied: when establishing business relationship, occasional transactions (>USD/EUR 15,000), suspected ML/TF, doubt on adequacy of previous data. Third-party reliance allowed under conditions.",
+    "metadata": {
+      "fatf_number": 10,
+      "topic": "cdd",
+      "threshold": "USD/EUR 15,000 occasional transactions",
+      "eu_implementation": "AMLR Arts.19-30"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r10",
+    "canonical_name": "FATF R.10 — Customer Due Diligence (CDD)"
+  },
+  {
+    "ref_id": "fatf-r11",
+    "description": "FIs must maintain records of CDD, transactions and business correspondence for at least 5 years from end of business relationship or transaction date. Records must be sufficient to reconstruct individual transactions. Must be available to competent authorities on request.",
+    "metadata": {
+      "fatf_number": 11,
+      "topic": "record-keeping",
+      "minimum_years": 5
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r11",
+    "canonical_name": "FATF R.11 — Record Keeping"
+  },
+  {
+    "ref_id": "fatf-r12",
+    "description": "FIs must apply enhanced CDD to PEPs: senior management approval to establish/continue relationship, source of wealth and source of funds must be established, enhanced ongoing monitoring. Foreign PEPs always high risk; domestic PEPs and international organisation PEPs — risk-based. Applies to family members and close associates.",
+    "metadata": {
+      "fatf_number": 12,
+      "topic": "peps",
+      "eu_implementation": "AMLR Arts.43-49"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r12",
+    "canonical_name": "FATF R.12 — Politically Exposed Persons (PEPs)"
+  },
+  {
+    "ref_id": "fatf-r13",
+    "description": "FIs must apply specific enhanced CDD to correspondent relationships: understand respondent's business; assess respondent's AML/CFT controls; senior management approval for new correspondents; document respective responsibilities; shell banks must not be served. Enhanced due diligence required for high-risk respondents.",
+    "metadata": {
+      "fatf_number": 13,
+      "topic": "correspondent-banking",
+      "eu_implementation": "AMLR Art.26"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r13",
+    "canonical_name": "FATF R.13 — Correspondent Banking"
+  },
+  {
+    "ref_id": "fatf-r15",
+    "description": "Countries and FIs must identify and assess ML/TF risks from new technologies including virtual assets (VAs) and virtual asset service providers (VASPs). Countries must apply FATF Standards to VASPs. VASPs must be regulated, licensed/registered, supervised. Travel Rule (R.16) applies to VA transfers.",
+    "metadata": {
+      "fatf_number": 15,
+      "topic": "new-technologies-virtual-assets",
+      "updated": "2019 (virtual assets added)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r15",
+    "canonical_name": "FATF R.15 — New Technologies (including Virtual Assets)"
+  },
+  {
+    "ref_id": "fatf-r16",
+    "description": "Financial institutions must include originator and beneficiary information in wire transfers and VA transfers (Travel Rule). Threshold: USD/EUR 1,000 for wire transfers. For VA transfers: all amounts. Information must be transmitted along the payment chain. Beneficiary FI must implement risk-based procedures to detect missing information.",
+    "metadata": {
+      "fatf_number": 16,
+      "topic": "travel-rule",
+      "wire_threshold": "USD/EUR 1,000",
+      "va_threshold": "all amounts",
+      "eu_implementation": "TFR Regulation 2023/1113"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r16",
+    "canonical_name": "FATF R.16 — Wire Transfers (Travel Rule)"
+  },
+  {
+    "ref_id": "fatf-r18",
+    "description": "Financial groups must implement group-wide AML/CFT programmes: group policies and procedures including PEP, EDD, record-keeping; group compliance/audit/risk functions; employee screening; training; sufficient resources for head office compliance function. Branches and majority-owned subsidiaries in high-risk countries must apply higher standards.",
+    "metadata": {
+      "fatf_number": 18,
+      "topic": "internal-controls-group",
+      "eu_implementation": "AMLR Arts.17-18"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r18",
+    "canonical_name": "FATF R.18 — Internal Controls"
+  },
+  {
+    "ref_id": "fatf-r19",
+    "description": "Countries must apply EDD proportionate to risks from countries with weak AML/CFT regimes. Must apply countermeasures to FATF-identified high-risk jurisdictions (blacklist). Consider FATF-identified jurisdictions under increased monitoring (greylist). Countermeasures may include: requiring additional information on transactions, enhanced supervision, limiting business relationships.",
+    "metadata": {
+      "fatf_number": 19,
+      "topic": "higher-risk-countries",
+      "eu_implementation": "AMLR Art.28"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r19",
+    "canonical_name": "FATF R.19 — Higher-Risk Countries"
+  },
+  {
+    "ref_id": "fatf-r20",
+    "description": "If an FI suspects or has reasonable grounds to suspect that funds are proceeds of crime or related to TF, it must report promptly to the FIU. Obligation to report regardless of amount. Must not 'tip-off' customer. Safe harbour protection for good-faith reports. Both attempted and completed transactions must be reported.",
+    "metadata": {
+      "fatf_number": 20,
+      "topic": "str-sar",
+      "eu_implementation": "AMLR Art.69"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r20",
+    "canonical_name": "FATF R.20 — Suspicious Transaction Reporting (STR/SAR)"
+  },
+  {
+    "ref_id": "fatf-r21",
+    "description": "FIs, their directors, officers and employees are prohibited from disclosing ('tipping off') that an STR/SAR or related information is being reported to the FIU. Safe harbour: disclosure in good faith is not a breach of professional secrecy. Disclosures within financial group (intra-group) and to correspondent banks allowed under conditions.",
+    "metadata": {
+      "fatf_number": 21,
+      "topic": "tipping-off",
+      "eu_implementation": "AMLR Art.71"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r21",
+    "canonical_name": "FATF R.21 — Tipping Off and Confidentiality"
+  },
+  {
+    "ref_id": "fatf-r22",
+    "description": "Designated Non-Financial Businesses and Professions (DNFBPs) must apply CDD requirements (R.10), record-keeping (R.11), PEP (R.12), and EDD obligations. DNFBPs include: casinos, real estate agents, dealers in precious metals/stones, lawyers, accountants, trust and company service providers.",
+    "metadata": {
+      "fatf_number": 22,
+      "topic": "dnfbp-cdd",
+      "dnfbp_types": [
+        "casinos",
+        "real estate agents",
+        "precious metals dealers",
+        "lawyers",
+        "accountants",
+        "TCSPs"
+      ]
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r22",
+    "canonical_name": "FATF R.22 — DNFBPs: Customer Due Diligence"
+  },
+  {
+    "ref_id": "fatf-r24",
+    "description": "Countries must ensure adequate, accurate and timely beneficial ownership (BO) information on legal persons. Multiple mechanisms: central BO register, company registry, FI-held records, other mechanisms. Basic information + BO information must be accessible to competent authorities. Updated 2022 to require central register as primary mechanism.",
+    "metadata": {
+      "fatf_number": 24,
+      "topic": "beneficial-ownership-legal-persons",
+      "updated": "2022",
+      "eu_implementation": "AMLD6 + AMLR Arts.62-67"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r24",
+    "canonical_name": "FATF R.24 — Transparency: Legal Persons (Beneficial Ownership)"
+  },
+  {
+    "ref_id": "fatf-r25",
+    "description": "Countries must ensure adequate, accurate and timely BO information on legal arrangements (trusts, foundations, fiduciaries). Trustee must disclose trust status and provide BO information to FIs. Central register or alternative mechanism. Information must be accessible to competent authorities.",
+    "metadata": {
+      "fatf_number": 25,
+      "topic": "beneficial-ownership-legal-arrangements"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r25",
+    "canonical_name": "FATF R.25 — Transparency: Legal Arrangements (Trusts)"
+  },
+  {
+    "ref_id": "fatf-r26",
+    "description": "Countries must ensure FIs are subject to adequate regulation and supervision for AML/CFT. Risk-based supervisory approach: supervisory resources and intensity proportional to risk. FIs must be licensed or registered. Market entry controls — fit & proper for beneficial owners, senior management, directors.",
+    "metadata": {
+      "fatf_number": 26,
+      "topic": "fi-supervision"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r26",
+    "canonical_name": "FATF R.26 — Regulation and Supervision of Financial Institutions"
+  },
+  {
+    "ref_id": "fatf-r28",
+    "description": "Casinos must be licensed. DNFBPs must be subject to effective AML/CFT supervisory systems. Supervisors should apply risk-based supervision. Must have powers to conduct inspections, compel production of information, impose sanctions. Self-regulatory bodies may act as supervisor with adequate oversight.",
+    "metadata": {
+      "fatf_number": 28,
+      "topic": "dnfbp-supervision"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r28",
+    "canonical_name": "FATF R.28 — Regulation and Supervision of DNFBPs"
+  },
+  {
+    "ref_id": "fatf-r29",
+    "description": "Countries must establish a FIU as national centre for receipt, analysis and dissemination of STRs/SARs and other ML/TF-relevant information. FIU must be operationally independent. Must have access to financial, administrative and law enforcement information. Must cooperate with foreign FIUs via Egmont Group.",
+    "metadata": {
+      "fatf_number": 29,
+      "topic": "fiu",
+      "network": "Egmont Group"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r29",
+    "canonical_name": "FATF R.29 — Financial Intelligence Units (FIUs)"
+  },
+  {
+    "ref_id": "fatf-r30",
+    "description": "Countries must ensure that designated law enforcement authorities have responsibility for ML, TF and predicate offences investigations. Must have access to coercive investigative powers: production orders, search warrants, controlled delivery, undercover operations, interception. Financial investigation must be a core competency.",
+    "metadata": {
+      "fatf_number": 30,
+      "topic": "law-enforcement-powers"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r30",
+    "canonical_name": "FATF R.30 — Powers of Law Enforcement"
+  },
+  {
+    "ref_id": "fatf-r36",
+    "description": "Countries should ratify and implement UNCC, UNTOC, TF Convention, Palermo Protocol. These instruments form the legal foundation for criminalising ML/TF and enabling international cooperation on asset recovery and extradition.",
+    "metadata": {
+      "fatf_number": 36,
+      "topic": "international-instruments"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r36",
+    "canonical_name": "FATF R.36 — International Instruments"
+  },
+  {
+    "ref_id": "fatf-r37",
+    "description": "Countries must provide the widest range of mutual legal assistance (MLA) for ML/TF and predicate offence investigations. Must execute requests promptly and constructively. Cannot refuse on grounds of secrecy alone. Asset-sharing provisions encouraged.",
+    "metadata": {
+      "fatf_number": 37,
+      "topic": "mla"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r37",
+    "canonical_name": "FATF R.37 — Mutual Legal Assistance"
+  },
+  {
+    "ref_id": "fatf-r40",
+    "description": "Countries should ensure FIUs, supervisors and law enforcement can share information with foreign counterparts without unduly restrictive conditions. Egmont Group principles for FIU-to-FIU information exchange. Supervisory cooperation via MoUs. Intelligence-sharing between FATF-style regional bodies (FSRBs).",
+    "metadata": {
+      "fatf_number": 40,
+      "topic": "international-cooperation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "fatf-r40",
+    "canonical_name": "FATF R.40 — Other Forms of International Cooperation"
+  },
+  {
+    "ref_id": "fatf-mev",
+    "description": "FATF assesses member countries through mutual evaluations (MEs) — peer review process every 5-7 years. Two components: (1) Technical compliance (TC): assessed against 40 Recommendations — C/LC/PC/NC ratings; (2) Effectiveness (EFF): 11 Immediate Outcomes (IOs) assessed through 40-point qualitative scoring. ME report published. Follow-up process: Regular, Enhanced or Expedited based on risk level.",
+    "metadata": {
+      "body": "FATF",
+      "technical_compliance_ratings": [
+        "C",
+        "LC",
+        "PC",
+        "NC"
+      ],
+      "effectiveness_outcomes": 11,
+      "follow_up_tracks": [
+        "Regular",
+        "Enhanced",
+        "Expedited"
+      ]
+    },
+    "entity_type": "document",
+    "entity_id": "fatf-mev",
+    "canonical_name": "FATF Mutual Evaluation Process"
+  },
+  {
+    "ref_id": "fatf-blacklist",
+    "description": "FATF's public statement on 'High-Risk Jurisdictions Subject to a Call for Action' (formerly FATF Blacklist). Jurisdictions with strategic AML/CFT deficiencies posing serious threat to international financial system. Countries must apply enhanced due diligence or countermeasures. Currently typically 2-3 jurisdictions. EU uses FATF blacklist as basis for its own high-risk third-country list.",
+    "metadata": {
+      "body": "FATF",
+      "published": "Three times per year",
+      "eu_link": "EU High-Risk Third Countries list"
+    },
+    "entity_type": "concept",
+    "entity_id": "fatf-blacklist",
+    "canonical_name": "FATF High-Risk Jurisdictions (Blacklist)"
+  },
+  {
+    "ref_id": "fatf-greylist",
+    "description": "FATF's 'Jurisdictions Under Increased Monitoring' (formerly FATF Greylist). Countries with identified AML/CFT deficiencies working with FATF to implement action plan. Enhanced scrutiny of transactions with greylisted jurisdictions required but not mandatory countermeasures. Typically 20-30+ jurisdictions listed. Listing has significant reputational and financial impact on correspondent banking.",
+    "metadata": {
+      "body": "FATF",
+      "published": "Three times per year",
+      "typical_count": "20-30+"
+    },
+    "entity_type": "concept",
+    "entity_id": "fatf-greylist",
+    "canonical_name": "FATF Jurisdictions Under Increased Monitoring (Greylist)"
+  },
+  {
+    "ref_id": "fatf-rba-guidance",
+    "description": "FATF has published sector-specific RBA guidance for: banking, securities, insurance, money/value transfer services, real estate, dealers in precious metals/stones, accountants, lawyers, trust and company service providers, and virtual assets/VASPs. Guidance documents are non-binding but represent international best practice interpretation of R.1.",
+    "metadata": {
+      "body": "FATF",
+      "type": "guidance",
+      "based_on": "FATF R.1"
+    },
+    "entity_type": "document",
+    "entity_id": "fatf-rba-guidance",
+    "canonical_name": "FATF Guidance on Risk-Based Approach"
+  },
+  {
+    "ref_id": "fatf-va-guidance",
+    "description": "FATF Guidance (2021 update) on R.15 and the Interpretive Note to R.15. Covers: definition of virtual asset and VASP, licensing/registration requirements, Travel Rule for VA transfers (all amounts), how to conduct risk assessment for VA sector, supervision of VASPs, international cooperation for VASP oversight. Key reference for MiCA and national VA regulation.",
+    "metadata": {
+      "body": "FATF",
+      "published": "2021 (updated)",
+      "based_on": "FATF R.15, IN R.15"
+    },
+    "entity_type": "document",
+    "entity_id": "fatf-va-guidance",
+    "canonical_name": "FATF Guidance on Virtual Assets and VASPs"
+  },
+  {
+    "ref_id": "fatf-bo-guidance",
+    "description": "FATF Guidance (2023 update) on R.24 and R.25 following the 2022 amendment to R.24. Covers: information to be collected, mechanisms for maintaining BO information, central register design, verification standards, access by competent authorities, international information exchange. Critical reference for EU BO register implementation under AMLD6.",
+    "metadata": {
+      "body": "FATF",
+      "published": "2023",
+      "based_on": "FATF R.24, R.25"
+    },
+    "entity_type": "document",
+    "entity_id": "fatf-bo-guidance",
+    "canonical_name": "FATF Guidance on Beneficial Ownership"
+  },
+  {
+    "ref_id": "fatf-derisking-guidance",
+    "description": "FATF Guidance on Correspondent Banking (2016) and supplementary analysis on de-risking (2021). Addresses: inappropriate de-risking by correspondent banks, how to apply RBA to correspondent relationships, regulatory expectations for due diligence, importance of maintaining financial inclusion. Directly relevant to AMLR Art.26 and FATF R.13.",
+    "metadata": {
+      "body": "FATF",
+      "published": "2016, updated 2021",
+      "based_on": "FATF R.13"
+    },
+    "entity_type": "document",
+    "entity_id": "fatf-derisking-guidance",
+    "canonical_name": "FATF Guidance on Correspondent Banking"
+  },
+  {
+    "ref_id": "fatf-io1",
+    "description": "FATF Effectiveness Immediate Outcome 1: ML/TF risks are understood and national AML/CFT policies and activities are coordinated domestically to address these risks.",
+    "metadata": {
+      "body": "FATF",
+      "io_number": 1,
+      "topic": "risk-understanding-coordination"
+    },
+    "entity_type": "concept",
+    "entity_id": "fatf-io1",
+    "canonical_name": "FATF IO.1 — Risk, Policy and Coordination"
+  },
+  {
+    "ref_id": "fatf-io3",
+    "description": "FATF Effectiveness Immediate Outcome 3: Supervisors appropriately supervise, monitor and regulate FIs and DNFBPs for compliance with AML/CFT requirements commensurate with risks.",
+    "metadata": {
+      "body": "FATF",
+      "io_number": 3,
+      "topic": "supervision"
+    },
+    "entity_type": "concept",
+    "entity_id": "fatf-io3",
+    "canonical_name": "FATF IO.3 — Supervision"
+  },
+  {
+    "ref_id": "fatf-io6",
+    "description": "FATF Effectiveness Immediate Outcome 6: FIU produces financial intelligence that supports ML/TF investigations. STRs/SARs and other financial intelligence are effectively used.",
+    "metadata": {
+      "body": "FATF",
+      "io_number": 6,
+      "topic": "fiu-intelligence"
+    },
+    "entity_type": "concept",
+    "entity_id": "fatf-io6",
+    "canonical_name": "FATF IO.6 — FIU Intelligence"
+  },
+  {
+    "ref_id": "org-fatf",
+    "description": "Intergovernmental body founded in 1989 by G7. Sets international AML/CFT/CPF standards (40 Recommendations). Conducts mutual evaluations. Identifies high-risk and non-cooperative jurisdictions (blacklist/greylist). 40 member jurisdictions + 2 regional organisations + observer organisations. Secretariat hosted by OECD in Paris.",
+    "metadata": {
+      "founded": "1989",
+      "members": "40+ jurisdictions",
+      "secretariat": "OECD, Paris",
+      "website": "www.fatf-gafi.org"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-fatf",
+    "canonical_name": "FATF — Financial Action Task Force"
+  },
+  {
+    "ref_id": "org-egmont",
+    "description": "International network of 170+ FIUs enabling secure FIU-to-FIU information exchange. Operates the Egmont Secure Web (ESW) — encrypted communication platform for spontaneous and requested exchanges of STR/SAR data and financial intelligence. Membership linked to FATF R.40 compliance.",
+    "metadata": {
+      "members": "170+ FIUs",
+      "platform": "Egmont Secure Web (ESW)"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-egmont",
+    "canonical_name": "Egmont Group of FIUs"
+  },
+  {
+    "ref_id": "org-fsrb",
+    "description": "Regional associates of FATF implementing FATF Standards and conducting mutual evaluations in their regions. Includes: MONEYVAL (Council of Europe), MENAFATF, APG, CFATF, GABAC, GIABA, EAG, GAFILAT, ESAAMLG. MONEYVAL most relevant for European jurisdictions outside FATF direct membership.",
+    "metadata": {
+      "body": "FATF Associates",
+      "europe_relevant": "MONEYVAL"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-fsrb",
+    "canonical_name": "FATF-Style Regional Bodies (FSRBs)"
+  },
+  {
+    "ref_id": "cross-fatf-amlr",
+    "description": "AMLR directly implements FATF 40 Recommendations in the EU: R.1 → AMLR RBA (Arts.8-16); R.10 → CDD (Arts.19-30); R.12 → PEP (Arts.43-49); R.16 → TFR (Regulation 2023/1113); R.20 → SAR (Art.69); R.24 → BO register (Arts.62-67). AMLR is the EU's legal transposition mechanism for FATF standards for financial institutions.",
+    "metadata": {
+      "frameworks": [
+        "FATF",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-fatf-amlr",
+    "canonical_name": "FATF × AMLR alignment"
+  },
+  {
+    "ref_id": "cross-fatf-mica",
+    "description": "FATF R.15 and its Interpretive Note require countries to regulate, supervise and apply AML/CFT to VASPs. MiCA + AMLR is the EU implementation: CASP = VASP in FATF terminology. FATF VA Guidance (2021) is the international best practice reference for CASP AML programme design, transaction monitoring for VAs, and Travel Rule implementation.",
+    "metadata": {
+      "frameworks": [
+        "FATF R.15",
+        "MiCA",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-fatf-mica",
+    "canonical_name": "FATF R.15 × MiCA alignment"
+  }
+]

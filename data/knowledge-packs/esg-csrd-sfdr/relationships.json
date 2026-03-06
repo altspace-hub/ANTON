@@ -1,0 +1,576 @@
+[
+  {
+    "from_ref": "csrd",
+    "to_ref": "csrd-a19a",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSRD contains Art.19a — the core sustainability reporting obligation for large undertakings"
+  },
+  {
+    "from_ref": "csrd",
+    "to_ref": "csrd-a29a",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSRD contains Art.29a on consolidated group sustainability reporting"
+  },
+  {
+    "from_ref": "csrd",
+    "to_ref": "csrd-a29b",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSRD contains Art.29b empowering Commission to adopt ESRS by delegated act"
+  },
+  {
+    "from_ref": "csrd",
+    "to_ref": "csrd-a34",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSRD contains Art.34 requiring limited assurance of sustainability reporting"
+  },
+  {
+    "from_ref": "sfdr",
+    "to_ref": "sfdr-a3",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "SFDR contains Art.3 — entity-level sustainability risk policy disclosure"
+  },
+  {
+    "from_ref": "sfdr",
+    "to_ref": "sfdr-a4",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "SFDR contains Art.4 — entity-level PAI disclosure obligation"
+  },
+  {
+    "from_ref": "sfdr",
+    "to_ref": "sfdr-a6",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "SFDR contains Art.6 — baseline product sustainability risk disclosure"
+  },
+  {
+    "from_ref": "sfdr",
+    "to_ref": "sfdr-a8",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "SFDR contains Art.8 — ESG-promoting (light green) product disclosures"
+  },
+  {
+    "from_ref": "sfdr",
+    "to_ref": "sfdr-a9",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "SFDR contains Art.9 — sustainable investment (dark green) product disclosures"
+  },
+  {
+    "from_ref": "sfdr",
+    "to_ref": "sfdr-a10",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "SFDR contains Art.10 — product-level website disclosure for Art.8/9 products"
+  },
+  {
+    "from_ref": "sfdr",
+    "to_ref": "sfdr-a11",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "SFDR contains Art.11 — periodic reporting for Art.8/9 products"
+  },
+  {
+    "from_ref": "eu-taxonomy",
+    "to_ref": "eu-taxonomy-a1",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "EU Taxonomy contains Art.1 on subject matter and purpose"
+  },
+  {
+    "from_ref": "eu-taxonomy",
+    "to_ref": "eu-taxonomy-a9",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "EU Taxonomy contains Art.9 defining the six environmental objectives"
+  },
+  {
+    "from_ref": "eu-taxonomy",
+    "to_ref": "eu-taxonomy-a10",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "EU Taxonomy contains Art.10 on climate change mitigation TSC"
+  },
+  {
+    "from_ref": "eu-taxonomy",
+    "to_ref": "eu-taxonomy-a17",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "EU Taxonomy contains Art.17 defining the DNSH principle"
+  },
+  {
+    "from_ref": "eu-taxonomy",
+    "to_ref": "eu-taxonomy-a18",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "EU Taxonomy contains Art.18 on minimum social safeguards"
+  },
+  {
+    "from_ref": "csddd",
+    "to_ref": "csddd-a5",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSDDD contains Art.5 — the core due diligence obligation"
+  },
+  {
+    "from_ref": "csddd",
+    "to_ref": "csddd-a6",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSDDD contains Art.6 on identification of adverse impacts"
+  },
+  {
+    "from_ref": "csddd",
+    "to_ref": "csddd-a7",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSDDD contains Art.7 on prevention and mitigation of potential adverse impacts"
+  },
+  {
+    "from_ref": "csddd",
+    "to_ref": "csddd-a8",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSDDD contains Art.8 on remediation of actual adverse impacts"
+  },
+  {
+    "from_ref": "csddd",
+    "to_ref": "csddd-a22",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CSDDD contains Art.22 on civil liability for failure to conduct due diligence"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-1",
+    "relationship_type": "mandates",
+    "strength": 1,
+    "description": "CSRD Art.29b mandates the adoption of ESRS including ESRS 1 (General Requirements)"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-2",
+    "relationship_type": "mandates",
+    "strength": 1,
+    "description": "CSRD Art.29b mandates ESRS 2 (General Disclosures) as mandatory cross-cutting standard"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-e1",
+    "relationship_type": "mandates",
+    "strength": 0.9,
+    "description": "CSRD Art.29b mandates topical ESRS including ESRS E1 on climate change"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-e2",
+    "relationship_type": "mandates",
+    "strength": 0.8,
+    "description": "CSRD Art.29b mandates ESRS E2 on pollution where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-e3",
+    "relationship_type": "mandates",
+    "strength": 0.8,
+    "description": "CSRD Art.29b mandates ESRS E3 on water and marine resources where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-e4",
+    "relationship_type": "mandates",
+    "strength": 0.8,
+    "description": "CSRD Art.29b mandates ESRS E4 on biodiversity where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-e5",
+    "relationship_type": "mandates",
+    "strength": 0.8,
+    "description": "CSRD Art.29b mandates ESRS E5 on circular economy where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-s1",
+    "relationship_type": "mandates",
+    "strength": 0.8,
+    "description": "CSRD Art.29b mandates ESRS S1 on own workforce where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-s2",
+    "relationship_type": "mandates",
+    "strength": 0.8,
+    "description": "CSRD Art.29b mandates ESRS S2 on value-chain workers where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-s3",
+    "relationship_type": "mandates",
+    "strength": 0.7,
+    "description": "CSRD Art.29b mandates ESRS S3 on affected communities where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-s4",
+    "relationship_type": "mandates",
+    "strength": 0.7,
+    "description": "CSRD Art.29b mandates ESRS S4 on consumers where material"
+  },
+  {
+    "from_ref": "csrd-a29b",
+    "to_ref": "esrs-g1",
+    "relationship_type": "mandates",
+    "strength": 0.8,
+    "description": "CSRD Art.29b mandates ESRS G1 on business conduct where material"
+  },
+  {
+    "from_ref": "csrd-a19a",
+    "to_ref": "esrs-1",
+    "relationship_type": "implemented_through",
+    "strength": 0.9,
+    "description": "CSRD Art.19a sustainability reporting obligation is implemented through ESRS 1 methodology"
+  },
+  {
+    "from_ref": "csrd-a19a",
+    "to_ref": "esrs-2",
+    "relationship_type": "implemented_through",
+    "strength": 0.9,
+    "description": "CSRD Art.19a is implemented through ESRS 2 general disclosure requirements"
+  },
+  {
+    "from_ref": "csrd-a34",
+    "to_ref": "csrd-a19a",
+    "relationship_type": "applies_to",
+    "strength": 0.9,
+    "description": "CSRD Art.34 assurance applies to sustainability information reported under Art.19a"
+  },
+  {
+    "from_ref": "esrs-1",
+    "to_ref": "concept-double-materiality",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "ESRS 1 defines the double materiality methodology for CSRD reporting"
+  },
+  {
+    "from_ref": "esrs-2",
+    "to_ref": "concept-iro",
+    "relationship_type": "operationalises",
+    "strength": 1,
+    "description": "ESRS 2 IRO-1/IRO-2 disclosures operationalise the IRO identification process"
+  },
+  {
+    "from_ref": "concept-double-materiality",
+    "to_ref": "concept-iro",
+    "relationship_type": "drives",
+    "strength": 0.9,
+    "description": "Double materiality assessment drives the identification of material IROs"
+  },
+  {
+    "from_ref": "concept-double-materiality",
+    "to_ref": "esrs-e1",
+    "relationship_type": "determines_applicability_of",
+    "strength": 0.8,
+    "description": "Double materiality determines whether climate change is a material topic requiring ESRS E1 disclosure"
+  },
+  {
+    "from_ref": "concept-double-materiality",
+    "to_ref": "esrs-s2",
+    "relationship_type": "determines_applicability_of",
+    "strength": 0.8,
+    "description": "Double materiality determines whether value-chain worker impacts are material under ESRS S2"
+  },
+  {
+    "from_ref": "sfdr-a4",
+    "to_ref": "concept-pai",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "SFDR Art.4 requires entity-level PAI statement from large financial market participants"
+  },
+  {
+    "from_ref": "sfdr-a11",
+    "to_ref": "concept-pai",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "SFDR Art.11 periodic reporting requires PAI data for Art.8/9 products"
+  },
+  {
+    "from_ref": "sfdr-a8",
+    "to_ref": "concept-taxonomy-alignment",
+    "relationship_type": "may_require",
+    "strength": 0.7,
+    "description": "SFDR Art.8 products may disclose EU Taxonomy alignment where they invest in taxonomy-covered activities"
+  },
+  {
+    "from_ref": "sfdr-a9",
+    "to_ref": "concept-taxonomy-alignment",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "SFDR Art.9 products must disclose EU Taxonomy alignment for investments in taxonomy-covered activities"
+  },
+  {
+    "from_ref": "sfdr-a9",
+    "to_ref": "concept-sustainable-investment",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "SFDR Art.9 products must have sustainable investment (Art.2(17)) as their objective"
+  },
+  {
+    "from_ref": "sfdr-a9",
+    "to_ref": "concept-dnsh",
+    "relationship_type": "requires_compliance_with",
+    "strength": 0.9,
+    "description": "SFDR Art.9 sustainable investments must meet DNSH requirement from SFDR Art.2(17) definition"
+  },
+  {
+    "from_ref": "eu-taxonomy-a17",
+    "to_ref": "concept-dnsh",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "EU Taxonomy Art.17 defines the DNSH criteria for each of the six environmental objectives"
+  },
+  {
+    "from_ref": "eu-taxonomy-a18",
+    "to_ref": "concept-taxonomy-alignment",
+    "relationship_type": "conditions",
+    "strength": 0.9,
+    "description": "Minimum social safeguards (Art.18) are a condition for taxonomy alignment alongside TSC and DNSH"
+  },
+  {
+    "from_ref": "eu-taxonomy-a9",
+    "to_ref": "eu-taxonomy-a10",
+    "relationship_type": "frames",
+    "strength": 0.9,
+    "description": "Art.9 environmental objectives frame the TSC in Art.10 (climate mitigation) and other Delegated Acts"
+  },
+  {
+    "from_ref": "eu-taxonomy-a10",
+    "to_ref": "eu-taxonomy-a17",
+    "relationship_type": "subject_to",
+    "strength": 0.9,
+    "description": "Climate mitigation activities (Art.10 TSC) must also comply with DNSH criteria (Art.17)"
+  },
+  {
+    "from_ref": "csddd-a5",
+    "to_ref": "csddd-a6",
+    "relationship_type": "requires",
+    "strength": 1,
+    "description": "Due diligence obligation (Art.5) requires identification of adverse impacts (Art.6) as first step"
+  },
+  {
+    "from_ref": "csddd-a6",
+    "to_ref": "csddd-a7",
+    "relationship_type": "informs",
+    "strength": 0.9,
+    "description": "Impact identification (Art.6) informs prevention and mitigation measures (Art.7)"
+  },
+  {
+    "from_ref": "csddd-a7",
+    "to_ref": "csddd-a8",
+    "relationship_type": "precedes",
+    "strength": 0.8,
+    "description": "Prevention/mitigation for potential impacts (Art.7) is distinct from remediation of actual impacts (Art.8)"
+  },
+  {
+    "from_ref": "csddd-a22",
+    "to_ref": "csddd-a5",
+    "relationship_type": "enforces",
+    "strength": 0.9,
+    "description": "Civil liability (Art.22) enforces the due diligence obligation in Art.5"
+  },
+  {
+    "from_ref": "concept-value-chain",
+    "to_ref": "csddd-a6",
+    "relationship_type": "scopes",
+    "strength": 0.9,
+    "description": "Value chain scope concept determines what must be mapped under CSDDD Art.6 impact identification"
+  },
+  {
+    "from_ref": "concept-value-chain",
+    "to_ref": "esrs-s2",
+    "relationship_type": "scopes",
+    "strength": 0.8,
+    "description": "Value chain scope determines which workers must be covered in ESRS S2 reporting"
+  },
+  {
+    "from_ref": "concept-transition-plan",
+    "to_ref": "esrs-e1",
+    "relationship_type": "disclosed_in",
+    "strength": 0.9,
+    "description": "Climate transition plan is disclosed under ESRS E1 (ESRS E1-1 disclosure requirement)"
+  },
+  {
+    "from_ref": "concept-transition-plan",
+    "to_ref": "csddd-a5",
+    "relationship_type": "required_by",
+    "strength": 0.8,
+    "description": "CSDDD Art.5 requires adoption of a transition plan aligned with Paris Agreement 1.5°C pathway"
+  },
+  {
+    "from_ref": "sfdr-rts",
+    "to_ref": "sfdr-a4",
+    "relationship_type": "implements_detail_of",
+    "strength": 1,
+    "description": "SFDR RTS specifies PAI statement templates and 14+46 indicators for Art.4"
+  },
+  {
+    "from_ref": "sfdr-rts",
+    "to_ref": "sfdr-a8",
+    "relationship_type": "implements_detail_of",
+    "strength": 1,
+    "description": "SFDR RTS specifies pre-contractual and periodic disclosure templates for Art.8 products"
+  },
+  {
+    "from_ref": "sfdr-rts",
+    "to_ref": "sfdr-a9",
+    "relationship_type": "implements_detail_of",
+    "strength": 1,
+    "description": "SFDR RTS specifies pre-contractual and periodic disclosure templates for Art.9 products"
+  },
+  {
+    "from_ref": "org-efrag",
+    "to_ref": "esrs-1",
+    "relationship_type": "developed",
+    "strength": 1,
+    "description": "EFRAG developed ESRS 1 under CSRD Art.29b mandate"
+  },
+  {
+    "from_ref": "org-efrag",
+    "to_ref": "esrs-2",
+    "relationship_type": "developed",
+    "strength": 1,
+    "description": "EFRAG developed ESRS 2 under CSRD Art.29b mandate"
+  },
+  {
+    "from_ref": "org-efrag",
+    "to_ref": "esrs-e1",
+    "relationship_type": "developed",
+    "strength": 0.9,
+    "description": "EFRAG developed ESRS E1 climate change topical standard"
+  },
+  {
+    "from_ref": "org-esma-sfdr",
+    "to_ref": "sfdr-rts",
+    "relationship_type": "co-developed",
+    "strength": 0.9,
+    "description": "ESMA co-developed SFDR RTS as part of ESA Joint Committee"
+  },
+  {
+    "from_ref": "org-eba-sfdr",
+    "to_ref": "sfdr-rts",
+    "relationship_type": "co-developed",
+    "strength": 0.9,
+    "description": "EBA co-developed SFDR RTS as part of ESA Joint Committee"
+  },
+  {
+    "from_ref": "cross-csrd-csddd",
+    "to_ref": "csrd",
+    "relationship_type": "links",
+    "strength": 0.8,
+    "description": "CSRD × CSDDD cross-reference links the reporting and action frameworks",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-csrd-csddd",
+    "to_ref": "csddd",
+    "relationship_type": "links",
+    "strength": 0.8,
+    "description": "CSRD × CSDDD cross-reference documents complementarity",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-csrd-sfdr",
+    "to_ref": "csrd",
+    "relationship_type": "links",
+    "strength": 0.8,
+    "description": "CSRD data feeds SFDR PAI disclosures",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-csrd-sfdr",
+    "to_ref": "sfdr",
+    "relationship_type": "links",
+    "strength": 0.8,
+    "description": "SFDR uses CSRD investee company data",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-sfdr-taxonomy",
+    "to_ref": "sfdr",
+    "relationship_type": "links",
+    "strength": 0.9,
+    "description": "SFDR Art.8/9 disclosures include EU Taxonomy KPIs",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-sfdr-taxonomy",
+    "to_ref": "eu-taxonomy",
+    "relationship_type": "links",
+    "strength": 0.9,
+    "description": "EU Taxonomy TSC/DNSH used in SFDR sustainable investment and product disclosure",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-csrd-amlr",
+    "to_ref": "csrd",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "ESRS G1 requires AML/CFT policy disclosures linking CSRD and AMLR",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "esrs-s2",
+    "to_ref": "csddd-a6",
+    "relationship_type": "discloses_results_of",
+    "strength": 0.8,
+    "description": "ESRS S2 disclosures cover the results of CSDDD Art.6 value-chain impact identification"
+  },
+  {
+    "from_ref": "esrs-g1",
+    "to_ref": "cross-csrd-amlr",
+    "relationship_type": "referenced_in",
+    "strength": 0.7,
+    "description": "ESRS G1 business conduct topics include anti-corruption, anti-bribery and financial crime — linking to AML regulatory requirements"
+  },
+  {
+    "from_ref": "concept-taxonomy-alignment",
+    "to_ref": "eu-taxonomy-a9",
+    "relationship_type": "defined_against",
+    "strength": 0.9,
+    "description": "Taxonomy alignment is defined against the six environmental objectives in Art.9"
+  },
+  {
+    "from_ref": "concept-taxonomy-alignment",
+    "to_ref": "eu-taxonomy-a17",
+    "relationship_type": "requires_compliance_with",
+    "strength": 0.9,
+    "description": "Taxonomy alignment requires DNSH compliance per Art.17 for each environmental objective"
+  },
+  {
+    "from_ref": "concept-taxonomy-alignment",
+    "to_ref": "eu-taxonomy-a18",
+    "relationship_type": "requires_compliance_with",
+    "strength": 0.8,
+    "description": "Taxonomy alignment requires minimum social safeguard compliance per Art.18"
+  }
+]

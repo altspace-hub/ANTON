@@ -1,0 +1,452 @@
+[
+  {
+    "ref_id": "crr3",
+    "description": "Regulation (EU) 2024/1623 amending the Capital Requirements Regulation (CRR). Implements Basel III final reforms in the EU: revised standardised approaches for credit, market and operational risk; output floor (72.5% of standardised approach); FRTB; CVA risk; IRRBB/CSRBB; ESG risk integration in Pillar 3. Applies from 1 January 2025.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2024/1623",
+      "short_name": "CRR3",
+      "amends": "Regulation (EU) 575/2013",
+      "applies_from": "2025-01-01",
+      "basel_framework": "Basel III final reforms",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "crr3",
+    "canonical_name": "CRR3"
+  },
+  {
+    "ref_id": "crd6",
+    "description": "Directive (EU) 2024/1619 amending the Capital Requirements Directive (CRD). Introduces: CSRBB supervisory expectations, harmonised third-country branch (TCB) regime, ESG risk integration in ICAAP/SREP, enhanced fit & proper requirements, new provisions on crypto-asset exposures. Transposition deadline 10 January 2026.",
+    "metadata": {
+      "full_title": "Directive (EU) 2024/1619",
+      "short_name": "CRD6",
+      "amends": "Directive 2013/36/EU",
+      "transposition_deadline": "2026-01-10",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "crd6",
+    "canonical_name": "CRD6"
+  },
+  {
+    "ref_id": "mica",
+    "description": "Markets in Crypto-Assets Regulation (Regulation (EU) 2023/1114). First comprehensive EU framework for crypto-assets. Covers: e-money tokens (EMTs), asset-referenced tokens (ARTs), and other crypto-assets. CASP authorisation, white paper requirements, AML/CFT obligations, market abuse prohibition, and significant token additional requirements.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2023/1114",
+      "short_name": "MiCA",
+      "applies_emt_art": "2024-06-30",
+      "applies_full": "2024-12-30",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "mica",
+    "canonical_name": "MiCA"
+  },
+  {
+    "ref_id": "crr3-output-floor",
+    "description": "New output floor caps internal model (IRB/IMA) RWAs at 72.5% of standardised approach equivalent. Transitional phase-in: 50% in 2025, rising to 72.5% by 2030. Significant constraint on banks heavily reliant on internal models. Applies at consolidated level with optional sub-consolidated application.",
+    "metadata": {
+      "regulation": "CRR3",
+      "article_reference": "Art.92a-92b",
+      "topic": "output-floor",
+      "floor_level": "72.5%",
+      "phase_in_complete": "2030"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crr3-output-floor",
+    "canonical_name": "CRR3 — Output Floor"
+  },
+  {
+    "ref_id": "crr3-sa-credit",
+    "description": "Revised standardised approach for credit risk: more risk-sensitive, reduced reliance on external ratings, more granular risk weights for retail, real estate, SME, infrastructure, and equity exposures. New due diligence requirements for external rating reliance.",
+    "metadata": {
+      "regulation": "CRR3",
+      "article_reference": "Art.111-164",
+      "chapter": "2",
+      "topic": "standardised-approach-credit"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crr3-sa-credit",
+    "canonical_name": "CRR3 — Revised Standardised Approach (Credit Risk)"
+  },
+  {
+    "ref_id": "crr3-frtb",
+    "description": "Fundamental Review of the Trading Book (FRTB): new market risk framework for EU. Revised standardised approach (SA) and internal model approach (IMA) with sensitivities-based method, default risk charge, and residual risk add-on. Trading/banking book boundary clarified. P&L attribution test for IMA eligibility.",
+    "metadata": {
+      "regulation": "CRR3",
+      "article_reference": "Art.325-377",
+      "topic": "frtb-market-risk"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crr3-frtb",
+    "canonical_name": "CRR3 — FRTB (Market Risk)"
+  },
+  {
+    "ref_id": "crr3-op-risk",
+    "description": "Single new standardised approach (SMA replacement) for operational risk. Business Indicator Component (BIC) based on income statement items × marginal coefficients. Loss multiplier based on bank's own historical operational risk losses. Replaces AMA and three previous standardised approaches.",
+    "metadata": {
+      "regulation": "CRR3",
+      "article_reference": "Art.312-323",
+      "topic": "operational-risk-new-sa"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crr3-op-risk",
+    "canonical_name": "CRR3 — New Standardised Approach (Operational Risk)"
+  },
+  {
+    "ref_id": "crr3-irrbb",
+    "description": "Interest Rate Risk in Banking Book (IRRBB) Pillar 1 standardised approach capital requirement for banks identified as outliers under Pillar 2 IRRBB framework. Six prescribed interest rate shock scenarios. Supervisory outlier test (SOT): NII-based and EVE-based.",
+    "metadata": {
+      "regulation": "CRR3",
+      "topic": "irrbb",
+      "scenarios": 6,
+      "outlier_test": "NII and EVE"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crr3-irrbb",
+    "canonical_name": "CRR3 — IRRBB Capital Requirements"
+  },
+  {
+    "ref_id": "crd6-csrbb",
+    "description": "Credit Spread Risk in Banking Book (CSRBB) — new regulatory requirement under CRD6. Banks must identify, measure, monitor and control CSRBB. EBA guidelines specify CSRBB quantification approaches. Affects bond portfolios, TLTRO positions, and AFS portfolios. Related to IRRBB framework.",
+    "metadata": {
+      "regulation": "CRD6",
+      "topic": "csrbb",
+      "ebal_guidelines": "EBA/GL/2022/14"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crd6-csrbb",
+    "canonical_name": "CRD6 — CSRBB"
+  },
+  {
+    "ref_id": "crd6-tcb",
+    "description": "New harmonised EU third-country branch regime under CRD6 Art.48a-48y. Third-country banks operating in the EU via branches must obtain Member State authorisation, meet local capital/liquidity booking requirements (Class 1/Class 2 branches), and comply with host state supervision. Booking model restrictions for high-risk TCBs.",
+    "metadata": {
+      "regulation": "CRD6",
+      "article_reference": "Art.48a-48y",
+      "topic": "third-country-branches",
+      "classes": [
+        "Class 1",
+        "Class 2"
+      ]
+    },
+    "entity_type": "obligation",
+    "entity_id": "crd6-tcb",
+    "canonical_name": "CRD6 — Third-Country Branch (TCB) Regime"
+  },
+  {
+    "ref_id": "crd6-esg-risk",
+    "description": "ESG risks (including climate, environmental, social and governance risks) must be integrated into banks' ICAAP, SREP, risk management frameworks, and stress testing. EBA published Pillar 3 ESG disclosure templates under CRR (Art.449a). Transition plan disclosures required for banks with CSRD reporting obligations.",
+    "metadata": {
+      "regulation": "CRD6",
+      "topic": "esg-risk",
+      "pillar": "Pillar 2 + Pillar 3",
+      "linked_frameworks": [
+        "CSRD",
+        "EBA Pillar 3 ESG"
+      ]
+    },
+    "entity_type": "obligation",
+    "entity_id": "crd6-esg-risk",
+    "canonical_name": "CRD6 — ESG Risk Integration"
+  },
+  {
+    "ref_id": "crd6-fit-proper",
+    "description": "Enhanced fit and proper requirements for bank management body members and key function holders. New harmonised EU-wide assessment criteria. EBA/ESMA joint guidelines on suitability. Pre-appointment notification to supervisory authority required. Stronger diversity requirements.",
+    "metadata": {
+      "regulation": "CRD6",
+      "topic": "fit-proper",
+      "linked_guidelines": "EBA/ESMA Joint Guidelines"
+    },
+    "entity_type": "obligation",
+    "entity_id": "crd6-fit-proper",
+    "canonical_name": "CRD6 — Fit & Proper"
+  },
+  {
+    "ref_id": "mica-a3",
+    "description": "Key MiCA definitions: crypto-asset (digital representation of value/rights using DLT), e-money token (EMT, maintains stable value by referencing one fiat currency), asset-referenced token (ART, maintains value by referencing multiple currencies/commodities/crypto-assets), utility token, crypto-asset service provider (CASP).",
+    "metadata": {
+      "regulation": "MiCA",
+      "article_number": 3,
+      "topic": "definitions"
+    },
+    "entity_type": "obligation",
+    "entity_id": "mica-a3",
+    "canonical_name": "MiCA Article 3 — Definitions"
+  },
+  {
+    "ref_id": "mica-a16",
+    "description": "Issuers of Asset-Referenced Tokens must be authorised by competent authority of home Member State before offering in EU. Must publish white paper. Banks may issue ARTs without authorisation under certain conditions. Significant ARTs subject to additional EBA oversight.",
+    "metadata": {
+      "regulation": "MiCA",
+      "article_number": 16,
+      "topic": "art-authorisation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "mica-a16",
+    "canonical_name": "MiCA Article 16 — ART Authorisation"
+  },
+  {
+    "ref_id": "mica-a43",
+    "description": "Issuers of E-Money Tokens must be authorised as credit institutions or e-money institutions under Directive 2009/110/EC. EMT subject to EMD2 rules plus MiCA-specific requirements. White paper required. Significant EMTs: additional EBA oversight, liquidity requirements, interoperability constraints.",
+    "metadata": {
+      "regulation": "MiCA",
+      "article_number": 43,
+      "topic": "emt-authorisation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "mica-a43",
+    "canonical_name": "MiCA Article 43 — EMT Authorisation"
+  },
+  {
+    "ref_id": "mica-a59",
+    "description": "Crypto-Asset Service Providers (CASPs) must obtain authorisation from national competent authority to provide crypto-asset services in the EU. Passport rights across EU. Services include: custody, exchange, trading platform operation, reception/transmission of orders, portfolio management, advice, transfer services.",
+    "metadata": {
+      "regulation": "MiCA",
+      "article_number": 59,
+      "topic": "casp-authorisation",
+      "services_count": 9
+    },
+    "entity_type": "obligation",
+    "entity_id": "mica-a59",
+    "canonical_name": "MiCA Article 59 — CASP Authorisation"
+  },
+  {
+    "ref_id": "mica-a76",
+    "description": "Prohibits market abuse in crypto-assets: insider dealing, unlawful disclosure of inside information, market manipulation. Competent authorities have investigatory and sanctioning powers. Modelled on MAR but adapted for crypto-asset market characteristics. Applies to crypto-assets admitted to trading.",
+    "metadata": {
+      "regulation": "MiCA",
+      "article_number": 76,
+      "topic": "market-abuse"
+    },
+    "entity_type": "obligation",
+    "entity_id": "mica-a76",
+    "canonical_name": "MiCA Article 76 — Market Abuse Prohibition"
+  },
+  {
+    "ref_id": "mica-a83",
+    "description": "CASPs and crypto-asset issuers are obliged entities under the EU AML/CFT framework. MiCA Art.83 explicitly cross-references AMLR and TFR (Travel Rule). CASPs must conduct CDD, transaction monitoring, file SARs, and screen against sanctions lists. Crypto-asset transfers subject to the Funds Transfer Regulation (Regulation 2023/1113).",
+    "metadata": {
+      "regulation": "MiCA",
+      "article_number": 83,
+      "topic": "aml-cft-casp",
+      "cross_ref": "AMLR / TFR (Regulation 2023/1113)"
+    },
+    "entity_type": "obligation",
+    "entity_id": "mica-a83",
+    "canonical_name": "MiCA Article 83 — AML/CFT"
+  },
+  {
+    "ref_id": "mica-a147",
+    "description": "ESMA has direct supervisory powers over certain crypto-asset entities and coordinates national competent authority actions. ESMA maintains CASP register and publishes technical standards. EBA has authority over significant ART/EMT issuers.",
+    "metadata": {
+      "regulation": "MiCA",
+      "article_number": 147,
+      "topic": "esma-supervisory-powers"
+    },
+    "entity_type": "obligation",
+    "entity_id": "mica-a147",
+    "canonical_name": "MiCA Article 147 — ESMA's Powers"
+  },
+  {
+    "ref_id": "crr-pillar1",
+    "description": "CRR/CRR3 Pillar 1: minimum capital requirements for credit risk, market risk, operational risk, and CVA risk. Total Capital Ratio minimum: 8% of RWA (plus combined buffers: capital conservation buffer 2.5%, countercyclical buffer, G-SII/O-SII buffer, systemic risk buffer). Common Equity Tier 1 (CET1) minimum: 4.5%.",
+    "metadata": {
+      "regulation": "CRR/CRR3",
+      "concept_type": "regulatory-requirement",
+      "cet1_min": "4.5%",
+      "total_capital_min": "8%"
+    },
+    "entity_type": "concept",
+    "entity_id": "crr-pillar1",
+    "canonical_name": "Pillar 1 — Minimum Capital Requirements"
+  },
+  {
+    "ref_id": "crr-pillar2",
+    "description": "CRD Pillar 2: supervisory review and evaluation process (SREP). Banks must conduct Internal Capital Adequacy Assessment Process (ICAAP) covering all material risks. Supervisors set Pillar 2 Requirement (P2R) and Pillar 2 Guidance (P2G). SREP scores drive supervisory expectations. ESG risks now part of SREP assessment.",
+    "metadata": {
+      "regulation": "CRD/CRD6",
+      "concept_type": "regulatory-requirement"
+    },
+    "entity_type": "concept",
+    "entity_id": "crr-pillar2",
+    "canonical_name": "Pillar 2 — ICAAP/SREP"
+  },
+  {
+    "ref_id": "crr-pillar3",
+    "description": "CRR Pillar 3: public disclosure requirements on capital, RWAs, liquidity, leverage, governance, and (from CRR3) ESG. Banks must publish annual/quarterly reports. EBA mandates templates. Pillar 3 ESG disclosures cover climate, environmental, social and governance risks per EBA June 2022 package.",
+    "metadata": {
+      "regulation": "CRR/CRR3",
+      "concept_type": "regulatory-requirement"
+    },
+    "entity_type": "concept",
+    "entity_id": "crr-pillar3",
+    "canonical_name": "Pillar 3 — Market Discipline & Disclosure"
+  },
+  {
+    "ref_id": "concept-rwa",
+    "description": "Risk-weighted measure of a bank's exposures used as denominator for capital ratios. Calculated using standardised approaches or internal models (IRB, IMA) subject to output floor. CRR3 output floor ensures RWAs cannot fall below 72.5% of standardised approach equivalent, limiting benefit of internal models.",
+    "metadata": {
+      "regulation": "CRR/CRR3",
+      "concept_type": "prudential-metric"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-rwa",
+    "canonical_name": "Risk-Weighted Assets (RWA)"
+  },
+  {
+    "ref_id": "concept-casp",
+    "description": "Entity that provides one or more crypto-asset services to clients on a professional basis under MiCA Art.3(16). Must be authorised per MiCA Art.59. Subject to capital requirements, organisational requirements, custody obligations, conflict-of-interest policies, and AML/CFT obligations. Licensed CASPs gain EU passport rights.",
+    "metadata": {
+      "regulation": "MiCA",
+      "concept_type": "entity-classification"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-casp",
+    "canonical_name": "Crypto-Asset Service Provider (CASP)"
+  },
+  {
+    "ref_id": "concept-art",
+    "description": "Crypto-asset that maintains stable value by referencing another value or right, or combination thereof, including one or several official currencies (but not a single official currency — that would be EMT). Stablecoins backed by baskets of currencies, commodities, or crypto-assets. Authorisation required under MiCA Art.16.",
+    "metadata": {
+      "regulation": "MiCA",
+      "concept_type": "crypto-asset-type"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-art",
+    "canonical_name": "Asset-Referenced Token (ART)"
+  },
+  {
+    "ref_id": "concept-emt",
+    "description": "Crypto-asset that purports to maintain stable value by referencing the value of one official currency. Digital representation of e-money issued on DLT. Subject to both MiCA and EMD2. Must be issued by authorised credit institution or e-money institution. Examples: EUR-denominated stablecoins like EURC.",
+    "metadata": {
+      "regulation": "MiCA / EMD2",
+      "concept_type": "crypto-asset-type"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-emt",
+    "canonical_name": "E-Money Token (EMT)"
+  },
+  {
+    "ref_id": "concept-significant-token",
+    "description": "ART or EMT classified as significant if it meets criteria: >10M users, >€5B daily transaction volume, >500k transactions/day, or >€5B reserve asset value. Significant tokens subject to additional EBA supervision, enhanced liquidity requirements, interoperability obligations, and capital requirements.",
+    "metadata": {
+      "regulation": "MiCA",
+      "concept_type": "regulatory-classification",
+      "thresholds": [
+        "10M users",
+        "€5B daily volume",
+        "500k tx/day",
+        "€5B reserves"
+      ]
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-significant-token",
+    "canonical_name": "Significant ART/EMT"
+  },
+  {
+    "ref_id": "org-eba-crr",
+    "description": "European Banking Authority. Key role in CRR3/CRD6: develops binding ITS/RTS and non-binding guidelines, conducts stress tests, publishes Pillar 3 disclosure templates, and monitors CRR3 implementation. Also oversees significant ART/EMT issuers under MiCA.",
+    "metadata": {
+      "regulation": "CRR3 / CRD6 / MiCA",
+      "role": "RTS/ITS, stress tests, guidelines, significant ART/EMT supervision"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-eba-crr",
+    "canonical_name": "EBA (Prudential context)"
+  },
+  {
+    "ref_id": "org-esma-mica",
+    "description": "European Securities and Markets Authority. Develops MiCA RTS/ITS, maintains EU CASP authorisation register, coordinates NCA supervision of CASPs, has direct powers over certain crypto-asset entities (Art.147), and enforces market abuse provisions for crypto-assets.",
+    "metadata": {
+      "regulation": "MiCA",
+      "role": "MiCA RTS/ITS, CASP register, market abuse enforcement"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-esma-mica",
+    "canonical_name": "ESMA (MiCA context)"
+  },
+  {
+    "ref_id": "org-ecb-banking",
+    "description": "European Central Bank / Single Supervisory Mechanism. Direct supervisor of significant credit institutions (SIs) in the Banking Union under SSM Regulation. Applies CRR3/CRD6 requirements directly to SIs. Issues supervisory expectations including SREP methodology, ICAAP guidance, and internal model requirements.",
+    "metadata": {
+      "regulation": "CRR/CRR3/CRD6",
+      "role": "Direct supervision of significant institutions in Banking Union"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-ecb-banking",
+    "canonical_name": "ECB / SSM"
+  },
+  {
+    "ref_id": "cross-crr-amlr",
+    "description": "Key intersection: (1) Operational risk capital (CRR3) may include losses from AML failures — AML fines count as op-risk events; (2) Fit & proper (CRD6) applies to AML Compliance Officers and MLROs; (3) Correspondent banking de-risking decisions affect both Pillar 2 (concentration risk) and AMLR (proportional CDD); (4) ESG risk (CRD6) increasingly includes financial crime and governance dimension.",
+    "metadata": {
+      "regulations": [
+        "CRR3",
+        "CRD6",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-crr-amlr",
+    "canonical_name": "CRR/CRD × AMLR cross-reference"
+  },
+  {
+    "ref_id": "cross-mica-amlr",
+    "description": "CASPs are obliged entities under AMLR. MiCA Art.83 explicitly references AMLR CDD requirements for CASPs. Transfer of crypto-assets subject to Travel Rule (TFR Regulation 2023/1113 — the crypto equivalent of Funds Transfer Regulation). AMLR Art.2 includes crypto-asset service providers in scope. Risk-based approach must cover crypto-asset services.",
+    "metadata": {
+      "regulations": [
+        "MiCA",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-mica-amlr",
+    "canonical_name": "MiCA × AMLR cross-reference"
+  },
+  {
+    "ref_id": "cross-crr-dora",
+    "description": "DORA complements CRR/CRD Pillar 2 ICAAP operational risk component. ICT/cyber risk events captured in operational risk loss data (CRR3 new SMA). DORA ICT incident reporting (Art.18) feeds into supervisory assessment (SREP). DORA CTPP concentration risk complements CRR concentration risk framework.",
+    "metadata": {
+      "regulations": [
+        "CRR3",
+        "CRD6",
+        "DORA"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-crr-dora",
+    "canonical_name": "CRR/CRD × DORA cross-reference"
+  },
+  {
+    "ref_id": "cross-mica-gdpr",
+    "description": "CASPs processing personal data in KYC/CDD, transaction monitoring, and market surveillance are controllers under GDPR. Blockchain immutability raises tension with GDPR right to erasure. On-chain data and pseudonymous addresses — whether 'personal data' contested. CASP GDPR lawful bases: Art.6(1)(c) AML obligation and Art.6(1)(b) contract.",
+    "metadata": {
+      "regulations": [
+        "MiCA",
+        "GDPR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-mica-gdpr",
+    "canonical_name": "MiCA × GDPR cross-reference"
+  },
+  {
+    "ref_id": "tfr-crypto",
+    "description": "Regulation (EU) 2023/1113 extending the Funds Transfer Regulation to crypto-asset transfers (Travel Rule). CASPs must accompany crypto-asset transfers with originator and beneficiary information. Applies to all crypto-asset transfers regardless of amount. Phased compliance: from 30 December 2024.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2023/1113",
+      "short_name": "TFR",
+      "applies_from": "2024-12-30",
+      "topic": "crypto-travel-rule",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "tfr-crypto",
+    "canonical_name": "TFR — Transfer of Funds Regulation (Crypto)"
+  }
+]

@@ -1,0 +1,688 @@
+[
+  {
+    "ref_id": "csrd",
+    "description": "Corporate Sustainability Reporting Directive (Directive 2022/2464/EU). Amends Directive 2013/34/EU (Accounting Directive). Requires large undertakings and listed SMEs to report on sustainability matters under European Sustainability Reporting Standards (ESRS). Introduces double materiality, value-chain scope, and third-party assurance.",
+    "metadata": {
+      "full_title": "Directive (EU) 2022/2464",
+      "short_name": "CSRD",
+      "amends": "Directive 2013/34/EU",
+      "replaces": "NFRD (Directive 2014/95/EU)",
+      "first_reporting_year": "2024 (large PIEs)",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "csrd",
+    "canonical_name": "CSRD"
+  },
+  {
+    "ref_id": "sfdr",
+    "description": "Sustainable Finance Disclosure Regulation (Regulation (EU) 2019/2088). Applies to financial market participants and financial advisers. Requires entity-level and product-level disclosures on integration of sustainability risks and PAI (Principal Adverse Impacts) on sustainability factors. Article 6, 8 and 9 product classification.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2019/2088",
+      "short_name": "SFDR",
+      "applies_from": "2021-03-10",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "sfdr",
+    "canonical_name": "SFDR"
+  },
+  {
+    "ref_id": "eu-taxonomy",
+    "description": "Regulation (EU) 2020/852 establishing a classification system (taxonomy) for environmentally sustainable economic activities. Six environmental objectives: climate change mitigation, climate change adaptation, sustainable water, circular economy, pollution prevention, biodiversity. Activities must meet DNSH (Do No Significant Harm) and minimum social safeguards.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2020/852",
+      "short_name": "EU Taxonomy",
+      "objectives_count": 6,
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "eu-taxonomy",
+    "canonical_name": "EU Taxonomy Regulation"
+  },
+  {
+    "ref_id": "csddd",
+    "description": "Corporate Sustainability Due Diligence Directive (Directive (EU) 2024/1760). Requires large EU companies and non-EU companies with significant EU turnover to conduct human rights and environmental due diligence across value chains. Introduces civil liability for failure to prevent adverse impacts.",
+    "metadata": {
+      "full_title": "Directive (EU) 2024/1760",
+      "short_name": "CSDDD",
+      "also_known_as": "CS3D",
+      "transposition_deadline": "2026-07-26",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "csddd",
+    "canonical_name": "CSDDD"
+  },
+  {
+    "ref_id": "csrd-a19a",
+    "description": "Core obligation: large undertakings must include sustainability information in their management report. Information must cover business model, strategy, sustainability targets, governance, material impacts, risks and opportunities, due diligence processes, and KPIs. Must be reported in XBRL-tagged format.",
+    "metadata": {
+      "regulation": "CSRD",
+      "article_number": "19a",
+      "topic": "sustainability-reporting-obligation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csrd-a19a",
+    "canonical_name": "CSRD Article 19a — Sustainability Reporting"
+  },
+  {
+    "ref_id": "csrd-a29a",
+    "description": "Parent undertakings of large groups must include consolidated sustainability information covering group subsidiaries. Third-country subsidiaries included when within scope. Subsidiary exemption available if parent publishes consolidated CSRD-compliant report.",
+    "metadata": {
+      "regulation": "CSRD",
+      "article_number": "29a",
+      "topic": "consolidated-sustainability-reporting"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csrd-a29a",
+    "canonical_name": "CSRD Article 29a — Consolidated Sustainability Reporting"
+  },
+  {
+    "ref_id": "csrd-a29b",
+    "description": "European Sustainability Reporting Standards (ESRS) are adopted by the Commission by delegated act. ESRS developed by EFRAG. Standards must enable double materiality assessment and cover ESRS cross-cutting standards (1 & 2) and topical standards (E1-E5, S1-S4, G1).",
+    "metadata": {
+      "regulation": "CSRD",
+      "article_number": "29b",
+      "topic": "esrs-basis"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csrd-a29b",
+    "canonical_name": "CSRD Article 29b — Sustainability Reporting Standards"
+  },
+  {
+    "ref_id": "csrd-a34",
+    "description": "Sustainability information must be subject to limited assurance by a statutory auditor or independent assurance service provider. Commission may require reasonable assurance in the future. Assurance standards adopted by Commission.",
+    "metadata": {
+      "regulation": "CSRD",
+      "article_number": 34,
+      "topic": "assurance"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csrd-a34",
+    "canonical_name": "CSRD Article 34 — Assurance of Sustainability Reporting"
+  },
+  {
+    "ref_id": "sfdr-a3",
+    "description": "Financial market participants and advisers must publish on their websites policies on integration of sustainability risks in their investment decision-making process. Or explain why sustainability risks are not relevant (comply or explain).",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_number": 3,
+      "topic": "entity-level-sri-policy",
+      "level": "entity"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-a3",
+    "canonical_name": "SFDR Article 3 — Transparency on Sustainability Risk Policies"
+  },
+  {
+    "ref_id": "sfdr-a4",
+    "description": "Financial market participants with >500 employees must publish a statement on their website on due diligence policies with respect to principal adverse impacts (PAI) of investment decisions on sustainability factors. Or provide reasons for not considering adverse impacts.",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_number": 4,
+      "topic": "pai-entity-level",
+      "threshold": ">500 employees",
+      "level": "entity"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-a4",
+    "canonical_name": "SFDR Article 4 — Principal Adverse Impacts (Entity Level)"
+  },
+  {
+    "ref_id": "sfdr-a6",
+    "description": "Pre-contractual disclosures for all financial products must describe: (a) how sustainability risks are integrated in investment decisions; or (b) why sustainability risks are not relevant. Article 6 is the baseline classification for all products.",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_number": 6,
+      "topic": "product-baseline-disclosure",
+      "product_classification": "Art.6",
+      "level": "product"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-a6",
+    "canonical_name": "SFDR Article 6 — Product Transparency: Sustainability Risk Integration"
+  },
+  {
+    "ref_id": "sfdr-a8",
+    "description": "Financial products that promote, among other characteristics, environmental or social characteristics (ESG integration) must disclose how those characteristics are met. Must disclose PAI consideration and EU Taxonomy alignment where applicable. Known as 'light green' or Article 8 funds.",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_number": 8,
+      "topic": "esg-promoting-product",
+      "product_classification": "Art.8",
+      "level": "product"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-a8",
+    "canonical_name": "SFDR Article 8 — Light Green Products"
+  },
+  {
+    "ref_id": "sfdr-a9",
+    "description": "Financial products with sustainable investment as objective must explain how the objective is attained, disclose designated index, PAI data, taxonomy alignment. Known as 'dark green' or Article 9 funds. Highest ESG classification under SFDR.",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_number": 9,
+      "topic": "sustainable-investment-product",
+      "product_classification": "Art.9",
+      "level": "product"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-a9",
+    "canonical_name": "SFDR Article 9 — Dark Green Products / Sustainable Investment"
+  },
+  {
+    "ref_id": "sfdr-a10",
+    "description": "Financial market participants must publish product-level sustainability information on their website for Art.8 and Art.9 products. Must include: ESG characteristics/objectives, methodology, data sources, PAI consideration, and taxonomy alignment.",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_number": 10,
+      "topic": "product-website-disclosure",
+      "level": "product"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-a10",
+    "canonical_name": "SFDR Article 10 — Product-Level Website Disclosure"
+  },
+  {
+    "ref_id": "sfdr-a11",
+    "description": "Art.8 and Art.9 product periodic reports must include attainment of ESG characteristics/objectives during the period, PAI data, and taxonomy alignment statements. Annual reports must follow SFDR Regulatory Technical Standards templates.",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_number": 11,
+      "topic": "periodic-reporting",
+      "level": "product"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-a11",
+    "canonical_name": "SFDR Article 11 — Periodic Reporting"
+  },
+  {
+    "ref_id": "eu-taxonomy-a1",
+    "description": "Establishes the EU Taxonomy framework: criteria for determining whether an economic activity qualifies as environmentally sustainable for the purposes of establishing the degree to which investment is environmentally sustainable.",
+    "metadata": {
+      "regulation": "EU Taxonomy",
+      "article_number": 1,
+      "topic": "scope-purpose"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eu-taxonomy-a1",
+    "canonical_name": "EU Taxonomy Art.1 — Subject Matter"
+  },
+  {
+    "ref_id": "eu-taxonomy-a9",
+    "description": "Defines six environmental objectives: (1) climate change mitigation; (2) climate change adaptation; (3) sustainable use/protection of water and marine resources; (4) transition to circular economy; (5) pollution prevention and control; (6) protection and restoration of biodiversity and ecosystems.",
+    "metadata": {
+      "regulation": "EU Taxonomy",
+      "article_number": 9,
+      "objectives": [
+        "climate mitigation",
+        "climate adaptation",
+        "water",
+        "circular economy",
+        "pollution prevention",
+        "biodiversity"
+      ]
+    },
+    "entity_type": "obligation",
+    "entity_id": "eu-taxonomy-a9",
+    "canonical_name": "EU Taxonomy Art.9 — Environmental Objectives"
+  },
+  {
+    "ref_id": "eu-taxonomy-a10",
+    "description": "Technical Screening Criteria (TSC) for activities contributing substantially to climate change mitigation. Activity must also Do No Significant Harm (DNSH) to other five objectives and comply with minimum social safeguards (OECD Guidelines, UNGPs, ILO).",
+    "metadata": {
+      "regulation": "EU Taxonomy",
+      "article_number": 10,
+      "objective": "climate mitigation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eu-taxonomy-a10",
+    "canonical_name": "EU Taxonomy Art.10 — Climate Change Mitigation"
+  },
+  {
+    "ref_id": "eu-taxonomy-a17",
+    "description": "An economic activity does not significantly harm any other environmental objective where it does not: (a) lead to significant GHG emissions; (b) adversely affect good ecological status; (c) be inconsistent with CE principles; (d) lead to significant pollution; (e) harm biodiversity or ecosystems.",
+    "metadata": {
+      "regulation": "EU Taxonomy",
+      "article_number": 17,
+      "topic": "dnsh-principle"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eu-taxonomy-a17",
+    "canonical_name": "EU Taxonomy Art.17 — Do No Significant Harm (DNSH)"
+  },
+  {
+    "ref_id": "eu-taxonomy-a18",
+    "description": "For an economic activity to qualify as environmentally sustainable, it must comply with minimum social safeguards: OECD Guidelines for Multinational Enterprises, UN Guiding Principles on Business and Human Rights, ILO Fundamental Conventions.",
+    "metadata": {
+      "regulation": "EU Taxonomy",
+      "article_number": 18,
+      "topic": "minimum-social-safeguards"
+    },
+    "entity_type": "obligation",
+    "entity_id": "eu-taxonomy-a18",
+    "canonical_name": "EU Taxonomy Art.18 — Minimum Social Safeguards"
+  },
+  {
+    "ref_id": "csddd-a5",
+    "description": "Companies must integrate due diligence into policies and risk management systems, identify actual/potential adverse human rights and environmental impacts in their own operations and those of subsidiaries and value-chain business partners, and take appropriate measures to prevent, mitigate and remediate those impacts.",
+    "metadata": {
+      "regulation": "CSDDD",
+      "article_number": 5,
+      "topic": "due-diligence-obligation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csddd-a5",
+    "canonical_name": "CSDDD Article 5 — Due Diligence Obligation"
+  },
+  {
+    "ref_id": "csddd-a6",
+    "description": "Companies must conduct a comprehensive mapping of own operations, subsidiaries and established business relationships in their chain of activities to identify areas where adverse impacts are most likely to occur. Risk-based prioritisation allowed for indirect business relationships.",
+    "metadata": {
+      "regulation": "CSDDD",
+      "article_number": 6,
+      "topic": "impact-identification"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csddd-a6",
+    "canonical_name": "CSDDD Article 6 — Identification of Adverse Impacts"
+  },
+  {
+    "ref_id": "csddd-a7",
+    "description": "Where potential adverse impacts are identified, companies must take appropriate measures to prevent or adequately mitigate them. This includes: prevention action plans, contractual assurances from business partners, investments, collaboration with industry schemes, and engaging with stakeholders.",
+    "metadata": {
+      "regulation": "CSDDD",
+      "article_number": 7,
+      "topic": "prevention-mitigation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csddd-a7",
+    "canonical_name": "CSDDD Article 7 — Prevention and Mitigation"
+  },
+  {
+    "ref_id": "csddd-a8",
+    "description": "Where a company caused or co-caused an actual adverse impact, it must provide remediation. Where impact is caused by business partner, company must use its influence to bring remediation and, if unable, may need to suspend the relationship.",
+    "metadata": {
+      "regulation": "CSDDD",
+      "article_number": 8,
+      "topic": "remediation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csddd-a8",
+    "canonical_name": "CSDDD Article 8 — Remediation of Actual Impacts"
+  },
+  {
+    "ref_id": "csddd-a22",
+    "description": "Member States must ensure companies can be held liable for damage caused by failure to comply with due diligence obligations, where the failure caused damage. Limitation periods of at least 5 years. Representative actions possible. Does not prevent criminal liability under national law.",
+    "metadata": {
+      "regulation": "CSDDD",
+      "article_number": 22,
+      "topic": "civil-liability",
+      "limitation_period": "min 5 years"
+    },
+    "entity_type": "obligation",
+    "entity_id": "csddd-a22",
+    "canonical_name": "CSDDD Article 22 — Civil Liability"
+  },
+  {
+    "ref_id": "esrs-1",
+    "description": "Cross-cutting ESRS standard. Establishes: double materiality methodology, reporting boundary, value-chain scope, time horizons, connectivity of financial and sustainability information, interoperability with other frameworks (GRI, TCFD). Phased-in disclosures for first reporters.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "standard_type": "cross-cutting"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-1",
+    "canonical_name": "ESRS 1 — General Requirements"
+  },
+  {
+    "ref_id": "esrs-2",
+    "description": "Cross-cutting ESRS standard. Mandatory for all CSRD reporters. Covers: governance (roles, due diligence), strategy (business model, value chain, material impacts), material impacts/risks/opportunities process, and targets. GOV-1 to GOV-4, SBM-1 to SBM-3, IRO-1 to IRO-2.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "standard_type": "cross-cutting",
+      "mandatory": true
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-2",
+    "canonical_name": "ESRS 2 — General Disclosures"
+  },
+  {
+    "ref_id": "esrs-e1",
+    "description": "Topical ESRS standard on climate change. Covers: transition plan for climate change mitigation, physical and transition risks/opportunities, GHG emissions (Scope 1/2/3), energy consumption, climate-related targets. TCFD-aligned. Financial entities: banking (PCAF), insurance (climate scenario analysis).",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "climate-change",
+      "tcfd_aligned": true
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-e1",
+    "canonical_name": "ESRS E1 — Climate Change"
+  },
+  {
+    "ref_id": "esrs-e2",
+    "description": "Topical ESRS standard on pollution. Covers pollution of air, water, soil; substances of concern; pollution-related incidents. Applies to undertakings with material pollution impacts.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "pollution"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-e2",
+    "canonical_name": "ESRS E2 — Pollution"
+  },
+  {
+    "ref_id": "esrs-e3",
+    "description": "Topical ESRS standard on water and marine resources. Covers water consumption, withdrawal from stressed areas, marine resource dependencies and impacts.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "water-marine"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-e3",
+    "canonical_name": "ESRS E3 — Water and Marine Resources"
+  },
+  {
+    "ref_id": "esrs-e4",
+    "description": "Topical ESRS standard on biodiversity and ecosystems. Covers land use change, impacts on species, ecosystem services, TNFD-aligned disclosures. Aligned with EU Biodiversity Strategy and Kunming-Montreal GBF targets.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "biodiversity"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-e4",
+    "canonical_name": "ESRS E4 — Biodiversity and Ecosystems"
+  },
+  {
+    "ref_id": "esrs-e5",
+    "description": "Topical ESRS standard on resource use and circular economy. Covers resource inflows, outflows, waste, product durability, circular design, and alignment with EU Circular Economy Action Plan.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "circular-economy"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-e5",
+    "canonical_name": "ESRS E5 — Resource Use and Circular Economy"
+  },
+  {
+    "ref_id": "esrs-s1",
+    "description": "Topical ESRS standard on own workforce. Covers: working conditions (secure employment, working time, adequate wages, social dialogue, collective bargaining), equal treatment, non-discrimination, diversity, and human rights. Aligns with ILO conventions and UNGP.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "own-workforce"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-s1",
+    "canonical_name": "ESRS S1 — Own Workforce"
+  },
+  {
+    "ref_id": "esrs-s2",
+    "description": "Topical ESRS standard on workers in value chain. Covers: due diligence on human rights and working conditions in supply chain, engagement with affected communities, remedy access. Linked to CSDDD obligations.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "value-chain-workers"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-s2",
+    "canonical_name": "ESRS S2 — Workers in Value Chain"
+  },
+  {
+    "ref_id": "esrs-s3",
+    "description": "Topical ESRS standard on affected communities. Covers: community economic inclusion, rights of indigenous peoples, access to land, food and water security, community security impacts.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "affected-communities"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-s3",
+    "canonical_name": "ESRS S3 — Affected Communities"
+  },
+  {
+    "ref_id": "esrs-s4",
+    "description": "Topical ESRS standard on consumers and end-users. Covers: product and service safety, privacy, responsible marketing, access to products for vulnerable groups, consumer complaints and remedy.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "consumers"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-s4",
+    "canonical_name": "ESRS S4 — Consumers and End-Users"
+  },
+  {
+    "ref_id": "esrs-g1",
+    "description": "Topical ESRS standard on governance, risk management and business conduct. Covers: corporate culture, anti-corruption and anti-bribery, political engagement and lobbying, whistleblower protection, supplier relationships and payment practices. Linked to AML compliance for financial entities.",
+    "metadata": {
+      "standard_body": "EFRAG",
+      "regulation_basis": "CSRD",
+      "topic": "business-conduct"
+    },
+    "entity_type": "document",
+    "entity_id": "esrs-g1",
+    "canonical_name": "ESRS G1 — Business Conduct"
+  },
+  {
+    "ref_id": "sfdr-rts",
+    "description": "Delegated Regulation (EU) 2022/1288 (Joint RTS by EBA/EIOPA/ESMA). Specifies: PAI indicators (mandatory and optional), product templates for Art.6/8/9 pre-contractual and periodic disclosures, taxonomy alignment disclosures. Applies from 1 January 2023.",
+    "metadata": {
+      "regulation": "SFDR",
+      "delegated_regulation": "EU 2022/1288",
+      "applies_from": "2023-01-01",
+      "developer": "EBA/EIOPA/ESMA Joint Committee"
+    },
+    "entity_type": "obligation",
+    "entity_id": "sfdr-rts",
+    "canonical_name": "SFDR Regulatory Technical Standards (RTS)"
+  },
+  {
+    "ref_id": "concept-double-materiality",
+    "description": "CSRD concept requiring reporting on both: (1) Impact materiality — sustainability matters that are material from the perspective of impact on people and environment (inside-out perspective); and (2) Financial materiality — sustainability matters that create financial risks/opportunities for the undertaking (outside-in perspective). An issue may be material from one or both perspectives.",
+    "metadata": {
+      "regulation": "CSRD",
+      "concept_type": "materiality-framework",
+      "esrs_reference": "ESRS 1"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-double-materiality",
+    "canonical_name": "Double Materiality"
+  },
+  {
+    "ref_id": "concept-iro",
+    "description": "CSRD/ESRS framework concept. Impacts: actual or potential effects of the undertaking on people and environment (positive and negative, short/medium/long-term). Risks: sustainability-related financial risks. Opportunities: sustainability-related financial opportunities. IRO assessment drives materiality and ESRS topic selection.",
+    "metadata": {
+      "regulation": "CSRD",
+      "concept_type": "reporting-framework",
+      "esrs_reference": "ESRS 1, ESRS 2 IRO-1"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-iro",
+    "canonical_name": "Impacts, Risks and Opportunities (IRO)"
+  },
+  {
+    "ref_id": "concept-pai",
+    "description": "SFDR concept: most significant negative effects of investment decisions on sustainability factors (environmental, social/employee, respect for human rights, anti-corruption, anti-bribery). 14 mandatory PAI indicators (18 for sovereigns/supranationals) plus 46 optional. Reported annually at entity level (>500 employees) and product level (Art.8/9).",
+    "metadata": {
+      "regulation": "SFDR",
+      "concept_type": "disclosure-framework",
+      "mandatory_indicators": 14,
+      "optional_indicators": 46
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-pai",
+    "canonical_name": "Principal Adverse Impacts (PAI)"
+  },
+  {
+    "ref_id": "concept-taxonomy-alignment",
+    "description": "The share of revenues, capex, or opex associated with economic activities that qualify as environmentally sustainable under the EU Taxonomy (meeting TSC + DNSH + minimum social safeguards). Financial entities report taxonomy alignment of their portfolios. Non-financial companies report taxonomy KPIs for own activities.",
+    "metadata": {
+      "regulation": "EU Taxonomy / SFDR / CSRD",
+      "concept_type": "kpi-framework",
+      "kpis": [
+        "revenue",
+        "capex",
+        "opex"
+      ]
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-taxonomy-alignment",
+    "canonical_name": "Taxonomy Alignment"
+  },
+  {
+    "ref_id": "concept-dnsh",
+    "description": "Principle under EU Taxonomy (Art.17) and SFDR: an economic activity or investment must not significantly harm any of the six environmental objectives to qualify as sustainable. Also used in SFDR Art.2(17) sustainable investment definition. Key test for Taxonomy eligibility and sustainable investment classification.",
+    "metadata": {
+      "regulation": "EU Taxonomy / SFDR",
+      "concept_type": "eligibility-criterion"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-dnsh",
+    "canonical_name": "Do No Significant Harm (DNSH)"
+  },
+  {
+    "ref_id": "concept-sustainable-investment",
+    "description": "Investment in an economic activity that: (a) contributes to an environmental or social objective; (b) does not significantly harm any environmental or social objective (DNSH); (c) follows good governance practices. This definition is used for SFDR Art.9 products. Does not require EU Taxonomy alignment.",
+    "metadata": {
+      "regulation": "SFDR",
+      "article_basis": "Art.2(17)",
+      "concept_type": "product-classification"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-sustainable-investment",
+    "canonical_name": "Sustainable Investment (SFDR Art.2(17))"
+  },
+  {
+    "ref_id": "concept-value-chain",
+    "description": "CSRD requires reporting on value-chain impacts beyond the entity boundary. CSDDD requires due diligence on value-chain business partners (upstream supply chain and downstream distribution). Value chain scope is broader than ESRS reporting boundary and includes Tier 2+ suppliers where material.",
+    "metadata": {
+      "regulation": "CSRD / CSDDD",
+      "concept_type": "scope-definition"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-value-chain",
+    "canonical_name": "Value Chain (CSRD/CSDDD scope)"
+  },
+  {
+    "ref_id": "concept-transition-plan",
+    "description": "CSRD/ESRS E1 requires undertakings to disclose if they have adopted a transition plan for climate change mitigation including targets, actions and financial plans. EU Corporate Sustainability Due Diligence Directive (CSDDD) requires adoption of a transition plan aligned with Paris Agreement 1.5°C pathway.",
+    "metadata": {
+      "regulation": "CSRD / CSDDD",
+      "concept_type": "strategic-requirement"
+    },
+    "entity_type": "concept",
+    "entity_id": "concept-transition-plan",
+    "canonical_name": "Climate Transition Plan"
+  },
+  {
+    "ref_id": "org-efrag",
+    "description": "European Financial Reporting Advisory Group. Develops European Sustainability Reporting Standards (ESRS) mandated by CSRD Art.29b. Also coordinates interoperability with GRI, ISSB/IFRS, TCFD. EFRAG Sustainability Reporting Board (SRB) oversees ESRS development.",
+    "metadata": {
+      "role": "ESRS standard-setter for CSRD",
+      "regulation": "CSRD"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-efrag",
+    "canonical_name": "EFRAG"
+  },
+  {
+    "ref_id": "org-esma-sfdr",
+    "description": "European Securities and Markets Authority. Supervises SFDR compliance for investment funds and participates in Joint Committee SFDR RTS development. Issues guidelines on fund naming (sustainability claims) and fund categorisation under SFDR Art.8/9.",
+    "metadata": {
+      "role": "SFDR supervision (funds) + RTS development",
+      "regulation": "SFDR"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-esma-sfdr",
+    "canonical_name": "ESMA (SFDR context)"
+  },
+  {
+    "ref_id": "org-eba-sfdr",
+    "description": "European Banking Authority. Supervises SFDR compliance for credit institutions and participates in Joint Committee SFDR RTS development. Issues guidelines on ESG risk management integration and Pillar 3 ESG disclosures (CRR Art.449a).",
+    "metadata": {
+      "role": "SFDR supervision (banks) + ESG risk guidelines",
+      "regulation": "SFDR / CRR"
+    },
+    "entity_type": "authority",
+    "entity_id": "org-eba-sfdr",
+    "canonical_name": "EBA (SFDR context)"
+  },
+  {
+    "ref_id": "cross-csrd-csddd",
+    "description": "CSRD reporting (ESRS S2, G1) and CSDDD due diligence obligations are complementary. CSDDD due diligence processes feed CSRD disclosure. ESRS 2 SBM-3 (material impacts) aligns with CSDDD Art.6 impact identification. Transition plan required under both. CSRD covers disclosure; CSDDD mandates action.",
+    "metadata": {
+      "regulations": [
+        "CSRD",
+        "CSDDD"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-csrd-csddd",
+    "canonical_name": "CSRD × CSDDD cross-reference"
+  },
+  {
+    "ref_id": "cross-csrd-sfdr",
+    "description": "CSRD sustainability reports of investee companies will feed SFDR PAI data collection for financial market participants. SFDR Art.8/9 product disclosures use CSRD data from portfolio companies. EU Taxonomy KPIs published under CSRD used in SFDR product-level taxonomy alignment disclosure.",
+    "metadata": {
+      "regulations": [
+        "CSRD",
+        "SFDR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-csrd-sfdr",
+    "canonical_name": "CSRD × SFDR cross-reference"
+  },
+  {
+    "ref_id": "cross-sfdr-taxonomy",
+    "description": "SFDR Art.8 and Art.9 products must disclose taxonomy alignment. Art.9 products must align with EU Taxonomy where they invest in economic activities covered by taxonomy TSC. SFDR RTS includes taxonomy KPI disclosure templates. Taxonomy DNSH applies within SFDR sustainable investment definition.",
+    "metadata": {
+      "regulations": [
+        "SFDR",
+        "EU Taxonomy"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-sfdr-taxonomy",
+    "canonical_name": "SFDR × EU Taxonomy cross-reference"
+  },
+  {
+    "ref_id": "cross-csrd-amlr",
+    "description": "ESRS G1 (Business Conduct) requires disclosure on anti-money laundering and counter-terrorism financing policies, incidents and sanctions. AML/CFT programme and AMLR compliance contributes to ESRS G1 reporting. Financial crime risk is a governance topic under double materiality.",
+    "metadata": {
+      "regulations": [
+        "CSRD",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-csrd-amlr",
+    "canonical_name": "CSRD × AMLR cross-reference"
+  },
+  {
+    "ref_id": "cross-csrd-gdpr",
+    "description": "CSRD supply-chain data collection (ESRS S2 value-chain workers) may involve personal data. GDPR applies to collection, processing and disclosure of individual supplier worker data. Companies must balance transparency obligations under CSRD with GDPR minimisation principles.",
+    "metadata": {
+      "regulations": [
+        "CSRD",
+        "GDPR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "cross-csrd-gdpr",
+    "canonical_name": "CSRD × GDPR cross-reference"
+  }
+]

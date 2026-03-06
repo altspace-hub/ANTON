@@ -1,0 +1,498 @@
+[
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r1",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.1 on risk-based approach"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r2",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.2 on national cooperation and coordination"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r3",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.3 on the money laundering offence"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r4",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.4 on confiscation and provisional measures"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r5",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.5 on the terrorist financing offence"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r6",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.6 on targeted financial sanctions for TF"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r7",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.7 on targeted financial sanctions for proliferation financing"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r10",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.10 on Customer Due Diligence"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r11",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.11 on record keeping (5-year minimum)"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r12",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.12 on Politically Exposed Persons"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r13",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.13 on correspondent banking EDD"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r15",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.15 on new technologies and virtual assets"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r16",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.16 on wire transfer Travel Rule"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r18",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.18 on internal controls and financial groups"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r19",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.19 on higher-risk countries"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r20",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.20 on suspicious transaction reporting"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r21",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.21 on tipping-off prohibition"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r22",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.22 on DNFBP CDD obligations"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r24",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.24 on beneficial ownership of legal persons"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r25",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.25 on beneficial ownership of legal arrangements"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r26",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.26 on regulation and supervision of FIs"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r28",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.28 on regulation and supervision of DNFBPs"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r29",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.29 on Financial Intelligence Units"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r30",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.30 on powers of law enforcement"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r36",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.36 on international legal instruments"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r37",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.37 on mutual legal assistance"
+  },
+  {
+    "from_ref": "fatf-40",
+    "to_ref": "fatf-r40",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "FATF 40 Recommendations contains R.40 on international cooperation"
+  },
+  {
+    "from_ref": "fatf-r1",
+    "to_ref": "fatf-rba-guidance",
+    "relationship_type": "elaborated_by",
+    "strength": 0.9,
+    "description": "R.1 risk-based approach is elaborated by sector-specific FATF RBA guidance documents"
+  },
+  {
+    "from_ref": "fatf-r1",
+    "to_ref": "fatf-r10",
+    "relationship_type": "informs",
+    "strength": 0.9,
+    "description": "R.1 RBA informs application of CDD (R.10) — risk level determines CDD intensity"
+  },
+  {
+    "from_ref": "fatf-r1",
+    "to_ref": "fatf-r19",
+    "relationship_type": "informs",
+    "strength": 0.8,
+    "description": "R.1 RBA framework informs countermeasures for higher-risk countries (R.19)"
+  },
+  {
+    "from_ref": "fatf-r10",
+    "to_ref": "fatf-r11",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "CDD (R.10) information must be retained per R.11 record-keeping requirements"
+  },
+  {
+    "from_ref": "fatf-r10",
+    "to_ref": "fatf-r12",
+    "relationship_type": "enhanced_by",
+    "strength": 0.9,
+    "description": "CDD (R.10) is enhanced by PEP requirements (R.12) for politically exposed persons"
+  },
+  {
+    "from_ref": "fatf-r10",
+    "to_ref": "fatf-r13",
+    "relationship_type": "enhanced_by",
+    "strength": 0.8,
+    "description": "CDD (R.10) is enhanced for correspondent banking relationships (R.13)"
+  },
+  {
+    "from_ref": "fatf-r12",
+    "to_ref": "fatf-r20",
+    "relationship_type": "triggers",
+    "strength": 0.7,
+    "description": "PEP relationships require enhanced monitoring which may trigger STR filing under R.20"
+  },
+  {
+    "from_ref": "fatf-r15",
+    "to_ref": "fatf-r16",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "R.15 (VASPs) requires application of Travel Rule (R.16) to virtual asset transfers"
+  },
+  {
+    "from_ref": "fatf-r15",
+    "to_ref": "fatf-va-guidance",
+    "relationship_type": "elaborated_by",
+    "strength": 1,
+    "description": "R.15 virtual asset requirements are elaborated in FATF VA Guidance (2021)"
+  },
+  {
+    "from_ref": "fatf-r16",
+    "to_ref": "fatf-r20",
+    "relationship_type": "supports",
+    "strength": 0.7,
+    "description": "Travel Rule (R.16) originator/beneficiary data supports transaction monitoring and STR filing (R.20)"
+  },
+  {
+    "from_ref": "fatf-r18",
+    "to_ref": "fatf-r10",
+    "relationship_type": "encompasses",
+    "strength": 0.8,
+    "description": "Group-wide internal controls (R.18) encompass group-wide CDD standards (R.10)"
+  },
+  {
+    "from_ref": "fatf-r19",
+    "to_ref": "fatf-blacklist",
+    "relationship_type": "references",
+    "strength": 1,
+    "description": "R.19 countermeasures against higher-risk countries requires attention to FATF blacklist"
+  },
+  {
+    "from_ref": "fatf-r19",
+    "to_ref": "fatf-greylist",
+    "relationship_type": "references",
+    "strength": 0.9,
+    "description": "R.19 requires considering risk from greylisted jurisdictions in CDD and EDD decisions"
+  },
+  {
+    "from_ref": "fatf-r20",
+    "to_ref": "fatf-r21",
+    "relationship_type": "paired_with",
+    "strength": 0.9,
+    "description": "STR reporting obligation (R.20) is paired with tipping-off prohibition (R.21)"
+  },
+  {
+    "from_ref": "fatf-r20",
+    "to_ref": "fatf-r29",
+    "relationship_type": "reported_to",
+    "strength": 1,
+    "description": "STRs filed under R.20 are reported to the national FIU established under R.29"
+  },
+  {
+    "from_ref": "fatf-r22",
+    "to_ref": "fatf-r10",
+    "relationship_type": "applies",
+    "strength": 0.9,
+    "description": "R.22 applies CDD (R.10) requirements to DNFBP context"
+  },
+  {
+    "from_ref": "fatf-r24",
+    "to_ref": "fatf-bo-guidance",
+    "relationship_type": "elaborated_by",
+    "strength": 1,
+    "description": "R.24 BO requirements for legal persons are elaborated in FATF BO Guidance (2023)"
+  },
+  {
+    "from_ref": "fatf-r25",
+    "to_ref": "fatf-bo-guidance",
+    "relationship_type": "elaborated_by",
+    "strength": 0.9,
+    "description": "R.25 BO requirements for trusts are elaborated in FATF BO Guidance"
+  },
+  {
+    "from_ref": "fatf-r24",
+    "to_ref": "fatf-r10",
+    "relationship_type": "enables",
+    "strength": 0.8,
+    "description": "BO information requirements (R.24) enable FIs to verify beneficial owners as part of CDD (R.10)"
+  },
+  {
+    "from_ref": "fatf-r26",
+    "to_ref": "fatf-r28",
+    "relationship_type": "parallels",
+    "strength": 0.8,
+    "description": "R.26 FI supervision requirements parallel R.28 DNFBP supervision requirements"
+  },
+  {
+    "from_ref": "fatf-r29",
+    "to_ref": "fatf-r40",
+    "relationship_type": "cooperates_via",
+    "strength": 0.8,
+    "description": "FIUs (R.29) cooperate internationally through channels specified in R.40 and the Egmont Group"
+  },
+  {
+    "from_ref": "fatf-r36",
+    "to_ref": "fatf-r37",
+    "relationship_type": "enables",
+    "strength": 0.8,
+    "description": "International legal instruments (R.36) enable effective mutual legal assistance (R.37)"
+  },
+  {
+    "from_ref": "fatf-r37",
+    "to_ref": "fatf-r40",
+    "relationship_type": "part_of",
+    "strength": 0.7,
+    "description": "MLA (R.37) is one form of international cooperation covered under R.40"
+  },
+  {
+    "from_ref": "fatf-mev",
+    "to_ref": "fatf-40",
+    "relationship_type": "assesses_compliance_with",
+    "strength": 1,
+    "description": "FATF Mutual Evaluation process assesses country compliance with all 40 Recommendations"
+  },
+  {
+    "from_ref": "fatf-mev",
+    "to_ref": "fatf-io1",
+    "relationship_type": "includes",
+    "strength": 0.9,
+    "description": "Mutual evaluation includes effectiveness assessment via IO.1 on risk understanding"
+  },
+  {
+    "from_ref": "fatf-mev",
+    "to_ref": "fatf-io3",
+    "relationship_type": "includes",
+    "strength": 0.9,
+    "description": "Mutual evaluation includes effectiveness assessment via IO.3 on supervision quality"
+  },
+  {
+    "from_ref": "fatf-mev",
+    "to_ref": "fatf-io6",
+    "relationship_type": "includes",
+    "strength": 0.9,
+    "description": "Mutual evaluation includes effectiveness assessment via IO.6 on FIU intelligence use"
+  },
+  {
+    "from_ref": "fatf-mev",
+    "to_ref": "fatf-blacklist",
+    "relationship_type": "can_result_in",
+    "strength": 0.7,
+    "description": "Persistent non-compliance found in mutual evaluation can lead to blacklisting"
+  },
+  {
+    "from_ref": "fatf-mev",
+    "to_ref": "fatf-greylist",
+    "relationship_type": "can_result_in",
+    "strength": 0.9,
+    "description": "Significant deficiencies found in mutual evaluation typically result in greylisting with an action plan"
+  },
+  {
+    "from_ref": "org-fatf",
+    "to_ref": "fatf-40",
+    "relationship_type": "publishes",
+    "strength": 1,
+    "description": "FATF publishes and maintains the 40 Recommendations"
+  },
+  {
+    "from_ref": "org-fatf",
+    "to_ref": "fatf-blacklist",
+    "relationship_type": "maintains",
+    "strength": 1,
+    "description": "FATF publishes and maintains the high-risk jurisdiction (blacklist) three times per year"
+  },
+  {
+    "from_ref": "org-fatf",
+    "to_ref": "fatf-greylist",
+    "relationship_type": "maintains",
+    "strength": 1,
+    "description": "FATF publishes and maintains the increased monitoring (greylist) three times per year"
+  },
+  {
+    "from_ref": "org-fatf",
+    "to_ref": "fatf-va-guidance",
+    "relationship_type": "publishes",
+    "strength": 1,
+    "description": "FATF published the VA/VASP Guidance documents"
+  },
+  {
+    "from_ref": "org-fatf",
+    "to_ref": "fatf-mev",
+    "relationship_type": "conducts",
+    "strength": 1,
+    "description": "FATF conducts mutual evaluations of member countries"
+  },
+  {
+    "from_ref": "org-egmont",
+    "to_ref": "fatf-r29",
+    "relationship_type": "supports",
+    "strength": 0.9,
+    "description": "Egmont Group supports FIU cooperation required by R.29"
+  },
+  {
+    "from_ref": "org-egmont",
+    "to_ref": "fatf-r40",
+    "relationship_type": "implements",
+    "strength": 0.8,
+    "description": "Egmont Group implements the FIU-to-FIU cooperation principles of R.40"
+  },
+  {
+    "from_ref": "org-fsrb",
+    "to_ref": "fatf-mev",
+    "relationship_type": "conducts",
+    "strength": 0.8,
+    "description": "FSRBs conduct mutual evaluations in their regions following FATF methodology"
+  },
+  {
+    "from_ref": "cross-fatf-amlr",
+    "to_ref": "fatf-40",
+    "relationship_type": "links",
+    "strength": 1,
+    "description": "FATF × AMLR cross-reference documents EU legal transposition of FATF standards",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-fatf-mica",
+    "to_ref": "fatf-r15",
+    "relationship_type": "links",
+    "strength": 0.9,
+    "description": "FATF R.15 × MiCA alignment documents VASP/CASP equivalence and Travel Rule implementation",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "fatf-r13",
+    "to_ref": "fatf-derisking-guidance",
+    "relationship_type": "elaborated_by",
+    "strength": 0.9,
+    "description": "R.13 correspondent banking requirements are elaborated in FATF de-risking guidance"
+  },
+  {
+    "from_ref": "fatf-io3",
+    "to_ref": "fatf-r26",
+    "relationship_type": "assesses",
+    "strength": 0.9,
+    "description": "IO.3 effectiveness assessment directly assesses quality of AML/CFT supervision (R.26)"
+  },
+  {
+    "from_ref": "fatf-io6",
+    "to_ref": "fatf-r29",
+    "relationship_type": "assesses",
+    "strength": 0.9,
+    "description": "IO.6 effectiveness assessment directly assesses FIU intelligence and STR use quality (R.29)"
+  },
+  {
+    "from_ref": "fatf-io1",
+    "to_ref": "fatf-r1",
+    "relationship_type": "assesses",
+    "strength": 0.9,
+    "description": "IO.1 effectiveness assessment directly assesses quality of national risk understanding (R.1)"
+  }
+]

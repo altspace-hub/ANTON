@@ -1,0 +1,22 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "fatf-recommendations",
+  "display_name": "FATF Recommendations — Global AML/CFT/CPF Standards",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for FATF's 40 Recommendations (2012, updated through 2023), the Methodology for Assessing Compliance, FATF Guidance on Virtual Assets and VASPs, Beneficial Ownership Guidance, and Mutual Evaluation procedures. Covers risk-based approach, customer due diligence, suspicious transaction reporting, correspondent banking, politically exposed persons, wire transfers, new technologies, virtual assets, and the FATF blacklist/greylist framework.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "Global (180+ FATF member jurisdictions)",
+  "regulatory_area": "AML/CFT/CPF — International Standards",
+  "regulation_ids": [
+    "FATF Recommendations",
+    "FATF 40 Recommendations",
+    "FATF Methodology",
+    "FATF Guidance",
+    "FATF-GAFI"
+  ],
+  "tier": 1,
+  "entity_count": 43,
+  "relationship_count": 70,
+  "alias_entry_count": 43
+}

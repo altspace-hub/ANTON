@@ -1,0 +1,882 @@
+[
+  {
+    "ref_id": "dora",
+    "description": "Regulation (EU) 2022/2554 on digital operational resilience for the financial sector (DORA). Applies from 17 January 2025. Establishes uniform requirements for ICT risk management, incident reporting, TLPT, and ICT third-party risk oversight across EU financial entities.",
+    "metadata": {
+      "full_title": "Regulation (EU) 2022/2554",
+      "short_name": "DORA",
+      "in_force": "2025-01-17",
+      "chapter_count": 9,
+      "article_count": 64,
+      "recital_count": 109,
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "dora",
+    "canonical_name": "DORA"
+  },
+  {
+    "ref_id": "nis2",
+    "description": "Directive (EU) 2022/2555 on measures for a high common level of cybersecurity across the Union (NIS2). Repeals NIS1. Transposition deadline 17 October 2024. Applies to essential and important entities including financial infrastructure.",
+    "metadata": {
+      "full_title": "Directive (EU) 2022/2555",
+      "short_name": "NIS2",
+      "transposition_deadline": "2024-10-17",
+      "replaces": "Directive (EU) 2016/1148",
+      "jurisdiction": "EU"
+    },
+    "entity_type": "regulation",
+    "entity_id": "nis2",
+    "canonical_name": "NIS2 Directive"
+  },
+  {
+    "ref_id": "dora-a5",
+    "description": "Management body of a financial entity bears ultimate responsibility for ICT risk management. Must approve, oversee and periodically review ICT risk management framework. Requires adequate time and budget for ICT risk governance. Board members must keep knowledge up to date.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 5,
+      "chapter": 2,
+      "topic": "governance"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a5",
+    "canonical_name": "DORA Article 5 — Governance & ICT Risk Management"
+  },
+  {
+    "ref_id": "dora-a6",
+    "description": "Financial entities must maintain a sound, comprehensive and well-documented ICT risk management framework as part of their overall risk management system. Framework must identify, classify and document ICT-supported business functions, roles and assets. Must be reviewed at least annually.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 6,
+      "chapter": 2,
+      "topic": "ict-risk-framework"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a6",
+    "canonical_name": "DORA Article 6 — ICT Risk Management Framework"
+  },
+  {
+    "ref_id": "dora-a7",
+    "description": "Financial entities shall use and maintain updated ICT systems, protocols and tools that: are appropriate to the scale of operations; are reliable; have sufficient technological capacity; are resilient; minimise ICT risk impact. Annual review required.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 7,
+      "chapter": 2,
+      "topic": "ict-systems"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a7",
+    "canonical_name": "DORA Article 7 — ICT Systems, Protocols and Tools"
+  },
+  {
+    "ref_id": "dora-a8",
+    "description": "Financial entities shall identify, classify and document ICT-supported business functions, assets and information. Must identify all ICT-related sources of risk and conduct regular ICT risk assessments on all legacy ICT systems. Review after major changes.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 8,
+      "chapter": 2,
+      "topic": "risk-identification"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a8",
+    "canonical_name": "DORA Article 8 — Identification of ICT Risk"
+  },
+  {
+    "ref_id": "dora-a9",
+    "description": "Financial entities shall have appropriate ICT security policies, procedures and controls. Must minimise impact of ICT risk through data and systems protection measures: access management, patch management, encryption, network security, and physical security policies.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 9,
+      "chapter": 2,
+      "topic": "protection-prevention"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a9",
+    "canonical_name": "DORA Article 9 — Protection and Prevention"
+  },
+  {
+    "ref_id": "dora-a10",
+    "description": "Financial entities shall have mechanisms to promptly detect anomalous activities including ICT network performance issues. Multiple layers of control, ICT security awareness programmes, dedicated alerts for ICT anomalies and incidents.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 10,
+      "chapter": 2,
+      "topic": "detection"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a10",
+    "canonical_name": "DORA Article 10 — Detection"
+  },
+  {
+    "ref_id": "dora-a11",
+    "description": "Financial entities shall have a comprehensive ICT Business Continuity Policy (BCP) and ICT Disaster Recovery Plan (DRP). BCP must enable continuity of critical functions. RTO and RPO must be defined and tested. Recovery objectives must be set and communicated.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 11,
+      "chapter": 2,
+      "topic": "bcp-drp"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a11",
+    "canonical_name": "DORA Article 11 — Response and Recovery"
+  },
+  {
+    "ref_id": "dora-a12",
+    "description": "Financial entities shall maintain backup and recovery procedures. Backups must be isolated, protected and tested. Recovery testing at least annually. Geographic redundancy required for systemically important firms.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 12,
+      "chapter": 2,
+      "topic": "backup-recovery"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a12",
+    "canonical_name": "DORA Article 12 — Backup Policies and Recovery"
+  },
+  {
+    "ref_id": "dora-a13",
+    "description": "Financial entities shall gather post-incident reviews, learn from ICT disruptions and analyse threats. Lessons-learned reviews must be conducted after major ICT-related incidents. Findings must feed back into risk management framework.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 13,
+      "chapter": 2,
+      "topic": "lessons-learned"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a13",
+    "canonical_name": "DORA Article 13 — Learning and Evolving"
+  },
+  {
+    "ref_id": "dora-a14",
+    "description": "Financial entities shall have ICT-related incident communication plans for internal staff, clients, counterparties, and public (where necessary). Communication plans must address crisis communications and media handling.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 14,
+      "chapter": 2,
+      "topic": "communication"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a14",
+    "canonical_name": "DORA Article 14 — Communication"
+  },
+  {
+    "ref_id": "dora-a17",
+    "description": "Financial entities shall classify ICT-related incidents and determine their major/non-major status using criteria: number of clients affected, duration, data loss, geographic spread, criticality of services, economic impact, reputational impact.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 17,
+      "chapter": 3,
+      "topic": "incident-classification"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a17",
+    "canonical_name": "DORA Article 17 — ICT Incident Classification"
+  },
+  {
+    "ref_id": "dora-a18",
+    "description": "Financial entities must report major ICT-related incidents to competent authority. Three-stage reporting: (1) initial notification within 4 hours (max 24h after classification); (2) intermediate report within 72 hours; (3) final report within 1 month. ESAs publish aggregate incident reports.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 18,
+      "chapter": 3,
+      "topic": "incident-reporting",
+      "initial_notification_deadline": "4h (max 24h)",
+      "intermediate_report_deadline": "72h",
+      "final_report_deadline": "1 month"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a18",
+    "canonical_name": "DORA Article 18 — Major Incident Reporting"
+  },
+  {
+    "ref_id": "dora-a19",
+    "description": "Financial entities may voluntarily notify competent authorities of significant cyber threats. Competent authorities shall notify ESAs on aggregated basis.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 19,
+      "chapter": 3,
+      "topic": "voluntary-notification"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a19",
+    "canonical_name": "DORA Article 19 — Voluntary Notification of Cyber Threats"
+  },
+  {
+    "ref_id": "dora-a20",
+    "description": "ESAs develop harmonised templates and standardised forms for ICT-related incident reporting. Single entry point for incident reports. Central EU Hub for major incident reporting established.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 20,
+      "chapter": 3,
+      "topic": "reporting-harmonisation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a20",
+    "canonical_name": "DORA Article 20 — Incident Reporting Harmonisation"
+  },
+  {
+    "ref_id": "dora-a24",
+    "description": "Financial entities identified by competent authorities shall perform Threat-Led Penetration Testing (TLPT) at least every 3 years. TLPT scope covers all critical/important functions. Results must be validated and shared with authority.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 24,
+      "chapter": 4,
+      "topic": "tlpt",
+      "frequency": "at least every 3 years"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a24",
+    "canonical_name": "DORA Article 24 — General Requirements for TLPT"
+  },
+  {
+    "ref_id": "dora-a25",
+    "description": "TLPT testers may be internal (after 3 years of testing capability) or external. External testers must meet competence, independence and reputational standards. TIBER-EU framework used as reference.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 25,
+      "chapter": 4,
+      "topic": "tlpt-testers"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a25",
+    "canonical_name": "DORA Article 25 — Testers for TLPT"
+  },
+  {
+    "ref_id": "dora-a26",
+    "description": "A TLPT performed at group level may satisfy the requirement for individual subsidiaries if scope covers the subsidiary. Avoids duplicative testing for group entities within EU.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 26,
+      "chapter": 4,
+      "topic": "tlpt-pooling"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a26",
+    "canonical_name": "DORA Article 26 — TLPT Recognition for Group Entities"
+  },
+  {
+    "ref_id": "dora-a28",
+    "description": "Financial entities shall manage ICT third-party risk as an integral component of their ICT risk management. Must adopt and regularly review a strategy for ICT third-party risk including a policy on the use of ICT services of critical third-party providers (CTPPs). Register of all contractual arrangements required.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 28,
+      "chapter": 5,
+      "topic": "tprm-general"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a28",
+    "canonical_name": "DORA Article 28 — General Principles for ICT Third-Party Risk"
+  },
+  {
+    "ref_id": "dora-a29",
+    "description": "Financial entities shall conduct thorough due diligence before entering ICT contracts supporting critical/important functions. Must assess concentration risk, sub-contracting chains and whether service provider meets security and resilience standards.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 29,
+      "chapter": 5,
+      "topic": "pre-contractual-due-diligence"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a29",
+    "canonical_name": "DORA Article 29 — Pre-Contractual Assessment"
+  },
+  {
+    "ref_id": "dora-a30",
+    "description": "Contracts with ICT service providers for critical/important functions must include: full description of services; locations of data processing; data security provisions; access and audit rights; right to terminate; SLAs; business continuity provisions; subcontracting restrictions; data portability provisions.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 30,
+      "chapter": 5,
+      "topic": "contractual-provisions"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a30",
+    "canonical_name": "DORA Article 30 — Key Contractual Provisions"
+  },
+  {
+    "ref_id": "dora-a31",
+    "description": "Joint Committee of ESAs designates Critical Third-Party Providers (CTPPs) based on systemic impact criteria: number of financial entities served, substitutability, systemic importance. ESAs publish and maintain list of CTPPs.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 31,
+      "chapter": 5,
+      "topic": "ctpp-designation"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a31",
+    "canonical_name": "DORA Article 31 — Designation of Critical ICT Third-Party Service Providers"
+  },
+  {
+    "ref_id": "dora-a32",
+    "description": "Lead overseer appointed from ESAs for each CTPP. Lead overseer conducts oversight activities, requests information, performs investigations, on-site inspections, issues recommendations. CTPPs must cooperate with lead overseer.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 32,
+      "chapter": 5,
+      "topic": "ctpp-oversight"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a32",
+    "canonical_name": "DORA Article 32 — Oversight Framework for CTPPs"
+  },
+  {
+    "ref_id": "dora-a33",
+    "description": "Lead overseer can request information and documents, conduct investigations including on-site inspections of CTPPs, impose periodic penalty payments. CTPPs outside EU with significant EU presence can be required to establish EU subsidiary.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 33,
+      "chapter": 5,
+      "topic": "lead-overseer-powers"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a33",
+    "canonical_name": "DORA Article 33 — Powers of Lead Overseer"
+  },
+  {
+    "ref_id": "dora-a45",
+    "description": "Financial entities may participate in voluntary arrangements for sharing cyber threat information and intelligence (TTPs, IOCs, tactics). Sharing must be within trusted communities, protected by confidentiality obligations, and not conflict with GDPR.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 45,
+      "chapter": 6,
+      "topic": "threat-intel-sharing"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a45",
+    "canonical_name": "DORA Article 45 — ICT Risk Information Sharing"
+  },
+  {
+    "ref_id": "dora-a46",
+    "description": "ESAs and ECB may participate as observers in information-sharing arrangements. Competent authorities notified of participation. Confidentiality requirements apply.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 46,
+      "chapter": 6,
+      "topic": "isac-oversight"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a46",
+    "canonical_name": "DORA Article 46 — Oversight of Information-Sharing Arrangements"
+  },
+  {
+    "ref_id": "dora-a50",
+    "description": "Member States shall lay down effective, proportionate and dissuasive administrative penalties. For financial entities, supervisory measures may include public statement, cease and desist, temporary prohibition of management, monetary penalties. For CTPPs: up to 1% of average daily worldwide turnover.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 50,
+      "chapter": 7,
+      "topic": "sanctions-penalties"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a50",
+    "canonical_name": "DORA Article 50 — Administrative Penalties"
+  },
+  {
+    "ref_id": "dora-a64",
+    "description": "DORA entered into force on 16 January 2023 and applies from 17 January 2025. Transitional arrangements for CTPP oversight in first year.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_number": 64,
+      "chapter": 9,
+      "topic": "entry-into-force",
+      "applies_from": "2025-01-17"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-a64",
+    "canonical_name": "DORA Article 64 — Entry into Force"
+  },
+  {
+    "ref_id": "nis2-a18",
+    "description": "Essential and important entities must take appropriate technical, operational and organisational measures to manage cybersecurity risks. Measures must include: risk analysis, incident handling, BCP/DRP, supply chain security, network security, access control, MFA, and employee training.",
+    "metadata": {
+      "regulation": "NIS2",
+      "article_number": 18,
+      "topic": "risk-management-measures"
+    },
+    "entity_type": "obligation",
+    "entity_id": "nis2-a18",
+    "canonical_name": "NIS2 Article 18 — Cybersecurity Risk-Management Measures"
+  },
+  {
+    "ref_id": "nis2-a19",
+    "description": "Management bodies of essential and important entities must approve cybersecurity risk-management measures, oversee implementation and can be held personally liable for infringements. Managers must complete regular cybersecurity training.",
+    "metadata": {
+      "regulation": "NIS2",
+      "article_number": 19,
+      "topic": "management-accountability"
+    },
+    "entity_type": "obligation",
+    "entity_id": "nis2-a19",
+    "canonical_name": "NIS2 Article 19 — Top Management Accountability"
+  },
+  {
+    "ref_id": "nis2-a20",
+    "description": "Essential and important entities must notify CSIRT or competent authority of significant incidents without undue delay. Early warning within 24 hours; full notification within 72 hours; intermediate and final reports. Significant incident = disruption to services, financial impact, reputational damage.",
+    "metadata": {
+      "regulation": "NIS2",
+      "article_number": 20,
+      "topic": "incident-notification",
+      "early_warning": "24h",
+      "full_notification": "72h"
+    },
+    "entity_type": "obligation",
+    "entity_id": "nis2-a20",
+    "canonical_name": "NIS2 Article 20 — Incident Notification"
+  },
+  {
+    "ref_id": "nis2-a21",
+    "description": "Competent authorities have powers to conduct on-site inspections, request information, issue binding instructions, impose fines. Essential entities: up to €10M or 2% of global annual turnover. Important entities: up to €7M or 1.4% of global annual turnover.",
+    "metadata": {
+      "regulation": "NIS2",
+      "article_number": 21,
+      "topic": "supervisory-enforcement",
+      "fine_essential": "€10M or 2%",
+      "fine_important": "€7M or 1.4%"
+    },
+    "entity_type": "obligation",
+    "entity_id": "nis2-a21",
+    "canonical_name": "NIS2 Article 21 — Supervisory and Enforcement Powers"
+  },
+  {
+    "ref_id": "nis2-a26",
+    "description": "NIS2 applies to medium and large enterprises in critical sectors. Essential entities: energy, transport, banking, financial market infrastructure, health, drinking water, digital infrastructure, ICT service management, public administration, space. Important entities: postal, waste management, chemicals, food, manufacturing, digital providers.",
+    "metadata": {
+      "regulation": "NIS2",
+      "article_number": 26,
+      "topic": "scope-entities"
+    },
+    "entity_type": "obligation",
+    "entity_id": "nis2-a26",
+    "canonical_name": "NIS2 Article 26 — Scope: Essential and Important Entities"
+  },
+  {
+    "ref_id": "dora-proc-ict-gov",
+    "description": "Board-level accountability and oversight of ICT risk management under DORA Art.5. Includes: ICT strategy approval, ICT risk appetite setting, ICT audit oversight, CISO/CTO accountability, and board-level ICT training.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "governance",
+      "owner": "Management body"
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-ict-gov",
+    "canonical_name": "ICT Governance Process"
+  },
+  {
+    "ref_id": "dora-proc-ictrf",
+    "description": "Documented framework required by DORA Art.6 covering: ICT risk identification and assessment, protection controls, detection mechanisms, response and recovery procedures, and communication plans. Annual review cycle.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "framework",
+      "review_cycle": "annual"
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-ictrf",
+    "canonical_name": "ICT Risk Management Framework"
+  },
+  {
+    "ref_id": "dora-proc-ict-incident",
+    "description": "End-to-end incident management under DORA Ch.3: detection, classification, escalation, reporting (3-stage to competent authority), root-cause analysis, post-incident review, and lessons-learned integration.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "operational",
+      "reporting_stages": 3
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-ict-incident",
+    "canonical_name": "ICT Incident Management Process"
+  },
+  {
+    "ref_id": "dora-proc-tlpt",
+    "description": "Threat-Led Penetration Testing programme under DORA Ch.4. Scope definition, tester selection (internal/external), intelligence-led test execution following TIBER-EU, results validation, authority submission, remediation tracking.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "testing",
+      "framework_reference": "TIBER-EU",
+      "frequency": "3 years"
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-tlpt",
+    "canonical_name": "TLPT Programme"
+  },
+  {
+    "ref_id": "dora-proc-tprm",
+    "description": "Lifecycle management of ICT service providers under DORA Ch.5: due diligence, contract negotiation (Art.30 key provisions), ongoing monitoring, audit rights exercise, exit planning, and register of arrangements.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "risk-management",
+      "register_required": true
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-tprm",
+    "canonical_name": "ICT Third-Party Risk Management (TPRM)"
+  },
+  {
+    "ref_id": "dora-proc-bcp",
+    "description": "BCP and DRP required by DORA Art.11. Defines RTO/RPO for critical functions, continuity scenarios, communication trees, activation triggers, recovery testing (at least annual), and lessons-learned integration.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "operational",
+      "testing_frequency": "annual"
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-bcp",
+    "canonical_name": "ICT Business Continuity & Disaster Recovery"
+  },
+  {
+    "ref_id": "dora-proc-isac",
+    "description": "Voluntary participation in ISACs/threat-intel sharing arrangements under DORA Art.45-46. Covers: joining trusted communities, sharing TTPs/IOCs, confidentiality protections, GDPR alignment, and regulatory notification.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "intelligence",
+      "voluntary": true
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-isac",
+    "canonical_name": "Cyber Threat Intelligence Sharing"
+  },
+  {
+    "ref_id": "dora-proc-ctpp-reg",
+    "description": "Financial entities must maintain a register of all ICT third-party arrangements (Art.28) and assess concentration risk. Annual reporting to competent authority. ESAs aggregate data across sector.",
+    "metadata": {
+      "regulation": "DORA",
+      "process_type": "reporting",
+      "report_to": "competent authority"
+    },
+    "entity_type": "process",
+    "entity_id": "dora-proc-ctpp-reg",
+    "canonical_name": "CTPP Register & Concentration Risk Assessment"
+  },
+  {
+    "ref_id": "dora-org-esa-jc",
+    "description": "Joint Committee of EBA, EIOPA and ESMA is responsible for designating Critical Third-Party Providers (CTPPs) under DORA Art.31 and appointing lead overseers. Coordinates cross-sector ICT risk.",
+    "metadata": {
+      "regulation": "DORA",
+      "role": "CTPP designation and lead overseer appointment"
+    },
+    "entity_type": "authority",
+    "entity_id": "dora-org-esa-jc",
+    "canonical_name": "ESA Joint Committee (DORA)"
+  },
+  {
+    "ref_id": "dora-org-eba",
+    "description": "European Banking Authority — lead overseer for CTPPs serving primarily the banking sector under DORA. Also develops RTS/ITS/Guidelines for ICT risk management, incident reporting, and TLPT for credit institutions.",
+    "metadata": {
+      "regulation": "DORA",
+      "role": "lead overseer — banking sector CTPPs; RTS/ITS development"
+    },
+    "entity_type": "authority",
+    "entity_id": "dora-org-eba",
+    "canonical_name": "EBA (DORA context)"
+  },
+  {
+    "ref_id": "dora-org-eiopa",
+    "description": "European Insurance and Occupational Pensions Authority — lead overseer for CTPPs serving primarily the insurance sector under DORA.",
+    "metadata": {
+      "regulation": "DORA",
+      "role": "lead overseer — insurance sector CTPPs"
+    },
+    "entity_type": "authority",
+    "entity_id": "dora-org-eiopa",
+    "canonical_name": "EIOPA (DORA context)"
+  },
+  {
+    "ref_id": "dora-org-esma",
+    "description": "European Securities and Markets Authority — lead overseer for CTPPs serving primarily the investment sector under DORA.",
+    "metadata": {
+      "regulation": "DORA",
+      "role": "lead overseer — investment sector CTPPs"
+    },
+    "entity_type": "authority",
+    "entity_id": "dora-org-esma",
+    "canonical_name": "ESMA (DORA context)"
+  },
+  {
+    "ref_id": "dora-org-enisa",
+    "description": "EU Agency for Cybersecurity. Provides guidelines, threat landscape reports, and supports TLPT reference framework (TIBER-EU). Supports NIS2 implementation and maintains EU cybersecurity certification framework.",
+    "metadata": {
+      "regulation": "NIS2/DORA",
+      "role": "technical guidance, threat landscape, TLPT support"
+    },
+    "entity_type": "authority",
+    "entity_id": "dora-org-enisa",
+    "canonical_name": "ENISA"
+  },
+  {
+    "ref_id": "dora-org-ecb-tiber",
+    "description": "European Central Bank's TIBER-EU framework is the reference methodology for Threat Intelligence-Based Ethical Red-teaming. Referenced by DORA for TLPT design and execution standards.",
+    "metadata": {
+      "regulation": "DORA",
+      "role": "TLPT reference framework"
+    },
+    "entity_type": "authority",
+    "entity_id": "dora-org-ecb-tiber",
+    "canonical_name": "ECB TIBER-EU"
+  },
+  {
+    "ref_id": "nis2-org-csirt",
+    "description": "Network of national Computer Security Incident Response Teams (CSIRTs) under NIS2. First point of contact for significant incident notifications. Coordinates cross-border incident response. Each Member State designates national CSIRT(s).",
+    "metadata": {
+      "regulation": "NIS2",
+      "role": "incident notification recipient, cross-border coordination"
+    },
+    "entity_type": "authority",
+    "entity_id": "nis2-org-csirt",
+    "canonical_name": "CSIRT Network"
+  },
+  {
+    "ref_id": "nis2-org-enisa",
+    "description": "EU Agency for Cybersecurity supports NIS2 implementation: maintains EU vulnerability database, produces EU cybersecurity threat landscape, supports CSIRT network, and coordinates certification framework.",
+    "metadata": {
+      "regulation": "NIS2",
+      "role": "vulnerability database, threat landscape, CSIRT support"
+    },
+    "entity_type": "authority",
+    "entity_id": "nis2-org-enisa",
+    "canonical_name": "ENISA (NIS2 context)"
+  },
+  {
+    "ref_id": "dora-rts-ict-risk",
+    "description": "RTS specifying a simplified ICT risk management framework for entities in scope of the simplified regime (Art.16). Developed jointly by EBA, EIOPA and ESMA. Proportionate requirements for smaller financial entities.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_basis": "Art.16(3)",
+      "developer": "EBA/EIOPA/ESMA"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-rts-ict-risk",
+    "canonical_name": "RTS on ICT Risk Management (simplified regime)"
+  },
+  {
+    "ref_id": "dora-rts-incident",
+    "description": "RTS specifying criteria for classification of ICT incidents as major (Art.17). Defines materiality thresholds for each criterion: clients affected, data volumes, geographic spread, reputational impact, economic impact, service duration.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_basis": "Art.17(3)",
+      "developer": "EBA/EIOPA/ESMA"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-rts-incident",
+    "canonical_name": "RTS on ICT Incident Classification"
+  },
+  {
+    "ref_id": "dora-its-incident-reporting",
+    "description": "ITS specifying standard forms, templates and procedures for reporting major ICT-related incidents (Art.18). Harmonised single entry point reporting. Three-stage report templates: initial notification, intermediate, final.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_basis": "Art.20(3)",
+      "developer": "EBA/EIOPA/ESMA"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-its-incident-reporting",
+    "canonical_name": "ITS on Incident Reporting Templates"
+  },
+  {
+    "ref_id": "dora-rts-tlpt",
+    "description": "RTS specifying criteria for identification of financial entities required to conduct TLPT, requirements for testers, and process/methodology for TLPT including TIBER-EU alignment. Developed by EBA/EIOPA/ESMA.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_basis": "Art.26(11)",
+      "developer": "EBA/EIOPA/ESMA"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-rts-tlpt",
+    "canonical_name": "RTS on TLPT"
+  },
+  {
+    "ref_id": "dora-rts-ctpp-oversight",
+    "description": "RTS specifying detailed criteria for CTPP designation, oversight scope, lead overseer powers and interaction with national competent authorities under DORA Art.31-33.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_basis": "Art.31(6)",
+      "developer": "ESA Joint Committee"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-rts-ctpp-oversight",
+    "canonical_name": "RTS on CTPP Oversight"
+  },
+  {
+    "ref_id": "dora-rts-subcontracting",
+    "description": "RTS specifying conditions under which ICT services supporting critical/important functions may be subcontracted, chain subcontracting restrictions, and due diligence requirements for sub-processors under DORA Art.30.",
+    "metadata": {
+      "regulation": "DORA",
+      "article_basis": "Art.30(5)",
+      "developer": "EBA/EIOPA/ESMA"
+    },
+    "entity_type": "obligation",
+    "entity_id": "dora-rts-subcontracting",
+    "canonical_name": "RTS on ICT Subcontracting"
+  },
+  {
+    "ref_id": "dora-concept-critical-function",
+    "description": "Under DORA, a function whose disruption would materially impair a financial entity's financial performance, the soundness of its services, or its regulatory compliance. Financial entities must identify and document all critical/important functions. Higher TPRM and resilience requirements apply to ICT services supporting these functions.",
+    "metadata": {
+      "regulation": "DORA",
+      "concept_type": "scope-definition"
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-concept-critical-function",
+    "canonical_name": "Critical or Important Function (DORA)"
+  },
+  {
+    "ref_id": "dora-concept-ctpp",
+    "description": "ICT third-party service providers designated by the ESA Joint Committee as critical based on systemic importance to EU financial sector. Subject to direct oversight by lead overseer. Designation does NOT relieve financial entities of their TPRM obligations.",
+    "metadata": {
+      "regulation": "DORA",
+      "concept_type": "entity-classification"
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-concept-ctpp",
+    "canonical_name": "Critical Third-Party Provider (CTPP)"
+  },
+  {
+    "ref_id": "dora-concept-rto-rpo",
+    "description": "Recovery Time Objective (RTO): maximum tolerable downtime for a critical function. Recovery Point Objective (RPO): maximum tolerable data loss. Financial entities must set and test RTO/RPO for all critical functions under DORA Art.11-12.",
+    "metadata": {
+      "regulation": "DORA",
+      "concept_type": "resilience-metric"
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-concept-rto-rpo",
+    "canonical_name": "RTO / RPO (DORA context)"
+  },
+  {
+    "ref_id": "dora-concept-tprm",
+    "description": "Managing risks arising from reliance on external ICT service providers including cloud, data centres, software vendors, and managed service providers. DORA establishes TPRM as a core component of ICT risk management with specific pre-contractual, contractual, and ongoing monitoring requirements.",
+    "metadata": {
+      "regulation": "DORA",
+      "concept_type": "risk-category"
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-concept-tprm",
+    "canonical_name": "ICT Third-Party Risk Management"
+  },
+  {
+    "ref_id": "dora-concept-concentration-risk",
+    "description": "Risk arising from excessive dependence on a single or small number of ICT third-party providers for critical services. Financial entities must assess concentration risk before and during ICT provider relationships. Sector-level concentration risk monitored by ESAs via CTPP register data.",
+    "metadata": {
+      "regulation": "DORA",
+      "concept_type": "risk-category"
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-concept-concentration-risk",
+    "canonical_name": "ICT Concentration Risk"
+  },
+  {
+    "ref_id": "dora-concept-digital-resilience",
+    "description": "The ability of a financial entity to build, assure and review its operational integrity and reliability by ensuring, directly or indirectly (through ICT third-party services), the full range of ICT capabilities needed to address the security of network and information systems used by financial entities. Overarching DORA objective.",
+    "metadata": {
+      "regulation": "DORA",
+      "concept_type": "overarching-objective"
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-concept-digital-resilience",
+    "canonical_name": "Digital Operational Resilience"
+  },
+  {
+    "ref_id": "nis2-concept-essential-entity",
+    "description": "Category of entity subject to stricter NIS2 requirements including ex ante supervision. Includes: large enterprises in energy, transport, banking, financial market infrastructure, health, digital infrastructure, ICT service management, public administration, space sectors. Subject to stricter penalties (€10M or 2% turnover).",
+    "metadata": {
+      "regulation": "NIS2",
+      "concept_type": "entity-classification"
+    },
+    "entity_type": "concept",
+    "entity_id": "nis2-concept-essential-entity",
+    "canonical_name": "Essential Entity (NIS2)"
+  },
+  {
+    "ref_id": "nis2-concept-important-entity",
+    "description": "Category of entity subject to NIS2 requirements with ex post supervision (action triggered by evidence of non-compliance). Includes medium and large enterprises in postal, waste, chemicals, food, manufacturing, digital providers. Penalties up to €7M or 1.4% of turnover.",
+    "metadata": {
+      "regulation": "NIS2",
+      "concept_type": "entity-classification"
+    },
+    "entity_type": "concept",
+    "entity_id": "nis2-concept-important-entity",
+    "canonical_name": "Important Entity (NIS2)"
+  },
+  {
+    "ref_id": "dora-cross-amlr",
+    "description": "DORA Art.9 (data protection) and AMLR Arts.72-78 (data management for AML) overlap on data security controls. ICT incidents involving customer/transaction data may trigger both DORA incident reporting and AMLR breach notification obligations. AMLA will interface with CTPP oversight via EBA coordination.",
+    "metadata": {
+      "regulations": [
+        "DORA",
+        "AMLR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-cross-amlr",
+    "canonical_name": "DORA × AMLR cross-reference"
+  },
+  {
+    "ref_id": "dora-cross-gdpr",
+    "description": "DORA Art.45 (threat-intel sharing) must comply with GDPR personal data restrictions. ICT incidents involving personal data breach may trigger both DORA Art.18 reporting and GDPR Art.33 breach notification (72h). Data retention for ICT records intersects GDPR Art.5(1)(e) storage limitation.",
+    "metadata": {
+      "regulations": [
+        "DORA",
+        "GDPR"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-cross-gdpr",
+    "canonical_name": "DORA × GDPR cross-reference"
+  },
+  {
+    "ref_id": "dora-cross-nis2",
+    "description": "Financial entities that are essential/important under NIS2 must comply with BOTH NIS2 and DORA. DORA is lex specialis — where DORA requirements are equivalent to or stricter than NIS2, DORA compliance fulfils NIS2 obligations (Art.1(2) NIS2). Incident reporting: DORA Art.18 reporting may satisfy NIS2 Art.20 obligation if submitted to same authority.",
+    "metadata": {
+      "regulations": [
+        "DORA",
+        "NIS2"
+      ],
+      "cross_area": true,
+      "lex_specialis": "DORA over NIS2 for financial entities"
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-cross-nis2",
+    "canonical_name": "DORA × NIS2 cross-reference"
+  },
+  {
+    "ref_id": "dora-cross-crr",
+    "description": "DORA Pillar on ICT risk complements CRR operational risk capital requirements (Pillar 1) and CRD ICAAP/SREP (Pillar 2). ICT-related losses feed into operational risk management. DORA does not replace CRR/CRD operational risk requirements but adds granular ICT-specific obligations.",
+    "metadata": {
+      "regulations": [
+        "DORA",
+        "CRR",
+        "CRD"
+      ],
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "dora-cross-crr",
+    "canonical_name": "DORA × CRR/CRD cross-reference"
+  },
+  {
+    "ref_id": "nis2-cross-dora",
+    "description": "NIS2 Art.1(2) explicitly provides that DORA is lex specialis with respect to NIS2 for financial entities. Where DORA imposes obligations equivalent to or stricter than NIS2, compliance with DORA discharges NIS2 obligations. Competent authorities must coordinate.",
+    "metadata": {
+      "regulations": [
+        "NIS2",
+        "DORA"
+      ],
+      "nis2_article": 2,
+      "cross_area": true
+    },
+    "entity_type": "concept",
+    "entity_id": "nis2-cross-dora",
+    "canonical_name": "NIS2 Art.1(2) DORA lex specialis"
+  },
+  {
+    "ref_id": "dora-annex-scope",
+    "description": "DORA applies to: credit institutions, payment institutions, e-money institutions, investment firms, crypto-asset service providers (CASPs), central securities depositories, central counterparties, trading venues, AIFs/UCITS/management companies, insurance/reinsurance undertakings, ICCPs, rating agencies, statutory auditors, data reporting service providers, securitisation repositories, crowdfunding service providers, and ICT third-party service providers.",
+    "metadata": {
+      "regulation": "DORA",
+      "article": "Art.2",
+      "entity_types_count": 20
+    },
+    "entity_type": "document",
+    "entity_id": "dora-annex-scope",
+    "canonical_name": "DORA Scope — Financial Entities"
+  }
+]

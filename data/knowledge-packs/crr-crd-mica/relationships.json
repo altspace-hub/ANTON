@@ -1,0 +1,350 @@
+[
+  {
+    "from_ref": "crr3",
+    "to_ref": "crr3-output-floor",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRR3 contains the output floor at 72.5% of standardised approach RWA"
+  },
+  {
+    "from_ref": "crr3",
+    "to_ref": "crr3-sa-credit",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRR3 contains the revised standardised approach for credit risk"
+  },
+  {
+    "from_ref": "crr3",
+    "to_ref": "crr3-frtb",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRR3 contains the FRTB market risk framework"
+  },
+  {
+    "from_ref": "crr3",
+    "to_ref": "crr3-op-risk",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRR3 contains the new standardised approach for operational risk"
+  },
+  {
+    "from_ref": "crr3",
+    "to_ref": "crr3-irrbb",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRR3 contains the IRRBB Pillar 1 capital requirement for outliers"
+  },
+  {
+    "from_ref": "crd6",
+    "to_ref": "crd6-csrbb",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRD6 contains the CSRBB supervisory requirement"
+  },
+  {
+    "from_ref": "crd6",
+    "to_ref": "crd6-tcb",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRD6 contains the harmonised third-country branch regime"
+  },
+  {
+    "from_ref": "crd6",
+    "to_ref": "crd6-esg-risk",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRD6 contains ESG risk integration requirements for banks"
+  },
+  {
+    "from_ref": "crd6",
+    "to_ref": "crd6-fit-proper",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "CRD6 contains enhanced fit and proper requirements"
+  },
+  {
+    "from_ref": "mica",
+    "to_ref": "mica-a3",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "MiCA contains Art.3 defining all key MiCA terms"
+  },
+  {
+    "from_ref": "mica",
+    "to_ref": "mica-a16",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "MiCA contains Art.16 on ART authorisation"
+  },
+  {
+    "from_ref": "mica",
+    "to_ref": "mica-a43",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "MiCA contains Art.43 on EMT authorisation via credit institutions/EMIs"
+  },
+  {
+    "from_ref": "mica",
+    "to_ref": "mica-a59",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "MiCA contains Art.59 on CASP authorisation"
+  },
+  {
+    "from_ref": "mica",
+    "to_ref": "mica-a76",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "MiCA contains Art.76 prohibiting market abuse in crypto-assets"
+  },
+  {
+    "from_ref": "mica",
+    "to_ref": "mica-a83",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "MiCA contains Art.83 cross-referencing AML/CFT requirements for CASPs"
+  },
+  {
+    "from_ref": "mica",
+    "to_ref": "mica-a147",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "MiCA contains Art.147 on ESMA's supervisory powers"
+  },
+  {
+    "from_ref": "crr3",
+    "to_ref": "crr-pillar1",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "CRR3 implements and revises the Pillar 1 minimum capital requirement framework"
+  },
+  {
+    "from_ref": "crd6",
+    "to_ref": "crr-pillar2",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "CRD6 implements and updates the Pillar 2 ICAAP/SREP framework"
+  },
+  {
+    "from_ref": "crr3",
+    "to_ref": "crr-pillar3",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "CRR3 implements and expands Pillar 3 market discipline disclosures"
+  },
+  {
+    "from_ref": "crr3-output-floor",
+    "to_ref": "concept-rwa",
+    "relationship_type": "constrains",
+    "strength": 0.9,
+    "description": "Output floor constrains minimum RWA to 72.5% of standardised approach level, reducing internal model benefit"
+  },
+  {
+    "from_ref": "crr3-sa-credit",
+    "to_ref": "concept-rwa",
+    "relationship_type": "determines",
+    "strength": 0.9,
+    "description": "Revised SA credit risk is primary determinant of RWA for standardised banks"
+  },
+  {
+    "from_ref": "crr3-frtb",
+    "to_ref": "concept-rwa",
+    "relationship_type": "determines",
+    "strength": 0.8,
+    "description": "FRTB determines market risk component of RWA"
+  },
+  {
+    "from_ref": "crr3-op-risk",
+    "to_ref": "concept-rwa",
+    "relationship_type": "determines",
+    "strength": 0.8,
+    "description": "New SMA determines operational risk component of RWA"
+  },
+  {
+    "from_ref": "crr3-irrbb",
+    "to_ref": "crd6-csrbb",
+    "relationship_type": "related_to",
+    "strength": 0.8,
+    "description": "IRRBB (Pillar 1 for outliers) and CSRBB (Pillar 2 supervisory requirement) are related interest/spread rate risk frameworks"
+  },
+  {
+    "from_ref": "crr-pillar1",
+    "to_ref": "crr-pillar2",
+    "relationship_type": "complemented_by",
+    "strength": 0.9,
+    "description": "Pillar 1 minimum requirements are complemented by Pillar 2 additional requirements set by supervisors in SREP"
+  },
+  {
+    "from_ref": "crr-pillar2",
+    "to_ref": "crr-pillar3",
+    "relationship_type": "disclosed_through",
+    "strength": 0.7,
+    "description": "Pillar 2 capital add-ons and risk assessments are disclosed through Pillar 3 reports"
+  },
+  {
+    "from_ref": "crd6-esg-risk",
+    "to_ref": "crr-pillar2",
+    "relationship_type": "integrates_into",
+    "strength": 0.9,
+    "description": "ESG risk integration (CRD6) requires ESG risks to be covered in ICAAP and SREP assessments"
+  },
+  {
+    "from_ref": "mica-a3",
+    "to_ref": "concept-casp",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "MiCA Art.3 defines the CASP concept and its constituent services"
+  },
+  {
+    "from_ref": "mica-a3",
+    "to_ref": "concept-art",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "MiCA Art.3 defines asset-referenced token (ART)"
+  },
+  {
+    "from_ref": "mica-a3",
+    "to_ref": "concept-emt",
+    "relationship_type": "defines",
+    "strength": 1,
+    "description": "MiCA Art.3 defines e-money token (EMT)"
+  },
+  {
+    "from_ref": "concept-casp",
+    "to_ref": "mica-a59",
+    "relationship_type": "authorised_under",
+    "strength": 1,
+    "description": "CASPs are authorised under MiCA Art.59"
+  },
+  {
+    "from_ref": "concept-art",
+    "to_ref": "mica-a16",
+    "relationship_type": "authorised_under",
+    "strength": 1,
+    "description": "ART issuers are authorised under MiCA Art.16"
+  },
+  {
+    "from_ref": "concept-emt",
+    "to_ref": "mica-a43",
+    "relationship_type": "authorised_under",
+    "strength": 1,
+    "description": "EMT issuers are authorised under MiCA Art.43"
+  },
+  {
+    "from_ref": "concept-significant-token",
+    "to_ref": "concept-art",
+    "relationship_type": "subset_of",
+    "strength": 0.8,
+    "description": "Significant tokens can be a subset of ARTs meeting threshold criteria"
+  },
+  {
+    "from_ref": "concept-significant-token",
+    "to_ref": "concept-emt",
+    "relationship_type": "subset_of",
+    "strength": 0.8,
+    "description": "Significant tokens can be a subset of EMTs meeting threshold criteria"
+  },
+  {
+    "from_ref": "concept-significant-token",
+    "to_ref": "org-eba-crr",
+    "relationship_type": "supervised_by",
+    "strength": 0.9,
+    "description": "Significant ART/EMT issuers are subject to additional EBA supervision under MiCA"
+  },
+  {
+    "from_ref": "mica-a83",
+    "to_ref": "cross-mica-amlr",
+    "relationship_type": "documented_in",
+    "strength": 0.9,
+    "description": "MiCA Art.83 AML/CFT obligations are detailed in the MiCA × AMLR cross-reference"
+  },
+  {
+    "from_ref": "tfr-crypto",
+    "to_ref": "mica-a83",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "TFR crypto Travel Rule implements the AML transfer transparency obligation referenced in MiCA Art.83"
+  },
+  {
+    "from_ref": "org-eba-crr",
+    "to_ref": "crr3",
+    "relationship_type": "develops_standards_for",
+    "strength": 0.9,
+    "description": "EBA develops RTS, ITS and guidelines implementing CRR3 requirements"
+  },
+  {
+    "from_ref": "org-eba-crr",
+    "to_ref": "crd6",
+    "relationship_type": "develops_standards_for",
+    "strength": 0.9,
+    "description": "EBA develops standards for CRD6 implementation including SREP guidelines"
+  },
+  {
+    "from_ref": "org-esma-mica",
+    "to_ref": "mica-a59",
+    "relationship_type": "maintains_register_for",
+    "strength": 0.9,
+    "description": "ESMA maintains the EU-wide CASP authorisation register"
+  },
+  {
+    "from_ref": "org-esma-mica",
+    "to_ref": "mica-a147",
+    "relationship_type": "exercises_powers_under",
+    "strength": 1,
+    "description": "ESMA exercises its direct supervisory powers for crypto-assets under MiCA Art.147"
+  },
+  {
+    "from_ref": "org-ecb-banking",
+    "to_ref": "crr-pillar2",
+    "relationship_type": "conducts",
+    "strength": 1,
+    "description": "ECB/SSM conducts SREP for significant institutions under its direct supervision"
+  },
+  {
+    "from_ref": "cross-crr-amlr",
+    "to_ref": "crr3",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "CRR/AMLR cross-reference documents AML fine and op-risk capital interactions",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-mica-amlr",
+    "to_ref": "mica",
+    "relationship_type": "links",
+    "strength": 0.9,
+    "description": "MiCA × AMLR cross-reference documents CASP AML/CFT obligations and Travel Rule",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-crr-dora",
+    "to_ref": "crr3",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "CRR × DORA cross-reference documents ICT risk and operational risk capital interaction",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "cross-mica-gdpr",
+    "to_ref": "mica",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "MiCA × GDPR cross-reference documents CASP personal data processing tensions",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "crd6-esg-risk",
+    "to_ref": "cross-crr-amlr",
+    "relationship_type": "expanded_by",
+    "strength": 0.6,
+    "description": "CRD6 ESG risk (including governance/financial crime dimension) is part of broader CRR/AMLR governance interaction"
+  }
+]

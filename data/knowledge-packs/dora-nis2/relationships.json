@@ -1,0 +1,814 @@
+[
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a5",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 5 on governance and management body accountability for ICT risk"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a6",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 6 requiring a comprehensive ICT risk management framework"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a7",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 7 on ICT systems, protocols and tools standards"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a8",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 8 on identification and classification of ICT risks"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a9",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 9 on ICT protection and prevention controls"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a10",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 10 on ICT anomaly detection mechanisms"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a11",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 11 on BCP and DRP response and recovery"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a12",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 12 on backup policies and recovery testing"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a13",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 13 on learning from ICT incidents"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a14",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 14 on ICT-related incident communication plans"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a17",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 17 on ICT incident classification criteria"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a18",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 18 establishing three-stage major incident reporting"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a19",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 19 on voluntary notification of cyber threats"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a20",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 20 on harmonisation of incident reporting forms and templates"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a24",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 24 on general TLPT requirements"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a25",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 25 on TLPT tester qualification requirements"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a26",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 26 on group-level TLPT recognition"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a28",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 28 on general principles for ICT third-party risk management"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a29",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 29 on pre-contractual due diligence for ICT providers"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a30",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 30 on key contractual provisions for critical ICT services"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a31",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 31 on designation of Critical Third-Party Providers"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a32",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 32 on the CTPP oversight framework and lead overseer"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a33",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 33 on lead overseer investigatory and enforcement powers"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a45",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 45 on voluntary ICT risk information sharing arrangements"
+  },
+  {
+    "from_ref": "dora",
+    "to_ref": "dora-a50",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "DORA contains Article 50 on administrative penalties and supervisory measures"
+  },
+  {
+    "from_ref": "nis2",
+    "to_ref": "nis2-a18",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "NIS2 contains Article 18 on cybersecurity risk-management measures"
+  },
+  {
+    "from_ref": "nis2",
+    "to_ref": "nis2-a19",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "NIS2 contains Article 19 on top management accountability for cybersecurity"
+  },
+  {
+    "from_ref": "nis2",
+    "to_ref": "nis2-a20",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "NIS2 contains Article 20 on significant incident notification timelines"
+  },
+  {
+    "from_ref": "nis2",
+    "to_ref": "nis2-a21",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "NIS2 contains Article 21 on supervisory and enforcement powers including fines"
+  },
+  {
+    "from_ref": "nis2",
+    "to_ref": "nis2-a26",
+    "relationship_type": "contains",
+    "strength": 1,
+    "description": "NIS2 contains Article 26 defining essential and important entity scope"
+  },
+  {
+    "from_ref": "dora-a5",
+    "to_ref": "dora-a6",
+    "relationship_type": "governs",
+    "strength": 0.9,
+    "description": "DORA Art.5 management body accountability governs the ICT risk management framework required by Art.6"
+  },
+  {
+    "from_ref": "dora-a6",
+    "to_ref": "dora-a7",
+    "relationship_type": "requires",
+    "strength": 0.8,
+    "description": "ICT risk management framework (Art.6) requires adequate ICT systems (Art.7) as a core component"
+  },
+  {
+    "from_ref": "dora-a6",
+    "to_ref": "dora-a8",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "ICT risk management framework (Art.6) requires risk identification and classification (Art.8)"
+  },
+  {
+    "from_ref": "dora-a6",
+    "to_ref": "dora-a9",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "ICT risk management framework (Art.6) requires protection and prevention controls (Art.9)"
+  },
+  {
+    "from_ref": "dora-a6",
+    "to_ref": "dora-a10",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "ICT risk management framework (Art.6) requires detection mechanisms (Art.10)"
+  },
+  {
+    "from_ref": "dora-a6",
+    "to_ref": "dora-a11",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "ICT risk management framework (Art.6) requires BCP and DRP (Art.11)"
+  },
+  {
+    "from_ref": "dora-a6",
+    "to_ref": "dora-a14",
+    "relationship_type": "requires",
+    "strength": 0.8,
+    "description": "ICT risk management framework (Art.6) requires communication plans (Art.14)"
+  },
+  {
+    "from_ref": "dora-a8",
+    "to_ref": "dora-a28",
+    "relationship_type": "informs",
+    "strength": 0.7,
+    "description": "ICT risk identification (Art.8) informs third-party risk assessment requirements (Art.28)"
+  },
+  {
+    "from_ref": "dora-a10",
+    "to_ref": "dora-a17",
+    "relationship_type": "triggers",
+    "strength": 0.9,
+    "description": "Detection of anomalous activity (Art.10) triggers incident classification process (Art.17)"
+  },
+  {
+    "from_ref": "dora-a11",
+    "to_ref": "dora-a12",
+    "relationship_type": "requires",
+    "strength": 0.8,
+    "description": "BCP/DRP (Art.11) requires backup and recovery procedures (Art.12)"
+  },
+  {
+    "from_ref": "dora-a13",
+    "to_ref": "dora-a6",
+    "relationship_type": "feeds_into",
+    "strength": 0.7,
+    "description": "Lessons learned from incidents (Art.13) feed back into ICT risk management framework updates (Art.6)"
+  },
+  {
+    "from_ref": "dora-a17",
+    "to_ref": "dora-a18",
+    "relationship_type": "triggers",
+    "strength": 1,
+    "description": "Classification as major incident (Art.17) triggers three-stage reporting obligation to competent authority (Art.18)"
+  },
+  {
+    "from_ref": "dora-a18",
+    "to_ref": "dora-a20",
+    "relationship_type": "uses",
+    "strength": 0.8,
+    "description": "Major incident reporting (Art.18) uses harmonised templates and single EU hub established under Art.20"
+  },
+  {
+    "from_ref": "dora-a24",
+    "to_ref": "dora-a25",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "TLPT requirement (Art.24) requires qualified testers meeting criteria in Art.25"
+  },
+  {
+    "from_ref": "dora-a24",
+    "to_ref": "dora-a26",
+    "relationship_type": "enables",
+    "strength": 0.7,
+    "description": "TLPT (Art.24) can be performed at group level with pooling under Art.26"
+  },
+  {
+    "from_ref": "dora-a28",
+    "to_ref": "dora-a29",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "TPRM general framework (Art.28) requires pre-contractual due diligence (Art.29)"
+  },
+  {
+    "from_ref": "dora-a28",
+    "to_ref": "dora-a30",
+    "relationship_type": "requires",
+    "strength": 0.9,
+    "description": "TPRM framework (Art.28) requires inclusion of key contractual provisions (Art.30)"
+  },
+  {
+    "from_ref": "dora-a29",
+    "to_ref": "dora-a30",
+    "relationship_type": "precedes",
+    "strength": 0.8,
+    "description": "Due diligence (Art.29) must be completed before contract with key provisions (Art.30) is signed"
+  },
+  {
+    "from_ref": "dora-a31",
+    "to_ref": "dora-a32",
+    "relationship_type": "establishes",
+    "strength": 1,
+    "description": "CTPP designation (Art.31) establishes the basis for the oversight framework and lead overseer appointment (Art.32)"
+  },
+  {
+    "from_ref": "dora-a32",
+    "to_ref": "dora-a33",
+    "relationship_type": "empowers",
+    "strength": 0.9,
+    "description": "Oversight framework (Art.32) is given effect through lead overseer powers (Art.33)"
+  },
+  {
+    "from_ref": "dora-a9",
+    "to_ref": "dora-a24",
+    "relationship_type": "tested_by",
+    "strength": 0.7,
+    "description": "ICT protection controls (Art.9) are validated through TLPT (Art.24)"
+  },
+  {
+    "from_ref": "dora-a6",
+    "to_ref": "dora-a13",
+    "relationship_type": "requires",
+    "strength": 0.7,
+    "description": "ICT risk management framework (Art.6) requires learning and evolving post-incident (Art.13)"
+  },
+  {
+    "from_ref": "dora-proc-ict-gov",
+    "to_ref": "dora-a5",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "ICT Governance Process implements the management body accountability requirements of DORA Art.5"
+  },
+  {
+    "from_ref": "dora-proc-ictrf",
+    "to_ref": "dora-a6",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "ICT Risk Management Framework process implements DORA Art.6 framework requirements"
+  },
+  {
+    "from_ref": "dora-proc-ict-incident",
+    "to_ref": "dora-a17",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "ICT Incident Management Process implements incident classification per DORA Art.17"
+  },
+  {
+    "from_ref": "dora-proc-ict-incident",
+    "to_ref": "dora-a18",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "ICT Incident Management Process implements three-stage reporting per DORA Art.18"
+  },
+  {
+    "from_ref": "dora-proc-tlpt",
+    "to_ref": "dora-a24",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "TLPT Programme implements DORA Art.24 TLPT requirements"
+  },
+  {
+    "from_ref": "dora-proc-tprm",
+    "to_ref": "dora-a28",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "ICT TPRM process implements DORA Art.28 general TPRM principles"
+  },
+  {
+    "from_ref": "dora-proc-tprm",
+    "to_ref": "dora-a29",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "ICT TPRM process includes pre-contractual due diligence per Art.29"
+  },
+  {
+    "from_ref": "dora-proc-tprm",
+    "to_ref": "dora-a30",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "ICT TPRM process ensures contractual provisions required by Art.30 are included"
+  },
+  {
+    "from_ref": "dora-proc-bcp",
+    "to_ref": "dora-a11",
+    "relationship_type": "implements",
+    "strength": 1,
+    "description": "ICT BCP/DRP process implements DORA Art.11 response and recovery requirements"
+  },
+  {
+    "from_ref": "dora-proc-bcp",
+    "to_ref": "dora-a12",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "ICT BCP/DRP process includes backup and recovery procedures per Art.12"
+  },
+  {
+    "from_ref": "dora-proc-isac",
+    "to_ref": "dora-a45",
+    "relationship_type": "implements",
+    "strength": 0.9,
+    "description": "Threat intelligence sharing process implements DORA Art.45 voluntary sharing arrangements"
+  },
+  {
+    "from_ref": "dora-proc-ctpp-reg",
+    "to_ref": "dora-a28",
+    "relationship_type": "implements",
+    "strength": 0.8,
+    "description": "CTPP Register process maintains the register of ICT arrangements required by Art.28"
+  },
+  {
+    "from_ref": "dora-proc-ctpp-reg",
+    "to_ref": "dora-a31",
+    "relationship_type": "reports_to",
+    "strength": 0.7,
+    "description": "CTPP Register feeds into the CTPP designation data collected by ESAs per Art.31"
+  },
+  {
+    "from_ref": "dora-proc-ict-gov",
+    "to_ref": "dora-proc-ictrf",
+    "relationship_type": "owns",
+    "strength": 0.9,
+    "description": "ICT Governance Process owns and approves the ICT Risk Management Framework"
+  },
+  {
+    "from_ref": "dora-proc-ictrf",
+    "to_ref": "dora-proc-ict-incident",
+    "relationship_type": "encompasses",
+    "strength": 0.8,
+    "description": "ICT Risk Management Framework encompasses incident management processes"
+  },
+  {
+    "from_ref": "dora-proc-ictrf",
+    "to_ref": "dora-proc-bcp",
+    "relationship_type": "encompasses",
+    "strength": 0.8,
+    "description": "ICT Risk Management Framework encompasses BCP/DRP processes"
+  },
+  {
+    "from_ref": "dora-proc-ictrf",
+    "to_ref": "dora-proc-tprm",
+    "relationship_type": "encompasses",
+    "strength": 0.8,
+    "description": "ICT Risk Management Framework encompasses ICT TPRM processes"
+  },
+  {
+    "from_ref": "dora-org-esa-jc",
+    "to_ref": "dora-a31",
+    "relationship_type": "executes",
+    "strength": 1,
+    "description": "ESA Joint Committee executes CTPP designation under DORA Art.31"
+  },
+  {
+    "from_ref": "dora-org-eba",
+    "to_ref": "dora-a32",
+    "relationship_type": "acts_as",
+    "strength": 0.9,
+    "description": "EBA acts as lead overseer for banking-sector CTPPs under DORA Art.32"
+  },
+  {
+    "from_ref": "dora-org-eiopa",
+    "to_ref": "dora-a32",
+    "relationship_type": "acts_as",
+    "strength": 0.9,
+    "description": "EIOPA acts as lead overseer for insurance-sector CTPPs under DORA Art.32"
+  },
+  {
+    "from_ref": "dora-org-esma",
+    "to_ref": "dora-a32",
+    "relationship_type": "acts_as",
+    "strength": 0.9,
+    "description": "ESMA acts as lead overseer for investment-sector CTPPs under DORA Art.32"
+  },
+  {
+    "from_ref": "dora-org-ecb-tiber",
+    "to_ref": "dora-a24",
+    "relationship_type": "provides_framework_for",
+    "strength": 0.8,
+    "description": "ECB TIBER-EU provides the reference methodology for TLPT execution under DORA Art.24"
+  },
+  {
+    "from_ref": "dora-org-enisa",
+    "to_ref": "dora-proc-tlpt",
+    "relationship_type": "supports",
+    "strength": 0.7,
+    "description": "ENISA provides threat landscape information supporting TLPT intelligence gathering"
+  },
+  {
+    "from_ref": "nis2-org-csirt",
+    "to_ref": "nis2-a20",
+    "relationship_type": "receives",
+    "strength": 1,
+    "description": "CSIRT network receives significant incident notifications under NIS2 Art.20"
+  },
+  {
+    "from_ref": "nis2-org-enisa",
+    "to_ref": "nis2-a20",
+    "relationship_type": "aggregates",
+    "strength": 0.7,
+    "description": "ENISA aggregates NIS2 incident notifications and publishes sector threat landscape"
+  },
+  {
+    "from_ref": "dora-rts-ict-risk",
+    "to_ref": "dora-a6",
+    "relationship_type": "implements_detail_of",
+    "strength": 0.9,
+    "description": "RTS on ICT risk management (simplified) specifies detailed framework requirements for Art.6 for smaller entities"
+  },
+  {
+    "from_ref": "dora-rts-incident",
+    "to_ref": "dora-a17",
+    "relationship_type": "implements_detail_of",
+    "strength": 1,
+    "description": "RTS on incident classification specifies materiality thresholds for major incident determination under Art.17"
+  },
+  {
+    "from_ref": "dora-its-incident-reporting",
+    "to_ref": "dora-a18",
+    "relationship_type": "implements_detail_of",
+    "strength": 1,
+    "description": "ITS on incident reporting provides templates and forms for three-stage reporting under Art.18"
+  },
+  {
+    "from_ref": "dora-its-incident-reporting",
+    "to_ref": "dora-a20",
+    "relationship_type": "implements_detail_of",
+    "strength": 0.9,
+    "description": "ITS on incident reporting implements the harmonisation objective of Art.20"
+  },
+  {
+    "from_ref": "dora-rts-tlpt",
+    "to_ref": "dora-a24",
+    "relationship_type": "implements_detail_of",
+    "strength": 1,
+    "description": "RTS on TLPT specifies identification criteria, tester requirements and methodology for DORA Art.24"
+  },
+  {
+    "from_ref": "dora-rts-tlpt",
+    "to_ref": "dora-a25",
+    "relationship_type": "implements_detail_of",
+    "strength": 0.9,
+    "description": "RTS on TLPT specifies competence and independence standards for testers under Art.25"
+  },
+  {
+    "from_ref": "dora-rts-ctpp-oversight",
+    "to_ref": "dora-a31",
+    "relationship_type": "implements_detail_of",
+    "strength": 1,
+    "description": "RTS on CTPP oversight specifies designation criteria and lead overseer procedures under Art.31"
+  },
+  {
+    "from_ref": "dora-rts-subcontracting",
+    "to_ref": "dora-a30",
+    "relationship_type": "implements_detail_of",
+    "strength": 0.9,
+    "description": "RTS on subcontracting specifies conditions for ICT sub-contracting chains under Art.30"
+  },
+  {
+    "from_ref": "dora-concept-critical-function",
+    "to_ref": "dora-a24",
+    "relationship_type": "scopes",
+    "strength": 0.9,
+    "description": "Critical/Important Function concept determines TLPT scope under Art.24"
+  },
+  {
+    "from_ref": "dora-concept-critical-function",
+    "to_ref": "dora-a28",
+    "relationship_type": "scopes",
+    "strength": 0.9,
+    "description": "Critical/Important Function concept determines which ICT third-party arrangements need full TPRM under Art.28"
+  },
+  {
+    "from_ref": "dora-concept-critical-function",
+    "to_ref": "dora-a30",
+    "relationship_type": "triggers",
+    "strength": 0.9,
+    "description": "Classification of a function as critical/important triggers mandatory contractual provisions under Art.30"
+  },
+  {
+    "from_ref": "dora-concept-ctpp",
+    "to_ref": "dora-a31",
+    "relationship_type": "defined_by",
+    "strength": 1,
+    "description": "CTPP concept is defined and operationalised through the designation process in Art.31"
+  },
+  {
+    "from_ref": "dora-concept-ctpp",
+    "to_ref": "dora-a32",
+    "relationship_type": "subject_to",
+    "strength": 1,
+    "description": "CTPPs are subject to the oversight framework established in Art.32"
+  },
+  {
+    "from_ref": "dora-concept-rto-rpo",
+    "to_ref": "dora-a11",
+    "relationship_type": "defined_in",
+    "strength": 0.9,
+    "description": "RTO/RPO concepts are required to be defined and tested under DORA Art.11"
+  },
+  {
+    "from_ref": "dora-concept-rto-rpo",
+    "to_ref": "dora-a12",
+    "relationship_type": "informs",
+    "strength": 0.8,
+    "description": "RTO/RPO objectives inform backup frequency and recovery testing requirements under Art.12"
+  },
+  {
+    "from_ref": "dora-concept-tprm",
+    "to_ref": "dora-a28",
+    "relationship_type": "defined_in",
+    "strength": 1,
+    "description": "ICT TPRM concept is defined and required by DORA Art.28"
+  },
+  {
+    "from_ref": "dora-concept-concentration-risk",
+    "to_ref": "dora-a29",
+    "relationship_type": "assessed_in",
+    "strength": 0.8,
+    "description": "ICT concentration risk must be assessed as part of pre-contractual due diligence under Art.29"
+  },
+  {
+    "from_ref": "dora-concept-concentration-risk",
+    "to_ref": "dora-a31",
+    "relationship_type": "monitored_by",
+    "strength": 0.8,
+    "description": "Sector-level ICT concentration risk is monitored by ESAs through CTPP designation and register data (Art.31)"
+  },
+  {
+    "from_ref": "dora-concept-digital-resilience",
+    "to_ref": "dora",
+    "relationship_type": "is_objective_of",
+    "strength": 1,
+    "description": "Digital operational resilience is the overarching objective that the entire DORA regulation pursues"
+  },
+  {
+    "from_ref": "nis2-concept-essential-entity",
+    "to_ref": "nis2-a26",
+    "relationship_type": "defined_by",
+    "strength": 1,
+    "description": "Essential entity classification is defined by the scope provisions in NIS2 Art.26"
+  },
+  {
+    "from_ref": "nis2-concept-important-entity",
+    "to_ref": "nis2-a26",
+    "relationship_type": "defined_by",
+    "strength": 1,
+    "description": "Important entity classification is defined by the scope provisions in NIS2 Art.26"
+  },
+  {
+    "from_ref": "nis2-concept-essential-entity",
+    "to_ref": "nis2-a21",
+    "relationship_type": "subject_to",
+    "strength": 0.9,
+    "description": "Essential entities are subject to stricter ex ante supervision and higher fines under NIS2 Art.21"
+  },
+  {
+    "from_ref": "nis2-concept-important-entity",
+    "to_ref": "nis2-a21",
+    "relationship_type": "subject_to",
+    "strength": 0.8,
+    "description": "Important entities are subject to ex post supervision and lower fines under NIS2 Art.21"
+  },
+  {
+    "from_ref": "nis2-a19",
+    "to_ref": "dora-a5",
+    "relationship_type": "parallels",
+    "strength": 0.8,
+    "description": "NIS2 Art.19 management accountability parallels DORA Art.5; for financial entities DORA governs as lex specialis",
+    "metadata": {
+      "cross_area": true,
+      "lex_specialis": "DORA"
+    }
+  },
+  {
+    "from_ref": "nis2-a18",
+    "to_ref": "dora-a6",
+    "relationship_type": "parallels",
+    "strength": 0.8,
+    "description": "NIS2 Art.18 risk-management measures parallels DORA Art.6 ICT risk framework; DORA lex specialis for financial entities",
+    "metadata": {
+      "cross_area": true,
+      "lex_specialis": "DORA"
+    }
+  },
+  {
+    "from_ref": "nis2-a20",
+    "to_ref": "dora-a18",
+    "relationship_type": "parallels",
+    "strength": 0.9,
+    "description": "NIS2 Art.20 incident notification parallels DORA Art.18 major incident reporting; DORA lex specialis means DORA reporting can satisfy NIS2 obligation",
+    "metadata": {
+      "cross_area": true,
+      "lex_specialis": "DORA"
+    }
+  },
+  {
+    "from_ref": "dora-cross-nis2",
+    "to_ref": "dora",
+    "relationship_type": "documents",
+    "strength": 0.8,
+    "description": "DORA × NIS2 cross-reference documents the lex specialis relationship"
+  },
+  {
+    "from_ref": "dora-cross-nis2",
+    "to_ref": "nis2",
+    "relationship_type": "documents",
+    "strength": 0.8,
+    "description": "DORA × NIS2 cross-reference documents the lex specialis relationship from NIS2 perspective"
+  },
+  {
+    "from_ref": "dora-cross-amlr",
+    "to_ref": "dora",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "DORA × AMLR cross-reference links DORA incident reporting and data controls to AMLR obligations",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "dora-cross-gdpr",
+    "to_ref": "dora",
+    "relationship_type": "links",
+    "strength": 0.7,
+    "description": "DORA × GDPR cross-reference links threat-intel sharing and data retention to GDPR constraints",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "dora-cross-crr",
+    "to_ref": "dora",
+    "relationship_type": "complements",
+    "strength": 0.7,
+    "description": "DORA ICT risk requirements complement CRR operational risk capital requirements",
+    "metadata": {
+      "cross_area": true
+    }
+  },
+  {
+    "from_ref": "dora-annex-scope",
+    "to_ref": "dora",
+    "relationship_type": "defines_scope_of",
+    "strength": 0.9,
+    "description": "DORA scope annex defines the 20+ financial entity types subject to DORA obligations"
+  },
+  {
+    "from_ref": "nis2-cross-dora",
+    "to_ref": "nis2",
+    "relationship_type": "documents",
+    "strength": 0.9,
+    "description": "NIS2 Art.1(2) documents the lex specialis exemption for financial entities covered by DORA"
+  },
+  {
+    "from_ref": "dora-a9",
+    "to_ref": "dora-cross-gdpr",
+    "relationship_type": "triggers",
+    "strength": 0.6,
+    "description": "DORA Art.9 data protection controls must align with GDPR requirements captured in the cross-reference"
+  },
+  {
+    "from_ref": "dora-a45",
+    "to_ref": "dora-cross-gdpr",
+    "relationship_type": "constrained_by",
+    "strength": 0.7,
+    "description": "Threat-intel sharing under DORA Art.45 is constrained by GDPR personal data rules"
+  },
+  {
+    "from_ref": "dora-a18",
+    "to_ref": "dora-cross-amlr",
+    "relationship_type": "may_trigger",
+    "strength": 0.6,
+    "description": "DORA Art.18 ICT incident reporting may also trigger AMLR breach notification if customer/transaction data is involved"
+  }
+]
