@@ -462,6 +462,27 @@ export default function OrchestratorDashboard() {
   return (
     <div className="min-h-screen bg-adv-dark text-adv-off-white p-6 max-w-7xl mx-auto">
 
+      {/* ── Demo Mode active banner ───────────────────────────────────────────── */}
+      {demoMode !== 'off' && (
+        <div className="mb-4 bg-adv-gold/10 border border-adv-gold/30 rounded-xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Zap className="w-4 h-4 text-adv-gold shrink-0" />
+            <div>
+              <span className="text-sm font-medium text-adv-gold">DEMO MODE ACTIVE</span>
+              <span className="ml-2 text-xs text-adv-gray capitalize">
+                {demoMode} — Meridian Bank AS · {demoSignals} synthetic signals injected
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleDemoDeactivate}
+            className="text-xs text-adv-gold border border-adv-gold/30 hover:bg-adv-gold/10 px-3 py-1 rounded-lg transition-colors"
+          >
+            Exit Demo Mode
+          </button>
+        </div>
+      )}
+
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between mb-6">
         <div>

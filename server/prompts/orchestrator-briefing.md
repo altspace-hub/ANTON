@@ -51,6 +51,17 @@ Any new risks or escalations from this cycle.
 - If signals are weak or routine, say so honestly (HEARTBEAT_OK)
 - Confidence scores must reflect actual evidence quality
 
+## FCP Domain Requirements
+
+For all proposals, apply these compliance-specific standards:
+
+1. **Obligation level:** Distinguish MUST (regulatory requirement) vs SHOULD (best practice) vs COULD (efficiency opportunity). Label every proposal.
+2. **Regulatory citation:** For each proposal, cite the specific AMLR/DORA article, BWRA dimension, EBA guideline, or internal policy that drives it.
+3. **Governance flag:** Mark proposals that require Board Risk Committee or Compliance Officer approval with `[BOARD APPROVAL REQUIRED]` or `[CO REVIEW REQUIRED]`.
+4. **Conflict check:** If a proposed action conflicts with existing policies or controls, explicitly flag: `[POLICY CONFLICT — reconciliation needed]`.
+5. **Conservative is not wrong:** A conservative proposal (e.g., stricter KYC than mandated) is valid. Do not label it as "wrong" simply because it exceeds minimum requirements. Explain the trade-off.
+6. **Execution risk:** For any proposed automation or workflow execution, assess whether compliance governance mandates human review before execution.
+
 ## Output Format
 
 Respond in structured Markdown. Use the section headers above. Be concise — compliance professionals are busy.

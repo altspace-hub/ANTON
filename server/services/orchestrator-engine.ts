@@ -358,14 +358,18 @@ function readApprenticeSignals(db: Database.Database, since: Date): PlatformSign
 /** Read Knowledge Graph signals — high-frequency entities with recent activity */
 function readKnowledgeGraphSignals(db: Database.Database): PlatformSignal[] {
   try {
+    // Use UNION instead of OR on JOIN to allow SQLite to use indexes on from_id and to_id
     const rows = db.prepare(`
       SELECT en.entity_type, en.canonical_name, en.interaction_count,
-             en.last_seen, COUNT(er.id) as relationship_count
+             en.last_seen,
+             (SELECT COUNT(*) FROM (
+               SELECT from_id as node_id FROM entity_relationships WHERE from_id = en.id
+               UNION
+               SELECT to_id as node_id FROM entity_relationships WHERE to_id = en.id
+             )) as relationship_count
       FROM entity_nodes en
-      LEFT JOIN entity_relationships er ON er.from_id = en.id OR er.to_id = en.id
       WHERE en.interaction_count >= 5
         AND en.last_seen >= datetime('now', '-7 days')
-      GROUP BY en.id
       ORDER BY en.interaction_count DESC
       LIMIT 5
     `).all() as Array<{
@@ -699,7 +703,9 @@ export function checkStageDemotion(db: Database.Database): { demoted: boolean; f
   if (stage.proposals_rated < 10) return { demoted: false };
   const badRate = stage.proposals_irrelevant_or_wrong / stage.proposals_rated;
 
-  if (badRate >= 0.5) {
+  // Threshold: 65% bad/wrong (not 50%) — compliance AI needs room to learn domain nuance.
+  // Conservative proposals marked "wrong" are not true failures.
+  if (badRate >= 0.65) {
     const now = new Date().toISOString();
     const fromStage = stage.current_stage;
     const reason = `Quality degraded: ${Math.round(badRate * 100)}% of proposals rated wrong/irrelevant at Stage ${fromStage}`;
@@ -901,7 +907,7 @@ export async function generateNarrativeSummary(
     WHERE trail_id = ? ORDER BY sequence_number ASC
   `).all(trailId) as Array<{ entry_type: string; title: string; content: string }>;
 
-  if (entries.length === 0) return '';
+  if (entries.length === 0) return 'No reasoning entries recorded for this trail.';
 
   const entrySummary = entries
     .map(e => `[${e.entry_type}] ${e.title}: ${e.content.substring(0, 200)}`)
@@ -1269,7 +1275,9 @@ export async function runHeartbeatCycle(
 
   // Async enrichment: narrative summary + workspace file (non-blocking)
   if (action === 'briefing_generated') {
-    enrichTrailAsync(trailId, db, anthropic).catch(() => {});
+    enrichTrailAsync(trailId, db, anthropic).catch(err => {
+      console.error('[orchestrator] enrichTrailAsync failed (non-fatal):', err);
+    });
   }
 
   // Pattern detection (non-blocking, runs after briefing)
@@ -1294,7 +1302,8 @@ export async function runHeartbeatCycle(
         console.warn(`[orchestrator] AUTO-PAUSED: ${reason}`);
       }
     } catch (e) {
-      console.warn('[orchestrator] Pattern detection error (non-fatal):', e);
+      // Log with full error — pattern detection failure should be visible for debugging
+      console.error('[orchestrator] Pattern detection error (non-fatal — heartbeat continues):', String(e));
     }
   }
 

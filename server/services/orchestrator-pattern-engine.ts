@@ -67,7 +67,7 @@ function detectQualityDropPatterns(db: Database.Database): DetectedPattern[] {
         auto_execute: false,
       });
     }
-  } catch { /* quality_scores table may not exist */ }
+  } catch (e) { if (String(e).includes('no such table')) { /* expected on fresh DB */ } else { console.warn('[pattern-engine] qualityDrop:', e); } }
   return patterns;
 }
 
@@ -104,7 +104,7 @@ function detectWorkflowRecurrencePatterns(db: Database.Database): DetectedPatter
         auto_execute: false, // Automation scheduling requires human approval
       });
     }
-  } catch { /* workflow_runs may not exist */ }
+  } catch (e) { if (String(e).includes('no such table')) { /* expected */ } else { console.warn('[pattern-engine] workflowRecurrence:', e); } }
   return patterns;
 }
 
@@ -134,7 +134,7 @@ function detectSignalClusterPatterns(db: Database.Database): DetectedPattern[] {
         auto_execute: false,
       });
     }
-  } catch { /* radar_items may not exist */ }
+  } catch (e) { if (String(e).includes('no such table')) { /* expected */ } else { console.warn('[pattern-engine] signalCluster:', e); } }
   return patterns;
 }
 
@@ -163,7 +163,7 @@ function detectDeadlineClusterPatterns(db: Database.Database): DetectedPattern[]
         auto_execute: false,
       });
     }
-  } catch { /* deadlines table may not exist */ }
+  } catch (e) { if (String(e).includes('no such table')) { /* expected */ } else { console.warn('[pattern-engine] deadlineCluster:', e); } }
   return patterns;
 }
 
@@ -223,7 +223,7 @@ export function detectPatterns(db: Database.Database): DetectedPattern[] {
         } catch { /* ignore */ }
       }
     }
-  } catch { /* pattern_detections may not exist yet */ }
+  } catch (e) { if (!String(e).includes('no such table')) { console.warn('[pattern-engine] dedup check:', e); } }
 
   return allPatterns.filter(p => !recentIds.has(p.pattern_id));
 }

@@ -107,6 +107,22 @@ const MERIDIAN_SIGNALS: DemoSignal[] = [
     scenario_tag: 'proactive_insight',
     summary: 'Proactive insight: Cross-referencing open BWRA gaps with new AMLR Art.42 requirements identifies 7 unaddressed high-risk factors — recommend prioritised gap analysis',
   },
+  // Post-acquisition risk signals (M&A integration — highest compliance priority)
+  {
+    source: 'compliance', urgency: 0.86, relevance: 0.92,
+    scenario_tag: 'post_acq_cdd',
+    summary: 'Post-acquisition CDD: 247 LitPay customers inherited without Meridian KYC standards — re-validation required within 30-day window (19 days remaining). AMLR Art.18 — ML/TF risk in acquired entity',
+  },
+  {
+    source: 'compliance', urgency: 0.79, relevance: 0.88,
+    scenario_tag: 'policy_consolidation',
+    summary: 'Policy integration gap: LitPay AML Policy not yet aligned to Meridian Group Policy — dual policy risk for Lithuanian regulators. Board-approved consolidation plan required under Art.8 AMLR',
+  },
+  {
+    source: 'compliance', urgency: 0.74, relevance: 0.85,
+    scenario_tag: 'beneficial_ownership',
+    summary: 'Beneficial ownership: LitPay acquisition surface reveals 3 corporate shareholders with beneficial ownership above 10% threshold not in FATF-compliant registry — urgent verification required before next supervisory review',
+  },
 ];
 
 // Historical simulation timeline (14 days of events, 2 events per day)
@@ -225,14 +241,22 @@ export function activateDemoMode(db: Database.Database, mode: DemoState['mode'] 
 /** Deactivate Demo Mode — remove all injected signals and reset state */
 export function deactivateDemoMode(db: Database.Database): { cleaned: number } {
   let cleaned = 0;
+  // Use a transaction so cleanup is atomic — partial cleanup is worse than no cleanup
   try {
-    const r1 = db.prepare("DELETE FROM radar_items WHERE id LIKE 'demo-%'").run();
-    cleaned += r1.changes;
-  } catch { /* ignore */ }
-  try {
-    const r2 = db.prepare("DELETE FROM deadlines WHERE id LIKE 'demo-%'").run();
-    cleaned += r2.changes;
-  } catch { /* ignore */ }
+    db.exec('BEGIN TRANSACTION');
+    try {
+      const r1 = db.prepare("DELETE FROM radar_items WHERE id LIKE 'demo-%'").run();
+      cleaned += r1.changes;
+    } catch { /* table may not exist */ }
+    try {
+      const r2 = db.prepare("DELETE FROM deadlines WHERE id LIKE 'demo-%'").run();
+      cleaned += r2.changes;
+    } catch { /* table may not exist */ }
+    db.exec('COMMIT');
+  } catch (e) {
+    try { db.exec('ROLLBACK'); } catch { /* ignore */ }
+    console.error('[orchestrator-demo] Deactivation cleanup failed — rolled back:', e);
+  }
 
   saveDemoState(db, { mode: 'off', persona: 'meridian', activated_at: null, signals_injected: 0, simulation_day: null });
   return { cleaned };

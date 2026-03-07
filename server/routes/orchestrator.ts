@@ -276,8 +276,8 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   router.post('/orchestrator/disable', requireAuth, (req: Request, res: Response) => {
     try {
       const user = (req as unknown as { user?: { username?: string; role?: string } }).user;
-      // Require admin role for full disable
-      if (user?.role && user.role !== 'admin') {
+      // Require admin role (or solo mode where role is undefined) for full disable
+      if (user && user.role && user.role !== 'admin') {
         return res.status(403).json({ error: 'Full disable requires admin role' });
       }
       const by = user?.username ?? 'solo';
@@ -629,13 +629,19 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       const trail = db.prepare('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?').get(req.params.id);
       if (!trail) return res.status(404).json({ error: 'Trail not found' });
 
+      const limit = Math.min(parseInt(String((req as Request & { query: Record<string, string> }).query.limit ?? '100'), 10) || 100, 200);
+      const offset = parseInt(String((req as Request & { query: Record<string, string> }).query.offset ?? '0'), 10) || 0;
       const entries = db.prepare(`
         SELECT * FROM orchestrator_reasoning_entries
         WHERE trail_id = ?
         ORDER BY sequence_number ASC
-      `).all(req.params.id);
+        LIMIT ? OFFSET ?
+      `).all(req.params.id, limit, offset);
+      const totalEntries = (db.prepare(
+        'SELECT COUNT(*) as c FROM orchestrator_reasoning_entries WHERE trail_id = ?'
+      ).get(req.params.id) as { c: number }).c;
 
-      res.json({ trail, entries });
+      res.json({ trail, entries, total_entries: totalEntries, limit, offset });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
