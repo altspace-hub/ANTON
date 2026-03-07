@@ -139,6 +139,37 @@ async function executeEventRun(db: Database.Database, run: PendingEventRun): Pro
 
       stepsCompleted++;
 
+      // ── onCompleteTrigger: fire a new workflow run when this step completes ──
+      const trigger = step.config && (step.config as Record<string, unknown>)['onCompleteTrigger'] as {
+        type: string; workflowId: string; label?: string; variables?: Record<string, string>;
+      } | undefined;
+      if (trigger?.type === 'start_workflow' && trigger.workflowId) {
+        try {
+          const { randomUUID } = await import('crypto');
+          const newRunId = randomUUID();
+          const triggerVars: Record<string, unknown> = {};
+          if (trigger.variables) {
+            for (const [k, v] of Object.entries(trigger.variables)) {
+              triggerVars[k] = typeof v === 'string' && v.startsWith('{{')
+                ? context[v.slice(2, -2).trim()] ?? v
+                : v;
+            }
+          }
+          db.prepare(`
+            INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
+            VALUES (?, ?, ?, 'pending', ?, datetime('now'))
+          `).run(
+            newRunId,
+            trigger.workflowId,
+            JSON.stringify({ type: 'event', source: 'step_complete', triggeredBy: run.id, stepIndex: i, label: trigger.label || '', variables: triggerVars }),
+            run.user_id
+          );
+          console.log(`[event-processor] Step trigger: started workflow ${trigger.workflowId} run ${newRunId}`);
+        } catch (triggerErr) {
+          console.warn('[event-processor] onCompleteTrigger failed (non-fatal):', triggerErr);
+        }
+      }
+
       // Update progress
       db.prepare('UPDATE workflow_runs SET current_step = ? WHERE id = ?').run(i + 1, run.id);
     } catch (stepErr) {

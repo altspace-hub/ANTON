@@ -46,9 +46,9 @@ export function initOrchestratorHeartbeat(db: Database.Database, anthropic: Anth
   const heartbeatCron = minutesToCron(config.heartbeat_interval_minutes);
   if (cron.validate(heartbeatCron)) {
     heartbeatTask = cron.schedule(heartbeatCron, async () => {
-      // Re-read config each tick (allows dynamic reconfiguration)
+      // Re-read config each tick (allows dynamic reconfiguration without restart)
       const currentConfig = getOrchestratorConfig(db);
-      if (currentConfig.fully_disabled || currentConfig.orchestrator_paused) return;
+      if (currentConfig.fully_disabled || currentConfig.orchestrator_paused || !currentConfig.heartbeat_enabled) return;
 
       console.log('[orchestrator-heartbeat] Running heartbeat cycle...');
       const result = await runHeartbeatCycle(db, anthropic, 'heartbeat');
@@ -75,7 +75,7 @@ export function initOrchestratorHeartbeat(db: Database.Database, anthropic: Anth
     if (cron.validate(dailyCron)) {
       dailyBriefingTask = cron.schedule(dailyCron, async () => {
         const currentConfig = getOrchestratorConfig(db);
-        if (currentConfig.fully_disabled || currentConfig.orchestrator_paused) return;
+        if (currentConfig.fully_disabled || currentConfig.orchestrator_paused || !currentConfig.heartbeat_enabled) return;
 
         console.log('[orchestrator-heartbeat] Running daily briefing...');
         const result = await runHeartbeatCycle(db, anthropic, 'daily', true);
@@ -98,7 +98,7 @@ export function initOrchestratorHeartbeat(db: Database.Database, anthropic: Anth
     if (cron.validate(weeklyCron)) {
       dailyBriefingTask = cron.schedule(weeklyCron, async () => {
         const currentConfig = getOrchestratorConfig(db);
-        if (currentConfig.fully_disabled || currentConfig.orchestrator_paused) return;
+        if (currentConfig.fully_disabled || currentConfig.orchestrator_paused || !currentConfig.heartbeat_enabled) return;
         const result = await runHeartbeatCycle(db, anthropic, 'weekly', true);
         console.log(`[orchestrator-heartbeat] Weekly briefing complete — ${result.signalCount} signals`);
         createNotification(db, {
