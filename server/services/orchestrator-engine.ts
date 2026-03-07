@@ -20,6 +20,8 @@
  */
 
 import { randomUUID } from 'crypto';
+import fs from 'fs-extra';
+import path from 'path';
 import type Database from 'better-sqlite3';
 import AnthropicSDK from '@anthropic-ai/sdk';
 
@@ -625,6 +627,196 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
   return { advanced: false };
 }
 
+// ── Workflow Plan Generation (Phase 2 — Opus) ─────────────────────────────────
+
+const PLAN_SYSTEM_PROMPT = `You are ANTON's AI Orchestrator generating a complete workflow execution plan.
+Given a proposal for an action, produce a concrete workflow plan that uses ANTON's existing step types.
+
+Available step types: module_execution, checkpoint, decision_gate, api_call, database_query, transform, wait, conditional, notification, messaging_notification, export, review.
+
+Respond with a JSON object:
+{
+  "name": "Descriptive workflow name",
+  "description": "What this workflow accomplishes",
+  "steps": [
+    {
+      "type": "module_execution|checkpoint|decision_gate|notification|...",
+      "name": "Step name",
+      "config": { "prompt": "...", "module": "...", "condition": "..." }
+    }
+  ],
+  "knowledge_sources": ["Source description 1", "Source description 2"],
+  "reviewer_role": "compliance-lead|analyst|senior-analyst|admin",
+  "estimated_duration": "e.g. 30-45 min",
+  "quality_threshold": 7.5
+}
+
+Keep plans specific and executable. Reference real ANTON modules and step patterns.`;
+
+export async function generateWorkflowPlan(
+  proposal: OrchestratorProposal,
+  anthropic: AnthropicSDK,
+  model: string = 'claude-opus-4-6'
+): Promise<string | null> {
+  const userMsg = `Generate a complete workflow execution plan for this proposal:
+
+Signal: [${proposal.signal_source}] ${proposal.signal_summary}
+Proposed action: ${proposal.proposed_action}
+Action type: ${proposal.action_type}
+Rationale: ${proposal.rationale}
+Estimated effort: ${proposal.estimated_effort ?? 'unknown'}
+
+Produce a concrete, executable workflow plan using ANTON's existing step types.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model,
+      max_tokens: 2000,
+      system: PLAN_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMsg }],
+    });
+    const raw = response.content[0]?.type === 'text' ? response.content[0].text : '';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return raw; // Return raw if no JSON found
+    JSON.parse(jsonMatch[0]); // Validate JSON
+    return jsonMatch[0];
+  } catch (err) {
+    console.warn('[orchestrator] Workflow plan generation failed:', err);
+    return null;
+  }
+}
+
+// ── Narrative Summary Generation (Sonnet) ─────────────────────────────────────
+
+export async function generateNarrativeSummary(
+  trailId: string,
+  db: Database.Database,
+  anthropic: AnthropicSDK
+): Promise<string> {
+  const entries = db.prepare(`
+    SELECT entry_type, title, content FROM orchestrator_reasoning_entries
+    WHERE trail_id = ? ORDER BY sequence_number ASC
+  `).all(trailId) as Array<{ entry_type: string; title: string; content: string }>;
+
+  if (entries.length === 0) return '';
+
+  const entrySummary = entries
+    .map(e => `[${e.entry_type}] ${e.title}: ${e.content.substring(0, 200)}`)
+    .join('\n');
+
+  const prompt = `You are ANTON's AI Orchestrator. Summarise the following reasoning trail in 2-3 plain-English sentences — like a colleague explaining what they did and why. Be specific, reference actual actions taken, and stay under 100 words.
+
+Trail entries:
+${entrySummary}
+
+Write the narrative summary:`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    return response.content[0]?.type === 'text' ? response.content[0].text.trim() : '';
+  } catch {
+    return '';
+  }
+}
+
+// ── Workspace Trail File Export ────────────────────────────────────────────────
+
+export async function saveTrailToWorkspace(
+  trailId: string,
+  db: Database.Database
+): Promise<string | null> {
+  try {
+    const trail = db.prepare('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?').get(trailId) as
+      Record<string, unknown> | undefined;
+    if (!trail) return null;
+
+    const entries = db.prepare(`
+      SELECT * FROM orchestrator_reasoning_entries
+      WHERE trail_id = ? ORDER BY sequence_number ASC
+    `).all(trailId) as Array<Record<string, unknown>>;
+
+    const date = new Date().toISOString().substring(0, 10);
+    const dirPath = path.join(process.cwd(), '.anton', 'orchestrator', 'trails', date);
+    await fs.ensureDir(dirPath);
+
+    const slug = String(trail.trigger_type).replace(/_/g, '-');
+    const filename = `${trailId.substring(0, 8)}-${slug}.md`;
+    const filePath = path.join(dirPath, filename);
+
+    const lines: string[] = [
+      `# ANTON Orchestrator — Reasoning Trail`,
+      ``,
+      `**Trail ID:** ${trailId}`,
+      `**Trigger:** ${trail.trigger_type}`,
+      `**Status:** ${trail.status}`,
+      `**Started:** ${trail.created_at}`,
+      `**Duration:** ${trail.duration_ms ? `${trail.duration_ms}ms` : 'n/a'}`,
+      ``,
+    ];
+
+    if (trail.narrative_summary) {
+      lines.push(`## Summary`, ``, String(trail.narrative_summary), ``);
+    }
+
+    lines.push(`## Reasoning Chain`, ``);
+
+    for (const entry of entries) {
+      lines.push(
+        `### Step ${entry.sequence_number}: ${String(entry.entry_type).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`,
+        `**${entry.title}**${entry.confidence != null ? ` — Confidence: ${Math.round(Number(entry.confidence) * 100)}%` : ''}`,
+        ``,
+        String(entry.content),
+        ``
+      );
+      if (entry.thinking_content) {
+        lines.push(`<details><summary>Extended thinking</summary>`, ``, String(entry.thinking_content), `</details>`, ``);
+      }
+    }
+
+    await fs.writeFile(filePath, lines.join('\n'), 'utf-8');
+
+    // Store file path on trail
+    db.prepare(`UPDATE orchestrator_reasoning_trails SET workspace_file_path = ? WHERE id = ?`)
+      .run(filePath, trailId);
+
+    return filePath;
+  } catch (err) {
+    console.warn('[orchestrator] Workspace trail export failed (non-fatal):', err);
+    return null;
+  }
+}
+
+// ── Audit Log Integration ──────────────────────────────────────────────────────
+
+export function logTrailToAuditLog(
+  trailId: string,
+  db: Database.Database,
+  trail: { trigger_type: string; status: string; total_entries: number; duration_ms?: number | null }
+): void {
+  try {
+    const tableExists = (db.prepare(
+      "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='audit_log'"
+    ).get() as { c: number }).c > 0;
+    if (!tableExists) return;
+
+    db.prepare(`
+      INSERT OR IGNORE INTO audit_log
+        (id, timestamp, module_id, response_status, knowledge_sources_used)
+      VALUES (?, datetime('now'), 'orchestrator', ?, ?)
+    `).run(
+      randomUUID(),
+      trail.status === 'completed' ? 'completed' : 'error',
+      JSON.stringify({ trail_id: trailId, trigger: trail.trigger_type, entries: trail.total_entries, duration_ms: trail.duration_ms })
+    );
+  } catch {
+    // Audit log integration is non-fatal
+  }
+}
+
 // ── Reasoning Trail ───────────────────────────────────────────────────────────
 
 export type ReasoningEntryType =
@@ -696,7 +888,7 @@ export function addTrailEntry(
   }
 }
 
-/** Finalise a reasoning trail */
+/** Finalise a reasoning trail (sync DB update; async post-processing handled separately) */
 export function completeTrail(
   db: Database.Database,
   trailId: string,
@@ -706,6 +898,8 @@ export function completeTrail(
 ): void {
   try {
     const now = new Date().toISOString();
+    const total = (db.prepare('SELECT total_entries FROM orchestrator_reasoning_trails WHERE id = ?').get(trailId) as { total_entries: number } | undefined)?.total_entries ?? 0;
+
     db.prepare(`
       UPDATE orchestrator_reasoning_trails SET
         status = ?, duration_ms = ?, completed_at = ?,
@@ -722,8 +916,28 @@ export function completeTrail(
       linkages?.execution_id ?? null,
       trailId
     );
+
+    // Audit log (sync — non-fatal)
+    logTrailToAuditLog(trailId, db, { trigger_type: 'heartbeat', status, total_entries: total, duration_ms: durationMs });
   } catch (err) {
     console.warn('[orchestrator] Trail complete write failed (non-fatal):', err);
+  }
+}
+
+/** Post-completion async enrichment: narrative summary + workspace file */
+export async function enrichTrailAsync(
+  trailId: string,
+  db: Database.Database,
+  anthropic: AnthropicSDK
+): Promise<void> {
+  try {
+    const narrative = await generateNarrativeSummary(trailId, db, anthropic);
+    if (narrative) {
+      db.prepare('UPDATE orchestrator_reasoning_trails SET narrative_summary = ? WHERE id = ?').run(narrative, trailId);
+    }
+    await saveTrailToWorkspace(trailId, db);
+  } catch (err) {
+    console.warn('[orchestrator] Trail enrichment failed (non-fatal):', err);
   }
 }
 
@@ -844,11 +1058,16 @@ export async function runHeartbeatCycle(
     error ? 'error' : 'ok'
   );
 
-  // Complete trail
+  // Complete trail (sync)
   completeTrail(db, trailId, error ? 'failed' : 'completed', Date.now() - start, {
     heartbeat_id: heartbeatId,
     briefing_id: briefingId,
   });
+
+  // Async enrichment: narrative summary + workspace file (non-blocking)
+  if (action === 'briefing_generated') {
+    enrichTrailAsync(trailId, db, anthropic).catch(() => {});
+  }
 
   // Check stage progression daily
   if (period === 'daily' || period === 'on_demand') {

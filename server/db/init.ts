@@ -2773,6 +2773,53 @@ export function initDatabase(): Database.Database {
     }
   } catch { /* table may not exist on fresh installs — 021 SQL handles it */ }
 
+  // Migration 023b: Reasoning trail enrichment + Stage 2 metric columns
+  // SQLite doesn't support IF NOT EXISTS on ALTER TABLE — use PRAGMA guards
+  try {
+    const entryColsRaw = db.prepare("PRAGMA table_info(orchestrator_reasoning_entries)").all() as Array<{ name: string }>;
+    if (entryColsRaw.length > 0) {
+      const ec = new Set(entryColsRaw.map(c => c.name));
+      if (!ec.has('evidence'))     db.exec("ALTER TABLE orchestrator_reasoning_entries ADD COLUMN evidence TEXT DEFAULT '{}'");
+      if (!ec.has('model_used'))   db.exec('ALTER TABLE orchestrator_reasoning_entries ADD COLUMN model_used TEXT');
+      if (!ec.has('tokens_used'))  db.exec('ALTER TABLE orchestrator_reasoning_entries ADD COLUMN tokens_used INTEGER');
+      if (!ec.has('cost_usd'))     db.exec('ALTER TABLE orchestrator_reasoning_entries ADD COLUMN cost_usd REAL');
+      if (!ec.has('proposal_id'))  db.exec('ALTER TABLE orchestrator_reasoning_entries ADD COLUMN proposal_id TEXT');
+      if (!ec.has('execution_id')) db.exec('ALTER TABLE orchestrator_reasoning_entries ADD COLUMN execution_id TEXT');
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_entries_proposal  ON orchestrator_reasoning_entries(proposal_id)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_entries_execution ON orchestrator_reasoning_entries(execution_id)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_entries_type      ON orchestrator_reasoning_entries(entry_type)`);
+    }
+
+    const trailColsRaw = db.prepare("PRAGMA table_info(orchestrator_reasoning_trails)").all() as Array<{ name: string }>;
+    if (trailColsRaw.length > 0) {
+      const tc = new Set(trailColsRaw.map(c => c.name));
+      if (!tc.has('total_reasoning_tokens'))   db.exec('ALTER TABLE orchestrator_reasoning_trails ADD COLUMN total_reasoning_tokens INTEGER DEFAULT 0');
+      if (!tc.has('total_reasoning_cost_usd')) db.exec('ALTER TABLE orchestrator_reasoning_trails ADD COLUMN total_reasoning_cost_usd REAL DEFAULT 0');
+      if (!tc.has('proposal_ids'))             db.exec("ALTER TABLE orchestrator_reasoning_trails ADD COLUMN proposal_ids TEXT DEFAULT '[]'");
+      if (!tc.has('execution_ids'))            db.exec("ALTER TABLE orchestrator_reasoning_trails ADD COLUMN execution_ids TEXT DEFAULT '[]'");
+    }
+
+    const propColsRaw = db.prepare("PRAGMA table_info(orchestrator_proposals)").all() as Array<{ name: string }>;
+    if (propColsRaw.length > 0 && !propColsRaw.some(c => c.name === 'workflow_plan')) {
+      db.exec('ALTER TABLE orchestrator_proposals ADD COLUMN workflow_plan TEXT');
+    }
+
+    const stageColsRaw = db.prepare("PRAGMA table_info(orchestrator_stage)").all() as Array<{ name: string }>;
+    if (stageColsRaw.length > 0) {
+      const sc = new Set(stageColsRaw.map(c => c.name));
+      if (!sc.has('plans_approved'))       db.exec('ALTER TABLE orchestrator_stage ADD COLUMN plans_approved INTEGER NOT NULL DEFAULT 0');
+      if (!sc.has('plans_modified'))       db.exec('ALTER TABLE orchestrator_stage ADD COLUMN plans_modified INTEGER NOT NULL DEFAULT 0');
+      if (!sc.has('plans_rejected'))       db.exec('ALTER TABLE orchestrator_stage ADD COLUMN plans_rejected INTEGER NOT NULL DEFAULT 0');
+      if (!sc.has('executions_completed')) db.exec('ALTER TABLE orchestrator_stage ADD COLUMN executions_completed INTEGER NOT NULL DEFAULT 0');
+      if (!sc.has('executions_failed'))    db.exec('ALTER TABLE orchestrator_stage ADD COLUMN executions_failed INTEGER NOT NULL DEFAULT 0');
+      if (!sc.has('avg_quality_score'))    db.exec('ALTER TABLE orchestrator_stage ADD COLUMN avg_quality_score REAL');
+      if (!sc.has('auto_executions'))      db.exec('ALTER TABLE orchestrator_stage ADD COLUMN auto_executions INTEGER NOT NULL DEFAULT 0');
+      if (!sc.has('auto_overrides'))       db.exec('ALTER TABLE orchestrator_stage ADD COLUMN auto_overrides INTEGER NOT NULL DEFAULT 0');
+    }
+  } catch (e) {
+    console.warn('[db] Migration 023b partial (non-fatal):', e);
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }

@@ -17,7 +17,7 @@ import {
   Clock, AlertTriangle, TrendingDown, ChevronRight,
   Play, Pause, RotateCcw, Settings, RefreshCw, ChevronDown,
   ShieldAlert, Radar, Calendar, BarChart2, Layers,
-  ThumbsUp, ThumbsDown, ListTree,
+  ThumbsUp, ThumbsDown, ListTree, Pencil,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -374,6 +374,31 @@ export default function OrchestratorDashboard() {
     } catch { /* ignore */ }
   };
 
+  const modifyProposal = async (proposalId: string, proposedAction: string) => {
+    const notes = prompt(`Modify scope before approval:\n\nCurrent: ${proposedAction}\n\nEnter modification notes (or leave blank to proceed):`) ?? '';
+    if (notes === null) return; // user cancelled
+    try {
+      const r = await fetch(`/api/orchestrator/proposals/${proposalId}/modify`, {
+        method: 'POST',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modification_notes: notes }),
+      });
+      if (!r.ok) {
+        const err = await r.json() as { error: string };
+        setStatusMsg(`Modify failed: ${err.error}`);
+        return;
+      }
+      const data = await r.json() as { redirect?: string };
+      setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, status: 'modified' } : p));
+      setStatusMsg('Proposal modified — navigate to Workflow Monitor to configure and execute');
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      }
+    } catch (err) {
+      setStatusMsg(`Error: ${String(err)}`);
+    }
+  };
+
   const handlePause = async () => {
     const paused = config?.orchestrator_paused;
     try {
@@ -650,11 +675,11 @@ export default function OrchestratorDashboard() {
                       </div>
 
                       {/* Action buttons — Approve/Reject (Stage 2+) or Rate (Stage 1) */}
-                      {p.human_rating || p.status === 'approved' || p.status === 'rejected' ? (
+                      {p.human_rating || p.status === 'approved' || p.status === 'rejected' || p.status === 'modified' ? (
                         <div className="flex items-center gap-1">
-                          <CheckCircle className={`w-3 h-3 ${p.status === 'rejected' ? 'text-adv-red' : 'text-adv-teal'}`} />
-                          <span className={`text-[10px] capitalize ${p.status === 'rejected' ? 'text-adv-red' : 'text-adv-teal'}`}>
-                            {p.status === 'approved' ? 'Approved — executing' : p.status === 'rejected' ? 'Rejected' : p.human_rating!.replace(/_/g, ' ')}
+                          <CheckCircle className={`w-3 h-3 ${p.status === 'rejected' ? 'text-adv-red' : p.status === 'modified' ? 'text-yellow-400' : 'text-adv-teal'}`} />
+                          <span className={`text-[10px] capitalize ${p.status === 'rejected' ? 'text-adv-red' : p.status === 'modified' ? 'text-yellow-400' : 'text-adv-teal'}`}>
+                            {p.status === 'approved' ? 'Approved — executing' : p.status === 'rejected' ? 'Rejected' : p.status === 'modified' ? 'Modified — pending execution' : p.human_rating!.replace(/_/g, ' ')}
                           </span>
                         </div>
                       ) : (stage?.current_stage ?? 1) >= 2 ? (
@@ -666,6 +691,13 @@ export default function OrchestratorDashboard() {
                           >
                             <ThumbsUp className="w-3 h-3" />
                             Approve
+                          </button>
+                          <button
+                            onClick={() => modifyProposal(p.id, p.proposed_action)}
+                            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border bg-adv-gold/10 text-yellow-400 border-yellow-400/20 hover:bg-adv-gold/20 transition-colors"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Modify
                           </button>
                           <button
                             onClick={() => rejectProposal(p.id)}

@@ -316,12 +316,25 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
       const { workflow_run_id, notes } = req.body as { workflow_run_id?: string; notes?: string };
 
+      // Create a workflow_runs record so execution is tracked in the workflow engine
+      const workflowRunId = randomUUID();
+      const workflowId = (proposal as Record<string, unknown>).action_type as string || 'orchestrator-action';
+      try {
+        db.prepare(`
+          INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id)
+          VALUES (?, ?, 'orchestrator_approval', 'running', ?)
+        `).run(workflowRunId, workflowId, user);
+      } catch {
+        // workflow_runs table may not exist on older DBs — non-fatal
+        console.warn('[orchestrator] workflow_runs insert skipped (table may not exist)');
+      }
+
       const executionId = randomUUID();
       db.prepare(`
         INSERT INTO orchestrator_executions
           (id, proposal_id, workflow_run_id, org_id, initiated_by, initiated_at, human_notes)
         VALUES (?, ?, ?, ?, 'human_approved', datetime('now'), ?)
-      `).run(executionId, proposal.id, workflow_run_id ?? null, null, notes ?? null);
+      `).run(executionId, proposal.id, workflow_run_id ?? workflowRunId, null, notes ?? null);
 
       // Update proposal status to approved
       db.prepare(`
@@ -391,6 +404,68 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
 
       res.json({ ok: true, status: 'rejected', trailId });
     } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Phase 2: Modify a proposal (human adjusts scope then approves) ───────
+  router.post('/orchestrator/proposals/:id/modify', requireAuth, (req: Request, res: Response) => {
+    try {
+      const proposal = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id) as
+        | { id: string; status: string; proposed_action: string; action_type: string } | undefined;
+      if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
+
+      const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
+        | { current_stage: number } | undefined;
+      if (!stage || stage.current_stage < 2) {
+        return res.status(403).json({ error: 'Proposal modification requires Stage 2 or higher' });
+      }
+
+      const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
+      const { modification_notes, modified_action } = req.body as {
+        modification_notes?: string;
+        modified_action?: string;
+      };
+
+      db.prepare(`
+        UPDATE orchestrator_proposals SET
+          status = 'modified',
+          human_feedback = ?,
+          proposed_action = COALESCE(?, proposed_action),
+          decided_at = datetime('now'),
+          decided_by = ?
+        WHERE id = ?
+      `).run(modification_notes ?? null, modified_action ?? null, user, proposal.id);
+
+      // Stage metric
+      db.prepare(`
+        UPDATE orchestrator_stage SET
+          plans_modified = plans_modified + 1,
+          proposals_rated = proposals_rated + 1,
+          proposals_good_or_relevant = proposals_good_or_relevant + 1,
+          updated_at = datetime('now')
+        WHERE id = 'default'
+      `).run();
+
+      const trailId = createReasoningTrail(db, 'modification');
+      addTrailEntry(db, trailId, {
+        entry_type: 'execution_decision',
+        title: `Proposal modified by ${user}`,
+        content: `Human modified proposal scope before approval.\n${modification_notes ? `Notes: ${modification_notes}` : ''}\n${modified_action ? `New action: ${modified_action}` : ''}`,
+        confidence: 1.0,
+        metadata: { proposal_id: proposal.id, modified_by: user },
+      });
+      completeTrail(db, trailId, 'completed', 0, { proposal_id: proposal.id });
+
+      const updated = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(proposal.id);
+      // Return redirect path so frontend can navigate to WorkflowMonitor with context
+      res.json({
+        proposal: updated,
+        trailId,
+        redirect: `/workflow-monitor?orchestrator_proposal=${proposal.id}&action=${encodeURIComponent(proposal.action_type)}`,
+      });
+    } catch (err) {
+      console.error('[orchestrator] modify error:', err);
       res.status(500).json({ error: String(err) });
     }
   });
