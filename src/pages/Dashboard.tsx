@@ -345,6 +345,15 @@ export default function Dashboard() {
             {t('dashboard.subtitle')}
           </p>
         </div>
+        {/* UX-03: 5-Minute Brief fast path */}
+        <Link
+          to="/module/regulatory-monitor?preset=quick-brief"
+          className="flex shrink-0 items-center gap-2 rounded-lg border border-adv-gold/30 bg-adv-gold/10 px-3 py-2 text-xs font-medium text-adv-gold transition-colors hover:bg-adv-gold/20"
+          title="One-click Sonnet + Quick thinking + Quick Briefing output — ideal for time-constrained executives"
+        >
+          <Zap className="h-3.5 w-3.5" />
+          5-Minute Brief
+        </Link>
       </div>
 
       {/* Scheduled Job Results Widget */}

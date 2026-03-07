@@ -12,6 +12,7 @@ import { ScriptLibrary } from '@/features/connections/ScriptLibrary';
 import { ChannelBridgeManager } from '@/features/connections/ChannelBridgeManager';
 import NavItemConfig from '@/components/layout/NavItemConfig';
 import { KnowledgeLibraryManager } from '@/features/knowledge/KnowledgeLibraryManager';
+import { OrgContextPanel } from '@/components/shared/OrgContextPanel';
 
 interface BrandTemplate {
   id: string;
@@ -79,7 +80,7 @@ const BASE_TABS = [
 ] as const;
 
 type BaseTabId = (typeof BASE_TABS)[number]['id'];
-type TabId = BaseTabId | 'team' | 'connections';
+type TabId = BaseTabId | 'team' | 'connections' | 'org-context';
 
 const TAB_BASE = 'px-4 py-2 text-sm font-medium transition-colors rounded-t-lg border-b-2';
 const TAB_ACTIVE = 'border-adv-teal text-adv-teal';
@@ -592,6 +593,13 @@ export default function Settings() {
           <Plug className="h-3.5 w-3.5" />
           {t('settings.connections')}
         </button>
+        <button
+          onClick={() => handleTabChange('org-context')}
+          className={`${TAB_BASE} ${activeTab === 'org-context' ? TAB_ACTIVE : TAB_INACTIVE} flex items-center gap-1.5`}
+        >
+          <Building2 className="h-3.5 w-3.5" />
+          Organisation Context
+        </button>
       </div>
 
       {/* My Profile tab */}
@@ -843,6 +851,13 @@ export default function Settings() {
             </div>
             <ChannelBridgeManager />
           </div>
+        </div>
+      )}
+
+      {/* Organisation Context tab */}
+      {activeTab === 'org-context' && (
+        <div className="max-w-2xl">
+          <OrgContextPanel />
         </div>
       )}
 
@@ -1757,6 +1772,45 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
                 : `Failed: ${ssoTestResult.error}`}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* UX-05: Show Onboarding Again */}
+      <div className="mt-6 rounded-xl border border-border bg-adv-card p-6">
+        <h2 className="text-sm font-semibold text-adv-white">Onboarding Tour</h2>
+        <p className="mt-1 text-xs text-adv-gray-med">Replay the guided onboarding tour that introduces the key features.</p>
+        <button
+          onClick={() => {
+            try { localStorage.removeItem('openexpert-tour-completed'); } catch { /* ignore */ }
+            window.location.href = '/';
+          }}
+          className="mt-3 flex items-center gap-2 rounded-lg bg-adv-teal-dim px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Show Onboarding Again
+        </button>
+      </div>
+
+      {/* ONBOARD-03: Keyboard shortcuts reference */}
+      <div className="mt-6 rounded-xl border border-border bg-adv-card p-6">
+        <h2 className="text-sm font-semibold text-adv-white">Keyboard Shortcuts</h2>
+        <p className="mt-1 mb-4 text-xs text-adv-gray-med">Keyboard shortcuts available throughout the application.</p>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
+          {([
+            ['Cmd/Ctrl + K', 'Open Command Palette'],
+            ['Cmd/Ctrl + Enter', 'Submit / Run Analysis'],
+            ['Cmd/Ctrl + /', 'Focus module search'],
+            ['Esc', 'Close modal / cancel'],
+            ['Alt + 1–9', 'Switch to sidebar section'],
+            ['Tab / Shift+Tab', 'Navigate focusable elements'],
+            ['Arrow keys', 'Navigate lists and menus'],
+            ['Enter / Space', 'Activate focused button'],
+          ] as [string, string][]).map(([key, desc]) => (
+            <div key={key} className="flex items-center justify-between gap-2 py-1 border-b border-border/50">
+              <span className="font-mono rounded bg-adv-dark px-1.5 py-0.5 text-[11px] text-adv-off-white">{key}</span>
+              <span className="text-adv-gray-med text-right">{desc}</span>
+            </div>
+          ))}
         </div>
       </div>
 

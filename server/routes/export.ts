@@ -25,8 +25,13 @@ export function createExportRouter(db: Database.Database): Router {
         return;
       }
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const basename  = (metadata?.filename  as string) || `openexpert-${timestamp}`;
+      // EXPORT-04: Auto-name files as {Module}_{YYYYMMDD} when no explicit filename provided
+      const datestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const moduleSlug = metadata?.moduleId
+        ? String(metadata.moduleId).replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase()
+        : null;
+      const autoBasename = moduleSlug ? `${moduleSlug}_${datestamp}` : `openexpert_${datestamp}`;
+      const basename  = (metadata?.filename  as string) || autoBasename;
       const title     = (metadata?.title     as string) || basename;
       const author    = (metadata?.author    as string) || 'ANTON by openEXPERT';
       // GOV-04: provenance fields passed through to export footers

@@ -277,3 +277,48 @@ html.corporate .prose-output tbody tr:hover { background: oklch(0.96 0.008 250);
 [dir="rtl"] .school-chat-bubble-ai {
   border-radius: 0.25rem 1rem 1rem 1rem;
 }
+
+/* ── RESP-02: Sticky first column for wide gap-scoring tables ─────────────── */
+.prose-output table th:first-child,
+.prose-output table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--color-adv-card);
+}
+
+/* ── RESP-04: Print styles ────────────────────────────────────────────────── */
+@media print {
+  /* Hide navigation chrome */
+  [data-sidebar], nav, header, aside, .no-print,
+  button:not(.print-visible) { display: none !important; }
+
+  /* Full-width content */
+  body { background: white !important; color: #111 !important; font-size: 11pt; }
+  main { padding: 0 !important; overflow: visible !important; width: 100% !important; }
+  #main-content { all: unset; display: block; }
+
+  /* Reset dark theme for text */
+  .prose-output, .prose-output * {
+    color: #111 !important;
+    background: transparent !important;
+    border-color: #ccc !important;
+  }
+
+  /* Tables print cleanly */
+  .prose-output table { font-size: 9pt; page-break-inside: auto; }
+  .prose-output tr     { page-break-inside: avoid; }
+  .prose-output thead  { display: table-header-group; }
+  .prose-output tfoot  { display: table-footer-group; }
+
+  /* Headings don't orphan */
+  h1, h2, h3, h4 { page-break-after: avoid; }
+
+  /* Hide streaming / control panels */
+  .thinking-panel, .control-panel, .export-bar { display: none !important; }
+
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+}

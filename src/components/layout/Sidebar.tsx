@@ -255,6 +255,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   };
 
   // Collapsible sidebar sections — persisted in localStorage
+  const [moduleSearch, setModuleSearch] = useState('');
   const [sectionsExpanded, setSectionsExpanded] = useState<Record<string, boolean>>(() => {
     try {
       const raw = localStorage.getItem('openexpert-sidebar-sections');
@@ -600,6 +601,22 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'governance': { to: '/governance', icon: Shield, label: t('nav.governance') },
                 'compare': { to: '/compare', icon: GitCompare, label: t('nav.compare') },
                 'marketplace': { to: '/marketplace', icon: Rocket, label: t('nav.marketplace') },
+                'task-agent': { to: '/task-agent', icon: Bot, label: 'ANTON Task Agent' },
+                'orchestrator': { to: '/orchestrator', icon: Brain, label: 'ANTON Orchestrator' },
+                'counsels-desk': { to: '/counsels-desk', icon: Scale, label: "Counsel's Desk" },
+                'gap-assessment': { to: '/gap-assessment', icon: ClipboardCheck, label: 'Gap Assessor' },
+                'roaring': { to: '/roaring', icon: Building2, label: 'Roaring Registry' },
+                'dj-screening': { to: '/dj-screening', icon: Shield, label: 'DJ Screening' },
+                'entity-intelligence': { to: '/entity-intelligence', icon: ScanSearch, label: 'Entity Intelligence' },
+                'ngo': { to: '/ngo', icon: Globe, label: 'NGO & Social Impact' },
+                'trades': { to: '/trades', icon: Wrench, label: 'Trades & Service Workers' },
+                'pe-vc': { to: '/pe-vc', icon: TrendingUp, label: 'PE/VC Hub' },
+                'school': { to: '/school', icon: GraduationCap, label: 'ANTON School' },
+                'innovation-radar': { to: '/innovation-radar', icon: Radar, label: 'Innovation Radar' },
+                'versions': { to: '/versions', icon: GitBranch, label: 'Version History' },
+                'community-groups': { to: '/community/groups', icon: Users2, label: 'Community Groups' },
+                'community-mail': { to: '/community/mail', icon: Mail, label: 'Community Mail' },
+                'community-calendar': { to: '/community/calendar', icon: CalendarDays, label: 'Community Calendar' },
                 'news': { to: '/news', icon: Newspaper, label: 'News' },
                 'finance': { to: '/finance', icon: Wallet, label: 'Finance' },
                 'travel': { to: '/travel', icon: Map, label: 'Travel' },
@@ -769,6 +786,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <TrendingUp className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.peVc', 'PE/VC')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/task-agent"
+          navId="task-agent"
+          title={sidebarCollapsed ? 'ANTON Task Agent' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('task-agent')}
+          isHidden={hiddenNavItems.has('task-agent')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Bot className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Task Agent'}
         </NavLinkWithStar>
 
         <NavLinkWithStar
@@ -1430,6 +1461,30 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </button>
         )}
 
+        {/* UX-04: Module search/filter — shown only when modules section is open */}
+        {!sidebarCollapsed && sectionsExpanded.modules && (
+          <div className="relative mb-2 px-2">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray-med" />
+            <input
+              type="text"
+              value={moduleSearch}
+              onChange={(e) => setModuleSearch(e.target.value)}
+              placeholder="Filter modules…"
+              aria-label="Filter modules"
+              className="w-full rounded-md border border-border bg-adv-dark py-1.5 pl-7 pr-7 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+            />
+            {moduleSearch && (
+              <button
+                onClick={() => setModuleSearch('')}
+                aria-label="Clear filter"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-adv-gray-med hover:text-adv-off-white"
+              >
+                <XIcon className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Collapsed: flat module icon list */}
         {sidebarCollapsed && MODULES.map((mod) => {
           const Icon = iconMap[mod.icon] || Search;
@@ -1445,8 +1500,39 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           );
         })}
 
+        {/* UX-04: Filtered module results — replaces area tree when search is active */}
+        {!sidebarCollapsed && sectionsExpanded.modules && moduleSearch.trim() && (() => {
+          const q = moduleSearch.trim().toLowerCase();
+          const matched = MODULES.filter(
+            (m) => m.id.includes(q) || m.shortLabel.toLowerCase().includes(q) || m.label?.toLowerCase().includes(q)
+          );
+          if (matched.length === 0) {
+            return <p className="px-4 py-2 text-xs text-adv-gray-med">No modules match "{moduleSearch}"</p>;
+          }
+          return (
+            <div className="mb-2">
+              {matched.map((mod) => {
+                const Icon = iconMap[mod.icon] || Search;
+                const area = AREAS.find((a) => a.moduleIds.includes(mod.id as string));
+                return (
+                  <NavLink
+                    key={mod.id}
+                    to={`/module/${mod.id}`}
+                    onClick={() => setModuleSearch('')}
+                    className={({ isActive }) => linkClass(isActive, area?.id)}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate text-sm">{mod.shortLabel}</span>
+                    {area && <span className="ml-auto shrink-0 text-[10px] text-adv-gray-med">{area.shortLabel}</span>}
+                  </NavLink>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         {/* ── My Modules section — appears before domain areas for quick access ── */}
-        {!sidebarCollapsed && sectionsExpanded.modules && (() => {
+        {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && (() => {
           const myModules = customModules.filter(() => true);
           if (myModules.length === 0) return null;
           const isExpanded = expandedAreas.has('my-modules');
@@ -1494,8 +1580,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           );
         })()}
 
-        {/* Expanded: modules grouped by area */}
-        {!sidebarCollapsed && sectionsExpanded.modules && AREAS.map((area) => {
+        {/* Expanded: modules grouped by area — hidden when search is active */}
+        {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && AREAS.map((area) => {
           const isExpanded = expandedAreas.has(area.id);
           const colors = AREA_COLORS[area.id] ?? DEFAULT_AREA_COLOR;
           const AreaIcon = iconMap[area.icon] || Search;

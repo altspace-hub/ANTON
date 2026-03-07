@@ -255,9 +255,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 |----|---------|---------|--------|--------|
 | UX-01 | Create 3 role-based nav presets in NavItemConfig: "FCP Consultant", "Lawyer/GC", "Compliance Officer" — show only relevant modules | 1, 5, 65 | M | [ ] |
 | UX-02 | Add "Quick Start" card to Dashboard: most recent session + 3 recommended modules for user role | 5, 81 | M | [ ] |
-| UX-03 | Add "5-Minute Brief" fast path: one-click Sonnet + Quick + Quick Briefing — for time-constrained executives | 85 | M | [ ] |
-| UX-04 | Add module search/filter bar in sidebar — users with 31 modules can't scan without search | 1 | S | [ ] |
-| UX-05 | Add "Show Onboarding Again" button in Settings | 1 | S | [ ] |
+| UX-03 | Add "5-Minute Brief" fast path: one-click Sonnet + Quick + Quick Briefing — for time-constrained executives | 85 | M | [x] |
+| UX-04 | Add module search/filter bar in sidebar — users with 31 modules can't scan without search | 1 | S | [x] |
+| UX-05 | Add "Show Onboarding Again" button in Settings | 1 | S | [x] |
 | UX-06 | Add engagement/client workspace: "Client" and "Engagement" as first-class objects scoping sessions + files | 67, 83 | XL | [ ] |
 
 ---
@@ -267,7 +267,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 |----|---------|---------|--------|--------|
 | A11Y-01 | Replace all 708 instances of `outline-none` with `focus-visible:outline-2 focus-visible:outline-adv-teal` | 2, 3 | M | [ ] |
 | A11Y-02 | Add text labels to all color-only status indicators (green check, red alert, amber warning) | 2 | S | [ ] |
-| A11Y-03 | Add skip-to-content link as first focusable element: `<a href="#main-content" className="sr-only focus:not-sr-only">` | 2 | S | [ ] |
+| A11Y-03 | Add skip-to-content link as first focusable element: `<a href="#main-content" className="sr-only focus:not-sr-only">` | 2 | S | [x] |
 | A11Y-04 | Add `aria-expanded`, `aria-controls`, `role="tooltip"` + `aria-describedby` to all interactive components | 2 | M | [ ] |
 | A11Y-05 | Replace `title=` attributes with accessible tooltip components (`role="tooltip"` + `aria-describedby`) | 2 | M | [ ] |
 | A11Y-06 | Replace placeholder-only labels with linked `<label htmlFor="">` elements | 2 | M | [ ] |
@@ -281,10 +281,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | RESP-01 | Add mini-sidebar mode (60px icons-only) at `md:` breakpoint for 13" laptops | 4 | M | [ ] |
-| RESP-02 | Add `sticky first column` to horizontal-scroll gap scoring tables | 4 | S | [ ] |
+| RESP-02 | Add `sticky first column` to horizontal-scroll gap scoring tables | 4 | S | [x] |
 | RESP-03 | Fix ModulePage two-column layout: stack config panel below output panel below `lg` breakpoint | 4 | M | [ ] |
-| RESP-04 | Add `@media print` styles for PDF print path | 4 | S | [ ] |
-| RESP-05 | Set root font-size floor to 14px regardless of OS scaling | 4, 2 | S | [ ] |
+| RESP-04 | Add `@media print` styles for PDF print path | 4 | S | [x] |
+| RESP-05 | Set root font-size floor to 14px regardless of OS scaling | 4, 2 | S | [x] |
 
 ---
 
@@ -294,7 +294,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | EXPORT-01 | Add governance-ready cover page: client name, project, date, version, author, reviewer signature lines | 67, 83 | M | [ ] |
 | EXPORT-02 | Add footer: confidentiality classification, version number, "DRAFT/FINAL" watermark, page number | 67, 83 | M | [ ] |
 | EXPORT-03 | Add change log table (auto-populated on re-run vs. prior version) | 83 | M | [ ] |
-| EXPORT-04 | Auto-name exported files: `{ClientName}_{Module}_{v1.0}_{YYYYMMDD}.{ext}` | 83 | S | [ ] |
+| EXPORT-04 | Auto-name exported files: `{ClientName}_{Module}_{v1.0}_{YYYYMMDD}.{ext}` | 83 | S | [x] |
 | EXPORT-05 | Fix DOCX table rendering for 20+ column gap scoring matrices | 24, 77 | M | [ ] |
 | EXPORT-06 | Fix Excel formula calculation at export time — formulas currently show as errors | 24, 77 | M | [ ] |
 | EXPORT-07 | Fix PDF page numbering and table of contents accuracy | 24 | M | [ ] |
@@ -307,7 +307,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 |----|---------|---------|--------|--------|
 | ONBOARD-01 | Add in-app help text and contextual tooltips to all ThinkingControls, KnowledgeSourcePanel, OutputFormatSelector | 5, 46, 65 | M | [ ] |
 | ONBOARD-02 | Add guided "first gap analysis" walkthrough (3 steps: upload policy, select AMLR pack, run) | 81 | M | [ ] |
-| ONBOARD-03 | Document all keyboard shortcuts in Settings > Help (Cmd+K palette, Cmd+Enter submit, etc.) | 1 | S | [ ] |
+| ONBOARD-03 | Document all keyboard shortcuts in Settings > Help (Cmd+K palette, Cmd+Enter submit, etc.) | 1 | S | [x] |
 | ONBOARD-04 | Add "Plain language" toggle to Counsel's Desk: board-member summary before full legal analysis | 84 | M | [ ] |
 
 **Phase 4 Total Effort: ~3-4 weeks. A11Y-01 through A11Y-03 are quick wins. UX-06 is the largest item.**
