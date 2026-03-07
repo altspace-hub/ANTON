@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import type { Request } from 'express';
+import type { AuthUser } from './auth.js';
 
 // General API rate limiter — 100 requests per 15 minutes per IP
 export const apiLimiter = rateLimit({
@@ -20,11 +21,15 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Per-user rate limiter — 100 requests per minute per IP
-// Note: Uses default IP-based limiting (handles IPv6 properly)
+// Per-user rate limiter — 100 requests per minute per user (falls back to IP in solo mode)
+// Using user ID prevents shared-office IP starvation where all colleagues share one NAT IP.
 export const userLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // Increased from 10 to handle dashboard with multiple API calls
+  max: 100,
+  keyGenerator: (req: Request) => {
+    const user = (req as Request & { user?: AuthUser }).user;
+    return user?.id ?? req.ip ?? 'unknown';
+  },
   message: { error: 'Too many requests. Please slow down.' },
   standardHeaders: true,
   legacyHeaders: false,

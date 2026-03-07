@@ -19,6 +19,7 @@ import { fetchUrl } from './url-fetcher.js';
 import { retrieveChunks } from './rag/retriever.js';
 import { semanticSearch } from './semantic-search.js';
 import type { KnowledgeSourceConfig, ResolvedKnowledge } from '../../src/lib/types.js';
+import { estimateTokens } from './token-estimator.js';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
 
@@ -26,10 +27,6 @@ const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '
 const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 160_000;
 const ESTIMATED_SYSTEM_PROMPT_TOKENS = 8_000;
 const AVAILABLE_CONTEXT_TOKENS = MAX_CONTEXT_TOKENS - ESTIMATED_SYSTEM_PROMPT_TOKENS;
-
-function estimateTokens(text: string): number {
-  return Math.round(text.split(/\s+/).filter(Boolean).length * 1.3);
-}
 
 async function scanFolder(
   folderPath: string,

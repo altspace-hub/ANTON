@@ -1,8 +1,24 @@
-// Simple token estimation (~4 characters per token)
-const CHARS_PER_TOKEN = 4;
+import { type Tiktoken, encoding_for_model } from 'tiktoken';
+
+// Use cl100k_base (GPT-4/Claude-compatible tokeniser).
+// Falls back to char-count heuristic if tiktoken fails to load.
+let _tokenizer: Tiktoken | null = null;
+try {
+  _tokenizer = encoding_for_model('gpt-3.5-turbo');
+} catch {
+  // tiktoken WASM not available — heuristic fallback
+}
 
 export function estimateTokens(text: string): number {
-  return Math.ceil(text.length / CHARS_PER_TOKEN);
+  if (_tokenizer) {
+    try {
+      return _tokenizer.encode(text).length;
+    } catch {
+      // fall through to heuristic
+    }
+  }
+  // ~4 chars/token fallback
+  return Math.ceil(text.length / 4);
 }
 
 export function estimateTokensFromWordCount(wordCount: number): number {

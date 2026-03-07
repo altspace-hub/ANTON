@@ -201,7 +201,16 @@ export async function streamToResponse(
     'X-Accel-Buffering': 'no',
   });
 
+  // Inactivity timeout: close stream if no events for 5 minutes (STREAM-04)
+  const INACTIVITY_MS = 5 * 60 * 1000;
+  let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+
   const sendEvent = (event: object) => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      res.write('data: ' + JSON.stringify({ type: 'error', message: 'Request timeout — no activity for 5 minutes.' }) + '\n\n');
+      res.end();
+    }, INACTIVITY_MS);
     res.write(`data: ${JSON.stringify(event)}\n\n`);
   };
 
@@ -395,11 +404,16 @@ export async function streamToResponse(
       });
     }
 
+    if (inactivityTimer) clearTimeout(inactivityTimer);
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
     const message = error instanceof Error ? error.message : 'Unknown error';
-    sendEvent({ type: 'error', message });
+    // Don't emit error event if the stream was intentionally aborted (client disconnect)
+    if (message !== 'This operation was aborted') {
+      sendEvent({ type: 'error', message });
+    }
     res.write('data: [DONE]\n\n');
     res.end();
   }

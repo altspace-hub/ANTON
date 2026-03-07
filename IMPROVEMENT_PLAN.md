@@ -95,20 +95,20 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | DB-01 | Add `user_id` column to all 5 tables missing it: `registered_folders`, `module_configs`, `projects`, `skills`, `reviews` | 12 | M | [ ] |
 | DB-02 | Add `user_id` filter to ALL SELECT queries in corresponding routes — verify no unscoped reads remain | 12, 96 | L | [ ] |
 | DB-03 | Add `org_id` column to sessions, projects, messages for future multi-org support | 96 | M | [ ] |
-| DB-04 | Fix migration runner in `init.ts` — run ALL numbered migration files (001–027), not just hardcoded ones | 12 | M | [ ] |
-| DB-05 | Wrap `init.ts` schema creation in a single transaction — prevent partial state on power loss | 12 | S | [ ] |
+| DB-04 | Fix migration runner in `init.ts` — run ALL numbered migration files (001–027), not just hardcoded ones | 12 | M | [x] |
+| DB-05 | Wrap `init.ts` schema creation in a single transaction — prevent partial state on power loss | 12 | S | [x] |
 | DB-06 | Add `PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000;` to `init.ts` | 12, 87, 89 | S | [x] |
-| DB-07 | Add 8 missing compound indexes: `messages(session_id, role, created_at)`, `audit_log(user_id, created_at)`, etc. | 12 | S | [ ] |
+| DB-07 | Add 8 missing compound indexes: `messages(session_id, role, created_at)`, `audit_log(user_id, created_at)`, etc. | 12 | S | [x] |
 
 ---
 
 ### 1B — Streaming & SSE Reliability
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| STREAM-01 | Destroy server-side Anthropic stream on client disconnect (`req.on('close', () => stream.destroy())`) | 13, 87 | S | [ ] |
-| STREAM-02 | Move `res.writeHead()` before the retry loop — prevent "headers already sent" on retry | 87 | S | [ ] |
-| STREAM-03 | Clear module-scoped `_textBuf`/`_thinkBuf` on stream start and on error — prevent cross-session contamination | 13, 8 | S | [ ] |
-| STREAM-04 | Add 5-minute inactivity timeout: emit `{type: 'error', message: 'Request timeout'}` if no new SSE events | 13, 87 | M | [ ] |
+| STREAM-01 | Destroy server-side Anthropic stream on client disconnect (`req.on('close', () => stream.destroy())`) | 13, 87 | S | [x] |
+| STREAM-02 | Move `res.writeHead()` before the retry loop — prevent "headers already sent" on retry | 87 | S | [x] |
+| STREAM-03 | Clear module-scoped `_textBuf`/`_thinkBuf` on stream start and on error — prevent cross-session contamination | 13, 8 | S | [x] |
+| STREAM-04 | Add 5-minute inactivity timeout: emit `{type: 'error', message: 'Request timeout'}` if no new SSE events | 13, 87 | M | [x] |
 | STREAM-05 | Add per-user concurrent stream limit (max 3) with 429 rejection when exceeded | 13 | M | [ ] |
 | STREAM-06 | Add client-side retry with exponential backoff (1s, 2s, 4s) for SSE connection drops | 87 | M | [ ] |
 | STREAM-07 | Wire `AbortController` signal to server so client abort triggers `stream.destroy()` | 87, 13 | M | [ ] |
@@ -118,7 +118,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 1C — Token Counting & Context Safety
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| TOKEN-01 | Replace `estimateTokens()` word-count heuristic with `js-tiktoken` accurate counting | 18, 64, 88 | S | [ ] |
+| TOKEN-01 | Replace `estimateTokens()` word-count heuristic with `js-tiktoken` accurate counting | 18, 64, 88 | S | [x] |
 | TOKEN-02 | Add pre-flight token validation before any Claude API call — reject with clear error if > 180k tokens | 64, 88 | M | [ ] |
 | TOKEN-03 | Emit SSE progress events during context assembly: `context_assembly_start`, per-folder progress, `context_assembly_complete` | 88 | M | [ ] |
 | TOKEN-04 | Show token cost estimate to user BEFORE running analysis (not just after) | 64 | M | [ ] |
@@ -129,7 +129,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 1D — Rate Limiting & Request Safety
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| RATE-01 | Switch `userLimiter` key from IP to `req.user?.id \|\| req.ip` — prevents shared-office starvation | 14, 89 | S | [ ] |
+| RATE-01 | Switch `userLimiter` key from IP to `req.user?.id \|\| req.ip` — prevents shared-office starvation | 14, 89 | S | [x] |
 | RATE-02 | Add circuit breaker for Claude API: fast-fail after 3 consecutive 5xx errors in 60s window | 87 | M | [ ] |
 | RATE-03 | Add request timeout per Claude API attempt: 30s per attempt, 90s total across 3 retries | 87 | M | [ ] |
 | RATE-04 | Add background async audit logging queue: batch-insert every 5s instead of per-request synchronous write | 89 | M | [ ] |
@@ -139,9 +139,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 1E — Prompt Injection Prevention
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| INJECT-01 | Add system prompt boundary markers (`===SYSTEM BOUNDARY===`) before/after all user-controlled text | 16, 19 | S | [ ] |
-| INJECT-02 | Never insert raw user content at `[SYSTEM]` level; use `[USER]` delimiters in multi-turn context assembly | 19 | S | [ ] |
-| INJECT-03 | Sanitise extracted document text before injection — strip any content that looks like system prompt override | 19 | M | [ ] |
+| INJECT-01 | Add system prompt boundary markers (`===SYSTEM BOUNDARY===`) before/after all user-controlled text | 16, 19 | S | [x] |
+| INJECT-02 | Never insert raw user content at `[SYSTEM]` level; use `[USER]` delimiters in multi-turn context assembly | 19 | S | [x] |
+| INJECT-03 | Sanitise extracted document text before injection — strip any content that looks like system prompt override | 19 | M | [x] |
 
 **Phase 1 Total Effort: ~3-4 weeks for one developer. DB-01/02/04 are the most critical and should go first.**
 

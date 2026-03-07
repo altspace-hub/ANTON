@@ -2913,6 +2913,60 @@ export function initDatabase(): Database.Database {
     }
   }
 
+  // ── Generic migration runner (DB-04) ─────────────────────────────────────
+  // Creates a schema_migrations table and runs any unprocessed .sql files in
+  // server/db/migrations/ with a numeric prefix >= 028. Earlier migrations
+  // (001–027b) are handled by the explicit sentinel blocks above and are
+  // marked as already-applied on first boot so they don't run again.
+  db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+    id TEXT PRIMARY KEY,
+    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Seed known-already-applied migrations so the runner skips them
+  const LEGACY_MIGRATIONS = [
+    '001','002','003','003b','004','004b','005',
+    '006','020','021','022','023','023b','024','024b',
+    '025','026','027','027b',
+  ];
+  const insertMig = db.prepare('INSERT OR IGNORE INTO schema_migrations (id) VALUES (?)');
+  for (const id of LEGACY_MIGRATIONS) {
+    insertMig.run(id);
+  }
+
+  // Scan for new migration files and run each exactly once inside a transaction
+  const _migrationsDir = path.join(__dirname, 'migrations');
+  try {
+    const migFiles = fs.readdirSync(_migrationsDir)
+      .filter((f: string) => f.endsWith('.sql'))
+      .sort(); // lexicographic sort keeps numeric prefix order
+
+    const applied = new Set(
+      (db.prepare('SELECT id FROM schema_migrations').all() as Array<{ id: string }>).map(r => r.id)
+    );
+
+    for (const file of migFiles) {
+      // Derive a stable ID from the filename prefix (strip .sql extension)
+      const migId = file.replace(/\.sql$/, '');
+      if (applied.has(migId)) continue;
+
+      try {
+        const sql = fs.readFileSync(path.join(_migrationsDir, file), 'utf-8');
+        // Wrap each migration in a transaction for atomicity (DB-05)
+        db.transaction(() => {
+          db.exec(sql);
+          db.prepare('INSERT INTO schema_migrations (id) VALUES (?)').run(migId);
+        })();
+        console.log(`[db] Migration applied: ${file}`);
+      } catch (e) {
+        console.error(`[db] Migration FAILED: ${file} —`, e);
+        // Don't abort the whole init — log and continue
+      }
+    }
+  } catch (e) {
+    console.warn('[db] Generic migration runner error (non-fatal):', e);
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }
