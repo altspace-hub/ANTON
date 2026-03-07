@@ -483,6 +483,38 @@ export default function Dashboard() {
         </>
       )}
 
+      {/* UX-02: Quick Start card — most recent session + 3 recommended modules */}
+      {continueWorkSessions.length === 0 && (
+        <div className="mb-6 rounded-xl border border-adv-teal/20 bg-adv-card p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Rocket className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-white">Quick Start</h2>
+          </div>
+          <p className="mb-4 text-xs text-adv-gray">Start with one of these recommended workflows for FCP consultants:</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              { to: '/module/gap-analysis', label: 'AMLR Gap Analysis', desc: 'Analyse your policies against AMLR 2024/1624', color: 'text-adv-teal', bg: 'bg-adv-teal/10' },
+              { to: '/module/sanctions-advisory', label: 'Sanctions Advisory', desc: 'Screen entities and review sanctions exposure', color: 'text-adv-gold', bg: 'bg-adv-gold/10' },
+              { to: '/module/risk-assessment', label: 'Risk Assessment', desc: 'Build or review your BWRA with AI assistance', color: 'text-adv-blue', bg: 'bg-adv-blue/10' },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="flex items-start gap-3 rounded-lg border border-border bg-adv-dark-2 p-3 transition-colors hover:border-adv-teal/40 hover:bg-adv-teal-soft"
+              >
+                <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${item.bg} ${item.color}`}>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className={`text-xs font-semibold ${item.color}`}>{item.label}</p>
+                  <p className="mt-0.5 text-xs text-adv-gray">{item.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Continue Your Work — recent sessions with output */}
       {continueWorkSessions.length > 0 && (
         <div className="mb-6 rounded-xl border border-border bg-adv-card p-5">

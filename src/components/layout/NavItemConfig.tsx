@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, RotateCcw, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, RotateCcw, RefreshCw, Users } from 'lucide-react';
 
 export const NAV_ITEMS_HIDDEN_KEY = 'openexpert-hidden-nav-items';
 
@@ -92,6 +92,58 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'compliance', label: 'Compliance', category: 'admin' },
 ];
 
+// UX-01: Role-based nav presets — show only relevant items for each persona
+// Items listed = shown; everything else = hidden
+const ROLE_PRESETS: Record<string, { label: string; description: string; show: string[] }> = {
+  'fcp-consultant': {
+    label: 'FCP Consultant',
+    description: 'AML/CFT, sanctions, regulatory compliance',
+    show: [
+      'prompt', 'brief', 'review', 'challenge', 'dual', 'sounding-board',
+      'counsels-desk', 'gap-assessment', 'roaring', 'dj-screening', 'entity-intelligence',
+      'my-work', 'projects', 'workflows', 'skills', 'skill-packs', 'batch',
+      'deadlines', 'radar', 'innovation-radar',
+      'knowledge-base', 'knowledge', 'graph', 'intelligence', 'patterns',
+      'compliance', 'governance', 'analytics', 'audit', 'versions', 'quality',
+      'task-agent', 'orchestrator',
+    ],
+  },
+  'lawyer-gc': {
+    label: 'Lawyer / GC',
+    description: 'Legal research, contracts, regulatory advice',
+    show: [
+      'prompt', 'brief', 'guide', 'challenge', 'dual', 'review', 'sounding-board',
+      'counsels-desk', 'gap-assessment',
+      'my-work', 'projects', 'skills', 'versions',
+      'deadlines', 'radar',
+      'knowledge-base', 'knowledge', 'graph',
+      'compliance', 'governance', 'audit',
+    ],
+  },
+  'compliance-officer': {
+    label: 'Compliance Officer',
+    description: 'Risk, governance, monitoring, reporting',
+    show: [
+      'prompt', 'brief', 'review', 'challenge', 'sounding-board',
+      'counsels-desk', 'gap-assessment', 'roaring', 'dj-screening', 'entity-intelligence',
+      'my-work', 'projects', 'workflows', 'skills',
+      'deadlines', 'radar', 'innovation-radar',
+      'knowledge-base', 'knowledge', 'graph', 'intelligence', 'patterns',
+      'compliance', 'governance', 'analytics', 'audit', 'insights', 'versions', 'quality',
+      'task-agent',
+    ],
+  },
+};
+
+export function applyRolePreset(role: string): void {
+  const preset = ROLE_PRESETS[role];
+  if (!preset) return;
+  const showSet = new Set(preset.show);
+  const allIds = ALL_NAV_ITEMS.map((i) => i.id);
+  const hidden = allIds.filter((id) => !showSet.has(id));
+  saveHiddenNavItems(new Set(hidden));
+}
+
 export function loadHiddenNavItems(): Set<string> {
   try {
     const raw = localStorage.getItem(NAV_ITEMS_HIDDEN_KEY);
@@ -152,8 +204,35 @@ export default function NavItemConfig() {
   const hiddenCount = hiddenItems.size;
   const totalCount = ALL_NAV_ITEMS.length;
 
+  function applyPreset(role: string) {
+    applyRolePreset(role);
+    setHiddenItems(loadHiddenNavItems());
+    setChangesMade(true);
+  }
+
   return (
     <div className="space-y-6">
+      {/* UX-01: Role-based nav presets */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Users className="h-4 w-4 text-adv-teal" />
+          <h3 className="text-sm font-semibold text-adv-white">Quick Role Presets</h3>
+        </div>
+        <p className="text-xs text-adv-gray mb-3">Start from a role-optimised view. You can customise below.</p>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(ROLE_PRESETS).map(([role, preset]) => (
+            <button
+              key={role}
+              onClick={() => applyPreset(role)}
+              className="flex flex-col items-start rounded-lg border border-adv-card bg-adv-card px-3 py-2 text-left hover:border-adv-teal hover:bg-adv-teal-soft transition-colors"
+            >
+              <span className="text-xs font-semibold text-adv-off-white">{preset.label}</span>
+              <span className="text-xs text-adv-gray">{preset.description}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-adv-white">Navigation Items</h3>
