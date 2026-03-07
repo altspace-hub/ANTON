@@ -718,6 +718,10 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const longContextBeta = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
       const useLongContext = longContextBeta && resolved.tokenEstimate > 200_000;
 
+      // Abort the Anthropic stream if the client disconnects to free API quota and server memory
+      const abortController = new AbortController();
+      req.on('close', () => abortController.abort());
+
       await streamToResponse(
           {
             model: selectedModel as 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
@@ -728,6 +732,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             tools: tools.length > 0 ? tools : undefined,
             nativeReasoningEnabled: !!nativeReasoningEnabled,
             useLongContext,
+            signal: abortController.signal,
           },
           res,
           onComplete

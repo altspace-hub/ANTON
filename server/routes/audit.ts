@@ -84,8 +84,8 @@ export function createAuditRoutes(db: Database.Database) {
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
         searchText: req.query.searchText as string,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
-        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+        limit: req.query.limit ? (parseInt(req.query.limit as string, 10) || 50) : 50,
+        offset: req.query.offset ? (parseInt(req.query.offset as string, 10) || 0) : 0,
         sortBy: (req.query.sortBy as string) || 'timestamp',
         sortOrder: (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC',
       };
@@ -200,8 +200,8 @@ export function createAuditRoutes(db: Database.Database) {
         moduleId: req.query.moduleId as string,
         startDate: req.query.startDate as string,
         endDate: req.query.endDate as string,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
-        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+        limit: req.query.limit ? (parseInt(req.query.limit as string, 10) || 50) : 50,
+        offset: req.query.offset ? (parseInt(req.query.offset as string, 10) || 0) : 0,
       };
       const events = getAuditLog(db, filters);
       res.json(events);
@@ -526,7 +526,7 @@ export function createAuditRoutes(db: Database.Database) {
    */
   router.get('/audit/security', (req, res) => {
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const limit = req.query.limit ? (parseInt(req.query.limit as string, 10) || 100) : 100;
       const severity = req.query.severity as string;
       const resolved = req.query.resolved as string;
 
@@ -594,7 +594,7 @@ export function createAuditRoutes(db: Database.Database) {
    */
   router.get('/audit/login-attempts', (req, res) => {
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const limit = req.query.limit ? (parseInt(req.query.limit as string, 10) || 100) : 100;
       const username = req.query.username as string;
       const success = req.query.success as string;
 

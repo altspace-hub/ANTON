@@ -290,7 +290,7 @@ export default function SchoolLessonPage() {
                 title={block.title || 'Interactive embed'}
                 className="w-full"
                 style={{ height: `${block.height || 400}px`, border: 'none' }}
-                sandbox="allow-scripts allow-same-origin allow-forms"
+                sandbox="allow-scripts allow-forms"
               />
             )}
           </div>

@@ -1331,7 +1331,7 @@ export default function ScriptMediumPage() {
                     </div>
                     <iframe
                       srcDoc={previewHtmlContent}
-                      sandbox="allow-scripts allow-modals"
+                      sandbox="allow-scripts"
                       className="w-full bg-white"
                       style={{ height: '600px' }}
                       title="Application Preview"

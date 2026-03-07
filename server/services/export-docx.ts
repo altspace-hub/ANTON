@@ -330,13 +330,15 @@ function parseMarkdownTable(lines: string[], accent: string = DEF_TEAL): Table |
 
 // ── Main converter ────────────────────────────────────────────
 
+const LEGAL_DISCLAIMER = `\n\n---\n\n**Legal Disclaimer:** This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.`;
+
 export async function generateDocx(
   markdown: string,
   metadata: { title?: string; author?: string; subject?: string } = {},
   brandConfig?: BrandConfig | null,
 ): Promise<Buffer> {
   const s = resolveStyle(brandConfig);
-  const lines = markdown.split('\n');
+  const lines = (markdown + LEGAL_DISCLAIMER).split('\n');
   const children: (Paragraph | Table)[] = [];
 
   // Hierarchical heading counters for auto-numbering

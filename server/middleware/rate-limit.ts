@@ -30,6 +30,15 @@ export const userLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Public inbound webhook endpoint — prevents event flooding
+export const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120, // 120 events/min per IP (2/sec burst)
+  message: { error: 'Webhook rate limit exceeded.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Claude API endpoints — prevent accidental loops and excessive usage
 export const claudeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

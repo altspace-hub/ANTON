@@ -73,7 +73,7 @@ export default function CodeSandbox({ code, language }: Props) {
         <iframe
           ref={iframeRef}
           srcDoc={sandboxDoc}
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts"
           className="w-full bg-white"
           style={{ height: fullscreen ? 'calc(100% - 2.5rem)' : '280px' }}
           title="Code output"

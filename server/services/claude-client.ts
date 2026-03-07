@@ -42,6 +42,8 @@ interface StreamConfig {
   /** When true, adds the anthropic-beta: context-1m-2025-08-07 header to unlock
    *  up to 1M token context for Opus 4.6 and Sonnet 4.6. Requires API beta access. */
   useLongContext?: boolean;
+  /** Optional abort signal — wire to req.on('close') to cancel the stream when the client disconnects. */
+  signal?: AbortSignal;
 }
 
 export interface StreamCompletionData {
@@ -273,15 +275,19 @@ export async function streamToResponse(
 
     sendEvent({ type: 'stream_start', messageId: crypto.randomUUID() });
 
-    // Build per-request options (beta header for 1M context if requested).
-    const requestOptions = config.useLongContext
-      ? { headers: { 'anthropic-beta': 'context-1m-2025-08-07' } }
-      : undefined;
+    // Build per-request options (beta header for 1M context if requested; abort signal for disconnect cleanup).
+    const requestOptions: Record<string, unknown> = {};
+    if (config.useLongContext) {
+      requestOptions.headers = { 'anthropic-beta': 'context-1m-2025-08-07' };
+    }
+    if (config.signal) {
+      requestOptions.signal = config.signal;
+    }
 
     // Wrap stream creation in withRetry so transient 429/500/503 errors are retried
     // with exponential backoff (1s → 2s → 4s) before surfacing to the caller.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await withRetry(async () => anthropic.messages.stream(requestParams as any, requestOptions as any));
+    const stream = await withRetry(async () => anthropic.messages.stream(requestParams as any, Object.keys(requestOptions).length ? requestOptions as any : undefined));
 
     for await (const event of stream) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

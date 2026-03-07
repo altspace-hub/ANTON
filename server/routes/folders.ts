@@ -140,13 +140,15 @@ export function createFolderRoutes(db: Database.Database) {
         lastModified: string;
       }> = [];
 
-      async function scanDir(dirPath: string) {
+      const MAX_DEPTH = 20;
+      async function scanDir(dirPath: string, depth = 0) {
+        if (depth > MAX_DEPTH) return;
         const entries = await fs.readdir(dirPath, { withFileTypes: true });
         for (const entry of entries) {
           if (entry.name.startsWith('.')) continue;
           const fullPath = path.join(dirPath, entry.name);
           if (entry.isDirectory() && recursive) {
-            await scanDir(fullPath);
+            await scanDir(fullPath, depth + 1);
           } else if (entry.isFile() && extensions.includes(path.extname(entry.name).toLowerCase())) {
             const stat = await fs.stat(fullPath);
             files.push({

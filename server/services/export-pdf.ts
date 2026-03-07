@@ -211,6 +211,8 @@ function parseMarkdownTable(lines: string[]): { headers: string[]; rows: string[
   return { headers: split(header), rows: rest.map(split) };
 }
 
+const LEGAL_DISCLAIMER = `\n\n---\n\n**Legal Disclaimer:** This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.`;
+
 // ── PDF Generator ────────────────────────────────────────────
 
 export function generatePdf(
@@ -263,7 +265,7 @@ export function generatePdf(
     }
 
     // ── Markdown renderer ────────────────────────────────────
-    const lines = markdown.split('\n');
+    const lines = (markdown + LEGAL_DISCLAIMER).split('\n');
     let i = 0;
 
     function ensureSpace(needed = 60) {

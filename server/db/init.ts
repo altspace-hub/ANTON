@@ -14,8 +14,9 @@ export function initDatabase(): Database.Database {
 
   const db = new Database(DB_PATH);
 
-  // Enable WAL mode and foreign keys
+  // Enable WAL mode, foreign keys, and busy timeout (prevents SQLITE_BUSY errors in team mode)
   db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 5000');
   db.pragma('foreign_keys = ON');
 
   // Run schema
@@ -2858,6 +2859,56 @@ export function initDatabase(): Database.Database {
         console.log('[db] Migration 025 applied (orchestrator meta-learning + stage demotion + chains)');
       } catch (e) {
         console.warn('[db] Migration 025 skipped (non-fatal):', e);
+      }
+    }
+  }
+
+  // ── Migration 026: ANTON Self-Knowledge DB + Task Agent ──────────────────
+  {
+    const sentinel026 = db.prepare(
+      "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='anton_capabilities'"
+    ).get() as { c: number };
+    if (sentinel026.c === 0) {
+      try {
+        const sql026 = fs.readFileSync(path.join(migrationsDir, '026_anton_self_knowledge.sql'), 'utf-8');
+        db.exec(sql026);
+        console.log('[db] Migration 026 applied (ANTON self-knowledge + task agent)');
+      } catch (e) {
+        console.warn('[db] Migration 026 skipped (non-fatal):', e);
+      }
+    }
+  }
+
+
+  // ── Migration 027: Task Execution Engine (intake + results columns) ─────────
+  {
+    const sentinel027 = db.prepare(
+      "SELECT COUNT(*) as c FROM pragma_table_info('anton_tasks') WHERE name='intake_ready'"
+    ).get() as { c: number };
+    if (sentinel027.c === 0) {
+      try {
+        const sql027 = fs.readFileSync(path.join(migrationsDir, '027_task_execution_engine.sql'), 'utf-8');
+        db.exec(sql027);
+        console.log('[db] Migration 027 applied (task execution engine)');
+      } catch (e) {
+        console.warn('[db] Migration 027 skipped (non-fatal):', e);
+      }
+    }
+  }
+
+
+  // ── Migration 027b: Task files + active knowledge packs ──────────────────────
+  {
+    const sentinel027b = db.prepare(
+      "SELECT COUNT(*) as c FROM pragma_table_info('anton_tasks') WHERE name='task_files'"
+    ).get() as { c: number };
+    if (sentinel027b.c === 0) {
+      try {
+        db.exec("ALTER TABLE anton_tasks ADD COLUMN task_files TEXT DEFAULT '[]'");
+        db.exec("ALTER TABLE anton_tasks ADD COLUMN active_knowledge_packs TEXT DEFAULT '[]'");
+        console.log('[db] Migration 027b applied (task files + knowledge packs)');
+      } catch (e) {
+        console.warn('[db] Migration 027b skipped (non-fatal):', e);
       }
     }
   }

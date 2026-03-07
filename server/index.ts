@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDatabase } from './db/init.js';
-import { authLimiter, userLimiter, claudeLimiter } from './middleware/rate-limit.js';
+import { authLimiter, userLimiter, claudeLimiter, webhookLimiter } from './middleware/rate-limit.js';
 import { createHealthRouter } from './routes/health.js';
 import { createClaudeRoutes } from './routes/claude.js';
 import filesRouter from './routes/files.js';
@@ -98,6 +98,7 @@ import { createKnowledgePacksRoutes } from './routes/knowledge-packs.js';
 import { createLegalResearchRoutes } from './routes/legal-research.js';
 import { createGapAssessmentsRoutes } from './routes/gap-assessments.js';
 import { createAiAssistRoutes } from './routes/ai-assist.js';
+import { createTaskAgentRoutes } from './routes/task-agent.js';
 import { createRoaringRoutes } from './routes/roaring.js';
 import { createDowJonesRoutes } from './routes/dowjones.js';
 import { createOrchestratorRoutes } from './routes/orchestrator.js';
@@ -365,6 +366,7 @@ app.use('/api', createCommunityRoutes(db));
 const webhookListenerInstance = createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton
 app.use('/api', createTriggersRoutes(db));           // RBAC-protected trigger management
+app.use('/api/webhooks', webhookLimiter);             // Rate limit public webhook endpoint (SEC-19)
 app.use('/', createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth)
 app.use('/api', createSessionResumeRoutes(db));      // Session Resume (snapshots)
 app.use('/api', createInsightsRoutes(db));           // Proactive Intelligence
@@ -374,6 +376,7 @@ app.use('/api', createKnowledgePacksRoutes(db));     // Regulatory Knowledge Pac
 app.use('/api', createLegalResearchRoutes(db, anthropic));   // Counsel's Desk — legal research sessions
 app.use('/api', createGapAssessmentsRoutes(db, anthropic)); // Compliance Gap Assessor
 app.use('/api', createAiAssistRoutes());                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
+app.use('/api/task-agent', createTaskAgentRoutes(db, anthropic)); // ANTON Task Agent — conversational task intake + approach proposal
 app.use('/api', createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
 app.use('/api', createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
 app.use('/api', createOrchestratorRoutes(db, anthropic));   // ANTON Orchestrator — AI management layer

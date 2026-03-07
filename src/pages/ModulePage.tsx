@@ -646,6 +646,13 @@ export default function ModulePage() {
             )}
           </div>
 
+          {/* Healthcare / medical disclaimer (LEGAL-03) */}
+          {(areaId === 'healthcare' || areaId === 'community-health') && (
+            <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/10 px-3 py-2 text-xs text-adv-gold">
+              <strong>Medical information only — not clinical advice.</strong> AI output may contain errors. Always consult a qualified healthcare professional for diagnosis, treatment, or medication decisions.
+            </div>
+          )}
+
           {/* AI Controls */}
           <ThinkingControls value={thinking} onChange={setThinking} />
 
@@ -977,6 +984,10 @@ export default function ModulePage() {
               )}
             </div>
           </div>
+          {/* AI disclaimer (LEGAL-02) */}
+          <p className="px-1 text-[10px] text-adv-gray-med leading-snug">
+            AI-generated output — not legal or compliance advice. Verify independently.
+          </p>
         </div>
       </div>
 

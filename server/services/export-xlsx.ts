@@ -296,6 +296,8 @@ function styleDataRow(row: ExcelJS.Row, rowIndex: number, colCount: number, styl
   }
 }
 
+const LEGAL_DISCLAIMER = 'This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.';
+
 // ── Main export function ────────────────────────────────────
 
 export async function generateXlsx(
@@ -389,6 +391,18 @@ export async function generateXlsx(
     });
     ws.getColumn(1).width = 120;
   }
+
+  // ── Legal disclaimer sheet (always last) ─────────────────
+  const disclaimerWs = workbook.addWorksheet('Disclaimer');
+  disclaimerWs.properties.tabColor = { argb: `FF${style.accent}` };
+  const dTitleRow = disclaimerWs.addRow(['Legal Disclaimer']);
+  dTitleRow.getCell(1).font = { bold: true, size: 12, color: { argb: `FF${style.accent}` } };
+  dTitleRow.height = 24;
+  disclaimerWs.addRow([]);
+  const dTextRow = disclaimerWs.addRow([LEGAL_DISCLAIMER]);
+  dTextRow.getCell(1).alignment = { wrapText: true };
+  disclaimerWs.getColumn(1).width = 110;
+  disclaimerWs.getRow(3).height = 60;
 
   const arrayBuffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);

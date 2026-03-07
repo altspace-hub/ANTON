@@ -14,7 +14,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-type Step = 1 | 2 | '2b' | 3 | 4 | 'complete';
+type Step = 0 | 1 | 2 | '2b' | 3 | 4 | 'complete';
 
 interface OnboardingState {
   tier: string;
@@ -41,7 +41,7 @@ export default function SchoolOnboardingPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>(0);
   const [state, setState] = useState<OnboardingState>({ tier: '', country: '', classCode: '', gymnasietProgram: '', universityProgram: '' });
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -169,6 +169,29 @@ export default function SchoolOnboardingPage() {
               />
             );
           })}
+        </div>
+      )}
+
+      {/* Step 0 — Privacy & age acknowledgment (LEGAL-04 / COPPA) */}
+      {step === 0 && (
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-adv-white">Before you begin</h2>
+            <p className="mt-2 text-sm text-adv-gray">Please read and confirm before using School Mode.</p>
+          </div>
+          <div className="rounded-xl border border-adv-card bg-adv-card p-5 text-sm text-adv-off-white space-y-3">
+            <p><strong className="text-adv-teal">AI-powered tool:</strong> School Mode uses the Claude AI API (Anthropic, Inc.). Your chat messages are sent to Anthropic's servers to generate responses. No personally identifiable information is stored by Futurechain beyond your local device.</p>
+            <p><strong className="text-adv-teal">Age requirement:</strong> Users under 13 years of age must have consent from a parent, guardian, or educational institution administrator before using this application.</p>
+            <p><strong className="text-adv-teal">School deployments:</strong> If this app is deployed by a school or educational institution, the institution acts as the data controller. Teachers and administrators are responsible for obtaining any necessary consents from students and parents.</p>
+            <p><strong className="text-adv-teal">Not a substitute:</strong> AI responses are for learning support only and may contain errors. Always verify information with teachers and authoritative sources.</p>
+          </div>
+          <button
+            onClick={() => setStep(1)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-adv-teal px-6 py-3 text-sm font-semibold text-adv-dark hover:bg-adv-teal-dark transition-colors"
+          >
+            I understand and agree
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       )}
 

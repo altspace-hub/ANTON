@@ -129,6 +129,33 @@ export async function executeScheduledWorkflow(
 
         stepsCompleted++;
 
+        // ── onCompleteTrigger: fire a new workflow run when this step completes ──
+        const trigger = step.config?.onCompleteTrigger;
+        if (trigger?.type === 'start_workflow' && trigger.workflowId) {
+          try {
+            const newRunId = randomUUID();
+            const triggerVars: Record<string, unknown> = {};
+            if (trigger.variables) {
+              for (const [k, v] of Object.entries(trigger.variables)) {
+                // Resolve {{variable}} references from context
+                triggerVars[k] = resolveTemplate(v, context);
+              }
+            }
+            db.prepare(`
+              INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
+              VALUES (?, ?, ?, 'pending', ?, datetime('now'))
+            `).run(
+              newRunId,
+              trigger.workflowId,
+              JSON.stringify({ type: 'event', source: 'step_complete', triggeredBy: runId, stepId: step.id, label: trigger.label || '', variables: triggerVars }),
+              'system'
+            );
+            console.log(`[workflow-executor] Step trigger: started workflow ${trigger.workflowId} run ${newRunId}`);
+          } catch (triggerErr) {
+            console.warn('[workflow-executor] onCompleteTrigger failed (non-fatal):', triggerErr);
+          }
+        }
+
         // Handle decision gate skip
         if (skippedToStepId) {
           const targetIdx = steps.findIndex((s) => s.id === skippedToStepId);
@@ -227,6 +254,11 @@ async function executeHeadlessStep(
         ? resolveTemplate(step.config.endpointPath, context)
         : '';
       const url = `${baseUrl}${endpointPath}`;
+
+      // SEC-21: Reject non-HTTPS schemes to prevent SSRF via javascript:, data:, file:, http: URIs
+      if (!url.startsWith('https://')) {
+        throw new Error(`API call blocked: URL scheme must be https:// (got: ${url.slice(0, 30)})`);
+      }
 
       const headers: Record<string, string> = { ...(cfg.headers as Record<string, string> || {}) };
       if (step.config.headers) {

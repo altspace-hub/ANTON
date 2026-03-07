@@ -19,7 +19,9 @@ export function createComplianceRoutes(db: Database) {
 
   router.get('/compliance/rules/:id', (req, res) => {
     try {
-      const rule = service.getRule(parseInt(req.params.id));
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid rule id' });
+      const rule = service.getRule(id);
       if (!rule) {
         return res.status(404).json({ success: false, error: 'Rule not found' });
       }
@@ -40,7 +42,9 @@ export function createComplianceRoutes(db: Database) {
 
   router.put('/compliance/rules/:id', (req, res) => {
     try {
-      service.updateRule(parseInt(req.params.id), req.body);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid rule id' });
+      service.updateRule(id, req.body);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ success: false, error: String(error) });
@@ -49,7 +53,9 @@ export function createComplianceRoutes(db: Database) {
 
   router.delete('/compliance/rules/:id', (req, res) => {
     try {
-      service.deleteRule(parseInt(req.params.id));
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid rule id' });
+      service.deleteRule(id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ success: false, error: String(error) });
@@ -59,7 +65,9 @@ export function createComplianceRoutes(db: Database) {
   // Rule execution
   router.post('/compliance/rules/:id/execute', async (req, res) => {
     try {
-      const execution = await service.executeRule(parseInt(req.params.id), req.body.context);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid rule id' });
+      const execution = await service.executeRule(id, req.body.context);
       res.json({ success: true, execution });
     } catch (error) {
       res.status(500).json({ success: false, error: String(error) });
@@ -82,7 +90,7 @@ export function createComplianceRoutes(db: Database) {
       const filters = {
         status: req.query.status as string,
         severity: req.query.severity as string,
-        ruleId: req.query.ruleId ? parseInt(req.query.ruleId as string) : undefined
+        ruleId: req.query.ruleId ? (parseInt(req.query.ruleId as string, 10) || undefined) : undefined
       };
       const violations = service.getViolations(filters);
       res.json({ success: true, violations });
@@ -93,7 +101,9 @@ export function createComplianceRoutes(db: Database) {
 
   router.put('/compliance/violations/:id', (req, res) => {
     try {
-      service.updateViolation(parseInt(req.params.id), req.body);
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid violation id' });
+      service.updateViolation(id, req.body);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ success: false, error: String(error) });

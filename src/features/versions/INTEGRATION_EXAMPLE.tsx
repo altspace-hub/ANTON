@@ -10,6 +10,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Save, GitCompare } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { VersionDiffViewer, saveVersion, listVersions } from '@/features/versions';
 
 // Example: Adding version controls to a module output panel
@@ -57,7 +59,7 @@ export function ExampleModuleOutputPanel({ sessionId, currentOutput }: {
     <div className="bg-adv-card rounded-lg p-4">
       {/* Output content */}
       <div className="prose prose-invert max-w-none mb-4">
-        <div dangerouslySetInnerHTML={{ __html: currentOutput }} />
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentOutput}</ReactMarkdown>
       </div>
 
       {/* Version controls */}
