@@ -324,7 +324,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | PERF-02 | Add `React.memo` to ContextPanel, OutputFormatSelector, ThinkingControls, KnowledgeSourcePanel | 6 | M | [ ] |
 | PERF-03 | Virtualise `ConversationThread` using `react-virtual` — render only visible messages | 6 | M | [ ] |
 | PERF-04 | Lazy-load heavy export libraries: `docx`, `exceljs`, `pdf-parse` only on export button click | 6 | M | [ ] |
-| PERF-05 | Debounce streaming text updates: batch `streamingText` updates every 100ms instead of per-token | 6 | S | [ ] |
+| PERF-05 | Debounce streaming text updates: batch `streamingText` updates every 100ms instead of per-token | 6 | S | [x] |
 | PERF-06 | Replace `useSessionStore.getState()` direct reads with Zustand subscriptions where re-rendering needed | 8 | M | [ ] |
 
 ---
@@ -333,7 +333,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | CACHE-01 | Implement mandatory 3-layer caching in `claude-client.ts`: foundation layer (never changes) + area-context layer (per-area) + knowledge-source layer (per-request) | 64, 99 | L | [ ] |
-| CACHE-02 | Apply `cache_control: { type: 'ephemeral' }` to static system prompt blocks on all routes | 64, 99 | M | [ ] |
+| CACHE-02 | Apply `cache_control: { type: 'ephemeral' }` to static system prompt blocks on all routes | 64, 99 | M | [x] |
 | CACHE-03 | Add cache hit/miss tracking to audit log; display "saved $X.XX from prompt caching" in session summary | 64 | M | [ ] |
 
 ---
@@ -356,10 +356,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | COMPAT-01 | Change `tsconfig.app.json` target from `ES2020` to `ES2015`; add `@babel/preset-env` for transpilation | 90 | M | [ ] |
-| COMPAT-02 | Create `src/lib/browser-compat.ts`: feature detection for `AbortController`, `ReadableStream`, `clipboard`, `localStorage` | 90 | S | [ ] |
-| COMPAT-03 | Add `localStorage` quota error handling: wrap all access in try-catch for `QuotaExceededError` | 90 | S | [ ] |
+| COMPAT-02 | Create `src/lib/browser-compat.ts`: feature detection for `AbortController`, `ReadableStream`, `clipboard`, `localStorage` | 90 | S | [x] |
+| COMPAT-03 | Add `localStorage` quota error handling: wrap all access in try-catch for `QuotaExceededError` | 90 | S | [x] |
 | COMPAT-04 | Add SSE long-polling fallback when `ReadableStream` unavailable | 90 | L | [ ] |
-| COMPAT-05 | Add Safari web clip icon and iOS PWA meta tags | 90 | S | [ ] |
+| COMPAT-05 | Add Safari web clip icon and iOS PWA meta tags | 90 | S | [x] |
 
 ---
 
@@ -369,8 +369,8 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | OBS-01 | Add structured JSON logging with `pino` or `winston`: replace all `console.log` calls | 54, 96 | M | [ ] |
 | OBS-02 | Add OpenTelemetry tracing for cross-request flows (Claude API latency, DB query time) | 54, 96 | L | [ ] |
 | OBS-03 | Add `/metrics` endpoint exposing Prometheus-format counters (requests/s, error rate, stream count) | 54, 96 | M | [ ] |
-| OBS-04 | Add `/health` endpoint returning database status, queue depth, memory usage | 96 | S | [ ] |
-| OBS-05 | Add graceful shutdown: drain in-flight requests (30s timeout) before process exit | 96 | M | [ ] |
+| OBS-04 | Add `/health` endpoint returning database status, queue depth, memory usage | 96 | S | [x] |
+| OBS-05 | Add graceful shutdown: drain in-flight requests (30s timeout) before process exit | 96 | M | [x] |
 
 **Phase 5 Total Effort: ~4-6 weeks. PERF-05, CACHE-02, COMPAT-02/03 are quick wins.**
 

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { safeStorage } from '@/lib/safe-storage';
 
 export interface AuthUser {
   id: string;
@@ -20,7 +21,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  token: localStorage.getItem('openexpert-token'),
+  token: safeStorage.getItem('openexpert-token'),
   isLoading: true,
   isTeamMode: false,
 
@@ -37,7 +38,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new Error(err.error || 'Login failed');
     }
     const data = await res.json() as { user: AuthUser; token: string };
-    localStorage.setItem('openexpert-token', data.token);
+    safeStorage.setItem('openexpert-token', data.token);
     set({ user: data.user, token: data.token });
   },
 
@@ -49,13 +50,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => {});
     }
-    localStorage.removeItem('openexpert-token');
+    safeStorage.removeItem('openexpert-token');
     set({ user: null, token: null });
   },
 
   checkAuth: async () => {
     set({ isLoading: true });
-    const token = localStorage.getItem('openexpert-token');
+    const token = safeStorage.getItem('openexpert-token');
     if (!token) {
       set({ isLoading: false });
       return;
@@ -68,7 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const user = await res.json() as AuthUser;
         set({ user, token, isLoading: false });
       } else {
-        localStorage.removeItem('openexpert-token');
+        safeStorage.removeItem('openexpert-token');
         set({ user: null, token: null, isLoading: false });
       }
     } catch {

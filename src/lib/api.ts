@@ -1,16 +1,17 @@
 import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent } from './types';
+import { safeStorage } from './safe-storage';
 
 const API_BASE = '/api';
 
 export function getAuthHeader(): Record<string, string> {
-  const token = localStorage.getItem('openexpert-token');
+  const token = safeStorage.getItem('openexpert-token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function handle401(response: Response): void {
   if (response.status === 401) {
     // Clear token and redirect to login
-    localStorage.removeItem('openexpert-token');
+    safeStorage.removeItem('openexpert-token');
     window.location.href = '/login';
   }
 }

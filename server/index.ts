@@ -558,8 +558,31 @@ httpServer.listen(PORT, () => {
   }
 });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  db.close();
-  process.exit(0);
-});
+// OBS-05: Graceful shutdown — drain in-flight requests (30s), then close
+const DRAIN_TIMEOUT_MS = 30_000;
+
+function shutdown(signal: string): void {
+  console.log(`[server] ${signal} received — shutting down gracefully`);
+
+  // Stop accepting new connections
+  httpServer.close((closeErr) => {
+    if (closeErr) {
+      console.error('[server] Error closing HTTP server:', closeErr);
+    } else {
+      console.log('[server] HTTP server closed');
+    }
+    try { db.close(); } catch { /* ignore */ }
+    console.log('[server] Database closed — exiting');
+    process.exit(closeErr ? 1 : 0);
+  });
+
+  // Force-kill if drain takes too long
+  setTimeout(() => {
+    console.error(`[server] Drain timeout (${DRAIN_TIMEOUT_MS}ms) exceeded — forcing exit`);
+    try { db.close(); } catch { /* ignore */ }
+    process.exit(1);
+  }, DRAIN_TIMEOUT_MS).unref();
+}
+
+process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

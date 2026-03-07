@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import type { HealthStatus, ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import { fetchHealth } from '@/lib/api';
+import { safeStorage } from '@/lib/safe-storage';
 
 type Theme = 'dark' | 'light' | 'corporate';
 
 function getInitialTheme(): Theme {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('openexpert-theme');
+    const saved = safeStorage.getItem('openexpert-theme');
     if (saved === 'light' || saved === 'dark' || saved === 'corporate') {
       return saved;
     }
@@ -16,14 +17,14 @@ function getInitialTheme(): Theme {
 
 function getInitialSidebarCollapsed(): boolean {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('openexpert-sidebar-collapsed') === 'true';
+    return safeStorage.getItem('openexpert-sidebar-collapsed') === 'true';
   }
   return false;
 }
 
 export function getStoredDefaultModel(): ModelId {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('openexpert-default-model');
+    const saved = safeStorage.getItem('openexpert-default-model');
     if (
       saved === 'claude-opus-4-6' ||
       saved === 'claude-sonnet-4-5-20250929' ||
@@ -37,7 +38,7 @@ export function getStoredDefaultModel(): ModelId {
 
 export function getStoredDefaultThinking(): ThinkingLevel {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('openexpert-default-thinking');
+    const saved = safeStorage.getItem('openexpert-default-thinking');
     if (
       saved === 'quick' ||
       saved === 'think' ||
@@ -53,7 +54,7 @@ export function getStoredDefaultThinking(): ThinkingLevel {
 
 export function getStoredDefaultCreativity(): CreativityLevel {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('openexpert-default-creativity');
+    const saved = safeStorage.getItem('openexpert-default-creativity');
     if (saved === 'strict' || saved === 'balanced' || saved === 'creative') {
       return saved;
     }
@@ -77,7 +78,7 @@ export type AppMode = 'work' | 'school' | 'life';
 
 function getInitialAppMode(): AppMode {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('openexpert-app-mode');
+    const saved = safeStorage.getItem('openexpert-app-mode');
     if (saved === 'school') return 'school';
     if (saved === 'life') return 'life';
   }
@@ -86,7 +87,7 @@ function getInitialAppMode(): AppMode {
 
 function getInitialEmailNotificationsEnabled(): boolean {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('openexpert-email-notifications') === 'true';
+    return safeStorage.getItem('openexpert-email-notifications') === 'true';
   }
   return false;
 }
@@ -161,45 +162,45 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   toggleTheme: () => {
     const current = get().theme;
     const next: Theme = current === 'dark' ? 'light' : current === 'light' ? 'corporate' : 'dark';
-    localStorage.setItem('openexpert-theme', next);
+    safeStorage.setItem('openexpert-theme', next);
     applyThemeToDOM(next);
     set({ theme: next });
   },
 
   setTheme: (theme: Theme) => {
-    localStorage.setItem('openexpert-theme', theme);
+    safeStorage.setItem('openexpert-theme', theme);
     applyThemeToDOM(theme);
     set({ theme });
   },
 
   toggleSidebar: () => {
     const next = !get().sidebarCollapsed;
-    localStorage.setItem('openexpert-sidebar-collapsed', String(next));
+    safeStorage.setItem('openexpert-sidebar-collapsed', String(next));
     set({ sidebarCollapsed: next });
   },
 
   setDefaultModel: (model: ModelId) => {
-    localStorage.setItem('openexpert-default-model', model);
+    safeStorage.setItem('openexpert-default-model', model);
     set({ defaultModel: model });
   },
 
   setDefaultThinking: (thinking: ThinkingLevel) => {
-    localStorage.setItem('openexpert-default-thinking', thinking);
+    safeStorage.setItem('openexpert-default-thinking', thinking);
     set({ defaultThinking: thinking });
   },
 
   setDefaultCreativity: (creativity: CreativityLevel) => {
-    localStorage.setItem('openexpert-default-creativity', creativity);
+    safeStorage.setItem('openexpert-default-creativity', creativity);
     set({ defaultCreativity: creativity });
   },
 
   setEmailNotificationsEnabled: (enabled: boolean) => {
-    localStorage.setItem('openexpert-email-notifications', String(enabled));
+    safeStorage.setItem('openexpert-email-notifications', String(enabled));
     set({ emailNotificationsEnabled: enabled });
   },
 
   setAppMode: (mode: AppMode) => {
-    localStorage.setItem('openexpert-app-mode', mode);
+    safeStorage.setItem('openexpert-app-mode', mode);
     set({ appMode: mode });
   },
 }));
