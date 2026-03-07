@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GraduationCap, Eye, UserCheck, Crown, ArrowRight } from 'lucide-react';
+import { GraduationCap, Eye, UserCheck, Crown, ArrowRight, Brain, Loader2, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MODULES } from '@/lib/constants';
 
@@ -26,9 +26,16 @@ const stageInfo = {
   autonomous: { label: 'Autonomous', icon: Crown, color: 'text-adv-gold', bg: 'bg-adv-gold/10', nextAt: null },
 };
 
+interface NextStepsData {
+  nextActions: string[];
+  focusArea: string;
+  encouragement: string;
+}
+
 export default function ApprenticePage() {
   const [profiles, setProfiles] = useState<ApprenticeProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [nextStepsMap, setNextStepsMap] = useState<Record<string, { data: NextStepsData | null; loading: boolean; open: boolean }>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,6 +47,33 @@ export default function ApprenticePage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  async function fetchNextSteps(profile: ApprenticeProfile) {
+    const key = profile.id;
+    // Toggle open if already loaded
+    setNextStepsMap((prev) => {
+      const existing = prev[key];
+      if (existing?.data) return { ...prev, [key]: { ...existing, open: !existing.open } };
+      return { ...prev, [key]: { data: null, loading: true, open: true } };
+    });
+    // If already loaded, just toggled — no fetch needed
+    if (nextStepsMap[key]?.data) return;
+    try {
+      const r = await fetch('/api/ai-assist/apprentice-next-steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ moduleId: profile.module_id, stage: profile.stage, sessionsCompleted: profile.sessions_completed, qualityAvg: profile.quality_avg }),
+      });
+      if (r.ok) {
+        const data = await r.json() as NextStepsData;
+        setNextStepsMap((prev) => ({ ...prev, [key]: { data, loading: false, open: true } }));
+      } else {
+        setNextStepsMap((prev) => ({ ...prev, [key]: { data: null, loading: false, open: false } }));
+      }
+    } catch {
+      setNextStepsMap((prev) => ({ ...prev, [key]: { data: null, loading: false, open: false } }));
+    }
+  }
 
   const getModuleName = (moduleId: string) => {
     return MODULES.find((m) => m.id === moduleId)?.label ?? moduleId;
@@ -192,14 +226,51 @@ export default function ApprenticePage() {
                   )}
                 </div>
 
-                {/* Continue button */}
-                <button
-                  onClick={() => navigate(`/module/${profile.module_id}`)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-adv-dark-2 px-4 py-2 text-sm text-adv-teal transition-colors hover:bg-adv-card"
-                >
-                  Continue Learning
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/module/${profile.module_id}`)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-adv-dark-2 px-4 py-2 text-sm text-adv-teal transition-colors hover:bg-adv-card"
+                  >
+                    Continue Learning
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => void fetchNextSteps(profile)}
+                    disabled={nextStepsMap[profile.id]?.loading}
+                    className="flex items-center gap-1.5 rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-3 py-2 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+                    title="AI coaching: what to work on next"
+                  >
+                    {nextStepsMap[profile.id]?.loading
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <Brain className="h-3.5 w-3.5" />}
+                    What&apos;s next?
+                  </button>
+                </div>
+
+                {/* AI next steps panel */}
+                {nextStepsMap[profile.id]?.open && nextStepsMap[profile.id]?.data && (
+                  <div className="mt-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3 space-y-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Brain className="h-3.5 w-3.5 text-adv-teal" />
+                      <span className="text-xs font-semibold text-adv-teal">AI Coaching</span>
+                      <button onClick={() => setNextStepsMap((prev) => ({ ...prev, [profile.id]: { ...prev[profile.id], open: false } }))} className="ml-auto text-adv-gray hover:text-adv-off-white">
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-xs font-medium text-adv-off-white">{nextStepsMap[profile.id].data!.focusArea}</p>
+                    {nextStepsMap[profile.id].data!.nextActions.length > 0 && (
+                      <ul className="space-y-1">
+                        {nextStepsMap[profile.id].data!.nextActions.map((a, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-adv-off-white">
+                            <span className="text-adv-teal mt-0.5 shrink-0">→</span>{a}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="text-xs text-adv-gray-med italic">{nextStepsMap[profile.id].data!.encouragement}</p>
+                  </div>
+                )}
               </div>
             );
           })}

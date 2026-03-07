@@ -187,3 +187,60 @@ CREATE INDEX IF NOT EXISTS idx_datasets_session ON datasets(session_id);
 CREATE INDEX IF NOT EXISTS idx_datasets_expires ON datasets(expires_at);
 CREATE INDEX IF NOT EXISTS idx_datasets_created_by ON datasets(created_by);
 CREATE INDEX IF NOT EXISTS idx_datasets_name ON datasets(name);
+
+-- ── Counsel's Desk: legal research sessions ──────────────────────────────────
+CREATE TABLE IF NOT EXISTS legal_research_sessions (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  mode TEXT NOT NULL DEFAULT 'deep-dive',
+  expert_role TEXT DEFAULT 'eu-regulatory-lawyer',
+  research_questions TEXT DEFAULT '[]',
+  pinned_findings TEXT DEFAULT '[]',
+  citations TEXT DEFAULT '[]',
+  active_knowledge_packs TEXT DEFAULT '[]',
+  user_id TEXT DEFAULT 'default',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_legal_sessions_user ON legal_research_sessions(user_id, updated_at DESC);
+
+-- ── Compliance Gap Assessor: assessment sessions ──────────────────────────────
+CREATE TABLE IF NOT EXISTS gap_assessments (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  frameworks TEXT NOT NULL DEFAULT '[]',
+  scope_config TEXT NOT NULL DEFAULT '{}',
+  context_config TEXT NOT NULL DEFAULT '{}',
+  status TEXT DEFAULT 'draft' CHECK(status IN ('draft','assessing','scoring','synthesising','complete','paused')),
+  current_step INTEGER DEFAULT 1,
+  article_scores TEXT DEFAULT '{}',
+  capability_view TEXT,
+  board_summary TEXT,
+  roadmap TEXT,
+  session_id TEXT,
+  user_id TEXT DEFAULT 'default',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_gap_assessments_user ON gap_assessments(user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_gap_assessments_status ON gap_assessments(status);
+
+-- ── Compliance Gap Assessor: per-article findings ────────────────────────────
+CREATE TABLE IF NOT EXISTS gap_findings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  assessment_id TEXT NOT NULL REFERENCES gap_assessments(id) ON DELETE CASCADE,
+  framework TEXT NOT NULL,
+  article_id TEXT NOT NULL,
+  article_title TEXT,
+  requirement TEXT,
+  current_state TEXT,
+  score TEXT CHECK(score IN ('red','amber','yellow','green')),
+  priority TEXT CHECK(priority IN ('critical','high','medium','low')),
+  notes TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_gap_findings_assessment ON gap_findings(assessment_id);
+CREATE INDEX IF NOT EXISTS idx_gap_findings_framework ON gap_findings(assessment_id, framework);

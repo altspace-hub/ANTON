@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, Shield } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, Shield, Brain, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface ComplianceRule {
   id: number;
@@ -16,6 +16,10 @@ interface ComplianceRule {
   updated_at: string;
 }
 
+interface RuleSuggestion {
+  name: string; description: string; category: string; condition: string; severity: string; rationale: string;
+}
+
 export default function RulesManager() {
   const [rules, setRules] = useState<ComplianceRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +27,9 @@ export default function RulesManager() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedRule, setSelectedRule] = useState<ComplianceRule | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [suggestions, setSuggestions] = useState<RuleSuggestion[]>([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     fetchRules();
@@ -75,6 +82,19 @@ export default function RulesManager() {
     } catch (error) {
       console.error('Failed to delete rule:', error);
     }
+  }
+
+  async function suggestRules() {
+    setSuggestLoading(true);
+    setShowSuggestions(true);
+    try {
+      const r = await fetch('/api/ai-assist/compliance-suggest-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ existingRules: rules.map(r => ({ name: r.title, description: r.description })), goal: 'Improve AI output quality and governance' }),
+      });
+      if (r.ok) { const { suggestions: s } = await r.json(); setSuggestions(s as RuleSuggestion[]); }
+    } catch { /* ignore */ } finally { setSuggestLoading(false); }
   }
 
   function getAuthHeader(): Record<string, string> {
@@ -132,6 +152,16 @@ export default function RulesManager() {
         </select>
 
         <button
+          onClick={suggestRules}
+          disabled={suggestLoading}
+          className="flex items-center gap-2 px-3 py-2 border border-adv-teal/40 bg-adv-teal/10 text-adv-teal rounded-lg text-sm hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+          title="Let AI suggest new compliance rules based on your existing rules"
+        >
+          {suggestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+          AI Suggest
+        </button>
+
+        <button
           onClick={() => {
             setSelectedRule(null);
             setShowEditor(true);
@@ -142,6 +172,36 @@ export default function RulesManager() {
           New Rule
         </button>
       </div>
+
+      {/* AI Rule Suggestions */}
+      {showSuggestions && (
+        <div className="rounded-xl border border-adv-teal/30 bg-adv-teal-soft p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4 text-adv-teal" />
+              <span className="text-sm font-semibold text-adv-off-white">AI Rule Suggestions</span>
+            </div>
+            <button onClick={() => setShowSuggestions(false)} className="text-xs text-adv-gray hover:text-adv-off-white">Dismiss</button>
+          </div>
+          {suggestLoading && <p className="text-sm text-adv-gray animate-pulse">Generating suggestions…</p>}
+          {!suggestLoading && suggestions.length === 0 && <p className="text-sm text-adv-gray">No suggestions generated.</p>}
+          <div className="space-y-3">
+            {suggestions.map((s, i) => (
+              <div key={i} className="rounded-lg bg-adv-card border border-border p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield className="h-3.5 w-3.5 text-adv-teal" />
+                  <span className="text-sm font-medium text-adv-off-white">{s.name}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-adv-dark text-adv-gray capitalize">{s.category}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded capitalize ml-auto ${s.severity === 'error' ? 'text-adv-red' : 'text-adv-gold'}`}>{s.severity}</span>
+                </div>
+                <p className="text-xs text-adv-gray mb-1">{s.description}</p>
+                <p className="text-xs text-adv-off-white"><span className="text-adv-gray">Condition:</span> {s.condition}</p>
+                <p className="text-xs text-adv-gray-med mt-1 italic">{s.rationale}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Rules Table */}
       {loading ? (

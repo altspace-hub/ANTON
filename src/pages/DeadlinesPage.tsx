@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Calendar, Plus, AlertTriangle, Search } from 'lucide-react';
+import { Calendar, Plus, AlertTriangle, Search, Brain, Loader2, X } from 'lucide-react';
 import type { Deadline, DeadlineLabel, Project, ViewType, FilterType } from '../components/deadlines/types';
 import { apiGet, apiPost, apiDelete } from '../components/deadlines/types';
 import ViewSwitcher from '../components/deadlines/ViewSwitcher';
@@ -113,6 +113,25 @@ export default function DeadlinesPage() {
   const atRiskCount = deadlines.filter(d => d.status === 'at_risk').length;
   const urgentCount = overdueCount + atRiskCount;
 
+  // AI Priority Review state
+  const [aiReview, setAiReview] = useState<{ summary: string; orderedIds: string[]; flags: { id: string; flag: string; message: string }[]; recommendations: string[] } | null>(null);
+  const [aiReviewLoading, setAiReviewLoading] = useState(false);
+  const [showAiReview, setShowAiReview] = useState(false);
+
+  async function runAiPriorityReview() {
+    setAiReviewLoading(true);
+    setShowAiReview(true);
+    try {
+      const pending = deadlines.filter(d => d.status !== 'completed').slice(0, 30);
+      const r = await fetch('/api/ai-assist/deadline-prioritise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deadlines: pending.map(d => ({ id: d.id, title: d.title, due_date: d.due_date, priority: d.priority, status: d.status, description: d.description })) }),
+      });
+      if (r.ok) setAiReview(await r.json());
+    } catch { /* ignore */ } finally { setAiReviewLoading(false); }
+  }
+
   return (
     <div className="mx-auto max-w-5xl">
       {/* Header */}
@@ -141,6 +160,17 @@ export default function DeadlinesPage() {
           {/* View Switcher */}
           <ViewSwitcher active={view} onChange={setView} />
 
+          {/* AI Priority Review */}
+          <button
+            onClick={runAiPriorityReview}
+            disabled={aiReviewLoading || deadlines.length === 0}
+            className="flex items-center gap-2 rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-3 py-2 text-sm text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+            title="Let AI prioritise and flag your current deadlines"
+          >
+            {aiReviewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+            AI Priority Review
+          </button>
+
           {/* Add button */}
           <button
             onClick={() => setShowForm((v) => !v)}
@@ -151,6 +181,47 @@ export default function DeadlinesPage() {
           </button>
         </div>
       </div>
+
+      {/* AI Priority Review panel */}
+      {showAiReview && (
+        <div className="mb-4 rounded-xl border border-adv-teal/30 bg-adv-teal-soft p-4">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4 text-adv-teal shrink-0" />
+              <span className="text-sm font-semibold text-adv-off-white">AI Priority Review</span>
+            </div>
+            <button onClick={() => setShowAiReview(false)} className="text-adv-gray hover:text-adv-off-white"><X className="h-4 w-4" /></button>
+          </div>
+          {aiReviewLoading && <p className="text-sm text-adv-gray animate-pulse">Analysing your deadlines…</p>}
+          {aiReview && !aiReviewLoading && (
+            <div className="space-y-3">
+              <p className="text-sm text-adv-off-white">{aiReview.summary}</p>
+              {aiReview.flags.length > 0 && (
+                <div className="space-y-1">
+                  {aiReview.flags.map((f, i) => {
+                    const dl = deadlines.find(d => d.id === f.id);
+                    return (
+                      <div key={i} className={`flex items-start gap-2 rounded-lg px-3 py-2 text-xs ${f.flag === 'warning' ? 'bg-adv-gold/10 text-adv-gold' : 'bg-adv-blue/10 text-adv-blue'}`}>
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span><strong>{dl?.title ?? f.id}:</strong> {f.message}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {aiReview.recommendations.length > 0 && (
+                <ul className="space-y-1">
+                  {aiReview.recommendations.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-adv-off-white">
+                      <span className="text-adv-teal mt-0.5">→</span>{r}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Urgent summary bar */}
       {urgentCount > 0 && (

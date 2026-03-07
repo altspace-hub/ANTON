@@ -424,6 +424,85 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
   );
 }
 
+// ── AI assist mini-components ────────────────────────────────────────────────
+
+interface GuidedInputFieldSuggested {
+  id: string; type: string; label: string; description?: string; placeholder?: string; required?: boolean;
+  options?: { value: string; label: string }[];
+}
+
+function AiDraftPromptButton({ name, description, area, thinking, creativity, onDraft, disabled }: {
+  name: string; description: string; area: string; thinking: string; creativity: string;
+  onDraft: (prompt: string) => void; disabled?: boolean;
+}) {
+  const [loading, setLoading] = useState(false);
+  async function draft() {
+    setLoading(true);
+    try {
+      const r = await fetch('/api/ai-assist/module-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ name, description, area, thinking, creativity }),
+      });
+      if (r.ok) { const { prompt } = await r.json(); onDraft(prompt as string); }
+    } catch { /* ignore */ } finally { setLoading(false); }
+  }
+  return (
+    <button
+      onClick={draft}
+      disabled={disabled || loading}
+      className="flex items-center gap-1.5 rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-2.5 py-1 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors shrink-0"
+      title={disabled ? 'Enter a module name first' : 'Let AI draft the system prompt'}
+    >
+      {loading ? <span className="h-3 w-3 animate-spin rounded-full border border-adv-teal border-t-transparent" /> : <Sparkles className="h-3 w-3" />}
+      {loading ? 'Drafting…' : 'Draft with AI'}
+    </button>
+  );
+}
+
+function AiSuggestInputsButton({ name, description, systemPrompt, onSuggest }: {
+  name: string; description: string; systemPrompt: string;
+  onSuggest: (fields: GuidedInputField[]) => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  async function suggest() {
+    setLoading(true);
+    try {
+      const r = await fetch('/api/ai-assist/module-inputs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ name, description, systemPrompt }),
+      });
+      if (r.ok) {
+        const { fields } = await r.json() as { fields: GuidedInputFieldSuggested[] };
+        if (Array.isArray(fields)) {
+          const typed = fields.map(f => ({
+            id: f.id || `field_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            type: f.type as GuidedInputField['type'],
+            label: f.label || 'Untitled',
+            description: f.description,
+            placeholder: f.placeholder,
+            required: f.required ?? false,
+            options: f.options,
+          }));
+          onSuggest(typed);
+        }
+      }
+    } catch { /* ignore */ } finally { setLoading(false); }
+  }
+  return (
+    <button
+      onClick={suggest}
+      disabled={!name.trim() || loading}
+      className="flex items-center gap-1.5 rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-2.5 py-1 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors shrink-0"
+      title="Let AI suggest guided input questions for this module"
+    >
+      {loading ? <span className="h-3 w-3 animate-spin rounded-full border border-adv-teal border-t-transparent" /> : <Sparkles className="h-3 w-3" />}
+      {loading ? 'Suggesting…' : 'AI Suggest'}
+    </button>
+  );
+}
+
 function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () => void; initialData?: Partial<WizardData>; editingModuleId?: string }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -653,7 +732,18 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
         {/* Step: System Prompt */}
         {step === 1 && (
           <div>
-            <label className={labelCls}>System prompt — core instructions for Claude</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className={labelCls}>System prompt — core instructions for Claude</label>
+              <AiDraftPromptButton
+                name={data.name}
+                description={data.description}
+                area={data.area}
+                thinking={data.thinking}
+                creativity={data.creativity}
+                onDraft={(prompt) => set('system_prompt', prompt)}
+                disabled={!data.name.trim()}
+              />
+            </div>
             <textarea
               className={`${inputCls} resize-none font-mono text-xs`}
               rows={14}
@@ -894,11 +984,19 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
         {/* Step 7: Module Settings */}
         {step === 7 && (
           <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold text-adv-off-white">Module Settings</h3>
-              <p className="text-xs text-adv-gray mt-1">
-                Define questions that appear at the top of the module. Users fill them in before running — answers are sent to Claude as structured context.
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-adv-off-white">Module Settings</h3>
+                <p className="text-xs text-adv-gray mt-1">
+                  Define questions that appear at the top of the module. Users fill them in before running — answers are sent to Claude as structured context.
+                </p>
+              </div>
+              <AiSuggestInputsButton
+                name={data.name}
+                description={data.description}
+                systemPrompt={data.system_prompt}
+                onSuggest={(fields) => setData((prev) => ({ ...prev, guidedInputs: [...prev.guidedInputs, ...fields] }))}
+              />
             </div>
 
             <GuidedInputEditor

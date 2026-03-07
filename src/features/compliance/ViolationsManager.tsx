@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Filter, Brain, Loader2 } from 'lucide-react';
 
 interface Violation {
   id: number;
@@ -15,12 +15,21 @@ interface Violation {
   created_at: string;
 }
 
+interface ViolationExplanation {
+  plainEnglish: string;
+  impact: string;
+  fix: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
 export default function ViolationsManager() {
   const [violations, setViolations] = useState<Violation[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('open');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [selectedViolation, setSelectedViolation] = useState<Violation | null>(null);
+  const [explanation, setExplanation] = useState<ViolationExplanation | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
 
   useEffect(() => {
     fetchViolations();
@@ -44,6 +53,19 @@ export default function ViolationsManager() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function explainViolation(v: Violation) {
+    setExplanation(null);
+    setExplanationLoading(true);
+    try {
+      const r = await fetch('/api/ai-assist/compliance-explain-violation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ ruleName: `Rule #${v.rule_id}`, violationDetails: v.description, moduleId: v.affected_entity }),
+      });
+      if (r.ok) setExplanation(await r.json() as ViolationExplanation);
+    } catch { /* ignore */ } finally { setExplanationLoading(false); }
   }
 
   async function updateViolationStatus(id: number, status: string) {
@@ -173,13 +195,37 @@ export default function ViolationsManager() {
           <div className="bg-adv-card border border-border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto">
             <div className="flex items-start justify-between mb-4">
               <h2 className="text-lg font-semibold text-adv-white">Violation Details</h2>
-              <button
-                onClick={() => setSelectedViolation(null)}
-                className="text-adv-gray hover:text-adv-off-white transition-colors"
-              >
-                <XCircle className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => explainViolation(selectedViolation)}
+                  disabled={explanationLoading}
+                  className="flex items-center gap-1.5 rounded border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+                >
+                  {explanationLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
+                  {explanationLoading ? 'Explaining…' : 'AI Explain'}
+                </button>
+                <button
+                  onClick={() => { setSelectedViolation(null); setExplanation(null); }}
+                  className="text-adv-gray hover:text-adv-off-white transition-colors"
+                >
+                  <XCircle className="h-5 w-5" />
+                </button>
+              </div>
             </div>
+            {explanation && (
+              <div className="mb-4 rounded-lg border border-adv-teal/30 bg-adv-teal-soft p-4 space-y-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Brain className="h-4 w-4 text-adv-teal" />
+                  <span className="text-sm font-semibold text-adv-teal">AI Explanation</span>
+                </div>
+                <p className="text-sm text-adv-off-white">{explanation.plainEnglish}</p>
+                <p className="text-xs text-adv-gray"><strong className="text-adv-off-white">Impact:</strong> {explanation.impact}</p>
+                <div className="rounded bg-adv-teal/10 border border-adv-teal/20 px-3 py-2">
+                  <span className="text-xs text-adv-teal font-medium">Fix: </span>
+                  <span className="text-xs text-adv-off-white">{explanation.fix}</span>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>

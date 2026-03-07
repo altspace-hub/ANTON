@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Clock, CheckSquare, Square, GitCompare, Trash2, FileText, ArrowLeft } from 'lucide-react';
+import { Clock, CheckSquare, Square, GitCompare, Trash2, FileText, ArrowLeft, Brain, Loader2 } from 'lucide-react';
 import VersionDiffViewer from '../features/versions/VersionDiffViewer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -59,6 +59,10 @@ export default function VersionHistoryPage() {
   const [diffOldId, setDiffOldId] = useState<number | null>(null);
   const [diffNewId, setDiffNewId] = useState<number | null>(null);
 
+  // AI Changelog
+  const [changelog, setChangelog] = useState<{ summary: string; changes: { type: string; description: string }[]; significance: string; recommendation: string } | null>(null);
+  const [changelogLoading, setChangelogLoading] = useState(false);
+
   useEffect(() => {
     if (!entityId) {
       setError('No entity ID provided');
@@ -100,7 +104,6 @@ export default function VersionHistoryPage() {
     const ids = Array.from(selected);
     if (ids.length !== 2) return;
 
-    // Determine which is older/newer based on version_number
     const v1 = versions.find((v) => v.id === ids[0]);
     const v2 = versions.find((v) => v.id === ids[1]);
     if (!v1 || !v2) return;
@@ -109,6 +112,27 @@ export default function VersionHistoryPage() {
     setDiffOldId(oldId);
     setDiffNewId(newId);
     setShowDiff(true);
+    setChangelog(null);
+  }
+
+  async function generateChangelog() {
+    if (!diffOldId || !diffNewId) return;
+    setChangelogLoading(true);
+    try {
+      const [oldRes, newRes] = await Promise.all([
+        fetch(`/api/versions/${diffOldId}/content`, { headers: getAuthHeader() }),
+        fetch(`/api/versions/${diffNewId}/content`, { headers: getAuthHeader() }),
+      ]);
+      if (!oldRes.ok || !newRes.ok) return;
+      const { content: oldContent } = await oldRes.json() as { content: string };
+      const { content: newContent } = await newRes.json() as { content: string };
+      const r = await fetch('/api/ai-assist/version-changelog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ oldContent, newContent, entityType }),
+      });
+      if (r.ok) setChangelog(await r.json());
+    } catch { /* ignore */ } finally { setChangelogLoading(false); }
   }
 
   function handleDelete(id: number) {
@@ -255,6 +279,49 @@ export default function VersionHistoryPage() {
         </div>
       )}
 
+      {/* AI Changelog (shown below diff viewer) */}
+      {showDiff && diffOldId !== null && diffNewId !== null && (
+        <div className="mt-4 rounded-xl border border-adv-teal/20 bg-adv-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4 text-adv-teal" />
+              <span className="text-sm font-semibold text-adv-off-white">AI Changelog</span>
+            </div>
+            <button
+              onClick={generateChangelog}
+              disabled={changelogLoading}
+              className="flex items-center gap-1.5 rounded border border-adv-teal/40 bg-adv-teal/10 px-3 py-1 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+            >
+              {changelogLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
+              {changelogLoading ? 'Generating…' : 'Generate Changelog'}
+            </button>
+          </div>
+          {!changelog && !changelogLoading && (
+            <p className="text-sm text-adv-gray">Click "Generate Changelog" to get a plain-English summary of what changed between these versions.</p>
+          )}
+          {changelog && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-adv-off-white">{changelog.summary}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-adv-gray">Significance:</span>
+                <span className={`text-xs font-medium capitalize ${changelog.significance === 'major' ? 'text-adv-red' : changelog.significance === 'moderate' ? 'text-adv-gold' : 'text-adv-green'}`}>{changelog.significance}</span>
+              </div>
+              {changelog.changes.length > 0 && (
+                <ul className="space-y-1">
+                  {changelog.changes.map((c, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-adv-off-white">
+                      <span className={`shrink-0 mt-0.5 capitalize font-medium ${c.type === 'added' ? 'text-adv-green' : c.type === 'removed' ? 'text-adv-red' : 'text-adv-gold'}`}>{c.type}:</span>
+                      {c.description}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-xs text-adv-gray-med italic">{changelog.recommendation}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Diff viewer modal */}
       {showDiff && diffOldId !== null && diffNewId !== null && (
         <VersionDiffViewer
@@ -263,6 +330,7 @@ export default function VersionHistoryPage() {
           onClose={() => {
             setShowDiff(false);
             setSelected(new Set());
+            setChangelog(null);
           }}
         />
       )}

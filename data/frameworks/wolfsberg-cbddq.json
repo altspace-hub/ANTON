@@ -1,0 +1,33 @@
+{
+  "id": "wolfsberg-cbddq",
+  "name": "Wolfsberg CBDDQ — Correspondent Banking Due Diligence Questionnaire",
+  "shortName": "CBDDQ",
+  "reference": "Wolfsberg Group CBDDQ 2020",
+  "applicationDate": "2020-01-01",
+  "articleCount": 14,
+  "themes": [
+    "Entity Profile",
+    "AML Programme",
+    "Customer Due Diligence",
+    "Transaction Monitoring",
+    "Reporting",
+    "Sanctions",
+    "Correspondent Banking Controls"
+  ],
+  "articles": [
+    {"id":"S1","title":"Entity identification","theme":"Entity Profile","requirement":"Full legal name, jurisdiction, regulatory status, ownership structure, publicly traded status"},
+    {"id":"S2","title":"Business activities","theme":"Entity Profile","requirement":"Description of all products/services; customer segments; geographic footprint; business lines"},
+    {"id":"S3","title":"AML/CFT programme — foundation","theme":"AML Programme","requirement":"Documented AML/CFT policy approved by senior management; MLRO designation; programme adequacy"},
+    {"id":"S4","title":"AML/CFT programme — governance","theme":"AML Programme","requirement":"Board-level oversight; AML committee structure; annual AML risk review; programme testing"},
+    {"id":"S5","title":"AML/CFT programme — risk assessment","theme":"AML Programme","requirement":"Enterprise-wide ML/TF risk assessment; customer, product, channel, geography risk factors; documented"},
+    {"id":"S6","title":"Customer due diligence","theme":"Customer Due Diligence","requirement":"CDD programme covering onboarding, customer identification, verification, beneficial ownership, risk rating"},
+    {"id":"S7","title":"Customer risk rating","theme":"Customer Due Diligence","requirement":"Documented customer risk rating methodology; factors considered; high-risk escalation procedures"},
+    {"id":"S8","title":"PEP controls","theme":"Customer Due Diligence","requirement":"PEP identification; enhanced due diligence; senior management approval; ongoing monitoring"},
+    {"id":"S9","title":"Transaction monitoring","theme":"Transaction Monitoring","requirement":"TM system in place; scenario-based and/or rules-based; alert investigation procedures; tuning process"},
+    {"id":"S10","title":"Suspicious activity reporting","theme":"Reporting","requirement":"SAR/STR process; MLRO review; FIU reporting; tipping-off controls; documentation retention"},
+    {"id":"S11","title":"Sanctions","theme":"Sanctions","requirement":"Sanctions screening programme; list sources (OFAC, EU, UN, OFSI); real-time screening; match resolution"},
+    {"id":"S12","title":"Training","theme":"AML Programme","requirement":"AML/CFT training programme; role-specific training; frequency; tracking and attestation"},
+    {"id":"S13","title":"Correspondent banking — specific controls","theme":"Correspondent Banking Controls","requirement":"SWIFT/payments controls; nested account controls; payable-through account controls; de-risking policy"},
+    {"id":"S14","title":"Audit and testing","theme":"AML Programme","requirement":"Independent AML/CFT programme testing; audit findings remediation; regulat exam experience"}
+  ]
+}

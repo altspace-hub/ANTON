@@ -95,6 +95,11 @@ import { createSessionResumeRoutes } from './routes/session-resume.js';
 import { createInsightsRoutes } from './routes/insights.js';
 import { createOrgContextRoutes } from './routes/org-context.js';
 import { createKnowledgePacksRoutes } from './routes/knowledge-packs.js';
+import { createLegalResearchRoutes } from './routes/legal-research.js';
+import { createGapAssessmentsRoutes } from './routes/gap-assessments.js';
+import { createAiAssistRoutes } from './routes/ai-assist.js';
+import { createRoaringRoutes } from './routes/roaring.js';
+import { createDowJonesRoutes } from './routes/dowjones.js';
 import { createContinuityRoutes } from './routes/continuity.js';
 import { createWebhookListener } from './services/webhook-listener.js';
 import { setEventEmitter } from './services/event-emitter.js';
@@ -364,6 +369,11 @@ app.use('/api', createInsightsRoutes(db));           // Proactive Intelligence
 app.use('/api', createOrgContextRoutes(db));         // Org Context Layer (prompt layer 2a)
 app.use('/api', createContinuityRoutes(db));         // Org Continuity (key-person risk)
 app.use('/api', createKnowledgePacksRoutes(db));     // Regulatory Knowledge Packs
+app.use('/api', createLegalResearchRoutes(db, anthropic));   // Counsel's Desk — legal research sessions
+app.use('/api', createGapAssessmentsRoutes(db, anthropic)); // Compliance Gap Assessor
+app.use('/api', createAiAssistRoutes());                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
+app.use('/api', createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
+app.use('/api', createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));

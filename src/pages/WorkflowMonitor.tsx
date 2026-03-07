@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, Circle, XCircle, Loader2, AlertTriangle,
   ChevronDown, ChevronRight, Play, SkipForward, Ban, Edit3, Eye,
-  Clock,
+  Clock, Brain,
 } from 'lucide-react';
 import type { WorkflowDefinition, WorkflowStepType } from '@/lib/workflow-definitions';
 import CheckpointMemoryPanel from '../features/intelligence/CheckpointMemoryPanel';
@@ -118,6 +118,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
   const [modifyMode, setModifyMode] = useState(false);
   const [modifyText, setModifyText] = useState('{}');
   const [actionLoading, setActionLoading] = useState(false);
+  const [diagMap, setDiagMap] = useState<Record<number, { text: string | null; loading: boolean }>>({});
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -213,6 +214,26 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
       setError((err as Error).message);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const diagnoseStep = async (result: StepResult, stepLabel: string) => {
+    const idx = result.stepIndex;
+    setDiagMap((prev) => ({ ...prev, [idx]: { text: null, loading: true } }));
+    try {
+      const r = await fetch('/api/ai-assist/workflow-diagnose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stepLabel, errorMessage: result.error ?? 'Unknown error', stepType: 'workflow-step', input: result.input }),
+      });
+      if (r.ok) {
+        const data = await r.json() as { diagnosis: string; likelyCause: string; fix: string };
+        setDiagMap((prev) => ({ ...prev, [idx]: { text: `**${data.likelyCause}** — ${data.diagnosis}\n\n**Fix:** ${data.fix}`, loading: false } }));
+      } else {
+        setDiagMap((prev) => ({ ...prev, [idx]: { text: null, loading: false } }));
+      }
+    } catch {
+      setDiagMap((prev) => ({ ...prev, [idx]: { text: null, loading: false } }));
     }
   };
 
@@ -518,7 +539,22 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
                 <div className="border-t border-border px-4 py-3 space-y-2">
                   {result.error && (
                     <div className="rounded bg-adv-red/10 border border-adv-red/20 px-2 py-1">
-                      <p className="text-[10px] text-adv-red">{result.error}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[10px] text-adv-red">{result.error}</p>
+                        <button
+                          onClick={() => void diagnoseStep(result, step.label)}
+                          disabled={diagMap[idx]?.loading}
+                          className="shrink-0 flex items-center gap-1 rounded border border-adv-teal/40 bg-adv-teal/10 px-2 py-0.5 text-[10px] text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+                        >
+                          {diagMap[idx]?.loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
+                          Diagnose
+                        </button>
+                      </div>
+                      {diagMap[idx]?.text && (
+                        <div className="mt-2 rounded bg-adv-teal/5 border border-adv-teal/20 px-2 py-1.5 text-[10px] text-adv-off-white whitespace-pre-wrap">
+                          {diagMap[idx].text}
+                        </div>
+                      )}
                     </div>
                   )}
                   <JsonViewer data={result.input} label="Input" />

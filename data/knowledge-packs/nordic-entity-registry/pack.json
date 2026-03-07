@@ -1,0 +1,79 @@
+{
+  "pack_id": "nordic-entity-registry",
+  "name": "Nordic Entity Registry Integration",
+  "version": "1.0.0",
+  "source": "roaring_api",
+  "bundle_type": "live-data-connector",
+  "description": "Live Swedish company registry, beneficial ownership chains, and sanctions screening via Roaring API. Covers SE, NO, FI, DK entities. Data is fetched on-demand at session time — not stored in the pack.",
+  "regulatory_areas": ["KYC", "EDD", "BWRA", "Sanctions", "CDD"],
+  "jurisdictions": ["SE", "NO", "FI", "DK"],
+  "entities": [
+    {
+      "id": "roaring-connector-capability",
+      "type": "capability",
+      "name": "Roaring Entity Registry Connector",
+      "attributes": {
+        "capabilities": ["company_lookup", "ubo_chain", "board_members", "sanctions_screen", "financial_risk", "batch_screen"],
+        "data_sources": ["Bolagsverket (Swedish Companies Registry)", "Verklig_Huvdman (UBO Registry)", "EU Consolidated Sanctions", "UN Consolidated Sanctions", "Finansinspektionen PEP lists"],
+        "coverage": "Swedish registered entities + UBO chains up to 5 levels",
+        "latency": "~150-300ms per lookup",
+        "rate_limit": "100 req/min (sandbox), 1000 req/min (production)"
+      }
+    },
+    {
+      "id": "amlr-art-12-cdd",
+      "type": "regulatory_obligation",
+      "name": "AMLR Article 12 — CDD Measures",
+      "attributes": {
+        "obligation": "Obliged entities must apply CDD measures when establishing business relationships, including verification of identity and beneficial ownership.",
+        "roaring_mapping": "Roaring company lookup + UBO chain directly satisfies Art. 12(1)(b) — verification of beneficial owner identity",
+        "amlr_article": "12"
+      }
+    },
+    {
+      "id": "amlr-art-22-pep",
+      "type": "regulatory_obligation",
+      "name": "AMLR Article 22 — Enhanced Due Diligence for PEPs",
+      "attributes": {
+        "obligation": "Obliged entities must apply EDD to customers who are PEPs or whose beneficial owner is a PEP.",
+        "roaring_mapping": "Roaring UBO chain includes PEP flags for each node. PEP flag = automatic Art. 22 trigger.",
+        "amlr_article": "22"
+      }
+    },
+    {
+      "id": "amlr-art-40-ongoing",
+      "type": "regulatory_obligation",
+      "name": "AMLR Article 40 — Ongoing Monitoring",
+      "attributes": {
+        "obligation": "Obliged entities must continuously monitor business relationships and transactions.",
+        "roaring_mapping": "Roaring provides periodic refresh of UBO chains and sanctions status. Changes trigger re-assessment.",
+        "amlr_article": "40"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "source": "roaring-connector-capability",
+      "target": "amlr-art-12-cdd",
+      "type": "SATISFIES",
+      "weight": 0.9
+    },
+    {
+      "source": "roaring-connector-capability",
+      "target": "amlr-art-22-pep",
+      "type": "TRIGGERS_WHEN",
+      "weight": 0.95
+    },
+    {
+      "source": "roaring-connector-capability",
+      "target": "amlr-art-40-ongoing",
+      "type": "SUPPORTS",
+      "weight": 0.8
+    }
+  ],
+  "live_connector": "roaring",
+  "refresh_policy": "on-demand",
+  "prompt_injection": "When activated, ANTON will automatically query Roaring for any Swedish/Nordic company mentioned in FCP module sessions. The entity profile (company details, UBO chain, sanctions status, financial risk) is injected as Layer 2c into the system prompt.",
+  "created_at": "2026-03-07",
+  "author": "FutureChain AB"
+}

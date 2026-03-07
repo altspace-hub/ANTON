@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Zap, Search, X, ChevronDown, ChevronRight, BookOpen, Globe, BarChart3, MessageSquare, Code, Plus, Check, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Zap, Search, X, ChevronDown, ChevronRight, BookOpen, Globe, BarChart3, MessageSquare, Code, Plus, Check, Users, Brain, Loader2, ExternalLink, Package } from 'lucide-react';
 import { fetchSkills, fetchCommunitySkills, submitCommunitySkill } from '@/lib/api';
 
 interface Skill {
@@ -33,6 +34,59 @@ interface CommunitySkill {
 
 const COMMUNITY_CATEGORIES = ['Analysis', 'Document', 'Communication', 'Research', 'Technical'];
 
+// Maps skill tags → relevant module route (for "Open in module" quick-action)
+const TAG_TO_MODULE: Record<string, { label: string; path: string }> = {
+  'gap-analysis':      { label: 'Gap Analysis', path: '/module/gap-analysis' },
+  'amlr':              { label: 'Gap Analysis', path: '/module/gap-analysis' },
+  'risk-assessment':   { label: 'Risk Assessment', path: '/module/risk-assessment' },
+  'bwra':              { label: 'Risk Assessment', path: '/module/risk-assessment' },
+  'sanctions':         { label: 'Sanctions Advisory', path: '/module/sanctions-advisory' },
+  'screening':         { label: 'Sanctions Advisory', path: '/module/sanctions-advisory' },
+  'document-creation': { label: 'Document Creation', path: '/module/document-creation' },
+  'policy':            { label: 'Document Creation', path: '/module/document-creation' },
+  'sar':               { label: 'Investigation Support', path: '/module/investigation-support' },
+  'str':               { label: 'Investigation Support', path: '/module/investigation-support' },
+  'investigation':     { label: 'Investigation Support', path: '/module/investigation-support' },
+  'edd':               { label: 'Gap Analysis', path: '/module/gap-analysis' },
+  'data-management':   { label: 'Data Management', path: '/module/data-management' },
+  'amla':              { label: 'Data Management', path: '/module/data-management' },
+  'regulatory':        { label: 'Regulatory Monitor', path: '/module/regulatory-monitor' },
+  'training':          { label: 'Training Content', path: '/module/training-content' },
+};
+
+// Maps skill tags → knowledge packs that work well with this skill
+const TAG_TO_PACKS: Record<string, Array<{ id: string; label: string }>> = {
+  'amlr':        [{ id: 'amlr-2024', label: 'AMLR 2024' }, { id: 'amla-amld6', label: 'AMLA / AMLD6' }],
+  'gap-analysis': [{ id: 'amlr-2024', label: 'AMLR 2024' }, { id: 'eba-aml-guidelines', label: 'EBA AML Guidelines' }],
+  'sanctions':   [{ id: 'eu-sanctions', label: 'EU Sanctions' }, { id: 'unscr-sanctions', label: 'UNSCR Sanctions' }],
+  'screening':   [{ id: 'eu-sanctions', label: 'EU Sanctions' }],
+  'amla':        [{ id: 'amla-amld6', label: 'AMLA / AMLD6' }, { id: 'amla-rts-tracker', label: 'AMLA RTS Tracker' }],
+  'edd':         [{ id: 'wolfsberg-principles', label: 'Wolfsberg Principles' }, { id: 'eba-aml-guidelines', label: 'EBA AML Guidelines' }],
+  'sar':         [{ id: 'wolfsberg-principles', label: 'Wolfsberg Principles' }],
+  'policy':      [{ id: 'amlr-2024', label: 'AMLR 2024' }, { id: 'eba-aml-guidelines', label: 'EBA AML Guidelines' }],
+  'bwra':        [{ id: 'fatf-recommendations', label: 'FATF Recommendations' }],
+  'regulatory':  [{ id: 'amla-rts-tracker', label: 'AMLA RTS Tracker' }],
+};
+
+function resolveSkillModule(tags: string[]): { label: string; path: string } | null {
+  for (const tag of tags) {
+    const match = TAG_TO_MODULE[tag.toLowerCase()];
+    if (match) return match;
+  }
+  return null;
+}
+
+function resolveSkillPacks(tags: string[]): Array<{ id: string; label: string }> {
+  const seen = new Set<string>();
+  const result: Array<{ id: string; label: string }> = [];
+  for (const tag of tags) {
+    for (const pack of TAG_TO_PACKS[tag.toLowerCase()] ?? []) {
+      if (!seen.has(pack.id)) { seen.add(pack.id); result.push(pack); }
+    }
+  }
+  return result.slice(0, 4);
+}
+
 function SubmitSkillModal({ onClose, onSubmitted }: { onClose: () => void; onSubmitted: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -40,8 +94,27 @@ function SubmitSkillModal({ onClose, onSubmitted }: { onClose: () => void; onSub
   const [promptInstruction, setPromptInstruction] = useState('');
   const [tags, setTags] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  async function draftWithAI() {
+    if (!name.trim()) { setError('Enter a name first'); return; }
+    setDraftLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/ai-assist/skill-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intent: name.trim(), description: description.trim(), category }),
+      });
+      if (r.ok) {
+        const data = await r.json() as { promptInstruction: string; description?: string };
+        if (data.promptInstruction) setPromptInstruction(data.promptInstruction);
+        if (data.description && !description.trim()) setDescription(data.description);
+      }
+    } catch { /* ignore */ } finally { setDraftLoading(false); }
+  }
 
   async function handleSubmit() {
     if (!name.trim() || !description.trim() || !promptInstruction.trim()) {
@@ -97,7 +170,18 @@ function SubmitSkillModal({ onClose, onSubmitted }: { onClose: () => void; onSub
               </select>
             </div>
             <div>
-              <label className={labelCls}>Prompt Instruction *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className={labelCls}>Prompt Instruction *</label>
+                <button
+                  type="button"
+                  onClick={draftWithAI}
+                  disabled={draftLoading || !name.trim()}
+                  className="flex items-center gap-1 rounded border border-adv-teal/40 bg-adv-teal/10 px-2 py-0.5 text-[11px] text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+                >
+                  {draftLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
+                  {draftLoading ? 'Drafting…' : 'Draft with AI'}
+                </button>
+              </div>
               <textarea className={`${inputCls} resize-none font-mono text-xs`} rows={5} placeholder="The actual prompt text that will be injected as a skill layer..." value={promptInstruction} onChange={(e) => setPromptInstruction(e.target.value)} />
             </div>
             <div>
@@ -295,11 +379,29 @@ export default function SkillsLibrary() {
                           <pre className="text-xs text-adv-gray leading-relaxed whitespace-pre-wrap font-sans">
                             {skill.prompt}
                           </pre>
-                          <div className="mt-3 flex gap-2 text-[11px] text-adv-gray-med">
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-adv-gray-med">
                             <span>ID: <code className="text-adv-teal">{skill.id}</code></span>
                             <span>·</span>
                             <span>Use in SkillAttacher on any module or Open Chat session</span>
+                            {resolveSkillModule(skill.tags || []) && (
+                              <Link
+                                to={resolveSkillModule(skill.tags || [])!.path}
+                                className="ml-1 flex items-center gap-1 rounded-md border border-adv-teal/30 bg-adv-teal/10 px-2 py-0.5 text-adv-teal hover:bg-adv-teal/20 transition-colors"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                Open in {resolveSkillModule(skill.tags || [])!.label}
+                              </Link>
+                            )}
                           </div>
+                          {resolveSkillPacks(skill.tags || []).length > 0 && (
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <Package className="h-3 w-3 text-adv-gray-med shrink-0" />
+                              <span className="text-[11px] text-adv-gray-med">Related packs:</span>
+                              {resolveSkillPacks(skill.tags || []).map(p => (
+                                <span key={p.id} className="rounded-full border border-adv-teal/20 bg-adv-teal/5 px-2 py-0.5 text-[10px] text-adv-teal">{p.label}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

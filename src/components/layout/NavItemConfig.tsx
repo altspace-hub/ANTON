@@ -41,6 +41,11 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'community-calendar', label: 'Community Calendar', category: 'tools' },
 
   // Tools
+  { id: 'counsels-desk', label: "Counsel's Desk", category: 'tools' },
+  { id: 'gap-assessment', label: 'Gap Assessor', category: 'tools' },
+  { id: 'roaring', label: 'Roaring Entity Registry', category: 'tools' },
+  { id: 'dj-screening', label: 'DJ Risk & Compliance', category: 'tools' },
+  { id: 'entity-intelligence', label: 'Entity Intelligence', category: 'tools' },
   { id: 'ngo', label: 'NGO & Social Impact', category: 'tools' },
   { id: 'trades', label: 'Trades & Service Workers', category: 'tools' },
   { id: 'pe-vc', label: 'PE/VC Hub', category: 'tools' },

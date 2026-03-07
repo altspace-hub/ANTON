@@ -95,6 +95,17 @@ const InnovationRadarPage = lazy(() => import('./pages/InnovationRadarPage'));
 // Strategic Improvements — Orchestration
 const OrchestrationDashboard = lazy(() => import('./pages/OrchestrationDashboard'));
 
+// FCP Interactive Modes
+const CounselsDesk = lazy(() => import('./pages/CounselsDesk'));
+const GapAssessmentHub = lazy(() => import('./pages/GapAssessmentHub'));
+const GapAssessmentWizard = lazy(() => import('./pages/GapAssessmentWizard'));
+
+// Data Partnerships — Roaring + Dow Jones
+const RoaringSearchPage = lazy(() => import('./pages/RoaringSearchPage'));
+const DJScreeningPage = lazy(() => import('./pages/DJScreeningPage'));
+const PartnershipDemo = lazy(() => import('./pages/PartnershipDemo'));
+const EntityIntelligencePage = lazy(() => import('./pages/EntityIntelligencePage'));
+
 // News Tab pages
 const NewsPage = lazy(() => import('./pages/news/NewsPage'));
 const NewsFeedPage = lazy(() => import('./pages/news/NewsFeedPage'));
@@ -376,6 +387,15 @@ export default function App() {
           {/* PE/VC Hub + Innovation Radar */}
           <Route path="/pe-vc" element={<PEVCHubPage />} />
           <Route path="/innovation-radar" element={<InnovationRadarPage />} />
+          {/* FCP Interactive Modes */}
+          <Route path="/counsels-desk" element={<CounselsDesk />} />
+          <Route path="/gap-assessment" element={<GapAssessmentHub />} />
+          <Route path="/gap-assessment/:id" element={<GapAssessmentWizard />} />
+          {/* Data Partnerships — Roaring + Dow Jones */}
+          <Route path="/roaring" element={<RoaringSearchPage />} />
+          <Route path="/dj-screening" element={<DJScreeningPage />} />
+          <Route path="/entity-intelligence" element={<EntityIntelligencePage />} />
+          <Route path="/demo/data-partnerships" element={<PartnershipDemo />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AlertTriangle,
   Info,
@@ -7,7 +7,11 @@ import {
   GitMerge,
   Zap,
   ArrowUpRight,
-  CheckCircle2
+  CheckCircle2,
+  Brain,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { DetectedPattern } from './types';
 import { formatDistanceToNow } from 'date-fns';
@@ -40,9 +44,40 @@ const SEVERITY_BADGE_STYLES = {
   positive: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
 };
 
+interface AiAnalysis {
+  explanation: string;
+  urgency: 'low' | 'medium' | 'high';
+  actions: string[];
+}
+
 export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardProps) {
   const Icon = PATTERN_ICONS[pattern.pattern_type];
   const affectedEntities = pattern.affected_entities ? JSON.parse(pattern.affected_entities) : [];
+  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+
+  async function runAnalysis() {
+    setAnalysisLoading(true);
+    setAnalysisOpen(true);
+    try {
+      const r = await fetch('/api/ai-assist/pattern-analyse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patternType: pattern.pattern_type,
+          title: pattern.title,
+          description: pattern.description,
+          severity: pattern.severity,
+          evidenceCount: pattern.evidence_count,
+          affectedEntities,
+        }),
+      });
+      if (r.ok) setAiAnalysis(await r.json() as AiAnalysis);
+    } catch { /* ignore */ } finally { setAnalysisLoading(false); }
+  }
+
+  const urgencyColor = { low: 'text-adv-gray', medium: 'text-adv-gold', high: 'text-adv-red' };
 
   const relativeTime = formatDistanceToNow(new Date(pattern.detected_at), { addSuffix: true });
 
@@ -84,6 +119,15 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
         </div>
 
         <div className="flex gap-2">
+          <button
+            onClick={aiAnalysis ? () => setAnalysisOpen(v => !v) : runAnalysis}
+            disabled={analysisLoading}
+            className="px-3 py-1.5 text-sm rounded border border-adv-teal/30 bg-adv-teal/10 text-adv-teal hover:bg-adv-teal/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            title="Get AI analysis of this pattern"
+          >
+            {analysisLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
+            {analysisLoading ? 'Analysing…' : aiAnalysis ? (analysisOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />) : 'Analyse'}
+          </button>
           {onInvestigate && pattern.status === 'active' && (
             <button
               onClick={onInvestigate}
@@ -104,6 +148,28 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
         </div>
       </div>
 
+      {aiAnalysis && analysisOpen && (
+        <div className="mt-3 pt-3 border-t border-adv-teal/20 space-y-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Brain className="w-3.5 h-3.5 text-adv-teal" />
+            <span className="text-xs font-medium text-adv-teal">AI Analysis</span>
+            <span className={`text-xs font-medium ml-auto ${urgencyColor[aiAnalysis.urgency] ?? 'text-adv-gray'}`}>
+              {aiAnalysis.urgency.toUpperCase()} urgency
+            </span>
+          </div>
+          <p className="text-sm text-adv-off-white">{aiAnalysis.explanation}</p>
+          {aiAnalysis.actions.length > 0 && (
+            <ul className="space-y-1">
+              {aiAnalysis.actions.map((a, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-adv-off-white">
+                  <span className="text-adv-teal mt-0.5">→</span>
+                  {a}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {pattern.status !== 'active' && (
         <div className="mt-3 pt-3 border-t border-adv-gray-med/20">
           <p className="text-xs text-adv-gray">

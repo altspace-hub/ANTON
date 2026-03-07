@@ -11,6 +11,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronRight,
+  Brain,
 } from 'lucide-react';
 import { MODULES } from '@/lib/constants';
 import { getModuleFeedbackStats, exportQualityBaselineAnton } from '@/lib/api';
@@ -49,18 +50,53 @@ interface FeedbackStats {
   recentComments: { rating: number; comment: string; created_at: string }[];
 }
 
+interface CoachingResult {
+  headline: string;
+  tips: { area: string; tip: string }[];
+  nextRun: string;
+}
+
 function ReasoningScoreRow({
   score,
   reasoning,
   hasReasoning,
   getScoreColor,
+  moduleId,
 }: {
   score: QualityScore;
   reasoning: { strengths?: string[]; weaknesses?: string[]; improvementSuggestion?: string } | null;
   hasReasoning: boolean;
   getScoreColor: (s: number) => string;
+  moduleId: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [coaching, setCoaching] = useState<CoachingResult | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [showCoaching, setShowCoaching] = useState(false);
+
+  async function getCoaching() {
+    setCoachLoading(true);
+    setShowCoaching(true);
+    try {
+      const r = await fetch('/api/ai-assist/quality-coaching', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          moduleId,
+          scores: {
+            overall: score.score_overall,
+            completeness: score.score_completeness,
+            accuracy: score.score_accuracy,
+            structure: score.score_structure,
+            actionability: score.score_actionability,
+            citations: score.score_citations,
+          },
+          reasoning,
+        }),
+      });
+      if (r.ok) setCoaching(await r.json() as CoachingResult);
+    } catch { /* ignore */ } finally { setCoachLoading(false); }
+  }
 
   return (
     <div className="rounded-lg bg-adv-dark-2 overflow-hidden">
@@ -85,6 +121,15 @@ function ReasoningScoreRow({
               Regression
             </span>
           )}
+          <button
+            onClick={coaching ? () => setShowCoaching(v => !v) : getCoaching}
+            disabled={coachLoading}
+            className="flex items-center gap-1 rounded border border-adv-teal/30 bg-adv-teal/10 px-2 py-1 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-40"
+            title="Get AI coaching to improve quality"
+          >
+            {coachLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
+            {coachLoading ? '…' : 'Coach'}
+          </button>
           {hasReasoning && (
             <button
               onClick={() => setExpanded((v) => !v)}
@@ -98,6 +143,27 @@ function ReasoningScoreRow({
         </div>
       </div>
 
+      {showCoaching && coaching && (
+        <div className="border-t border-adv-teal/20 px-4 pb-3 pt-2 bg-adv-teal-soft/30 space-y-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Brain className="h-3.5 w-3.5 text-adv-teal" />
+            <span className="text-xs font-semibold text-adv-teal">AI Coaching</span>
+          </div>
+          <p className="text-xs font-medium text-adv-off-white">{coaching.headline}</p>
+          <ul className="space-y-1">
+            {coaching.tips.map((t, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-adv-off-white">
+                <span className="text-adv-teal mt-0.5 capitalize shrink-0">{t.area}:</span>
+                {t.tip}
+              </li>
+            ))}
+          </ul>
+          <div className="rounded bg-adv-teal/10 border border-adv-teal/20 px-3 py-2">
+            <span className="text-xs text-adv-teal font-medium">Next run: </span>
+            <span className="text-xs text-adv-off-white italic">{coaching.nextRun}</span>
+          </div>
+        </div>
+      )}
       {expanded && hasReasoning && reasoning && (
         <div className="border-t border-border/50 px-4 pb-3 pt-2 space-y-2">
           {reasoning.strengths && reasoning.strengths.length > 0 && (
@@ -541,6 +607,7 @@ export default function QualityPage() {
                             reasoning={reasoning}
                             hasReasoning={!!hasReasoning}
                             getScoreColor={getScoreColor}
+                            moduleId={selectedModuleId ?? ''}
                           />
                         );
                       })}

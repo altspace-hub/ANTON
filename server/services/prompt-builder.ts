@@ -390,3 +390,11 @@ ${structureRef.description}`;
 
   return '';
 }
+
+// ── Layer 2c: Roaring Entity Data ─────────────────────────────────────────────
+// Called when a module session includes a Roaring entity profile (KYC, EDD, BWRA, SAR modules)
+export { buildRoaringLayer } from './roaring-connector.js';
+
+// ── Layer 2d: Dow Jones Screening Data ────────────────────────────────────────
+// Called when a module session includes DJ screening results (sanctions-advisory, edd, SAR modules)
+export { buildDJScreeningLayer } from './dowjones-connector.js';

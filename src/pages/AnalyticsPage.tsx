@@ -6,6 +6,8 @@ import {
   DollarSign,
   Zap,
   Layers,
+  Brain,
+  Loader2,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -160,6 +162,8 @@ export default function AnalyticsPage() {
   const [moduleUsage, setModuleUsage] = useState<ModuleUsage[]>([]);
   const [costTrend, setCostTrend] = useState<CostPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [narrative, setNarrative] = useState<string | null>(null);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('openexpert-token');
@@ -178,6 +182,24 @@ export default function AnalyticsPage() {
       setLoading(false);
     });
   }, []);
+
+  async function generateNarrative() {
+    if (!overview) return;
+    setNarrativeLoading(true);
+    const token = localStorage.getItem('openexpert-token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    try {
+      const r = await fetch('/api/ai-assist/analytics-narrative', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ overview, topModules: moduleUsage.slice(0, 5), costTrend: costTrend.slice(-7) }),
+      });
+      if (r.ok) {
+        const data = await r.json() as { narrative: string };
+        setNarrative(data.narrative);
+      }
+    } catch { /* ignore */ } finally { setNarrativeLoading(false); }
+  }
 
   // ROI calculation
   const hoursPerSession = 4;
@@ -206,11 +228,32 @@ export default function AnalyticsPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-adv-teal-dim">
           <BarChart2 className="h-5 w-5 text-adv-teal" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold text-adv-off-white">Usage Analytics</h1>
           <p className="text-sm text-adv-gray">Track your openEXPERT usage, cost, and ROI</p>
         </div>
+        <button
+          onClick={generateNarrative}
+          disabled={narrativeLoading || loading || !overview}
+          className="flex items-center gap-2 rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-3 py-2 text-sm text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+          title="Let AI summarise your usage patterns in plain English"
+        >
+          {narrativeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+          Narrate
+        </button>
       </div>
+
+      {/* AI narrative panel */}
+      {narrative && (
+        <div className="rounded-xl border border-adv-teal/30 bg-adv-teal-soft p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Brain className="h-4 w-4 text-adv-teal" />
+            <span className="text-sm font-semibold text-adv-off-white">Usage Summary</span>
+            <button onClick={() => setNarrative(null)} className="ml-auto text-xs text-adv-gray hover:text-adv-off-white transition-colors">Dismiss</button>
+          </div>
+          <p className="text-sm text-adv-off-white leading-relaxed">{narrative}</p>
+        </div>
+      )}
 
       {/* Overview cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

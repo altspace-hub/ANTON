@@ -772,6 +772,76 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </NavLinkWithStar>
 
         <NavLinkWithStar
+          to="/counsels-desk"
+          navId="counsels-desk"
+          title={sidebarCollapsed ? "Counsel's Desk" : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('counsels-desk')}
+          isHidden={hiddenNavItems.has('counsels-desk')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Scale className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && "Counsel's Desk"}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/gap-assessment"
+          navId="gap-assessment"
+          title={sidebarCollapsed ? 'Gap Assessor' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('gap-assessment')}
+          isHidden={hiddenNavItems.has('gap-assessment')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <ClipboardCheck className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Gap Assessor'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/roaring"
+          navId="roaring"
+          title={sidebarCollapsed ? 'Roaring Entity Registry' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('roaring')}
+          isHidden={hiddenNavItems.has('roaring')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Building2 className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Roaring Registry'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/dj-screening"
+          navId="dj-screening"
+          title={sidebarCollapsed ? 'DJ Risk & Compliance' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('dj-screening')}
+          isHidden={hiddenNavItems.has('dj-screening')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Shield className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'DJ Screening'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/entity-intelligence"
+          navId="entity-intelligence"
+          title={sidebarCollapsed ? 'Entity Intelligence' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('entity-intelligence')}
+          isHidden={hiddenNavItems.has('entity-intelligence')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <ScanSearch className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Entity Intelligence'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
           to="/school"
           navId="school"
           title={sidebarCollapsed ? t('nav.school', 'ANTON School') : undefined}

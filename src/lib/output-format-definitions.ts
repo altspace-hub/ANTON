@@ -65,39 +65,6 @@ Structure:
   },
 
   {
-    id: 'legal-brief',
-    label: 'Legal Brief',
-    icon: 'Scale',
-    description: 'Formal legal memorandum structure: issue, rule, analysis, conclusion (IRAC)',
-    category: 'strategic',
-    exportFormats: ['docx', 'pdf'],
-    estimatedLength: '3-8 pages',
-    audience: 'Legal counsel, Compliance',
-    promptInstruction: `Structure your response as a formal Legal Brief using IRAC methodology:
-# LEGAL BRIEF
-
-**Matter:** [Case/matter reference]
-**Date:** [Current date]
-**Prepared by:** ANTON AI Legal Analysis
-
-## ISSUE(S)
-State each legal question precisely.
-
-## APPLICABLE LAW & RULES
-Cite specific regulations, directives, articles, case law. Full citations required.
-
-## ANALYSIS
-Apply each rule to the facts methodically. Address counterarguments. Note jurisdictional variations.
-
-## CONCLUSION
-Clear, definitive conclusions per issue. Confidence level (High/Medium/Low). Caveats.
-
-## RECOMMENDED ACTIONS
-Specific next steps with rationale.
-
-*Note: This analysis is for informational purposes. Consult qualified legal counsel for legal advice.*`,
-  },
-  {
     id: 'board-pack',
     label: 'Board Pack',
     icon: 'Briefcase',
@@ -1451,6 +1418,31 @@ Structure:
 **You're done when:** [Clear completion criteria]
 
 **Next steps / Related guides:** [What to do after completing this]`,
+  },
+
+  // ── LEGAL ──────────────────────────────────────────────────
+  {
+    id: 'legal-brief',
+    label: 'Legal Brief (IRAC)',
+    icon: 'Scale',
+    description: 'Formal legal analysis: Issue → Rule → Application → Conclusion. Complete citations, jurisdictional framing, and uncertainty flags.',
+    category: 'analytical',
+    exportFormats: ['md', 'docx', 'pdf'],
+    estimatedLength: '3-8 pages',
+    audience: 'Lawyers, compliance counsel, legal teams',
+    promptInstruction: `## OUTPUT FORMAT: LEGAL BRIEF (IRAC)
+Produce a formal legal brief using strict IRAC structure. Every assertion must carry a citation.
+
+Structure:
+1. **MATTER** — One sentence: the legal question being analysed and the jurisdiction(s) in scope
+2. **ISSUE(S)** — Each distinct legal question stated as a numbered question. Where multiple issues exist, list all before analysing any.
+3. **APPLICABLE RULES** — Per issue: cite the exact legal instrument (Regulation No., Article, Paragraph, Recital, OJ reference where applicable), relevant supervisory guidance (EBA Q&As, RTS, ITS), and any applicable CJEU or national case law. Use full formal citations: e.g., "Regulation (EU) 2024/1624 of the European Parliament and of the Council, Art. 15(3)(b), OJ L, 19.6.2024."
+4. **APPLICATION** — Apply each rule to the specific facts/scenario. Where the law is ambiguous or contested, present all plausible interpretations with their supporting authority. Explicitly state which interpretation appears most defensible and why. Flag where supervisory practice deviates from statutory text.
+5. **CONCLUSION** — Clear statement per issue: (a) the most defensible legal position, (b) residual legal risk level (Low / Medium / High / Critical), (c) recommended action.
+6. **UNCERTAINTY FLAGS** — List any areas where: the law is unsettled, supervisory guidance is absent or conflicting, national transposition varies, or the analysis depends on contested facts.
+7. **BIBLIOGRAPHY** — All citations in full, ordered by instrument type (EU Regulations → Directives → EBA/ESMA guidelines → National law → Case law → Academic).
+
+Style: Precise, authoritative, neutral. Use passive voice for legal propositions. Flag every ambiguity. Do not express opinions not grounded in cited authority.`,
   },
 ];
 

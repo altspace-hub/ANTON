@@ -18,7 +18,10 @@ import {
   Loader2,
   Download,
   RefreshCw,
+  Brain,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Insight {
   id: string;
@@ -49,6 +52,8 @@ export function InsightsTab() {
   const [distribution, setDistribution] = useState<AtomDistribution>({});
   const [topEntities, setTopEntities] = useState<TopEntity[]>([]);
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month' | 'all'>('week');
+  const [brief, setBrief] = useState<string | null>(null);
+  const [generatingBrief, setGeneratingBrief] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -89,6 +94,36 @@ export function InsightsTab() {
     } finally {
       setGeneratingInsights(false);
     }
+  }
+
+  async function generateBrief() {
+    setGeneratingBrief(true);
+    try {
+      const [summaryRes, patternsRes] = await Promise.all([
+        fetch('/api/intelligence/summary'),
+        fetch('/api/patterns?status=active&limit=10'),
+      ]);
+      const summaryData = await summaryRes.json();
+      const patternsData = await patternsRes.json();
+      const r = await fetch('/api/ai-assist/intelligence-brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          totalAtoms: summaryData.totalAtoms,
+          totalEntities: summaryData.totalEntities,
+          totalPatterns: summaryData.totalPatterns,
+          criticalPatterns: summaryData.criticalPatterns,
+          distribution,
+          topEntities,
+          patterns: patternsData.patterns || [],
+          timeRange,
+        }),
+      });
+      if (r.ok) {
+        const { brief: b } = await r.json();
+        setBrief(b as string);
+      }
+    } catch { /* ignore */ } finally { setGeneratingBrief(false); }
   }
 
   async function exportAtoms(format: 'json' | 'csv') {
@@ -219,6 +254,33 @@ export function InsightsTab() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* AI Narrative Brief */}
+      <div className="bg-adv-card border border-adv-teal/20 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-adv-white flex items-center gap-2">
+            <Brain className="w-4 h-4 text-adv-teal" />
+            Intelligence Brief
+          </h3>
+          <button
+            onClick={generateBrief}
+            disabled={generatingBrief || totalAtoms === 0}
+            className="flex items-center gap-2 px-3 py-1 text-sm rounded bg-adv-teal text-white hover:bg-adv-teal-dark disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {generatingBrief ? <><Loader2 className="w-4 h-4 animate-spin" />Generating…</> : <><Brain className="w-4 h-4" />Generate Brief</>}
+          </button>
+        </div>
+        {!brief && !generatingBrief && (
+          <p className="text-center py-6 text-adv-gray text-sm">
+            Click "Generate Brief" for a plain-English narrative of what your intelligence data means and what to do next.
+          </p>
+        )}
+        {brief && (
+          <div className="prose prose-invert prose-sm max-w-none text-adv-off-white">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
+          </div>
+        )}
       </div>
 
       {/* AI Insights */}

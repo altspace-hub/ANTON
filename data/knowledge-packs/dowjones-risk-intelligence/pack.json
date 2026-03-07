@@ -1,0 +1,106 @@
+{
+  "pack_id": "dowjones-risk-intelligence",
+  "name": "Dow Jones Risk & Compliance Intelligence",
+  "version": "1.0.0",
+  "source": "dowjones_api",
+  "bundle_type": "live-data-connector",
+  "description": "Global sanctions lists, PEP database (1.4M+ entries), adverse media intelligence from 35,000+ sources, and state-owned entity (SOE) data via Dow Jones Risk & Compliance API. Real-time screening, historical data, and ongoing monitoring.",
+  "regulatory_areas": ["Sanctions", "PEP", "KYC", "EDD", "AdverseMedia", "SOE", "AML"],
+  "jurisdictions": ["GLOBAL"],
+  "coverage": {
+    "sanctions_lists": "50+ including OFAC SDN, EU Consolidated, UN Consolidated, OFSI, SECO",
+    "pep_database": "1.4M+ entries across 250+ countries",
+    "adverse_media_sources": "35,000+ global sources",
+    "soe_entities": "100,000+ government-linked entities",
+    "enforcement_actions": "45,000+ regulatory enforcement actions"
+  },
+  "entities": [
+    {
+      "id": "dj-sanctions-coverage",
+      "type": "capability",
+      "name": "Dow Jones Consolidated Sanctions Coverage",
+      "attributes": {
+        "lists_covered": ["OFAC_SDN", "OFAC_Non-SDN", "EU_CONSOLIDATED", "UN_CONSOLIDATED", "OFSI", "SECO", "DFAT_AU", "MAS_SG", "HMT_UK"],
+        "update_frequency": "Real-time (within minutes of official list updates)",
+        "amlr_mapping": "Satisfies AMLR Art. 16(1) — screening against designated persons lists"
+      }
+    },
+    {
+      "id": "dj-pep-database",
+      "type": "capability",
+      "name": "Dow Jones Global PEP Database",
+      "attributes": {
+        "total_entries": "1,400,000+",
+        "tiers": "T1 (heads of state, senior politicians), T2 (regional/municipal officials), T3 (state enterprise directors)",
+        "family_coverage": "Immediate family members and known associates included",
+        "amlr_mapping": "Required for AMLR Art. 22 PEP identification and Art. 21 senior management approval process"
+      }
+    },
+    {
+      "id": "dj-adverse-media",
+      "type": "capability",
+      "name": "Dow Jones Adverse Media Intelligence",
+      "attributes": {
+        "sources": "35,000+ global media sources including regulatory press, national newspapers, financial news wires",
+        "categories": ["Financial Crime", "Fraud", "Bribery & Corruption", "Tax Evasion", "Organised Crime", "Terrorism", "Trafficking", "Environmental"],
+        "languages": "Multiple — AI-processed and translated",
+        "amlr_mapping": "Supports AMLR Art. 13 — risk-based CDD, reputation risk assessment"
+      }
+    },
+    {
+      "id": "amlr-art-16-screening",
+      "type": "regulatory_obligation",
+      "name": "AMLR Article 16 — Screening Obligations",
+      "attributes": {
+        "obligation": "Obliged entities must screen customers and UBOs against sanctions lists before establishing business relationships and on an ongoing basis.",
+        "dj_mapping": "DJ real-time screening API directly satisfies Art. 16(1). Webhook monitoring satisfies ongoing screening requirement.",
+        "amlr_article": "16"
+      }
+    },
+    {
+      "id": "amlr-art-22-pep-edd",
+      "type": "regulatory_obligation",
+      "name": "AMLR Article 22 — PEP Enhanced Due Diligence",
+      "attributes": {
+        "obligation": "Obliged entities must apply EDD to domestic and foreign PEPs, including heads of international organisations. EDD applies for a minimum of 12 months after a PEP ceases to hold the function.",
+        "dj_mapping": "DJ PEP database covers all three tiers. Tier history (from/to dates) supports the 12-month look-back requirement.",
+        "amlr_article": "22"
+      }
+    },
+    {
+      "id": "amlr-art-21-approval",
+      "type": "regulatory_obligation",
+      "name": "AMLR Article 21 — Senior Management Approval for PEPs",
+      "attributes": {
+        "obligation": "Senior management approval required before establishing business relationships with PEPs.",
+        "dj_mapping": "DJ PEP tier 1 flag auto-triggers senior management approval workflow in ANTON engagement system.",
+        "amlr_article": "21"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "source": "dj-sanctions-coverage",
+      "target": "amlr-art-16-screening",
+      "type": "SATISFIES",
+      "weight": 0.95
+    },
+    {
+      "source": "dj-pep-database",
+      "target": "amlr-art-22-pep-edd",
+      "type": "SATISFIES",
+      "weight": 0.9
+    },
+    {
+      "source": "dj-pep-database",
+      "target": "amlr-art-21-approval",
+      "type": "TRIGGERS_WHEN",
+      "weight": 0.85
+    }
+  ],
+  "live_connector": "dowjones",
+  "refresh_policy": "real-time",
+  "prompt_injection": "When activated, ANTON will screen any entity name mentioned in FCP module sessions against DJ sanctions, PEP, and adverse media databases. Results are injected as Layer 2d into the system prompt. High-risk matches trigger automatic Counsel's Desk escalation.",
+  "created_at": "2026-03-07",
+  "author": "FutureChain AB"
+}

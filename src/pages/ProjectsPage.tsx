@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FolderOpen, Plus, Trash2, Pencil, Check, X, Clock, MessageSquare, ChevronDown, ChevronRight, Link2, Unlink, FileText, StickyNote, Users, BarChart3 } from 'lucide-react';
+import { FolderOpen, Plus, Trash2, Pencil, Check, X, Clock, MessageSquare, ChevronDown, ChevronRight, Link2, Unlink, FileText, StickyNote, Users, BarChart3, Brain, Loader2 } from 'lucide-react';
 import { fetchProjects, createProject, deleteProject, updateProject, fetchProject, fetchSessions, assignSessionToProject } from '@/lib/api';
 import { MODULES, AREAS } from '@/lib/constants';
 import type { Session } from '@/lib/types';
@@ -78,11 +78,24 @@ const PROJECT_TEMPLATES = [
   { id: 'regulatory-response', name: 'Regulatory Response', description: 'Respond to a regulatory finding, inspection, or supervisory enquiry.' },
 ];
 
+interface ScaffoldData {
+  description: string;
+  recommendedModules: { id: string; reason: string }[];
+  suggestedDeadlines: { title: string; dayOffset: number }[];
+}
+
+function getAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem('openexpert-token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [scaffoldLoading, setScaffoldLoading] = useState(false);
+  const [scaffoldData, setScaffoldData] = useState<ScaffoldData | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
@@ -111,12 +124,30 @@ export default function ProjectsPage() {
       .catch(() => setStatsLoading(false));
   }, [activeTab, expandedProjectId]);
 
+  const runAiScaffold = async () => {
+    if (!newName.trim()) return;
+    setScaffoldLoading(true);
+    try {
+      const r = await fetch('/api/ai-assist/project-scaffold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ name: newName.trim(), goal: newDesc.trim(), availableModuleIds: MODULES.map((m) => m.id) }),
+      });
+      if (r.ok) {
+        const data = await r.json() as ScaffoldData;
+        setScaffoldData(data);
+        if (data.description && !newDesc.trim()) setNewDesc(data.description);
+      }
+    } catch { /* ignore */ } finally { setScaffoldLoading(false); }
+  };
+
   const handleCreate = async () => {
     if (!newName.trim()) return;
     const project = await createProject({ name: newName.trim(), description: newDesc.trim() || undefined });
     setProjects((prev) => [project, ...prev]);
     setNewName('');
     setNewDesc('');
+    setScaffoldData(null);
     setShowNew(false);
   };
 
@@ -230,8 +261,48 @@ export default function ProjectsPage() {
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Description (optional)"
             rows={2}
-            className="mb-3 w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+            className="mb-2 w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
           />
+          <button
+            onClick={runAiScaffold}
+            disabled={scaffoldLoading || !newName.trim()}
+            className="mb-3 flex items-center gap-1.5 rounded border border-adv-teal/40 bg-adv-teal/10 px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+          >
+            {scaffoldLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
+            {scaffoldLoading ? 'Scaffolding…' : 'AI Scaffold'}
+          </button>
+          {scaffoldData && (
+            <div className="mb-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3 space-y-2">
+              {scaffoldData.recommendedModules.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-medium text-adv-teal mb-1">Recommended modules</p>
+                  <div className="flex flex-wrap gap-1">
+                    {scaffoldData.recommendedModules.map((m) => {
+                      const mod = MODULES.find((x) => x.id === m.id);
+                      return (
+                        <span key={m.id} className="rounded-full bg-adv-teal/10 border border-adv-teal/20 px-2 py-0.5 text-[10px] text-adv-teal" title={m.reason}>
+                          {mod?.shortLabel || m.id}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {scaffoldData.suggestedDeadlines.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-medium text-adv-off-white mb-1">Suggested milestones</p>
+                  <ul className="space-y-0.5">
+                    {scaffoldData.suggestedDeadlines.map((d, i) => (
+                      <li key={i} className="text-[10px] text-adv-gray">
+                        <span className="text-adv-off-white">{d.title}</span>
+                        {d.dayOffset > 0 && <span className="text-adv-gray-med"> · day {d.dayOffset}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex gap-2">
             <button
               onClick={handleCreate}
