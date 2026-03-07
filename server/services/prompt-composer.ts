@@ -112,6 +112,10 @@ export interface PromptComposerConfig {
   orgContextPrompt?: string;
   /** Layer 2b: Active regulatory knowledge pack summary — built by buildKnowledgePackLayer() */
   knowledgePackPrompt?: string;
+  /** Layer 2c: Roaring entity intelligence (live Swedish registry, UBO, sanctions) */
+  roaringEntityPrompt?: string;
+  /** Layer 2d: Dow Jones screening data (sanctions, PEP, adverse media) */
+  djScreeningPrompt?: string;
   /** Layer 4a: Session resume context (snapshot summary, decisions, next steps) — built by buildResumeContextLayer() */
   resumeContextPrompt?: string;
 }
@@ -305,6 +309,12 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   // Layer 2b: Active Regulatory Knowledge Packs — structured regulatory entity context
   if (config.knowledgePackPrompt?.trim()) parts.push(config.knowledgePackPrompt.trim());
 
+  // Layer 2c: Roaring entity intelligence (Swedish registry, UBO chain, sanctions)
+  if (config.roaringEntityPrompt?.trim()) parts.push(config.roaringEntityPrompt.trim());
+
+  // Layer 2d: Dow Jones screening data (global sanctions, PEP, adverse media)
+  if (config.djScreeningPrompt?.trim()) parts.push(config.djScreeningPrompt.trim());
+
   // Layer 3: Area Context — domain landscape, regulatory framework, terminology
   const areaId = config.areaId;
   if (areaId) {
@@ -426,6 +436,12 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
 
   // Layer 2b: Active Regulatory Knowledge Packs
   if (config.knowledgePackPrompt?.trim()) staticParts.push(config.knowledgePackPrompt.trim());
+
+  // Layer 2c: Roaring entity intelligence
+  if (config.roaringEntityPrompt?.trim()) staticParts.push(config.roaringEntityPrompt.trim());
+
+  // Layer 2d: Dow Jones screening data
+  if (config.djScreeningPrompt?.trim()) staticParts.push(config.djScreeningPrompt.trim());
 
   // Layer 3: Area Context
   if (config.areaId) {

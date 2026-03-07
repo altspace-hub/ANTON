@@ -2692,6 +2692,26 @@ export function initDatabase(): Database.Database {
   if (!userSchoolCols.includes('guardian_invite_code'))
     db.exec("ALTER TABLE users ADD COLUMN guardian_invite_code TEXT");
 
+  // Migration 020: Data Partnership Connectors (Roaring + Dow Jones)
+  const dataConnectorsExists = db.prepare(
+    "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='data_connectors'"
+  ).get() as { c: number };
+  if (dataConnectorsExists.c === 0) {
+    const migration020Path = path.join(__dirname, 'migrations', '020_data_partnerships.sql');
+    if (fs.existsSync(migration020Path)) {
+      const migration020 = fs.readFileSync(migration020Path, 'utf-8');
+      db.exec(migration020);
+    }
+  } else {
+    // Tables already exist — ensure indexes are present on existing DBs (idempotent)
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_screens_connector ON entity_screens(connector)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_screens_org_number ON entity_screens(org_number)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_screens_cache_lookup ON entity_screens(org_number, connector, cached_until)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_screens_screened_at ON entity_screens(screened_at)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_entity_monitoring_status ON entity_monitoring(connector, status)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_monitoring_alerts_entity ON monitoring_alerts(entity_monitoring_id)`);
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }
