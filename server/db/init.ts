@@ -2733,6 +2733,46 @@ export function initDatabase(): Database.Database {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_proposals_source ON orchestrator_proposals(signal_source, created_at DESC)`);
   }
 
+  // Migration 022: ANTON Orchestrator Phase 2 — Proposal Manager (orchestrator_executions)
+  const execTableExists = db.prepare(
+    "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_executions'"
+  ).get() as { c: number };
+  if (execTableExists.c === 0) {
+    const migration022Path = path.join(__dirname, 'migrations', '022_orchestrator_phase2.sql');
+    if (fs.existsSync(migration022Path)) {
+      const migration022 = fs.readFileSync(migration022Path, 'utf-8');
+      db.exec(migration022);
+      console.log('[db] Migration 022: orchestrator_executions table created');
+    }
+  } else {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_executions_proposal ON orchestrator_executions(proposal_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_executions_initiated ON orchestrator_executions(initiated_at DESC)`);
+  }
+
+  // Migration 023: ANTON Orchestrator Reasoning Trails
+  const trailTableExists = db.prepare(
+    "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_reasoning_trails'"
+  ).get() as { c: number };
+  if (trailTableExists.c === 0) {
+    const migration023Path = path.join(__dirname, 'migrations', '023_orchestrator_reasoning_trails.sql');
+    if (fs.existsSync(migration023Path)) {
+      const migration023 = fs.readFileSync(migration023Path, 'utf-8');
+      db.exec(migration023);
+      console.log('[db] Migration 023: Orchestrator reasoning trail tables created');
+    }
+  } else {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_trails_created ON orchestrator_reasoning_trails(created_at DESC)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_entries_trail  ON orchestrator_reasoning_entries(trail_id, sequence_number)`);
+  }
+
+  // Add reasoning_transparency_level config column (0=outcome only, 1=summaries, 2=full trace)
+  try {
+    const orchConfigCols = db.prepare("PRAGMA table_info(orchestrator_config)").all() as Array<{ name: string }>;
+    if (orchConfigCols.length > 0 && !orchConfigCols.some(c => c.name === 'reasoning_transparency_level')) {
+      db.exec('ALTER TABLE orchestrator_config ADD COLUMN reasoning_transparency_level INTEGER NOT NULL DEFAULT 1');
+    }
+  } catch { /* table may not exist on fresh installs — 021 SQL handles it */ }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }

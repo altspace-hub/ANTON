@@ -625,6 +625,108 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
   return { advanced: false };
 }
 
+// ── Reasoning Trail ───────────────────────────────────────────────────────────
+
+export type ReasoningEntryType =
+  | 'signal_detection' | 'signal_assessment' | 'context_gathering'
+  | 'proposal_reasoning' | 'module_selection' | 'input_configuration'
+  | 'execution_decision' | 'quality_assessment' | 'chain_reasoning'
+  | 'escalation_reasoning' | 'pattern_recognition' | 'pdp_alignment'
+  | 'completion_summary';
+
+export interface ReasoningEntryInput {
+  entry_type: ReasoningEntryType;
+  title: string;
+  content: string;
+  thinking_content?: string;
+  confidence?: number;
+  duration_ms?: number;
+  metadata?: Record<string, unknown>;
+}
+
+/** Create a new reasoning trail for a heartbeat cycle or approval action */
+export function createReasoningTrail(
+  db: Database.Database,
+  trigger_type: 'heartbeat' | 'on_demand' | 'approval' | 'rejection' | 'auto_execution' | 'chain',
+  transparency_level: number = 1
+): string {
+  const id = randomUUID();
+  db.prepare(`
+    INSERT INTO orchestrator_reasoning_trails (id, trigger_type, transparency_level)
+    VALUES (?, ?, ?)
+  `).run(id, trigger_type, transparency_level);
+  return id;
+}
+
+/** Append a reasoning entry to an active trail */
+export function addTrailEntry(
+  db: Database.Database,
+  trailId: string,
+  entry: ReasoningEntryInput
+): void {
+  try {
+    const seq = (db.prepare(
+      'SELECT COUNT(*) as c FROM orchestrator_reasoning_entries WHERE trail_id = ?'
+    ).get(trailId) as { c: number }).c + 1;
+
+    db.prepare(`
+      INSERT INTO orchestrator_reasoning_entries
+        (id, trail_id, entry_type, sequence_number, title, content,
+         thinking_content, confidence, duration_ms, metadata)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      randomUUID(),
+      trailId,
+      entry.entry_type,
+      seq,
+      entry.title,
+      entry.content,
+      entry.thinking_content ?? null,
+      entry.confidence ?? null,
+      entry.duration_ms ?? null,
+      entry.metadata ? JSON.stringify(entry.metadata) : null
+    );
+
+    db.prepare(`
+      UPDATE orchestrator_reasoning_trails SET total_entries = ? WHERE id = ?
+    `).run(seq, trailId);
+  } catch (err) {
+    // Trail recording must never break the main cycle
+    console.warn('[orchestrator] Trail entry write failed (non-fatal):', err);
+  }
+}
+
+/** Finalise a reasoning trail */
+export function completeTrail(
+  db: Database.Database,
+  trailId: string,
+  status: 'completed' | 'failed' | 'abandoned',
+  durationMs: number,
+  linkages?: { heartbeat_id?: string; briefing_id?: string; proposal_id?: string; execution_id?: string }
+): void {
+  try {
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE orchestrator_reasoning_trails SET
+        status = ?, duration_ms = ?, completed_at = ?,
+        heartbeat_id  = COALESCE(?, heartbeat_id),
+        briefing_id   = COALESCE(?, briefing_id),
+        proposal_id   = COALESCE(?, proposal_id),
+        execution_id  = COALESCE(?, execution_id)
+      WHERE id = ?
+    `).run(
+      status, durationMs, now,
+      linkages?.heartbeat_id ?? null,
+      linkages?.briefing_id ?? null,
+      linkages?.proposal_id ?? null,
+      linkages?.execution_id ?? null,
+      trailId
+    );
+  } catch (err) {
+    console.warn('[orchestrator] Trail complete write failed (non-fatal):', err);
+  }
+}
+
 // ── Full Heartbeat Cycle ──────────────────────────────────────────────────────
 
 export async function runHeartbeatCycle(
@@ -632,7 +734,7 @@ export async function runHeartbeatCycle(
   anthropic: AnthropicSDK,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'heartbeat',
   forceBriefing: boolean = false
-): Promise<{ action: 'none' | 'briefing_generated'; briefingId?: string; signalCount: number }> {
+): Promise<{ action: 'none' | 'briefing_generated'; briefingId?: string; signalCount: number; trailId?: string }> {
   const config = getOrchestratorConfig(db);
 
   if (config.fully_disabled || config.orchestrator_paused) {
@@ -642,17 +744,69 @@ export async function runHeartbeatCycle(
   const start = Date.now();
   const since = new Date(Date.now() - (period === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000);
 
+  // Start reasoning trail
+  const triggerType = period === 'on_demand' ? 'on_demand' : 'heartbeat';
+  const trailId = createReasoningTrail(db, triggerType, (config as OrchestratorConfig & { reasoning_transparency_level?: number }).reasoning_transparency_level ?? 1);
+
   let signals: PlatformSignal[] = [];
   let action: 'none' | 'briefing_generated' = 'none';
   let briefingId: string | undefined;
+  let heartbeatId: string | undefined;
   let error: string | undefined;
 
   try {
+    // Step 1: Aggregate signals
+    const signalStart = Date.now();
     signals = await aggregateSignals(db, since);
+    addTrailEntry(db, trailId, {
+      entry_type: 'signal_detection',
+      title: `${signals.length} platform signals detected`,
+      content: signals.length === 0
+        ? 'No signals detected across all 9 platform sources.'
+        : `Aggregated ${signals.length} signals from platform sources.\n\nTop signals:\n${signals.slice(0, 5).map(s => `- [${s.source}] urgency=${s.urgency.toFixed(2)}: ${s.summary}`).join('\n')}`,
+      duration_ms: Date.now() - signalStart,
+      metadata: {
+        total_signals: signals.length,
+        significant_signals: signals.filter(s => s.urgency >= 0.6).length,
+        sources_with_signals: [...new Set(signals.map(s => s.source))],
+      },
+    });
+
+    // Step 2: Assess significance
+    const assessStart = Date.now();
     const significant = forceBriefing || (await assessSignificance(signals, anthropic));
+    addTrailEntry(db, trailId, {
+      entry_type: 'signal_assessment',
+      title: significant ? 'Signals assessed as significant — briefing warranted' : 'Signals assessed as routine — no briefing needed',
+      content: significant
+        ? `Assessment result: SIGNIFICANT. ${forceBriefing ? 'Force-briefing requested.' : `${signals.filter(s => s.urgency >= 0.7).length} high-urgency signals and/or ≥3 moderate signals detected.`}`
+        : `Assessment result: ROUTINE. ${signals.length} signals detected but none meet the significance threshold individually or collectively.`,
+      confidence: significant ? 0.9 : 0.8,
+      duration_ms: Date.now() - assessStart,
+      metadata: { significant, forced: forceBriefing, signal_count: signals.length },
+    });
 
     if (significant || period !== 'heartbeat') {
+      // Step 3: Generate briefing + proposals
+      const briefingStart = Date.now();
+      addTrailEntry(db, trailId, {
+        entry_type: 'proposal_reasoning',
+        title: `Generating ${period} briefing with proposal recommendations`,
+        content: `Calling ${config.briefing_model} to analyse ${signals.length} signals and generate actionable proposals.\n\nSignal composition:\n${[...new Set(signals.map(s => s.source))].map(src => `- ${src}: ${signals.filter(s => s.source === src).length} signals`).join('\n')}`,
+        metadata: { model: config.briefing_model, signal_count: signals.length, period },
+      });
+
       const { content, proposals } = await generateBriefing(signals, anthropic, config.briefing_model, period);
+
+      addTrailEntry(db, trailId, {
+        entry_type: 'completion_summary',
+        title: `Briefing generated — ${proposals.length} proposals`,
+        content: `Briefing generation complete.\n\nProposals generated: ${proposals.length}\n${proposals.slice(0, 5).map((p, i) => `${i + 1}. [${p.action_type}] ${p.proposed_action} (confidence: ${Math.round(p.confidence_score * 100)}%)`).join('\n')}`,
+        confidence: proposals.length > 0 ? proposals.reduce((a, p) => a + p.confidence_score, 0) / proposals.length : 0,
+        duration_ms: Date.now() - briefingStart,
+        metadata: { proposals_count: proposals.length, action_types: [...new Set(proposals.map(p => p.action_type))] },
+      });
+
       briefingId = saveBriefing(db, {
         period,
         content,
@@ -666,15 +820,22 @@ export async function runHeartbeatCycle(
   } catch (err) {
     error = String(err);
     console.error('[orchestrator] Heartbeat cycle error:', err);
+    addTrailEntry(db, trailId, {
+      entry_type: 'completion_summary',
+      title: 'Cycle failed with error',
+      content: `Error during heartbeat cycle: ${error}`,
+      metadata: { error },
+    });
   }
 
   // Log heartbeat
+  heartbeatId = randomUUID();
   db.prepare(`
     INSERT INTO orchestrator_heartbeats
       (id, signals_checked, signals_significant, action_taken, duration_ms, error_message, status)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(
-    randomUUID(),
+    heartbeatId,
     signals.length,
     signals.filter(s => s.urgency >= 0.6).length,
     action,
@@ -683,10 +844,16 @@ export async function runHeartbeatCycle(
     error ? 'error' : 'ok'
   );
 
+  // Complete trail
+  completeTrail(db, trailId, error ? 'failed' : 'completed', Date.now() - start, {
+    heartbeat_id: heartbeatId,
+    briefing_id: briefingId,
+  });
+
   // Check stage progression daily
   if (period === 'daily' || period === 'on_demand') {
     checkStageProgression(db);
   }
 
-  return { action, briefingId, signalCount: signals.length };
+  return { action, briefingId, signalCount: signals.length, trailId };
 }

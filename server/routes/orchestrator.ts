@@ -19,10 +19,11 @@
  */
 
 import { Router, type Request, type Response } from 'express';
+import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import type AnthropicSDK from '@anthropic-ai/sdk';
 import { requireAuth } from '../middleware/auth.js';
-import { runHeartbeatCycle } from '../services/orchestrator-engine.js';
+import { runHeartbeatCycle, createReasoningTrail, addTrailEntry, completeTrail } from '../services/orchestrator-engine.js';
 
 export function createOrchestratorRoutes(db: Database.Database, anthropic: AnthropicSDK | null): Router {
   const router = Router();
@@ -294,6 +295,224 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       `).run(now);
 
       res.json({ ok: true, stage: 1, reset: true });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Phase 2: Approve a proposal (creates orchestrator_execution) ────────────
+  router.post('/orchestrator/proposals/:id/approve', requireAuth, (req: Request, res: Response) => {
+    try {
+      const proposal = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id) as
+        | { id: string; status: string; proposed_action: string; action_type: string; confidence_score: number } | undefined;
+      if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
+
+      const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
+        | { current_stage: number } | undefined;
+      if (!stage || stage.current_stage < 2) {
+        return res.status(403).json({ error: 'Proposal execution requires Stage 2 (Proposal Manager) or higher' });
+      }
+
+      const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
+      const { workflow_run_id, notes } = req.body as { workflow_run_id?: string; notes?: string };
+
+      const executionId = randomUUID();
+      db.prepare(`
+        INSERT INTO orchestrator_executions
+          (id, proposal_id, workflow_run_id, org_id, initiated_by, initiated_at, human_notes)
+        VALUES (?, ?, ?, ?, 'human_approved', datetime('now'), ?)
+      `).run(executionId, proposal.id, workflow_run_id ?? null, null, notes ?? null);
+
+      // Update proposal status to approved
+      db.prepare(`
+        UPDATE orchestrator_proposals SET
+          status = 'approved', decided_at = datetime('now'), decided_by = ?
+        WHERE id = ?
+      `).run(user, proposal.id);
+
+      // Create reasoning trail for this approval action
+      const trailId = createReasoningTrail(db, 'approval');
+      addTrailEntry(db, trailId, {
+        entry_type: 'execution_decision',
+        title: `Proposal approved by ${user}`,
+        content: `Human approval received for proposal.\n\nProposed action: ${proposal.proposed_action}\nAction type: ${proposal.action_type}\nConfidence: ${Math.round(proposal.confidence_score * 100)}%\n${notes ? `\nApprover notes: ${notes}` : ''}`,
+        confidence: 1.0,
+        metadata: { proposal_id: proposal.id, execution_id: executionId, approved_by: user },
+      });
+      completeTrail(db, trailId, 'completed', 0, { proposal_id: proposal.id, execution_id: executionId });
+
+      const execution = db.prepare('SELECT * FROM orchestrator_executions WHERE id = ?').get(executionId);
+      res.status(201).json({ execution, trailId });
+    } catch (err) {
+      console.error('[orchestrator] approve error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Phase 2: Reject a proposal ───────────────────────────────────────────
+  router.post('/orchestrator/proposals/:id/reject', requireAuth, (req: Request, res: Response) => {
+    try {
+      const proposal = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id) as
+        | { id: string; status: string } | undefined;
+      if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
+
+      const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
+      const { reason } = req.body as { reason?: string };
+
+      db.prepare(`
+        UPDATE orchestrator_proposals SET
+          status = 'rejected', human_rating = 'wrong',
+          human_feedback = ?, decided_at = datetime('now'), decided_by = ?
+        WHERE id = ?
+      `).run(reason ?? null, user, proposal.id);
+
+      // Update stage metrics (rejection = negative signal)
+      const existing = db.prepare('SELECT human_rating FROM orchestrator_proposals WHERE id = ?').get(proposal.id) as { human_rating: string | null } | undefined;
+      if (!existing?.human_rating) {
+        db.prepare(`
+          UPDATE orchestrator_stage SET
+            proposals_rated = proposals_rated + 1,
+            proposals_irrelevant_or_wrong = proposals_irrelevant_or_wrong + 1,
+            updated_at = datetime('now')
+          WHERE id = 'default'
+        `).run();
+      }
+
+      // Create reasoning trail for rejection
+      const trailId = createReasoningTrail(db, 'rejection');
+      addTrailEntry(db, trailId, {
+        entry_type: 'execution_decision',
+        title: `Proposal rejected by ${user}`,
+        content: `Proposal rejected.${reason ? `\nReason: ${reason}` : ''}`,
+        confidence: 1.0,
+        metadata: { proposal_id: proposal.id, rejected_by: user },
+      });
+      completeTrail(db, trailId, 'completed', 0, { proposal_id: proposal.id });
+
+      res.json({ ok: true, status: 'rejected', trailId });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Executions list ──────────────────────────────────────────────────────
+  router.get('/orchestrator/executions', requireAuth, (req: Request, res: Response) => {
+    try {
+      // Guard: table may not exist on older DBs
+      const tableExists = (db.prepare(
+        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_executions'"
+      ).get() as { c: number }).c > 0;
+      if (!tableExists) return res.json({ executions: [], total: 0 });
+
+      const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
+      const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
+
+      const executions = db.prepare(`
+        SELECT e.*, p.proposed_action, p.action_type, p.signal_source
+        FROM orchestrator_executions e
+        LEFT JOIN orchestrator_proposals p ON p.id = e.proposal_id
+        ORDER BY e.initiated_at DESC
+        LIMIT ? OFFSET ?
+      `).all(limit, offset);
+
+      const total = (db.prepare('SELECT COUNT(*) as c FROM orchestrator_executions').get() as { c: number }).c;
+      res.json({ executions, total, limit, offset });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Single execution detail ──────────────────────────────────────────────
+  router.get('/orchestrator/executions/:id', requireAuth, (req: Request, res: Response) => {
+    try {
+      const execution = db.prepare('SELECT * FROM orchestrator_executions WHERE id = ?').get(req.params.id);
+      if (!execution) return res.status(404).json({ error: 'Execution not found' });
+      res.json({ execution });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Record execution outcome ─────────────────────────────────────────────
+  router.patch('/orchestrator/executions/:id/outcome', requireAuth, (req: Request, res: Response) => {
+    try {
+      const { outcome, quality_assessment, human_satisfaction, human_notes } = req.body as {
+        outcome?: string;
+        quality_assessment?: Record<string, unknown>;
+        human_satisfaction?: string;
+        human_notes?: string;
+      };
+
+      const validOutcomes = ['success', 'partial', 'failed', 'escalated', 'cancelled'];
+      if (outcome && !validOutcomes.includes(outcome)) {
+        return res.status(400).json({ error: `outcome must be one of: ${validOutcomes.join(', ')}` });
+      }
+
+      db.prepare(`
+        UPDATE orchestrator_executions SET
+          outcome = COALESCE(?, outcome),
+          quality_assessment = COALESCE(?, quality_assessment),
+          human_satisfaction = COALESCE(?, human_satisfaction),
+          human_notes = COALESCE(?, human_notes),
+          completed_at = CASE WHEN ? IS NOT NULL THEN datetime('now') ELSE completed_at END
+        WHERE id = ?
+      `).run(
+        outcome ?? null,
+        quality_assessment ? JSON.stringify(quality_assessment) : null,
+        human_satisfaction ?? null,
+        human_notes ?? null,
+        outcome ?? null,
+        req.params.id
+      );
+
+      const updated = db.prepare('SELECT * FROM orchestrator_executions WHERE id = ?').get(req.params.id);
+      res.json({ execution: updated });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Reasoning trails list ────────────────────────────────────────────────
+  router.get('/orchestrator/trails', requireAuth, (req: Request, res: Response) => {
+    try {
+      const tableExists = (db.prepare(
+        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_reasoning_trails'"
+      ).get() as { c: number }).c > 0;
+      if (!tableExists) return res.json({ trails: [], total: 0 });
+
+      const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
+      const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
+
+      const trails = db.prepare(`
+        SELECT id, trigger_type, transparency_level, status,
+               narrative_summary, total_entries, duration_ms,
+               heartbeat_id, briefing_id, proposal_id, execution_id,
+               created_at, completed_at
+        FROM orchestrator_reasoning_trails
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `).all(limit, offset);
+
+      const total = (db.prepare('SELECT COUNT(*) as c FROM orchestrator_reasoning_trails').get() as { c: number }).c;
+      res.json({ trails, total, limit, offset });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Single trail with entries ────────────────────────────────────────────
+  router.get('/orchestrator/trails/:id', requireAuth, (req: Request, res: Response) => {
+    try {
+      const trail = db.prepare('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?').get(req.params.id);
+      if (!trail) return res.status(404).json({ error: 'Trail not found' });
+
+      const entries = db.prepare(`
+        SELECT * FROM orchestrator_reasoning_entries
+        WHERE trail_id = ?
+        ORDER BY sequence_number ASC
+      `).all(req.params.id);
+
+      res.json({ trail, entries });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }

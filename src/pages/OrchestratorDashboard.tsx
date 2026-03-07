@@ -17,6 +17,7 @@ import {
   Clock, AlertTriangle, TrendingDown, ChevronRight,
   Play, Pause, RotateCcw, Settings, RefreshCw, ChevronDown,
   ShieldAlert, Radar, Calendar, BarChart2, Layers,
+  ThumbsUp, ThumbsDown, ListTree,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -87,6 +88,43 @@ interface BriefingDetail {
   proposals_count: number;
   status: string;
   created_at: string;
+}
+
+interface Execution {
+  id: string;
+  proposal_id: string;
+  workflow_run_id: string | null;
+  initiated_by: string;
+  initiated_at: string;
+  outcome: string | null;
+  completed_at: string | null;
+  human_satisfaction: string | null;
+  human_notes: string | null;
+  proposed_action: string | null;
+  action_type: string | null;
+  signal_source: string | null;
+}
+
+interface ReasoningTrail {
+  id: string;
+  trigger_type: string;
+  status: string;
+  total_entries: number;
+  duration_ms: number | null;
+  created_at: string;
+  completed_at: string | null;
+  briefing_id: string | null;
+  proposal_id: string | null;
+}
+
+interface ReasoningEntry {
+  id: string;
+  entry_type: string;
+  sequence_number: number;
+  title: string;
+  content: string;
+  confidence: number | null;
+  duration_ms: number | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -172,12 +210,17 @@ export default function OrchestratorDashboard() {
   const [briefings, setBriefings] = useState<BriefingSummary[]>([]);
   const [activeBriefing, setActiveBriefing] = useState<BriefingDetail | null>(null);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [executions, setExecutions] = useState<Execution[]>([]);
+  const [trails, setTrails] = useState<ReasoningTrail[]>([]);
+  const [activeTrail, setActiveTrail] = useState<{ trail: ReasoningTrail; entries: ReasoningEntry[] } | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [apiConfigured, setApiConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showTrails, setShowTrails] = useState(false);
+  const [showExecutions, setShowExecutions] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
 
   const fetchStatus = useCallback(async () => {
@@ -213,14 +256,43 @@ export default function OrchestratorDashboard() {
     } catch { /* ignore */ }
   }, []);
 
+  const fetchExecutions = useCallback(async () => {
+    try {
+      const r = await fetch('/api/orchestrator/executions?limit=10', { headers: getAuthHeader() });
+      if (!r.ok) return;
+      const data = await r.json();
+      setExecutions(data.executions ?? []);
+    } catch { /* ignore */ }
+  }, []);
+
+  const fetchTrails = useCallback(async () => {
+    try {
+      const r = await fetch('/api/orchestrator/trails?limit=10', { headers: getAuthHeader() });
+      if (!r.ok) return;
+      const data = await r.json();
+      setTrails(data.trails ?? []);
+    } catch { /* ignore */ }
+  }, []);
+
+  const loadTrail = useCallback(async (id: string) => {
+    try {
+      const r = await fetch(`/api/orchestrator/trails/${id}`, { headers: getAuthHeader() });
+      if (!r.ok) return;
+      const data = await r.json();
+      setActiveTrail({ trail: data.trail, entries: data.entries ?? [] });
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       await fetchStatus();
       await fetchBriefings();
+      await fetchExecutions();
+      await fetchTrails();
       setLoading(false);
     })();
-  }, [fetchStatus, fetchBriefings]);
+  }, [fetchStatus, fetchBriefings, fetchExecutions, fetchTrails]);
 
   // Auto-load latest briefing
   useEffect(() => {
@@ -266,6 +338,39 @@ export default function OrchestratorDashboard() {
       setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, human_rating: rating } : p));
       // Update stage metrics display
       await fetchStatus();
+    } catch { /* ignore */ }
+  };
+
+  const approveProposal = async (proposalId: string) => {
+    try {
+      const r = await fetch(`/api/orchestrator/proposals/${proposalId}/approve`, {
+        method: 'POST',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) {
+        const err = await r.json();
+        setStatusMsg(`Approval failed: ${err.error}`);
+        return;
+      }
+      setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, status: 'approved', human_rating: 'good_catch' } : p));
+      await fetchExecutions();
+      await fetchTrails();
+      setStatusMsg('Proposal approved — execution record created');
+    } catch (err) {
+      setStatusMsg(`Error: ${String(err)}`);
+    }
+  };
+
+  const rejectProposal = async (proposalId: string) => {
+    try {
+      await fetch(`/api/orchestrator/proposals/${proposalId}/reject`, {
+        method: 'POST',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, status: 'rejected', human_rating: 'wrong' } : p));
+      setStatusMsg('Proposal rejected');
     } catch { /* ignore */ }
   };
 
@@ -544,13 +649,44 @@ export default function OrchestratorDashboard() {
                         <span className="capitalize">{p.action_type.replace(/_/g, ' ')}</span>
                       </div>
 
-                      {/* Rating buttons */}
-                      {p.human_rating ? (
+                      {/* Action buttons — Approve/Reject (Stage 2+) or Rate (Stage 1) */}
+                      {p.human_rating || p.status === 'approved' || p.status === 'rejected' ? (
                         <div className="flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3 text-adv-teal" />
-                          <span className="text-[10px] text-adv-teal capitalize">{p.human_rating.replace(/_/g, ' ')}</span>
+                          <CheckCircle className={`w-3 h-3 ${p.status === 'rejected' ? 'text-adv-red' : 'text-adv-teal'}`} />
+                          <span className={`text-[10px] capitalize ${p.status === 'rejected' ? 'text-adv-red' : 'text-adv-teal'}`}>
+                            {p.status === 'approved' ? 'Approved — executing' : p.status === 'rejected' ? 'Rejected' : p.human_rating!.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      ) : (stage?.current_stage ?? 1) >= 2 ? (
+                        /* Stage 2+: Approve / Reject execution buttons */
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => approveProposal(p.id)}
+                            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border bg-adv-green/20 text-green-400 border-green-400/30 hover:bg-adv-green/30 transition-colors"
+                          >
+                            <ThumbsUp className="w-3 h-3" />
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => rejectProposal(p.id)}
+                            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border bg-adv-red/10 text-red-400 border-red-400/20 hover:bg-adv-red/20 transition-colors"
+                          >
+                            <ThumbsDown className="w-3 h-3" />
+                            Reject
+                          </button>
+                          <span className="text-adv-gray-med text-[9px] ml-1">or rate:</span>
+                          {RATING_OPTIONS.slice(0, 3).map(opt => (
+                            <button
+                              key={opt.value}
+                              onClick={() => rateProposal(p.id, opt.value)}
+                              className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${opt.className}`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
                         </div>
                       ) : (
+                        /* Stage 1: Rating only */
                         <div className="flex flex-wrap gap-1">
                           {RATING_OPTIONS.map(opt => (
                             <button
@@ -664,15 +800,144 @@ export default function OrchestratorDashboard() {
         </div>
       </div>
 
+      {/* ── Executions log (Phase 2+) ──────────────────────────────────────── */}
+      {executions.length > 0 && (
+        <div className="mt-6 bg-adv-card border border-white/5 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowExecutions(v => !v)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/2 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-adv-teal" />
+              <span className="text-sm font-medium text-adv-off-white">Execution Log</span>
+              <span className="bg-adv-teal/20 text-adv-teal text-xs px-1.5 py-0.5 rounded-full">{executions.length}</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-adv-gray transition-transform ${showExecutions ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showExecutions && (
+            <div className="border-t border-white/5 divide-y divide-white/5">
+              {executions.map(ex => (
+                <div key={ex.id} className="px-4 py-3 flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-adv-off-white truncate">{ex.proposed_action ?? 'Approved proposal'}</p>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-adv-gray">
+                      <span className="capitalize">{ex.action_type?.replace(/_/g, ' ') ?? ex.initiated_by}</span>
+                      <span>·</span>
+                      <span>{formatTime(ex.initiated_at)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                      ex.outcome === 'success' ? 'bg-adv-green/20 text-green-400 border-green-400/30' :
+                      ex.outcome === 'failed' ? 'bg-adv-red/20 text-red-400 border-red-400/30' :
+                      ex.outcome ? 'bg-adv-gold/20 text-adv-gold border-adv-gold/30' :
+                      'bg-adv-teal-dim text-adv-teal border-adv-teal/30'
+                    }`}>
+                      {ex.outcome ?? 'pending'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Reasoning Trails ───────────────────────────────────────────────── */}
+      {trails.length > 0 && (
+        <div className="mt-4 bg-adv-card border border-white/5 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowTrails(v => !v)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/2 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <ListTree className="w-4 h-4 text-adv-gray" />
+              <span className="text-sm font-medium text-adv-off-white">Reasoning Trails</span>
+              <span className="bg-adv-gray/20 text-adv-gray text-xs px-1.5 py-0.5 rounded-full">{trails.length}</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-adv-gray transition-transform ${showTrails ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showTrails && (
+            <div className="border-t border-white/5">
+              <div className="divide-y divide-white/5 max-h-64 overflow-y-auto">
+                {trails.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => loadTrail(t.id)}
+                    className={`w-full px-4 py-2.5 flex items-center justify-between hover:bg-white/2 transition-colors text-left ${activeTrail?.trail.id === t.id ? 'bg-adv-teal-dim' : ''}`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs text-adv-off-white capitalize">{t.trigger_type.replace(/_/g, ' ')}</span>
+                        <span className={`text-[10px] px-1 py-0.5 rounded ${t.status === 'completed' ? 'text-adv-teal' : t.status === 'failed' ? 'text-adv-red' : 'text-adv-gray'}`}>
+                          {t.status}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-adv-gray-med">
+                        {formatTime(t.created_at)} · {t.total_entries} steps
+                        {t.duration_ms ? ` · ${t.duration_ms}ms` : ''}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-adv-gray shrink-0" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Active trail detail */}
+              {activeTrail && (
+                <div className="border-t border-white/5 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-medium text-adv-off-white">
+                      Trail: {activeTrail.trail.trigger_type.replace(/_/g, ' ')} — {activeTrail.entries.length} steps
+                    </h4>
+                    <button
+                      onClick={() => setActiveTrail(null)}
+                      className="text-[10px] text-adv-gray hover:text-adv-off-white"
+                    >
+                      close
+                    </button>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {activeTrail.entries.map(entry => (
+                      <div key={entry.id} className="bg-adv-dark-2 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[9px] font-medium uppercase tracking-wide text-adv-teal px-1.5 py-0.5 bg-adv-teal-dim rounded">
+                            {entry.entry_type.replace(/_/g, ' ')}
+                          </span>
+                          <span className="text-[10px] text-adv-off-white">{entry.title}</span>
+                          {entry.confidence != null && (
+                            <span className="ml-auto text-[10px] text-adv-gray">{Math.round(entry.confidence * 100)}%</span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-adv-gray leading-relaxed whitespace-pre-line line-clamp-4">
+                          {entry.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Footer: phase info ─────────────────────────────────────────────── */}
       <div className="mt-6 bg-adv-teal-soft border border-adv-teal/10 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-adv-teal mt-0.5 shrink-0" />
           <div className="text-xs text-adv-gray">
-            <strong className="text-adv-teal">Phase 1: Observer Stage</strong> — The Orchestrator reads all platform signals
-            and generates situational briefings. It cannot trigger workflows or take any action.
-            Rate proposals to help it learn and progress to Stage 2 (Proposal Manager), where it will
-            generate complete workflow execution plans for human approval.
+            {(stage?.current_stage ?? 1) >= 2 ? (
+              <><strong className="text-adv-teal">Phase 2: Proposal Manager</strong> — Proposals can now be
+              approved for execution. Each approval creates an execution record. Approve or reject proposals using the
+              buttons on each card. All decisions are captured in the Reasoning Trail for full auditability.</>
+            ) : (
+              <><strong className="text-adv-teal">Phase 1: Observer Stage</strong> — The Orchestrator reads all platform signals
+              and generates situational briefings. Rate proposals to help it learn and progress to Stage 2 (Proposal Manager),
+              where proposals can be approved for execution.</>
+            )}
           </div>
         </div>
       </div>
