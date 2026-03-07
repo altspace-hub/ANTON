@@ -83,8 +83,32 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         moduleInputs,
       } = req.body;
 
+      // MGOV-01/02: Apply compliance_policy + model allowlist checks
+      let policyModel = (model as string) || 'claude-opus-4-6';
+      if (moduleId) {
+        try {
+          // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId
+          const policy = db.prepare(
+            'SELECT enforce_model FROM compliance_policy WHERE module_id = ?'
+          ).get(moduleId) as { enforce_model: string | null } | undefined;
+          if (policy?.enforce_model) policyModel = policy.enforce_model;
+
+          // MGOV-02: per-user model allowlist (team mode only)
+          if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
+            const userAllowlistCount = (db.prepare('SELECT COUNT(*) as c FROM model_allowed WHERE user_id = ?').get(req.user.id) as { c: number }).c;
+            if (userAllowlistCount > 0) {
+              const allowed = (db.prepare('SELECT COUNT(*) as c FROM model_allowed WHERE user_id = ? AND model_id = ?').get(req.user.id, policyModel) as { c: number }).c;
+              if (allowed === 0) {
+                res.status(403).json({ error: `Model '${policyModel}' is not permitted for your account. Contact your administrator.` });
+                return;
+              }
+            }
+          }
+        } catch { /* non-fatal — policy table may not exist on older DBs */ }
+      }
+
       // Determine provider and validate API key
-      const selectedModel = (model as string) || 'claude-opus-4-6';
+      const selectedModel = policyModel;
       // Ollama models are prefixed with 'ollama:' (e.g. 'ollama:llama3.2').
       // They are not in the MODEL_REGISTRY so we detect them by prefix first.
       const isOllamaModel = selectedModel.startsWith('ollama:');

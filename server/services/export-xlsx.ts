@@ -302,7 +302,7 @@ const LEGAL_DISCLAIMER_TEXT = 'This document has been prepared by ANTON AI (open
 
 export async function generateXlsx(
   markdown: string,
-  metadata: { title?: string; author?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string } = {},
+  metadata: { title?: string; author?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string; documentsLoaded?: string[] } = {},
   brandConfig?: BrandConfig | null
 ): Promise<Buffer> {
   const style = resolveXlsxStyle(brandConfig);
@@ -403,6 +403,15 @@ export async function generateXlsx(
   dTextRow.getCell(1).alignment = { wrapText: true };
   disclaimerWs.getColumn(1).width = 110;
   disclaimerWs.getRow(3).height = 60;
+
+  // ATTR-02: Sources & Scope row
+  if (metadata.documentsLoaded && metadata.documentsLoaded.length > 0) {
+    disclaimerWs.addRow([]);
+    const srcRow = disclaimerWs.addRow([`Sources & Scope: ${metadata.documentsLoaded.join(', ')}`]);
+    srcRow.getCell(1).font = { size: 9 };
+    srcRow.getCell(1).alignment = { wrapText: true };
+    disclaimerWs.getRow(disclaimerWs.rowCount).height = 18;
+  }
 
   // GOV-04: Analysis provenance row
   const provParts: string[] = [];

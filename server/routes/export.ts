@@ -33,12 +33,13 @@ export function createExportRouter(db: Database.Database): Router {
       const basename  = (metadata?.filename  as string) || autoBasename;
       const title     = (metadata?.title     as string) || basename;
       const author    = (metadata?.author    as string) || 'ANTON by openEXPERT';
-      // GOV-04: provenance fields passed through to export footers
-      const model     = (metadata?.model     as string | undefined);
-      const thinking  = (metadata?.thinking  as string | undefined);
-      const moduleId  = (metadata?.moduleId  as string | undefined);
-      const sessionId = (metadata?.sessionId as string | undefined);
-      const creativity = (metadata?.creativity as string | undefined);
+      // GOV-04 + ATTR-02: provenance fields passed through to export footers
+      const model           = (metadata?.model           as string | undefined);
+      const thinking        = (metadata?.thinking        as string | undefined);
+      const moduleId        = (metadata?.moduleId        as string | undefined);
+      const sessionId       = (metadata?.sessionId       as string | undefined);
+      const creativity      = (metadata?.creativity      as string | undefined);
+      const documentsLoaded = (metadata?.documentsLoaded as string[] | undefined);
 
       // Load brand config from user profile
       let brandConfig = null;
@@ -61,7 +62,7 @@ export function createExportRouter(db: Database.Database): Router {
 
         case 'docx': {
           const filename = `${basename}.docx`;
-          const buffer = await generateDocx(content, { title, author, model, thinking, moduleId, sessionId, creativity }, brandConfig);
+          const buffer = await generateDocx(content, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -71,7 +72,7 @@ export function createExportRouter(db: Database.Database): Router {
 
         case 'xlsx': {
           const filename = `${basename}.xlsx`;
-          const buffer = await generateXlsx(content, { title, author, model, thinking, moduleId, sessionId, creativity }, brandConfig);
+          const buffer = await generateXlsx(content, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -81,7 +82,7 @@ export function createExportRouter(db: Database.Database): Router {
 
         case 'pdf': {
           const filename = `${basename}.pdf`;
-          const buffer = await generatePdf(content, { title, author, model, thinking, moduleId, sessionId, creativity }, brandConfig);
+          const buffer = await generatePdf(content, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/pdf');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

@@ -1069,7 +1069,15 @@ export default function ModulePage() {
               <ExportBar
               content={outputContent}
               availableFormats={exportFormats.length > 0 ? exportFormats : ['md']}
-              onExport={(fmt) => doExport(fmt, outputContent, `${moduleId}-output`)}
+              onExport={(fmt) => doExport(fmt, outputContent, {
+                filename: `${moduleId}-output`,
+                moduleId: moduleId ?? undefined,
+                model,
+                thinking,
+                creativity,
+                sessionId: sessionId ?? undefined,
+                documentsLoaded: files.filter(f => f.status === 'done').map(f => f.name),
+              })}
               isExporting={isExporting}
               sessionId={sessionId ?? undefined}
               onReframe={handleReframe}

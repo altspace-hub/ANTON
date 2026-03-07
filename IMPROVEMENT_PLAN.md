@@ -208,7 +208,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | ATTR-01 | Add source attribution footnote instructions to all 8 FCP system prompts: `[Source: AMLR Art. X, local PDF p.12, or web search]` | 92, 95 | S | [x] |
-| ATTR-02 | Add "Sources & Scope" section to all compliance exports: which docs loaded, model/thinking/creativity, session ID, timestamp | 92, 95 | M | [ ] |
+| ATTR-02 | Add "Sources & Scope" section to all compliance exports: which docs loaded, model/thinking/creativity, session ID, timestamp | 92, 95 | M | [x] |
 | ATTR-03 | Add structured confidence annotation to gap-analysis, risk-assessment, data-management prompts: `Confidence: [High | Medium | Low] + rationale` | 95 | S | [x] |
 | ATTR-04 | Extend CitationVerifier to parse source footnotes and cross-check against loaded knowledge sources | 95 | M | [ ] |
 | ATTR-05 | Surface RAG chunks to user in a collapsible "Sources used" panel (currently logged but not shown) | 95 | M | [ ] |
@@ -228,8 +228,8 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 3D — Model Governance Controls
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| MGOV-01 | Add admin tab to Settings: "Compliance Policy" — enforce Opus 4.6 + investigate thinking per specified module | 92, 93 | M | [ ] |
-| MGOV-02 | Add `model_allowed` table: per-user model allowlist; block use of disallowed models at route level | 93 | M | [ ] |
+| MGOV-01 | Add admin tab to Settings: "Compliance Policy" — enforce Opus 4.6 + investigate thinking per specified module | 92, 93 | M | [x] |
+| MGOV-02 | Add `model_allowed` table: per-user model allowlist; block use of disallowed models at route level | 93 | M | [x] |
 | MGOV-03 | Add model end-of-life dates to MODELS array; emit 90-day/30-day warnings in ModelSelector | 93 | M | [x] |
 | MGOV-04 | Surface `transparencyLevel` parameter in `claude.ts` — currently set in UI but never passed to API | 65 | M | [x] |
 

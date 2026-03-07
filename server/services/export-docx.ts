@@ -333,7 +333,7 @@ function parseMarkdownTable(lines: string[], accent: string = DEF_TEAL): Table |
 // GOV-04: Build export footer with analysis provenance metadata
 function buildExportFooter(meta: {
   model?: string; thinking?: string; moduleId?: string;
-  sessionId?: string; creativity?: string;
+  sessionId?: string; creativity?: string; documentsLoaded?: string[];
 } = {}): string {
   const parts: string[] = [];
   if (meta.moduleId) parts.push(`Module: ${meta.moduleId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`);
@@ -344,12 +344,17 @@ function buildExportFooter(meta: {
   parts.push(`Generated: ${new Date().toISOString().split('T')[0]}`);
   const provenance = parts.length ? `\n\n*Analysis configuration: ${parts.join(' | ')}*` : '';
 
-  return `\n\n---\n\n**Legal Disclaimer:** This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.${provenance}`;
+  // ATTR-02: Sources & Scope section
+  const sourcesSection = meta.documentsLoaded && meta.documentsLoaded.length > 0
+    ? `\n\n**Sources & Scope:** ${meta.documentsLoaded.join(', ')}`
+    : '';
+
+  return `\n\n---\n\n**Legal Disclaimer:** This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.${sourcesSection}${provenance}`;
 }
 
 export async function generateDocx(
   markdown: string,
-  metadata: { title?: string; author?: string; subject?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string } = {},
+  metadata: { title?: string; author?: string; subject?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string; documentsLoaded?: string[] } = {},
   brandConfig?: BrandConfig | null,
 ): Promise<Buffer> {
   const s = resolveStyle(brandConfig);

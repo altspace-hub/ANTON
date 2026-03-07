@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight, Shield } from 'lucide-react';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import { IdentityPanel } from '@/components/platform/IdentityPanel';
 import ProfileSettingsTab from './ProfileSettingsTab';
@@ -80,7 +80,7 @@ const BASE_TABS = [
 ] as const;
 
 type BaseTabId = (typeof BASE_TABS)[number]['id'];
-type TabId = BaseTabId | 'team' | 'connections' | 'org-context';
+type TabId = BaseTabId | 'team' | 'connections' | 'org-context' | 'compliance-policy';
 
 const TAB_BASE = 'px-4 py-2 text-sm font-medium transition-colors rounded-t-lg border-b-2';
 const TAB_ACTIVE = 'border-adv-teal text-adv-teal';
@@ -586,6 +586,15 @@ export default function Settings() {
             {t('settings.teamTab')}
           </button>
         )}
+        {isAdmin && (
+          <button
+            onClick={() => handleTabChange('compliance-policy')}
+            className={`${TAB_BASE} ${activeTab === 'compliance-policy' ? TAB_ACTIVE : TAB_INACTIVE} flex items-center gap-1.5`}
+          >
+            <Shield className="h-3.5 w-3.5" />
+            Compliance Policy
+          </button>
+        )}
         <button
           onClick={() => handleTabChange('connections')}
           className={`${TAB_BASE} ${activeTab === 'connections' ? TAB_ACTIVE : TAB_INACTIVE} flex items-center gap-1.5`}
@@ -827,6 +836,11 @@ export default function Settings() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Compliance Policy tab — admin only */}
+      {activeTab === 'compliance-policy' && isAdmin && (
+        <CompliancePolicyTab />
       )}
 
       {/* Connections tab */}
@@ -2263,6 +2277,197 @@ function MyWaySettingsContent() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── MGOV-01: Compliance Policy Admin Tab ─────────────────────────────────────
+
+interface CompliancePolicy {
+  id: number;
+  module_id: string;
+  enforce_model: string | null;
+  enforce_thinking: string | null;
+  enforce_creativity: string | null;
+  note: string | null;
+  updated_at: string;
+}
+
+function CompliancePolicyTab() {
+  const [policies, setPolicies] = useState<CompliancePolicy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState({ moduleId: '', enforce_model: '', enforce_thinking: '', enforce_creativity: '', note: '' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/compliance-policy')
+      .then(r => r.json())
+      .then((d: CompliancePolicy[]) => { setPolicies(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  async function handleSave(moduleId: string) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/compliance-policy/${moduleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enforce_model: form.enforce_model || null,
+          enforce_thinking: form.enforce_thinking || null,
+          enforce_creativity: form.enforce_creativity || null,
+          note: form.note || null,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json() as CompliancePolicy;
+        setPolicies(prev => {
+          const idx = prev.findIndex(p => p.module_id === moduleId);
+          if (idx >= 0) return prev.map((p, i) => i === idx ? updated : p);
+          return [...prev, updated];
+        });
+        setEditing(null);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(moduleId: string) {
+    await fetch(`/api/compliance-policy/${moduleId}`, { method: 'DELETE' });
+    setPolicies(prev => prev.filter(p => p.module_id !== moduleId));
+  }
+
+  function startEdit(policy: CompliancePolicy) {
+    setEditing(policy.module_id);
+    setForm({ moduleId: policy.module_id, enforce_model: policy.enforce_model || '', enforce_thinking: policy.enforce_thinking || '', enforce_creativity: policy.enforce_creativity || '', note: policy.note || '' });
+  }
+
+  const INPUT = 'w-full rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none';
+  const SELECT = `${INPUT} cursor-pointer`;
+
+  return (
+    <div className="max-w-3xl space-y-6">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <Shield className="h-5 w-5 text-adv-teal" />
+          <h2 className="text-lg font-semibold text-adv-off-white">Compliance Policy</h2>
+        </div>
+        <p className="text-sm text-adv-gray-med">
+          Enforce specific model, thinking level, and creativity for compliance-critical modules.
+          <code className="ml-1 text-[11px] bg-adv-dark-2 px-1 rounded">enforce_model</code> is applied server-side;
+          <code className="ml-1 text-[11px] bg-adv-dark-2 px-1 rounded">enforce_thinking</code> and <code className="text-[11px] bg-adv-dark-2 px-1 rounded">enforce_creativity</code> are shown to users in the module UI.
+        </p>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-adv-gray-med">Loading...</p>
+      ) : (
+        <div className="space-y-3">
+          {policies.map(policy => (
+            <div key={policy.module_id} className="rounded-lg border border-border bg-adv-card p-4">
+              {editing === policy.module_id ? (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-adv-teal uppercase tracking-wide">{policy.module_id}</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Model</label>
+                      <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="e.g. claude-opus-4-6" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Thinking</label>
+                      <select className={SELECT} value={form.enforce_thinking} onChange={e => setForm(f => ({ ...f, enforce_thinking: e.target.value }))}>
+                        <option value="">— none —</option>
+                        {['quick', 'think', 'think_hard', 'investigate', 'plan_first'].map(v => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Creativity</label>
+                      <select className={SELECT} value={form.enforce_creativity} onChange={e => setForm(f => ({ ...f, enforce_creativity: e.target.value }))}>
+                        <option value="">— none —</option>
+                        {['strict', 'balanced', 'creative'].map(v => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] text-adv-gray-med">Note (reason)</label>
+                    <input className={INPUT} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="e.g. Regulatory requirement — Opus + Investigate mandatory" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => void handleSave(policy.module_id)} disabled={saving} className="rounded bg-adv-teal px-3 py-1 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50">
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button onClick={() => setEditing(null)} className="rounded border border-border px-3 py-1 text-xs text-adv-gray hover:text-adv-off-white">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-adv-off-white">{policy.module_id}</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {policy.enforce_model && <span className="rounded bg-adv-blue/10 px-2 py-0.5 text-[11px] text-adv-blue">Model: {policy.enforce_model}</span>}
+                      {policy.enforce_thinking && <span className="rounded bg-adv-teal/10 px-2 py-0.5 text-[11px] text-adv-teal">Thinking: {policy.enforce_thinking}</span>}
+                      {policy.enforce_creativity && <span className="rounded bg-adv-gold/10 px-2 py-0.5 text-[11px] text-adv-gold">Creativity: {policy.enforce_creativity}</span>}
+                      {policy.note && <span className="text-[11px] text-adv-gray-med italic">{policy.note}</span>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => startEdit(policy)} className="rounded border border-border px-2 py-1 text-[11px] text-adv-gray hover:text-adv-off-white"><Edit2 className="h-3 w-3" /></button>
+                    <button onClick={() => void handleDelete(policy.module_id)} className="rounded border border-adv-red/30 px-2 py-1 text-[11px] text-adv-red/70 hover:text-adv-red"><Trash2 className="h-3 w-3" /></button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Add new policy */}
+          {editing === '__new__' ? (
+            <div className="rounded-lg border border-adv-teal/30 bg-adv-card p-4 space-y-3">
+              <p className="text-xs font-semibold text-adv-teal uppercase tracking-wide">New Policy</p>
+              <div>
+                <label className="mb-1 block text-[11px] text-adv-gray-med">Module ID</label>
+                <input className={INPUT} value={form.moduleId} onChange={e => setForm(f => ({ ...f, moduleId: e.target.value }))} placeholder="e.g. gap-analysis" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Model</label>
+                  <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="claude-opus-4-6" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Thinking</label>
+                  <select className={SELECT} value={form.enforce_thinking} onChange={e => setForm(f => ({ ...f, enforce_thinking: e.target.value }))}>
+                    <option value="">— none —</option>
+                    {['quick', 'think', 'think_hard', 'investigate', 'plan_first'].map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Creativity</label>
+                  <select className={SELECT} value={form.enforce_creativity} onChange={e => setForm(f => ({ ...f, enforce_creativity: e.target.value }))}>
+                    <option value="">— none —</option>
+                    {['strict', 'balanced', 'creative'].map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-[11px] text-adv-gray-med">Note</label>
+                <input className={INPUT} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Optional reason" />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => { if (form.moduleId.trim()) void handleSave(form.moduleId.trim()); }} disabled={saving || !form.moduleId.trim()} className="rounded bg-adv-teal px-3 py-1 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50">
+                  {saving ? 'Saving...' : 'Add Policy'}
+                </button>
+                <button onClick={() => setEditing(null)} className="rounded border border-border px-3 py-1 text-xs text-adv-gray hover:text-adv-off-white">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => { setEditing('__new__'); setForm({ moduleId: '', enforce_model: 'claude-opus-4-6', enforce_thinking: 'investigate', enforce_creativity: 'strict', note: '' }); }} className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-adv-gray hover:border-adv-teal hover:text-adv-teal transition-colors w-full">
+              <Plus className="h-4 w-4" />
+              Add module policy
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

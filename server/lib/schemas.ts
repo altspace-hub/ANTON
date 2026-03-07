@@ -64,6 +64,8 @@ export const ExportSchema = z.object({
     moduleId: z.string().max(100).optional(),
     sessionId: z.string().max(100).optional(),
     creativity: z.string().max(50).optional(),
+    // ATTR-02: sources & scope
+    documentsLoaded: z.array(z.string().max(300)).max(100).optional(),
   }).optional(),
 });
 
