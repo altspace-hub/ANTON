@@ -33,6 +33,7 @@ export interface AuditEntry {
   seed?: number;
   userId?: string;
   ragChunks?: string; // JSON array of {citation, relevance}
+  systemPromptVersionId?: string; // GOV-02: versioned prompt ID from system_prompts table
 }
 
 export interface SecurityEvent {
@@ -76,8 +77,9 @@ export function writeAuditEntry(db: Database.Database, entry: AuditEntry): strin
       thinking_level, creativity, writing_tone, emoji_enabled, structured_reasoning,
       transparency_level, knowledge_sources_used,
       input_token_count, output_token_count, cached_tokens, cache_creation_tokens,
-      estimated_cost_usd, response_status, seed, user_id, rag_chunks
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      estimated_cost_usd, response_status, seed, user_id, rag_chunks,
+      system_prompt_version_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       id,
       entry.sessionId || null,
       entry.moduleId || null,
@@ -99,7 +101,8 @@ export function writeAuditEntry(db: Database.Database, entry: AuditEntry): strin
       entry.responseStatus || 'completed',
       entry.seed !== undefined ? entry.seed : null,
       entry.userId || null,
-      entry.ragChunks || null
+      entry.ragChunks || null,
+      entry.systemPromptVersionId || null
     );
     console.log(`[AuditLogger] Logged AI usage: ${entry.model} (session: ${entry.sessionId || 'none'})`);
   } catch (e) {

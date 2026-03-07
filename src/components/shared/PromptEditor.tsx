@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, RotateCcw, Save } from 'lucide-react';
+import { ChevronDown, ChevronRight, Lock, RotateCcw, Save } from 'lucide-react';
 import VersionHistory from './VersionHistory';
 
 interface PromptEditorProps {
@@ -10,6 +10,12 @@ interface PromptEditorProps {
   entityId?: string;
   /** Entity type for version history. Defaults to 'prompt'. */
   entityType?: string;
+  /**
+   * GOV-06: A block of text always appended to the prompt that users cannot remove.
+   * When provided the textarea only edits the portion BEFORE this suffix;
+   * onChange always returns editablePart + '\n\n' + lockedSuffix.
+   */
+  lockedSuffix?: string;
 }
 
 export default function PromptEditor({
@@ -18,10 +24,24 @@ export default function PromptEditor({
   onChange,
   entityId,
   entityType = 'prompt',
+  lockedSuffix,
 }: PromptEditorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+
+  // If a lockedSuffix is provided, strip it from the visible/editable portion
+  const editableValue = lockedSuffix && value.endsWith(lockedSuffix.trim())
+    ? value.slice(0, value.lastIndexOf(lockedSuffix.trim())).trimEnd()
+    : value;
+
+  function handleEditableChange(newEditable: string) {
+    if (lockedSuffix) {
+      onChange(newEditable + '\n\n' + lockedSuffix.trim());
+    } else {
+      onChange(newEditable);
+    }
+  }
 
   const wordCount = value.trim().split(/\s+/).filter(Boolean).length;
   const isModified = value !== defaultValue;
@@ -72,12 +92,21 @@ export default function PromptEditor({
       {isOpen && (
         <div className="border-t border-border p-3">
           <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
+            value={editableValue}
+            onChange={(e) => handleEditableChange(e.target.value)}
             className="w-full rounded-lg border border-border bg-adv-dark p-3 font-mono text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
             rows={12}
             placeholder="System prompt..."
           />
+          {lockedSuffix && (
+            <div className="mt-2 rounded-lg border border-adv-teal-dim bg-adv-teal-soft p-3">
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <Lock className="h-3 w-3 text-adv-teal" />
+                <span className="text-[11px] font-medium text-adv-teal">Locked guardrail — cannot be removed</span>
+              </div>
+              <pre className="whitespace-pre-wrap font-mono text-[11px] text-adv-gray leading-relaxed">{lockedSuffix.trim()}</pre>
+            </div>
+          )}
           <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
             <span className="text-[11px] text-adv-gray-med">
               This prompt shapes Claude's behavior for this module.

@@ -196,11 +196,11 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | GOV-01 | Create `system_prompts` DB table: `(id, module_id, version, content_hash, effective_date, deprecated_at)` | 92, 93, 95 | M | [x] |
-| GOV-02 | Store `(session_id, system_prompt_version_id)` in audit log on every compliance request | 92, 93 | M | [ ] |
+| GOV-02 | Store `(session_id, system_prompt_version_id)` in audit log on every compliance request | 92, 93 | M | [x] |
 | GOV-03 | Create immutable `session_snapshots` table: written on session completion with full config hash | 92, 93 | M | [x] |
 | GOV-04 | On export, include "Analysis produced with module v[X] effective [date], model [Y], thinking [Z]" | 92, 93, 95 | S | [x] |
 | GOV-05 | Add `prompt_audit` table: log every PromptEditor change with (original_hash, edited_hash, edited_by, edited_at) | 95 | M | [x] |
-| GOV-06 | Enforce critical guardrails (e.g., "You do NOT make compliance decisions") as non-editable in PromptEditor | 91, 93 | M | [ ] |
+| GOV-06 | Enforce critical guardrails (e.g., "You do NOT make compliance decisions") as non-editable in PromptEditor | 91, 93 | M | [x] |
 
 ---
 

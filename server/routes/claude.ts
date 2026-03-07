@@ -546,6 +546,16 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             } catch {
               // Non-fatal — message was already streamed to user
             }
+            // GOV-02: look up current system_prompt version for this module
+            let systemPromptVersionId: string | undefined;
+            if (moduleId) {
+              try {
+                const spRow = db.prepare(
+                  `SELECT id FROM system_prompts WHERE module_id = ? AND deprecated_at IS NULL ORDER BY created_at DESC LIMIT 1`
+                ).get(moduleId) as { id: string } | undefined;
+                systemPromptVersionId = spRow?.id;
+              } catch { /* non-fatal */ }
+            }
             writeAuditEntry(db, {
               sessionId,
               moduleId,
@@ -563,6 +573,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
               seed: seed !== undefined ? seed : undefined,
               userId: req.user?.id,
               ragChunks: ragChunks.length > 0 ? JSON.stringify(ragChunks.map(c => ({ citation: c.citation, relevance: c.relevanceScore }))) : undefined,
+              systemPromptVersionId,
             });
             // Update per-user monthly usage (team mode only)
             if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {

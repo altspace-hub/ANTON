@@ -68,6 +68,12 @@ const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inp
 // Module prompts are now loaded from server/prompts/*.md via the API.
 // The server's PromptComposer handles all prompt assembly — no inline prompts needed here.
 
+// GOV-06: Non-editable compliance guardrail appended to all FCP module prompts.
+const FCP_COMPLIANCE_GUARDRAIL = `**IMPORTANT LIMITATION — NON-NEGOTIABLE**
+You do NOT make compliance decisions, give legal advice, or replace professional judgment.
+You provide analysis, structured information, and decision support to human experts who retain full professional responsibility for all compliance and legal conclusions.
+Every output must include appropriate caveats where decisions depend on facts or legal interpretation not visible in this analysis.`;
+
 export default function ModulePage() {
   const { t } = useTranslation();
   const { moduleId } = useParams<{ moduleId: string }>();
@@ -865,6 +871,7 @@ export default function ModulePage() {
                   onChange={setSystemPrompt}
                   entityId={moduleId}
                   entityType="prompt"
+                  lockedSuffix={areaId === 'fcp' ? FCP_COMPLIANCE_GUARDRAIL : undefined}
                 />
               </div>
             )}
