@@ -7,6 +7,8 @@ import { generateXlsx } from '../services/export-xlsx.js';
 import { generatePdf }  from '../services/export-pdf.js';
 import { generatePptx } from '../services/export-pptx.js';
 import { injectIntoDocxTemplate, injectIntoPptxTemplate } from '../services/template-injector.js';
+import { validate } from '../lib/validate.js';
+import { ExportSchema, ExportWithTemplateSchema, TrustCertificateSchema } from '../lib/schemas.js';
 
 const OUTPUT_DIR = process.env.OUTPUT_DIR || './outputs';
 fs.ensureDirSync(OUTPUT_DIR);
@@ -16,14 +18,11 @@ export function createExportRouter(db: Database.Database): Router {
   const router = Router();
 
   // POST /api/export — generate file for download
-  router.post('/export', async (req, res) => {
+  router.post('/export', validate(ExportSchema), async (req, res) => {
     try {
       const { format, content, metadata } = req.body;
 
-      if (!content) {
-        res.status(400).json({ error: 'No content to export' });
-        return;
-      }
+      // content and format validated by ExportSchema
 
       // EXPORT-04: Auto-name files as {Module}_{YYYYMMDD} when no explicit filename provided
       const datestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -111,7 +110,7 @@ export function createExportRouter(db: Database.Database): Router {
   });
 
   // POST /api/export/with-template — inject content into a brand template and download
-  router.post('/export/with-template', async (req, res) => {
+  router.post('/export/with-template', validate(ExportWithTemplateSchema), async (req, res) => {
     try {
       const { templateId, content, format } = req.body as {
         templateId: string;
@@ -119,15 +118,7 @@ export function createExportRouter(db: Database.Database): Router {
         format: 'docx' | 'pptx';
       };
 
-      if (!templateId || !content || !format) {
-        res.status(400).json({ error: 'templateId, content, and format are required' });
-        return;
-      }
-
-      if (format !== 'docx' && format !== 'pptx') {
-        res.status(400).json({ error: 'format must be "docx" or "pptx"' });
-        return;
-      }
+      // templateId, content, format validated by ExportWithTemplateSchema
 
       // Look up the template record from the shared db
       const tpl = db.prepare('SELECT * FROM brand_templates WHERE id = ?').get(templateId) as
@@ -173,13 +164,9 @@ export function createExportRouter(db: Database.Database): Router {
   });
 
   // POST /api/export/trust-certificate — generate a quality trust certificate PDF for a session
-  router.post('/export/trust-certificate', async (req, res) => {
+  router.post('/export/trust-certificate', validate(TrustCertificateSchema), async (req, res) => {
     try {
-      const { sessionId } = req.body as { sessionId?: string };
-      if (!sessionId) {
-        res.status(400).json({ error: 'sessionId is required' });
-        return;
-      }
+      const { sessionId } = req.body as { sessionId: string };
 
       // Fetch session row
       const session = db.prepare('SELECT id, module_id, title, config, created_at FROM sessions WHERE id = ?').get(sessionId) as

@@ -23,6 +23,8 @@ import { isKnownAudience, getAudiencePrompt } from '../services/audience-adapter
 import { createBudgetMiddleware } from '../middleware/budget.js';
 import { semanticSearch } from '../services/semantic-search.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
+import { validate } from '../lib/validate.js';
+import { ClaudeMessageSchema } from '../lib/schemas.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -44,7 +46,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
   }
 
   // POST /api/claude/message — streaming SSE proxy (multi-LLM)
-  router.post('/claude/message', checkBudget, async (req, res) => {
+  router.post('/claude/message', validate(ClaudeMessageSchema), checkBudget, async (req, res) => {
     try {
       const {
         model,

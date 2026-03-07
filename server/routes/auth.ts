@@ -8,6 +8,8 @@ import { logSecurityEvent } from '../services/security-logger.js';
 import * as oidcClient from 'openid-client';
 import { getUserBudgetStatus } from '../services/budget-manager.js';
 import { safeError } from '../lib/error-response.js';
+import { validate } from '../lib/validate.js';
+import { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema } from '../lib/schemas.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -67,15 +69,13 @@ export function createAuthRoutes(db: Database) {
   const IS_TEAM_MODE = process.env.DEPLOYMENT_MODE === 'team';
 
   // POST /api/auth/login
-  router.post('/auth/login', async (req, res) => {
+  router.post('/auth/login', validate(LoginSchema), async (req, res) => {
     if (!IS_TEAM_MODE) {
       res.json({ user: { id: 'solo', username: 'solo', role: 'admin' }, token: 'solo-mode' });
       return;
     }
     const { username, password } = req.body as { username: string; password: string };
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
-
-    if (!username || !password) { res.status(400).json({ error: 'Username and password required' }); return; }
 
     // Check for too many recent failed attempts (account lockout)
     const recentFails = db.prepare(`
@@ -149,7 +149,7 @@ export function createAuthRoutes(db: Database) {
   });
 
   // POST /api/auth/forgot-password
-  router.post('/auth/forgot-password', async (req, res) => {
+  router.post('/auth/forgot-password', validate(ForgotPasswordSchema), async (req, res) => {
     const { email } = req.body as { email?: string };
     // Always return 200 for security — don't reveal whether email exists
     if (!email) { res.json({ success: true }); return; }
@@ -179,16 +179,8 @@ export function createAuthRoutes(db: Database) {
   });
 
   // POST /api/auth/reset-password
-  router.post('/auth/reset-password', async (req, res) => {
-    const { token, newPassword } = req.body as { token?: string; newPassword?: string };
-    if (!token || !newPassword) {
-      res.status(400).json({ error: 'Token and new password are required' });
-      return;
-    }
-    if (newPassword.length < 12) {
-      res.status(400).json({ error: 'Password must be at least 12 characters' });
-      return;
-    }
+  router.post('/auth/reset-password', validate(ResetPasswordSchema), async (req, res) => {
+    const { token, newPassword } = req.body as { token: string; newPassword: string };
 
     const record = db.prepare(
       `SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')`

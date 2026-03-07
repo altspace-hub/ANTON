@@ -49,7 +49,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | SEC-11 | Replace all dynamic WHERE/SET string concatenation with parameterised statements | 14, 17 | M | [x] |
-| SEC-12 | Add Zod/schema validation to all `req.body` / `req.query` / `req.params` at route entry | 7, 14 | L | [ ] |
+| SEC-12 | Add Zod/schema validation to all `req.body` / `req.query` / `req.params` at route entry | 7, 14 | L | [x] |
 | SEC-13 | Validate `parseInt()` results — check `!isNaN()` before use in SQL LIMIT/OFFSET | 14 | S | [x] |
 
 ---

@@ -4,6 +4,8 @@ import path from 'path';
 import fs from 'fs-extra';
 import { fileTypeFromBuffer } from 'file-type';
 import { extractTextFromFile } from '../services/text-extractor.js';
+import { validateParams } from '../lib/validate.js';
+import { FileIdParamSchema } from '../lib/schemas.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 fs.ensureDirSync(UPLOAD_DIR);
@@ -80,7 +82,7 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
 });
 
 // GET /api/files/:id
-router.get('/files/:id', (req, res) => {
+router.get('/files/:id', validateParams(FileIdParamSchema), (req, res) => {
   const filePath = path.join(UPLOAD_DIR, req.params.id);
   // Existence check before realpath (realpath throws on missing file)
   if (!fs.existsSync(filePath)) {

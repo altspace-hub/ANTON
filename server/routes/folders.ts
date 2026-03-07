@@ -2,6 +2,8 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs-extra';
+import { validate } from '../lib/validate.js';
+import { FolderBrowseSchema, FolderRegisterSchema, FolderIndexSchema } from '../lib/schemas.js';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
 
@@ -22,10 +24,10 @@ export function createFolderRoutes(db: Database.Database) {
   const router = Router();
 
   // POST /api/folders/browse — list directory contents
-  router.post('/folders/browse', async (req, res) => {
+  router.post('/folders/browse', validate(FolderBrowseSchema), async (req, res) => {
     try {
-      const { path: dirPath } = req.body;
-      if (!dirPath || !path.isAbsolute(dirPath)) {
+      const { path: dirPath } = req.body as { path: string };
+      if (!path.isAbsolute(dirPath)) {
         res.status(400).json({ error: 'Absolute path required' });
         return;
       }
@@ -62,10 +64,10 @@ export function createFolderRoutes(db: Database.Database) {
   });
 
   // POST /api/folders/register — save a folder
-  router.post('/folders/register', async (req, res) => {
+  router.post('/folders/register', validate(FolderRegisterSchema), async (req, res) => {
     try {
-      const { path: folderPath, label } = req.body;
-      if (!folderPath || !path.isAbsolute(folderPath)) {
+      const { path: folderPath, label } = req.body as { path: string; label?: string };
+      if (!path.isAbsolute(folderPath)) {
         res.status(400).json({ error: 'Absolute path required' });
         return;
       }
@@ -118,10 +120,10 @@ export function createFolderRoutes(db: Database.Database) {
   });
 
   // POST /api/folders/index — get detailed index of folder contents
-  router.post('/folders/index', async (req, res) => {
+  router.post('/folders/index', validate(FolderIndexSchema), async (req, res) => {
     try {
-      const { path: folderPath, recursive = true, filter } = req.body;
-      if (!folderPath || !path.isAbsolute(folderPath)) {
+      const { path: folderPath, recursive = true, filter } = req.body as { path: string; recursive: boolean; filter?: string[] };
+      if (!path.isAbsolute(folderPath)) {
         res.status(400).json({ error: 'Absolute path required' });
         return;
       }
