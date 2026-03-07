@@ -16,7 +16,7 @@ Last updated: 2026-03-07
 | SEC-09 | Add compression ratio check to ZIP uploads: reject if expanded > 100× compressed size | M | ZIP uploads are not currently a primary flow. Add when ZIP extraction is added as a file type. |
 | ~~SEC-12~~ | ~~Zod validation on route bodies~~ | L | **DONE** — `server/lib/validate.ts` + `server/lib/schemas.ts`; applied to auth, files, folders, export, claude, task-agent. |
 | SEC-14 | Add CSRF token validation on all state-mutating routes (POST/PUT/DELETE) | M | JWT Bearer header in `Authorization` already provides CSRF protection for all API endpoints (browser SameSite form submissions can't set custom headers). CSRF tokens only needed if/when switching to cookie-based auth (SEC-05). Do together with SEC-05. |
-| SEC-16 | Add WebSocket auth validation: reject Socket.IO connections without valid JWT | M | School Mode study rooms use anonymous displayName (no JWT by design). Community namespace uses contactHash. Add JWT gate only for community namespace in team mode deployment. |
+| ~~SEC-16~~ | ~~WebSocket JWT auth~~ | M | **DONE** — `communityNS.use()` middleware in server/index.ts; team mode rejects without valid JWT; solo mode unchanged. |
 
 ---
 

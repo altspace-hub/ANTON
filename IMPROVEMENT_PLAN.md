@@ -59,7 +59,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 |----|---------|---------|--------|--------|
 | SEC-14 | Add CSRF token validation on all state-mutating routes (POST/PUT/DELETE) | 11, 19, 38 | M | [~] |
 | SEC-15 | Rate-limit `/api/auth/*` endpoints: max 10 attempts/min per IP | 12, 38 | S | [x] |
-| SEC-16 | Add WebSocket auth validation: reject socketIO connections without valid JWT | 14 | M | [ ] |
+| SEC-16 | Add WebSocket auth validation: reject socketIO connections without valid JWT | 14 | M | [x] |
 | SEC-17 | Add `req.on('close')` + `res.socket?.destroy()` cleanup to all 19 SSE endpoints | 13 | M | [x] |
 
 ---

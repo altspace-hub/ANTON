@@ -456,6 +456,25 @@ studyRooms.on('connection', (socket) => {
 // Community namespace — personal notification rooms + group chat relay
 const communityNS = io.of('/community');
 setCommunitySocketNS(communityNS);
+
+// SEC-16: JWT auth gate for community namespace in team mode
+const IS_TEAM_MODE_SOCK = process.env.DEPLOYMENT_MODE === 'team';
+const SOCK_JWT_SECRET = process.env.JWT_SECRET || '';
+communityNS.use((socket, next) => {
+  if (!IS_TEAM_MODE_SOCK) return next(); // solo mode — always allow
+  const token = (socket.handshake.auth as Record<string, string>)?.token
+    || (socket.handshake.query.token as string | undefined);
+  if (!token) { next(new Error('Authentication required')); return; }
+  try {
+    jwt.verify(token, SOCK_JWT_SECRET);
+    const session = db.prepare('SELECT id FROM user_sessions WHERE token = ? AND expires_at > datetime("now")').get(token);
+    if (!session) { next(new Error('Session expired')); return; }
+    next();
+  } catch {
+    next(new Error('Invalid token'));
+  }
+});
+
 communityNS.on('connection', (socket) => {
   const { contactHash } = socket.handshake.query as { contactHash?: string };
   if (contactHash) void socket.join(`user:${contactHash}`);
