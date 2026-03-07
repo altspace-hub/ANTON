@@ -395,11 +395,40 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* LONE-03: Regulatory deadline countdown */}
+      {(() => {
+        const AMLR_DATE   = new Date('2027-07-10');
+        const AMLD6_DATE  = new Date('2026-07-10');
+        const DORA_DATE   = new Date('2025-01-17');
+        const today = new Date();
+        const daysUntil = (d: Date) => Math.max(0, Math.ceil((d.getTime() - today.getTime()) / 86_400_000));
+        const deadlines = [
+          { label: 'DORA applies',        date: DORA_DATE,  color: daysUntil(DORA_DATE)  === 0 ? 'text-adv-red'   : 'text-adv-gold', link: '/module/gap-analysis' },
+          { label: 'AMLD6 transposition', date: AMLD6_DATE, color: daysUntil(AMLD6_DATE) < 180 ? 'text-adv-gold'  : 'text-adv-teal', link: '/module/gap-analysis' },
+          { label: 'AMLR applies',        date: AMLR_DATE,  color: daysUntil(AMLR_DATE)  < 365 ? 'text-adv-gold'  : 'text-adv-teal', link: '/module/gap-analysis' },
+        ].filter(d => daysUntil(d.date) > 0);
+        if (deadlines.length === 0) return null;
+        return (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {deadlines.map(d => (
+              <Link key={d.label} to={d.link}
+                className="flex items-center gap-2 rounded-lg border border-adv-card bg-adv-card px-3 py-1.5 text-xs transition-colors hover:border-adv-teal/40"
+              >
+                <Clock className="h-3 w-3 text-adv-gray" />
+                <span className="text-adv-gray">{d.label}:</span>
+                <span className={`font-semibold ${d.color}`}>{daysUntil(d.date).toLocaleString()} days</span>
+              </Link>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Stat Cards */}
       {stats !== null && (
         <>
+          {/* LONE-04: stat cards are drill-down links to relevant pages */}
           <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+            <Link to="/my-work" className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4 transition-colors hover:border-adv-teal/40">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
                 <LayoutGrid className="h-5 w-5" />
               </div>
@@ -407,8 +436,8 @@ export default function Dashboard() {
                 <p className="text-xl font-semibold text-adv-white">{stats.totalSessions}</p>
                 <p className="text-xs text-adv-gray">{t('dashboard.sessions')}</p>
               </div>
-            </div>
-            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+            </Link>
+            <Link to="/my-work" className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4 transition-colors hover:border-adv-teal/40">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
                 <MessageSquare className="h-5 w-5" />
               </div>
@@ -416,8 +445,8 @@ export default function Dashboard() {
                 <p className="text-xl font-semibold text-adv-white">{stats.totalMessages}</p>
                 <p className="text-xs text-adv-gray">{t('dashboard.aiResponses')}</p>
               </div>
-            </div>
-            <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
+            </Link>
+            <Link to="/audit" className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4 transition-colors hover:border-adv-teal/40">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
                 <Zap className="h-5 w-5" />
               </div>
@@ -425,7 +454,7 @@ export default function Dashboard() {
                 <p className="text-xl font-semibold text-adv-white">{(stats.totalOutputTokens ?? 0).toLocaleString()}</p>
                 <p className="text-xs text-adv-gray">{t('dashboard.outputTokens')}</p>
               </div>
-            </div>
+            </Link>
             <div className="flex items-center gap-4 rounded-xl border border-border bg-adv-card px-5 py-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-adv-teal-dim text-adv-teal">
                 <Clock className="h-5 w-5" />
