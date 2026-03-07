@@ -27,6 +27,7 @@ import {
   runHeartbeatCycle,
   createReasoningTrail, addTrailEntry, completeTrail,
   ORCHESTRATOR_HARD_LIMITS,
+  checkStageDemotion, generateManagementReport,
 } from '../services/orchestrator-engine.js';
 import {
   getDemoState, activateDemoMode, deactivateDemoMode, advanceSimulationDay,
@@ -635,6 +636,43 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       `).all(req.params.id);
 
       res.json({ trail, entries });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Management report ─────────────────────────────────────────────────────
+  router.get('/orchestrator/report', requireAuth, async (req: Request, res: Response) => {
+    if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
+    try {
+      const period = (req.query.period as string) === 'month' ? 'month' : 'week';
+      const report = await generateManagementReport(db, anthropic, period);
+      res.json({ report, period, generated_at: new Date().toISOString() });
+    } catch (err) {
+      console.error('[orchestrator] report error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Stage demotion check ───────────────────────────────────────────────────
+  router.post('/orchestrator/demotion-check', requireAuth, (_req: Request, res: Response) => {
+    try {
+      const result = checkStageDemotion(db);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Stage demotion history ────────────────────────────────────────────────
+  router.get('/orchestrator/demotions', requireAuth, (_req: Request, res: Response) => {
+    try {
+      const tableExists = (db.prepare(
+        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_stage_demotions'"
+      ).get() as { c: number }).c > 0;
+      if (!tableExists) return res.json({ demotions: [] });
+      const demotions = db.prepare('SELECT * FROM orchestrator_stage_demotions ORDER BY demoted_at DESC LIMIT 20').all();
+      res.json({ demotions });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }

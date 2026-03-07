@@ -355,6 +355,36 @@ function readApprenticeSignals(db: Database.Database, since: Date): PlatformSign
   }));
 }
 
+/** Read Knowledge Graph signals — high-frequency entities with recent activity */
+function readKnowledgeGraphSignals(db: Database.Database): PlatformSignal[] {
+  try {
+    const rows = db.prepare(`
+      SELECT en.entity_type, en.canonical_name, en.interaction_count,
+             en.last_seen, COUNT(er.id) as relationship_count
+      FROM entity_nodes en
+      LEFT JOIN entity_relationships er ON er.from_id = en.id OR er.to_id = en.id
+      WHERE en.interaction_count >= 5
+        AND en.last_seen >= datetime('now', '-7 days')
+      GROUP BY en.id
+      ORDER BY en.interaction_count DESC
+      LIMIT 5
+    `).all() as Array<{
+      entity_type: string; canonical_name: string; interaction_count: number;
+      last_seen: string; relationship_count: number;
+    }>;
+
+    return rows.map(r => ({
+      source: 'knowledge_graph' as const,
+      signal_id: `kg-${r.entity_type}-${r.canonical_name}`,
+      summary: `Knowledge graph: "${r.canonical_name}" (${r.entity_type}) with ${r.interaction_count} interactions and ${r.relationship_count} relationships — frequently referenced entity`,
+      urgency: Math.min(0.6, 0.3 + (r.interaction_count / 50) * 0.3),
+      relevance: 0.7,
+      detected_at: r.last_seen,
+      raw_data: { entity_type: r.entity_type, canonical_name: r.canonical_name, interaction_count: r.interaction_count },
+    }));
+  } catch { return []; }
+}
+
 /** Read unread high-severity proactive insights */
 function readProactiveSignals(db: Database.Database): PlatformSignal[] {
   const rows = db.prepare(`
@@ -398,6 +428,7 @@ export async function aggregateSignals(
     ...readWorkflowSignals(db, since),
     ...readApprenticeSignals(db, since),
     ...readProactiveSignals(db),
+    ...readKnowledgeGraphSignals(db),
   ];
 
   // Sort by urgency × relevance descending
@@ -645,6 +676,158 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
   }
 
   return { advanced: false };
+}
+
+/**
+ * Automatic stage demotion: if performance deteriorates significantly after
+ * advancing to Stage 2+, demote back to Stage 1 for recalibration.
+ */
+export function checkStageDemotion(db: Database.Database): { demoted: boolean; fromStage?: number; reason?: string } {
+  const stage = db.prepare('SELECT * FROM orchestrator_stage WHERE id = ?').get('default') as {
+    current_stage: number;
+    stage_entered_at: string;
+    proposals_rated: number;
+    proposals_good_or_relevant: number;
+    proposals_irrelevant_or_wrong: number;
+    stage_history: string;
+  } | undefined;
+
+  if (!stage || stage.current_stage < 2) return { demoted: false };
+
+  // Demotion criteria: >50% bad/wrong proposals with at least 10 rated at current stage
+  // Only evaluate proposals since entering the current stage
+  if (stage.proposals_rated < 10) return { demoted: false };
+  const badRate = stage.proposals_irrelevant_or_wrong / stage.proposals_rated;
+
+  if (badRate >= 0.5) {
+    const now = new Date().toISOString();
+    const fromStage = stage.current_stage;
+    const reason = `Quality degraded: ${Math.round(badRate * 100)}% of proposals rated wrong/irrelevant at Stage ${fromStage}`;
+    const history = JSON.parse(stage.stage_history || '[]') as unknown[];
+    history.push({
+      stage: fromStage,
+      entered_at: stage.stage_entered_at,
+      exited_at: now,
+      reason: `AUTO-DEMOTION: ${reason}`,
+      was_demotion: true,
+    });
+
+    db.prepare(`
+      UPDATE orchestrator_stage SET
+        current_stage = 1,
+        stage_entered_at = ?,
+        stage_history = ?,
+        proposals_rated = 0,
+        proposals_good_or_relevant = 0,
+        proposals_irrelevant_or_wrong = 0,
+        updated_at = ?
+      WHERE id = 'default'
+    `).run(now, JSON.stringify(history), now);
+
+    // Log demotion event
+    try {
+      db.prepare(`
+        INSERT INTO orchestrator_stage_demotions
+          (id, from_stage, to_stage, reason, trigger_type, triggered_by)
+        VALUES (?, ?, 1, ?, 'auto_quality', 'system')
+      `).run(randomUUID(), fromStage, reason);
+    } catch { /* table may not exist */ }
+
+    console.warn(`[orchestrator] STAGE DEMOTION: ${fromStage} → 1. Reason: ${reason}`);
+    return { demoted: true, fromStage, reason };
+  }
+
+  return { demoted: false };
+}
+
+// ── Management Report Generation ──────────────────────────────────────────────
+
+/**
+ * Generate a management report summarising orchestrator performance.
+ * Used by GET /orchestrator/report endpoint.
+ */
+export async function generateManagementReport(
+  db: Database.Database,
+  anthropic: AnthropicSDK,
+  period: 'week' | 'month' = 'week'
+): Promise<string> {
+  const days = period === 'week' ? 7 : 30;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  // Gather stats
+  const briefingCount = (db.prepare(
+    'SELECT COUNT(*) as c FROM orchestrator_briefings WHERE created_at >= ?'
+  ).get(since) as { c: number }).c;
+  const proposalCount = (db.prepare(
+    'SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ?'
+  ).get(since) as { c: number }).c;
+  const ratedCount = (db.prepare(
+    'SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ? AND human_rating IS NOT NULL'
+  ).get(since) as { c: number }).c;
+  const goodCount = (db.prepare(
+    "SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ? AND human_rating IN ('good_catch','relevant')"
+  ).get(since) as { c: number }).c;
+  const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
+    { current_stage: number } | undefined;
+
+  let executionStats = { c: 0 };
+  try {
+    executionStats = db.prepare(
+      'SELECT COUNT(*) as c FROM orchestrator_executions WHERE initiated_at >= ?'
+    ).get(since) as { c: number };
+  } catch { /* ignore */ }
+
+  const platformStats = {
+    briefings: briefingCount,
+    proposals: proposalCount,
+    rated: ratedCount,
+    good: goodCount,
+    good_rate: ratedCount > 0 ? Math.round((goodCount / ratedCount) * 100) : 0,
+    executions: executionStats.c,
+    stage: stage?.current_stage ?? 1,
+    period_days: days,
+  };
+
+  const prompt = `Generate a concise management report for ANTON Prime (AI Orchestrator) for the last ${days} days.
+
+Platform statistics:
+- Briefings generated: ${platformStats.briefings}
+- Proposals made: ${platformStats.proposals}
+- Proposals rated: ${platformStats.rated}
+- Good/relevant: ${platformStats.good} (${platformStats.good_rate}%)
+- Executions approved: ${platformStats.executions}
+- Current stage: ${platformStats.stage} of 4
+
+Report format:
+# ANTON Prime — ${period === 'week' ? 'Weekly' : 'Monthly'} Management Report
+## Performance Summary
+## Key Activities
+## Proposal Quality Analysis
+## Recommendations
+## Next Period Focus
+
+Keep it concise (300–500 words). Professional tone. Include concrete numbers.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const content = response.content[0];
+    return content.type === 'text' ? content.text : 'Report generation failed';
+  } catch (e) {
+    // Fallback: data-only report
+    return `# ANTON Prime — ${period === 'week' ? 'Weekly' : 'Monthly'} Management Report\n\n` +
+      `**Period:** Last ${days} days\n\n` +
+      `| Metric | Value |\n|---|---|\n` +
+      `| Briefings | ${platformStats.briefings} |\n` +
+      `| Proposals | ${platformStats.proposals} |\n` +
+      `| Proposal quality | ${platformStats.good_rate}% good/relevant |\n` +
+      `| Executions | ${platformStats.executions} |\n` +
+      `| Current stage | ${platformStats.stage}/4 |\n\n` +
+      `*Note: Narrative report unavailable — API error: ${String(e)}*`;
+  }
 }
 
 // ── Workflow Plan Generation (Phase 2 — Opus) ─────────────────────────────────
@@ -1115,9 +1298,12 @@ export async function runHeartbeatCycle(
     }
   }
 
-  // Check stage progression daily
+  // Check stage progression + demotion daily
   if (period === 'daily' || period === 'on_demand') {
-    checkStageProgression(db);
+    const demotion = checkStageDemotion(db);
+    if (!demotion.demoted) {
+      checkStageProgression(db);
+    }
   }
 
   return { action, briefingId, signalCount: signals.length, trailId };

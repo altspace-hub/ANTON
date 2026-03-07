@@ -2846,6 +2846,22 @@ export function initDatabase(): Database.Database {
     }
   }
 
+  // ── Migration 025: Meta-learning + Stage Demotion + Workflow Chains ──────
+  {
+    const sentinel025 = db.prepare(
+      "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_meta_learning'"
+    ).get() as { c: number };
+    if (sentinel025.c === 0) {
+      try {
+        const sql025 = fs.readFileSync(path.join(migrationsDir, '025_orchestrator_meta_learning.sql'), 'utf-8');
+        db.exec(sql025);
+        console.log('[db] Migration 025 applied (orchestrator meta-learning + stage demotion + chains)');
+      } catch (e) {
+        console.warn('[db] Migration 025 skipped (non-fatal):', e);
+      }
+    }
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }
