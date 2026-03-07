@@ -97,6 +97,7 @@ const OrchestrationDashboard = lazy(() => import('./pages/OrchestrationDashboard
 
 // FCP Interactive Modes
 const CounselsDesk = lazy(() => import('./pages/CounselsDesk'));
+const OrchestratorDashboard = lazy(() => import('./pages/OrchestratorDashboard'));
 const GapAssessmentHub = lazy(() => import('./pages/GapAssessmentHub'));
 const GapAssessmentWizard = lazy(() => import('./pages/GapAssessmentWizard'));
 
@@ -389,6 +390,7 @@ export default function App() {
           <Route path="/innovation-radar" element={<InnovationRadarPage />} />
           {/* FCP Interactive Modes */}
           <Route path="/counsels-desk" element={<CounselsDesk />} />
+          <Route path="/orchestrator" element={<OrchestratorDashboard />} />
           <Route path="/gap-assessment" element={<GapAssessmentHub />} />
           <Route path="/gap-assessment/:id" element={<GapAssessmentWizard />} />
           {/* Data Partnerships — Roaring + Dow Jones */}

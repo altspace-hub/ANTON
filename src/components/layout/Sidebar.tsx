@@ -772,6 +772,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </NavLinkWithStar>
 
         <NavLinkWithStar
+          to="/orchestrator"
+          navId="orchestrator"
+          title={sidebarCollapsed ? 'ANTON Orchestrator' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('orchestrator')}
+          isHidden={hiddenNavItems.has('orchestrator')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Brain className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Orchestrator'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
           to="/counsels-desk"
           navId="counsels-desk"
           title={sidebarCollapsed ? "Counsel's Desk" : undefined}

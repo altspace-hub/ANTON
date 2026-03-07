@@ -100,6 +100,8 @@ import { createGapAssessmentsRoutes } from './routes/gap-assessments.js';
 import { createAiAssistRoutes } from './routes/ai-assist.js';
 import { createRoaringRoutes } from './routes/roaring.js';
 import { createDowJonesRoutes } from './routes/dowjones.js';
+import { createOrchestratorRoutes } from './routes/orchestrator.js';
+import { initOrchestratorHeartbeat } from './services/orchestrator-heartbeat.js';
 import { createContinuityRoutes } from './routes/continuity.js';
 import { createWebhookListener } from './services/webhook-listener.js';
 import { setEventEmitter } from './services/event-emitter.js';
@@ -374,6 +376,7 @@ app.use('/api', createGapAssessmentsRoutes(db, anthropic)); // Compliance Gap As
 app.use('/api', createAiAssistRoutes());                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
 app.use('/api', createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
 app.use('/api', createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
+app.use('/api', createOrchestratorRoutes(db, anthropic));   // ANTON Orchestrator — AI management layer
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));
@@ -487,6 +490,13 @@ httpServer.listen(PORT, () => {
     console.log('[deadline-reminders] Reminder service started');
   } catch (err) {
     console.error('[deadline-reminders] Failed to start reminder service:', err);
+  }
+
+  // Initialize ANTON Orchestrator heartbeat
+  try {
+    initOrchestratorHeartbeat(db, anthropic);
+  } catch (err) {
+    console.error('[orchestrator-heartbeat] Failed to start:', err);
   }
 
   // Initialize radar background scanning from DB settings

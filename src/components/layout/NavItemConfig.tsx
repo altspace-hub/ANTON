@@ -41,6 +41,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'community-calendar', label: 'Community Calendar', category: 'tools' },
 
   // Tools
+  { id: 'orchestrator', label: 'ANTON Orchestrator', category: 'intelligence' },
   { id: 'counsels-desk', label: "Counsel's Desk", category: 'tools' },
   { id: 'gap-assessment', label: 'Gap Assessor', category: 'tools' },
   { id: 'roaring', label: 'Roaring Entity Registry', category: 'tools' },

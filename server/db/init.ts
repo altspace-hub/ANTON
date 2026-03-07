@@ -2712,6 +2712,27 @@ export function initDatabase(): Database.Database {
     db.exec(`CREATE INDEX IF NOT EXISTS idx_monitoring_alerts_entity ON monitoring_alerts(entity_monitoring_id)`);
   }
 
+  // Migration 021: ANTON Orchestrator (Phase 1 — Observer stage)
+  const orchestratorExists = db.prepare(
+    "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_config'"
+  ).get() as { c: number };
+  if (orchestratorExists.c === 0) {
+    const migration021Path = path.join(__dirname, 'migrations', '021_orchestrator.sql');
+    if (fs.existsSync(migration021Path)) {
+      const migration021 = fs.readFileSync(migration021Path, 'utf-8');
+      db.exec(migration021);
+      console.log('[db] Migration 021: Orchestrator tables created');
+    }
+  } else {
+    // Idempotent index enforcement for existing DBs
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_heartbeats_ran_at ON orchestrator_heartbeats(ran_at DESC)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_briefings_created ON orchestrator_briefings(created_at DESC)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_briefings_status ON orchestrator_briefings(status, user_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_proposals_briefing ON orchestrator_proposals(briefing_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_proposals_status ON orchestrator_proposals(status, created_at DESC)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_orch_proposals_source ON orchestrator_proposals(signal_source, created_at DESC)`);
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }
