@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Brain, Activity, FileText, Zap, CheckCircle, XCircle,
   Clock, AlertTriangle, TrendingDown, ChevronRight,
@@ -204,6 +205,7 @@ function stage1ProgressPercent(stage: OrchestratorStage): number {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function OrchestratorDashboard() {
+  const navigate = useNavigate();
   const [stage, setStage] = useState<OrchestratorStage | null>(null);
   const [config, setConfig] = useState<OrchestratorConfig | null>(null);
   const [lastHeartbeat, setLastHeartbeat] = useState<Heartbeat | null>(null);
@@ -895,12 +897,14 @@ export default function OrchestratorDashboard() {
             <div className="border-t border-white/5">
               <div className="divide-y divide-white/5 max-h-64 overflow-y-auto">
                 {trails.map(t => (
-                  <button
+                  <div
                     key={t.id}
-                    onClick={() => loadTrail(t.id)}
-                    className={`w-full px-4 py-2.5 flex items-center justify-between hover:bg-white/2 transition-colors text-left ${activeTrail?.trail.id === t.id ? 'bg-adv-teal-dim' : ''}`}
+                    className={`px-4 py-2.5 flex items-center justify-between hover:bg-white/2 transition-colors ${activeTrail?.trail.id === t.id ? 'bg-adv-teal-dim' : ''}`}
                   >
-                    <div>
+                    <button
+                      onClick={() => loadTrail(t.id)}
+                      className="flex-1 text-left"
+                    >
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs text-adv-off-white capitalize">{t.trigger_type.replace(/_/g, ' ')}</span>
                         <span className={`text-[10px] px-1 py-0.5 rounded ${t.status === 'completed' ? 'text-adv-teal' : t.status === 'failed' ? 'text-adv-red' : 'text-adv-gray'}`}>
@@ -911,9 +915,15 @@ export default function OrchestratorDashboard() {
                         {formatTime(t.created_at)} · {t.total_entries} steps
                         {t.duration_ms ? ` · ${t.duration_ms}ms` : ''}
                       </div>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-adv-gray shrink-0" />
-                  </button>
+                    </button>
+                    <button
+                      onClick={() => navigate(`/orchestrator/trail/${t.id}`)}
+                      className="shrink-0 ml-2 text-[10px] text-adv-teal hover:text-adv-teal-dark px-2 py-0.5 rounded border border-adv-teal/20 hover:bg-adv-teal-dim transition-colors"
+                      title="Open full trail viewer"
+                    >
+                      View
+                    </button>
+                  </div>
                 ))}
               </div>
 

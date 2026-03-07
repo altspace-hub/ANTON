@@ -23,7 +23,11 @@ import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import type AnthropicSDK from '@anthropic-ai/sdk';
 import { requireAuth } from '../middleware/auth.js';
-import { runHeartbeatCycle, createReasoningTrail, addTrailEntry, completeTrail } from '../services/orchestrator-engine.js';
+import {
+  runHeartbeatCycle,
+  createReasoningTrail, addTrailEntry, completeTrail,
+  ORCHESTRATOR_HARD_LIMITS,
+} from '../services/orchestrator-engine.js';
 
 export function createOrchestratorRoutes(db: Database.Database, anthropic: AnthropicSDK | null): Router {
   const router = Router();
@@ -261,6 +265,45 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
+  });
+
+  // ── Kill switch: full disable (admin-only, irreversible until restart) ───
+  router.post('/orchestrator/disable', requireAuth, (req: Request, res: Response) => {
+    try {
+      const user = (req as unknown as { user?: { username?: string; role?: string } }).user;
+      // Require admin role for full disable
+      if (user?.role && user.role !== 'admin') {
+        return res.status(403).json({ error: 'Full disable requires admin role' });
+      }
+      const by = user?.username ?? 'solo';
+      const { reason } = req.body as { reason?: string };
+
+      db.prepare(`
+        UPDATE orchestrator_config SET
+          orchestrator_paused = 1,
+          fully_disabled = 1,
+          paused_at = datetime('now'),
+          paused_by = ?,
+          updated_at = datetime('now')
+        WHERE id = 'default'
+      `).run(by);
+
+      // Log the disable event
+      db.prepare(`
+        INSERT INTO orchestrator_heartbeats (ran_at, trigger_type, action, signals_evaluated, error_message)
+        VALUES (datetime('now'), 'system', 'fully_disabled', 0, ?)
+      `).run(`Orchestrator fully disabled by ${by}. Reason: ${reason ?? 'Not provided'}`);
+
+      console.warn(`[orchestrator] ⛔ FULLY DISABLED by ${by}. Reason: ${reason ?? 'none'}`);
+      res.json({ ok: true, fully_disabled: true, disabled_by: by });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Hard limits (read-only — cannot be overridden) ────────────────────────
+  router.get('/orchestrator/limits', requireAuth, (_req: Request, res: Response) => {
+    res.json({ limits: ORCHESTRATOR_HARD_LIMITS });
   });
 
   // ── Kill switch: reset to Observer ───────────────────────────────────────

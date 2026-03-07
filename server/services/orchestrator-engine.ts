@@ -80,6 +80,25 @@ interface OrchestratorConfig {
   fully_disabled: number;
 }
 
+// ── Hard limits (safety ceiling — cannot be overridden via config) ────────────
+
+export const ORCHESTRATOR_HARD_LIMITS = {
+  /** Maximum proposals generated per briefing */
+  MAX_PROPOSALS_PER_BRIEFING: 10,
+  /** Maximum heartbeat cycles per hour (prevents runaway scheduling) */
+  MAX_HEARTBEATS_PER_HOUR: 6,
+  /** Maximum auto-executions per day (Stage 3+) */
+  MAX_AUTO_EXECUTIONS_PER_DAY: 20,
+  /** Maximum chained workflow depth */
+  MAX_CHAIN_DEPTH: 5,
+  /** Minimum interval between heartbeats in minutes */
+  MIN_HEARTBEAT_INTERVAL_MINUTES: 10,
+  /** Maximum reasoning trail entries per trail */
+  MAX_TRAIL_ENTRIES: 100,
+  /** Maximum cost per heartbeat cycle in USD */
+  MAX_COST_PER_CYCLE_USD: 2.0,
+} as const;
+
 // ── Config loader ─────────────────────────────────────────────────────────────
 
 export function getOrchestratorConfig(db: Database.Database): OrchestratorConfig {
@@ -535,8 +554,9 @@ export function saveBriefing(
     JSON.stringify(briefing.signals_data)
   );
 
-  // Save individual proposals
-  for (const p of briefing.proposals) {
+  // Save individual proposals (hard limit: max per briefing)
+  const cappedProposals = briefing.proposals.slice(0, ORCHESTRATOR_HARD_LIMITS.MAX_PROPOSALS_PER_BRIEFING);
+  for (const p of cappedProposals) {
     db.prepare(`
       INSERT INTO orchestrator_proposals
         (id, briefing_id, signal_source, signal_id, signal_summary,
@@ -564,7 +584,7 @@ export function saveBriefing(
       total_proposals = total_proposals + ?,
       updated_at = datetime('now')
     WHERE id = 'default'
-  `).run(briefing.proposals.length);
+  `).run(cappedProposals.length);
 
   return id;
 }
