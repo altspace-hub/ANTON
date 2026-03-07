@@ -42,7 +42,10 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-adv-off-white">Knowledge Sources</span>
-        <HelpTooltip text="Where should Claude find regulatory text and reference material?" />
+        <HelpTooltip
+          wide
+          text={"Controls where Claude gets its reference material.\n\n• Claude's knowledge — built-in training data + optional live web search for the latest regulatory publications.\n• Online links — paste URLs to specific regulations; Claude reads them directly.\n• Local folders — point to folders on your computer containing client documents, regulation texts, or policy files.\n• Combined mode — use local documents alongside Claude's knowledge. Best for gap analysis: compare client docs against regulatory requirements.\n\nYou can enable multiple sources at once. Token usage is shown below."}
+        />
       </div>
 
       {/* Mode 1: Claude Knowledge */}

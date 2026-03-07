@@ -1,142 +1,1601 @@
 [
-  {"ref_id": "REG-AMLR",      "entity_type": "regulation",   "entity_id": "AMLR-2024",         "canonical_name": "Regulation (EU) 2024/1624 — AMLR",              "description": "The EU Anti-Money Laundering Regulation, directly applicable across all Member States, replacing AMLD4/5 customer-facing provisions.", "metadata": {"oj_ref": "OJ L 2024/1624", "entry_into_force": "2024-07-11", "applies_from": "2027-07-10"}},
-  {"ref_id": "REG-AMLD6",     "entity_type": "regulation",   "entity_id": "AMLD6-2024",         "canonical_name": "Directive (EU) 2024/1640 — AMLD6",              "description": "6th Anti-Money Laundering Directive — institutional and supervisory framework to be implemented by Member States.", "metadata": {"oj_ref": "OJ L 2024/1640", "transposition_deadline": "2026-07-10"}},
-  {"ref_id": "REG-AMLA",      "entity_type": "authority",    "entity_id": "AMLA",               "canonical_name": "Anti-Money Laundering Authority (AMLA)",        "description": "New EU supervisory authority established by Regulation (EU) 2024/1620. Becomes operational 2025, takes over direct supervision of highest-risk entities 2028.", "metadata": {"seat": "Frankfurt", "operational": "2025-07-01", "direct_supervision": "2028-01-01"}},
-  {"ref_id": "REG-EBA",       "entity_type": "authority",    "entity_id": "EBA",                "canonical_name": "European Banking Authority (EBA)",              "description": "Issues binding technical standards and guidelines on AML/CFT. Transfers supervisory convergence role to AMLA from 2025.", "metadata": {}},
-  {"ref_id": "REG-FATF",      "entity_type": "authority",    "entity_id": "FATF",               "canonical_name": "Financial Action Task Force (FATF)",            "description": "International standard-setter for AML/CFT. AMLR requirements aligned with FATF Recommendations 2012 (as updated).", "metadata": {}},
-  {"ref_id": "OBL-CDD",       "entity_type": "obligation",   "entity_id": "AMLR-Art-20",        "canonical_name": "Customer Due Diligence (CDD) — Art. 20 AMLR",   "description": "Obliged entities must apply CDD measures when establishing a business relationship, carrying out occasional transactions ≥€10,000, or when suspicion of ML/TF arises.", "metadata": {"article": "20", "chapter": "III", "threshold_eur": 10000}},
-  {"ref_id": "OBL-EDD",       "entity_type": "obligation",   "entity_id": "AMLR-Art-34",        "canonical_name": "Enhanced Due Diligence (EDD) — Art. 34 AMLR",   "description": "Mandatory EDD for high-risk third countries, PEPs, and complex/unusual transactions. Includes enhanced monitoring and senior management approval.", "metadata": {"article": "34", "chapter": "III"}},
-  {"ref_id": "OBL-SDD",       "entity_type": "obligation",   "entity_id": "AMLR-Art-31",        "canonical_name": "Simplified Due Diligence (SDD) — Art. 31 AMLR", "description": "Proportionate measures permitted for lower-risk situations. Cannot be applied to PEPs, high-risk third countries, or when ML/TF suspicion exists.", "metadata": {"article": "31", "chapter": "III"}},
-  {"ref_id": "OBL-UBO",       "entity_type": "obligation",   "entity_id": "AMLR-Art-22",        "canonical_name": "Beneficial Ownership Identification — Art. 22 AMLR", "description": "Obliged entities must identify and verify the beneficial owner of legal entities as part of CDD (Art. 22 AMLR). ≥25% ownership or control threshold for companies. No percentage threshold applies to trusts/foundations — all persons in the trust structure must be identified.", "metadata": {"article": "22", "threshold_pct": 25, "note": "25% threshold applies to legal entities only; no threshold for trusts/foundations"}},
-  {"ref_id": "OBL-PEP",       "entity_type": "obligation",   "entity_id": "AMLR-Art-44",        "canonical_name": "PEP Obligations — Art. 44 AMLR",                "description": "Politically Exposed Persons: enhanced scrutiny, senior management approval, source of wealth/funds verification. Former PEPs must be treated as PEPs for an appropriate risk-based period after ceasing public function (Art. 45(4) AMLR — no fixed duration mandated; risk-sensitive assessment required).", "metadata": {"article": "44", "chapter": "III", "cessation_note": "Risk-based period per Art. 45(4) — no fixed duration mandated by AMLR"}},
-  {"ref_id": "OBL-SAR",       "entity_type": "obligation",   "entity_id": "AMLR-Art-69",        "canonical_name": "Suspicious Activity Reporting (SAR) — Art. 69 AMLR", "description": "Obliged entities must promptly report suspicions of ML/TF to FIUs. Tipping-off prohibition applies. Attempted transactions must also be reported.", "metadata": {"article": "69", "chapter": "V"}},
-  {"ref_id": "OBL-RBA",       "entity_type": "obligation",   "entity_id": "AMLR-Art-8",         "canonical_name": "Risk-Based Approach (RBA) — Art. 8 AMLR",       "description": "Obliged entities must implement a risk-based approach informed by supranational (SNRA), national (NRA), and entity-level risk assessments. Proportionate to identified risks.", "metadata": {"article": "8", "chapter": "II"}},
-  {"ref_id": "OBL-BWRA",      "entity_type": "obligation",   "entity_id": "AMLR-Art-10",        "canonical_name": "Business-Wide Risk Assessment (BWRA) — Art. 10 AMLR", "description": "Written BWRA required covering all products, services, customers, geographies. Must be updated at least annually and upon material changes.", "metadata": {"article": "10", "chapter": "II", "review_frequency": "annual"}},
-  {"ref_id": "OBL-TRAIN",     "entity_type": "obligation",   "entity_id": "AMLR-Art-18",        "canonical_name": "Employee Training — Art. 18 AMLR",              "description": "Obliged entities must ensure staff receive regular training on AML/CFT obligations, relevant typologies, and internal policies. Must be role-specific.", "metadata": {"article": "18", "chapter": "II"}},
-  {"ref_id": "OBL-MLRO",      "entity_type": "obligation",   "entity_id": "AMLR-Art-11",        "canonical_name": "Compliance Officer / MLRO — Art. 11 AMLR",      "description": "Must appoint a senior compliance officer at management body level (AML Officer) and a dedicated MLRO. Both must have adequate seniority, resources, and access.", "metadata": {"article": "11", "chapter": "II"}},
-  {"ref_id": "OBL-DATA",      "entity_type": "obligation",   "entity_id": "AMLR-Art-77",        "canonical_name": "Data Retention — Art. 77 AMLR",                 "description": "CDD records and transaction data must be retained for 5 years from end of business relationship or transaction date. Extendable to 10 years by national law.", "metadata": {"article": "77", "chapter": "VI", "retention_years": 5, "max_retention_years": 10}},
-  {"ref_id": "OBL-WIRE",      "entity_type": "obligation",   "entity_id": "AMLR-Art-83",        "canonical_name": "Wire Transfer Information (TFR) — Art. 83 AMLR", "description": "Payment service providers must accompany transfers with complete payer/payee information. Aligned with FATF Recommendation 16 and TFR Regulation.", "metadata": {"article": "83", "chapter": "VI"}},
-  {"ref_id": "OBL-SANC",      "entity_type": "obligation",   "entity_id": "AMLR-Art-17",        "canonical_name": "Internal Controls & Compliance Programme — Art. 17 AMLR", "description": "Obliged entities must establish written policies, controls, and procedures. Must be approved by senior management and communicated to all relevant staff.", "metadata": {"article": "17", "chapter": "II"}},
-  {"ref_id": "DEF-OBLENT",    "entity_type": "concept",      "entity_id": "DEF-ObligedEntity",  "canonical_name": "Obliged Entity (Definition)",                   "description": "Entities subject to AMLR obligations: credit institutions, financial institutions, crypto-asset service providers (CASPs), auditors, lawyers, notaries, tax advisors, real estate agents, trust/company service providers, and others.", "metadata": {"article": "3"}},
-  {"ref_id": "DEF-ML",        "entity_type": "concept",      "entity_id": "DEF-MoneyLaundering","canonical_name": "Money Laundering (ML) — Definition",            "description": "Conversion, transfer, concealment, disguising, acquisition, possession or use of criminal proceeds, knowing that property is derived from criminal activity.", "metadata": {"article": "1"}},
-  {"ref_id": "DEF-TF",        "entity_type": "concept",      "entity_id": "DEF-TerroristFinancing","canonical_name": "Terrorist Financing (TF) — Definition",      "description": "Provision or collection of funds with the intention or knowledge that they will be used for terrorist activities.", "metadata": {"article": "1"}},
-  {"ref_id": "DEF-PEP",       "entity_type": "concept",      "entity_id": "DEF-PEP",            "canonical_name": "Politically Exposed Person (PEP)",              "description": "Individuals entrusted with prominent public functions including Heads of State, senior politicians, judicial officials, central bank governors, ambassadors, board members of state-owned enterprises.", "metadata": {"article": "2"}},
-  {"ref_id": "DEF-BO",        "entity_type": "concept",      "entity_id": "DEF-BeneficialOwner","canonical_name": "Beneficial Owner (BO)",                         "description": "Natural person(s) who ultimately own or control a legal entity or arrangement. For legal entities: ≥25% ownership or control threshold. For trusts and similar arrangements: NO percentage threshold — settlor, all trustees, protector, all beneficiaries, and any person exercising effective control must be identified.", "metadata": {"article": "2", "threshold_pct_companies": 25, "threshold_pct_trusts": "N/A — all natural persons in the structure"}},
-  {"ref_id": "DEF-HRTC",      "entity_type": "concept",      "entity_id": "DEF-HighRiskThirdCountry","canonical_name": "High-Risk Third Country (HRTC)",            "description": "Countries with strategic deficiencies in AML/CFT frameworks as identified by the EU Commission under delegated regulation. Triggers mandatory EDD.", "metadata": {"article": "29"}},
-  {"ref_id": "DEF-CASP",      "entity_type": "concept",      "entity_id": "DEF-CASP",           "canonical_name": "Crypto-Asset Service Provider (CASP)",         "description": "Persons providing crypto-asset services as defined in MiCAR. CASPs are obliged entities under AMLR from its application date. Subject to full CDD and SAR obligations.", "metadata": {"article": "3", "related_regulation": "MiCAR"}},
-  {"ref_id": "DEF-FIU",       "entity_type": "authority",    "entity_id": "DEF-FIU",            "canonical_name": "Financial Intelligence Unit (FIU)",             "description": "National authority receiving and analysing SARs. FIUs in each Member State. FIU.net coordinates cross-border intelligence sharing in the EU.", "metadata": {}},
-  {"ref_id": "DEF-SNRA",      "entity_type": "concept",      "entity_id": "DEF-SNRA",           "canonical_name": "Supranational Risk Assessment (SNRA)",          "description": "Commission-level assessment of ML/TF risks affecting the EU internal market. Published every 2 years. Must inform entity-level BWRA.", "metadata": {"article": "7", "frequency_years": 2}},
-  {"ref_id": "DEF-NRA",       "entity_type": "concept",      "entity_id": "DEF-NRA",            "canonical_name": "National Risk Assessment (NRA)",                "description": "Member State assessment of ML/TF risks in their jurisdiction. Must be published and communicated to obliged entities. Must inform entity-level BWRA.", "metadata": {"article": "8"}},
-  {"ref_id": "THLD-CASH",     "entity_type": "concept",      "entity_id": "THLD-CashPayment",   "canonical_name": "Cash Payment Limit — €10,000",                  "description": "AMLR restricts acceptance of cash payments above €10,000 for goods/services by professionals (Art. 80). Some Member States may set lower limits.", "metadata": {"article": "80", "amount_eur": 10000}},
-  {"ref_id": "THLD-WIRE",     "entity_type": "concept",      "entity_id": "THLD-WireTransfer",  "canonical_name": "Wire Transfer / Crypto Transfer Information Requirements", "description": "Payment service providers must accompany wire transfers with full payer/payee data (AMLR Art. 83 / TFR Regulation (EU) 2023/1113). For crypto-asset transfers: full originator/beneficiary information is required at any amount — there is NO minimum threshold (TFR2 Art. 4). The €1,000 threshold applies only to wire transfers without payment service providers.", "metadata": {"article": "83", "wire_threshold_eur": 1000, "crypto_threshold_eur": 0, "note": "Crypto transfers: no minimum threshold per TFR2 (Regulation 2023/1113)"}},
-  {"ref_id": "THLD-CASINO",   "entity_type": "concept",      "entity_id": "THLD-Casino",        "canonical_name": "Casino Transaction Threshold — €2,000",         "description": "Casinos must verify customer identity for transactions ≥€2,000 (purchase/exchange of chips, etc.).", "metadata": {"article": "20", "amount_eur": 2000}},
-  {"ref_id": "PERIOD-APPLY",  "entity_type": "concept",      "entity_id": "PERIOD-Application", "canonical_name": "AMLR Application Date — 10 July 2027",          "description": "AMLR applies from 10 July 2027 (3 years after OJ publication). CASPs have transitional provisions. Certain obligations may be earlier via AMLA RTS.", "metadata": {"date": "2027-07-10"}},
-  {"ref_id": "PERIOD-AMLD6",  "entity_type": "concept",      "entity_id": "PERIOD-AMLD6Transposition","canonical_name": "AMLD6 Transposition Deadline — 10 July 2026", "description": "Member States must transpose AMLD6 into national law by 10 July 2026, one year before AMLR application.", "metadata": {"date": "2026-07-10"}},
-  {"ref_id": "PERIOD-AMLA",   "entity_type": "concept",      "entity_id": "PERIOD-AMLA-Direct", "canonical_name": "AMLA Direct Supervision — January 2028",        "description": "AMLA takes over direct supervision of highest-risk credit institutions and CASPs across the EU from January 2028.", "metadata": {"date": "2028-01-01"}},
-  {"ref_id": "RTS-CDD",       "entity_type": "concept",      "entity_id": "RTS-CDD-Standards",  "canonical_name": "AMLA RTS on CDD",                              "description": "AMLA will develop binding Regulatory Technical Standards on CDD procedures, including enhanced due diligence for high-risk third countries and PEPs.", "metadata": {}},
-  {"ref_id": "REG-MICAR",     "entity_type": "regulation",   "entity_id": "MiCAR-2023",         "canonical_name": "Markets in Crypto-Assets Regulation (MiCAR)",   "description": "Regulation (EU) 2023/1114. CASPs licensed under MiCAR are obliged entities under AMLR. Licensing authority coordinates with AML supervisors.", "metadata": {"oj_ref": "OJ L 2023/1114"}},
-  {"ref_id": "REG-DORA",      "entity_type": "regulation",   "entity_id": "DORA-2022",          "canonical_name": "Digital Operational Resilience Act (DORA)",     "description": "Regulation (EU) 2022/2554. Applies to financial entities including credit institutions and investment firms. Relevant to AML system resilience requirements.", "metadata": {"oj_ref": "OJ L 2022/2554", "applies_from": "2025-01-17"}},
-  {"ref_id": "REG-GDPR",      "entity_type": "regulation",   "entity_id": "GDPR-2016",          "canonical_name": "General Data Protection Regulation (GDPR)",     "description": "Regulation (EU) 2016/679. AML data processing must comply with GDPR. Art. 77 AMLR data retention obligations must be balanced against GDPR erasure rights.", "metadata": {"oj_ref": "OJ L 2016/119"}},
-  {"ref_id": "INST-CREDIT",   "entity_type": "concept",      "entity_id": "INST-CreditInstitution","canonical_name": "Credit Institution (Obliged Entity)",        "description": "Banks and other credit institutions are primary obliged entities under AMLR. Subject to the full set of CDD, SAR, and internal controls obligations.", "metadata": {}},
-  {"ref_id": "INST-INVEST",   "entity_type": "concept",      "entity_id": "INST-InvestmentFirm","canonical_name": "Investment Firm (Obliged Entity)",               "description": "Investment firms regulated under MiFID II are obliged entities under AMLR. CDD applies to all clients and transactions.", "metadata": {}},
-  {"ref_id": "INST-INSURER",  "entity_type": "concept",      "entity_id": "INST-Insurer",       "canonical_name": "Life Insurance Undertaking (Obliged Entity)",   "description": "Life insurance and intermediaries dealing with investment-linked products are obliged entities. Beneficiary screening required.", "metadata": {"article": "3"}},
-  {"ref_id": "OBL-TPREL",     "entity_type": "obligation",   "entity_id": "AMLR-Art-28",        "canonical_name": "Third-Party Reliance — Art. 28 AMLR",           "description": "Obliged entities may rely on third parties to conduct CDD, but remain fully liable for compliance failures. Third party must be an obliged entity itself, subject to equivalent AML/CFT requirements. Immediate availability of CDD data required.", "metadata": {"article": "28", "chapter": "III"}},
-  {"ref_id": "OBL-GROUP",     "entity_type": "obligation",   "entity_id": "AMLR-Art-15",        "canonical_name": "Group-Level Compliance — Art. 15 AMLR",         "description": "Parent undertakings must implement group-wide AML/CFT policies and procedures. Subsidiaries in third countries must apply group standards where local law permits; where it does not, parent must notify home state supervisor.", "metadata": {"article": "15", "chapter": "II"}},
-  {"ref_id": "OBL-CORR",      "entity_type": "obligation",   "entity_id": "AMLR-Art-38",        "canonical_name": "Correspondent Banking — Art. 38 AMLR",          "description": "Credit institutions must conduct enhanced CDD on correspondent relationships. Must assess respondent's AML/CFT controls, obtain senior management approval, document respective responsibilities. Shell bank prohibition maintained.", "metadata": {"article": "38", "chapter": "III"}},
-  {"ref_id": "DEF-PEPFAM",    "entity_type": "concept",      "entity_id": "DEF-PEP-Family",     "canonical_name": "PEP Family Members and Close Associates",       "description": "Family members (spouse/partner, children and their spouses, parents) and known close associates of PEPs are subject to equivalent enhanced scrutiny under AMLR Art. 44. Enhanced measures continue for an appropriate risk-based period after the PEP ceases their public function — no fixed duration is mandated.", "metadata": {"article": "2", "chapter": "I"}},
-  {"ref_id": "OBL-ANON",      "entity_type": "obligation",   "entity_id": "AMLR-Art-79",        "canonical_name": "Prohibition on Anonymous Accounts — Art. 79 AMLR", "description": "Credit institutions and financial institutions must not keep anonymous accounts, passbooks, or safe-deposit boxes. Existing anonymous accounts must be subject to CDD measures and identified before any transaction.", "metadata": {"article": "79"}},
-  {"ref_id": "DEF-SHELL",     "entity_type": "concept",      "entity_id": "DEF-ShellBank",      "canonical_name": "Shell Bank (Prohibited Correspondent)",         "description": "A credit institution incorporated in a jurisdiction where it has no physical presence and which is not affiliated with a regulated financial group. AMLR prohibits correspondent relationships with shell banks.", "metadata": {"article": "38"}},
-  {"ref_id": "OBL-MONITOR",   "entity_type": "obligation",   "entity_id": "AMLR-Art-25",        "canonical_name": "Ongoing Monitoring — Art. 25 AMLR",             "description": "Obliged entities must monitor business relationships on an ongoing basis, including scrutiny of transactions to ensure consistency with knowledge of customer, business profile, and risk. CDD documents must be kept up to date.", "metadata": {"article": "25", "chapter": "III"}},
-  {"ref_id": "OBL-CUST",      "entity_type": "obligation",   "entity_id": "AMLR-Art-21",        "canonical_name": "Customer Identification and Verification — Art. 21 AMLR", "description": "Obliged entities must identify and verify customer identity using reliable, independent source documents. For legal entities: identification of legal form, registered address, directors, and beneficial owners.", "metadata": {"article": "21", "chapter": "III"}},
-  {"ref_id": "DEF-TRUST",     "entity_type": "concept",      "entity_id": "DEF-Trust",          "canonical_name": "Express Trust (Beneficial Ownership)",           "description": "Trusts and similar legal arrangements are subject to AMLR BO disclosure. Trustees must identify themselves as trustees. BO = settlor, trustees, protector, beneficiaries, and any natural person exercising effective control.", "metadata": {"article": "62"}},
-
-  {"ref_id": "AMLR-A1",       "entity_type": "regulation",   "entity_id": "AMLR-Art-1-scope",   "canonical_name": "AMLR Art. 1 — Subject Matter and Scope",        "description": "Establishes that AMLR lays down rules on prevention of the use of the financial system for ML/TF purposes. Directly applicable in all Member States without transposition. Covers obliged entities' internal procedures, CDD, reporting, and group compliance.", "metadata": {"article": "1", "chapter": "I", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A2",       "entity_type": "regulation",   "entity_id": "AMLR-Art-2-defs",    "canonical_name": "AMLR Art. 2 — Definitions",                     "description": "Provides comprehensive definitions for all terms used in AMLR including: obliged entity, business relationship, beneficial owner, PEP, FIU, credit institution, financial institution, occasional transaction, and others. The primary definitional source for the entire AMLR framework.", "metadata": {"article": "2", "chapter": "I", "regulation": "AMLR 2024/1624", "note": "Primary definitional article — defines all key terms referenced throughout AMLR"}},
-  {"ref_id": "AMLR-A3",       "entity_type": "obligation",   "entity_id": "AMLR-Art-3-oblents", "canonical_name": "AMLR Art. 3 — Obliged Entities",                "description": "Lists all persons subject to AMLR obligations: credit institutions, financial institutions, CASPs, auditors, external accountants, tax advisors, notaries, lawyers (in specific circumstances), real estate agents and developers, trust/company service providers, high-value goods dealers, and gambling service providers.", "metadata": {"article": "3", "chapter": "I", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A4",       "entity_type": "obligation",   "entity_id": "AMLR-Art-4-exemptions","canonical_name": "AMLR Art. 4 — Limited-Activity Exemptions",   "description": "Member States may exempt natural or legal persons that carry out financial activity on an occasional or very limited basis from AMLR obligations, where strict low-risk criteria are met. Exemptions must be notified to the Commission.", "metadata": {"article": "4", "chapter": "I", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A5",       "entity_type": "obligation",   "entity_id": "AMLR-Art-5-equivalence","canonical_name": "AMLR Art. 5 — Third-Country Equivalence",    "description": "The Commission may determine that certain third countries have equivalent AML/CFT requirements to those of the EU. This equivalence determination allows for adjusted group-level compliance obligations for subsidiaries in those third countries.", "metadata": {"article": "5", "chapter": "I", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A7",       "entity_type": "obligation",   "entity_id": "AMLR-Art-7-SNRA",    "canonical_name": "AMLR Art. 7 — Supranational Risk Assessment",   "description": "The Commission shall conduct a supranational risk assessment of the ML/TF risks affecting the internal market every two years. The SNRA identifies cross-border risks and sector-specific vulnerabilities. Obliged entities must take the SNRA into account in their BWRA.", "metadata": {"article": "7", "chapter": "II", "regulation": "AMLR 2024/1624", "frequency": "biennial"}},
-  {"ref_id": "AMLR-A9",       "entity_type": "obligation",   "entity_id": "AMLR-Art-9-sectorrisk","canonical_name": "AMLR Art. 9 — Sector-Specific Risk Assessments","description": "AMLA shall conduct sector-specific risk assessments to identify ML/TF risks to which specific categories of obliged entities are exposed. These sector assessments inform supervisory approaches, RTS development, and the calibration of supervisory intensity.", "metadata": {"article": "9", "chapter": "II", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A12",      "entity_type": "obligation",   "entity_id": "AMLR-Art-12-governance","canonical_name": "AMLR Art. 12 — Management Body Responsibility","description": "The management body of an obliged entity bears ultimate responsibility for AML/CFT compliance. At least one member must have adequate knowledge of AML/CFT risks. The management body approves the BWRA, internal policies, and compliance programme.", "metadata": {"article": "12", "chapter": "II", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A13",      "entity_type": "obligation",   "entity_id": "AMLR-Art-13-riskvars","canonical_name": "AMLR Art. 13 — Risk Variables and Factors",    "description": "Sets out the risk variables and factors obliged entities must consider in their risk assessments, including customer, product/service, geographic, and delivery channel factors. References Annexes II and III. AMLA shall develop RTS specifying minimum risk assessment requirements.", "metadata": {"article": "13", "chapter": "II", "regulation": "AMLR 2024/1624", "rts_delegation": true, "annexes": ["II", "III"]}},
-  {"ref_id": "AMLR-A14",      "entity_type": "obligation",   "entity_id": "AMLR-Art-14-mitigation","canonical_name": "AMLR Art. 14 — Risk Mitigation Policies and Controls","description": "Obliged entities must establish and maintain policies, controls, and procedures to mitigate ML/TF risks identified in their BWRA. The nature and extent of controls must be proportionate to identified risks, and must be reviewed regularly.", "metadata": {"article": "14", "chapter": "II", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A16",      "entity_type": "obligation",   "entity_id": "AMLR-Art-16-groupthird","canonical_name": "AMLR Art. 16 — Group Policies in Third Countries","description": "Where group subsidiaries or branches are established in third countries with less stringent AML/CFT requirements, the group parent must ensure those entities apply EU-standard measures to the extent permitted by local law. Impediments must be notified to the home Member State supervisor.", "metadata": {"article": "16", "chapter": "II", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A19",      "entity_type": "obligation",   "entity_id": "AMLR-Art-19-screening","canonical_name": "AMLR Art. 19 — Employee Screening",           "description": "Obliged entities must screen employees involved in AML/CFT compliance functions for integrity and competence. Includes pre-employment background checks and ongoing assessment. Ensures staff in sensitive positions are not themselves involved in criminal activity.", "metadata": {"article": "19", "chapter": "II", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A23",      "entity_type": "obligation",   "entity_id": "AMLR-Art-23-BOVerif","canonical_name": "AMLR Art. 23 — Beneficial Ownership Verification","description": "Sets out the measures obliged entities must take to verify BO identity, including consulting national BO registers, collecting documents, and applying risk-based independent verification. Where BO cannot be verified, the business relationship must not be established or continued.", "metadata": {"article": "23", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A24",      "entity_type": "obligation",   "entity_id": "AMLR-Art-24-trusts",  "canonical_name": "AMLR Art. 24 — Legal Arrangements (Trusts)",  "description": "Specific CDD requirements for customers that are express trusts or similar legal arrangements. Trustees must identify themselves as trustees. All natural persons in the trust structure — settlor, trustees, protector, beneficiaries, and persons exercising effective control — must be identified and verified.", "metadata": {"article": "24", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A26",      "entity_type": "obligation",   "entity_id": "AMLR-Art-26-timing",  "canonical_name": "AMLR Art. 26 — Timing of CDD",                 "description": "CDD must generally be completed before establishing a business relationship or executing a transaction. In limited circumstances and for lower-risk situations, verification of identity may be completed during the course of establishing the relationship, provided transactions are restricted until CDD is complete.", "metadata": {"article": "26", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A27",      "entity_type": "obligation",   "entity_id": "AMLR-Art-27-existing","canonical_name": "AMLR Art. 27 — Existing Customers",           "description": "Obliged entities must apply CDD measures to existing customers at appropriate intervals, in particular when customer circumstances change. Risk-based approach governs the timing and frequency of periodic reviews. Higher-risk customers require more frequent reassessment.", "metadata": {"article": "27", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A29",      "entity_type": "obligation",   "entity_id": "AMLR-Art-29-agents",  "canonical_name": "AMLR Art. 29 — CDD by Agents and Distributors","description": "Where obliged entities appoint agents or distributors to perform CDD on their behalf, ultimate responsibility for compliance failures remains with the principal entity. Clear contractual arrangements, training, and oversight of agents are required.", "metadata": {"article": "29", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A30",      "entity_type": "obligation",   "entity_id": "AMLR-Art-30-fintime", "canonical_name": "AMLR Art. 30 — Timing for Financial Sector",   "description": "Financial sector-specific rules allow credit and financial institutions to open accounts before identity verification is complete, provided that transactions are restricted until verification is finalized. Applicable only where ML/TF risk is assessed as low and strict conditions are met.", "metadata": {"article": "30", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A32",      "entity_type": "obligation",   "entity_id": "AMLR-Art-32-SDDconds","canonical_name": "AMLR Art. 32 — Conditions for Simplified CDD",  "description": "Specifies the conditions under which simplified due diligence measures may be applied: the customer or product must exhibit low-risk characteristics as listed in Annex I, no ML/TF suspicion may exist, and the customer must not be a PEP or from a high-risk third country.", "metadata": {"article": "32", "chapter": "III", "regulation": "AMLR 2024/1624", "reference": "Annex I"}},
-  {"ref_id": "AMLR-A33",      "entity_type": "obligation",   "entity_id": "AMLR-Art-33-lowrisk", "canonical_name": "AMLR Art. 33 — Low-Risk Factors (Annex I)",    "description": "Lists the customer, product/service, geographic, and delivery channel factors that indicate lower ML/TF risk for SDD eligibility. References Annex I. Includes regulated financial institutions, listed companies, government/public bodies, low-value insurance products, and basic payment accounts.", "metadata": {"article": "33", "chapter": "III", "regulation": "AMLR 2024/1624", "reference": "Annex I"}},
-  {"ref_id": "AMLR-A35",      "entity_type": "obligation",   "entity_id": "AMLR-Art-35-eddtrig", "canonical_name": "AMLR Art. 35 — EDD Trigger Situations",        "description": "Specifies circumstances requiring enhanced due diligence beyond standard CDD: customers from high-risk third countries, PEPs, complex/large/unusual transactions with no apparent economic purpose, business relationships with non-face-to-face elements in higher-risk contexts.", "metadata": {"article": "35", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A36",      "entity_type": "obligation",   "entity_id": "AMLR-Art-36-HRTCedd","canonical_name": "AMLR Art. 36 — EDD for High-Risk Third Countries","description": "Mandatory EDD for business relationships or transactions involving natural or legal persons from EU-designated high-risk third countries. Measures include: enhanced monitoring, senior management approval, verification of source of funds and source of wealth, and additional document collection.", "metadata": {"article": "36", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A37",      "entity_type": "obligation",   "entity_id": "AMLR-Art-37-eddmeas", "canonical_name": "AMLR Art. 37 — EDD Specific Measures",          "description": "Details the specific additional measures in EDD situations: obtaining additional information on the customer, BO, and source of wealth/funds; obtaining senior management approval before establishing or continuing the relationship; enhanced and more frequent monitoring of transactions.", "metadata": {"article": "37", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A39",      "entity_type": "obligation",   "entity_id": "AMLR-Art-39-nominees","canonical_name": "AMLR Art. 39 — Nominee Shareholders and Directors","description": "Where nominee shareholders or directors are used, obliged entities must identify both the nominee and the person on whose behalf they act (the underlying principal). Nominee arrangements cannot be used to obscure beneficial ownership.", "metadata": {"article": "39", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A41",      "entity_type": "obligation",   "entity_id": "AMLR-Art-41-newtech", "canonical_name": "AMLR Art. 41 — New Technologies Risk",          "description": "Obliged entities must identify and assess ML/TF risks arising from new products, business practices, delivery mechanisms, and technologies before launch, including anonymity-enhancing tools. AMLA may issue guidance on emerging technology risks.", "metadata": {"article": "41", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A42",      "entity_type": "obligation",   "entity_id": "AMLR-Art-42-shellbank","canonical_name": "AMLR Art. 42 — Prohibition on Shell Bank Relationships","description": "Credit institutions are prohibited from entering into or continuing correspondent banking relationships with shell banks. Obliged entities must not engage in relationships with financial institutions that permit their accounts to be used by shell banks.", "metadata": {"article": "42", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A43",      "entity_type": "obligation",   "entity_id": "AMLR-Art-43-PEPlist", "canonical_name": "AMLR Art. 43 — PEP Functions List",             "description": "AMLA shall establish and maintain a publicly accessible list of the specific functions in each Member State and international organisations that qualify as prominent public functions for PEP classification purposes. Member States must notify AMLA of qualifying functions.", "metadata": {"article": "43", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A45",      "entity_type": "obligation",   "entity_id": "AMLR-Art-45-formerPEP","canonical_name": "AMLR Art. 45 — Former PEPs",                  "description": "Persons who have ceased to hold a prominent public function remain subject to enhanced measures for an appropriate risk-based period, determined by factors including the nature of the function and residual risk. AMLR mandates no fixed cessation period — the assessment must be risk-sensitive.", "metadata": {"article": "45", "chapter": "III", "regulation": "AMLR 2024/1624", "note": "No fixed cessation period — risk-based assessment required per Art. 45(4)"}},
-  {"ref_id": "AMLR-A46",      "entity_type": "obligation",   "entity_id": "AMLR-Art-46-seniorMgt","canonical_name": "AMLR Art. 46 — Senior Management Approval for PEPs","description": "Obliged entities must obtain senior management approval before establishing or continuing a business relationship with a PEP. The level of seniority required for approval must be proportionate to the risk posed by the specific PEP.", "metadata": {"article": "46", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A47",      "entity_type": "obligation",   "entity_id": "AMLR-Art-47-PEPfam",  "canonical_name": "AMLR Art. 47 — PEP Family Members and Close Associates","description": "Enhanced scrutiny must be applied to family members (spouse/partner, children and their partners, parents) and known close associates of PEPs. Obliged entities must take reasonable steps to identify PEP relationships at onboarding and on an ongoing basis.", "metadata": {"article": "47", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A48",      "entity_type": "obligation",   "entity_id": "AMLR-Art-48-lifeins", "canonical_name": "AMLR Art. 48 — Life Insurance PEP Beneficiaries","description": "Life insurance and investment-related insurance undertakings must check whether policy beneficiaries and their beneficial owners are PEPs. A PEP beneficiary triggers senior management notification and enhanced scrutiny at payout or assignment of the policy.", "metadata": {"article": "48", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A49",      "entity_type": "obligation",   "entity_id": "AMLR-Art-49-sanctions","canonical_name": "AMLR Art. 49 — Targeted Financial Sanctions Screening","description": "Obliged entities must screen customers, beneficial owners, and transaction counterparties against EU, UN, and applicable national targeted financial sanctions lists. Screening must occur before establishing business relationships, before executing transactions, and on an ongoing basis when lists are updated.", "metadata": {"article": "49", "chapter": "III", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A50",      "entity_type": "obligation",   "entity_id": "AMLR-Art-50-intrep",  "canonical_name": "AMLR Art. 50 — Internal Reporting to MLRO",   "description": "Employees who know or suspect that a transaction or activity involves ML/TF must report through internal channels to the MLRO. Obliged entities must establish clear, secure internal reporting procedures and protect employees who report from retaliation.", "metadata": {"article": "50", "chapter": "IV", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A52",      "entity_type": "obligation",   "entity_id": "AMLR-Art-52-tipping", "canonical_name": "AMLR Art. 52 — Tipping-Off Prohibition",       "description": "Obliged entities and their employees must not disclose to the customer or any third party that a SAR has been filed, that an investigation is underway, or that information has been requested by authorities. Violation is a criminal offence under AMLD6.", "metadata": {"article": "52", "chapter": "IV", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A53",      "entity_type": "obligation",   "entity_id": "AMLR-Art-53-protection","canonical_name": "AMLR Art. 53 — Good-Faith Reporting Protection","description": "Obliged entities and their employees who report suspicions to FIUs in good faith are protected from civil, criminal, administrative, and professional liability, even if the suspicion proves unfounded. Member States must ensure effective legal and employment protection against retaliation.", "metadata": {"article": "53", "chapter": "IV", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "AMLR-A54",      "entity_type": "obligation",   "entity_id": "AMLR-Art-54-FIUcoop", "canonical_name": "AMLR Art. 54 — Cooperation with FIUs",         "description": "Obliged entities must promptly provide additional information to FIUs upon request, following SAR filing or as part of ongoing investigations. Must grant access to records and documentation within the scope of the request.", "metadata": {"article": "54", "chapter": "IV", "regulation": "AMLR 2024/1624"}},
-
-  {"ref_id": "PROC-BWRA",     "entity_type": "process",      "entity_id": "PROCESS-BWRA",       "canonical_name": "Business-Wide Risk Assessment Process",         "description": "Formal written assessment of ML/TF risks across all products, services, customers, delivery channels, and geographies. Required at least annually and upon material changes. Must be approved by the management body and available to supervisors on request.", "metadata": {"frequency": "annual minimum", "regulatory_basis": "AMLR Art. 10"}},
-  {"ref_id": "PROC-CDD",      "entity_type": "process",      "entity_id": "PROCESS-CDD",        "canonical_name": "Customer Due Diligence Process",                "description": "Structured process for identifying and verifying customer identity, understanding the purpose and nature of the business relationship, identifying beneficial owners, and assessing customer ML/TF risk. Foundation of the AML/CFT compliance programme.", "metadata": {"regulatory_basis": "AMLR Arts. 20-30"}},
-  {"ref_id": "PROC-EDD",      "entity_type": "process",      "entity_id": "PROCESS-EDD",        "canonical_name": "Enhanced Due Diligence Process",                "description": "Intensified CDD measures for higher-risk customers and situations: additional information collection, source of funds/wealth verification, senior management approval, and enhanced transaction monitoring. Mandatory for HRTCs, PEPs, and complex/unusual transactions.", "metadata": {"regulatory_basis": "AMLR Arts. 34-42"}},
-  {"ref_id": "PROC-SDD",      "entity_type": "process",      "entity_id": "PROCESS-SDD",        "canonical_name": "Simplified Due Diligence Process",              "description": "Reduced CDD measures for verified low-risk situations as documented in the entity's BWRA. The degree of simplification must be proportionate and documented. Cannot apply where ML/TF suspicion exists, to PEPs, or to HRTC customers.", "metadata": {"regulatory_basis": "AMLR Arts. 31-33"}},
-  {"ref_id": "PROC-TM",       "entity_type": "process",      "entity_id": "PROCESS-TM",         "canonical_name": "Transaction Monitoring",                        "description": "Systematic review of customer transactions to detect patterns inconsistent with the customer's known profile, risk rating, and expected business activity. Combines automated rule-based alerts and scenario detection with human review and escalation workflows.", "metadata": {"regulatory_basis": "AMLR Art. 25"}},
-  {"ref_id": "PROC-SAR",      "entity_type": "process",      "entity_id": "PROCESS-SAR",        "canonical_name": "Suspicious Activity Report (SAR) Filing Process","description": "End-to-end process for identifying, triaging, and reporting ML/TF suspicions to the national FIU. Stages: detection/alert, internal triage, MLRO investigation, decision, SAR completion and filing, record retention, and FIU cooperation on follow-up requests.", "metadata": {"regulatory_basis": "AMLR Arts. 50-54, 69"}},
-  {"ref_id": "PROC-BO-VERIF", "entity_type": "process",      "entity_id": "PROCESS-BO-VERIF",   "canonical_name": "Beneficial Ownership Verification",             "description": "Process for identifying and verifying the natural persons who ultimately own or control a customer legal entity or arrangement. Includes BO declarations, consulting national BO registers, and independent document-based verification proportionate to risk.", "metadata": {"regulatory_basis": "AMLR Arts. 22-24"}},
-  {"ref_id": "PROC-PEP-SCRN", "entity_type": "process",      "entity_id": "PROCESS-PEP-SCREEN", "canonical_name": "PEP Screening Process",                         "description": "Systematic screening of customers, beneficial owners, and transaction parties against PEP lists and commercial databases. Applied at onboarding and on an ongoing basis. Must capture family members (Art. 47) and close associates. Positive matches require EDD and senior management approval.", "metadata": {"regulatory_basis": "AMLR Arts. 43-48"}},
-  {"ref_id": "PROC-SANCTIONS","entity_type": "process",      "entity_id": "PROCESS-SANCTIONS",  "canonical_name": "Sanctions Screening Process",                  "description": "Screening of customers, beneficial owners, and counterparties against EU/UN/national targeted financial sanctions lists. Applied before establishing relationships, before transactions, and when sanctions lists are updated. Positive matches trigger asset freeze and competent authority notification.", "metadata": {"regulatory_basis": "AMLR Art. 49"}},
-  {"ref_id": "PROC-ONGOING",  "entity_type": "process",      "entity_id": "PROCESS-ONGOING-MON","canonical_name": "Ongoing Customer Monitoring",                   "description": "Continuous monitoring throughout the lifecycle of the business relationship: periodic CDD refresh, risk re-rating when circumstances change, transaction pattern analysis, and updating CDD documentation. Frequency must be risk-based.", "metadata": {"regulatory_basis": "AMLR Arts. 25, 27"}},
-  {"ref_id": "PROC-RECORDS",  "entity_type": "process",      "entity_id": "PROCESS-RECORDS",    "canonical_name": "Record Keeping and Retention",                  "description": "Systematic retention of CDD documents, transaction records, SAR correspondence, and monitoring results for the required periods (5 years from end of relationship/transaction, extendable to 10 years by national law). Records must be retrievable and provided to supervisors on request.", "metadata": {"regulatory_basis": "AMLR Art. 77", "retention_years": 5, "max_retention_years": 10}},
-  {"ref_id": "PROC-RBA",      "entity_type": "process",      "entity_id": "PROCESS-RBA",        "canonical_name": "Risk-Based Approach Implementation",            "description": "The overarching process of calibrating AML/CFT controls to identified risk levels. Encompasses BWRA, customer risk scoring, product/service risk assessment, and proportionate control design. The foundational principle of AMLR and FATF standards.", "metadata": {"regulatory_basis": "AMLR Art. 8", "fatf_basis": "FATF Recommendation 1"}},
-
-  {"ref_id": "ORG-AMLA-INST", "entity_type": "organization",  "entity_id": "ORG-AMLA-INST",     "canonical_name": "AMLA — Anti-Money Laundering Authority",       "description": "EU supervisory authority established by Regulation (EU) 2024/1620, headquartered in Frankfurt. Operational from 1 July 2025. Will directly supervise selected high-risk credit institutions and CASPs from January 2028. Issues binding RTS/ITS and guidelines for the EU AML/CFT framework.", "metadata": {"seat": "Frankfurt", "operational": "2025-07-01", "direct_supervision_start": "2028-01-01", "legal_basis": "Regulation (EU) 2024/1620"}},
-  {"ref_id": "ORG-EC-AML",    "entity_type": "organization",  "entity_id": "ORG-EC-AML",        "canonical_name": "European Commission — AML Functions",           "description": "The European Commission designates high-risk third countries (delegated regulations), publishes the biennial SNRA, adopts delegated and implementing acts under AMLR (including the HRTC list), and proposes amendments to the AML/CFT legislative framework.", "metadata": {"key_powers": ["HRTC designation", "SNRA publication", "delegated acts", "implementing acts"]}},
-  {"ref_id": "ORG-FIU-NET",   "entity_type": "organization",  "entity_id": "ORG-FIU-NET",       "canonical_name": "FIU.net — EU FIU Cooperation Platform",         "description": "Secure platform hosted at Europol facilitating cross-border exchange of financial intelligence between EU national FIUs. Enables joint analysis and coordinated response to cross-border ML/TF threats.", "metadata": {"host": "Europol", "governance": "AMLD6"}},
-  {"ref_id": "ORG-NCA-AML",   "entity_type": "organization",  "entity_id": "ORG-NCA-AML",       "canonical_name": "National Competent Authorities (AML Supervisors)","description": "National authorities in each Member State responsible for supervising obliged entities' compliance with AMLR and national AML/CFT law. Typically financial supervisors, central banks, or dedicated AML units. Will continue supervising most entities after AMLA begins direct supervision of highest-risk entities.", "metadata": {}},
-  {"ref_id": "ORG-FATF-INST", "entity_type": "organization",  "entity_id": "ORG-FATF-INST",     "canonical_name": "Financial Action Task Force (FATF) — Institution", "description": "International standard-setter for AML/CFT and CPF, comprising 37 member jurisdictions. AMLR implements FATF's 40 Recommendations and 11 Immediate Outcomes. FATF mutual evaluation findings influence EU supervisory priorities and HRTC designations.", "metadata": {"role": "international standard-setter", "standards": "FATF 40 Recommendations + 11 Immediate Outcomes"}},
-  {"ref_id": "ORG-EBA-HIST",  "entity_type": "organization",  "entity_id": "ORG-EBA-HIST",      "canonical_name": "EBA — Historical AML Supervisory Role",         "description": "From 2020-2025, EBA held EU-level AML/CFT supervisory convergence responsibilities including issuing binding RTS, conducting peer reviews, and maintaining the AML/CFT college network. These responsibilities transferred to AMLA upon its establishment in July 2025.", "metadata": {"transition_date": "2025-07-01", "successor": "AMLA"}},
-
-  {"ref_id": "RTS-RISK-VARS", "entity_type": "regulation",   "entity_id": "RTS-RISK-VARIABLES", "canonical_name": "AMLA RTS on Customer Risk Variables (Art. 13)", "description": "AMLA RTS specifying the minimum requirements for customer risk assessments: mandatory risk variables, risk factors, and risk scoring methodology. Mandated by AMLR Art. 13. Status: consultation phase (AMLA work programme 2025-2026).", "metadata": {"status": "consultation", "mandating_article": "13", "regulator": "AMLA"}},
-  {"ref_id": "RTS-GROUP-POL", "entity_type": "regulation",   "entity_id": "RTS-GROUP-POLICIES", "canonical_name": "AMLA RTS on Group-Wide Policies (Arts. 15-16)",  "description": "RTS specifying the content, format, and minimum requirements for group-level AML/CFT policies, including requirements for ensuring policy compliance in third-country subsidiaries and handling of legal impediments.", "metadata": {"status": "consultation", "mandating_articles": "15-16", "regulator": "AMLA"}},
-  {"ref_id": "RTS-CDD-INFO",  "entity_type": "regulation",   "entity_id": "RTS-CDD-INFORMATION","canonical_name": "AMLA RTS on CDD Information Requirements",      "description": "RTS specifying the minimum information to be collected and verified as part of standard CDD, EDD, and SDD. Covers identification documents, verification methods, and BO information requirements across different customer categories.", "metadata": {"status": "consultation", "regulator": "AMLA"}},
-  {"ref_id": "RTS-REMOTE-ID", "entity_type": "regulation",   "entity_id": "RTS-REMOTE-ID",      "canonical_name": "AMLA RTS on Remote Customer Identification",    "description": "RTS specifying technical requirements and security standards for non-face-to-face customer identification and verification, including digital identity, video verification, and electronic signatures.", "metadata": {"status": "consultation", "regulator": "AMLA"}},
-  {"ref_id": "RTS-HRTC-EDD",  "entity_type": "regulation",   "entity_id": "RTS-HRTC-EDD",       "canonical_name": "AMLA RTS on EDD Measures for HRTCs (Art. 36)",  "description": "RTS specifying the minimum EDD measures obliged entities must apply when dealing with customers or transactions from Commission-designated high-risk third countries.", "metadata": {"status": "draft", "mandating_article": "36", "regulator": "AMLA"}},
-  {"ref_id": "RTS-BO-REG",    "entity_type": "regulation",   "entity_id": "RTS-BO-REGISTER",    "canonical_name": "AMLA RTS on Beneficial Ownership Register Standards","description": "RTS governing technical standards for the interconnection of national BO registers, including data format, API standards, and cross-border access rules for the central EU BO register portal.", "metadata": {"status": "planned", "regulator": "AMLA/EC"}},
-  {"ref_id": "ITS-SUPER-REP", "entity_type": "regulation",   "entity_id": "ITS-SUPER-REPORTING","canonical_name": "AMLA ITS on Supervisory Reporting",             "description": "ITS specifying the format, templates, and data standards for supervisory reporting by obliged entities to competent authorities, and by competent authorities to AMLA for the purposes of regulatory oversight.", "metadata": {"status": "planned", "regulator": "AMLA"}},
-  {"ref_id": "RTS-DATA-PTS",  "entity_type": "regulation",   "entity_id": "RTS-DATA-POINTS",    "canonical_name": "AMLA RTS on Data Points for Reporting",         "description": "RTS specifying the data points that obliged entities must maintain for AML/CFT compliance purposes and be able to report to supervisors and AMLA on request, including CDD data elements, transaction records, and SAR statistics.", "metadata": {"status": "draft", "regulator": "AMLA"}},
-
-  {"ref_id": "RISK-ML",       "entity_type": "risk",         "entity_id": "RISK-ML",            "canonical_name": "Money Laundering Risk",                         "description": "The risk that an obliged entity's products, services, customers, or channels are used to launder criminal proceeds. Encompasses the three classic stages: placement (introducing funds), layering (concealment), and integration (reintroducing clean funds).", "metadata": {"stages": ["placement", "layering", "integration"]}},
-  {"ref_id": "RISK-TF",       "entity_type": "risk",         "entity_id": "RISK-TF",            "canonical_name": "Terrorist Financing Risk",                      "description": "The risk that funds are raised or moved through an obliged entity to support terrorist activities. Distinct from ML risk: TF may involve small amounts and legitimate sources of funds, requiring different detection approaches.", "metadata": {}},
-  {"ref_id": "RISK-PF",       "entity_type": "risk",         "entity_id": "RISK-PF",            "canonical_name": "Proliferation Financing Risk",                  "description": "The risk that funds or financial services are used to support the financing of weapons of mass destruction proliferation in violation of UN Security Council resolutions. Required to be addressed through targeted financial sanctions screening under AMLR Art. 49.", "metadata": {"un_basis": "UNSCR 1540, 1737, 1718, 2231"}},
-  {"ref_id": "RISK-SANC-EV",  "entity_type": "risk",         "entity_id": "RISK-SANCTIONS-EVASION","canonical_name": "Sanctions Evasion Risk",                    "description": "The risk that customers or transactions are used to circumvent EU, UN, or national targeted financial sanctions programmes. Obliged entities must maintain dedicated sanctions screening controls and escalation procedures.", "metadata": {}},
-  {"ref_id": "CONC-FATF-GREY","entity_type": "concept",      "entity_id": "CONCEPT-FATF-GREY",  "canonical_name": "FATF Greylisting (Increased Monitoring)",       "description": "FATF's public listing of jurisdictions under increased monitoring due to strategic AML/CFT deficiencies that they have committed to addressing. Greylisted jurisdictions are candidates for EU HRTC designation, triggering mandatory EDD obligations for obliged entities.", "metadata": {}},
-  {"ref_id": "CONC-FATF-BLACK","entity_type": "concept",     "entity_id": "CONCEPT-FATF-BLACK", "canonical_name": "FATF Call for Action (Blacklist)",              "description": "FATF's listing of jurisdictions with serious, unaddressed AML/CFT deficiencies that pose a significant threat to the international financial system. Typically triggers mandatory EU HRTC designation with the most severe countermeasures.", "metadata": {}},
-  {"ref_id": "CONC-PREDICATE","entity_type": "concept",      "entity_id": "CONCEPT-PREDICATE",  "canonical_name": "Predicate Offences",                            "description": "Criminal activities whose proceeds can give rise to ML. AMLR and 6AMLD adopt an all-crimes approach — all serious criminal offences including tax crimes, corruption, fraud, drug trafficking, human trafficking, and cybercrime are predicate offences.", "metadata": {"approach": "all-crimes", "key_offences": ["tax crime", "corruption", "fraud", "drug trafficking", "human trafficking", "cybercrime", "bribery"]}},
-  {"ref_id": "CONC-RBA-PRINC","entity_type": "concept",      "entity_id": "CONCEPT-RBA",        "canonical_name": "Risk-Based Approach (Core Principle)",          "description": "The fundamental principle that AML/CFT measures should be proportionate to the ML/TF risks identified. Higher-risk situations require more intensive controls; lower-risk situations allow proportionately lighter measures. Core to both FATF Recommendation 1 and AMLR Art. 8.", "metadata": {"fatf_basis": "FATF Recommendation 1"}},
-
-  {"ref_id": "AMLD6-SUPER",   "entity_type": "regulation",   "entity_id": "AMLD6-Supervision",  "canonical_name": "AMLD6 — Supervision Framework",                 "description": "AMLD6 establishes the supervisory framework complementing AMLR: designation of national competent authorities, supervisory colleges, cooperation with AMLA, and supervisory convergence obligations. Governance of AML supervision sits in AMLD6 rather than AMLR.", "metadata": {"directive": "2024/1640"}},
-  {"ref_id": "AMLD6-CRIM",    "entity_type": "regulation",   "entity_id": "AMLD6-CriminalSanct", "canonical_name": "AMLD6 — Criminal Sanctions",                    "description": "AMLD6 requires Member States to establish criminal sanctions for ML offences including: effective, proportionate, and dissuasive penalties for natural and legal persons; minimum standards for tipping-off and obstruction offences; and rules on corporate liability.", "metadata": {"directive": "2024/1640"}},
-  {"ref_id": "AMLD6-FIU",     "entity_type": "regulation",   "entity_id": "AMLD6-FIU-Powers",   "canonical_name": "AMLD6 — FIU Powers and Cooperation",            "description": "AMLD6 governs FIU establishment, operational independence, powers to obtain and use financial intelligence, feedback obligations to reporting entities, and cross-border cooperation through FIU.net and joint analysis teams.", "metadata": {"directive": "2024/1640"}},
-  {"ref_id": "AMLD6-BO-REG",  "entity_type": "regulation",   "entity_id": "AMLD6-BO-Registers", "canonical_name": "AMLD6 — Beneficial Ownership Registers",        "description": "AMLD6 requires Member States to maintain central beneficial ownership registers for legal entities and legal arrangements, specifying access conditions (competent authorities, obliged entities, public access), data quality standards, and interconnection via BRIS.", "metadata": {"directive": "2024/1640"}},
-  {"ref_id": "AMLD6-TRANS",   "entity_type": "regulation",   "entity_id": "AMLD6-Transposition","canonical_name": "AMLD6 — Transposition Deadline 10 July 2026", "description": "Member States must transpose AMLD6 into national law by 10 July 2026, one year before AMLR application date. Coordinated transposition is critical to ensure the supervisory and criminal law framework is in place when AMLR obligations apply.", "metadata": {"transposition_deadline": "2026-07-10"}},
-
-  {"ref_id": "REG-4AMLD",     "entity_type": "regulation",   "entity_id": "4AMLD-2015",         "canonical_name": "Directive 2015/849 — 4th AML Directive (4AMLD)","description": "The Fourth Anti-Money Laundering Directive, whose customer-facing provisions (CDD, BO, reporting) are largely superseded by AMLR. Supervisory and institutional provisions are superseded by AMLD6. 4AMLD remains in force until AMLR and AMLD6 apply.", "metadata": {"oj_ref": "OJ L 2015/141", "superseded_by": "AMLR 2024/1624 (customer provisions) + AMLD6 2024/1640 (institutional provisions)"}},
-  {"ref_id": "REG-TFR2",      "entity_type": "regulation",   "entity_id": "TFR2-2023",          "canonical_name": "Transfer of Funds Regulation (TFR2) — Reg. 2023/1113","description": "Extends FATF Recommendation 16 travel rule to crypto-asset transfers. PSPs must accompany wire transfers with full payer/payee data (€1,000 threshold for non-PSP transfers). CASPs must include full originator/beneficiary info for ALL crypto transfers with NO minimum threshold.", "metadata": {"oj_ref": "OJ L 2023/1113", "applies_from": "2024-12-30", "crypto_threshold": "none — all amounts", "wire_threshold_eur": 1000}},
-  {"ref_id": "GDPR-A6",       "entity_type": "regulation",   "entity_id": "GDPR-Art-6-legalbasis","canonical_name": "GDPR Art. 6 — Lawfulness of Processing",      "description": "AML/CFT data processing requires a lawful basis under GDPR Art. 6. The primary basis is Art. 6(1)(c) — processing necessary for compliance with a legal obligation (AMLR). Stub entity — enriched with full article detail in the GDPR/AI Act knowledge pack.", "metadata": {"regulation": "GDPR 2016/679", "article": "6", "stub": true, "enriched_in": "gdpr-ai-act"}},
-  {"ref_id": "DORA-A9-STUB",  "entity_type": "regulation",   "entity_id": "DORA-Art-9-security","canonical_name": "DORA Art. 9 — ICT Security Policies (Stub)",   "description": "DORA Art. 9 requires financial entities to implement ICT security policies. AML transaction monitoring, sanctions screening, and SAR filing systems are financial entity ICT systems subject to DORA operational resilience requirements. Enriched in DORA/NIS2 pack.", "metadata": {"regulation": "DORA 2022/2554", "article": "9", "stub": true, "enriched_in": "dora-nis2"}},
-  {"ref_id": "MICA-A60-STUB", "entity_type": "regulation",   "entity_id": "MICA-Art-60-CASP",   "canonical_name": "MiCA Art. 60 — CASP Authorisation (Stub)",     "description": "CASPs authorised under MiCA automatically become obliged entities under AMLR. The MiCA authorisation process and the AML supervisory regime are coordinated via AMLA and national supervisors. Enriched in Banking Prudential pack.", "metadata": {"regulation": "MiCA 2023/1114", "article": "60", "stub": true, "enriched_in": "crr-crd-mica"}},
-
-  {"ref_id": "ANNEX-I",       "entity_type": "document",     "entity_id": "AMLR-Annex-I",       "canonical_name": "AMLR Annex I — Potentially Low-Risk Factors",  "description": "Lists customer, product/service, geographic, and delivery channel factors that may indicate lower ML/TF risk and support application of simplified due diligence. Referenced by Art. 33. Factors include: regulated financial institutions, listed companies, public authorities, low-value insurance products, and certain financial products.", "metadata": {"annex": "I", "regulation": "AMLR 2024/1624"}},
-  {"ref_id": "ANNEX-II",      "entity_type": "document",     "entity_id": "AMLR-Annex-II",      "canonical_name": "AMLR Annex II — Potentially High-Risk Factors", "description": "Lists customer, product/service, geographic, and delivery channel factors that may indicate higher ML/TF risk and trigger enhanced due diligence. Referenced by Art. 13. Factors include: cash-intensive businesses, PEP-related relationships, HRTCs, non-face-to-face relationships, and complex ownership structures.", "metadata": {"annex": "II", "regulation": "AMLR 2024/1624"}}
+  {
+    "ref_id": "REG-AMLR",
+    "entity_type": "regulation",
+    "entity_id": "AMLR-2024",
+    "canonical_name": "Regulation (EU) 2024/1624 — AMLR",
+    "description": "The EU Anti-Money Laundering Regulation, directly applicable across all Member States, replacing AMLD4/5 customer-facing provisions.",
+    "metadata": {
+      "oj_ref": "OJ L 2024/1624",
+      "entry_into_force": "2024-07-11",
+      "applies_from": "2027-07-10"
+    }
+  },
+  {
+    "ref_id": "REG-AMLD6",
+    "entity_type": "regulation",
+    "entity_id": "AMLD6-2024",
+    "canonical_name": "Directive (EU) 2024/1640 — AMLD6",
+    "description": "6th Anti-Money Laundering Directive — institutional and supervisory framework to be implemented by Member States.",
+    "metadata": {
+      "oj_ref": "OJ L 2024/1640",
+      "transposition_deadline": "2026-07-10"
+    }
+  },
+  {
+    "ref_id": "REG-AMLA",
+    "entity_type": "authority",
+    "entity_id": "AMLA",
+    "canonical_name": "Anti-Money Laundering Authority (AMLA)",
+    "description": "New EU supervisory authority established by Regulation (EU) 2024/1620. Becomes operational 2025, takes over direct supervision of highest-risk entities 2028.",
+    "metadata": {
+      "seat": "Frankfurt",
+      "operational": "2025-07-01",
+      "direct_supervision": "2028-01-01"
+    }
+  },
+  {
+    "ref_id": "REG-EBA",
+    "entity_type": "authority",
+    "entity_id": "EBA",
+    "canonical_name": "European Banking Authority (EBA)",
+    "description": "Issues binding technical standards and guidelines on AML/CFT. Transfers supervisory convergence role to AMLA from 2025.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "REG-FATF",
+    "entity_type": "authority",
+    "entity_id": "FATF",
+    "canonical_name": "Financial Action Task Force (FATF)",
+    "description": "International standard-setter for AML/CFT. AMLR requirements aligned with FATF Recommendations 2012 (as updated).",
+    "metadata": {}
+  },
+  {
+    "ref_id": "OBL-CDD",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-20",
+    "canonical_name": "Customer Due Diligence (CDD) — Art. 20 AMLR",
+    "description": "Obliged entities must apply CDD measures when establishing a business relationship, carrying out occasional transactions ≥€10,000, or when suspicion of ML/TF arises.",
+    "metadata": {
+      "article": "20",
+      "chapter": "III",
+      "threshold_eur": 10000,
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 20: \"obliged entities shall apply CDD measures\"",
+      "cross_references": [
+        "AMLR-Art-21",
+        "AMLR-Art-22",
+        "AMLR-Art-25",
+        "AMLR-Art-28",
+        "AMLR-Art-31",
+        "AMLR-Art-34"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-EDD",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-34",
+    "canonical_name": "Enhanced Due Diligence (EDD) — Art. 34 AMLR",
+    "description": "Mandatory EDD for high-risk third countries, PEPs, and complex/unusual transactions. Includes enhanced monitoring and senior management approval.",
+    "metadata": {
+      "article": "34",
+      "chapter": "III",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 34: mandatory for listed triggers (HRTCs, PEPs, unusual transactions)",
+      "cross_references": [
+        "AMLR-Art-20",
+        "AMLR-Art-44",
+        "AMLR-Art-38",
+        "DEF-HRTC"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-SDD",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-31",
+    "canonical_name": "Simplified Due Diligence (SDD) — Art. 31 AMLR",
+    "description": "Proportionate measures permitted for lower-risk situations. Cannot be applied to PEPs, high-risk third countries, or when ML/TF suspicion exists.",
+    "metadata": {
+      "article": "31",
+      "chapter": "III",
+      "obligation_type": "may",
+      "obligation_type_note": "Art. 31: \"obliged entities may apply simplified due diligence\" in lower-risk situations",
+      "cross_references": [
+        "AMLR-Art-20",
+        "OBL-EDD"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-UBO",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-22",
+    "canonical_name": "Beneficial Ownership Identification — Art. 22 AMLR",
+    "description": "Obliged entities must identify and verify the beneficial owner of legal entities as part of CDD (Art. 22 AMLR). ≥25% ownership or control threshold for companies. No percentage threshold applies to trusts/foundations — all persons in the trust structure must be identified.",
+    "metadata": {
+      "article": "22",
+      "threshold_pct": 25,
+      "note": "25% threshold applies to legal entities only; no threshold for trusts/foundations",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 22: \"obliged entities shall identify and take reasonable measures to verify the identity of the beneficial owner\"",
+      "cross_references": [
+        "DEF-BO",
+        "DEF-Trust",
+        "AMLR-Art-20"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-PEP",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-44",
+    "canonical_name": "PEP Obligations — Art. 44 AMLR",
+    "description": "Politically Exposed Persons: enhanced scrutiny, senior management approval, source of wealth/funds verification. Former PEPs must be treated as PEPs for an appropriate risk-based period after ceasing public function (Art. 45(4) AMLR — no fixed duration mandated; risk-sensitive assessment required).",
+    "metadata": {
+      "article": "44",
+      "chapter": "III",
+      "cessation_note": "Risk-based period per Art. 45(4) — no fixed duration mandated by AMLR",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 44: mandatory enhanced scrutiny — no discretion once PEP status confirmed",
+      "cross_references": [
+        "DEF-PEP",
+        "DEF-PEPFAM",
+        "OBL-EDD"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-SAR",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-69",
+    "canonical_name": "Suspicious Activity Reporting (SAR) — Art. 69 AMLR",
+    "description": "Obliged entities must promptly report suspicions of ML/TF to FIUs. Tipping-off prohibition applies. Attempted transactions must also be reported.",
+    "metadata": {
+      "article": "69",
+      "chapter": "V",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 69: \"obliged entities shall promptly report\" — absolute obligation",
+      "cross_references": [
+        "DEF-FIU",
+        "AMLR-Art-25"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-RBA",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-8",
+    "canonical_name": "Risk-Based Approach (RBA) — Art. 8 AMLR",
+    "description": "Obliged entities must implement a risk-based approach informed by supranational (SNRA), national (NRA), and entity-level risk assessments. Proportionate to identified risks.",
+    "metadata": {
+      "article": "8",
+      "chapter": "II",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 8: \"obliged entities shall take appropriate steps to identify, assess and understand the risks\"",
+      "cross_references": [
+        "OBL-BWRA",
+        "DEF-SNRA",
+        "DEF-NRA"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-BWRA",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-10",
+    "canonical_name": "Business-Wide Risk Assessment (BWRA) — Art. 10 AMLR",
+    "description": "Written BWRA required covering all products, services, customers, geographies. Must be updated at least annually and upon material changes.",
+    "metadata": {
+      "article": "10",
+      "chapter": "II",
+      "review_frequency": "annual",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 10: written BWRA is mandatory",
+      "cross_references": [
+        "OBL-RBA",
+        "DEF-SNRA",
+        "DEF-NRA",
+        "AMLR-Art-12"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-TRAIN",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-18",
+    "canonical_name": "Employee Training — Art. 18 AMLR",
+    "description": "Obliged entities must ensure staff receive regular training on AML/CFT obligations, relevant typologies, and internal policies. Must be role-specific.",
+    "metadata": {
+      "article": "18",
+      "chapter": "II",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 18: \"obliged entities shall take measures to ensure that their employees are aware of the provisions\"",
+      "cross_references": [
+        "OBL-MLRO",
+        "AMLR-Art-12"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-MLRO",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-11",
+    "canonical_name": "Compliance Officer / MLRO — Art. 11 AMLR",
+    "description": "Must appoint a senior compliance officer at management body level (AML Officer) and a dedicated MLRO. Both must have adequate seniority, resources, and access.",
+    "metadata": {
+      "article": "11",
+      "chapter": "II",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 11: appointment of compliance officer and MLRO is mandatory",
+      "cross_references": [
+        "OBL-TRAIN",
+        "AMLR-Art-12",
+        "OBL-SANC"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-DATA",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-77",
+    "canonical_name": "Data Retention — Art. 77 AMLR",
+    "description": "CDD records and transaction data must be retained for 5 years from end of business relationship or transaction date. Extendable to 10 years by national law.",
+    "metadata": {
+      "article": "77",
+      "chapter": "VI",
+      "retention_years": 5,
+      "max_retention_years": 10,
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 77: \"obliged entities shall retain\" CDD and transaction records"
+    }
+  },
+  {
+    "ref_id": "OBL-WIRE",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-83",
+    "canonical_name": "Wire Transfer Information (TFR) — Art. 83 AMLR",
+    "description": "Payment service providers must accompany transfers with complete payer/payee information. Aligned with FATF Recommendation 16 and TFR Regulation.",
+    "metadata": {
+      "article": "83",
+      "chapter": "VI",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 83: mandatory — payment service providers shall ensure information accompanies transfers",
+      "cross_references": [
+        "THLD-WIRE",
+        "DEF-CASP"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-SANC",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-17",
+    "canonical_name": "Internal Controls & Compliance Programme — Art. 17 AMLR",
+    "description": "Obliged entities must establish written policies, controls, and procedures. Must be approved by senior management and communicated to all relevant staff.",
+    "metadata": {
+      "article": "17",
+      "chapter": "II",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 17: written internal controls programme is mandatory"
+    }
+  },
+  {
+    "ref_id": "DEF-OBLENT",
+    "entity_type": "concept",
+    "entity_id": "DEF-ObligedEntity",
+    "canonical_name": "Obliged Entity (Definition)",
+    "description": "Entities subject to AMLR obligations: credit institutions, financial institutions, crypto-asset service providers (CASPs), auditors, lawyers, notaries, tax advisors, real estate agents, trust/company service providers, and others.",
+    "metadata": {
+      "article": "3"
+    }
+  },
+  {
+    "ref_id": "DEF-ML",
+    "entity_type": "concept",
+    "entity_id": "DEF-MoneyLaundering",
+    "canonical_name": "Money Laundering (ML) — Definition",
+    "description": "Conversion, transfer, concealment, disguising, acquisition, possession or use of criminal proceeds, knowing that property is derived from criminal activity.",
+    "metadata": {
+      "article": "1"
+    }
+  },
+  {
+    "ref_id": "DEF-TF",
+    "entity_type": "concept",
+    "entity_id": "DEF-TerroristFinancing",
+    "canonical_name": "Terrorist Financing (TF) — Definition",
+    "description": "Provision or collection of funds with the intention or knowledge that they will be used for terrorist activities.",
+    "metadata": {
+      "article": "1"
+    }
+  },
+  {
+    "ref_id": "DEF-PEP",
+    "entity_type": "concept",
+    "entity_id": "DEF-PEP",
+    "canonical_name": "Politically Exposed Person (PEP)",
+    "description": "Individuals entrusted with prominent public functions including Heads of State, senior politicians, judicial officials, central bank governors, ambassadors, board members of state-owned enterprises.",
+    "metadata": {
+      "article": "2",
+      "cross_references": [
+        "OBL-PEP",
+        "DEF-PEPFAM",
+        "OBL-EDD"
+      ]
+    }
+  },
+  {
+    "ref_id": "DEF-BO",
+    "entity_type": "concept",
+    "entity_id": "DEF-BeneficialOwner",
+    "canonical_name": "Beneficial Owner (BO)",
+    "description": "Natural person(s) who ultimately own or control a legal entity or arrangement. For legal entities: ≥25% ownership or control threshold. For trusts and similar arrangements: NO percentage threshold — settlor, all trustees, protector, all beneficiaries, and any person exercising effective control must be identified.",
+    "metadata": {
+      "article": "2",
+      "threshold_pct_companies": 25,
+      "threshold_pct_trusts": "N/A — all natural persons in the structure",
+      "cross_references": [
+        "OBL-UBO",
+        "DEF-Trust"
+      ]
+    }
+  },
+  {
+    "ref_id": "DEF-HRTC",
+    "entity_type": "concept",
+    "entity_id": "DEF-HighRiskThirdCountry",
+    "canonical_name": "High-Risk Third Country (HRTC)",
+    "description": "Countries with strategic deficiencies in AML/CFT frameworks as identified by the EU Commission under delegated regulation. Triggers mandatory EDD.",
+    "metadata": {
+      "article": "29"
+    }
+  },
+  {
+    "ref_id": "DEF-CASP",
+    "entity_type": "concept",
+    "entity_id": "DEF-CASP",
+    "canonical_name": "Crypto-Asset Service Provider (CASP)",
+    "description": "Persons providing crypto-asset services as defined in MiCAR. CASPs are obliged entities under AMLR from its application date. Subject to full CDD and SAR obligations.",
+    "metadata": {
+      "article": "3",
+      "related_regulation": "MiCAR"
+    }
+  },
+  {
+    "ref_id": "DEF-FIU",
+    "entity_type": "authority",
+    "entity_id": "DEF-FIU",
+    "canonical_name": "Financial Intelligence Unit (FIU)",
+    "description": "National authority receiving and analysing SARs. FIUs in each Member State. FIU.net coordinates cross-border intelligence sharing in the EU.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "DEF-SNRA",
+    "entity_type": "concept",
+    "entity_id": "DEF-SNRA",
+    "canonical_name": "Supranational Risk Assessment (SNRA)",
+    "description": "Commission-level assessment of ML/TF risks affecting the EU internal market. Published every 2 years. Must inform entity-level BWRA.",
+    "metadata": {
+      "article": "7",
+      "frequency_years": 2
+    }
+  },
+  {
+    "ref_id": "DEF-NRA",
+    "entity_type": "concept",
+    "entity_id": "DEF-NRA",
+    "canonical_name": "National Risk Assessment (NRA)",
+    "description": "Member State assessment of ML/TF risks in their jurisdiction. Must be published and communicated to obliged entities. Must inform entity-level BWRA.",
+    "metadata": {
+      "article": "8"
+    }
+  },
+  {
+    "ref_id": "THLD-CASH",
+    "entity_type": "concept",
+    "entity_id": "THLD-CashPayment",
+    "canonical_name": "Cash Payment Limit — €10,000",
+    "description": "AMLR restricts acceptance of cash payments above €10,000 for goods/services by professionals (Art. 80). Some Member States may set lower limits.",
+    "metadata": {
+      "article": "80",
+      "amount_eur": 10000
+    }
+  },
+  {
+    "ref_id": "THLD-WIRE",
+    "entity_type": "concept",
+    "entity_id": "THLD-WireTransfer",
+    "canonical_name": "Wire Transfer / Crypto Transfer Information Requirements",
+    "description": "Payment service providers must accompany wire transfers with full payer/payee data (AMLR Art. 83 / TFR Regulation (EU) 2023/1113). For crypto-asset transfers: full originator/beneficiary information is required at any amount — there is NO minimum threshold (TFR2 Art. 4). The €1,000 threshold applies only to wire transfers without payment service providers.",
+    "metadata": {
+      "article": "83",
+      "wire_threshold_eur": 1000,
+      "crypto_threshold_eur": 0,
+      "note": "Crypto transfers: no minimum threshold per TFR2 (Regulation 2023/1113)"
+    }
+  },
+  {
+    "ref_id": "THLD-CASINO",
+    "entity_type": "concept",
+    "entity_id": "THLD-Casino",
+    "canonical_name": "Casino Transaction Threshold — €2,000",
+    "description": "Casinos must verify customer identity for transactions ≥€2,000 (purchase/exchange of chips, etc.).",
+    "metadata": {
+      "article": "20",
+      "amount_eur": 2000
+    }
+  },
+  {
+    "ref_id": "PERIOD-APPLY",
+    "entity_type": "concept",
+    "entity_id": "PERIOD-Application",
+    "canonical_name": "AMLR Application Date — 10 July 2027",
+    "description": "AMLR applies from 10 July 2027 (3 years after OJ publication). CASPs have transitional provisions. Certain obligations may be earlier via AMLA RTS.",
+    "metadata": {
+      "date": "2027-07-10"
+    }
+  },
+  {
+    "ref_id": "PERIOD-AMLD6",
+    "entity_type": "concept",
+    "entity_id": "PERIOD-AMLD6Transposition",
+    "canonical_name": "AMLD6 Transposition Deadline — 10 July 2026",
+    "description": "Member States must transpose AMLD6 into national law by 10 July 2026, one year before AMLR application.",
+    "metadata": {
+      "date": "2026-07-10"
+    }
+  },
+  {
+    "ref_id": "PERIOD-AMLA",
+    "entity_type": "concept",
+    "entity_id": "PERIOD-AMLA-Direct",
+    "canonical_name": "AMLA Direct Supervision — January 2028",
+    "description": "AMLA takes over direct supervision of highest-risk credit institutions and CASPs across the EU from January 2028.",
+    "metadata": {
+      "date": "2028-01-01"
+    }
+  },
+  {
+    "ref_id": "RTS-CDD",
+    "entity_type": "concept",
+    "entity_id": "RTS-CDD-Standards",
+    "canonical_name": "AMLA RTS on CDD",
+    "description": "AMLA will develop binding Regulatory Technical Standards on CDD procedures, including enhanced due diligence for high-risk third countries and PEPs.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "REG-MICAR",
+    "entity_type": "regulation",
+    "entity_id": "MiCAR-2023",
+    "canonical_name": "Markets in Crypto-Assets Regulation (MiCAR)",
+    "description": "Regulation (EU) 2023/1114. CASPs licensed under MiCAR are obliged entities under AMLR. Licensing authority coordinates with AML supervisors.",
+    "metadata": {
+      "oj_ref": "OJ L 2023/1114"
+    }
+  },
+  {
+    "ref_id": "REG-DORA",
+    "entity_type": "regulation",
+    "entity_id": "DORA-2022",
+    "canonical_name": "Digital Operational Resilience Act (DORA)",
+    "description": "Regulation (EU) 2022/2554. Applies to financial entities including credit institutions and investment firms. Relevant to AML system resilience requirements.",
+    "metadata": {
+      "oj_ref": "OJ L 2022/2554",
+      "applies_from": "2025-01-17"
+    }
+  },
+  {
+    "ref_id": "REG-GDPR",
+    "entity_type": "regulation",
+    "entity_id": "GDPR-2016",
+    "canonical_name": "General Data Protection Regulation (GDPR)",
+    "description": "Regulation (EU) 2016/679. AML data processing must comply with GDPR. Art. 77 AMLR data retention obligations must be balanced against GDPR erasure rights.",
+    "metadata": {
+      "oj_ref": "OJ L 2016/119"
+    }
+  },
+  {
+    "ref_id": "INST-CREDIT",
+    "entity_type": "concept",
+    "entity_id": "INST-CreditInstitution",
+    "canonical_name": "Credit Institution (Obliged Entity)",
+    "description": "Banks and other credit institutions are primary obliged entities under AMLR. Subject to the full set of CDD, SAR, and internal controls obligations.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "INST-INVEST",
+    "entity_type": "concept",
+    "entity_id": "INST-InvestmentFirm",
+    "canonical_name": "Investment Firm (Obliged Entity)",
+    "description": "Investment firms regulated under MiFID II are obliged entities under AMLR. CDD applies to all clients and transactions.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "INST-INSURER",
+    "entity_type": "concept",
+    "entity_id": "INST-Insurer",
+    "canonical_name": "Life Insurance Undertaking (Obliged Entity)",
+    "description": "Life insurance and intermediaries dealing with investment-linked products are obliged entities. Beneficiary screening required.",
+    "metadata": {
+      "article": "3"
+    }
+  },
+  {
+    "ref_id": "OBL-TPREL",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-28",
+    "canonical_name": "Third-Party Reliance — Art. 28 AMLR",
+    "description": "Obliged entities may rely on third parties to conduct CDD, but remain fully liable for compliance failures. Third party must be an obliged entity itself, subject to equivalent AML/CFT requirements. Immediate availability of CDD data required.",
+    "metadata": {
+      "article": "28",
+      "chapter": "III",
+      "obligation_type": "may",
+      "obligation_type_note": "Art. 28: reliance on third parties is permitted but not required — discretionary",
+      "cross_references": [
+        "OBL-CDD",
+        "OBL-UBO"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-GROUP",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-15",
+    "canonical_name": "Group-Level Compliance — Art. 15 AMLR",
+    "description": "Parent undertakings must implement group-wide AML/CFT policies and procedures. Subsidiaries in third countries must apply group standards where local law permits; where it does not, parent must notify home state supervisor.",
+    "metadata": {
+      "article": "15",
+      "chapter": "II",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 15: parent undertakings shall implement group-wide policies",
+      "cross_references": [
+        "AMLR-Art-12",
+        "OBL-SANC"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-CORR",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-38",
+    "canonical_name": "Correspondent Banking — Art. 38 AMLR",
+    "description": "Credit institutions must conduct enhanced CDD on correspondent relationships. Must assess respondent's AML/CFT controls, obtain senior management approval, document respective responsibilities. Shell bank prohibition maintained.",
+    "metadata": {
+      "article": "38",
+      "chapter": "III",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 38: enhanced CDD on correspondent relationships is mandatory",
+      "cross_references": [
+        "OBL-EDD",
+        "DEF-SHELL"
+      ]
+    }
+  },
+  {
+    "ref_id": "DEF-PEPFAM",
+    "entity_type": "concept",
+    "entity_id": "DEF-PEP-Family",
+    "canonical_name": "PEP Family Members and Close Associates",
+    "description": "Family members (spouse/partner, children and their spouses, parents) and known close associates of PEPs are subject to equivalent enhanced scrutiny under AMLR Art. 44. Enhanced measures continue for an appropriate risk-based period after the PEP ceases their public function — no fixed duration is mandated.",
+    "metadata": {
+      "article": "2",
+      "chapter": "I"
+    }
+  },
+  {
+    "ref_id": "OBL-ANON",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-79",
+    "canonical_name": "Prohibition on Anonymous Accounts — Art. 79 AMLR",
+    "description": "Credit institutions and financial institutions must not keep anonymous accounts, passbooks, or safe-deposit boxes. Existing anonymous accounts must be subject to CDD measures and identified before any transaction.",
+    "metadata": {
+      "article": "79",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 79: prohibition — no discretion"
+    }
+  },
+  {
+    "ref_id": "DEF-SHELL",
+    "entity_type": "concept",
+    "entity_id": "DEF-ShellBank",
+    "canonical_name": "Shell Bank (Prohibited Correspondent)",
+    "description": "A credit institution incorporated in a jurisdiction where it has no physical presence and which is not affiliated with a regulated financial group. AMLR prohibits correspondent relationships with shell banks.",
+    "metadata": {
+      "article": "38"
+    }
+  },
+  {
+    "ref_id": "OBL-MONITOR",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-25",
+    "canonical_name": "Ongoing Monitoring — Art. 25 AMLR",
+    "description": "Obliged entities must monitor business relationships on an ongoing basis, including scrutiny of transactions to ensure consistency with knowledge of customer, business profile, and risk. CDD documents must be kept up to date.",
+    "metadata": {
+      "article": "25",
+      "chapter": "III",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 25: \"obliged entities shall monitor the business relationship on an ongoing basis\"",
+      "cross_references": [
+        "OBL-CDD",
+        "OBL-SAR"
+      ]
+    }
+  },
+  {
+    "ref_id": "OBL-CUST",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-21",
+    "canonical_name": "Customer Identification and Verification — Art. 21 AMLR",
+    "description": "Obliged entities must identify and verify customer identity using reliable, independent source documents. For legal entities: identification of legal form, registered address, directors, and beneficial owners.",
+    "metadata": {
+      "article": "21",
+      "chapter": "III",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 21: identification and verification is mandatory"
+    }
+  },
+  {
+    "ref_id": "DEF-TRUST",
+    "entity_type": "concept",
+    "entity_id": "DEF-Trust",
+    "canonical_name": "Express Trust (Beneficial Ownership)",
+    "description": "Trusts and similar legal arrangements are subject to AMLR BO disclosure. Trustees must identify themselves as trustees. BO = settlor, trustees, protector, beneficiaries, and any natural person exercising effective control.",
+    "metadata": {
+      "article": "62"
+    }
+  },
+  {
+    "ref_id": "AMLR-A1",
+    "entity_type": "regulation",
+    "entity_id": "AMLR-Art-1-scope",
+    "canonical_name": "AMLR Art. 1 — Subject Matter and Scope",
+    "description": "Establishes that AMLR lays down rules on prevention of the use of the financial system for ML/TF purposes. Directly applicable in all Member States without transposition. Covers obliged entities' internal procedures, CDD, reporting, and group compliance.",
+    "metadata": {
+      "article": "1",
+      "chapter": "I",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A2",
+    "entity_type": "regulation",
+    "entity_id": "AMLR-Art-2-defs",
+    "canonical_name": "AMLR Art. 2 — Definitions",
+    "description": "Provides comprehensive definitions for all terms used in AMLR including: obliged entity, business relationship, beneficial owner, PEP, FIU, credit institution, financial institution, occasional transaction, and others. The primary definitional source for the entire AMLR framework.",
+    "metadata": {
+      "article": "2",
+      "chapter": "I",
+      "regulation": "AMLR 2024/1624",
+      "note": "Primary definitional article — defines all key terms referenced throughout AMLR"
+    }
+  },
+  {
+    "ref_id": "AMLR-A3",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-3-oblents",
+    "canonical_name": "AMLR Art. 3 — Obliged Entities",
+    "description": "Lists all persons subject to AMLR obligations: credit institutions, financial institutions, CASPs, auditors, external accountants, tax advisors, notaries, lawyers (in specific circumstances), real estate agents and developers, trust/company service providers, high-value goods dealers, and gambling service providers.",
+    "metadata": {
+      "article": "3",
+      "chapter": "I",
+      "regulation": "AMLR 2024/1624",
+      "obligation_type": "shall",
+      "obligation_type_note": "Designates who is subject to AMLR — non-discretionary"
+    }
+  },
+  {
+    "ref_id": "AMLR-A4",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-4-exemptions",
+    "canonical_name": "AMLR Art. 4 — Limited-Activity Exemptions",
+    "description": "Member States may exempt natural or legal persons that carry out financial activity on an occasional or very limited basis from AMLR obligations, where strict low-risk criteria are met. Exemptions must be notified to the Commission.",
+    "metadata": {
+      "article": "4",
+      "chapter": "I",
+      "regulation": "AMLR 2024/1624",
+      "obligation_type": "may",
+      "obligation_type_note": "Art. 4: Member States MAY exempt limited-activity persons"
+    }
+  },
+  {
+    "ref_id": "AMLR-A5",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-5-equivalence",
+    "canonical_name": "AMLR Art. 5 — Third-Country Equivalence",
+    "description": "The Commission may determine that certain third countries have equivalent AML/CFT requirements to those of the EU. This equivalence determination allows for adjusted group-level compliance obligations for subsidiaries in those third countries.",
+    "metadata": {
+      "article": "5",
+      "chapter": "I",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A7",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-7-SNRA",
+    "canonical_name": "AMLR Art. 7 — Supranational Risk Assessment",
+    "description": "The Commission shall conduct a supranational risk assessment of the ML/TF risks affecting the internal market every two years. The SNRA identifies cross-border risks and sector-specific vulnerabilities. Obliged entities must take the SNRA into account in their BWRA.",
+    "metadata": {
+      "article": "7",
+      "chapter": "II",
+      "regulation": "AMLR 2024/1624",
+      "frequency": "biennial"
+    }
+  },
+  {
+    "ref_id": "AMLR-A9",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-9-sectorrisk",
+    "canonical_name": "AMLR Art. 9 — Sector-Specific Risk Assessments",
+    "description": "AMLA shall conduct sector-specific risk assessments to identify ML/TF risks to which specific categories of obliged entities are exposed. These sector assessments inform supervisory approaches, RTS development, and the calibration of supervisory intensity.",
+    "metadata": {
+      "article": "9",
+      "chapter": "II",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A12",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-12-governance",
+    "canonical_name": "AMLR Art. 12 — Management Body Responsibility",
+    "description": "The management body of an obliged entity bears ultimate responsibility for AML/CFT compliance. At least one member must have adequate knowledge of AML/CFT risks. The management body approves the BWRA, internal policies, and compliance programme.",
+    "metadata": {
+      "article": "12",
+      "chapter": "II",
+      "regulation": "AMLR 2024/1624",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 12: management body SHALL bear responsibility"
+    }
+  },
+  {
+    "ref_id": "AMLR-A13",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-13-riskvars",
+    "canonical_name": "AMLR Art. 13 — Risk Variables and Factors",
+    "description": "Sets out the risk variables and factors obliged entities must consider in their risk assessments, including customer, product/service, geographic, and delivery channel factors. References Annexes II and III. AMLA shall develop RTS specifying minimum risk assessment requirements.",
+    "metadata": {
+      "article": "13",
+      "chapter": "II",
+      "regulation": "AMLR 2024/1624",
+      "rts_delegation": true,
+      "annexes": [
+        "II",
+        "III"
+      ]
+    }
+  },
+  {
+    "ref_id": "AMLR-A14",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-14-mitigation",
+    "canonical_name": "AMLR Art. 14 — Risk Mitigation Policies and Controls",
+    "description": "Obliged entities must establish and maintain policies, controls, and procedures to mitigate ML/TF risks identified in their BWRA. The nature and extent of controls must be proportionate to identified risks, and must be reviewed regularly.",
+    "metadata": {
+      "article": "14",
+      "chapter": "II",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A16",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-16-groupthird",
+    "canonical_name": "AMLR Art. 16 — Group Policies in Third Countries",
+    "description": "Where group subsidiaries or branches are established in third countries with less stringent AML/CFT requirements, the group parent must ensure those entities apply EU-standard measures to the extent permitted by local law. Impediments must be notified to the home Member State supervisor.",
+    "metadata": {
+      "article": "16",
+      "chapter": "II",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A19",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-19-screening",
+    "canonical_name": "AMLR Art. 19 — Employee Screening",
+    "description": "Obliged entities must screen employees involved in AML/CFT compliance functions for integrity and competence. Includes pre-employment background checks and ongoing assessment. Ensures staff in sensitive positions are not themselves involved in criminal activity.",
+    "metadata": {
+      "article": "19",
+      "chapter": "II",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A23",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-23-BOVerif",
+    "canonical_name": "AMLR Art. 23 — Beneficial Ownership Verification",
+    "description": "Sets out the measures obliged entities must take to verify BO identity, including consulting national BO registers, collecting documents, and applying risk-based independent verification. Where BO cannot be verified, the business relationship must not be established or continued.",
+    "metadata": {
+      "article": "23",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A24",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-24-trusts",
+    "canonical_name": "AMLR Art. 24 — Legal Arrangements (Trusts)",
+    "description": "Specific CDD requirements for customers that are express trusts or similar legal arrangements. Trustees must identify themselves as trustees. All natural persons in the trust structure — settlor, trustees, protector, beneficiaries, and persons exercising effective control — must be identified and verified.",
+    "metadata": {
+      "article": "24",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A26",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-26-timing",
+    "canonical_name": "AMLR Art. 26 — Timing of CDD",
+    "description": "CDD must generally be completed before establishing a business relationship or executing a transaction. In limited circumstances and for lower-risk situations, verification of identity may be completed during the course of establishing the relationship, provided transactions are restricted until CDD is complete.",
+    "metadata": {
+      "article": "26",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A27",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-27-existing",
+    "canonical_name": "AMLR Art. 27 — Existing Customers",
+    "description": "Obliged entities must apply CDD measures to existing customers at appropriate intervals, in particular when customer circumstances change. Risk-based approach governs the timing and frequency of periodic reviews. Higher-risk customers require more frequent reassessment.",
+    "metadata": {
+      "article": "27",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A29",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-29-agents",
+    "canonical_name": "AMLR Art. 29 — CDD by Agents and Distributors",
+    "description": "Where obliged entities appoint agents or distributors to perform CDD on their behalf, ultimate responsibility for compliance failures remains with the principal entity. Clear contractual arrangements, training, and oversight of agents are required.",
+    "metadata": {
+      "article": "29",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A30",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-30-fintime",
+    "canonical_name": "AMLR Art. 30 — Timing for Financial Sector",
+    "description": "Financial sector-specific rules allow credit and financial institutions to open accounts before identity verification is complete, provided that transactions are restricted until verification is finalized. Applicable only where ML/TF risk is assessed as low and strict conditions are met.",
+    "metadata": {
+      "article": "30",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A32",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-32-SDDconds",
+    "canonical_name": "AMLR Art. 32 — Conditions for Simplified CDD",
+    "description": "Specifies the conditions under which simplified due diligence measures may be applied: the customer or product must exhibit low-risk characteristics as listed in Annex I, no ML/TF suspicion may exist, and the customer must not be a PEP or from a high-risk third country.",
+    "metadata": {
+      "article": "32",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624",
+      "reference": "Annex I"
+    }
+  },
+  {
+    "ref_id": "AMLR-A33",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-33-lowrisk",
+    "canonical_name": "AMLR Art. 33 — Low-Risk Factors (Annex I)",
+    "description": "Lists the customer, product/service, geographic, and delivery channel factors that indicate lower ML/TF risk for SDD eligibility. References Annex I. Includes regulated financial institutions, listed companies, government/public bodies, low-value insurance products, and basic payment accounts.",
+    "metadata": {
+      "article": "33",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624",
+      "reference": "Annex I"
+    }
+  },
+  {
+    "ref_id": "AMLR-A35",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-35-eddtrig",
+    "canonical_name": "AMLR Art. 35 — EDD Trigger Situations",
+    "description": "Specifies circumstances requiring enhanced due diligence beyond standard CDD: customers from high-risk third countries, PEPs, complex/large/unusual transactions with no apparent economic purpose, business relationships with non-face-to-face elements in higher-risk contexts.",
+    "metadata": {
+      "article": "35",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A36",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-36-HRTCedd",
+    "canonical_name": "AMLR Art. 36 — EDD for High-Risk Third Countries",
+    "description": "Mandatory EDD for business relationships or transactions involving natural or legal persons from EU-designated high-risk third countries. Measures include: enhanced monitoring, senior management approval, verification of source of funds and source of wealth, and additional document collection.",
+    "metadata": {
+      "article": "36",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A37",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-37-eddmeas",
+    "canonical_name": "AMLR Art. 37 — EDD Specific Measures",
+    "description": "Details the specific additional measures in EDD situations: obtaining additional information on the customer, BO, and source of wealth/funds; obtaining senior management approval before establishing or continuing the relationship; enhanced and more frequent monitoring of transactions.",
+    "metadata": {
+      "article": "37",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A39",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-39-nominees",
+    "canonical_name": "AMLR Art. 39 — Nominee Shareholders and Directors",
+    "description": "Where nominee shareholders or directors are used, obliged entities must identify both the nominee and the person on whose behalf they act (the underlying principal). Nominee arrangements cannot be used to obscure beneficial ownership.",
+    "metadata": {
+      "article": "39",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A41",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-41-newtech",
+    "canonical_name": "AMLR Art. 41 — New Technologies Risk",
+    "description": "Obliged entities must identify and assess ML/TF risks arising from new products, business practices, delivery mechanisms, and technologies before launch, including anonymity-enhancing tools. AMLA may issue guidance on emerging technology risks.",
+    "metadata": {
+      "article": "41",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A42",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-42-shellbank",
+    "canonical_name": "AMLR Art. 42 — Prohibition on Shell Bank Relationships",
+    "description": "Credit institutions are prohibited from entering into or continuing correspondent banking relationships with shell banks. Obliged entities must not engage in relationships with financial institutions that permit their accounts to be used by shell banks.",
+    "metadata": {
+      "article": "42",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A43",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-43-PEPlist",
+    "canonical_name": "AMLR Art. 43 — PEP Functions List",
+    "description": "AMLA shall establish and maintain a publicly accessible list of the specific functions in each Member State and international organisations that qualify as prominent public functions for PEP classification purposes. Member States must notify AMLA of qualifying functions.",
+    "metadata": {
+      "article": "43",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A45",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-45-formerPEP",
+    "canonical_name": "AMLR Art. 45 — Former PEPs",
+    "description": "Persons who have ceased to hold a prominent public function remain subject to enhanced measures for an appropriate risk-based period, determined by factors including the nature of the function and residual risk. AMLR mandates no fixed cessation period — the assessment must be risk-sensitive.",
+    "metadata": {
+      "article": "45",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624",
+      "note": "No fixed cessation period — risk-based assessment required per Art. 45(4)"
+    }
+  },
+  {
+    "ref_id": "AMLR-A46",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-46-seniorMgt",
+    "canonical_name": "AMLR Art. 46 — Senior Management Approval for PEPs",
+    "description": "Obliged entities must obtain senior management approval before establishing or continuing a business relationship with a PEP. The level of seniority required for approval must be proportionate to the risk posed by the specific PEP.",
+    "metadata": {
+      "article": "46",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A47",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-47-PEPfam",
+    "canonical_name": "AMLR Art. 47 — PEP Family Members and Close Associates",
+    "description": "Enhanced scrutiny must be applied to family members (spouse/partner, children and their partners, parents) and known close associates of PEPs. Obliged entities must take reasonable steps to identify PEP relationships at onboarding and on an ongoing basis.",
+    "metadata": {
+      "article": "47",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A48",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-48-lifeins",
+    "canonical_name": "AMLR Art. 48 — Life Insurance PEP Beneficiaries",
+    "description": "Life insurance and investment-related insurance undertakings must check whether policy beneficiaries and their beneficial owners are PEPs. A PEP beneficiary triggers senior management notification and enhanced scrutiny at payout or assignment of the policy.",
+    "metadata": {
+      "article": "48",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A49",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-49-sanctions",
+    "canonical_name": "AMLR Art. 49 — Targeted Financial Sanctions Screening",
+    "description": "Obliged entities must screen customers, beneficial owners, and transaction counterparties against EU, UN, and applicable national targeted financial sanctions lists. Screening must occur before establishing business relationships, before executing transactions, and on an ongoing basis when lists are updated.",
+    "metadata": {
+      "article": "49",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A50",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-50-intrep",
+    "canonical_name": "AMLR Art. 50 — Internal Reporting to MLRO",
+    "description": "Employees who know or suspect that a transaction or activity involves ML/TF must report through internal channels to the MLRO. Obliged entities must establish clear, secure internal reporting procedures and protect employees who report from retaliation.",
+    "metadata": {
+      "article": "50",
+      "chapter": "IV",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A52",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-52-tipping",
+    "canonical_name": "AMLR Art. 52 — Tipping-Off Prohibition",
+    "description": "Obliged entities and their employees must not disclose to the customer or any third party that a SAR has been filed, that an investigation is underway, or that information has been requested by authorities. Violation is a criminal offence under AMLD6.",
+    "metadata": {
+      "article": "52",
+      "chapter": "IV",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A53",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-53-protection",
+    "canonical_name": "AMLR Art. 53 — Good-Faith Reporting Protection",
+    "description": "Obliged entities and their employees who report suspicions to FIUs in good faith are protected from civil, criminal, administrative, and professional liability, even if the suspicion proves unfounded. Member States must ensure effective legal and employment protection against retaliation.",
+    "metadata": {
+      "article": "53",
+      "chapter": "IV",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A54",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-54-FIUcoop",
+    "canonical_name": "AMLR Art. 54 — Cooperation with FIUs",
+    "description": "Obliged entities must promptly provide additional information to FIUs upon request, following SAR filing or as part of ongoing investigations. Must grant access to records and documentation within the scope of the request.",
+    "metadata": {
+      "article": "54",
+      "chapter": "IV",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "PROC-BWRA",
+    "entity_type": "process",
+    "entity_id": "PROCESS-BWRA",
+    "canonical_name": "Business-Wide Risk Assessment Process",
+    "description": "Formal written assessment of ML/TF risks across all products, services, customers, delivery channels, and geographies. Required at least annually and upon material changes. Must be approved by the management body and available to supervisors on request.",
+    "metadata": {
+      "frequency": "annual minimum",
+      "regulatory_basis": "AMLR Art. 10"
+    }
+  },
+  {
+    "ref_id": "PROC-CDD",
+    "entity_type": "process",
+    "entity_id": "PROCESS-CDD",
+    "canonical_name": "Customer Due Diligence Process",
+    "description": "Structured process for identifying and verifying customer identity, understanding the purpose and nature of the business relationship, identifying beneficial owners, and assessing customer ML/TF risk. Foundation of the AML/CFT compliance programme.",
+    "metadata": {
+      "regulatory_basis": "AMLR Arts. 20-30"
+    }
+  },
+  {
+    "ref_id": "PROC-EDD",
+    "entity_type": "process",
+    "entity_id": "PROCESS-EDD",
+    "canonical_name": "Enhanced Due Diligence Process",
+    "description": "Intensified CDD measures for higher-risk customers and situations: additional information collection, source of funds/wealth verification, senior management approval, and enhanced transaction monitoring. Mandatory for HRTCs, PEPs, and complex/unusual transactions.",
+    "metadata": {
+      "regulatory_basis": "AMLR Arts. 34-42"
+    }
+  },
+  {
+    "ref_id": "PROC-SDD",
+    "entity_type": "process",
+    "entity_id": "PROCESS-SDD",
+    "canonical_name": "Simplified Due Diligence Process",
+    "description": "Reduced CDD measures for verified low-risk situations as documented in the entity's BWRA. The degree of simplification must be proportionate and documented. Cannot apply where ML/TF suspicion exists, to PEPs, or to HRTC customers.",
+    "metadata": {
+      "regulatory_basis": "AMLR Arts. 31-33"
+    }
+  },
+  {
+    "ref_id": "PROC-TM",
+    "entity_type": "process",
+    "entity_id": "PROCESS-TM",
+    "canonical_name": "Transaction Monitoring",
+    "description": "Systematic review of customer transactions to detect patterns inconsistent with the customer's known profile, risk rating, and expected business activity. Combines automated rule-based alerts and scenario detection with human review and escalation workflows.",
+    "metadata": {
+      "regulatory_basis": "AMLR Art. 25"
+    }
+  },
+  {
+    "ref_id": "PROC-SAR",
+    "entity_type": "process",
+    "entity_id": "PROCESS-SAR",
+    "canonical_name": "Suspicious Activity Report (SAR) Filing Process",
+    "description": "End-to-end process for identifying, triaging, and reporting ML/TF suspicions to the national FIU. Stages: detection/alert, internal triage, MLRO investigation, decision, SAR completion and filing, record retention, and FIU cooperation on follow-up requests.",
+    "metadata": {
+      "regulatory_basis": "AMLR Arts. 50-54, 69"
+    }
+  },
+  {
+    "ref_id": "PROC-BO-VERIF",
+    "entity_type": "process",
+    "entity_id": "PROCESS-BO-VERIF",
+    "canonical_name": "Beneficial Ownership Verification",
+    "description": "Process for identifying and verifying the natural persons who ultimately own or control a customer legal entity or arrangement. Includes BO declarations, consulting national BO registers, and independent document-based verification proportionate to risk.",
+    "metadata": {
+      "regulatory_basis": "AMLR Arts. 22-24"
+    }
+  },
+  {
+    "ref_id": "PROC-PEP-SCRN",
+    "entity_type": "process",
+    "entity_id": "PROCESS-PEP-SCREEN",
+    "canonical_name": "PEP Screening Process",
+    "description": "Systematic screening of customers, beneficial owners, and transaction parties against PEP lists and commercial databases. Applied at onboarding and on an ongoing basis. Must capture family members (Art. 47) and close associates. Positive matches require EDD and senior management approval.",
+    "metadata": {
+      "regulatory_basis": "AMLR Arts. 43-48"
+    }
+  },
+  {
+    "ref_id": "PROC-SANCTIONS",
+    "entity_type": "process",
+    "entity_id": "PROCESS-SANCTIONS",
+    "canonical_name": "Sanctions Screening Process",
+    "description": "Screening of customers, beneficial owners, and counterparties against EU/UN/national targeted financial sanctions lists. Applied before establishing relationships, before transactions, and when sanctions lists are updated. Positive matches trigger asset freeze and competent authority notification.",
+    "metadata": {
+      "regulatory_basis": "AMLR Art. 49"
+    }
+  },
+  {
+    "ref_id": "PROC-ONGOING",
+    "entity_type": "process",
+    "entity_id": "PROCESS-ONGOING-MON",
+    "canonical_name": "Ongoing Customer Monitoring",
+    "description": "Continuous monitoring throughout the lifecycle of the business relationship: periodic CDD refresh, risk re-rating when circumstances change, transaction pattern analysis, and updating CDD documentation. Frequency must be risk-based.",
+    "metadata": {
+      "regulatory_basis": "AMLR Arts. 25, 27"
+    }
+  },
+  {
+    "ref_id": "PROC-RECORDS",
+    "entity_type": "process",
+    "entity_id": "PROCESS-RECORDS",
+    "canonical_name": "Record Keeping and Retention",
+    "description": "Systematic retention of CDD documents, transaction records, SAR correspondence, and monitoring results for the required periods (5 years from end of relationship/transaction, extendable to 10 years by national law). Records must be retrievable and provided to supervisors on request.",
+    "metadata": {
+      "regulatory_basis": "AMLR Art. 77",
+      "retention_years": 5,
+      "max_retention_years": 10
+    }
+  },
+  {
+    "ref_id": "PROC-RBA",
+    "entity_type": "process",
+    "entity_id": "PROCESS-RBA",
+    "canonical_name": "Risk-Based Approach Implementation",
+    "description": "The overarching process of calibrating AML/CFT controls to identified risk levels. Encompasses BWRA, customer risk scoring, product/service risk assessment, and proportionate control design. The foundational principle of AMLR and FATF standards.",
+    "metadata": {
+      "regulatory_basis": "AMLR Art. 8",
+      "fatf_basis": "FATF Recommendation 1"
+    }
+  },
+  {
+    "ref_id": "ORG-AMLA-INST",
+    "entity_type": "organization",
+    "entity_id": "ORG-AMLA-INST",
+    "canonical_name": "AMLA — Anti-Money Laundering Authority",
+    "description": "EU supervisory authority established by Regulation (EU) 2024/1620, headquartered in Frankfurt. Operational from 1 July 2025. Will directly supervise selected high-risk credit institutions and CASPs from January 2028. Issues binding RTS/ITS and guidelines for the EU AML/CFT framework.",
+    "metadata": {
+      "seat": "Frankfurt",
+      "operational": "2025-07-01",
+      "direct_supervision_start": "2028-01-01",
+      "legal_basis": "Regulation (EU) 2024/1620"
+    }
+  },
+  {
+    "ref_id": "ORG-EC-AML",
+    "entity_type": "organization",
+    "entity_id": "ORG-EC-AML",
+    "canonical_name": "European Commission — AML Functions",
+    "description": "The European Commission designates high-risk third countries (delegated regulations), publishes the biennial SNRA, adopts delegated and implementing acts under AMLR (including the HRTC list), and proposes amendments to the AML/CFT legislative framework.",
+    "metadata": {
+      "key_powers": [
+        "HRTC designation",
+        "SNRA publication",
+        "delegated acts",
+        "implementing acts"
+      ]
+    }
+  },
+  {
+    "ref_id": "ORG-FIU-NET",
+    "entity_type": "organization",
+    "entity_id": "ORG-FIU-NET",
+    "canonical_name": "FIU.net — EU FIU Cooperation Platform",
+    "description": "Secure platform hosted at Europol facilitating cross-border exchange of financial intelligence between EU national FIUs. Enables joint analysis and coordinated response to cross-border ML/TF threats.",
+    "metadata": {
+      "host": "Europol",
+      "governance": "AMLD6"
+    }
+  },
+  {
+    "ref_id": "ORG-NCA-AML",
+    "entity_type": "organization",
+    "entity_id": "ORG-NCA-AML",
+    "canonical_name": "National Competent Authorities (AML Supervisors)",
+    "description": "National authorities in each Member State responsible for supervising obliged entities' compliance with AMLR and national AML/CFT law. Typically financial supervisors, central banks, or dedicated AML units. Will continue supervising most entities after AMLA begins direct supervision of highest-risk entities.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "ORG-FATF-INST",
+    "entity_type": "organization",
+    "entity_id": "ORG-FATF-INST",
+    "canonical_name": "Financial Action Task Force (FATF) — Institution",
+    "description": "International standard-setter for AML/CFT and CPF, comprising 37 member jurisdictions. AMLR implements FATF's 40 Recommendations and 11 Immediate Outcomes. FATF mutual evaluation findings influence EU supervisory priorities and HRTC designations.",
+    "metadata": {
+      "role": "international standard-setter",
+      "standards": "FATF 40 Recommendations + 11 Immediate Outcomes"
+    }
+  },
+  {
+    "ref_id": "ORG-EBA-HIST",
+    "entity_type": "organization",
+    "entity_id": "ORG-EBA-HIST",
+    "canonical_name": "EBA — Historical AML Supervisory Role",
+    "description": "From 2020-2025, EBA held EU-level AML/CFT supervisory convergence responsibilities including issuing binding RTS, conducting peer reviews, and maintaining the AML/CFT college network. These responsibilities transferred to AMLA upon its establishment in July 2025.",
+    "metadata": {
+      "transition_date": "2025-07-01",
+      "successor": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RTS-RISK-VARS",
+    "entity_type": "regulation",
+    "entity_id": "RTS-RISK-VARIABLES",
+    "canonical_name": "AMLA RTS on Customer Risk Variables (Art. 13)",
+    "description": "AMLA RTS specifying the minimum requirements for customer risk assessments: mandatory risk variables, risk factors, and risk scoring methodology. Mandated by AMLR Art. 13. Status: consultation phase (AMLA work programme 2025-2026).",
+    "metadata": {
+      "status": "consultation",
+      "mandating_article": "13",
+      "regulator": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RTS-GROUP-POL",
+    "entity_type": "regulation",
+    "entity_id": "RTS-GROUP-POLICIES",
+    "canonical_name": "AMLA RTS on Group-Wide Policies (Arts. 15-16)",
+    "description": "RTS specifying the content, format, and minimum requirements for group-level AML/CFT policies, including requirements for ensuring policy compliance in third-country subsidiaries and handling of legal impediments.",
+    "metadata": {
+      "status": "consultation",
+      "mandating_articles": "15-16",
+      "regulator": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RTS-CDD-INFO",
+    "entity_type": "regulation",
+    "entity_id": "RTS-CDD-INFORMATION",
+    "canonical_name": "AMLA RTS on CDD Information Requirements",
+    "description": "RTS specifying the minimum information to be collected and verified as part of standard CDD, EDD, and SDD. Covers identification documents, verification methods, and BO information requirements across different customer categories.",
+    "metadata": {
+      "status": "consultation",
+      "regulator": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RTS-REMOTE-ID",
+    "entity_type": "regulation",
+    "entity_id": "RTS-REMOTE-ID",
+    "canonical_name": "AMLA RTS on Remote Customer Identification",
+    "description": "RTS specifying technical requirements and security standards for non-face-to-face customer identification and verification, including digital identity, video verification, and electronic signatures.",
+    "metadata": {
+      "status": "consultation",
+      "regulator": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RTS-HRTC-EDD",
+    "entity_type": "regulation",
+    "entity_id": "RTS-HRTC-EDD",
+    "canonical_name": "AMLA RTS on EDD Measures for HRTCs (Art. 36)",
+    "description": "RTS specifying the minimum EDD measures obliged entities must apply when dealing with customers or transactions from Commission-designated high-risk third countries.",
+    "metadata": {
+      "status": "draft",
+      "mandating_article": "36",
+      "regulator": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RTS-BO-REG",
+    "entity_type": "regulation",
+    "entity_id": "RTS-BO-REGISTER",
+    "canonical_name": "AMLA RTS on Beneficial Ownership Register Standards",
+    "description": "RTS governing technical standards for the interconnection of national BO registers, including data format, API standards, and cross-border access rules for the central EU BO register portal.",
+    "metadata": {
+      "status": "planned",
+      "regulator": "AMLA/EC"
+    }
+  },
+  {
+    "ref_id": "ITS-SUPER-REP",
+    "entity_type": "regulation",
+    "entity_id": "ITS-SUPER-REPORTING",
+    "canonical_name": "AMLA ITS on Supervisory Reporting",
+    "description": "ITS specifying the format, templates, and data standards for supervisory reporting by obliged entities to competent authorities, and by competent authorities to AMLA for the purposes of regulatory oversight.",
+    "metadata": {
+      "status": "planned",
+      "regulator": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RTS-DATA-PTS",
+    "entity_type": "regulation",
+    "entity_id": "RTS-DATA-POINTS",
+    "canonical_name": "AMLA RTS on Data Points for Reporting",
+    "description": "RTS specifying the data points that obliged entities must maintain for AML/CFT compliance purposes and be able to report to supervisors and AMLA on request, including CDD data elements, transaction records, and SAR statistics.",
+    "metadata": {
+      "status": "draft",
+      "regulator": "AMLA"
+    }
+  },
+  {
+    "ref_id": "RISK-ML",
+    "entity_type": "risk",
+    "entity_id": "RISK-ML",
+    "canonical_name": "Money Laundering Risk",
+    "description": "The risk that an obliged entity's products, services, customers, or channels are used to launder criminal proceeds. Encompasses the three classic stages: placement (introducing funds), layering (concealment), and integration (reintroducing clean funds).",
+    "metadata": {
+      "stages": [
+        "placement",
+        "layering",
+        "integration"
+      ]
+    }
+  },
+  {
+    "ref_id": "RISK-TF",
+    "entity_type": "risk",
+    "entity_id": "RISK-TF",
+    "canonical_name": "Terrorist Financing Risk",
+    "description": "The risk that funds are raised or moved through an obliged entity to support terrorist activities. Distinct from ML risk: TF may involve small amounts and legitimate sources of funds, requiring different detection approaches.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "RISK-PF",
+    "entity_type": "risk",
+    "entity_id": "RISK-PF",
+    "canonical_name": "Proliferation Financing Risk",
+    "description": "The risk that funds or financial services are used to support the financing of weapons of mass destruction proliferation in violation of UN Security Council resolutions. Required to be addressed through targeted financial sanctions screening under AMLR Art. 49.",
+    "metadata": {
+      "un_basis": "UNSCR 1540, 1737, 1718, 2231"
+    }
+  },
+  {
+    "ref_id": "RISK-SANC-EV",
+    "entity_type": "risk",
+    "entity_id": "RISK-SANCTIONS-EVASION",
+    "canonical_name": "Sanctions Evasion Risk",
+    "description": "The risk that customers or transactions are used to circumvent EU, UN, or national targeted financial sanctions programmes. Obliged entities must maintain dedicated sanctions screening controls and escalation procedures.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CONC-FATF-GREY",
+    "entity_type": "concept",
+    "entity_id": "CONCEPT-FATF-GREY",
+    "canonical_name": "FATF Greylisting (Increased Monitoring)",
+    "description": "FATF's public listing of jurisdictions under increased monitoring due to strategic AML/CFT deficiencies that they have committed to addressing. Greylisted jurisdictions are candidates for EU HRTC designation, triggering mandatory EDD obligations for obliged entities.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CONC-FATF-BLACK",
+    "entity_type": "concept",
+    "entity_id": "CONCEPT-FATF-BLACK",
+    "canonical_name": "FATF Call for Action (Blacklist)",
+    "description": "FATF's listing of jurisdictions with serious, unaddressed AML/CFT deficiencies that pose a significant threat to the international financial system. Typically triggers mandatory EU HRTC designation with the most severe countermeasures.",
+    "metadata": {}
+  },
+  {
+    "ref_id": "CONC-PREDICATE",
+    "entity_type": "concept",
+    "entity_id": "CONCEPT-PREDICATE",
+    "canonical_name": "Predicate Offences",
+    "description": "Criminal activities whose proceeds can give rise to ML. AMLR and 6AMLD adopt an all-crimes approach — all serious criminal offences including tax crimes, corruption, fraud, drug trafficking, human trafficking, and cybercrime are predicate offences.",
+    "metadata": {
+      "approach": "all-crimes",
+      "key_offences": [
+        "tax crime",
+        "corruption",
+        "fraud",
+        "drug trafficking",
+        "human trafficking",
+        "cybercrime",
+        "bribery"
+      ]
+    }
+  },
+  {
+    "ref_id": "CONC-RBA-PRINC",
+    "entity_type": "concept",
+    "entity_id": "CONCEPT-RBA",
+    "canonical_name": "Risk-Based Approach (Core Principle)",
+    "description": "The fundamental principle that AML/CFT measures should be proportionate to the ML/TF risks identified. Higher-risk situations require more intensive controls; lower-risk situations allow proportionately lighter measures. Core to both FATF Recommendation 1 and AMLR Art. 8.",
+    "metadata": {
+      "fatf_basis": "FATF Recommendation 1"
+    }
+  },
+  {
+    "ref_id": "AMLD6-SUPER",
+    "entity_type": "regulation",
+    "entity_id": "AMLD6-Supervision",
+    "canonical_name": "AMLD6 — Supervision Framework",
+    "description": "AMLD6 establishes the supervisory framework complementing AMLR: designation of national competent authorities, supervisory colleges, cooperation with AMLA, and supervisory convergence obligations. Governance of AML supervision sits in AMLD6 rather than AMLR.",
+    "metadata": {
+      "directive": "2024/1640"
+    }
+  },
+  {
+    "ref_id": "AMLD6-CRIM",
+    "entity_type": "regulation",
+    "entity_id": "AMLD6-CriminalSanct",
+    "canonical_name": "AMLD6 — Criminal Sanctions",
+    "description": "AMLD6 requires Member States to establish criminal sanctions for ML offences including: effective, proportionate, and dissuasive penalties for natural and legal persons; minimum standards for tipping-off and obstruction offences; and rules on corporate liability.",
+    "metadata": {
+      "directive": "2024/1640"
+    }
+  },
+  {
+    "ref_id": "AMLD6-FIU",
+    "entity_type": "regulation",
+    "entity_id": "AMLD6-FIU-Powers",
+    "canonical_name": "AMLD6 — FIU Powers and Cooperation",
+    "description": "AMLD6 governs FIU establishment, operational independence, powers to obtain and use financial intelligence, feedback obligations to reporting entities, and cross-border cooperation through FIU.net and joint analysis teams.",
+    "metadata": {
+      "directive": "2024/1640"
+    }
+  },
+  {
+    "ref_id": "AMLD6-BO-REG",
+    "entity_type": "regulation",
+    "entity_id": "AMLD6-BO-Registers",
+    "canonical_name": "AMLD6 — Beneficial Ownership Registers",
+    "description": "AMLD6 requires Member States to maintain central beneficial ownership registers for legal entities and legal arrangements, specifying access conditions (competent authorities, obliged entities, public access), data quality standards, and interconnection via BRIS.",
+    "metadata": {
+      "directive": "2024/1640"
+    }
+  },
+  {
+    "ref_id": "AMLD6-TRANS",
+    "entity_type": "regulation",
+    "entity_id": "AMLD6-Transposition",
+    "canonical_name": "AMLD6 — Transposition Deadline 10 July 2026",
+    "description": "Member States must transpose AMLD6 into national law by 10 July 2026, one year before AMLR application date. Coordinated transposition is critical to ensure the supervisory and criminal law framework is in place when AMLR obligations apply.",
+    "metadata": {
+      "transposition_deadline": "2026-07-10"
+    }
+  },
+  {
+    "ref_id": "REG-4AMLD",
+    "entity_type": "regulation",
+    "entity_id": "4AMLD-2015",
+    "canonical_name": "Directive 2015/849 — 4th AML Directive (4AMLD)",
+    "description": "The Fourth Anti-Money Laundering Directive, whose customer-facing provisions (CDD, BO, reporting) are largely superseded by AMLR. Supervisory and institutional provisions are superseded by AMLD6. 4AMLD remains in force until AMLR and AMLD6 apply.",
+    "metadata": {
+      "oj_ref": "OJ L 2015/141",
+      "superseded_by": "AMLR 2024/1624 (customer provisions) + AMLD6 2024/1640 (institutional provisions)"
+    }
+  },
+  {
+    "ref_id": "REG-TFR2",
+    "entity_type": "regulation",
+    "entity_id": "TFR2-2023",
+    "canonical_name": "Transfer of Funds Regulation (TFR2) — Reg. 2023/1113",
+    "description": "Extends FATF Recommendation 16 travel rule to crypto-asset transfers. PSPs must accompany wire transfers with full payer/payee data (€1,000 threshold for non-PSP transfers). CASPs must include full originator/beneficiary info for ALL crypto transfers with NO minimum threshold.",
+    "metadata": {
+      "oj_ref": "OJ L 2023/1113",
+      "applies_from": "2024-12-30",
+      "crypto_threshold": "none — all amounts",
+      "wire_threshold_eur": 1000
+    }
+  },
+  {
+    "ref_id": "GDPR-A6",
+    "entity_type": "regulation",
+    "entity_id": "GDPR-Art-6-legalbasis",
+    "canonical_name": "GDPR Art. 6 — Lawfulness of Processing",
+    "description": "AML/CFT data processing requires a lawful basis under GDPR Art. 6. The primary basis is Art. 6(1)(c) — processing necessary for compliance with a legal obligation (AMLR). Stub entity — enriched with full article detail in the GDPR/AI Act knowledge pack.",
+    "metadata": {
+      "regulation": "GDPR 2016/679",
+      "article": "6",
+      "stub": true,
+      "enriched_in": "gdpr-ai-act"
+    }
+  },
+  {
+    "ref_id": "DORA-A9-STUB",
+    "entity_type": "regulation",
+    "entity_id": "DORA-Art-9-security",
+    "canonical_name": "DORA Art. 9 — ICT Security Policies (Stub)",
+    "description": "DORA Art. 9 requires financial entities to implement ICT security policies. AML transaction monitoring, sanctions screening, and SAR filing systems are financial entity ICT systems subject to DORA operational resilience requirements. Enriched in DORA/NIS2 pack.",
+    "metadata": {
+      "regulation": "DORA 2022/2554",
+      "article": "9",
+      "stub": true,
+      "enriched_in": "dora-nis2"
+    }
+  },
+  {
+    "ref_id": "MICA-A60-STUB",
+    "entity_type": "regulation",
+    "entity_id": "MICA-Art-60-CASP",
+    "canonical_name": "MiCA Art. 60 — CASP Authorisation (Stub)",
+    "description": "CASPs authorised under MiCA automatically become obliged entities under AMLR. The MiCA authorisation process and the AML supervisory regime are coordinated via AMLA and national supervisors. Enriched in Banking Prudential pack.",
+    "metadata": {
+      "regulation": "MiCA 2023/1114",
+      "article": "60",
+      "stub": true,
+      "enriched_in": "crr-crd-mica"
+    }
+  },
+  {
+    "ref_id": "ANNEX-I",
+    "entity_type": "document",
+    "entity_id": "AMLR-Annex-I",
+    "canonical_name": "AMLR Annex I — Potentially Low-Risk Factors",
+    "description": "Lists customer, product/service, geographic, and delivery channel factors that may indicate lower ML/TF risk and support application of simplified due diligence. Referenced by Art. 33. Factors include: regulated financial institutions, listed companies, public authorities, low-value insurance products, and certain financial products.",
+    "metadata": {
+      "annex": "I",
+      "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "ANNEX-II",
+    "entity_type": "document",
+    "entity_id": "AMLR-Annex-II",
+    "canonical_name": "AMLR Annex II — Potentially High-Risk Factors",
+    "description": "Lists customer, product/service, geographic, and delivery channel factors that may indicate higher ML/TF risk and trigger enhanced due diligence. Referenced by Art. 13. Factors include: cash-intensive businesses, PEP-related relationships, HRTCs, non-face-to-face relationships, and complex ownership structures.",
+    "metadata": {
+      "annex": "II",
+      "regulation": "AMLR 2024/1624"
+    }
+  }
 ]

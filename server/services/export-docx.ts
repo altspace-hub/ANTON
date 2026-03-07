@@ -284,6 +284,11 @@ function makeRuns(
 
 // ── Table parser ──────────────────────────────────────────────
 
+// EXPORT-05: Wide tables get the full usable page width (both columns + gutter)
+const FULL_PAGE_USABLE_DXA = PAGE_WIDTH_DXA - (MARGIN_DXA * 2); // ~9746 DXA
+const MIN_CELL_WIDTH_DXA = 600; // ~0.4 inch minimum per cell
+const WIDE_TABLE_THRESHOLD = 8; // >= 8 columns → use full page width
+
 function parseMarkdownTable(lines: string[], accent: string = DEF_TEAL): Table | null {
   // Remove the separator row (|---|---|)
   const dataLines = lines.filter(l => !l.match(/^\|[\s:-]+\|/));
@@ -293,12 +298,15 @@ function parseMarkdownTable(lines: string[], accent: string = DEF_TEAL): Table |
     line.split('|').slice(1, -1).map(cell => cell.trim())
   );
   const colCount = Math.max(...rows.map(r => r.length));
-  // Each column shares the single-column width; for tables that span both
-  // columns, Word will expand automatically within the column flow.
-  const cellWidthDxa = Math.floor(COL_WIDTH_DXA / colCount);
+
+  // EXPORT-05: Wide tables (>= 8 cols) span full usable page width; narrow tables stay in one column
+  const isWide = colCount >= WIDE_TABLE_THRESHOLD;
+  const tableWidthDxa = isWide ? FULL_PAGE_USABLE_DXA : COL_WIDTH_DXA;
+  const rawCellWidth = Math.floor(tableWidthDxa / colCount);
+  const cellWidthDxa = Math.max(rawCellWidth, MIN_CELL_WIDTH_DXA);
 
   return new Table({
-    width: { size: COL_WIDTH_DXA, type: WidthType.DXA },
+    width: { size: tableWidthDxa, type: WidthType.DXA },
     rows: rows.map((cells, rowIdx) =>
       new TableRow({
         children: Array.from({ length: colCount }, (_, colIdx) => {
@@ -352,9 +360,99 @@ function buildExportFooter(meta: {
   return `\n\n---\n\n**Legal Disclaimer:** This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.${sourcesSection}${provenance}`;
 }
 
+interface ExportMetadata {
+  title?: string;
+  author?: string;
+  subject?: string;
+  model?: string;
+  thinking?: string;
+  moduleId?: string;
+  sessionId?: string;
+  creativity?: string;
+  documentsLoaded?: string[];
+  // EXPORT-01/02 — governance cover page
+  clientName?: string;
+  projectName?: string;
+  version?: string;
+  reviewer?: string;
+  status?: 'DRAFT' | 'FINAL' | 'CONFIDENTIAL DRAFT';
+  classificationLabel?: string; // e.g. "CONFIDENTIAL — For Recipient Only"
+  includeCoverPage?: boolean;
+}
+
+// EXPORT-01: Build a governance-ready cover page as the first section
+function buildCoverPage(meta: ExportMetadata, s: ReturnType<typeof resolveStyle>): (Paragraph | Table)[] {
+  const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  const items: (Paragraph | Table)[] = [];
+
+  // Top ANTON branding line
+  items.push(new Paragraph({ children: [new TextRun({ text: 'ANTON by openEXPERT', color: '2DD4A8', size: 36, bold: true, font: s.h1Font })], spacing: { before: 0, after: 400 } }));
+
+  // Classification badge
+  const classification = meta.classificationLabel || 'CONFIDENTIAL — For Recipient Only';
+  items.push(new Paragraph({
+    children: [new TextRun({ text: classification.toUpperCase(), color: 'E74C3C', size: 20, bold: true, font: s.h2Font })],
+    spacing: { before: 200, after: 800 },
+  }));
+
+  // Main title
+  items.push(new Paragraph({
+    children: [new TextRun({ text: meta.title || 'Analysis Report', color: 'FFFFFF', size: 64, bold: true, font: s.h1Font })],
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 0, after: 400 },
+  }));
+
+  if (meta.subject) {
+    items.push(new Paragraph({ children: [new TextRun({ text: meta.subject, color: 'B0B0B0', size: 28, font: s.bodyFont })], spacing: { before: 0, after: 800 } }));
+  }
+
+  // Status watermark
+  const status = meta.status || 'DRAFT';
+  items.push(new Paragraph({ children: [new TextRun({ text: status, color: status === 'FINAL' ? '27AE60' : 'F5A623', size: 32, bold: true, font: s.h1Font })], spacing: { before: 0, after: 1600 } }));
+
+  // Cover metadata table
+  const rows: Array<[string, string]> = [
+    ['Client', meta.clientName || '—'],
+    ['Project', meta.projectName || '—'],
+    ['Date', date],
+    ['Version', meta.version || 'v1.0'],
+    ['Author', meta.author || 'ANTON FCP Workbench'],
+    ['Reviewer', meta.reviewer || '________________________'],
+    ['Session ID', meta.sessionId ? meta.sessionId.slice(0, 8).toUpperCase() : '—'],
+  ];
+
+  const COL1 = 1440; const COL2 = 3600;
+
+  items.push(new Table({
+    width: { size: COL1 + COL2, type: WidthType.DXA },
+    rows: rows.map(([label, value]) => new TableRow({
+      children: [
+        new TableCell({ width: { size: COL1, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, size: 18, font: s.bodyFont, color: 'B0B0B0' })], spacing: { before: 40, after: 40 } })], shading: { type: ShadingType.CLEAR, fill: '152238' } }),
+        new TableCell({ width: { size: COL2, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: value, size: 18, font: s.bodyFont, color: 'E0E0E0' })], spacing: { before: 40, after: 40 } })], shading: { type: ShadingType.CLEAR, fill: '0F1B2D' } }),
+      ],
+    })),
+    borders: {
+      top:    { style: BorderStyle.SINGLE, size: 1, color: '2DD4A8' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: '2DD4A8' },
+      left:   { style: BorderStyle.NONE },
+      right:  { style: BorderStyle.NONE },
+      insideH:{ style: BorderStyle.SINGLE, size: 1, color: '152238' },
+      insideV:{ style: BorderStyle.NONE },
+    },
+  }));
+
+  // LEGAL-01 disclaimer
+  items.push(new Paragraph({
+    children: [new TextRun({ text: 'AI-Assisted Analysis — Not Legal Advice — Requires Professional Review', size: 16, italics: true, color: '707070', font: s.bodyFont })],
+    spacing: { before: 800, after: 0 },
+  }));
+
+  return items;
+}
+
 export async function generateDocx(
   markdown: string,
-  metadata: { title?: string; author?: string; subject?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string; documentsLoaded?: string[] } = {},
+  metadata: ExportMetadata = {},
   brandConfig?: BrandConfig | null,
 ): Promise<Buffer> {
   const s = resolveStyle(brandConfig);
@@ -563,6 +661,16 @@ export async function generateDocx(
     },
 
     sections: [
+      // EXPORT-01: cover page section (only when requested)
+      ...(metadata.includeCoverPage !== false ? [{
+        properties: {
+          page: {
+            size: { width: PAGE_WIDTH_DXA, height: PAGE_HEIGHT_DXA },
+            margin: { top: MARGIN_DXA, right: MARGIN_DXA, bottom: MARGIN_DXA, left: MARGIN_DXA },
+          },
+        },
+        children: buildCoverPage(metadata, s),
+      }] : []),
       {
         // ── A4 two-column layout ─────────────────────────────────
         properties: {
@@ -596,16 +704,20 @@ export async function generateDocx(
         },
 
         footers: {
+          // EXPORT-02: footer includes confidentiality classification + version + status + page number
           default: new Footer({
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: 'ANTON by openEXPERT   |   Page ', color: DEF_GRAY, size: 16 }),
-                  new TextRun({ children: [PageNumber.CURRENT], color: DEF_GRAY, size: 16 }),
-                  new TextRun({ text: ' of ', color: DEF_GRAY, size: 16 }),
-                  new TextRun({ children: [PageNumber.TOTAL_PAGES], color: DEF_GRAY, size: 16 }),
+                  new TextRun({ text: (metadata.classificationLabel || 'CONFIDENTIAL').toUpperCase(), color: 'E74C3C', size: 14, bold: true }),
+                  new TextRun({ text: '   |   ', color: DEF_GRAY, size: 14 }),
+                  new TextRun({ text: `${metadata.status || 'DRAFT'}   ${metadata.version || 'v1.0'}   |   ANTON by openEXPERT   |   Page `, color: DEF_GRAY, size: 14 }),
+                  new TextRun({ children: [PageNumber.CURRENT], color: DEF_GRAY, size: 14 }),
+                  new TextRun({ text: ' of ', color: DEF_GRAY, size: 14 }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], color: DEF_GRAY, size: 14 }),
                 ],
                 alignment: AlignmentType.CENTER,
+                border: { top: { style: BorderStyle.SINGLE, size: 1, color: '2DD4A8', space: 4 } },
               }),
             ],
           }),

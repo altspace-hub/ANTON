@@ -170,9 +170,10 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
         | { mode: string; expert_role: string; active_knowledge_packs: string } | undefined;
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
-      const { messages, webSearchEnabled } = req.body as {
+      const { messages, webSearchEnabled, plainLanguageMode } = req.body as {
         messages: Array<{ role: 'user' | 'assistant'; content: string }>;
         webSearchEnabled?: boolean;
+        plainLanguageMode?: boolean;
       };
 
       if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -219,7 +220,12 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
       const orgContextLayer = buildOrgContextLayer(db, uid);
       const orgContextSection = orgContextLayer ? `\n\n${orgContextLayer}` : '';
 
-      const systemPrompt = basePrompt + modeInstruction + roleInstruction + orgContextSection + knowledgePackSection;
+      // ONBOARD-04: plain language prefix instruction
+      const plainLanguageInstruction = plainLanguageMode
+        ? '\n\n## PLAIN LANGUAGE MODE — ACTIVE\nBefore your full legal analysis, first provide a short "PLAIN LANGUAGE SUMMARY" section (max 150 words). Write it for a non-lawyer board member: no Latin, no statute numbers, just clear plain English explaining what the issue is, what it means for the organisation, and what the recommended action is. Then proceed with the full legal analysis as normal.'
+        : '';
+
+      const systemPrompt = basePrompt + modeInstruction + roleInstruction + orgContextSection + knowledgePackSection + plainLanguageInstruction;
 
       const tools: Anthropic.Tool[] = webSearchEnabled
         ? [{ type: 'web_search_20250305' as const, name: 'web_search' } as unknown as Anthropic.Tool]

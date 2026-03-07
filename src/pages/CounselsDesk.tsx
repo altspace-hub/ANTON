@@ -11,7 +11,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Scale, BookOpen, FlaskConical, GitCompare, Search, FileText,
   SearchCheck, Globe, Zap, Plus, X, Pin, Download, Trash2,
-  ChevronDown, RefreshCw, Copy, CheckSquare,
+  ChevronDown, RefreshCw, Copy, CheckSquare, Languages,
 } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
 
@@ -163,6 +163,8 @@ export default function CounselsDesk() {
   const [citations, setCitations] = useState<Citation[]>([]);
   const [userInput, setUserInput] = useState('');
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  // ONBOARD-04: plain language mode — prepends a non-technical summary before full legal analysis
+  const [plainLanguageMode, setPlainLanguageMode] = useState(false);
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -322,6 +324,7 @@ export default function CounselsDesk() {
         body: JSON.stringify({
           messages: updatedQuestion.messages.map(m => ({ role: m.role, content: m.content })),
           webSearchEnabled,
+          plainLanguageMode,
         }),
       });
 
@@ -831,6 +834,14 @@ export default function CounselsDesk() {
               >
                 <Search className="h-3 w-3" />
                 Web search {webSearchEnabled ? 'ON' : 'OFF'}
+              </button>
+              <button
+                onClick={() => setPlainLanguageMode(!plainLanguageMode)}
+                title="Plain language mode: Claude will first give a plain-English summary for board members, then the full legal analysis"
+                className={`flex items-center gap-1.5 rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${plainLanguageMode ? 'bg-adv-blue/20 text-adv-blue' : 'text-adv-gray hover:text-adv-off-white'}`}
+              >
+                <Languages className="h-3 w-3" />
+                Plain language {plainLanguageMode ? 'ON' : 'OFF'}
               </button>
               <span className="text-xs text-adv-gray">Select text → Pin finding</span>
             </div>

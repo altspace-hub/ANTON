@@ -32,6 +32,7 @@
     "licenses:full": "pnpm dlx license-checker --csv --out licenses-report.csv",
     "licenses:report": "node scripts/generate-license-report.js",
     "outdated": "pnpm outdated",
+    "validate:locales": "node scripts/validate-locales.mjs",
     "security:report": "node scripts/vulnerability-report.js",
     "security:audit": "tsx scripts/security-audit.ts",
     "security:pentest": "tsx scripts/security-audit.ts",

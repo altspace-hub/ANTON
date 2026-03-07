@@ -2967,6 +2967,45 @@ export function initDatabase(): Database.Database {
     console.warn('[db] Generic migration runner error (non-fatal):', e);
   }
 
+  // FRAME-01/02: Auto-seed bundled knowledge packs from data/knowledge-packs/
+  // Scans for *.anton bundles, importing any not already registered in the DB.
+  try {
+    const { createKnowledgePackService } = await import('../services/knowledge-pack-service.js');
+    const kpService = createKnowledgePackService(db);
+    const packsDir = path.resolve(__dirname, '../../data/knowledge-packs');
+    if (fs.existsSync(packsDir)) {
+      const packDirs = fs.readdirSync(packsDir).filter((entry: string) => {
+        try { return fs.statSync(path.join(packsDir, entry)).isDirectory(); } catch { return false; }
+      });
+      for (const dir of packDirs) {
+        const dirPath = path.join(packsDir, dir);
+        const manifestPath = path.join(dirPath, 'manifest.json');
+        if (!fs.existsSync(manifestPath)) continue;
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as { name: string; version: string };
+        // Skip if already in DB
+        const existing = db.prepare('SELECT id FROM knowledge_packs WHERE name = ?').get(manifest.name) as { id: string } | undefined;
+        if (existing) continue;
+        // Find the .anton bundle file
+        const antonFile = fs.readdirSync(dirPath).find((f: string) => f.endsWith('.anton'));
+        if (!antonFile) continue;
+        try {
+          const buffer = fs.readFileSync(path.join(dirPath, antonFile));
+          kpService.importFromBundle(buffer, 'system');
+          console.log(`[db] Knowledge pack auto-seeded: ${manifest.name}`);
+        } catch (e) {
+          // Non-fatal: pack already imported or version conflict
+          const msg = e instanceof Error ? e.message : String(e);
+          if (!msg.includes('already imported')) {
+            console.warn(`[db] Knowledge pack seed skipped (${manifest.name}): ${msg}`);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Non-fatal: service import or pack scan failure should not break startup
+    console.warn('[db] Knowledge pack auto-seed error (non-fatal):', e instanceof Error ? e.message : e);
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }

@@ -35,7 +35,10 @@ function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps)
     <div>
       <div className="mb-2 flex items-center gap-2">
         <span className="text-sm font-medium text-adv-off-white">What should Claude produce?</span>
-        <HelpTooltip text="Click to select. Multiple formats = multiple deliverables in one response." />
+        <HelpTooltip
+          wide
+          text={"Click chips to select the format(s) you need. Multiple selections = multiple stand-alone deliverables in one response.\n\n• Strategic — board-ready summaries, decision memos, risk appetite statements.\n• Analysis — detailed findings, regulatory comparisons, impact assessments.\n• Operational — action plans, project plans, policy documents, RACI matrices.\n• Scoring — gap matrices (RAG-rated), maturity assessments, data readiness scorecards.\n• Communication — quick briefings, presentations, training materials.\n• Planning — compliance calendars, monitoring plans, budget estimates.\n\nEach format injects specific structural instructions so Claude produces exactly that deliverable. Best exports (DOCX, XLSX) are shown after selection."}
+        />
       </div>
 
       <div className="space-y-3 rounded-lg border border-border bg-adv-card p-3">

@@ -220,6 +220,15 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { pathname } = useLocation();
   const isLifeMode = ['/life', '/news', '/finance', '/travel', '/community'].some(r => pathname.startsWith(r));
   const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
+  // RESP-01: force icon-only at md breakpoint (768-1024px) regardless of user toggle
+  const [isForcedMini, setIsForcedMini] = useState(() => window.innerWidth >= 768 && window.innerWidth < 1024);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
+    const handler = (e: MediaQueryListEvent) => setIsForcedMini(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  const mini = sidebarCollapsed || isForcedMini;
   const { user: authUser, isTeamMode } = useAuthStore();
   const isAdmin = authUser?.role === 'admin' || !isTeamMode;
   // Track which areas are expanded — FCP open by default
@@ -340,14 +349,14 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         />
       )}
     <aside
-      className={`flex flex-col border-r border-border bg-adv-dark-2 transition-all duration-200
-        ${mobileOpen ? 'fixed inset-y-0 left-0 z-50 w-[280px]' : 'hidden lg:flex'}
-        lg:static lg:z-auto
-        ${!mobileOpen ? (sidebarCollapsed ? 'lg:w-16' : 'lg:w-[280px]') : ''}
+      className={`flex flex-col border-r border-border bg-adv-dark-2 transition-all duration-200 overflow-hidden
+        ${mobileOpen ? 'fixed inset-y-0 left-0 z-50 w-[280px] overflow-visible' : 'hidden md:flex'}
+        md:static md:z-auto
+        ${!mobileOpen ? (mini ? 'md:w-16' : `md:w-16 lg:w-[280px]`) : ''}
       `}
     >
       {/* Logo */}
-      <div className={`flex h-16 items-center border-b border-border ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-6'}`}>
+      <div className={`flex h-16 items-center border-b border-border ${mini ? 'justify-center px-2' : 'gap-3 px-6'}`}>
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-adv-teal">
           <span className="text-sm font-bold text-adv-dark">A</span>
         </div>
@@ -652,6 +661,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed && (
           <button
             onClick={() => toggleSection('interaction')}
+            aria-expanded={!!sectionsExpanded.interaction}
+            aria-controls="nav-section-interaction"
             className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
             <span>{t('nav.interactiveModes')}</span>
@@ -1060,6 +1071,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed && (
           <button
             onClick={() => toggleSection('tools')}
+            aria-expanded={!!sectionsExpanded.tools}
+            aria-controls="nav-section-tools"
             className="mb-1 mt-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
             <span>{t('nav.toolsAndFeatures')}</span>
@@ -1454,6 +1467,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed && (
           <button
             onClick={() => toggleSection('modules')}
+            aria-expanded={!!sectionsExpanded.modules}
+            aria-controls="nav-section-modules"
             className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
             <span>{t('nav.modules')}</span>
@@ -1597,6 +1612,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               {/* Area header — clickable to expand/collapse */}
               <button
                 onClick={() => toggleArea(area.id)}
+                aria-expanded={isExpanded}
+                aria-controls={`area-modules-${area.id}`}
                 className="mb-0.5 flex w-full items-center justify-between rounded-lg px-3 py-1.5 transition-colors hover:bg-adv-card"
               >
                 <div className="flex items-center gap-2">
@@ -1613,7 +1630,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
               {/* Area dashboard + module links within area */}
               {isExpanded && (
-                <>
+                <div id={`area-modules-${area.id}`}>
                   <AreaDashboard
                     areaId={area.id}
                     areaLabel={area.label}
@@ -1651,7 +1668,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                       );
                     })}
                   </div>
-                </>
+                </div>
               )}
             </div>
           );
@@ -1710,9 +1727,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         <button
           onClick={toggleSidebar}
           className="flex w-full items-center justify-center py-3 text-adv-gray hover:text-adv-teal transition-colors"
-          title={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+          title={mini ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
         >
-          {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {mini ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
         {!sidebarCollapsed && (
           <div className="px-4 pb-3 text-xs text-adv-gray">

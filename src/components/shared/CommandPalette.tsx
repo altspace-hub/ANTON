@@ -309,6 +309,9 @@ export function CommandPalette() {
       onClick={closePalette}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command Palette"
         className="bg-adv-card border border-border rounded-lg shadow-2xl w-full max-w-2xl animate-in fade-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >

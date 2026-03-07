@@ -18,6 +18,7 @@ import ModelSelector from '@/components/shared/ModelSelector';
 import PromptEditor from '@/components/shared/PromptEditor';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
 import OutputFormatSelector from '@/components/shared/OutputFormatSelector';
+import GapAnalysisWalkthrough from '@/components/shared/GapAnalysisWalkthrough';
 import CommunicationsPanel from '@/components/shared/CommunicationsPanel';
 import StructureReference from '@/components/shared/StructureReference';
 import ReferenceOutputPanel from '@/components/shared/ReferenceOutputPanel';
@@ -629,9 +630,9 @@ export default function ModulePage() {
       : `~€${estimatedCostEur.toFixed(1)}`;
 
   return (
-    <div className="flex h-full flex-col gap-6 lg:flex-row">
+    <div className="flex h-full flex-col gap-6 md:flex-row">
       {/* Left: Configuration Panel */}
-      <div className="w-full shrink-0 overflow-auto pr-2 lg:w-[420px]">
+      <div className="w-full shrink-0 overflow-auto pr-2 md:w-[340px] lg:w-[420px]">
         <div className="space-y-5">
           {/* Module Header */}
           <div>
@@ -651,6 +652,9 @@ export default function ModulePage() {
               </a>
             )}
           </div>
+
+          {/* ONBOARD-02: First-run gap analysis walkthrough */}
+          <GapAnalysisWalkthrough moduleId={moduleId ?? ''} />
 
           {/* Healthcare / medical disclaimer (LEGAL-03) */}
           {(areaId === 'healthcare' || areaId === 'community-health') && (

@@ -1422,6 +1422,46 @@ Structure:
 
   // ── LEGAL ──────────────────────────────────────────────────
   {
+    id: 'legal-memo',
+    label: 'Legal Memo',
+    icon: 'FileText',
+    description: 'Structured memorandum of law: Matter → Question Presented → Brief Answer → Discussion → Conclusion. For internal counsel, board briefings, and regulatory submissions.',
+    category: 'analytical',
+    exportFormats: ['md', 'docx', 'pdf'],
+    estimatedLength: '2-6 pages',
+    audience: 'In-house counsel, GC, compliance leadership, board legal advisors',
+    promptInstruction: `## OUTPUT FORMAT: LEGAL MEMORANDUM
+Produce a formal legal memorandum in the following structure. Tone: precise, objective, professional. Written as internal counsel advising senior management.
+
+Structure:
+**MEMORANDUM**
+TO: [Recipient / Role]
+FROM: [Author / Role]
+DATE: [Today's date]
+RE: [Subject — one sentence summary of the legal question]
+PRIVILEGE: Attorney-Client Privileged and Confidential
+
+---
+
+1. **MATTER** — One paragraph summarising the factual and regulatory background that gives rise to this memo. State the specific legal question, the applicable jurisdiction(s), and any relevant deadlines or urgency.
+
+2. **QUESTION(S) PRESENTED** — Each distinct legal question stated precisely and concisely, numbered. Written in the form: "Whether [subject] [verb] [legal question]?" Where multiple questions exist, list all upfront.
+
+3. **BRIEF ANSWER** — For each question: a one- to two-sentence direct answer (Yes / No / It depends, and why). This section must be usable as a standalone summary for executives who do not read the full memo.
+
+4. **DISCUSSION** — Per question (with sub-headings):
+   a. **Applicable Legal Framework** — Cite all relevant instruments (Regulation No., Article, Paragraph; Directive; EBA/ESMA guidelines; national law; case law) in full formal citation format.
+   b. **Analysis** — Apply the law to the specific facts. Address each plausible interpretation. Where the law is ambiguous, identify the most defensible position and explain why. Flag divergence between statutory text and supervisory practice.
+   c. **Risk Assessment** — Residual legal risk: Low / Medium / High / Critical. Identify the specific risk driver (ambiguity in law, supervisory discretion, facts-dependent, etc.).
+
+5. **CONCLUSION** — For each question: (a) the recommended legal position, (b) proposed action or decision, (c) escalation requirement if any (board approval, external counsel opinion, regulatory notification).
+
+6. **OPEN ISSUES / CAVEATS** — List any assumptions, information gaps, or areas where additional facts or expert opinion would materially change the analysis.
+
+Style: Formal memorandum language. Passive voice for legal propositions. Never speculate beyond cited authority. Flag every material uncertainty explicitly.`,
+  },
+
+  {
     id: 'legal-brief',
     label: 'Legal Brief (IRAC)',
     icon: 'Scale',

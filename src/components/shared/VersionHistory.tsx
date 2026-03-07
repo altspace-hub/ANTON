@@ -85,7 +85,12 @@ export default function VersionHistory({ entityType, entityId, onRestore, classN
           <div className="flex-1 bg-black/50" onClick={handleClose} />
 
           {/* Slide-out Panel */}
-          <div className="w-96 bg-adv-dark-2 border-l border-adv-card flex flex-col shadow-xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Version History"
+            className="w-96 bg-adv-dark-2 border-l border-adv-card flex flex-col shadow-xl"
+          >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-adv-card">
               <div className="flex items-center gap-2">

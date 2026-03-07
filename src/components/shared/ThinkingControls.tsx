@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Zap, Brain, Microscope, SearchCode, ListChecks } from 'lucide-react';
 import type { ThinkingLevel } from '@/lib/types';
+import HelpTooltip from './HelpTooltip';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Zap,
@@ -31,9 +32,15 @@ interface ThinkingControlsProps {
 function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-adv-off-white">
-        How deeply should Claude analyze?
-      </label>
+      <div className="mb-2 flex items-center gap-1.5">
+        <label className="text-sm font-medium text-adv-off-white">
+          How deeply should Claude analyze?
+        </label>
+        <HelpTooltip
+          wide
+          text={"Controls Claude's reasoning depth, time, and cost.\n\n• Quick — instant, minimal reasoning. Good for simple questions.\n• Think — standard analysis. Suits most compliance tasks.\n• Think Hard — deep reasoning with careful multi-step logic.\n• Investigate — maximum depth. Ideal for gap analysis and legal research.\n• Plan First — Claude outlines its approach before writing. Best for complex multi-deliverable work.\n\nHigher levels cost more but produce significantly better output for complex regulatory analysis."}
+        />
+      </div>
       <div className="grid grid-cols-5 gap-1.5">
         {levels.map((level) => {
           const Icon = iconMap[level.icon];
