@@ -170,20 +170,20 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | KG-01 | Embed all `entity_nodes` in knowledge packs — currently 100% invisible to semantic search | 59, 62 | M | [ ] |
 | KG-02 | Add embedding dimension validation: reject or re-embed when stored dims != current model dims | 59, 62 | M | [ ] |
 | KG-03 | Replace SQL LIKE substring BM25 fallback with proper BM25 scoring (use `better-sqlite3-fts5`) | 59 | L | [ ] |
-| KG-04 | Add referential integrity check on knowledge pack import: fail if relationship references non-existent entity | 56 | S | [ ] |
-| KG-05 | Add typed relationship schema: replace generic types with `implements`, `clarifies`, `requires`, `supersedes` | 57 | M | [ ] |
+| KG-04 | Add referential integrity check on knowledge pack import: fail if relationship references non-existent entity | 56 | S | [x] |
+| KG-05 | Add typed relationship schema: replace generic types with `implements`, `clarifies`, `requires`, `supersedes` | 57 | M | [x] |
 | KG-06 | Add transitive closure query support: "all articles transitively required by Art. X" | 57 | L | [ ] |
-| KG-07 | Add entity description truncation warning: show user when description was cut to 4000 chars | 56 | S | [ ] |
-| KG-08 | Add embedding probe guard with error logging — currently fails silently | 62 | S | [ ] |
+| KG-07 | Add entity description truncation warning: show user when description was cut to 4000 chars | 56 | S | [x] |
+| KG-08 | Add embedding probe guard with error logging — currently fails silently | 62 | S | [x] |
 
 ---
 
 ### 2C — Knowledge Pack Governance
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| KP-01 | Add schema validation to knowledge pack import: verify entity/relationship counts, required fields, ID uniqueness | 56, 58 | M | [ ] |
-| KP-02 | Add content accuracy attestation requirement on import: submitter must confirm source + date of regulatory text | 58, 92 | S | [ ] |
-| KP-03 | Version-stamp all knowledge packs: `effective_date`, `source_url`, `validated_by` fields | 56, 58 | S | [ ] |
+| KP-01 | Add schema validation to knowledge pack import: verify entity/relationship counts, required fields, ID uniqueness | 56, 58 | M | [x] |
+| KP-02 | Add content accuracy attestation requirement on import: submitter must confirm source + date of regulatory text | 58, 92 | S | [x] |
+| KP-03 | Version-stamp all knowledge packs: `effective_date`, `source_url`, `validated_by` fields | 56, 58 | S | [x] |
 
 **Phase 2 Total Effort: ~2-3 weeks. DATA-01 through DATA-05 are same-day fixes. KG work requires more planning.**
 

@@ -80,7 +80,21 @@ export async function semanticSearch(db: Database.Database, query: SearchQuery):
         });
       }
     } catch (error) {
-      console.warn(`[semantic-search] ChromaDB unavailable for collection ${collectionId} — will use keyword fallback`);
+      // KG-08: Log the specific error so operators can distinguish between:
+      // - OPENAI_API_KEY not set (expected in dev)
+      // - ChromaDB server not running (infra issue)
+      // - Embedding dimension mismatch (config error)
+      // - Network/timeout errors
+      const msg = error instanceof Error ? error.message : String(error);
+      const isDimMismatch = msg.includes('dimension') || msg.includes('InvalidDimensionException');
+      const isNoKey = msg.includes('API key') || msg.includes('api_key');
+      if (isDimMismatch) {
+        console.error(`[semantic-search] Embedding dimension mismatch for collection ${collectionId} — stored embeddings may have been created with a different model. Re-index the collection to fix. Error: ${msg}`);
+      } else if (isNoKey) {
+        console.warn(`[semantic-search] OpenAI API key not configured — vector search disabled. Set OPENAI_API_KEY to enable. Falling back to keyword search.`);
+      } else {
+        console.error(`[semantic-search] ChromaDB error for collection ${collectionId} — falling back to keyword search. Error: ${msg}`);
+      }
     }
   }
 

@@ -38,6 +38,11 @@ export interface PackManifest {
   regulation_ids?: string[];
   tier?: 1 | 2 | 3;
   bundle_type: 'regulatory-knowledge-pack';
+  // Governance fields (KP-03)
+  effective_date?: string;   // ISO date: when the regulatory text takes effect, e.g. '2027-07-10'
+  source_url?: string;       // canonical URL of the source regulation, e.g. EUR-Lex permalink
+  validated_by?: string;     // name/email of person who verified the pack content
+  content_confirmed?: boolean; // submitter confirmed accuracy at time of build
 }
 
 interface EntityDef {
@@ -85,6 +90,11 @@ export interface KnowledgePack {
   activated_at: string | null;
   deactivated_at: string | null;
   user_id: string;
+  // Governance fields (KP-03)
+  effective_date: string | null;
+  source_url: string | null;
+  validated_by: string | null;
+  content_confirmed: boolean;
 }
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
@@ -117,6 +127,10 @@ function rowToPack(row: Record<string, unknown>): KnowledgePack {
     activated_at: row.activated_at as string | null,
     deactivated_at: row.deactivated_at as string | null,
     user_id: row.user_id as string,
+    effective_date: (row.effective_date as string | null) ?? null,
+    source_url: (row.source_url as string | null) ?? null,
+    validated_by: (row.validated_by as string | null) ?? null,
+    content_confirmed: !!(row.content_confirmed as number | null),
   };
 }
 
@@ -156,6 +170,13 @@ export function createKnowledgePackService(db: Database.Database) {
     'client', 'regulation', 'control', 'risk', 'person',
     'system', 'product', 'geography', 'organization', 'process',
     'document', 'obligation', 'authority', 'concept', 'threshold', 'institution',
+  ]);
+
+  // Valid relationship types (KG-05) — structured semantic vocabulary
+  const VALID_RELATIONSHIP_TYPES = new Set([
+    'references', 'implements', 'clarifies', 'requires', 'supersedes',
+    'related_to', 'part_of', 'derived_from', 'applies_to', 'amends',
+    'cross_references', 'enforces', 'defines', 'exempts',
   ]);
 
   function validateField(value: unknown, fieldName: string): string {
@@ -217,7 +238,10 @@ export function createKnowledgePackService(db: Database.Database) {
     if (rawAliases.length > MAX_ALIASES)
       throw new Error(`Pack contains ${rawAliases.length} alias entries, max allowed is ${MAX_ALIASES}`);
 
-    // Validate entity shape, field lengths, and entity_type whitelist
+    // Validate entity shape, field lengths, entity_type whitelist, and entity_id uniqueness (KP-01, KG-07)
+    let truncatedDescriptionCount = 0;
+    const seenEntityKeys = new Set<string>(); // key = entity_type:entity_id — uniqueness check (KP-01)
+
     const entities: EntityDef[] = rawEntities.map((e: unknown, i: number) => {
       if (typeof e !== 'object' || e === null) throw new Error(`entities[${i}]: must be an object`);
       const obj = e as Record<string, unknown>;
@@ -225,23 +249,48 @@ export function createKnowledgePackService(db: Database.Database) {
       if (!VALID_ENTITY_TYPES.has(entity_type)) {
         throw new Error(`entities[${i}].entity_type '${entity_type}' is not a recognised type. Valid types: ${[...VALID_ENTITY_TYPES].join(', ')}`);
       }
+      const entity_id = validateField(obj.entity_id, `entities[${i}].entity_id`);
+      const uniqueKey = `${entity_type}:${entity_id}`;
+      if (seenEntityKeys.has(uniqueKey)) {
+        throw new Error(`Duplicate entity (type='${entity_type}', id='${entity_id}') at entities[${i}] — entity_id must be unique within each type`);
+      }
+      seenEntityKeys.add(uniqueKey);
+
+      let description: string | undefined;
+      if (typeof obj.description === 'string') {
+        if (obj.description.length > 4_000) {
+          truncatedDescriptionCount++;
+          console.warn(`[knowledge-pack] entities[${i}] (${entity_id}): description truncated from ${obj.description.length} to 4000 chars`);
+        }
+        description = obj.description.slice(0, 4_000);
+      }
+
       return {
         ref_id:         validateField(obj.ref_id, `entities[${i}].ref_id`),
         entity_type,
-        entity_id:      validateField(obj.entity_id, `entities[${i}].entity_id`),
+        entity_id,
         canonical_name: validateField(obj.canonical_name, `entities[${i}].canonical_name`),
-        description:    typeof obj.description === 'string' ? obj.description.slice(0, 4_000) : undefined,
+        description,
         metadata:       typeof obj.metadata === 'object' && obj.metadata !== null ? obj.metadata as Record<string, unknown> : undefined,
       };
     });
 
+    if (truncatedDescriptionCount > 0) {
+      console.warn(`[knowledge-pack] ${truncatedDescriptionCount} entity description(s) were truncated to 4000 chars. Consider shortening them in the source pack.`);
+    }
+
     const relationships: RelationshipDef[] = rawRelationships.map((r: unknown, i: number) => {
       if (typeof r !== 'object' || r === null) throw new Error(`relationships[${i}]: must be an object`);
       const obj = r as Record<string, unknown>;
+      const relationship_type = validateField(obj.relationship_type, `relationships[${i}].relationship_type`);
+      // KG-05: Validate relationship type against the allowed vocabulary
+      if (!VALID_RELATIONSHIP_TYPES.has(relationship_type)) {
+        console.warn(`[knowledge-pack] relationships[${i}]: unknown relationship_type '${relationship_type}'. Valid types: ${[...VALID_RELATIONSHIP_TYPES].join(', ')}. Proceeding with import.`);
+      }
       return {
         from_ref:          validateField(obj.from_ref, `relationships[${i}].from_ref`),
         to_ref:            validateField(obj.to_ref, `relationships[${i}].to_ref`),
-        relationship_type: validateField(obj.relationship_type, `relationships[${i}].relationship_type`),
+        relationship_type,
         strength:          typeof obj.strength === 'number' ? Math.min(1, Math.max(0, obj.strength)) : 1.0,
         description:       typeof obj.description === 'string' ? obj.description.slice(0, 2_000) : undefined,
         metadata:          typeof obj.metadata === 'object' && obj.metadata !== null ? obj.metadata as Record<string, unknown> : undefined,
@@ -276,8 +325,9 @@ export function createKnowledgePackService(db: Database.Database) {
         INSERT INTO knowledge_packs
           (id, name, display_name, version, description, jurisdiction, regulatory_area,
            regulation_ids, author, publisher, tier, entity_count, relationship_count,
-           alias_count, status, manifest, file_hash, user_id)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,0,0,0,'installed',?,?,?)
+           alias_count, status, manifest, file_hash, user_id,
+           effective_date, source_url, validated_by, content_confirmed)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,0,0,0,'installed',?,?,?,?,?,?,?)
       `).run(
         packId,
         manifest.name,
@@ -293,6 +343,10 @@ export function createKnowledgePackService(db: Database.Database) {
         JSON.stringify(manifest),
         fileHash,
         userId,
+        manifest.effective_date ?? null,
+        manifest.source_url ?? null,
+        manifest.validated_by ?? null,
+        manifest.content_confirmed ? 1 : 0,
       );
 
       // Insert entities (upsert — pack enriches existing nodes if same type+id)
@@ -330,16 +384,25 @@ export function createKnowledgePackService(db: Database.Database) {
 
       type RelData = { strength: number; description?: string; metadata?: Record<string, unknown> };
       const seenRels = new Map<string, RelData>(); // key → best entry by strength
+      const brokenRefs: string[] = []; // KG-04: track broken refs instead of silently dropping
       for (const r of relationships) {
         const from = refMap.get(r.from_ref);
         const to = refMap.get(r.to_ref);
-        if (!from || !to) continue; // skip broken references
+        if (!from || !to) {
+          brokenRefs.push(`${r.from_ref} → ${r.to_ref} (${r.relationship_type})`);
+          continue;
+        }
         const key = `${from.entity_type}|${from.entity_id}|${to.entity_type}|${to.entity_id}|${r.relationship_type}`;
         const strength = r.strength ?? 1.0;
         const best = seenRels.get(key);
         if (!best || strength > best.strength) {
           seenRels.set(key, { strength, description: r.description, metadata: r.metadata });
         }
+      }
+
+      // KG-04: Log broken references (relationships referencing unknown ref_ids)
+      if (brokenRefs.length > 0) {
+        console.warn(`[knowledge-pack] ${brokenRefs.length} relationship(s) reference unknown ref_ids and were skipped:\n  ${brokenRefs.slice(0, 10).join('\n  ')}${brokenRefs.length > 10 ? `\n  ... and ${brokenRefs.length - 10} more` : ''}`);
       }
 
       let relCount = 0;
