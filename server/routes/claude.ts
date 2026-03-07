@@ -25,6 +25,9 @@ import { semanticSearch } from '../services/semantic-search.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { validate } from '../lib/validate.js';
 import { ClaudeMessageSchema } from '../lib/schemas.js';
+import { acquireStream, releaseStream } from '../services/stream-limiter.js';
+import { isCircuitOpen, recordSuccess, recordFailure } from '../services/circuit-breaker.js';
+import { enqueueAudit } from '../services/audit-queue.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -591,7 +594,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
               cacheCreationTokens * (costIn * 1.25) +
               (data.outputTokens || 0) * costOut
             ) / 1_000_000;
-            writeAuditEntry(db, {
+            // RATE-04: use async audit queue instead of synchronous write
+            enqueueAudit({
               sessionId,
               moduleId,
               areaId,
@@ -757,6 +761,41 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         }
       }
 
+      // TOKEN-02: pre-flight token validation — reject before calling Claude API
+      const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 180_000;
+      if (resolved.tokenEstimate > MAX_CONTEXT_TOKENS) {
+        res.status(400).json({
+          error: `Context too large: estimated ${resolved.tokenEstimate.toLocaleString()} tokens exceeds the ${MAX_CONTEXT_TOKENS.toLocaleString()} token limit. ` +
+                 `Reduce the number of loaded documents, use Summary mode for online references, or deselect some knowledge sources.`,
+          code: 'CONTEXT_TOO_LARGE',
+          tokenEstimate: resolved.tokenEstimate,
+          limit: MAX_CONTEXT_TOKENS,
+        });
+        return;
+      }
+
+      // STREAM-05: per-user concurrent stream limit (max 3)
+      const streamUserId = (req as any).user?.id || req.ip || 'anonymous';
+      if (!acquireStream(streamUserId)) {
+        res.status(429).json({
+          error: 'Too many concurrent streams. You have reached the maximum of 3 active streams. Please wait for an existing stream to complete.',
+          code: 'STREAM_LIMIT_EXCEEDED',
+        });
+        return;
+      }
+      // Release the slot when the response closes (success or error)
+      res.on('close', () => releaseStream(streamUserId));
+      res.on('finish', () => releaseStream(streamUserId));
+
+      // RATE-02: circuit breaker — fast-fail if Claude API is known to be unhealthy
+      if (isCircuitOpen()) {
+        res.status(503).json({
+          error: 'Claude API is temporarily unavailable due to repeated errors. Please try again in a minute.',
+          code: 'CIRCUIT_OPEN',
+        });
+        return;
+      }
+
       // Route to the correct provider adapter
       if (provider === 'anthropic') {
         // Use existing Anthropic streaming.
@@ -772,6 +811,14 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const abortController = new AbortController();
       req.on('close', () => abortController.abort());
 
+      // RATE-03: per-attempt request timeout (30s) and total timeout (90s across retries)
+      // This is enforced inside streamToResponse via the AbortController signal timeout.
+      const timeoutMs = Number(process.env.CLAUDE_REQUEST_TIMEOUT_MS) || 90_000;
+      const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+      res.on('close', () => clearTimeout(timeoutId));
+      res.on('finish', () => clearTimeout(timeoutId));
+
+      try {
       await streamToResponse(
           {
             model: selectedModel as 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
@@ -787,6 +834,16 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           res,
           onComplete
         );
+        recordSuccess();
+      } catch (streamErr: unknown) {
+        const status = (streamErr instanceof Error && 'status' in streamErr)
+          ? (streamErr as { status?: number }).status
+          : undefined;
+        recordFailure(status);
+        throw streamErr;
+      } finally {
+        clearTimeout(timeoutId);
+      }
       } else {
         // Non-Anthropic providers: set SSE headers, stream, then finalize
         const precisionLevel: PrecisionLevel = precision || 'balanced';

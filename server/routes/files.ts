@@ -53,12 +53,42 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
 
   const ext = path.extname(req.file.originalname).toLowerCase();
   const expectedMime = ALLOWED_MIMES[ext];
+  const fileBuffer = await fs.readFile(req.file.path);
+
   if (expectedMime) {
-    const fileBuffer = await fs.readFile(req.file.path);
     const detected = await fileTypeFromBuffer(fileBuffer);
     if (detected && detected.mime !== expectedMime) {
       await fs.remove(req.file.path);
       res.status(400).json({ error: `File content does not match declared type (expected ${expectedMime}, got ${detected.mime})` });
+      return;
+    }
+  }
+
+  // SEC-09: ZIP bomb / compression ratio check for ZIP-based formats (.docx, .xlsx)
+  // These formats are ZIP archives — expanded content must not exceed 100× compressed size.
+  const ZIP_BASED_EXTS = new Set(['.docx', '.doc', '.xlsx']);
+  if (ZIP_BASED_EXTS.has(ext)) {
+    const compressedSize = req.file.size;
+    // Quick heuristic: scan central directory for uncompressed sizes without fully extracting.
+    // We walk the file buffer looking for local file header signatures (PK\x03\x04).
+    let totalUncompressed = 0;
+    let pos = 0;
+    const sig = Buffer.from([0x50, 0x4b, 0x03, 0x04]); // PK local file header
+    while (pos < fileBuffer.length - 30) {
+      const idx = fileBuffer.indexOf(sig, pos);
+      if (idx === -1) break;
+      // Uncompressed size is at offset +22 from signature (4 bytes LE)
+      const uncompressedSize = fileBuffer.readUInt32LE(idx + 22);
+      totalUncompressed += uncompressedSize;
+      pos = idx + 4;
+    }
+    const MAX_RATIO = Number(process.env.ZIP_MAX_EXPANSION_RATIO) || 100;
+    if (compressedSize > 0 && totalUncompressed > compressedSize * MAX_RATIO) {
+      await fs.remove(req.file.path);
+      res.status(400).json({
+        error: `File rejected: compressed content expands by more than ${MAX_RATIO}× (${Math.round(totalUncompressed / compressedSize)}× detected). Possible ZIP bomb.`,
+        code: 'ZIP_BOMB_DETECTED',
+      });
       return;
     }
   }

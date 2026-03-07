@@ -115,6 +115,8 @@ import { createServer as createHttpServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { logger } from './lib/logger.js';
 import { createMetricsRouter, incrementRequests, incrementErrors } from './routes/metrics.js';
+import { initAuditQueue, flushAuditQueue } from './services/audit-queue.js';
+import { getTotalActiveStreams } from './services/stream-limiter.js';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -208,6 +210,12 @@ app.use(express.json({
 // URL-encoded body parsing for Slack slash commands (application/x-www-form-urlencoded)
 app.use('/api/integrations/slack/commands', express.urlencoded({ extended: true }));
 
+// LONE-22: API version header on all responses
+app.use((_req, res, next) => {
+  res.setHeader('X-API-Version', '1.0');
+  next();
+});
+
 // Initialize database
 const db = initDatabase();
 
@@ -223,6 +231,9 @@ if (!projectsTable) {
   const projectsCount = db.prepare('SELECT COUNT(*) as count FROM projects').get() as { count: number };
   console.log(`[db] ✅ Projects table exists with ${projectsCount.count} projects`);
 }
+
+// RATE-04: initialise async audit queue now that DB is ready
+initAuditQueue(db);
 
 // Initialize workspace root directory
 await ensureWorkspacesRoot();
@@ -437,6 +448,11 @@ const io = new SocketIOServer(httpServer, {
     credentials: true,
   },
   path: '/school-ws',
+  // LONE-12: prevent DoS via oversized packets — max 1MB per message
+  maxHttpBufferSize: 1_048_576,
+  perMessageDeflate: {
+    threshold: 1024, // Only compress messages > 1KB
+  },
 });
 
 // Study room namespace
@@ -579,6 +595,7 @@ function shutdown(signal: string): void {
     } else {
       logger.info('HTTP server closed');
     }
+    flushAuditQueue(); // RATE-04: drain pending audit entries before closing
     try { db.close(); } catch { /* ignore */ }
     logger.info('Database closed — exiting');
     process.exit(closeErr ? 1 : 0);
