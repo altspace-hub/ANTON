@@ -224,6 +224,8 @@ export default function OrchestratorDashboard() {
   const [showTrails, setShowTrails] = useState(false);
   const [showExecutions, setShowExecutions] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [demoMode, setDemoMode] = useState<'off' | 'demo' | 'simulation' | 'accelerated'>('off');
+  const [demoSignals, setDemoSignals] = useState(0);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -418,6 +420,31 @@ export default function OrchestratorDashboard() {
       await fetch('/api/orchestrator/reset', { method: 'POST', headers: getAuthHeader() });
       await fetchStatus();
       setStatusMsg('Orchestrator reset to Stage 1');
+    } catch { /* ignore */ }
+  };
+
+  const handleDemoActivate = async (mode: 'demo' | 'simulation' | 'accelerated') => {
+    try {
+      const r = await fetch('/api/orchestrator/demo/activate', {
+        method: 'POST',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+      if (r.ok) {
+        const d = await r.json() as { signals_injected: number };
+        setDemoMode(mode);
+        setDemoSignals(d.signals_injected);
+        setStatusMsg(`Demo Mode (${mode}) activated — ${d.signals_injected} Meridian Bank signals injected`);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const handleDemoDeactivate = async () => {
+    try {
+      await fetch('/api/orchestrator/demo/deactivate', { method: 'POST', headers: getAuthHeader() });
+      setDemoMode('off');
+      setDemoSignals(0);
+      setStatusMsg('Demo Mode deactivated — synthetic signals removed');
     } catch { /* ignore */ }
   };
 
@@ -965,6 +992,60 @@ export default function OrchestratorDashboard() {
           )}
         </div>
       )}
+
+      {/* ── Demo Mode panel ──────────────────────────────────────────────────── */}
+      <div className="mt-4 bg-adv-card border border-white/5 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-adv-gold" />
+            <span className="text-sm font-medium text-adv-off-white">Demo Mode</span>
+            {demoMode !== 'off' && (
+              <span className="text-[10px] px-2 py-0.5 bg-adv-gold/10 text-adv-gold border border-adv-gold/20 rounded-full capitalize">
+                {demoMode} — Meridian Bank · {demoSignals} signals
+              </span>
+            )}
+          </div>
+          {demoMode !== 'off' && (
+            <button
+              onClick={handleDemoDeactivate}
+              className="text-xs text-adv-red hover:text-red-300 transition-colors"
+            >
+              Deactivate
+            </button>
+          )}
+        </div>
+        {demoMode === 'off' ? (
+          <div className="space-y-2">
+            <p className="text-xs text-adv-gray mb-3">
+              Inject synthetic signals from a realistic Nordic bank scenario (Meridian Bank AS) to explore ANTON without live platform data.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleDemoActivate('demo')}
+                className="text-xs px-3 py-1.5 rounded border bg-adv-gold/10 text-adv-gold border-adv-gold/20 hover:bg-adv-gold/20 transition-colors"
+              >
+                Demo Mode — inject today's signals
+              </button>
+              <button
+                onClick={() => handleDemoActivate('simulation')}
+                className="text-xs px-3 py-1.5 rounded border bg-white/5 text-adv-off-white border-white/10 hover:bg-white/10 transition-colors"
+              >
+                Simulation — 14-day historical replay
+              </button>
+              <button
+                onClick={() => handleDemoActivate('accelerated')}
+                className="text-xs px-3 py-1.5 rounded border bg-white/5 text-adv-off-white border-white/10 hover:bg-white/10 transition-colors"
+              >
+                Accelerated — fast-forward trust building
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-adv-gray">
+            Meridian Bank synthetic signals are active. Generate a briefing to see ANTON analyse them. Deactivate to remove all demo data.
+          </p>
+        )}
+      </div>
 
       {/* ── Footer: phase info ─────────────────────────────────────────────── */}
       <div className="mt-6 bg-adv-teal-soft border border-adv-teal/10 rounded-xl p-4">

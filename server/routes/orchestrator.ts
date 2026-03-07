@@ -28,6 +28,10 @@ import {
   createReasoningTrail, addTrailEntry, completeTrail,
   ORCHESTRATOR_HARD_LIMITS,
 } from '../services/orchestrator-engine.js';
+import {
+  getDemoState, activateDemoMode, deactivateDemoMode, advanceSimulationDay,
+  getMeridianPersonaContext,
+} from '../services/orchestrator-demo.js';
 
 export function createOrchestratorRoutes(db: Database.Database, anthropic: AnthropicSDK | null): Router {
   const router = Router();
@@ -631,6 +635,56 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       `).all(req.params.id);
 
       res.json({ trail, entries });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Demo Mode: get state ─────────────────────────────────────────────────
+  router.get('/orchestrator/demo', requireAuth, (_req: Request, res: Response) => {
+    try {
+      const state = getDemoState(db);
+      res.json({ demo: state, persona_context: state.mode !== 'off' ? getMeridianPersonaContext() : null });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Demo Mode: activate ──────────────────────────────────────────────────
+  router.post('/orchestrator/demo/activate', requireAuth, (req: Request, res: Response) => {
+    try {
+      const { mode } = req.body as { mode?: 'demo' | 'simulation' | 'accelerated' };
+      const validModes = ['demo', 'simulation', 'accelerated'];
+      if (mode && !validModes.includes(mode)) {
+        return res.status(400).json({ error: `mode must be one of: ${validModes.join(', ')}` });
+      }
+      const result = activateDemoMode(db, mode ?? 'demo');
+      res.json({ ok: true, ...result, mode: mode ?? 'demo' });
+    } catch (err) {
+      console.error('[orchestrator] demo activate error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Demo Mode: deactivate ────────────────────────────────────────────────
+  router.post('/orchestrator/demo/deactivate', requireAuth, (_req: Request, res: Response) => {
+    try {
+      const result = deactivateDemoMode(db);
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Demo Mode: advance simulation day (Accelerated Mode) ─────────────────
+  router.post('/orchestrator/demo/advance', requireAuth, async (_req: Request, res: Response) => {
+    try {
+      const { day, done } = advanceSimulationDay(db);
+      if (!done && anthropic) {
+        // Trigger a heartbeat cycle for the new day's signals
+        runHeartbeatCycle(db, anthropic, 'on_demand', false).catch(() => {});
+      }
+      res.json({ ok: true, day, done });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }

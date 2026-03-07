@@ -2820,6 +2820,32 @@ export function initDatabase(): Database.Database {
     console.warn('[db] Migration 023b partial (non-fatal):', e);
   }
 
+  // ── Migration 024: Demo Mode state + Pattern Recognition tables ──────────
+  {
+    const sentinel024 = db.prepare(
+      "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_patterns'"
+    ).get() as { c: number };
+    if (sentinel024.c === 0) {
+      try {
+        const sql024 = fs.readFileSync(path.join(migrationsDir, '024_orchestrator_demo_patterns.sql'), 'utf-8');
+        db.exec(sql024);
+        console.log('[db] Migration 024 applied (orchestrator patterns + demo mode)');
+      } catch (e) {
+        console.warn('[db] Migration 024 skipped (non-fatal):', e);
+      }
+    }
+    // Add demo_state column to orchestrator_config if missing (PRAGMA-guarded)
+    try {
+      const cfgCols = db.prepare('PRAGMA table_info(orchestrator_config)').all() as Array<{ name: string }>;
+      if (cfgCols.length > 0) {
+        const cc = new Set(cfgCols.map(c => c.name));
+        if (!cc.has('demo_state')) db.exec('ALTER TABLE orchestrator_config ADD COLUMN demo_state TEXT');
+      }
+    } catch (e) {
+      console.warn('[db] Migration 024b (demo_state column) partial (non-fatal):', e);
+    }
+  }
+
   console.log(`Database initialized at ${DB_PATH}`);
   return db;
 }
