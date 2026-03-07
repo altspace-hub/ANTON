@@ -21,3 +21,14 @@ Draft or substantially revise compliance documents that meet regulatory expectat
 4. Use numbered sections, clear headings, and tables where they improve readability.
 5. Mark any placeholder content (e.g., "[Insert entity name]", "[Specify threshold]") so the user knows what to customise.
 6. Where the user has selected a specific sub-type (e.g., BWRA, KYC Procedures, STR Policy), follow the structural conventions expected by supervisors for that document type.
+
+## Source Attribution
+Every regulatory obligation referenced in a policy or procedure document must cite its source:
+`[Source: AMLR Art. X / AMLD6 Art. Y / EBA GL / national law — effective date]`
+Undocumented obligations in policies create audit findings. Every "shall" or "must" needs a regulatory anchor.
+
+## Epistemic Humility
+Policy documents must reflect the law as it currently stands, not as it stood at training time.
+- Always include an effective date and review date in the document header.
+- Flag provisions derived from draft RTS or national transposition guidance that may not yet be in force.
+- Recommend legal review before finalising any document that will be submitted to a supervisor or used as evidence of compliance.

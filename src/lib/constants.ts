@@ -3281,6 +3281,7 @@ export const MODELS: ModelInfo[] = [
     contextWindow: 200000,
     costTier: 2,
     legacy: true,
+    eolDate: '2026-09-01',
   },
   {
     id: 'claude-haiku-4-5-20251001',

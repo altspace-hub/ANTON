@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { MODELS } from '@/lib/constants';
 import type { ModelId, ModelInfo } from '@/lib/types';
-import { Star, HardDrive, ChevronDown, Check, Sparkles } from 'lucide-react';
+import { Star, HardDrive, ChevronDown, Check, Sparkles, AlertTriangle } from 'lucide-react';
+
+// MGOV-03: Compute days until a model's EOL date (negative = already past)
+function daysUntilEol(eolDate: string): number {
+  return Math.ceil((new Date(eolDate).getTime() - Date.now()) / 86_400_000);
+}
 
 interface CustomModelConfig {
   enabled: boolean;
@@ -117,6 +122,24 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
           <ChevronDown className={`h-4 w-4 text-adv-gray transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
 
+        {/* MGOV-03: EOL warning banner */}
+        {currentModel?.eolDate && (() => {
+          const days = daysUntilEol(currentModel.eolDate!);
+          if (days > 90) return null;
+          return (
+            <div className="mt-1.5 flex items-start gap-2 rounded-md border border-adv-gold/30 bg-adv-gold/10 px-2.5 py-1.5 text-[11px] text-adv-gold">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>
+                {days <= 0
+                  ? `${currentModel.label} has been retired (${currentModel.eolDate}). Switch to a supported model.`
+                  : days <= 30
+                  ? `${currentModel.label} retires in ${days} days (${currentModel.eolDate}). Migrate soon.`
+                  : `${currentModel.label} retires in ~${Math.round(days / 30)} months (${currentModel.eolDate}). Plan migration.`}
+              </span>
+            </div>
+          );
+        })()}
+
         {open && (
           <div className="absolute z-50 mt-1 w-full max-h-80 overflow-y-auto rounded-lg border border-border bg-adv-card shadow-xl">
             {/* Cloud models */}
@@ -143,6 +166,16 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                           Rec
                         </span>
                       )}
+                      {model.eolDate && (() => {
+                        const days = daysUntilEol(model.eolDate);
+                        if (days > 90) return null;
+                        return (
+                          <span className="flex shrink-0 items-center gap-1 rounded bg-adv-gold/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-gold">
+                            <AlertTriangle className="h-2.5 w-2.5" />
+                            {days <= 0 ? 'Retired' : `EOL ${days}d`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="text-[10px] text-adv-gray-med truncate">
                       ${model.inputCostPer1M}/M in · ${model.outputCostPer1M}/M out

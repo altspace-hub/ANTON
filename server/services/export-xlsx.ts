@@ -296,13 +296,13 @@ function styleDataRow(row: ExcelJS.Row, rowIndex: number, colCount: number, styl
   }
 }
 
-const LEGAL_DISCLAIMER = 'This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.';
+const LEGAL_DISCLAIMER_TEXT = 'This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.';
 
 // ── Main export function ────────────────────────────────────
 
 export async function generateXlsx(
   markdown: string,
-  metadata: { title?: string; author?: string } = {},
+  metadata: { title?: string; author?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string } = {},
   brandConfig?: BrandConfig | null
 ): Promise<Buffer> {
   const style = resolveXlsxStyle(brandConfig);
@@ -399,10 +399,24 @@ export async function generateXlsx(
   dTitleRow.getCell(1).font = { bold: true, size: 12, color: { argb: `FF${style.accent}` } };
   dTitleRow.height = 24;
   disclaimerWs.addRow([]);
-  const dTextRow = disclaimerWs.addRow([LEGAL_DISCLAIMER]);
+  const dTextRow = disclaimerWs.addRow([LEGAL_DISCLAIMER_TEXT]);
   dTextRow.getCell(1).alignment = { wrapText: true };
   disclaimerWs.getColumn(1).width = 110;
   disclaimerWs.getRow(3).height = 60;
+
+  // GOV-04: Analysis provenance row
+  const provParts: string[] = [];
+  if (metadata.moduleId) provParts.push(`Module: ${metadata.moduleId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`);
+  if (metadata.model)    provParts.push(`Model: ${metadata.model}`);
+  if (metadata.thinking) provParts.push(`Thinking: ${metadata.thinking}`);
+  if (metadata.creativity) provParts.push(`Creativity: ${metadata.creativity}`);
+  if (metadata.sessionId) provParts.push(`Session: ${metadata.sessionId}`);
+  provParts.push(`Generated: ${new Date().toISOString().split('T')[0]}`);
+  disclaimerWs.addRow([]);
+  const provRow = disclaimerWs.addRow([`Analysis configuration: ${provParts.join(' | ')}`]);
+  provRow.getCell(1).font = { italic: true, size: 9 };
+  provRow.getCell(1).alignment = { wrapText: true };
+  disclaimerWs.getRow(disclaimerWs.rowCount).height = 18;
 
   const arrayBuffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);

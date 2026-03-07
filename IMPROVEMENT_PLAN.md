@@ -195,11 +195,11 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 3A — System Prompt Versioning & Immutable Audit
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| GOV-01 | Create `system_prompts` DB table: `(id, module_id, version, content_hash, effective_date, deprecated_at)` | 92, 93, 95 | M | [ ] |
+| GOV-01 | Create `system_prompts` DB table: `(id, module_id, version, content_hash, effective_date, deprecated_at)` | 92, 93, 95 | M | [x] |
 | GOV-02 | Store `(session_id, system_prompt_version_id)` in audit log on every compliance request | 92, 93 | M | [ ] |
-| GOV-03 | Create immutable `session_snapshots` table: written on session completion with full config hash | 92, 93 | M | [ ] |
-| GOV-04 | On export, include "Analysis produced with module v[X] effective [date], model [Y], thinking [Z]" | 92, 93, 95 | S | [ ] |
-| GOV-05 | Add `prompt_audit` table: log every PromptEditor change with (original_hash, edited_hash, edited_by, edited_at) | 95 | M | [ ] |
+| GOV-03 | Create immutable `session_snapshots` table: written on session completion with full config hash | 92, 93 | M | [x] |
+| GOV-04 | On export, include "Analysis produced with module v[X] effective [date], model [Y], thinking [Z]" | 92, 93, 95 | S | [x] |
+| GOV-05 | Add `prompt_audit` table: log every PromptEditor change with (original_hash, edited_hash, edited_by, edited_at) | 95 | M | [x] |
 | GOV-06 | Enforce critical guardrails (e.g., "You do NOT make compliance decisions") as non-editable in PromptEditor | 91, 93 | M | [ ] |
 
 ---
@@ -207,9 +207,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 3B — Source Attribution & Confidence Scoring
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| ATTR-01 | Add source attribution footnote instructions to all 8 FCP system prompts: `[Source: AMLR Art. X, local PDF p.12, or web search]` | 92, 95 | S | [ ] |
+| ATTR-01 | Add source attribution footnote instructions to all 8 FCP system prompts: `[Source: AMLR Art. X, local PDF p.12, or web search]` | 92, 95 | S | [x] |
 | ATTR-02 | Add "Sources & Scope" section to all compliance exports: which docs loaded, model/thinking/creativity, session ID, timestamp | 92, 95 | M | [ ] |
-| ATTR-03 | Add structured confidence annotation to gap-analysis, risk-assessment, data-management prompts: `Confidence: [High | Medium | Low] + rationale` | 95 | S | [ ] |
+| ATTR-03 | Add structured confidence annotation to gap-analysis, risk-assessment, data-management prompts: `Confidence: [High | Medium | Low] + rationale` | 95 | S | [x] |
 | ATTR-04 | Extend CitationVerifier to parse source footnotes and cross-check against loaded knowledge sources | 95 | M | [ ] |
 | ATTR-05 | Surface RAG chunks to user in a collapsible "Sources used" panel (currently logged but not shown) | 95 | M | [ ] |
 
@@ -218,10 +218,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 3C — Bias Awareness in FCP Prompts
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| BIAS-01 | Add bias awareness block to `gap-analysis.md`, `risk-assessment.md`, `sanctions-advisory.md`: geographic bias, name-matching false positives, jurisdiction balance | 94 | S | [ ] |
-| BIAS-02 | Add diversity instruction to `training-content.md`: "Include examples across gender, age, occupation, geography. Avoid stereotyping." | 94 | S | [ ] |
-| BIAS-03 | Add false positive guidance to Sanctions Advisory: flag if matching confidence < 85% or depends on partial name match alone | 94 | S | [ ] |
-| BIAS-04 | Add epistemic humility block to all 8 core FCP system prompts: flag knowledge cutoff; never infer unstated obligations; cite uncertainty explicitly | 91 | S | [ ] |
+| BIAS-01 | Add bias awareness block to `gap-analysis.md`, `risk-assessment.md`, `sanctions-advisory.md`: geographic bias, name-matching false positives, jurisdiction balance | 94 | S | [x] |
+| BIAS-02 | Add diversity instruction to `training-content.md`: "Include examples across gender, age, occupation, geography. Avoid stereotyping." | 94 | S | [x] |
+| BIAS-03 | Add false positive guidance to Sanctions Advisory: flag if matching confidence < 85% or depends on partial name match alone | 94 | S | [x] |
+| BIAS-04 | Add epistemic humility block to all 8 core FCP system prompts: flag knowledge cutoff; never infer unstated obligations; cite uncertainty explicitly | 91 | S | [x] |
 
 ---
 
@@ -230,8 +230,8 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 |----|---------|---------|--------|--------|
 | MGOV-01 | Add admin tab to Settings: "Compliance Policy" — enforce Opus 4.6 + investigate thinking per specified module | 92, 93 | M | [ ] |
 | MGOV-02 | Add `model_allowed` table: per-user model allowlist; block use of disallowed models at route level | 93 | M | [ ] |
-| MGOV-03 | Add model end-of-life dates to MODELS array; emit 90-day/30-day warnings in ModelSelector | 93 | M | [ ] |
-| MGOV-04 | Surface `transparencyLevel` parameter in `claude.ts` — currently set in UI but never passed to API | 65 | M | [ ] |
+| MGOV-03 | Add model end-of-life dates to MODELS array; emit 90-day/30-day warnings in ModelSelector | 93 | M | [x] |
+| MGOV-04 | Surface `transparencyLevel` parameter in `claude.ts` — currently set in UI but never passed to API | 65 | M | [x] |
 
 ---
 

@@ -21,3 +21,21 @@ Create training content that builds genuine understanding of financial crime ris
 4. For front-line staff: emphasise recognition of suspicious indicators, practical CDD steps, and when/how to escalate. Use plain language.
 5. Include at least two realistic scenario-based exercises per major topic.
 6. Where appropriate, note common mistakes or misconceptions that lead to compliance failures.
+
+## Source Attribution
+Ground all regulatory references in specific provisions:
+`[Source: AMLR Art. X / AMLD6 / EBA GL / national law — date]`
+Training content built on unverified or misattributed rules can create compliance liability.
+
+## Diversity and Inclusion in Examples
+All training scenarios, case studies, and examples must:
+- Represent diverse characters across gender, age, occupation, ethnicity, and geography — never rely on stereotyped depictions
+- Present red-flag scenarios based on documented typologies (FATF, Egmont Group, FIU reports), not on assumptions about national origin or personal characteristics
+- Include examples from multiple jurisdictions and institutional types where relevant to the audience
+- Avoid language or scenarios that could cause a reasonable person to associate criminal behaviour with any demographic group
+
+## Epistemic Humility
+Training content becomes outdated quickly. AML typologies, thresholds, and regulatory requirements evolve.
+- Clearly label the regulatory basis and effective date for every obligation described.
+- Flag where content may need to be updated as AMLA RTS and AMLD6 transposition progresses.
+- Recommend that training content be reviewed annually or upon material regulatory changes.

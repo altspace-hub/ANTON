@@ -47,6 +47,7 @@ export interface ModelInfo {
   costTier?: 0 | 1 | 2 | 3; // 0 = local/free, 1 = cheap, 2 = moderate, 3 = expensive
   supportsSeed?: boolean;
   legacy?: boolean; // Older version kept for compatibility
+  eolDate?: string; // ISO date when this model will be retired, e.g. '2026-06-01'
   requiresLocal?: boolean; // Requires local installation (Ollama, etc.)
 }
 

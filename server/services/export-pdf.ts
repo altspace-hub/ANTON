@@ -211,13 +211,28 @@ function parseMarkdownTable(lines: string[]): { headers: string[]; rows: string[
   return { headers: split(header), rows: rest.map(split) };
 }
 
-const LEGAL_DISCLAIMER = `\n\n---\n\n**Legal Disclaimer:** This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.`;
+// GOV-04: Build export footer with analysis provenance metadata (shared with docx)
+function buildExportFooter(meta: {
+  model?: string; thinking?: string; moduleId?: string;
+  sessionId?: string; creativity?: string;
+} = {}): string {
+  const parts: string[] = [];
+  if (meta.moduleId) parts.push(`Module: ${meta.moduleId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`);
+  if (meta.model)    parts.push(`Model: ${meta.model}`);
+  if (meta.thinking) parts.push(`Thinking: ${meta.thinking}`);
+  if (meta.creativity) parts.push(`Creativity: ${meta.creativity}`);
+  if (meta.sessionId) parts.push(`Session: ${meta.sessionId}`);
+  parts.push(`Generated: ${new Date().toISOString().split('T')[0]}`);
+  const provenance = parts.length ? `\n\n*Analysis configuration: ${parts.join(' | ')}*` : '';
+
+  return `\n\n---\n\n**Legal Disclaimer:** This document has been prepared by ANTON AI (openEXPERT) for informational purposes only. It does not constitute legal, regulatory, or compliance advice. The analysis is based on information provided and AI-generated content, which may contain errors or omissions. Users must verify all findings independently and consult qualified legal and compliance professionals before acting on this output. Futurechain / openEXPERT accepts no liability for decisions made based on this document.${provenance}`;
+}
 
 // ── PDF Generator ────────────────────────────────────────────
 
 export function generatePdf(
   markdown: string,
-  metadata: { title?: string; author?: string } = {},
+  metadata: { title?: string; author?: string; model?: string; thinking?: string; moduleId?: string; sessionId?: string; creativity?: string } = {},
   brandConfig?: BrandConfig | null
 ): Promise<Buffer> {
   const ps = resolvePdfStyle(brandConfig);
@@ -265,7 +280,7 @@ export function generatePdf(
     }
 
     // ── Markdown renderer ────────────────────────────────────
-    const lines = (markdown + LEGAL_DISCLAIMER).split('\n');
+    const lines = (markdown + buildExportFooter(metadata)).split('\n');
     let i = 0;
 
     function ensureSpace(needed = 60) {
