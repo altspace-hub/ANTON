@@ -640,6 +640,68 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
     }
   });
 
+  // ── Patterns: list ───────────────────────────────────────────────────────
+  router.get('/orchestrator/patterns', requireAuth, (_req: Request, res: Response) => {
+    try {
+      const tableExists = (db.prepare(
+        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_patterns'"
+      ).get() as { c: number }).c > 0;
+      if (!tableExists) return res.json({ patterns: [], detections: [] });
+
+      const patterns = db.prepare('SELECT * FROM orchestrator_patterns ORDER BY last_detected_at DESC').all();
+      const detections = db.prepare(
+        "SELECT * FROM orchestrator_pattern_detections ORDER BY detected_at DESC LIMIT 50"
+      ).all();
+      res.json({ patterns, detections });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Patterns: toggle auto-execute ────────────────────────────────────────
+  router.patch('/orchestrator/patterns/:id', requireAuth, (req: Request, res: Response) => {
+    try {
+      const { auto_execute } = req.body as { auto_execute?: boolean };
+      const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
+        | { current_stage: number } | undefined;
+
+      // Auto-execute requires Stage 3+
+      if (auto_execute && (!stage || stage.current_stage < 3)) {
+        return res.status(403).json({ error: 'Auto-execution requires Stage 3 (Supervised Orchestrator) or higher' });
+      }
+
+      db.prepare(`
+        UPDATE orchestrator_patterns SET
+          auto_execute = ?,
+          updated_at = datetime('now')
+        WHERE id = ?
+      `).run(auto_execute ? 1 : 0, req.params.id);
+
+      const updated = db.prepare('SELECT * FROM orchestrator_patterns WHERE id = ?').get(req.params.id);
+      if (!updated) return res.status(404).json({ error: 'Pattern not found' });
+      res.json({ pattern: updated });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Patterns: run detection now ───────────────────────────────────────────
+  router.post('/orchestrator/patterns/detect', requireAuth, async (_req: Request, res: Response) => {
+    try {
+      const { detectPatterns, recordPatternDetection } = await import('../services/orchestrator-pattern-engine.js');
+      const patterns = detectPatterns(db);
+      const recorded: string[] = [];
+      for (const p of patterns.slice(0, 5)) {
+        const pid = recordPatternDetection(db, p, null);
+        if (pid) recorded.push(pid);
+      }
+      res.json({ patterns_detected: patterns.length, patterns_recorded: recorded.length, patterns });
+    } catch (err) {
+      console.error('[orchestrator] pattern detect error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
   // ── Demo Mode: get state ─────────────────────────────────────────────────
   router.get('/orchestrator/demo', requireAuth, (_req: Request, res: Response) => {
     try {

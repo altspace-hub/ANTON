@@ -1089,6 +1089,32 @@ export async function runHeartbeatCycle(
     enrichTrailAsync(trailId, db, anthropic).catch(() => {});
   }
 
+  // Pattern detection (non-blocking, runs after briefing)
+  if (action === 'briefing_generated' || action === 'no_action') {
+    try {
+      const { detectPatterns, recordPatternDetection, shouldAutoPause } = await import('./orchestrator-pattern-engine.js');
+      const patterns = detectPatterns(db);
+      if (patterns.length > 0) {
+        for (const pat of patterns.slice(0, 3)) { // max 3 pattern proposals per cycle
+          recordPatternDetection(db, pat, briefingId);
+        }
+        console.log(`[orchestrator] Pattern engine: ${patterns.length} patterns detected, ${Math.min(patterns.length, 3)} recorded`);
+      }
+      // Auto-pause check
+      const { pause, reason } = shouldAutoPause(db);
+      if (pause) {
+        db.prepare(`
+          UPDATE orchestrator_config SET
+            orchestrator_paused = 1, paused_at = datetime('now'), paused_by = 'auto_quality_check', updated_at = datetime('now')
+          WHERE id = 'default'
+        `).run();
+        console.warn(`[orchestrator] AUTO-PAUSED: ${reason}`);
+      }
+    } catch (e) {
+      console.warn('[orchestrator] Pattern detection error (non-fatal):', e);
+    }
+  }
+
   // Check stage progression daily
   if (period === 'daily' || period === 'on_demand') {
     checkStageProgression(db);
