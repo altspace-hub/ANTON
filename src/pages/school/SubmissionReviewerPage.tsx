@@ -183,7 +183,7 @@ export default function SubmissionReviewerPage() {
                   className="flex w-full items-center justify-between px-4 py-3 text-start"
                 >
                   <div className="flex items-center gap-2">
-                    <ClipboardList className="h-4 w-4 text-adv-gray-med" />
+                    <ClipboardList className="h-4 w-4 text-adv-gray" />
                     <span className="text-sm text-adv-off-white">
                       Q{idx + 1}: {ans.questionContent.slice(0, 60)}{ans.questionContent.length > 60 ? '...' : ''}
                     </span>
@@ -193,15 +193,15 @@ export default function SubmissionReviewerPage() {
                       <span className="text-xs text-adv-teal">{ans.aiScore}/{ans.maxMarks}</span>
                     )}
                     {expandedQuestions.has(ans.questionId)
-                      ? <ChevronDown className="h-4 w-4 text-adv-gray-med" />
-                      : <ChevronRight className="h-4 w-4 text-adv-gray-med" />}
+                      ? <ChevronDown className="h-4 w-4 text-adv-gray" />
+                      : <ChevronRight className="h-4 w-4 text-adv-gray" />}
                   </div>
                 </button>
                 {expandedQuestions.has(ans.questionId) && (
                   <div className="border-t border-border px-4 pb-4 pt-3 text-sm text-adv-off-white">
                     <p className="mb-2 text-adv-gray">{ans.questionContent}</p>
                     <div className="rounded-lg bg-adv-dark p-3">
-                      <p className="text-xs text-adv-gray-med mb-1">Student answer</p>
+                      <p className="text-xs text-adv-gray mb-1">Student answer</p>
                       <p>{ans.studentAnswer}</p>
                     </div>
                   </div>
@@ -214,7 +214,7 @@ export default function SubmissionReviewerPage() {
         {/* Learning Evidence Log */}
         <section>
           <h2 className="mb-1 text-sm font-semibold text-adv-off-white">Learning Evidence Log</h2>
-          <p className="mb-3 text-xs text-adv-gray-med">{submission.learningEvidenceLog.summary}</p>
+          <p className="mb-3 text-xs text-adv-gray">{submission.learningEvidenceLog.summary}</p>
 
           {submission.learningEvidenceLog.sessions.map((session) => (
             <div key={session.questionId} className="rounded-xl border border-border bg-adv-card overflow-hidden mb-2">
@@ -228,8 +228,8 @@ export default function SubmissionReviewerPage() {
                   <span className="text-xs text-adv-teal">{session.outcome}</span>
                 </div>
                 {expandedEvidence.has(session.questionId)
-                  ? <ChevronDown className="h-4 w-4 text-adv-gray-med" />
-                  : <ChevronRight className="h-4 w-4 text-adv-gray-med" />}
+                  ? <ChevronDown className="h-4 w-4 text-adv-gray" />
+                  : <ChevronRight className="h-4 w-4 text-adv-gray" />}
               </button>
               {expandedEvidence.has(session.questionId) && (
                 <div className="border-t border-border px-4 pb-4 pt-3 space-y-2">
@@ -239,7 +239,7 @@ export default function SubmissionReviewerPage() {
                         ? 'bg-adv-teal/5 text-adv-off-white'
                         : 'bg-adv-dark text-adv-gray ms-4'
                     }`}>
-                      <span className="text-adv-gray-med">[{step.type}]</span> {step.content}
+                      <span className="text-adv-gray">[{step.type}]</span> {step.content}
                     </div>
                   ))}
                   <div className="flex flex-wrap gap-1 pt-1">
@@ -260,22 +260,22 @@ export default function SubmissionReviewerPage() {
           <h2 className="text-sm font-semibold text-adv-off-white">Your Grade & Feedback</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-xs text-adv-gray-med mb-1">Grade</label>
+              <label className="block text-xs text-adv-gray mb-1">Grade</label>
               <input
                 type="text"
                 value={teacherGrade}
                 onChange={(e) => setTeacherGrade(e.target.value)}
                 placeholder="e.g. B / 14/17 / Pass"
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs text-adv-gray-med mb-1">Written feedback (optional)</label>
+              <label className="block text-xs text-adv-gray mb-1">Written feedback (optional)</label>
               <textarea
                 value={teacherFeedback}
                 onChange={(e) => setTeacherFeedback(e.target.value)}
                 rows={2}
-                className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
           </div>

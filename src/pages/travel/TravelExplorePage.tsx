@@ -112,13 +112,13 @@ export default function TravelExplorePage() {
       <div className="flex-1 px-6 py-6 space-y-8">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search destinations…"
-            className="w-full rounded-xl border border-border bg-adv-card pl-10 pr-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-xl border border-border bg-adv-card pl-10 pr-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
 

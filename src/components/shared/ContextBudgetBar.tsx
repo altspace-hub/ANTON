@@ -65,7 +65,7 @@ export default function ContextBudgetBar({ systemPrompt, userInput, history, mod
       ? 'text-adv-red'
       : breakdown.level === 'warning'
       ? 'text-adv-gold'
-      : 'text-adv-gray-med';
+      : 'text-adv-gray';
 
   // Only show when there's something meaningful to show
   if (breakdown.total < 100) return null;
@@ -87,20 +87,20 @@ export default function ContextBudgetBar({ systemPrompt, userInput, history, mod
 
       {/* Breakdown row */}
       <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-        <span className="text-[10px] text-adv-gray-med">
+        <span className="text-xs text-adv-gray">
           <span className="text-adv-gray">Prompt</span> {fmt(breakdown.system)}
         </span>
         {breakdown.docs > 0 && (
-          <span className="text-[10px] text-adv-gray-med">
+          <span className="text-xs text-adv-gray">
             <span className="text-adv-gray">Docs</span> {fmt(breakdown.docs)}
           </span>
         )}
         {breakdown.history > 0 && (
-          <span className="text-[10px] text-adv-gray-med">
+          <span className="text-xs text-adv-gray">
             <span className="text-adv-gray">History</span> {fmt(breakdown.history)}
           </span>
         )}
-        <span className="text-[10px] text-adv-gray-med">
+        <span className="text-xs text-adv-gray">
           <span className="text-adv-gray">Message</span> {fmt(breakdown.message)}
         </span>
       </div>
@@ -119,7 +119,7 @@ export default function ContextBudgetBar({ systemPrompt, userInput, history, mod
         </div>
       )}
       {breakdown.level === 'ok' && breakdown.pct > 30 && (
-        <div className="flex items-center gap-1 text-[10px] text-adv-gray-med">
+        <div className="flex items-center gap-1 text-xs text-adv-gray">
           <Info className="h-2.5 w-2.5 shrink-0" />
           {Math.round(breakdown.pct)}% of {fmt(breakdown.maxCtx)} token window used
         </div>

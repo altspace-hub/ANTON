@@ -26,7 +26,7 @@ const TYPE_OPTIONS: TypeOption[] = [
   { id: 'script_library', label: 'Script Library',  description: 'Register a folder of approved executable scripts', icon: Code },
 ];
 
-const INPUT_CLASS = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none';
+const INPUT_CLASS = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
 const LABEL_CLASS = 'mb-1 block text-xs font-medium text-adv-gray';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ function DatabaseForm({ config, onChange }: { config: Record<string, unknown>; o
             <div>
               <label className={LABEL_CLASS}>Host / IP Address</label>
               <input type="text" placeholder="localhost or 192.168.1.100" value={String(config.host ?? '')} onChange={(e) => set('host', e.target.value)} className={INPUT_CLASS} />
-              <p className="mt-1 text-xs text-adv-gray-med">Use IP or hostname for remote servers</p>
+              <p className="mt-1 text-xs text-adv-gray">Use IP or hostname for remote servers</p>
             </div>
             <div>
               <label className={LABEL_CLASS}>Port</label>
@@ -169,12 +169,12 @@ function ApiForm({ config, onChange }: { config: Record<string, unknown>; onChan
           ))}
           <div className="flex items-center gap-2">
             <select value={newEndpoint.method} onChange={(e) => setNewEndpoint((v) => ({ ...v, method: e.target.value }))}
-              className="rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none">
+              className="rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
               <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>*</option>
             </select>
             <input type="text" placeholder="/api/endpoint or /api/*" value={newEndpoint.path} onChange={(e) => setNewEndpoint((v) => ({ ...v, path: e.target.value }))}
               onKeyDown={(e) => { if (e.key === 'Enter') addEndpoint(); }}
-              className="flex-1 rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+              className="flex-1 rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
             <button onClick={addEndpoint} className="rounded-lg bg-adv-teal-dim px-2 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors">Add</button>
           </div>
         </div>
@@ -201,7 +201,7 @@ function FilesystemForm({ config, onChange }: { config: Record<string, unknown>;
       <div>
         <label className={LABEL_CLASS}>Base Path *</label>
         <input type="text" placeholder="/path/to/folder or C:\Users\..." value={String(config.base_path ?? '')} onChange={(e) => set('base_path', e.target.value)} className={INPUT_CLASS} />
-        <p className="mt-1 text-xs text-adv-gray-med">All file access is restricted to this directory and its subdirectories.</p>
+        <p className="mt-1 text-xs text-adv-gray">All file access is restricted to this directory and its subdirectories.</p>
       </div>
       <div>
         <label className={LABEL_CLASS}>Allowed Extensions (none = all allowed)</label>
@@ -361,12 +361,12 @@ export function ConnectionWizard({ onClose, onCreated }: ConnectionWizardProps) 
               <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
                 i < stepIndex ? 'bg-adv-teal text-adv-dark' :
                 i === stepIndex ? 'bg-adv-teal text-adv-dark' :
-                'border border-border text-adv-gray-med'
+                'border border-border text-adv-gray'
               }`}>
                 {i < stepIndex ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
               </div>
-              <span className={`text-xs ${i === stepIndex ? 'text-adv-off-white font-medium' : 'text-adv-gray-med'}`}>{s.label}</span>
-              {i < STEPS.length - 1 && <ChevronRight className="h-3 w-3 text-adv-gray-med" />}
+              <span className={`text-xs ${i === stepIndex ? 'text-adv-off-white font-medium' : 'text-adv-gray'}`}>{s.label}</span>
+              {i < STEPS.length - 1 && <ChevronRight className="h-3 w-3 text-adv-gray" />}
             </div>
           ))}
         </div>
@@ -386,7 +386,7 @@ export function ConnectionWizard({ onClose, onCreated }: ConnectionWizardProps) 
                     <Icon className={`h-5 w-5 shrink-0 ${isSelected ? 'text-adv-teal' : 'text-adv-gray'}`} />
                     <div>
                       <p className={`text-sm font-medium ${isSelected ? 'text-adv-teal' : 'text-adv-off-white'}`}>{opt.label}</p>
-                      <p className="text-xs text-adv-gray-med">{opt.description}</p>
+                      <p className="text-xs text-adv-gray">{opt.description}</p>
                     </div>
                   </button>
                 );
@@ -415,7 +415,7 @@ export function ConnectionWizard({ onClose, onCreated }: ConnectionWizardProps) 
               <div className="rounded-xl border border-border bg-adv-card p-4">
                 <p className="mb-1 text-xs font-semibold text-adv-gray">Connection Summary</p>
                 <p className="text-sm text-adv-off-white">{displayName}</p>
-                <p className="mt-0.5 text-xs text-adv-gray-med capitalize">{selectedType}</p>
+                <p className="mt-0.5 text-xs text-adv-gray capitalize">{selectedType}</p>
               </div>
               <button onClick={handleTest} disabled={testing}
                 className="flex items-center gap-2 rounded-lg bg-adv-teal-dim px-4 py-2 text-sm text-adv-teal hover:bg-adv-teal/20 disabled:opacity-50 transition-colors">
@@ -449,7 +449,7 @@ export function ConnectionWizard({ onClose, onCreated }: ConnectionWizardProps) 
                   <span className="text-xs text-adv-gold">Pending approval</span>
                 </div>
               </div>
-              <p className="text-xs text-adv-gray-med">
+              <p className="text-xs text-adv-gray">
                 The connection will be in "pending" status until an administrator approves it. Active connections are available to all users.
               </p>
             </div>

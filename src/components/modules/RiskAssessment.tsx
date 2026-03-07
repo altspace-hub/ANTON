@@ -40,7 +40,7 @@ export default function RiskAssessment({ onInputChange }: Props) {
                 <div className={`text-xs font-medium ${assessmentType === t.id ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                   {t.label}
                 </div>
-                <div className="text-[11px] text-adv-gray-med">{t.description}</div>
+                <div className="text-[11px] text-adv-gray">{t.description}</div>
               </div>
             </button>
           ))}
@@ -54,7 +54,7 @@ export default function RiskAssessment({ onInputChange }: Props) {
           value={entityType}
           onChange={(e) => setEntityType(e.target.value)}
           placeholder="e.g., Nordic retail bank with 2M customers"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -64,7 +64,7 @@ export default function RiskAssessment({ onInputChange }: Props) {
           value={scope}
           onChange={(e) => setScope(e.target.value)}
           placeholder="Business lines in scope, jurisdictions, specific risk factors to consider..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>

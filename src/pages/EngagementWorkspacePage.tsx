@@ -321,12 +321,12 @@ export default function EngagementWorkspacePage() {
             <div className="min-w-0">
               <p className="text-xs font-medium text-adv-off-white leading-tight truncate">{engagement.title}</p>
               {engagement.client_name && (
-                <p className="text-[10px] text-adv-gray-med mt-0.5 truncate">{engagement.client_name}</p>
+                <p className="text-xs text-adv-gray mt-0.5 truncate">{engagement.client_name}</p>
               )}
               {engagement.project_id && (() => {
                 const proj = projects.find(p => p.id === engagement.project_id);
                 return proj ? (
-                  <div className="mt-1 flex items-center gap-1 text-[10px] text-adv-teal truncate">
+                  <div className="mt-1 flex items-center gap-1 text-xs text-adv-teal truncate">
                     <FolderOpen className="h-3 w-3 shrink-0" />
                     <span className="truncate">{proj.name}</span>
                   </div>
@@ -336,7 +336,7 @@ export default function EngagementWorkspacePage() {
                 <div className="relative mt-1">
                   <button
                     onClick={() => setShowProjectLink(!showProjectLink)}
-                    className="flex items-center gap-1 text-[10px] text-adv-gray-med hover:text-adv-teal transition-colors"
+                    className="flex items-center gap-1 text-xs text-adv-gray hover:text-adv-teal transition-colors"
                   >
                     <Link2 className="h-3 w-3" />
                     Link to project
@@ -377,10 +377,10 @@ export default function EngagementWorkspacePage() {
                 }`}
               >
                 <StatusDot status={st} />
-                <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-adv-teal' : 'text-adv-gray-med'}`} />
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-adv-teal' : 'text-adv-gray'}`} />
                 <span className="flex-1 text-left text-xs">{phase.shortLabel}</span>
                 {!phase.mvp && (
-                  <span className="text-[9px] bg-adv-gold/10 text-adv-gold border border-adv-gold/20 rounded px-1">Soon</span>
+                  <span className="text-xs bg-adv-gold/10 text-adv-gold border border-adv-gold/20 rounded px-1">Soon</span>
                 )}
               </button>
             );
@@ -390,8 +390,8 @@ export default function EngagementWorkspacePage() {
         {/* Phase progress indicator */}
         <div className="px-4 py-3 border-t border-border">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-adv-gray-med">Progress</span>
-            <span className="text-[10px] text-adv-teal">{getOverallProgress(engagement.status)}%</span>
+            <span className="text-xs text-adv-gray">Progress</span>
+            <span className="text-xs text-adv-teal">{getOverallProgress(engagement.status)}%</span>
           </div>
           <div className="h-1 bg-adv-dark rounded-full overflow-hidden">
             <div

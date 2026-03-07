@@ -175,7 +175,7 @@ function ScheduleModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-adv-gray-med hover:text-adv-off-white transition-colors"
+            className="rounded-lg p-1.5 text-adv-gray hover:text-adv-off-white transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -212,13 +212,13 @@ function ScheduleModal({
               value={customCron}
               onChange={(e) => { setCustomCron(e.target.value); setError(''); }}
               placeholder="e.g. 0 9 * * 1-5"
-              className={`w-full rounded-lg border px-3 py-2 text-sm font-mono text-adv-off-white bg-adv-dark placeholder:text-adv-gray-med focus:outline-none transition-colors ${
+              className={`w-full rounded-lg border px-3 py-2 text-sm font-mono text-adv-off-white bg-adv-dark placeholder:text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 transition-colors ${
                 customCron && !cronIsValid
                   ? 'border-adv-red focus:border-adv-red'
                   : 'border-border focus:border-adv-teal'
               }`}
             />
-            <p className="mt-1 text-[11px] text-adv-gray-med">
+            <p className="mt-1 text-[11px] text-adv-gray">
               Format: minute hour day-of-month month day-of-week
             </p>
           </div>
@@ -250,7 +250,7 @@ function ScheduleModal({
 
         {/* Existing schedules */}
         <div>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">
             Active schedules
           </h3>
           {loading ? (
@@ -258,7 +258,7 @@ function ScheduleModal({
               <Loader2 className="h-4 w-4 animate-spin text-adv-teal" />
             </div>
           ) : schedules.length === 0 ? (
-            <p className="py-3 text-center text-xs text-adv-gray-med">No schedules yet</p>
+            <p className="py-3 text-center text-xs text-adv-gray">No schedules yet</p>
           ) : (
             <div className="space-y-2">
               {schedules.map((s) => (
@@ -268,9 +268,9 @@ function ScheduleModal({
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-mono text-adv-off-white truncate">{s.cron_expression}</p>
-                    <p className="text-[11px] text-adv-gray-med">{cronToHuman(s.cron_expression)}</p>
+                    <p className="text-[11px] text-adv-gray">{cronToHuman(s.cron_expression)}</p>
                     {s.last_run_at && (
-                      <p className="text-[10px] text-adv-gray-med">
+                      <p className="text-xs text-adv-gray">
                         Last run: {new Date(s.last_run_at).toLocaleString()} · {s.run_count}x
                       </p>
                     )}
@@ -283,13 +283,13 @@ function ScheduleModal({
                     {s.is_active ? (
                       <ToggleRight className="h-5 w-5 text-adv-teal hover:text-adv-teal-dark" />
                     ) : (
-                      <ToggleLeft className="h-5 w-5 text-adv-gray-med hover:text-adv-off-white" />
+                      <ToggleLeft className="h-5 w-5 text-adv-gray hover:text-adv-off-white" />
                     )}
                   </button>
                   <button
                     onClick={() => { void handleDelete(s.id); }}
                     title="Delete schedule"
-                    className="shrink-0 text-adv-gray-med hover:text-adv-red transition-colors"
+                    className="shrink-0 text-adv-gray hover:text-adv-red transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -393,7 +393,7 @@ export default function WorkflowsPage() {
                         {wf.label}
                       </div>
                       <p className="mt-1 text-xs text-adv-gray leading-relaxed">{wf.description || 'No description'}</p>
-                      <div className="mt-2 flex items-center gap-3 text-[11px] text-adv-gray-med">
+                      <div className="mt-2 flex items-center gap-3 text-[11px] text-adv-gray">
                         <span>{wf.steps.length} steps</span>
                         <span>{wf.estimatedTime}</span>
                       </div>
@@ -401,21 +401,21 @@ export default function WorkflowsPage() {
                     <div className="relative z-10 flex items-center gap-1 shrink-0">
                       <button
                         onClick={(e) => { e.stopPropagation(); setSchedulingWorkflow(wf); }}
-                        className="p-1.5 text-adv-gray-med hover:text-adv-teal transition-colors"
+                        className="p-1.5 text-adv-gray hover:text-adv-teal transition-colors"
                         title="Schedule workflow"
                       >
                         <Clock className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/workflows/builder/${wf.id}`); }}
-                        className="p-1.5 text-adv-gray-med hover:text-adv-teal transition-colors"
+                        className="p-1.5 text-adv-gray hover:text-adv-teal transition-colors"
                         title="Edit workflow"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteWorkflow(wf.id); }}
-                        className="p-1.5 text-adv-gray-med hover:text-adv-red transition-colors"
+                        className="p-1.5 text-adv-gray hover:text-adv-red transition-colors"
                         title="Delete workflow"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -435,7 +435,7 @@ export default function WorkflowsPage() {
             if (!workflows) return null;
             return (
               <div key={cat}>
-                <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-adv-gray-med">
+                <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-adv-gray">
                   {WORKFLOW_CATEGORY_LABELS[cat]}
                 </h2>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -459,7 +459,7 @@ export default function WorkflowsPage() {
                             {wf.label}
                           </div>
                           <p className="mt-1 text-xs text-adv-gray leading-relaxed">{wf.description}</p>
-                          <div className="mt-2 flex items-center gap-3 text-[11px] text-adv-gray-med">
+                          <div className="mt-2 flex items-center gap-3 text-[11px] text-adv-gray">
                             <span>{wf.steps.length} steps</span>
                             <span>{wf.estimatedTime}</span>
                             <div className="flex gap-1">
@@ -472,12 +472,12 @@ export default function WorkflowsPage() {
                         <div className="relative z-10 flex items-center gap-1 shrink-0">
                           <button
                             onClick={(e) => { e.stopPropagation(); setSchedulingWorkflow(wf); }}
-                            className="p-1.5 text-adv-gray-med opacity-0 group-hover:opacity-100 hover:text-adv-teal transition-all"
+                            className="p-1.5 text-adv-gray opacity-0 group-hover:opacity-100 hover:text-adv-teal transition-all"
                             title="Schedule workflow"
                           >
                             <Clock className="h-3.5 w-3.5" />
                           </button>
-                          <ChevronRight className="h-4 w-4 text-adv-gray-med opacity-0 transition-opacity group-hover:opacity-100" />
+                          <ChevronRight className="h-4 w-4 text-adv-gray opacity-0 transition-opacity group-hover:opacity-100" />
                         </div>
                       </div>
                     );
@@ -685,7 +685,7 @@ export default function WorkflowsPage() {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-adv-white">{selectedWorkflow.label}</h2>
-            <p className="mt-0.5 text-[11px] text-adv-gray-med">{selectedWorkflow.estimatedTime}</p>
+            <p className="mt-0.5 text-[11px] text-adv-gray">{selectedWorkflow.estimatedTime}</p>
           </div>
         </div>
 
@@ -714,11 +714,11 @@ export default function WorkflowsPage() {
                     <Loader2 className="h-5 w-5 animate-spin text-adv-teal" />
                   ) : state?.status === 'error' ? (
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-adv-red/20 text-adv-red">
-                      <span className="text-[10px] font-bold">!</span>
+                      <span className="text-xs font-bold">!</span>
                     </div>
                   ) : (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full border border-adv-gray-med text-adv-gray-med">
-                      <span className="text-[10px]">{idx + 1}</span>
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full border border-adv-gray-med text-adv-gray">
+                      <span className="text-xs">{idx + 1}</span>
                     </div>
                   )}
                 </div>
@@ -726,7 +726,7 @@ export default function WorkflowsPage() {
                   <div className={`text-xs font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                     {step.label}
                   </div>
-                  <div className="text-[10px] text-adv-gray-med truncate">{step.description}</div>
+                  <div className="text-xs text-adv-gray truncate">{step.description}</div>
                 </div>
               </button>
             );
@@ -767,7 +767,7 @@ export default function WorkflowsPage() {
                         <select
                           value={currentState?.inputValues[field.id] || ''}
                           onChange={(e) => updateInputValue(currentStep.id, field.id, e.target.value)}
-                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         >
                           <option value="">Select...</option>
                           {field.options?.map(o => <option key={o} value={o}>{o}</option>)}
@@ -777,11 +777,11 @@ export default function WorkflowsPage() {
                           value={currentState?.inputValues[field.id] || ''}
                           onChange={(e) => updateInputValue(currentStep.id, field.id, e.target.value)}
                           placeholder={field.placeholder}
-                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                           rows={4}
                         />
                       ) : field.type === 'file' ? (
-                        <div className="rounded-lg border-2 border-dashed border-border p-4 text-center text-xs text-adv-gray-med">
+                        <div className="rounded-lg border-2 border-dashed border-border p-4 text-center text-xs text-adv-gray">
                           File upload — paste content in the text field above for now
                         </div>
                       ) : (
@@ -790,7 +790,7 @@ export default function WorkflowsPage() {
                           value={currentState?.inputValues[field.id] || ''}
                           onChange={(e) => updateInputValue(currentStep.id, field.id, e.target.value)}
                           placeholder={field.placeholder}
-                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         />
                       )}
                     </div>
@@ -809,24 +809,24 @@ export default function WorkflowsPage() {
                       <span className="rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-0.5 text-[11px] font-medium text-adv-teal">
                         {currentStep.type.replace(/_/g, ' ')}
                       </span>
-                      <span className="text-xs text-adv-gray-med">runs on server</span>
+                      <span className="text-xs text-adv-gray">runs on server</span>
                     </div>
                     {/* Config summary */}
                     <div className="rounded-lg border border-border bg-adv-dark p-3 text-xs font-mono text-adv-gray">
-                      <p className="mb-1 text-[10px] uppercase tracking-wider text-adv-gray-med">Step configuration</p>
+                      <p className="mb-1 text-xs uppercase tracking-wider text-adv-gray">Step configuration</p>
                       {Object.entries(currentStep.config)
                         .filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
                         .slice(0, 8)
                         .map(([k, v]) => (
                           <div key={k} className="flex gap-2">
-                            <span className="text-adv-gray-med shrink-0">{k}:</span>
+                            <span className="text-adv-gray shrink-0">{k}:</span>
                             <span className="text-adv-off-white truncate">
                               {typeof v === 'object' ? JSON.stringify(v).slice(0, 80) : String(v).slice(0, 80)}
                             </span>
                           </div>
                         ))}
                     </div>
-                    <p className="text-xs text-adv-gray-med">Click "Run Step" to execute this step on the server.</p>
+                    <p className="text-xs text-adv-gray">Click "Run Step" to execute this step on the server.</p>
                   </div>
                 )}
                 {currentState?.status === 'running' && (
@@ -849,9 +849,9 @@ export default function WorkflowsPage() {
                 {currentState?.status === 'pending' && (
                   <div className="flex h-full items-center justify-center text-center">
                     <div>
-                      <p className="text-sm text-adv-gray-med">Click "Run Step" to execute this analysis step.</p>
+                      <p className="text-sm text-adv-gray">Click "Run Step" to execute this analysis step.</p>
                       {currentStep.config.thinking && (
-                        <p className="mt-1 text-[11px] text-adv-gray-med">
+                        <p className="mt-1 text-[11px] text-adv-gray">
                           Thinking level: {currentStep.config.thinking}
                         </p>
                       )}

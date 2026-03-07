@@ -43,7 +43,7 @@ export default function DeadlineCard({ deadline: d, labels, onComplete, onDelete
           {d.title}
         </p>
         <div className="mt-1 flex items-center gap-1.5">
-          <span className={`text-[10px] ${d.status === 'overdue' ? 'text-adv-red' : 'text-adv-gray-med'}`}>
+          <span className={`text-xs ${d.status === 'overdue' ? 'text-adv-red' : 'text-adv-gray'}`}>
             {formatRelativeDue(d.due_date)}
           </span>
           <span className={`h-1.5 w-1.5 rounded-full ${priority.dot}`} />
@@ -72,7 +72,7 @@ export default function DeadlineCard({ deadline: d, labels, onComplete, onDelete
               </p>
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(v => !v); }}
-                className="shrink-0 text-adv-gray-med hover:text-adv-off-white transition-colors"
+                className="shrink-0 text-adv-gray hover:text-adv-off-white transition-colors"
               >
                 {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
@@ -92,25 +92,25 @@ export default function DeadlineCard({ deadline: d, labels, onComplete, onDelete
                 {priority.label}
               </span>
 
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusCfg.color}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusCfg.color}`}>
                 {statusCfg.label}
               </span>
 
-              <span className="flex items-center gap-1 rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray-med">
+              <span className="flex items-center gap-1 rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                 <Tag className="h-3 w-3" />
                 {d.category}
               </span>
 
               {/* Label chips */}
               {matchedLabels.map(l => (
-                <span key={l.id} className="rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: l.color + '20', color: l.color }}>
+                <span key={l.id} className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: l.color + '20', color: l.color }}>
                   {l.name}
                 </span>
               ))}
 
               {/* Subtask indicator */}
               {d.subtask_count != null && d.subtask_count > 0 && (
-                <span className="flex items-center gap-1 text-[10px] text-adv-gray-med">
+                <span className="flex items-center gap-1 text-xs text-adv-gray">
                   <GitBranch className="h-3 w-3" />
                   {d.subtask_completed ?? 0}/{d.subtask_count}
                 </span>
@@ -118,7 +118,7 @@ export default function DeadlineCard({ deadline: d, labels, onComplete, onDelete
             </div>
 
             {d.earliest_start && d.status !== 'completed' && (
-              <p className="mt-1 text-[11px] text-adv-gray-med">
+              <p className="mt-1 text-[11px] text-adv-gray">
                 Start by: {formatDate(d.earliest_start)}
               </p>
             )}
@@ -130,7 +130,7 @@ export default function DeadlineCard({ deadline: d, labels, onComplete, onDelete
             {d.description && (
               <p className="mb-2 text-xs leading-relaxed text-adv-gray">{d.description}</p>
             )}
-            <div className="flex flex-wrap gap-4 text-xs text-adv-gray-med">
+            <div className="flex flex-wrap gap-4 text-xs text-adv-gray">
               <span>Prep: {d.preparation_days}d</span>
               <span>Review: {d.review_days}d</span>
               <span>Buffer: {d.buffer_days}d</span>

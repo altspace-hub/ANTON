@@ -85,7 +85,7 @@ export function CreateCollectionModal({ isOpen, onClose, onSuccess }: CreateColl
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="e.g., Tax Codes 2024, Legal Precedents, Industry Standards"
-              className="w-full px-3 py-2 bg-adv-dark border border-adv-gray-med rounded text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full px-3 py-2 bg-adv-dark border border-adv-gray-med rounded text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               required
             />
           </div>
@@ -99,7 +99,7 @@ export function CreateCollectionModal({ isOpen, onClose, onSuccess }: CreateColl
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What kind of documents will this collection contain?"
               rows={3}
-              className="w-full px-3 py-2 bg-adv-dark border border-adv-gray-med rounded text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full px-3 py-2 bg-adv-dark border border-adv-gray-med rounded text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 

@@ -16,7 +16,7 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
         <select
           value={config.mergeType || 'join'}
           onChange={(e) => onUpdate({ mergeType: e.target.value as 'join' | 'union' | 'concat' })}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="join">Join (match by keys)</option>
           <option value="union">Union (stack vertically)</option>
@@ -32,7 +32,7 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
           value={config.leftDatasetId || ''}
           onChange={(e) => onUpdate({ leftDatasetId: e.target.value })}
           placeholder="{{step_1.dataset.id}}"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
 
@@ -44,7 +44,7 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
           value={config.rightDatasetId || ''}
           onChange={(e) => onUpdate({ rightDatasetId: e.target.value })}
           placeholder="{{step_2.dataset.id}}"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
 
@@ -56,7 +56,7 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
             <select
               value={config.joinType || 'inner'}
               onChange={(e) => onUpdate({ joinType: e.target.value as 'inner' | 'left' | 'right' | 'full' })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="inner">Inner Join (only matches)</option>
               <option value="left">Left Join (all from left)</option>
@@ -73,7 +73,7 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
                 value={config.leftKey || ''}
                 onChange={(e) => onUpdate({ leftKey: e.target.value })}
                 placeholder="customer_id"
-                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
 
@@ -84,7 +84,7 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
                 value={config.rightKey || ''}
                 onChange={(e) => onUpdate({ rightKey: e.target.value })}
                 placeholder="customerId"
-                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
           </div>
@@ -107,9 +107,9 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
             }}
             placeholder='{"customer_id": "customerId", "email_address": "email"}'
             rows={4}
-            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
           />
-          <p className="mt-1 text-[10px] text-adv-gray-med">Map right column names to match left column names</p>
+          <p className="mt-1 text-xs text-adv-gray">Map right column names to match left column names</p>
         </div>
       )}
 
@@ -141,13 +141,13 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
               value={(config.deduplicateBy || []).join(', ')}
               onChange={(e) => onUpdate({ deduplicateBy: e.target.value.split(',').map((k) => k.trim()) })}
               placeholder="Key columns: id, email"
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
 
             <select
               value={config.deduplicateStrategy || 'keep_first'}
               onChange={(e) => onUpdate({ deduplicateStrategy: e.target.value as any })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="keep_first">Keep First</option>
               <option value="keep_last">Keep Last</option>
@@ -165,7 +165,7 @@ export default function DataMergeStep({ step, onUpdate }: DataMergeStepProps) {
           value={config.outputVariable || 'merged_dataset'}
           onChange={(e) => onUpdate({ outputVariable: e.target.value })}
           placeholder="merged_dataset"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
     </div>

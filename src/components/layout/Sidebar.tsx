@@ -193,7 +193,7 @@ function DeadlinesNavLink({ sidebarCollapsed, collapsedLinkClass, linkClass }: D
       <div className="relative shrink-0">
         <Calendar className="h-4 w-4" />
         {urgentCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-adv-red text-[8px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-adv-red text-xs font-bold text-white">
             {urgentCount > 9 ? '9+' : urgentCount}
           </span>
         )}
@@ -202,7 +202,7 @@ function DeadlinesNavLink({ sidebarCollapsed, collapsedLinkClass, linkClass }: D
         <span className="flex flex-1 items-center justify-between">
           {t('nav.deadlines')}
           {urgentCount > 0 && (
-            <span className="ml-auto rounded-full bg-adv-red/20 px-1.5 py-0.5 text-[10px] font-semibold text-adv-red">
+            <span className="ml-auto rounded-full bg-adv-red/20 px-1.5 py-0.5 text-xs font-semibold text-adv-red">
               {urgentCount}
             </span>
           )}
@@ -354,7 +354,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed && (
           <div className="flex-1">
             <div className="text-sm font-semibold text-adv-white">Anton</div>
-            <div className="text-xs text-adv-gray-med">by openEXPERT</div>
+            <div className="text-xs text-adv-gray">by openEXPERT</div>
           </div>
         )}
         {/* Mobile close button */}
@@ -384,7 +384,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   <ChevronLeft className="h-3.5 w-3.5" />
                   Back to Work
                 </button>
-                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-gray-med">Life Platform</div>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">Life Platform</div>
               </div>
             ) : (
               <button
@@ -652,7 +652,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed && (
           <button
             onClick={() => toggleSection('interaction')}
-            className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray-med hover:bg-adv-card hover:text-adv-off-white transition-colors"
+            className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
             <span>{t('nav.interactiveModes')}</span>
             <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${sectionsExpanded.interaction ? '' : '-rotate-90'}`} />
@@ -1060,7 +1060,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed && (
           <button
             onClick={() => toggleSection('tools')}
-            className="mb-1 mt-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray-med hover:bg-adv-card hover:text-adv-off-white transition-colors"
+            className="mb-1 mt-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
             <span>{t('nav.toolsAndFeatures')}</span>
             <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${sectionsExpanded.tools ? '' : '-rotate-90'}`} />
@@ -1454,7 +1454,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {!sidebarCollapsed && (
           <button
             onClick={() => toggleSection('modules')}
-            className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray-med hover:bg-adv-card hover:text-adv-off-white transition-colors"
+            className="mb-1 flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
           >
             <span>{t('nav.modules')}</span>
             <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${sectionsExpanded.modules ? '' : '-rotate-90'}`} />
@@ -1464,20 +1464,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {/* UX-04: Module search/filter — shown only when modules section is open */}
         {!sidebarCollapsed && sectionsExpanded.modules && (
           <div className="relative mb-2 px-2">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray-med" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray" />
             <input
               type="text"
               value={moduleSearch}
               onChange={(e) => setModuleSearch(e.target.value)}
               placeholder="Filter modules…"
               aria-label="Filter modules"
-              className="w-full rounded-md border border-border bg-adv-dark py-1.5 pl-7 pr-7 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-md border border-border bg-adv-dark py-1.5 pl-7 pr-7 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             {moduleSearch && (
               <button
                 onClick={() => setModuleSearch('')}
                 aria-label="Clear filter"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-adv-gray-med hover:text-adv-off-white"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-adv-gray hover:text-adv-off-white"
               >
                 <XIcon className="h-3 w-3" />
               </button>
@@ -1507,7 +1507,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             (m) => m.id.includes(q) || m.shortLabel.toLowerCase().includes(q) || m.label?.toLowerCase().includes(q)
           );
           if (matched.length === 0) {
-            return <p className="px-4 py-2 text-xs text-adv-gray-med">No modules match "{moduleSearch}"</p>;
+            return <p className="px-4 py-2 text-xs text-adv-gray">No modules match "{moduleSearch}"</p>;
           }
           return (
             <div className="mb-2">
@@ -1523,7 +1523,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate text-sm">{mod.shortLabel}</span>
-                    {area && <span className="ml-auto shrink-0 text-[10px] text-adv-gray-med">{area.shortLabel}</span>}
+                    {area && <span className="ml-auto shrink-0 text-xs text-adv-gray">{area.shortLabel}</span>}
                   </NavLink>
                 );
               })}
@@ -1547,10 +1547,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">
                     {t('nav.myModules')}
                   </span>
-                  <span className="text-[10px] text-adv-gray-med">{myModules.length}</span>
+                  <span className="text-xs text-adv-gray">{myModules.length}</span>
                 </div>
                 <ChevronDown
-                  className={`h-3 w-3 text-adv-gray-med transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`}
+                  className={`h-3 w-3 text-adv-gray transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`}
                 />
               </button>
               {isExpanded && (
@@ -1604,10 +1604,10 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   <span className={`text-xs font-semibold uppercase tracking-wider ${colors.text}`}>
                     {area.shortLabel}
                   </span>
-                  <span className="text-[10px] text-adv-gray-med">{totalCount}</span>
+                  <span className="text-xs text-adv-gray">{totalCount}</span>
                 </div>
                 <ChevronDown
-                  className={`h-3 w-3 text-adv-gray-med transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`}
+                  className={`h-3 w-3 text-adv-gray transition-transform duration-150 ${isExpanded ? '' : '-rotate-90'}`}
                 />
               </button>
 
@@ -1646,7 +1646,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                         >
                           <Icon className="h-3.5 w-3.5 shrink-0" />
                           <span className="truncate text-sm">{cm.short_name || cm.name}</span>
-                          <span className="ml-auto shrink-0 text-[9px] text-adv-teal/60">custom</span>
+                          <span className="ml-auto shrink-0 text-xs text-adv-teal/60">custom</span>
                         </NavLink>
                       );
                     })}
@@ -1674,7 +1674,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 {profileName.charAt(0).toUpperCase()}
               </div>
             ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-adv-gray-med text-[10px] text-adv-gray-med">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-adv-gray-med text-xs text-adv-gray">
                 ?
               </div>
             )}
@@ -1692,12 +1692,12 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm text-adv-off-white">{profileName}</div>
                   {profileRole && (
-                    <div className="truncate text-[11px] text-adv-gray-med">{profileRole}</div>
+                    <div className="truncate text-[11px] text-adv-gray">{profileRole}</div>
                   )}
                 </div>
               </>
             ) : (
-              <span className="text-xs text-adv-gray-med">
+              <span className="text-xs text-adv-gray">
                 {t('nav.setupProfile')} →
               </span>
             )}
@@ -1709,13 +1709,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       <div className="border-t border-border">
         <button
           onClick={toggleSidebar}
-          className="flex w-full items-center justify-center py-3 text-adv-gray-med hover:text-adv-teal transition-colors"
+          className="flex w-full items-center justify-center py-3 text-adv-gray hover:text-adv-teal transition-colors"
           title={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
         >
           {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
         {!sidebarCollapsed && (
-          <div className="px-4 pb-3 text-xs text-adv-gray-med">
+          <div className="px-4 pb-3 text-xs text-adv-gray">
             Anton v0.5.0
           </div>
         )}

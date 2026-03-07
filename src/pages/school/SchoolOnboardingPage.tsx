@@ -143,7 +143,7 @@ export default function SchoolOnboardingPage() {
         </div>
         <div>
           <p className="text-lg font-bold text-adv-white">ANTON</p>
-          <p className="text-xs text-adv-gray-med">{t('nav.schoolMode', 'School Mode')}</p>
+          <p className="text-xs text-adv-gray">{t('nav.schoolMode', 'School Mode')}</p>
         </div>
       </div>
 
@@ -205,7 +205,7 @@ export default function SchoolOnboardingPage() {
             <p className="mt-2 text-sm text-adv-gray">
               {t('onboarding.student.step1.subtitle', "Let's get you set up.")}
             </p>
-            <p className="mt-4 text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+            <p className="mt-4 text-xs font-medium uppercase tracking-widest text-adv-gray">
               {t('onboarding.student.step1.selectTier', 'What year are you in?')}
             </p>
           </div>
@@ -220,13 +220,13 @@ export default function SchoolOnboardingPage() {
                 key={value}
                 type="button"
                 onClick={() => selectTier(value)}
-                className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-5 py-4 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+                className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-5 py-4 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-adv-teal/10">
                   <Icon className="h-4 w-4 text-adv-teal" />
                 </div>
                 <span className="text-sm font-medium text-adv-off-white">{label}</span>
-                <ChevronRight className="ml-auto h-4 w-4 text-adv-gray-med" />
+                <ChevronRight className="ml-auto h-4 w-4 text-adv-gray" />
               </button>
             ))}
           </div>
@@ -240,7 +240,7 @@ export default function SchoolOnboardingPage() {
             <h1 className="text-2xl font-bold text-adv-white">
               {t('onboarding.student.step2.title', 'Where are you?')}
             </h1>
-            <p className="mt-2 text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+            <p className="mt-2 text-xs font-medium uppercase tracking-widest text-adv-gray">
               {t('onboarding.student.step2.selectCountry', 'Select your country')}
             </p>
           </div>
@@ -258,13 +258,13 @@ export default function SchoolOnboardingPage() {
                 key={value}
                 type="button"
                 onClick={() => selectCountry(value)}
-                className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-5 py-4 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+                className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-5 py-4 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-adv-teal/10">
                   <Globe className="h-4 w-4 text-adv-teal" />
                 </div>
                 <span className="text-sm font-medium text-adv-off-white">{label}</span>
-                <ChevronRight className="ml-auto h-4 w-4 text-adv-gray-med" />
+                <ChevronRight className="ml-auto h-4 w-4 text-adv-gray" />
               </button>
             ))}
           </div>
@@ -280,7 +280,7 @@ export default function SchoolOnboardingPage() {
                 ? t('onboarding.student.step2b.gymnasietTitle', 'What programme are you in?')
                 : t('onboarding.student.step2b.universityTitle', 'What are you studying?')}
             </h1>
-            <p className="mt-2 text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+            <p className="mt-2 text-xs font-medium uppercase tracking-widest text-adv-gray">
               {state.tier === 'T3'
                 ? t('onboarding.student.step2b.gymnasietSubtitle', 'Your Gymnasiet programme (linje)')
                 : t('onboarding.student.step2b.universitySubtitle', 'Your university programme')}
@@ -304,13 +304,13 @@ export default function SchoolOnboardingPage() {
                   key={value}
                   type="button"
                   onClick={() => selectProgram(value)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-adv-off-white">{label}</p>
-                    <p className="text-xs text-adv-gray-med">{desc}</p>
+                    <p className="text-xs text-adv-gray">{desc}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-adv-gray-med" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-adv-gray" />
                 </button>
               ))
             ) : (
@@ -330,20 +330,20 @@ export default function SchoolOnboardingPage() {
                   key={value}
                   type="button"
                   onClick={() => selectProgram(value)}
-                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-left transition-colors hover:border-adv-teal hover:bg-adv-teal/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-adv-off-white">{label}</p>
-                    <p className="text-xs text-adv-gray-med">{desc}</p>
+                    <p className="text-xs text-adv-gray">{desc}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-adv-gray-med" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-adv-gray" />
                 </button>
               ))
             )}
             <button
               type="button"
               onClick={() => setStep(3)}
-              className="w-full text-center text-sm text-adv-gray-med hover:text-adv-gray transition-colors pt-1"
+              className="w-full text-center text-sm text-adv-gray hover:text-adv-gray transition-colors pt-1"
             >
               {t('onboarding.student.step2b.skip', "Skip — I'll set this later")}
             </button>
@@ -380,7 +380,7 @@ export default function SchoolOnboardingPage() {
                 value={state.classCode}
                 onChange={(e) => setState((p) => ({ ...p, classCode: e.target.value.toUpperCase() }))}
                 placeholder={t('onboarding.student.step3.codePlaceholder', 'e.g. MATH-9B-2026')}
-                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm font-mono text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm font-mono text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 onKeyDown={(e) => e.key === 'Enter' && state.classCode.trim() && handleJoinClass()}
               />
             </div>
@@ -393,7 +393,7 @@ export default function SchoolOnboardingPage() {
               type="button"
               onClick={handleJoinClass}
               disabled={!state.classCode.trim() || isJoining}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
             >
               {isJoining ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               {t('onboarding.student.step3.join', 'Join class')}
@@ -403,7 +403,7 @@ export default function SchoolOnboardingPage() {
           <button
             type="button"
             onClick={skipClassJoin}
-            className="w-full text-center text-sm text-adv-gray-med hover:text-adv-gray transition-colors"
+            className="w-full text-center text-sm text-adv-gray hover:text-adv-gray transition-colors"
           >
             {t('onboarding.student.step3.skip', "I'll join later")}
           </button>
@@ -426,7 +426,7 @@ export default function SchoolOnboardingPage() {
             <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-adv-teal/10">
               <BookOpen className="h-8 w-8 text-adv-teal" />
             </div>
-            <p className="text-sm text-adv-gray-med">
+            <p className="text-sm text-adv-gray">
               The diagnostic check is a quick 5-question assessment that helps Alma personalise her teaching to your level. You can skip this and do it later.
             </p>
           </div>
@@ -435,7 +435,7 @@ export default function SchoolOnboardingPage() {
             <button
               type="button"
               onClick={finishOnboarding}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
             >
               {t('onboarding.student.step4.start', 'Start check')}
               <ArrowRight className="h-4 w-4" />
@@ -443,7 +443,7 @@ export default function SchoolOnboardingPage() {
             <button
               type="button"
               onClick={finishOnboarding}
-              className="w-full text-center text-sm text-adv-gray-med hover:text-adv-gray transition-colors"
+              className="w-full text-center text-sm text-adv-gray hover:text-adv-gray transition-colors"
             >
               {t('onboarding.student.step4.skip', 'Skip for now')}
             </button>
@@ -468,7 +468,7 @@ export default function SchoolOnboardingPage() {
           <button
             type="button"
             onClick={goToDashboard}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
           >
             {t('onboarding.student.complete.goToDashboard', 'Go to my dashboard')}
             <ArrowRight className="h-4 w-4" />

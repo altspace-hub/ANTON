@@ -56,7 +56,7 @@ export default function RadarWidget() {
           <Radio className="h-5 w-5 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">Horizon Radar</h2>
         </div>
-        <p className="text-xs text-adv-gray-med">Loading...</p>
+        <p className="text-xs text-adv-gray">Loading...</p>
       </div>
     );
   }
@@ -71,7 +71,7 @@ export default function RadarWidget() {
           <Radio className="h-5 w-5 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">Horizon Radar</h2>
           {highRelevanceCount > 0 && (
-            <span className="rounded-full bg-adv-red/20 px-2 py-0.5 text-[10px] font-semibold text-adv-red">
+            <span className="rounded-full bg-adv-red/20 px-2 py-0.5 text-xs font-semibold text-adv-red">
               {highRelevanceCount} High
             </span>
           )}
@@ -95,14 +95,14 @@ export default function RadarWidget() {
               <p className="mb-0.5 line-clamp-2 text-sm font-medium text-adv-off-white">
                 {item.title}
               </p>
-              <p className="text-xs text-adv-gray-med">
+              <p className="text-xs text-adv-gray">
                 {item.source_name} · {formatRelativeTime(item.published_at)} · Relevance: {Math.round(item.relevance_score * 100)}%
               </p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-xs text-adv-gray-med">No high-relevance items yet.</p>
+        <p className="text-xs text-adv-gray">No high-relevance items yet.</p>
       )}
     </div>
   );

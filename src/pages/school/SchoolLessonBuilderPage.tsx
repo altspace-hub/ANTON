@@ -49,7 +49,7 @@ const BLOCK_TYPES = [
   { type: 'checkpoint', label: 'Checkpoint', icon: CheckSquare, color: 'text-adv-green' },
   { type: 'link', label: 'Link', icon: Link, color: 'text-adv-blue' },
   { type: 'embed', label: 'Embed', icon: Layers, color: 'text-adv-gray' },
-  { type: 'divider', label: 'Divider', icon: Type, color: 'text-adv-gray-med' },
+  { type: 'divider', label: 'Divider', icon: Type, color: 'text-adv-gray' },
 ];
 
 function defaultBlock(type: string): ContentBlock {
@@ -197,7 +197,7 @@ export default function SchoolLessonBuilderPage() {
             onChange={e => updateBlock(index, { content: e.target.value })}
             placeholder="Write your lesson text here... (Markdown supported)"
             rows={5}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none resize-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
           />
         )}
 
@@ -207,20 +207,20 @@ export default function SchoolLessonBuilderPage() {
               value={block.video_id || ''}
               onChange={e => updateBlock(index, { video_id: e.target.value })}
               placeholder="YouTube Video ID (e.g. dQw4w9WgXcQ)"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
                 value={block.title || ''}
                 onChange={e => updateBlock(index, { title: e.target.value })}
                 placeholder="Video title"
-                className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
               <input
                 value={block.channel || ''}
                 onChange={e => updateBlock(index, { channel: e.target.value })}
                 placeholder="Channel name (e.g. CrashCourse)"
-                className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function SchoolLessonBuilderPage() {
               value={block.question || ''}
               onChange={e => updateBlock(index, { question: e.target.value })}
               placeholder="Quiz question"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             {(block.options || ['', '', '', '']).map((opt, oi) => (
               <div key={oi} className="flex items-center gap-2">
@@ -251,7 +251,7 @@ export default function SchoolLessonBuilderPage() {
                     updateBlock(index, { options: opts });
                   }}
                   placeholder={`Option ${String.fromCharCode(65 + oi)}`}
-                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
             ))}
@@ -259,7 +259,7 @@ export default function SchoolLessonBuilderPage() {
               value={block.explanation || ''}
               onChange={e => updateBlock(index, { explanation: e.target.value })}
               placeholder="Explanation (shown after answering)"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
         )}
@@ -271,7 +271,7 @@ export default function SchoolLessonBuilderPage() {
               onChange={e => updateBlock(index, { content: e.target.value })}
               placeholder={block.type === 'exercise' ? 'Exercise instructions...' : block.type === 'ai_discussion' ? 'Discussion prompt (optional)...' : 'Checkpoint description...'}
               rows={3}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none resize-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
             {block.type === 'exercise' && (
               <textarea
@@ -279,7 +279,7 @@ export default function SchoolLessonBuilderPage() {
                 onChange={e => updateBlock(index, { solution: e.target.value })}
                 placeholder="Solution hint (shown on demand)..."
                 rows={2}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none resize-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
               />
             )}
           </div>
@@ -291,19 +291,19 @@ export default function SchoolLessonBuilderPage() {
               value={block.url || ''}
               onChange={e => updateBlock(index, { url: e.target.value })}
               placeholder="URL"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <input
               value={block.title || ''}
               onChange={e => updateBlock(index, { title: e.target.value })}
               placeholder="Title"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
         )}
 
         {block.type === 'divider' && (
-          <p className="text-xs text-adv-gray-med text-center">— section divider —</p>
+          <p className="text-xs text-adv-gray text-center">— section divider —</p>
         )}
       </div>
     );
@@ -350,7 +350,7 @@ export default function SchoolLessonBuilderPage() {
                 value={form.title}
                 onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Lesson title"
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div>
@@ -359,7 +359,7 @@ export default function SchoolLessonBuilderPage() {
                 value={form.subject_id}
                 onChange={e => setForm(prev => ({ ...prev, subject_id: e.target.value }))}
                 placeholder="e.g. mathematics, history"
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
           </div>
@@ -369,7 +369,7 @@ export default function SchoolLessonBuilderPage() {
               value={form.description}
               onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Brief description"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -379,7 +379,7 @@ export default function SchoolLessonBuilderPage() {
                 type="number"
                 value={form.estimated_minutes}
                 onChange={e => setForm(prev => ({ ...prev, estimated_minutes: Number(e.target.value) }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div>
@@ -387,7 +387,7 @@ export default function SchoolLessonBuilderPage() {
               <select
                 value={form.bloom_level}
                 onChange={e => setForm(prev => ({ ...prev, bloom_level: e.target.value }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 {['remember','understand','apply','analyze','evaluate','create'].map(l => (
                   <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
@@ -399,7 +399,7 @@ export default function SchoolLessonBuilderPage() {
               <select
                 value={form.tier}
                 onChange={e => setForm(prev => ({ ...prev, tier: e.target.value }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="T1">T1 — Primary</option>
                 <option value="T2">T2 — Secondary</option>
@@ -436,7 +436,7 @@ export default function SchoolLessonBuilderPage() {
         </div>
 
         {form.content_blocks.length === 0 && (
-          <p className="text-center text-xs text-adv-gray-med mt-4">No blocks yet. Add your first content block above.</p>
+          <p className="text-center text-xs text-adv-gray mt-4">No blocks yet. Add your first content block above.</p>
         )}
       </div>
     </SchoolLayout>

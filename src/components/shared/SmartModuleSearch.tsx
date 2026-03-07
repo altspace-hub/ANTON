@@ -150,7 +150,7 @@ export default function SmartModuleSearch() {
             onKeyDown={handleKeyDown}
             placeholder="e.g. I need to do a gap analysis against the new AML regulation…"
             rows={2}
-            className="flex-1 resize-none rounded-xl border border-border bg-adv-dark px-4 py-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+            className="flex-1 resize-none rounded-xl border border-border bg-adv-dark px-4 py-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
           />
           <button
             onClick={handleSearch}
@@ -188,7 +188,7 @@ export default function SmartModuleSearch() {
                   className="group flex flex-col gap-2 rounded-xl border border-border bg-adv-dark-2 p-4 text-left hover:border-adv-teal/40 hover:shadow-md transition-all"
                 >
                   <div className="flex items-center gap-2">
-                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold ${colorClass}`}>
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold ${colorClass}`}>
                       {i + 1}
                     </span>
                     <span className="text-sm font-semibold text-adv-white leading-tight">
@@ -196,7 +196,7 @@ export default function SmartModuleSearch() {
                     </span>
                   </div>
                   {area && (
-                    <span className="inline-block rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray-med">
+                    <span className="inline-block rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                       {area.shortLabel}
                     </span>
                   )}
@@ -225,7 +225,7 @@ export default function SmartModuleSearch() {
 
         {/* Footer link to full discovery */}
         <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-          <p className="text-[11px] text-adv-gray-med">
+          <p className="text-[11px] text-adv-gray">
             Powered by Claude Haiku · results in ~2 seconds
           </p>
           <Link

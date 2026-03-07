@@ -482,7 +482,7 @@ export default function ModulePage() {
   if (!module && !isCustomModule && isDynamicModule === false) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-adv-gray-med">{t('module.moduleNotFound')}</p>
+        <p className="text-adv-gray">{t('module.moduleNotFound')}</p>
       </div>
     );
   }
@@ -638,14 +638,14 @@ export default function ModulePage() {
             <h1 className="text-xl font-bold text-adv-white">{module?.label ?? customModuleLabel ?? dynamicCfg?.label ?? moduleId}</h1>
             {(module?.description || dynamicCfg?.description) && <p className="mt-1 text-xs text-adv-gray">{module?.description ?? dynamicCfg?.description}</p>}
             {isCustomModule && !module && (
-              <span className="mt-1 inline-block rounded-full bg-adv-teal/10 border border-adv-teal/20 px-2 py-0.5 text-[10px] text-adv-teal">
+              <span className="mt-1 inline-block rounded-full bg-adv-teal/10 border border-adv-teal/20 px-2 py-0.5 text-xs text-adv-teal">
                 {t('module.customModule')}
               </span>
             )}
             {myWayActive && (
               <a
                 href={typeof dynamicCfg?.myWayHubPath === 'string' ? dynamicCfg.myWayHubPath : '/trades'}
-                className="mt-1 inline-flex items-center gap-1 text-[10px] text-adv-gold hover:underline"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-adv-gold hover:underline"
               >
                 <Wrench size={10} /> My way active
               </a>
@@ -904,7 +904,7 @@ export default function ModulePage() {
                       ? t('module.describeTaskPlaceholder')
                       : t('module.followUpPlaceholder')
                   }
-                  className="w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+                  className="w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
                   rows={4}
                 />
                 {isSpeechSupported && (
@@ -979,7 +979,7 @@ export default function ModulePage() {
               )}
               {/* Cost estimate (WP-13) */}
               {!isStreaming && userInput.trim() && (
-                <div className={`flex items-center gap-1 text-[11px] ${estimatedInputTokens > 50000 ? 'text-adv-gold' : 'text-adv-gray-med'}`}>
+                <div className={`flex items-center gap-1 text-[11px] ${estimatedInputTokens > 50000 ? 'text-adv-gold' : 'text-adv-gray'}`}>
                   <Coins className="h-3 w-3" />
                   <span>
                     ~{estimatedInputTokens.toLocaleString()} tokens · {euroCostDisplay}
@@ -992,7 +992,7 @@ export default function ModulePage() {
             </div>
           </div>
           {/* AI disclaimer (LEGAL-02) */}
-          <p className="px-1 text-[10px] text-adv-gray-med leading-snug">
+          <p className="px-1 text-xs text-adv-gray leading-snug">
             AI-generated output — not legal or compliance advice. Verify independently.
           </p>
         </div>
@@ -1047,8 +1047,8 @@ export default function ModulePage() {
             {messages.length === 0 && !isStreaming ? (
               <div className="flex min-h-[200px] items-center justify-center">
                 <div className="text-center">
-                  <p className="text-sm text-adv-gray-med">{t('module.outputWillAppear')}</p>
-                  <p className="mt-1 text-xs text-adv-gray-med">{t('module.configureAndRun')}</p>
+                  <p className="text-sm text-adv-gray">{t('module.outputWillAppear')}</p>
+                  <p className="mt-1 text-xs text-adv-gray">{t('module.configureAndRun')}</p>
                 </div>
               </div>
             ) : (
@@ -1098,7 +1098,7 @@ export default function ModulePage() {
                 ))}
                 <button
                   onClick={() => setShowReframePicker(false)}
-                  className="ml-auto text-adv-gray-med hover:text-adv-off-white transition-colors"
+                  className="ml-auto text-adv-gray hover:text-adv-off-white transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1118,7 +1118,7 @@ export default function ModulePage() {
             >
               {learnSaving ? 'Saving…' : 'Yes, learn from this'}
             </button>
-            <button onClick={() => setLearnOffered(false)} className="text-adv-gray-med hover:text-adv-off-white transition-colors">
+            <button onClick={() => setLearnOffered(false)} className="text-adv-gray hover:text-adv-off-white transition-colors">
               Dismiss
             </button>
           </div>

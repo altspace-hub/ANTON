@@ -80,7 +80,7 @@ function SortableCard({
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 cursor-grab text-adv-gray-med opacity-0 transition-opacity group-hover:opacity-100"
+          className="mt-0.5 cursor-grab text-adv-gray opacity-0 transition-opacity group-hover:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical className="h-4 w-4" />
@@ -112,7 +112,7 @@ function SortableCard({
 
             {/* subtask count */}
             {(deadline.subtask_count ?? 0) > 0 && (
-              <span className="text-xs text-adv-gray-med">
+              <span className="text-xs text-adv-gray">
                 {deadline.subtask_completed ?? 0}/{deadline.subtask_count}
               </span>
             )}
@@ -124,7 +124,7 @@ function SortableCard({
               {matchedLabels.map((l) => (
                 <span
                   key={l.id}
-                  className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                  className="rounded px-1.5 py-0.5 text-xs font-medium"
                   style={{ backgroundColor: l.color + '22', color: l.color }}
                 >
                   {l.name}
@@ -216,7 +216,7 @@ function KanbanColumn({
         </SortableContext>
 
         {deadlines.length === 0 && (
-          <p className="py-8 text-center text-xs text-adv-gray-med">
+          <p className="py-8 text-center text-xs text-adv-gray">
             No items
           </p>
         )}

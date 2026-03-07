@@ -124,7 +124,7 @@ export default function StudyRoomsPage() {
             onChange={e => setJoinCode(e.target.value.toUpperCase())}
             placeholder={t('studyRooms.codePlaceholder', { defaultValue: 'Enter 6-letter code...' })}
             maxLength={6}
-            className="flex-1 bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm placeholder-adv-gray focus:outline-none focus:border-adv-teal uppercase"
+            className="flex-1 bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal uppercase"
           />
           <button
             onClick={joinByCode}
@@ -148,12 +148,12 @@ export default function StudyRoomsPage() {
               value={newName}
               onChange={e => setNewName(e.target.value)}
               placeholder={t('studyRooms.roomNamePlaceholder', { defaultValue: 'e.g. Maths exam prep — Year 11' })}
-              className="w-full bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <select
               value={newSubject}
               onChange={e => setNewSubject(e.target.value)}
-              className="w-full bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             >
               {['mathematics', 'physics', 'chemistry', 'biology', 'english', 'history', 'economics', 'computer-science'].map(s => (
                 <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>

@@ -49,7 +49,7 @@ export default function CodeViewer({
             <span className="font-mono text-xs">{filename}</span>
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-adv-gray">{language}</span>
+            <span className="text-xs uppercase tracking-wider text-adv-gray">{language}</span>
             <button
               onClick={handleCopy}
               className="flex items-center gap-1 rounded px-2 py-1 text-xs text-adv-gray hover:text-adv-teal hover:bg-adv-card transition-colors"
@@ -71,7 +71,7 @@ export default function CodeViewer({
               <tbody>
                 {lines.map((line, i) => (
                   <tr key={i} className="hover:bg-adv-card/50">
-                    <td className="w-10 select-none border-r border-border px-2 py-0.5 text-right text-adv-gray-med">
+                    <td className="w-10 select-none border-r border-border px-2 py-0.5 text-right text-adv-gray">
                       {i + 1}
                     </td>
                     <td className="px-3 py-0.5 whitespace-pre text-adv-off-white">{line}</td>
@@ -116,10 +116,10 @@ function DiffView({ oldCode, newCode }: { oldCode: string; newCode: string }) {
                 isChanged ? 'bg-adv-gold/10' : 'hover:bg-adv-card/50'
               }
             >
-              <td className="w-8 select-none border-r border-border px-2 py-0.5 text-right text-adv-gray-med">
+              <td className="w-8 select-none border-r border-border px-2 py-0.5 text-right text-adv-gray">
                 {!isAdded ? i + 1 : ''}
               </td>
-              <td className="w-8 select-none border-r border-border px-2 py-0.5 text-right text-adv-gray-med">
+              <td className="w-8 select-none border-r border-border px-2 py-0.5 text-right text-adv-gray">
                 {!isRemoved ? i + 1 : ''}
               </td>
               <td className="w-4 select-none px-1 py-0.5 text-center">

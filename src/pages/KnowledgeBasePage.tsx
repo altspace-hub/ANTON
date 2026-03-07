@@ -252,7 +252,7 @@ function CollectionsTab() {
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <DatabaseIcon className="h-16 w-16 text-adv-gray-med mb-4" />
+            <DatabaseIcon className="h-16 w-16 text-adv-gray mb-4" />
             <h2 className="text-xl font-semibold text-adv-off-white mb-2">No Collection Selected</h2>
             <p className="text-sm text-adv-gray mb-6">Create a collection to get started</p>
             <button
@@ -485,7 +485,7 @@ function PreviewModal({ pack, onClose, onActivate }: PreviewModalProps) {
                     </span>
                     <ArrowRight className="h-3.5 w-3.5 text-adv-gray flex-shrink-0" />
                     <span className="text-adv-off-white font-mono truncate max-w-28">{r.target_id}</span>
-                    <span className="ml-auto text-adv-gray-med">{(r.strength * 100).toFixed(0)}%</span>
+                    <span className="ml-auto text-adv-gray">{(r.strength * 100).toFixed(0)}%</span>
                   </div>
                 ))}
                 {relationships.length === 50 && (
@@ -852,7 +852,7 @@ function RegulatoryPacksTab() {
       {/* True empty state — no bundled, no installed */}
       {packs.length === 0 && availableBundled.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Package className="h-16 w-16 text-adv-gray-med mb-4" />
+          <Package className="h-16 w-16 text-adv-gray mb-4" />
           <h2 className="text-xl font-semibold text-adv-off-white mb-2">No Knowledge Packs</h2>
           <p className="text-sm text-adv-gray mb-6 max-w-md">
             Import a Regulatory Knowledge Pack (.anton file) to provide Claude with structured knowledge about regulations, articles, and compliance obligations.

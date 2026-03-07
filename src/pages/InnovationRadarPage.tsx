@@ -514,7 +514,7 @@ export default function InnovationRadarPage() {
                     value={cronExpression}
                     onChange={e => { setCronExpression(e.target.value); setCronError(''); }}
                     placeholder="0 6 * * *  (min hour day month weekday)"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-adv-dark text-adv-off-white font-mono placeholder:text-adv-gray focus:border-adv-blue focus:outline-none"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-adv-dark text-adv-off-white font-mono placeholder:text-adv-gray focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                   {cronError && <p className="text-xs text-adv-red">{cronError}</p>}
                   <button
@@ -561,7 +561,7 @@ export default function InnovationRadarPage() {
               value={scoringCriteriaEdit}
               onChange={e => setScoringCriteriaEdit(e.target.value)}
               placeholder={DEFAULT_CRITERIA_PLACEHOLDER}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-adv-dark text-adv-off-white placeholder:text-adv-gray/50 focus:border-adv-blue focus:outline-none resize-none mt-2"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-adv-dark text-adv-off-white placeholder:text-adv-gray/50 focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none mt-2"
             />
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-adv-gray">
@@ -682,7 +682,7 @@ export default function InnovationRadarPage() {
                   }`}
                 >
                   {tab.label}
-                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                  <span className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
                     filterTab === tab.id ? 'bg-white/20 text-white' : 'bg-adv-dark text-adv-gray'
                   }`}>
                     {tab.count}
@@ -699,7 +699,7 @@ export default function InnovationRadarPage() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search signals…"
-                  className="rounded-lg bg-adv-card border border-adv-card pl-8 pr-3 py-1.5 text-xs text-adv-off-white placeholder-adv-gray focus:border-adv-blue focus:outline-none w-48"
+                  className="rounded-lg bg-adv-card border border-adv-card pl-8 pr-3 py-1.5 text-xs text-adv-off-white placeholder-adv-gray focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 w-48"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-adv-gray hover:text-adv-white">
@@ -710,7 +710,7 @@ export default function InnovationRadarPage() {
               <select
                 value={typeFilter}
                 onChange={e => setTypeFilter(e.target.value)}
-                className="rounded-lg bg-adv-card border border-adv-card px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-blue focus:outline-none"
+                className="rounded-lg bg-adv-card border border-adv-card px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="all">All types</option>
                 {Object.entries(ITEM_TYPE_CONFIG).map(([k, v]) => (
@@ -758,14 +758,14 @@ export default function InnovationRadarPage() {
                             style={{ height: `${Math.round(item.relevance_score)}%` }}
                           />
                         </div>
-                        <span className="text-[9px] text-adv-gray/60">{Math.round(item.relevance_score)}%</span>
+                        <span className="text-xs text-adv-gray/60">{Math.round(item.relevance_score)}%</span>
                       </div>
 
                       <div className="flex-1 min-w-0">
                         {/* Meta row */}
                         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                           {isNew && (
-                            <span className="rounded-full bg-adv-blue/20 border border-adv-blue/30 px-1.5 py-0.5 text-[10px] font-semibold text-adv-blue uppercase tracking-wide">
+                            <span className="rounded-full bg-adv-blue/20 border border-adv-blue/30 px-1.5 py-0.5 text-xs font-semibold text-adv-blue uppercase tracking-wide">
                               New
                             </span>
                           )}
@@ -893,7 +893,7 @@ export default function InnovationRadarPage() {
                     value={sourceForm.display_name}
                     onChange={e => setSourceForm(p => ({ ...p, display_name: e.target.value }))}
                     placeholder="e.g., Nordic VC News"
-                    className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none"
+                    className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div>
@@ -901,7 +901,7 @@ export default function InnovationRadarPage() {
                   <select
                     value={sourceForm.source_type}
                     onChange={e => setSourceForm(p => ({ ...p, source_type: e.target.value }))}
-                    className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none"
+                    className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   >
                     <option value="rss">RSS Feed</option>
                     <option value="web_page">Web Page</option>
@@ -915,7 +915,7 @@ export default function InnovationRadarPage() {
                   value={sourceForm.url}
                   onChange={e => setSourceForm(p => ({ ...p, url: e.target.value }))}
                   placeholder="https://..."
-                  className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none"
+                  className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
               <div>
@@ -924,7 +924,7 @@ export default function InnovationRadarPage() {
                   value={sourceForm.keywords}
                   onChange={e => setSourceForm(p => ({ ...p, keywords: e.target.value }))}
                   placeholder="funding, Series A, startup, acquisition, PE, buyout"
-                  className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none"
+                  className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
               {editingSource && (

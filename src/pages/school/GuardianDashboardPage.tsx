@@ -90,7 +90,7 @@ function WeeklyDigestSection({ studentId }: { studentId: string }) {
         <h2 className="text-sm font-semibold text-adv-off-white">
           {t('guardian.digest.title', 'Weekly Digest')}
         </h2>
-        <span className="text-xs text-adv-gray-med">
+        <span className="text-xs text-adv-gray">
           {t('guardian.digest.period', 'Past 7 days')}
         </span>
       </div>
@@ -99,35 +99,35 @@ function WeeklyDigestSection({ studentId }: { studentId: string }) {
         <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
           <div className="flex items-center gap-1.5">
             <BookOpen className="h-3.5 w-3.5 text-adv-teal" />
-            <span className="text-xs text-adv-gray-med">{t('guardian.digest.sessionsCount', '{{count}} study sessions', { count: digest.sessionsCount })}</span>
+            <span className="text-xs text-adv-gray">{t('guardian.digest.sessionsCount', '{{count}} study sessions', { count: digest.sessionsCount })}</span>
           </div>
           <span className="text-lg font-bold text-adv-white">{digest.sessionsCount}</span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
           <div className="flex items-center gap-1.5">
             <Star className="h-3.5 w-3.5 text-adv-gold" />
-            <span className="text-xs text-adv-gray-med">{t('guardian.digest.xpEarned', '{{xp}} XP earned', { xp: digest.xpEarned })}</span>
+            <span className="text-xs text-adv-gray">{t('guardian.digest.xpEarned', '{{xp}} XP earned', { xp: digest.xpEarned })}</span>
           </div>
           <span className="text-lg font-bold text-adv-white">{digest.xpEarned}</span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
           <div className="flex items-center gap-1.5">
             <Flame className="h-3.5 w-3.5 text-adv-red" />
-            <span className="text-xs text-adv-gray-med">{t('guardian.digest.streakDays', '{{count}}-day streak', { count: digest.currentStreak })}</span>
+            <span className="text-xs text-adv-gray">{t('guardian.digest.streakDays', '{{count}}-day streak', { count: digest.currentStreak })}</span>
           </div>
           <span className="text-lg font-bold text-adv-white">{digest.currentStreak}</span>
         </div>
         <div className="flex flex-col gap-1 rounded-lg bg-adv-dark px-3 py-2">
           <div className="flex items-center gap-1.5">
             <ClipboardList className="h-3.5 w-3.5 text-adv-teal" />
-            <span className="text-xs text-adv-gray-med">{t('guardian.digest.assignmentsSubmitted', '{{count}} assignments submitted', { count: digest.assignmentsSubmitted })}</span>
+            <span className="text-xs text-adv-gray">{t('guardian.digest.assignmentsSubmitted', '{{count}} assignments submitted', { count: digest.assignmentsSubmitted })}</span>
           </div>
           <span className="text-lg font-bold text-adv-white">{digest.assignmentsSubmitted}</span>
         </div>
       </div>
 
       <div className="flex items-center justify-between border-t border-border pt-3">
-        <div className="text-xs text-adv-gray-med space-y-0.5">
+        <div className="text-xs text-adv-gray space-y-0.5">
           <p>
             {t('guardian.digest.nextSend', 'Next auto-digest: Monday 08:00')}
           </p>
@@ -215,7 +215,7 @@ export default function GuardianDashboardPage() {
         {/* Link form */}
         {!isLoading && children.length === 0 && !showLinkForm && (
           <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-            <Link2 className="mx-auto mb-3 h-10 w-10 text-adv-gray-med" />
+            <Link2 className="mx-auto mb-3 h-10 w-10 text-adv-gray" />
             <p className="text-sm text-adv-gray">{t('guardian.dashboard.linkPrompt')}</p>
             <button
               type="button"
@@ -237,7 +237,7 @@ export default function GuardianDashboardPage() {
                 value={linkCode}
                 onChange={(e) => setLinkCode(e.target.value)}
                 placeholder={t('guardian.link.codePlaceholder')}
-                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
               <button
                 type="submit"
@@ -262,7 +262,7 @@ export default function GuardianDashboardPage() {
               </div>
             )}
 
-            <p className="mt-3 text-xs text-adv-gray-med">{t('guardian.link.privacyNote')}</p>
+            <p className="mt-3 text-xs text-adv-gray">{t('guardian.link.privacyNote')}</p>
           </div>
         )}
 
@@ -282,7 +282,7 @@ export default function GuardianDashboardPage() {
                 <div className="rounded-xl border border-border bg-adv-card p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="h-4 w-4 text-adv-teal" />
-                    <span className="text-xs text-adv-gray-med">{t('guardian.dashboard.timeThisWeek')}</span>
+                    <span className="text-xs text-adv-gray">{t('guardian.dashboard.timeThisWeek')}</span>
                   </div>
                   <p className="text-lg font-bold text-adv-white">
                     {Math.round(child.timeThisWeekMinutes / 60)}h {child.timeThisWeekMinutes % 60}m

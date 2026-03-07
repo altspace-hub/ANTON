@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
               onChange={(e) => setNewPassword(e.target.value)}
               autoFocus
               required
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               placeholder="Minimum 12 characters"
             />
           </div>
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               placeholder="Repeat password"
             />
           </div>
@@ -115,7 +115,7 @@ export default function ResetPasswordPage() {
             {status === 'submitting' ? 'Updating...' : 'Update Password'}
           </button>
         </form>
-        <p className="mt-4 text-center text-xs text-adv-gray-med">
+        <p className="mt-4 text-center text-xs text-adv-gray">
           Link expired?{' '}
           <Link to="/?forgot=1" className="text-adv-teal hover:underline">
             Request a new one

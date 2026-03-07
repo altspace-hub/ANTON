@@ -102,7 +102,7 @@ function CreateEventModal({ onClose, onCreated, defaultGroupId }: {
 
         <label className="mb-1 block text-sm text-adv-gray">Title *</label>
         <input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="Event title" maxLength={120}
-          className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+          className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
 
         <label className="mb-2 block text-sm text-adv-gray">Type</label>
         <div className="mb-4 flex gap-2">
@@ -125,26 +125,26 @@ function CreateEventModal({ onClose, onCreated, defaultGroupId }: {
           <div>
             <label className="mb-1 block text-sm text-adv-gray">Start *</label>
             <input type={allDay ? 'date' : 'datetime-local'} value={startAt} onChange={e => setStartAt(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </div>
           <div>
             <label className="mb-1 block text-sm text-adv-gray">End *</label>
             <input type={allDay ? 'date' : 'datetime-local'} value={endAt} onChange={e => setEndAt(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </div>
         </div>
 
         <label className="mb-1 block text-sm text-adv-gray">Location (optional)</label>
         <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Address or room"
-          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
 
         <label className="mb-1 block text-sm text-adv-gray">Meeting link (optional)</label>
         <input value={meetingLink} onChange={e => setMeetingLink(e.target.value)} placeholder="https://meet.example.com/…"
-          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
 
         <label className="mb-1 block text-sm text-adv-gray">Description (optional)</label>
         <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} maxLength={500}
-          className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+          className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
 
         <label className="mb-2 block text-sm text-adv-gray">Recurrence</label>
         <div className="mb-4 flex gap-3">
@@ -320,7 +320,7 @@ export default function CommunityCalendarPage() {
                   {dayEvents.length > 0 && (
                     <div className="mt-0.5 flex gap-0.5">
                       {dayEvents.slice(0, 3).map((e, idx) => <EventDot key={idx} type={e.event_type} />)}
-                      {dayEvents.length > 3 && <span className="text-[9px] text-adv-gray">+{dayEvents.length - 3}</span>}
+                      {dayEvents.length > 3 && <span className="text-xs text-adv-gray">+{dayEvents.length - 3}</span>}
                     </div>
                   )}
                 </button>

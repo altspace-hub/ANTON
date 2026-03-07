@@ -167,7 +167,7 @@ export default function SchoolCurriculumPage() {
                 value={genTopic}
                 onChange={e => setGenTopic(e.target.value)}
                 placeholder="Topic (e.g. 'Photosynthesis', 'World War I causes', 'Quadratic equations')"
-                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
               <button
                 onClick={generateLesson}
@@ -196,7 +196,7 @@ export default function SchoolCurriculumPage() {
           <div className="text-center py-16">
             <BookOpen className="h-10 w-10 text-adv-gray mx-auto mb-3" />
             <p className="text-adv-gray text-sm">No lessons yet.</p>
-            <p className="text-adv-gray-med text-xs mt-1">Create your first lesson or generate one with AI.</p>
+            <p className="text-adv-gray text-xs mt-1">Create your first lesson or generate one with AI.</p>
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -233,21 +233,21 @@ export default function SchoolCurriculumPage() {
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${BLOOM_COLORS[lesson.bloom_level] || BLOOM_COLORS.understand}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${BLOOM_COLORS[lesson.bloom_level] || BLOOM_COLORS.understand}`}>
                     {lesson.bloom_level}
                   </span>
-                  <span className="flex items-center gap-1 text-[10px] text-adv-gray">
+                  <span className="flex items-center gap-1 text-xs text-adv-gray">
                     <Clock className="h-2.5 w-2.5" />
                     {lesson.estimated_minutes}m
                   </span>
-                  <span className="flex items-center gap-1 text-[10px] text-adv-gray">
+                  <span className="flex items-center gap-1 text-xs text-adv-gray">
                     <Brain className="h-2.5 w-2.5" />
                     {lesson.content_blocks.length} blocks
                   </span>
                   {lesson.published ? (
-                    <span className="text-[10px] text-adv-green">Published</span>
+                    <span className="text-xs text-adv-green">Published</span>
                   ) : (
-                    <span className="text-[10px] text-adv-gray-med">Draft</span>
+                    <span className="text-xs text-adv-gray">Draft</span>
                   )}
                 </div>
 

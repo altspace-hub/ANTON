@@ -154,7 +154,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
         <div className="flex items-center gap-2">
           <Brain className="h-4 w-4 text-adv-teal" />
           <h3 className="text-sm font-semibold text-adv-off-white">Reasoning Depth</h3>
-          <span className="ml-auto text-xs text-adv-gray-med flex items-center gap-1">
+          <span className="ml-auto text-xs text-adv-gray flex items-center gap-1">
             <Info className="h-3 w-3" />
             Controls Claude model &amp; thinking budget
           </span>
@@ -174,15 +174,15 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
                 }`}
               >
                 {opt.badge && (
-                  <span className="absolute top-2 right-2 text-[9px] bg-adv-teal/20 text-adv-teal border border-adv-teal/30 rounded px-1.5 py-0.5">
+                  <span className="absolute top-2 right-2 text-xs bg-adv-teal/20 text-adv-teal border border-adv-teal/30 rounded px-1.5 py-0.5">
                     {opt.badge}
                   </span>
                 )}
-                <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${isSelected ? 'text-adv-teal' : 'text-adv-gray-med'}`} />
+                <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${isSelected ? 'text-adv-teal' : 'text-adv-gray'}`} />
                 <div>
                   <p className={`text-sm font-medium ${isSelected ? 'text-adv-teal' : 'text-adv-off-white'}`}>{opt.label}</p>
                   <p className="text-[11px] text-adv-gray mt-0.5 leading-snug">{opt.description}</p>
-                  <p className="text-[10px] text-adv-gray-med mt-1">Model: {opt.model}</p>
+                  <p className="text-xs text-adv-gray mt-1">Model: {opt.model}</p>
                 </div>
               </button>
             );
@@ -195,7 +195,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-adv-teal" />
           <h3 className="text-sm font-semibold text-adv-off-white">Expert Panel</h3>
-          <span className="text-xs text-adv-gray-med ml-1">— which expert hats should ANTON wear?</span>
+          <span className="text-xs text-adv-gray ml-1">— which expert hats should ANTON wear?</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {EXPERT_PERSONAS.map(ep => {
@@ -205,7 +205,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
                 key={ep.id}
                 onClick={() => toggleExpert(ep.id)}
                 className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${
-                  isSelected ? ep.color : 'text-adv-gray-med border-border hover:border-adv-teal/40 hover:text-adv-off-white'
+                  isSelected ? ep.color : 'text-adv-gray border-border hover:border-adv-teal/40 hover:text-adv-off-white'
                 }`}
               >
                 {isSelected && <span className="mr-1">✓</span>}
@@ -215,7 +215,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
           })}
         </div>
         {expertPanel.length === 0 && (
-          <p className="text-xs text-adv-gray-med italic">No experts selected — ANTON will apply general compliance expertise.</p>
+          <p className="text-xs text-adv-gray italic">No experts selected — ANTON will apply general compliance expertise.</p>
         )}
       </div>
 
@@ -224,7 +224,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
         <div className="flex items-center gap-2">
           <Eye className="h-4 w-4 text-adv-teal" />
           <h3 className="text-sm font-semibold text-adv-off-white">Review Lenses</h3>
-          <span className="text-xs text-adv-gray-med ml-1">— which dimensions should outputs be evaluated against?</span>
+          <span className="text-xs text-adv-gray ml-1">— which dimensions should outputs be evaluated against?</span>
         </div>
         <div className="space-y-2">
           {REVIEW_LENSES.map(lens => {

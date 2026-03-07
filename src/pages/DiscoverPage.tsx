@@ -499,7 +499,7 @@ export default function DiscoverPage() {
               );
             })}
           </div>
-          <p className="mt-3 text-center text-xs text-adv-gray-med">
+          <p className="mt-3 text-center text-xs text-adv-gray">
             Not sure? Start with Lite — you can always go deeper later.
           </p>
         </div>
@@ -527,7 +527,7 @@ export default function DiscoverPage() {
                       <div className="flex items-center gap-2 text-xs text-adv-gray">
                         <Clock className="h-3 w-3" />
                         {new Date(session.started_at).toLocaleDateString()}
-                        <span className="text-adv-gray-med">·</span>
+                        <span className="text-adv-gray">·</span>
                         {PHASE_LABELS[session.phase as DiscoveryPhase] || session.phase}
                       </div>
                     </div>
@@ -585,7 +585,7 @@ export default function DiscoverPage() {
         {/* Left: Progress Panel */}
         <div className="hidden w-56 shrink-0 border-r border-border bg-adv-dark-2 p-4 lg:block">
           <div className="mb-4">
-            <div className="mb-1 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Discovery Progress</div>
+            <div className="mb-1 text-xs font-medium uppercase tracking-wider text-adv-gray">Discovery Progress</div>
             <div className="mb-1 text-lg font-bold text-adv-teal">{overallProgress}%</div>
             <div className="h-1.5 rounded-full bg-adv-card">
               <div
@@ -606,7 +606,7 @@ export default function DiscoverPage() {
                   key={phase}
                   className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors ${
                     isCurrent ? 'bg-adv-teal/10 text-adv-teal' :
-                    isComplete ? 'text-adv-green' : 'text-adv-gray-med'
+                    isComplete ? 'text-adv-green' : 'text-adv-gray'
                   }`}
                 >
                   {isComplete ? (
@@ -628,7 +628,7 @@ export default function DiscoverPage() {
           {/* Quick Stats */}
           {(state.workActivities.length > 0 || state.painPoints.length > 0) && (
             <div className="mt-6 space-y-2 border-t border-border pt-4">
-              <div className="text-xs font-medium text-adv-gray-med uppercase tracking-wider">Captured</div>
+              <div className="text-xs font-medium text-adv-gray uppercase tracking-wider">Captured</div>
               {state.workActivities.length > 0 && (
                 <div className="text-xs text-adv-off-white">
                   {state.workActivities.length} work activities
@@ -823,7 +823,7 @@ export default function DiscoverPage() {
                   placeholder="Type your answer..."
                   disabled={isProcessing || isGenerating}
                   rows={1}
-                  className="flex-1 resize-none rounded-xl border border-border bg-adv-card px-4 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal disabled:opacity-50"
+                  className="flex-1 resize-none rounded-xl border border-border bg-adv-card px-4 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal disabled:opacity-50"
                 />
                 <button
                   onClick={sendMessage}
@@ -834,7 +834,7 @@ export default function DiscoverPage() {
                 </button>
               </div>
 
-              <div className="mt-2 flex items-center justify-between text-[10px] text-adv-gray-med">
+              <div className="mt-2 flex items-center justify-between text-xs text-adv-gray">
                 <span>Phase: {PHASE_LABELS[state.phase]}</span>
                 <span>Press Enter to send · Shift+Enter for new line</span>
               </div>
@@ -845,7 +845,7 @@ export default function DiscoverPage() {
         {/* Right: Insight Panel */}
         <div className="hidden w-64 shrink-0 border-l border-border bg-adv-dark-2 p-4 xl:block">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-adv-gray-med">Emerging Insights</span>
+            <span className="text-xs font-medium uppercase tracking-wider text-adv-gray">Emerging Insights</span>
             {insightLoading && <Loader2 className="h-3 w-3 animate-spin text-adv-teal" />}
           </div>
 
@@ -871,7 +871,7 @@ export default function DiscoverPage() {
                     {insights.earlyModuleMatches.map((m, i) => (
                       <div key={i} className="flex items-center justify-between rounded bg-adv-card px-2 py-1">
                         <span className="text-xs text-adv-off-white truncate">{m.name}</span>
-                        <span className="text-[10px] text-adv-gray">{Math.round(m.confidence * 100)}%</span>
+                        <span className="text-xs text-adv-gray">{Math.round(m.confidence * 100)}%</span>
                       </div>
                     ))}
                   </div>
@@ -905,7 +905,7 @@ export default function DiscoverPage() {
               )}
             </div>
           ) : (
-            <div className="text-xs text-adv-gray-med">
+            <div className="text-xs text-adv-gray">
               Insights will appear as the conversation progresses...
             </div>
           )}
@@ -913,8 +913,8 @@ export default function DiscoverPage() {
           {/* Discovery Pack (Expert tier) */}
           {state?.tier === 'expert' && availablePacks.length > 0 && !state.activePack && (
             <div className="mt-6 border-t border-border pt-4">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Discovery Packs</div>
-              <p className="mb-2 text-[10px] text-adv-gray">Activate a domain pack for specialized questions</p>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Discovery Packs</div>
+              <p className="mb-2 text-xs text-adv-gray">Activate a domain pack for specialized questions</p>
               <div className="space-y-1.5">
                 {availablePacks.map(pack => (
                   <button
@@ -923,7 +923,7 @@ export default function DiscoverPage() {
                     className="w-full rounded-lg border border-border bg-adv-card p-2 text-left hover:border-adv-gold transition-colors"
                   >
                     <div className="text-xs font-medium text-adv-off-white">{pack.name}</div>
-                    <div className="text-[10px] text-adv-gray">{pack.description}</div>
+                    <div className="text-xs text-adv-gray">{pack.description}</div>
                   </button>
                 ))}
               </div>
@@ -981,15 +981,15 @@ export default function DiscoverPage() {
           {/* Module Recommendations */}
           {output.moduleMatches.length > 0 && (
             <div className="mb-6">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Recommended Modules</div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Recommended Modules</div>
               <div className="space-y-2">
                 {output.moduleMatches.map((m, i) => (
                   <div key={i} className="rounded-lg border border-border bg-adv-card p-3">
                     <div className="mb-1 text-sm font-medium text-adv-teal">{m.moduleName}</div>
-                    <div className="mb-1 text-[10px] text-adv-gray">{m.areaName}</div>
+                    <div className="mb-1 text-xs text-adv-gray">{m.areaName}</div>
                     <p className="text-xs text-adv-off-white leading-relaxed">{m.matchReason}</p>
                     {m.estimatedTimeSavings && (
-                      <div className="mt-1.5 flex items-center gap-1 text-[10px] text-adv-green">
+                      <div className="mt-1.5 flex items-center gap-1 text-xs text-adv-green">
                         <Clock className="h-3 w-3" />
                         {m.estimatedTimeSavings}
                       </div>
@@ -1003,7 +1003,7 @@ export default function DiscoverPage() {
           {/* Action Plan */}
           {output.actionPlan.length > 0 && (
             <div className="mb-6">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Action Plan</div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Action Plan</div>
               <div className="space-y-1.5">
                 {output.actionPlan.map((a, i) => (
                   <div key={i} className="flex items-start gap-2 rounded-lg bg-adv-card px-3 py-2">
@@ -1012,7 +1012,7 @@ export default function DiscoverPage() {
                     }`} />
                     <div>
                       <div className="text-xs text-adv-off-white">{a.action}</div>
-                      {a.timeline && <div className="text-[10px] text-adv-gray">{a.timeline}</div>}
+                      {a.timeline && <div className="text-xs text-adv-gray">{a.timeline}</div>}
                     </div>
                   </div>
                 ))}
@@ -1023,12 +1023,12 @@ export default function DiscoverPage() {
           {/* Non-AI Findings */}
           {output.nonAiFindings.length > 0 && (
             <div className="mb-6">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Non-AI Findings</div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Non-AI Findings</div>
               <div className="space-y-2">
                 {output.nonAiFindings.map((f, i) => (
                   <div key={i} className="rounded-lg border border-adv-gold/20 bg-adv-gold/5 p-3">
                     <div className="text-xs text-adv-off-white">{f.description}</div>
-                    <div className="mt-1 text-[10px] text-adv-gold">{f.realSolution}</div>
+                    <div className="mt-1 text-xs text-adv-gold">{f.realSolution}</div>
                   </div>
                 ))}
               </div>
@@ -1038,7 +1038,7 @@ export default function DiscoverPage() {
           {/* Executive Briefing */}
           {output.executiveBriefing && (
             <div className="mb-6">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Executive Briefing</div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Executive Briefing</div>
               <div className="rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3">
                 <p className="text-xs text-adv-off-white leading-relaxed">{output.executiveBriefing}</p>
               </div>
@@ -1048,7 +1048,7 @@ export default function DiscoverPage() {
           {/* Governance Recommendations */}
           {output.governanceRecommendations && output.governanceRecommendations.length > 0 && (
             <div className="mb-6">
-              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Governance</div>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Governance</div>
               <div className="space-y-1.5">
                 {output.governanceRecommendations.map((g, i) => (
                   <div key={i} className="rounded-lg bg-adv-card px-3 py-2">
@@ -1058,7 +1058,7 @@ export default function DiscoverPage() {
                       }`} />
                       <div className="text-xs font-medium text-adv-off-white">{g.area}</div>
                     </div>
-                    <p className="mt-1 text-[10px] text-adv-gray">{g.recommendation}</p>
+                    <p className="mt-1 text-xs text-adv-gray">{g.recommendation}</p>
                   </div>
                 ))}
               </div>
@@ -1067,7 +1067,7 @@ export default function DiscoverPage() {
 
           {/* Follow-Up Scheduling */}
           <div className="mb-4 border-t border-border pt-4">
-            <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Follow-Up</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Follow-Up</div>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => scheduleFollowUp('30_day')}
@@ -1092,7 +1092,7 @@ export default function DiscoverPage() {
 
           {/* Export */}
           <div className="border-t border-border pt-4">
-            <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray-med">Export Report</div>
+            <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Export Report</div>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={downloadMarkdown}

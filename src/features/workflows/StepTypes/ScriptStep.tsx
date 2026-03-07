@@ -37,7 +37,7 @@ export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 rounded-md border border-adv-blue/30 bg-adv-blue/10 px-3 py-1.5">
-        <span className="text-[10px] font-medium text-adv-blue">Connection required: Script Library</span>
+        <span className="text-xs font-medium text-adv-blue">Connection required: Script Library</span>
       </div>
 
       <div>
@@ -45,7 +45,7 @@ export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
         <select
           value={step.config.scriptId || ''}
           onChange={(e) => onUpdate({ scriptId: e.target.value || undefined, parameterMapping: {} })}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">— Select script —</option>
           {scripts.map((s) => (
@@ -59,9 +59,9 @@ export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
 
       {selectedScript?.parameters && selectedScript.parameters.length > 0 && (
         <div className="rounded-lg border border-border bg-adv-dark/50 p-3">
-          <p className="mb-2 text-[10px] text-adv-gray-med">Script parameters:</p>
+          <p className="mb-2 text-xs text-adv-gray">Script parameters:</p>
           {selectedScript.parameters.map((p) => (
-            <div key={p.name} className="mb-1 text-[10px] text-adv-gray">
+            <div key={p.name} className="mb-1 text-xs text-adv-gray">
               <span className="font-mono text-adv-teal">{p.name}</span> — {p.description}
             </div>
           ))}
@@ -80,15 +80,15 @@ export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
               readOnly
               className="w-32 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono"
             />
-            <span className="text-adv-gray-med text-xs">→</span>
+            <span className="text-adv-gray text-xs">→</span>
             <input
               type="text"
               value={value}
               onChange={(e) => onUpdate({ parameterMapping: { ...paramMapping, [key]: e.target.value } })}
               placeholder="{{step_1.field}}"
-              className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+              className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
-            <button onClick={() => removeMapping(key)} className="text-adv-gray-med hover:text-adv-red transition-colors">
+            <button onClick={() => removeMapping(key)} className="text-adv-gray hover:text-adv-red transition-colors">
               <Trash2 className="h-3 w-3" />
             </button>
           </div>
@@ -99,15 +99,15 @@ export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
             value={newParamKey}
             onChange={(e) => setNewParamKey(e.target.value)}
             placeholder="param_name"
-            className="w-32 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+            className="w-32 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
-          <span className="text-adv-gray-med text-xs">→</span>
+          <span className="text-adv-gray text-xs">→</span>
           <input
             type="text"
             value={newParamValue}
             onChange={(e) => setNewParamValue(e.target.value)}
             placeholder="{{step_1.customer_id}}"
-            className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+            className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           <button onClick={addMapping} className="text-adv-teal hover:text-adv-teal-dark transition-colors">
             <Plus className="h-3 w-3" />
@@ -122,7 +122,7 @@ export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
           value={step.config.outputVariable || ''}
           onChange={(e) => onUpdate({ outputVariable: e.target.value })}
           placeholder="script_result"
-          className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
     </div>

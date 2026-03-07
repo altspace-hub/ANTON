@@ -119,7 +119,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-adv-gray-med transition-colors hover:bg-adv-dark hover:text-adv-off-white focus:outline-none focus:ring-2 focus:ring-adv-teal"
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-adv-gray transition-colors hover:bg-adv-dark hover:text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
           aria-label="Close tour"
         >
           <X className="h-4 w-4" />
@@ -149,7 +149,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
 
           {/* Whitepaper link on last step */}
           {isLast && (
-            <p className="mt-4 text-center text-xs text-adv-gray-med">
+            <p className="mt-4 text-center text-xs text-adv-gray">
               Want to go deeper?{' '}
               <a
                 href="/ANTON by openEXPERT whitepaper.pdf"
@@ -170,7 +170,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
             <button
               key={idx}
               onClick={() => setCurrentStep(idx)}
-              className={`h-2 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-adv-teal ${
+              className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal ${
                 idx === currentStep
                   ? 'w-6 bg-adv-teal'
                   : 'w-2 bg-adv-gray-med hover:bg-adv-gray'
@@ -186,7 +186,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           <button
             onClick={handlePrev}
             disabled={isFirst}
-            className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-adv-gray transition-colors hover:border-adv-teal hover:text-adv-teal disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm text-adv-gray transition-colors hover:border-adv-teal hover:text-adv-teal disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
             aria-label="Previous step"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -195,7 +195,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
 
           <button
             onClick={handleNext}
-            className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card"
+            className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card"
             aria-label={isLast ? 'Finish tour' : 'Next step'}
           >
             {isLast ? (

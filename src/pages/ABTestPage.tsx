@@ -113,7 +113,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
         </span>
         <span className="text-sm font-semibold text-adv-off-white">Variant {label}</span>
         {selectedModule && (
-          <span className={`ml-auto rounded border px-1.5 py-0.5 text-[10px] font-medium ${accentClass}`}>
+          <span className={`ml-auto rounded border px-1.5 py-0.5 text-xs font-medium ${accentClass}`}>
             [{selectedArea?.shortLabel ?? '?'}] {selectedModule.shortLabel}
           </span>
         )}
@@ -133,7 +133,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
                 // When area changes, clear module
                 onChange({ moduleId: '' });
               }}
-              className="rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">All areas</option>
               {AREAS.map((area) => (
@@ -143,7 +143,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
             <select
               value={config.moduleId}
               onChange={(e) => onChange({ moduleId: e.target.value })}
-              className="rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">None (custom prompt)</option>
               {(() => {
@@ -174,7 +174,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
             <select
               value={config.thinking}
               onChange={(e) => onChange({ thinking: e.target.value as ThinkingLevel })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {THINKING_OPTIONS.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -186,7 +186,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
             <select
               value={config.creativity}
               onChange={(e) => onChange({ creativity: e.target.value as CreativityLevel })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {CREATIVITY_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -233,7 +233,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
               value={config.systemPromptOverride}
               onChange={(e) => onChange({ systemPromptOverride: e.target.value })}
               placeholder="Override system prompt for this variant..."
-              className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2.5 py-2 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+              className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2.5 py-2 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
               rows={5}
             />
           )}
@@ -246,12 +246,12 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
           <span className="text-[11px] font-medium text-adv-gray">Output</span>
           {output && (
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-adv-gray-med">
+              <span className="text-xs text-adv-gray">
                 {countWords(output)} words · ~{estimateTokens(output).toLocaleString()} tokens
               </span>
               <button
                 onClick={onCopy}
-                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-adv-gray hover:text-adv-off-white transition-colors"
+                className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-adv-gray hover:text-adv-off-white transition-colors"
                 title="Copy output"
               >
                 {copied ? <Check className="h-3 w-3 text-adv-green" /> : <Copy className="h-3 w-3" />}
@@ -273,7 +273,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
             </div>
           ) : !isStreaming ? (
             <div className="flex h-32 items-center justify-center">
-              <p className="text-xs text-adv-gray-med">Output will appear here after running</p>
+              <p className="text-xs text-adv-gray">Output will appear here after running</p>
             </div>
           ) : null}
         </div>
@@ -457,7 +457,7 @@ ${config.systemPromptOverride}`;
       {/* Shared input */}
       <div className="rounded-xl border border-border bg-adv-card p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <Info className="h-4 w-4 text-adv-gray-med shrink-0" />
+          <Info className="h-4 w-4 text-adv-gray shrink-0" />
           <p className="text-xs text-adv-gray">
             This message is sent to both variants. After running, the outputs are compared below.
             Variants A and B run sequentially to avoid rate limits.
@@ -469,7 +469,7 @@ ${config.systemPromptOverride}`;
             value={userMessage}
             onChange={(e) => setUserMessage(e.target.value)}
             placeholder="e.g., Summarise the key AML obligations under AMLR 2024/1624 for a Nordic bank..."
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             rows={3}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleRunBoth();
@@ -508,7 +508,7 @@ ${config.systemPromptOverride}`;
               Running Variant B...
             </div>
           )}
-          <span className="text-[11px] text-adv-gray-med">Ctrl+Enter to run</span>
+          <span className="text-[11px] text-adv-gray">Ctrl+Enter to run</span>
         </div>
       </div>
 
@@ -554,32 +554,32 @@ ${config.systemPromptOverride}`;
                   <td className="py-2 text-center text-adv-off-white text-xs">
                     {variantA.moduleId
                       ? MODULES.find((m) => m.id === variantA.moduleId)?.shortLabel ?? variantA.moduleId
-                      : <span className="text-adv-gray-med">None</span>}
+                      : <span className="text-adv-gray">None</span>}
                   </td>
                   <td className="py-2 text-center text-adv-off-white text-xs">
                     {variantB.moduleId
                       ? MODULES.find((m) => m.id === variantB.moduleId)?.shortLabel ?? variantB.moduleId
-                      : <span className="text-adv-gray-med">None</span>}
+                      : <span className="text-adv-gray">None</span>}
                   </td>
-                  <td className="py-2 text-center text-adv-gray-med text-xs">—</td>
+                  <td className="py-2 text-center text-adv-gray text-xs">—</td>
                 </tr>
                 <tr>
                   <td className="py-2 text-adv-gray">Thinking level</td>
                   <td className="py-2 text-center text-adv-off-white text-xs">{variantA.thinking}</td>
                   <td className="py-2 text-center text-adv-off-white text-xs">{variantB.thinking}</td>
-                  <td className="py-2 text-center text-adv-gray-med text-xs">—</td>
+                  <td className="py-2 text-center text-adv-gray text-xs">—</td>
                 </tr>
                 <tr>
                   <td className="py-2 text-adv-gray">Creativity</td>
                   <td className="py-2 text-center text-adv-off-white text-xs">{variantA.creativity}</td>
                   <td className="py-2 text-center text-adv-off-white text-xs">{variantB.creativity}</td>
-                  <td className="py-2 text-center text-adv-gray-med text-xs">—</td>
+                  <td className="py-2 text-center text-adv-gray text-xs">—</td>
                 </tr>
                 <tr>
                   <td className="py-2 text-adv-gray">Model</td>
                   <td className="py-2 text-center text-adv-off-white text-xs">{variantA.model?.includes('opus') ? 'Opus 4.6' : variantA.model?.includes('sonnet') ? 'Sonnet 4.5' : 'Haiku 4.5'}</td>
                   <td className="py-2 text-center text-adv-off-white text-xs">{variantB.model?.includes('opus') ? 'Opus 4.6' : variantB.model?.includes('sonnet') ? 'Sonnet 4.5' : 'Haiku 4.5'}</td>
-                  <td className="py-2 text-center text-adv-gray-med text-xs">—</td>
+                  <td className="py-2 text-center text-adv-gray text-xs">—</td>
                 </tr>
                 <tr>
                   <td className="py-2 text-adv-gray">Word count</td>
@@ -607,7 +607,7 @@ ${config.systemPromptOverride}`;
                   <td className="py-2 text-center text-adv-off-white">
                     ~{comparison.tokenEstB.toLocaleString()}
                   </td>
-                  <td className="py-2 text-center text-adv-gray-med text-xs">—</td>
+                  <td className="py-2 text-center text-adv-gray text-xs">—</td>
                 </tr>
                 <tr>
                   <td className="py-2 text-adv-gray">Response length ratio</td>
@@ -625,7 +625,7 @@ ${config.systemPromptOverride}`;
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-[11px] text-adv-gray-med">
+          <p className="mt-3 text-[11px] text-adv-gray">
             Note: "Winner" is based on response length (more words = higher score). Evaluate quality manually.
             Length alone does not determine value — a concise answer may be superior.
           </p>

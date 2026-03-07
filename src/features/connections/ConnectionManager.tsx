@@ -73,8 +73,8 @@ function AuditLogPanel({ connectionId }: AuditLogPanelProps) {
       .finally(() => setLoading(false));
   }, [connectionId]);
 
-  if (loading) return <p className="py-3 text-xs text-adv-gray-med">Loading audit log...</p>;
-  if (entries.length === 0) return <p className="py-3 text-xs text-adv-gray-med">No audit entries yet.</p>;
+  if (loading) return <p className="py-3 text-xs text-adv-gray">Loading audit log...</p>;
+  if (entries.length === 0) return <p className="py-3 text-xs text-adv-gray">No audit entries yet.</p>;
 
   return (
     <div className="mt-3 max-h-52 overflow-y-auto rounded-lg border border-border">
@@ -90,10 +90,10 @@ function AuditLogPanel({ connectionId }: AuditLogPanelProps) {
         <tbody className="divide-y divide-border">
           {entries.map((e) => (
             <tr key={e.id} className="hover:bg-adv-dark-2/50">
-              <td className="px-3 py-1.5 text-adv-gray-med">{new Date(e.executed_at).toLocaleString()}</td>
+              <td className="px-3 py-1.5 text-adv-gray">{new Date(e.executed_at).toLocaleString()}</td>
               <td className="px-3 py-1.5 font-mono text-adv-off-white">{e.action}</td>
               <td className="px-3 py-1.5 text-adv-gray">{e.result_summary ?? '—'}</td>
-              <td className="px-3 py-1.5 text-adv-gray-med">{e.executed_by}</td>
+              <td className="px-3 py-1.5 text-adv-gray">{e.executed_by}</td>
             </tr>
           ))}
         </tbody>
@@ -141,7 +141,7 @@ function ConnectionRow({
         {/* Name */}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-adv-off-white">{connection.display_name}</p>
-          <p className="text-xs text-adv-gray-med">
+          <p className="text-xs text-adv-gray">
             Created {new Date(connection.created_at).toLocaleDateString()}
             {connection.last_tested && ` · Tested ${new Date(connection.last_tested).toLocaleDateString()}`}
           </p>
@@ -307,7 +307,7 @@ export function ConnectionManager() {
         <div className="flex items-center gap-2">
           <Plug className="h-5 w-5 text-adv-teal" />
           <h2 className="text-lg font-semibold text-adv-white">Connections</h2>
-          <span className="text-xs text-adv-gray-med">({connections.length} total)</span>
+          <span className="text-xs text-adv-gray">({connections.length} total)</span>
         </div>
         {isAdmin && (
           <button
@@ -328,13 +328,13 @@ export function ConnectionManager() {
       )}
 
       {loading ? (
-        <p className="text-sm text-adv-gray-med">Loading connections...</p>
+        <p className="text-sm text-adv-gray">Loading connections...</p>
       ) : connections.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
-          <Plug className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
+          <Plug className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
           <p className="text-sm text-adv-gray">No connections configured yet.</p>
           {isAdmin && (
-            <p className="mt-1 text-xs text-adv-gray-med">Click "Add Connection" to register your first integration.</p>
+            <p className="mt-1 text-xs text-adv-gray">Click "Add Connection" to register your first integration.</p>
           )}
         </div>
       ) : (
@@ -388,7 +388,7 @@ export function ConnectionManager() {
           {/* Disabled / Error */}
           {other.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">
                 Disabled / Error ({other.length})
               </p>
               <div className="space-y-2">

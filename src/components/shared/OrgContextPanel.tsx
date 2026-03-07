@@ -131,7 +131,7 @@ export function OrgContextPanel() {
                     value={context.org_name ?? ''}
                     onChange={(e) => setContext((p) => ({ ...p, org_name: e.target.value || null }))}
                     placeholder="e.g. Nordea Bank AB"
-                    className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus:border-adv-teal/50"
+                    className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                   />
                 </div>
                 <div>
@@ -139,7 +139,7 @@ export function OrgContextPanel() {
                   <select
                     value={context.org_type ?? ''}
                     onChange={(e) => setContext((p) => ({ ...p, org_type: e.target.value || null }))}
-                    className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal/50"
+                    className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                   >
                     <option value="">Select type…</option>
                     {ORG_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -154,7 +154,7 @@ export function OrgContextPanel() {
                   value={context.jurisdiction ?? ''}
                   onChange={(e) => setContext((p) => ({ ...p, jurisdiction: e.target.value || null }))}
                   placeholder="e.g. Sweden, Finland, EU"
-                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus:border-adv-teal/50"
+                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                 />
               </div>
 
@@ -177,7 +177,7 @@ export function OrgContextPanel() {
                   onChange={(e) => setContext((p) => ({ ...p, risk_appetite: e.target.value || null }))}
                   placeholder="e.g. Conservative — zero tolerance for sanctions violations, low tolerance for AML control gaps…"
                   rows={2}
-                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus:border-adv-teal/50 resize-none"
+                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50 resize-none"
                 />
               </div>
 
@@ -222,7 +222,7 @@ export function OrgContextPanel() {
                   onChange={(e) => setContext((p) => ({ ...p, custom_context: e.target.value || null }))}
                   placeholder="Any other context that should inform Claude's analysis…"
                   rows={2}
-                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus:border-adv-teal/50 resize-none"
+                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50 resize-none"
                 />
               </div>
 
@@ -280,7 +280,7 @@ function ArrayField({
           onChange={(e) => onNewValueChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onAdd()}
           placeholder={placeholder}
-          className="flex-1 bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus:border-adv-teal/50"
+          className="flex-1 bg-adv-dark border border-white/10 rounded px-2.5 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
         />
         <button
           onClick={onAdd}

@@ -81,7 +81,7 @@ export default function SuggestionWidget() {
 
       {/* Error state */}
       {!loading && error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-adv-dark-2 text-adv-gray-med text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-adv-dark-2 text-adv-gray text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>Could not load suggestions.</span>
         </div>
@@ -90,9 +90,9 @@ export default function SuggestionWidget() {
       {/* Empty state */}
       {!loading && !error && suggestions.length === 0 && (
         <div className="py-6 text-center">
-          <Lightbulb className="w-8 h-8 text-adv-gray-med mx-auto mb-2 opacity-40" />
-          <p className="text-sm text-adv-gray-med">No suggestions right now.</p>
-          <p className="text-xs text-adv-gray-med mt-1">Check back after running some analyses.</p>
+          <Lightbulb className="w-8 h-8 text-adv-gray mx-auto mb-2 opacity-40" />
+          <p className="text-sm text-adv-gray">No suggestions right now.</p>
+          <p className="text-xs text-adv-gray mt-1">Check back after running some analyses.</p>
         </div>
       )}
 

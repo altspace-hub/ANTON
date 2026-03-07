@@ -144,7 +144,7 @@ export default function DJScreeningPage() {
             }`}>
               <div className={`h-2 w-2 rounded-full ${status.mode === 'live' ? 'bg-adv-green' : 'bg-adv-gold'}`} />
               {status.mode === 'live' ? 'Live API' : 'Mock Demo Mode'}
-              {status.connector && <span className="text-adv-gray-med">· {status.connector.total_calls} calls</span>}
+              {status.connector && <span className="text-adv-gray">· {status.connector.total_calls} calls</span>}
             </div>
           )}
         </div>
@@ -174,7 +174,7 @@ export default function DJScreeningPage() {
                   onChange={e => setEntityName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleScreen()}
                   placeholder="Individual name or entity name…"
-                  className="w-full rounded-xl border border-adv-dark/60 bg-adv-card pl-9 pr-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none"
+                  className="w-full rounded-xl border border-adv-dark/60 bg-adv-card pl-9 pr-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
               <button
@@ -214,10 +214,10 @@ export default function DJScreeningPage() {
                     <div key={list.id} className="flex items-center justify-between rounded-lg bg-adv-dark/30 px-3 py-2">
                       <div>
                         <div className="text-xs text-adv-off-white">{list.name}</div>
-                        <div className="text-[10px] text-adv-gray-med">{list.type}</div>
+                        <div className="text-xs text-adv-gray">{list.type}</div>
                       </div>
                       {list.entityCount > 0 && (
-                        <div className="text-[10px] text-adv-gray">{list.entityCount.toLocaleString()}</div>
+                        <div className="text-xs text-adv-gray">{list.entityCount.toLocaleString()}</div>
                       )}
                     </div>
                   ))}
@@ -238,7 +238,7 @@ export default function DJScreeningPage() {
                 onChange={e => setBatchInput(e.target.value)}
                 placeholder="Acme Holdings AB&#10;John Smith&#10;Nordic Capital Fund III"
                 rows={6}
-                className="w-full rounded-lg border border-adv-dark/60 bg-adv-dark/40 px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none resize-none"
+                className="w-full rounded-lg border border-adv-dark/60 bg-adv-dark/40 px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
               />
               <div className="mt-3 flex items-center gap-3">
                 <button
@@ -270,7 +270,7 @@ export default function DJScreeningPage() {
                           <div className="flex justify-center">{RISK_ICON[row.riskScore as keyof typeof RISK_ICON] ?? RISK_ICON.CLEAR}</div>
                         </td>
                         <td className="px-4 py-2 text-center text-adv-off-white">{row.hitCount}</td>
-                        <td className="px-4 py-2 text-right text-adv-gray-med font-mono text-[10px]">{row.referenceId.slice(-8)}</td>
+                        <td className="px-4 py-2 text-right text-adv-gray font-mono text-xs">{row.referenceId.slice(-8)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -287,7 +287,7 @@ export default function DJScreeningPage() {
               <div className="rounded-xl border border-adv-dark/50 bg-adv-card px-6 py-12 text-center">
                 <Bell className="h-8 w-8 text-adv-gray mx-auto mb-3" />
                 <p className="text-sm text-adv-gray">No entities under active monitoring</p>
-                <p className="text-xs text-adv-gray-med mt-1">Screen an entity and click "Add to monitoring" to start receiving alerts</p>
+                <p className="text-xs text-adv-gray mt-1">Screen an entity and click "Add to monitoring" to start receiving alerts</p>
               </div>
             ) : (
               <div className="rounded-xl border border-adv-dark/50 bg-adv-card overflow-hidden">
@@ -309,7 +309,7 @@ export default function DJScreeningPage() {
                           <span className={`font-medium ${row.alert_count > 0 ? 'text-adv-red' : 'text-adv-gray'}`}>{row.alert_count}</span>
                         </td>
                         <td className="px-4 py-2 text-center">
-                          <span className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                          <span className={`rounded-full border px-2 py-0.5 text-xs ${
                             row.status === 'active' ? 'border-adv-green/30 bg-adv-green/5 text-adv-green' : 'border-adv-gray/30 bg-adv-card text-adv-gray'
                           }`}>
                             {row.status}
@@ -324,7 +324,7 @@ export default function DJScreeningPage() {
                                 const d = await fetch('/api/dowjones/monitoring').then(r => r.json());
                                 setMonitoring(d.monitoring ?? []);
                               }}
-                              className="text-[10px] text-adv-red/70 hover:text-adv-red transition-colors"
+                              className="text-xs text-adv-red/70 hover:text-adv-red transition-colors"
                             >
                               Cancel
                             </button>

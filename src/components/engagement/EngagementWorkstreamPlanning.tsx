@@ -27,7 +27,7 @@ const THINKING_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending:   'text-adv-gray-med bg-adv-dark border-border',
+  pending:   'text-adv-gray bg-adv-dark border-border',
   blocked:   'text-adv-red bg-adv-red/10 border-adv-red/20',
   ready:     'text-adv-teal bg-adv-teal-dim border-adv-teal/20',
   executing: 'text-adv-gold bg-adv-gold/10 border-adv-gold/20',
@@ -176,7 +176,7 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
         ))}
 
         {workstreams.length === 0 && (
-          <div className="text-center py-8 text-sm text-adv-gray-med border border-dashed border-border rounded-xl">
+          <div className="text-center py-8 text-sm text-adv-gray border border-dashed border-border rounded-xl">
             No workstreams yet — add one below
           </div>
         )}
@@ -204,44 +204,44 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               placeholder="Workstream title (e.g. TM Programme Review)"
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <textarea
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               placeholder="Description / scope of this workstream (optional)"
               rows={2}
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal resize-none"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
             />
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-adv-gray-med mb-1 block">Thinking Level</label>
+                <label className="text-xs text-adv-gray mb-1 block">Thinking Level</label>
                 <select
                   value={form.thinking_level}
                   onChange={e => setForm(f => ({ ...f, thinking_level: e.target.value as ThinkingLevel }))}
-                  className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+                  className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 >
                   {Object.entries(THINKING_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-adv-gray-med mb-1 block">Start</label>
+                  <label className="text-xs text-adv-gray mb-1 block">Start</label>
                   <input
                     type="date"
                     value={form.timeline_start}
                     onChange={e => setForm(f => ({ ...f, timeline_start: e.target.value }))}
-                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-2 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-2 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-adv-gray-med mb-1 block">End</label>
+                  <label className="text-xs text-adv-gray mb-1 block">End</label>
                   <input
                     type="date"
                     value={form.timeline_end}
                     onChange={e => setForm(f => ({ ...f, timeline_end: e.target.value }))}
-                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-2 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-2 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                   />
                 </div>
               </div>
@@ -268,11 +268,11 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
           <div className="flex items-center gap-3 flex-wrap">
             <GitBranch className="h-4 w-4 text-adv-teal shrink-0" />
             <span className="text-sm text-adv-off-white">{workstreams.length} workstream{workstreams.length !== 1 ? 's' : ''} defined</span>
-            <span className="text-adv-gray-med">·</span>
+            <span className="text-adv-gray">·</span>
             <span className="text-xs text-adv-gray">
               {workstreams.filter(ws => ws.timeline_start).length}/{workstreams.length} with dates
             </span>
-            <span className="text-adv-gray-med">·</span>
+            <span className="text-adv-gray">·</span>
             <span className="text-xs text-adv-gray">
               Deepest: {workstreams.some(ws => ws.thinking_level === 'investigate') ? 'Investigate' : workstreams.some(ws => ws.thinking_level === 'think_hard') ? 'Think Hard' : 'Think'}
             </span>
@@ -322,26 +322,26 @@ function WorkstreamCard({
           autoFocus
           value={editForm.title ?? ''}
           onChange={e => onEditChange({ ...editForm, title: e.target.value })}
-          className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+          className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
         />
         <textarea
           value={editForm.description ?? ''}
           onChange={e => onEditChange({ ...editForm, description: e.target.value })}
           rows={2}
-          className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal resize-none"
+          className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
         />
         <div className="grid grid-cols-3 gap-2">
           <select
             value={editForm.thinking_level ?? 'investigate'}
             onChange={e => onEditChange({ ...editForm, thinking_level: e.target.value as 'quick' | 'think' | 'think_hard' | 'investigate' })}
-            className="bg-adv-dark-2 border border-border rounded-lg px-2 py-1.5 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+            className="bg-adv-dark-2 border border-border rounded-lg px-2 py-1.5 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
           >
             {Object.entries(THINKING_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <input type="date" value={editForm.timeline_start ?? ''} onChange={e => onEditChange({ ...editForm, timeline_start: e.target.value })}
-            className="bg-adv-dark-2 border border-border rounded-lg px-2 py-1.5 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal" />
+            className="bg-adv-dark-2 border border-border rounded-lg px-2 py-1.5 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal" />
           <input type="date" value={editForm.timeline_end ?? ''} onChange={e => onEditChange({ ...editForm, timeline_end: e.target.value })}
-            className="bg-adv-dark-2 border border-border rounded-lg px-2 py-1.5 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal" />
+            className="bg-adv-dark-2 border border-border rounded-lg px-2 py-1.5 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal" />
         </div>
         <div className="flex gap-2 justify-end">
           <button onClick={onCancel} className="text-xs text-adv-gray hover:text-adv-off-white px-3 py-1.5">Cancel</button>
@@ -360,19 +360,19 @@ function WorkstreamCard({
 
   return (
     <div className="bg-adv-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
-      <GripVertical className="h-4 w-4 text-adv-gray-med shrink-0 cursor-grab opacity-40" />
+      <GripVertical className="h-4 w-4 text-adv-gray shrink-0 cursor-grab opacity-40" />
       <GitBranch className="h-4 w-4 text-adv-teal shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-adv-off-white">{ws.title}</p>
         {ws.description && <p className="text-xs text-adv-gray mt-0.5 truncate">{ws.description}</p>}
         <div className="flex items-center gap-3 mt-1">
           {ws.thinking_level && (
-            <span className="text-[10px] text-adv-gray-med flex items-center gap-0.5">
+            <span className="text-xs text-adv-gray flex items-center gap-0.5">
               <Brain className="h-3 w-3" /> {THINKING_LABELS[ws.thinking_level] || ws.thinking_level}
             </span>
           )}
           {(ws.timeline_start || ws.timeline_end) && (
-            <span className="text-[10px] text-adv-gray-med flex items-center gap-0.5">
+            <span className="text-xs text-adv-gray flex items-center gap-0.5">
               <Calendar className="h-3 w-3" />
               {ws.timeline_start ? ws.timeline_start.slice(0, 10) : '—'}
               {ws.timeline_end && ` → ${ws.timeline_end.slice(0, 10)}`}
@@ -380,13 +380,13 @@ function WorkstreamCard({
           )}
         </div>
       </div>
-      <span className={`text-[10px] border rounded-full px-2 py-0.5 shrink-0 ${sc}`}>
+      <span className={`text-xs border rounded-full px-2 py-0.5 shrink-0 ${sc}`}>
         {ws.execution_status}
       </span>
-      <button onClick={onEdit} className="text-adv-gray-med hover:text-adv-teal transition-colors p-1">
+      <button onClick={onEdit} className="text-adv-gray hover:text-adv-teal transition-colors p-1">
         <Edit3 className="h-3.5 w-3.5" />
       </button>
-      <button onClick={onDelete} className="text-adv-gray-med hover:text-adv-red transition-colors p-1">
+      <button onClick={onDelete} className="text-adv-gray hover:text-adv-red transition-colors p-1">
         <Trash2 className="h-3.5 w-3.5" />
       </button>
     </div>

@@ -350,7 +350,7 @@ export default function GuideMePage() {
                     ? 'bg-adv-teal text-adv-dark'
                     : s === step
                     ? 'border-2 border-adv-teal bg-adv-teal/10 text-adv-teal'
-                    : 'border border-border bg-adv-dark text-adv-gray-med'
+                    : 'border border-border bg-adv-dark text-adv-gray'
                 }`}
               >
                 {s < step ? <CheckCircle2 className="h-4 w-4" /> : s}
@@ -381,7 +381,7 @@ export default function GuideMePage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. I need to assess our bank's AML policies against the new EU regulation..."
-              className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+              className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
               rows={4}
             />
             <p className="mb-2 text-xs font-medium text-adv-gray">Categories (optional, multi-select)</p>
@@ -479,7 +479,7 @@ export default function GuideMePage() {
                     <div>
                       <h3 className="text-sm font-semibold text-adv-white">{r.module.label}</h3>
                       <span
-                        className={`mt-0.5 inline-block rounded border px-1.5 py-0.5 text-[10px] font-medium ${
+                        className={`mt-0.5 inline-block rounded border px-1.5 py-0.5 text-xs font-medium ${
                           colorMap[r.areaColor] || 'bg-adv-gray/20 text-adv-gray border-adv-gray/30'
                         }`}
                       >
@@ -487,7 +487,7 @@ export default function GuideMePage() {
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] text-adv-gray-med">Score: {r.score}</span>
+                  <span className="text-xs text-adv-gray">Score: {r.score}</span>
                 </div>
                 <p className="mb-3 text-sm text-adv-gray">{r.module.description}</p>
                 <button

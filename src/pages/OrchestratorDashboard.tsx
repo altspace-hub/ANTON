@@ -11,7 +11,7 @@
  * - Config panel
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Brain, Activity, FileText, Zap, CheckCircle, XCircle,
@@ -172,6 +172,119 @@ const RATING_OPTIONS = [
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+function ConfigPanel({ config, onSaved, authHeader }: {
+  config: OrchestratorConfig;
+  onSaved: (updated: OrchestratorConfig) => void;
+  authHeader: Record<string, string>;
+}) {
+  const [interval, setInterval] = React.useState(String(config.heartbeat_interval_minutes));
+  const [schedule, setSchedule] = React.useState(config.briefing_schedule);
+  const [saving, setSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+
+  async function toggleHeartbeat() {
+    const next = config.heartbeat_enabled ? 0 : 1;
+    setSaving(true);
+    try {
+      const r = await fetch('/api/orchestrator/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify({ heartbeat_enabled: next }),
+      });
+      if (r.ok) onSaved({ ...config, heartbeat_enabled: next });
+    } finally { setSaving(false); }
+  }
+
+  async function saveInterval() {
+    const val = Math.max(10, parseInt(interval, 10) || 30);
+    setInterval(String(val));
+    setSaving(true);
+    try {
+      const r = await fetch('/api/orchestrator/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify({ heartbeat_interval_minutes: val, briefing_schedule: schedule }),
+      });
+      if (r.ok) { onSaved({ ...config, heartbeat_interval_minutes: val, briefing_schedule: schedule }); setSaved(true); setTimeout(() => setSaved(false), 2000); }
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="bg-adv-card border border-white/5 rounded-xl p-5 mb-6">
+      <h3 className="text-sm font-semibold text-adv-off-white mb-4">Orchestrator Configuration</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        {/* Heartbeat on/off */}
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-medium text-adv-gray uppercase tracking-wider">Heartbeat</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleHeartbeat}
+              disabled={saving}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${config.heartbeat_enabled ? 'bg-adv-teal' : 'bg-adv-gray-med/40'} disabled:opacity-50`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${config.heartbeat_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+            <span className={`text-sm ${config.heartbeat_enabled ? 'text-adv-teal' : 'text-adv-gray'}`}>
+              {config.heartbeat_enabled ? 'Enabled' : 'Disabled'}
+            </span>
+          </div>
+          <p className="text-xs text-adv-gray">
+            {config.heartbeat_enabled
+              ? 'ANTON monitors signals on a schedule and generates briefings automatically.'
+              : 'Heartbeat is off. Use "Generate Briefing" to trigger manually at any time.'}
+          </p>
+        </div>
+
+        {/* Interval + schedule */}
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-medium text-adv-gray uppercase tracking-wider">Heartbeat Interval</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={10}
+              max={1440}
+              value={interval}
+              onChange={e => setInterval(e.target.value)}
+              className="w-20 bg-adv-dark border border-border rounded px-2 py-1 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
+            />
+            <span className="text-sm text-adv-gray">minutes (min 10)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-adv-gray">Briefing schedule:</span>
+            <select
+              value={schedule}
+              onChange={e => setSchedule(e.target.value)}
+              className="bg-adv-dark border border-border rounded px-2 py-1 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
+            >
+              <option value="manual">Manual only</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly (Monday)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Read-only status + save */}
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-medium text-adv-gray uppercase tracking-wider">Status</p>
+          <div className="space-y-1 text-xs text-adv-gray">
+            <div className="flex justify-between"><span>Status</span><span className={config.orchestrator_paused ? 'text-adv-gold' : 'text-adv-teal'}>{config.orchestrator_paused ? 'Paused' : 'Active'}</span></div>
+            <div className="flex justify-between"><span>Radar threshold</span><span className="text-adv-off-white">≥{Math.round(config.radar_urgency_threshold * 100)}%</span></div>
+            <div className="flex justify-between"><span>Deadline window</span><span className="text-adv-off-white">{config.deadline_alert_days} days</span></div>
+          </div>
+          <button
+            onClick={saveInterval}
+            disabled={saving}
+            className="mt-auto px-3 py-1.5 bg-adv-teal hover:bg-adv-teal-dark text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+          >
+            {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function urgencyBadge(score: number): string {
   if (score >= 0.85) return 'bg-adv-red/20 text-red-400 border-red-400/30';
@@ -555,10 +668,10 @@ export default function OrchestratorDashboard() {
                     <span className={`w-1.5 h-1.5 rounded-full ${lastHeartbeat.status === 'ok' ? 'bg-adv-green' : 'bg-adv-red'}`} />
                     Heartbeat {lastHeartbeat.status === 'ok' ? 'active' : 'error'}
                   </div>
-                  <div className="text-adv-gray-med">{formatTime(lastHeartbeat.ran_at)}</div>
+                  <div className="text-adv-gray">{formatTime(lastHeartbeat.ran_at)}</div>
                 </>
               ) : (
-                <span className="text-adv-gray-med">No heartbeats yet</span>
+                <span className="text-adv-gray">No heartbeats yet</span>
               )}
             </div>
           </div>
@@ -641,27 +754,9 @@ export default function OrchestratorDashboard() {
         </div>
       </div>
 
-      {/* ── Config panel (collapsible) ─────────────────────────────────────── */}
+      {/* ── Config panel (collapsible, interactive) ─────────────────────── */}
       {showConfig && config && (
-        <div className="bg-adv-card border border-white/5 rounded-xl p-4 mb-6">
-          <h3 className="text-sm font-medium text-adv-off-white mb-3">Orchestrator Configuration</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            {[
-              { label: 'Heartbeat interval', value: `${config.heartbeat_interval_minutes} min` },
-              { label: 'Briefing schedule', value: config.briefing_schedule },
-              { label: 'Radar urgency threshold', value: `≥ ${Math.round(config.radar_urgency_threshold * 100)}%` },
-              { label: 'Quality decline threshold', value: `≥ ${config.quality_decline_threshold} pts` },
-              { label: 'Deadline alert window', value: `${config.deadline_alert_days} days` },
-              { label: 'Heartbeat enabled', value: config.heartbeat_enabled ? 'Yes' : 'No' },
-              { label: 'Status', value: config.orchestrator_paused ? `Paused (${config.paused_at ? formatTime(config.paused_at) : ''})` : 'Active' },
-            ].map(item => (
-              <div key={item.label}>
-                <p className="text-adv-gray text-xs mb-0.5">{item.label}</p>
-                <p className="text-adv-off-white">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ConfigPanel config={config} onSaved={(updated) => setConfig(updated)} authHeader={getAuthHeader()} />
       )}
 
       {/* ── Main content: briefing + proposals ────────────────────────────── */}
@@ -700,10 +795,10 @@ export default function OrchestratorDashboard() {
                         <IconComp className={`w-4 h-4 mt-0.5 shrink-0 ${colClass}`} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${urgencyBadge(p.urgency_score)}`}>
+                            <span className={`text-xs px-1.5 py-0.5 rounded border font-medium ${urgencyBadge(p.urgency_score)}`}>
                               {urgencyLabel(p.urgency_score)}
                             </span>
-                            <span className="text-[10px] text-adv-gray capitalize">{p.signal_source}</span>
+                            <span className="text-xs text-adv-gray capitalize">{p.signal_source}</span>
                           </div>
                           <p className="text-xs text-adv-gray leading-snug line-clamp-2">{p.signal_summary}</p>
                         </div>
@@ -713,12 +808,12 @@ export default function OrchestratorDashboard() {
                       <div className="bg-adv-dark-2 rounded-lg p-2 mb-2">
                         <p className="text-xs text-adv-off-white leading-snug">{p.proposed_action}</p>
                         {p.estimated_effort && (
-                          <p className="text-[10px] text-adv-gray mt-1">{p.estimated_effort}</p>
+                          <p className="text-xs text-adv-gray mt-1">{p.estimated_effort}</p>
                         )}
                       </div>
 
                       {/* Confidence */}
-                      <div className="flex items-center gap-2 text-[10px] text-adv-gray mb-2">
+                      <div className="flex items-center gap-2 text-xs text-adv-gray mb-2">
                         <span>Confidence: {Math.round(p.confidence_score * 100)}%</span>
                         <span>·</span>
                         <span className="capitalize">{p.action_type.replace(/_/g, ' ')}</span>
@@ -728,7 +823,7 @@ export default function OrchestratorDashboard() {
                       {p.human_rating || p.status === 'approved' || p.status === 'rejected' || p.status === 'modified' ? (
                         <div className="flex items-center gap-1">
                           <CheckCircle className={`w-3 h-3 ${p.status === 'rejected' ? 'text-adv-red' : p.status === 'modified' ? 'text-yellow-400' : 'text-adv-teal'}`} />
-                          <span className={`text-[10px] capitalize ${p.status === 'rejected' ? 'text-adv-red' : p.status === 'modified' ? 'text-yellow-400' : 'text-adv-teal'}`}>
+                          <span className={`text-xs capitalize ${p.status === 'rejected' ? 'text-adv-red' : p.status === 'modified' ? 'text-yellow-400' : 'text-adv-teal'}`}>
                             {p.status === 'approved' ? 'Approved — executing' : p.status === 'rejected' ? 'Rejected' : p.status === 'modified' ? 'Modified — pending execution' : p.human_rating!.replace(/_/g, ' ')}
                           </span>
                         </div>
@@ -737,31 +832,31 @@ export default function OrchestratorDashboard() {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => approveProposal(p.id)}
-                            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border bg-adv-green/20 text-green-400 border-green-400/30 hover:bg-adv-green/30 transition-colors"
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded border bg-adv-green/20 text-green-400 border-green-400/30 hover:bg-adv-green/30 transition-colors"
                           >
                             <ThumbsUp className="w-3 h-3" />
                             Approve
                           </button>
                           <button
                             onClick={() => modifyProposal(p.id, p.proposed_action)}
-                            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border bg-adv-gold/10 text-yellow-400 border-yellow-400/20 hover:bg-adv-gold/20 transition-colors"
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded border bg-adv-gold/10 text-yellow-400 border-yellow-400/20 hover:bg-adv-gold/20 transition-colors"
                           >
                             <Pencil className="w-3 h-3" />
                             Modify
                           </button>
                           <button
                             onClick={() => rejectProposal(p.id)}
-                            className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border bg-adv-red/10 text-red-400 border-red-400/20 hover:bg-adv-red/20 transition-colors"
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded border bg-adv-red/10 text-red-400 border-red-400/20 hover:bg-adv-red/20 transition-colors"
                           >
                             <ThumbsDown className="w-3 h-3" />
                             Reject
                           </button>
-                          <span className="text-adv-gray-med text-[9px] ml-1">or rate:</span>
+                          <span className="text-adv-gray text-xs ml-1">or rate:</span>
                           {RATING_OPTIONS.slice(0, 3).map(opt => (
                             <button
                               key={opt.value}
                               onClick={() => rateProposal(p.id, opt.value)}
-                              className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${opt.className}`}
+                              className={`text-xs px-1.5 py-0.5 rounded border transition-colors ${opt.className}`}
                             >
                               {opt.label}
                             </button>
@@ -774,7 +869,7 @@ export default function OrchestratorDashboard() {
                             <button
                               key={opt.value}
                               onClick={() => rateProposal(p.id, opt.value)}
-                              className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${opt.className}`}
+                              className={`text-xs px-2 py-0.5 rounded border transition-colors ${opt.className}`}
                             >
                               {opt.label}
                             </button>
@@ -955,18 +1050,18 @@ export default function OrchestratorDashboard() {
                     >
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs text-adv-off-white capitalize">{t.trigger_type.replace(/_/g, ' ')}</span>
-                        <span className={`text-[10px] px-1 py-0.5 rounded ${t.status === 'completed' ? 'text-adv-teal' : t.status === 'failed' ? 'text-adv-red' : 'text-adv-gray'}`}>
+                        <span className={`text-xs px-1 py-0.5 rounded ${t.status === 'completed' ? 'text-adv-teal' : t.status === 'failed' ? 'text-adv-red' : 'text-adv-gray'}`}>
                           {t.status}
                         </span>
                       </div>
-                      <div className="text-[10px] text-adv-gray-med">
+                      <div className="text-xs text-adv-gray">
                         {formatTime(t.created_at)} · {t.total_entries} steps
                         {t.duration_ms ? ` · ${t.duration_ms}ms` : ''}
                       </div>
                     </button>
                     <button
                       onClick={() => navigate(`/orchestrator/trail/${t.id}`)}
-                      className="shrink-0 ml-2 text-[10px] text-adv-teal hover:text-adv-teal-dark px-2 py-0.5 rounded border border-adv-teal/20 hover:bg-adv-teal-dim transition-colors"
+                      className="shrink-0 ml-2 text-xs text-adv-teal hover:text-adv-teal-dark px-2 py-0.5 rounded border border-adv-teal/20 hover:bg-adv-teal-dim transition-colors"
                       title="Open full trail viewer"
                     >
                       View
@@ -984,7 +1079,7 @@ export default function OrchestratorDashboard() {
                     </h4>
                     <button
                       onClick={() => setActiveTrail(null)}
-                      className="text-[10px] text-adv-gray hover:text-adv-off-white"
+                      className="text-xs text-adv-gray hover:text-adv-off-white"
                     >
                       close
                     </button>
@@ -993,15 +1088,15 @@ export default function OrchestratorDashboard() {
                     {activeTrail.entries.map(entry => (
                       <div key={entry.id} className="bg-adv-dark-2 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[9px] font-medium uppercase tracking-wide text-adv-teal px-1.5 py-0.5 bg-adv-teal-dim rounded">
+                          <span className="text-xs font-medium uppercase tracking-wide text-adv-teal px-1.5 py-0.5 bg-adv-teal-dim rounded">
                             {entry.entry_type.replace(/_/g, ' ')}
                           </span>
-                          <span className="text-[10px] text-adv-off-white">{entry.title}</span>
+                          <span className="text-xs text-adv-off-white">{entry.title}</span>
                           {entry.confidence != null && (
-                            <span className="ml-auto text-[10px] text-adv-gray">{Math.round(entry.confidence * 100)}%</span>
+                            <span className="ml-auto text-xs text-adv-gray">{Math.round(entry.confidence * 100)}%</span>
                           )}
                         </div>
-                        <p className="text-[10px] text-adv-gray leading-relaxed whitespace-pre-line line-clamp-4">
+                        <p className="text-xs text-adv-gray leading-relaxed whitespace-pre-line line-clamp-4">
                           {entry.content}
                         </p>
                       </div>
@@ -1021,7 +1116,7 @@ export default function OrchestratorDashboard() {
             <Zap className="w-4 h-4 text-adv-gold" />
             <span className="text-sm font-medium text-adv-off-white">Demo Mode</span>
             {demoMode !== 'off' && (
-              <span className="text-[10px] px-2 py-0.5 bg-adv-gold/10 text-adv-gold border border-adv-gold/20 rounded-full capitalize">
+              <span className="text-xs px-2 py-0.5 bg-adv-gold/10 text-adv-gold border border-adv-gold/20 rounded-full capitalize">
                 {demoMode} — Meridian Bank · {demoSignals} signals
               </span>
             )}

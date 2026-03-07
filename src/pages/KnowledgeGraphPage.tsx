@@ -258,7 +258,7 @@ export default function KnowledgeGraphPage() {
                 placeholder="Search entities..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-adv-card border border-adv-gray/20 rounded text-adv-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+                className="w-full pl-10 pr-4 py-2 bg-adv-card border border-adv-gray/20 rounded text-adv-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               />
             </div>
             <div className="flex gap-1">
@@ -298,7 +298,7 @@ export default function KnowledgeGraphPage() {
                   <div className="flex items-center gap-1.5">
                     <span className="font-medium text-sm">{entity.canonical_name}</span>
                     {entity.source === 'pack' && (
-                      <span className="text-[10px] px-1.5 py-0.5 bg-adv-teal/15 text-adv-teal rounded border border-adv-teal/20 flex-shrink-0">Pack</span>
+                      <span className="text-xs px-1.5 py-0.5 bg-adv-teal/15 text-adv-teal rounded border border-adv-teal/20 flex-shrink-0">Pack</span>
                     )}
                   </div>
                   <div className="text-xs opacity-70 flex items-center justify-between mt-1">

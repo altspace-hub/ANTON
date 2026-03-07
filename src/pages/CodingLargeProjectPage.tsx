@@ -625,10 +625,10 @@ export default function CodingLargeProjectPage() {
         {CODING_PHASES.map((phase) => (
           <div
             key={phase.number}
-            className={`flex-1 rounded-sm py-1 text-center text-[10px] ${
+            className={`flex-1 rounded-sm py-1 text-center text-xs ${
               phase.number < project.current_phase ? 'bg-adv-green/20 text-adv-green' :
               phase.number === project.current_phase ? 'bg-adv-gold/20 text-adv-gold font-medium' :
-              'bg-adv-dark text-adv-gray-med'
+              'bg-adv-dark text-adv-gray'
             }`}
             title={phase.label}
           >
@@ -649,7 +649,7 @@ export default function CodingLargeProjectPage() {
           >
             <Icon className="h-3.5 w-3.5" />{label}
             {count !== undefined && count > 0 && (
-              <span className="ml-1 rounded-full bg-adv-card px-1.5 text-[10px]">{count}</span>
+              <span className="ml-1 rounded-full bg-adv-card px-1.5 text-xs">{count}</span>
             )}
           </button>
         ))}
@@ -671,7 +671,7 @@ export default function CodingLargeProjectPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-adv-gray">Status:</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(project.status)}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(project.status)}`}>
                       {project.status}
                     </span>
                   </div>
@@ -748,11 +748,11 @@ export default function CodingLargeProjectPage() {
                 <AlertTriangle className="h-4 w-4 text-adv-gold" />
               </div>
               <p className="mt-2 text-2xl font-bold text-adv-white">{reviews.length}</p>
-              <div className="mt-1 flex items-center gap-2 text-[10px]">
+              <div className="mt-1 flex items-center gap-2 text-xs">
                 <span className="text-adv-green">{reviewVerdicts.endorse} endorse</span>
-                <span className="text-adv-gray-med">|</span>
+                <span className="text-adv-gray">|</span>
                 <span className="text-adv-gold">{reviewVerdicts.flag} flag</span>
-                <span className="text-adv-gray-med">|</span>
+                <span className="text-adv-gray">|</span>
                 <span className="text-adv-red">{reviewVerdicts.dissent} dissent</span>
               </div>
             </div>
@@ -801,7 +801,7 @@ export default function CodingLargeProjectPage() {
                 <Shield className="h-3.5 w-3.5" />
                 Governance
                 {techDebtCount > 0 && (
-                  <span className="rounded-full bg-adv-gold/10 px-1.5 text-[10px] font-medium text-adv-gold">
+                  <span className="rounded-full bg-adv-gold/10 px-1.5 text-xs font-medium text-adv-gold">
                     {techDebtCount} debt
                   </span>
                 )}
@@ -841,7 +841,7 @@ export default function CodingLargeProjectPage() {
               <h3 className="text-xs font-semibold uppercase text-adv-gray">Recent Activity</h3>
               <button
                 onClick={() => { setTab('activity'); fetchActivity(); }}
-                className="flex items-center gap-1 text-[10px] text-adv-teal hover:text-adv-teal-dark transition-colors"
+                className="flex items-center gap-1 text-xs text-adv-teal hover:text-adv-teal-dark transition-colors"
               >
                 View all <ArrowRight className="h-3 w-3" />
               </button>
@@ -852,10 +852,10 @@ export default function CodingLargeProjectPage() {
                   <div key={item.id} className="flex items-center gap-3 rounded border border-border bg-adv-dark px-3 py-2">
                     {activityIcon(item.type)}
                     <span className="flex-1 truncate text-xs text-adv-off-white">{item.title}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] ${statusBadge(item.status)}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${statusBadge(item.status)}`}>
                       {item.status}
                     </span>
-                    <span className="text-[10px] text-adv-gray-med">{formatTimestamp(item.timestamp)}</span>
+                    <span className="text-xs text-adv-gray">{formatTimestamp(item.timestamp)}</span>
                   </div>
                 ))}
               </div>
@@ -904,7 +904,7 @@ export default function CodingLargeProjectPage() {
                     value={releaseForm.name}
                     onChange={(e) => setReleaseForm((f) => ({ ...f, name: e.target.value }))}
                     placeholder="e.g. v1.0 - Core Foundation"
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div>
@@ -914,7 +914,7 @@ export default function CodingLargeProjectPage() {
                     value={releaseForm.description}
                     onChange={(e) => setReleaseForm((f) => ({ ...f, description: e.target.value }))}
                     placeholder="Brief description of what this release delivers"
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div>
@@ -924,7 +924,7 @@ export default function CodingLargeProjectPage() {
                     value={releaseForm.scope}
                     onChange={(e) => setReleaseForm((f) => ({ ...f, scope: e.target.value }))}
                     placeholder="e.g. Authentication, API layer, Dashboard"
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div>
@@ -934,9 +934,9 @@ export default function CodingLargeProjectPage() {
                     onChange={(e) => setReleaseForm((f) => ({ ...f, acceptance_criteria: e.target.value }))}
                     placeholder="One criterion per line..."
                     rows={4}
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                   />
-                  <p className="mt-0.5 text-[10px] text-adv-gray-med">One acceptance criterion per line</p>
+                  <p className="mt-0.5 text-xs text-adv-gray">One acceptance criterion per line</p>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-adv-off-white">Milestone Date</label>
@@ -944,7 +944,7 @@ export default function CodingLargeProjectPage() {
                     type="date"
                     value={releaseForm.milestone_date}
                     onChange={(e) => setReleaseForm((f) => ({ ...f, milestone_date: e.target.value }))}
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-2">
@@ -999,16 +999,16 @@ export default function CodingLargeProjectPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${statusBadge(r.status)}`}>
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadge(r.status)}`}>
                         {r.status}
                       </span>
-                      <ArrowRight className="h-4 w-4 text-adv-gray-med opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ArrowRight className="h-4 w-4 text-adv-gray opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
 
                   {/* Task count + Progress bar + Milestone */}
                   <div className="mt-3 flex items-center gap-4">
-                    <span className="flex items-center gap-1 text-[10px] text-adv-gray">
+                    <span className="flex items-center gap-1 text-xs text-adv-gray">
                       <CheckCircle2 className="h-3 w-3" />
                       {taskCount} tasks
                     </span>
@@ -1020,11 +1020,11 @@ export default function CodingLargeProjectPage() {
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <span className="text-[10px] text-adv-gray">{progress}%</span>
+                        <span className="text-xs text-adv-gray">{progress}%</span>
                       </div>
                     )}
                     {r.milestone_date && (
-                      <span className="flex items-center gap-1 text-[10px] text-adv-gray">
+                      <span className="flex items-center gap-1 text-xs text-adv-gray">
                         <Clock className="h-3 w-3" />
                         {formatDate(r.milestone_date)}
                       </span>
@@ -1037,7 +1037,7 @@ export default function CodingLargeProjectPage() {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleGenerateTaskBreakdown(r.id); }}
                     disabled={isStreaming}
-                    className="flex items-center gap-1.5 rounded px-3 py-1.5 text-[10px] font-medium text-adv-teal hover:bg-adv-teal-dim transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal-dim transition-colors disabled:opacity-50"
                   >
                     <Play className="h-3 w-3" />
                     Generate Task Breakdown
@@ -1075,7 +1075,7 @@ export default function CodingLargeProjectPage() {
             <select
               value={taskReleaseFilter}
               onChange={(e) => setTaskReleaseFilter(e.target.value)}
-              className="rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="all">All Releases</option>
               {releases.map((r) => (
@@ -1085,14 +1085,14 @@ export default function CodingLargeProjectPage() {
             <select
               value={taskStatusFilter}
               onChange={(e) => setTaskStatusFilter(e.target.value)}
-              className="rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="all">All Statuses</option>
               {taskStatuses.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
-            <span className="ml-auto text-[10px] text-adv-gray">
+            <span className="ml-auto text-xs text-adv-gray">
               {filteredTasks.length} of {tasks.length} tasks
             </span>
           </div>
@@ -1119,14 +1119,14 @@ export default function CodingLargeProjectPage() {
                   }
                   <span className="font-mono text-xs text-adv-gray">{t.task_number}</span>
                   <span className="flex-1 truncate text-sm text-adv-off-white">{t.title}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(t.status)}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(t.status)}`}>
                     {t.status}
                   </span>
-                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${complexityBadge(t.complexity_band)}`}>
+                  <span className={`rounded-full px-1.5 py-0.5 text-xs ${complexityBadge(t.complexity_band)}`}>
                     {t.complexity_band}
                   </span>
                   {t.assigned_role && (
-                    <span className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">
+                    <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                       {t.assigned_role}
                     </span>
                   )}
@@ -1202,7 +1202,7 @@ export default function CodingLargeProjectPage() {
                           {isStreaming && (
                             <button
                               onClick={stopStreaming}
-                              className="text-[10px] text-adv-red hover:text-adv-red/80"
+                              className="text-xs text-adv-red hover:text-adv-red/80"
                             >
                               Stop
                             </button>
@@ -1238,14 +1238,14 @@ export default function CodingLargeProjectPage() {
             <select
               value={reviewTypeFilter}
               onChange={(e) => setReviewTypeFilter(e.target.value)}
-              className="rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="all">All Types</option>
               {reviewTypes.map((rt) => (
                 <option key={rt} value={rt}>{rt}</option>
               ))}
             </select>
-            <span className="ml-auto text-[10px] text-adv-gray">
+            <span className="ml-auto text-xs text-adv-gray">
               {filteredReviews.length} of {reviews.length} reviews
             </span>
           </div>
@@ -1271,14 +1271,14 @@ export default function CodingLargeProjectPage() {
                   }
                   <div className="flex flex-1 items-center gap-3">
                     <span className="text-sm font-medium text-adv-off-white">{r.reviewer_persona_id}</span>
-                    <span className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">{r.review_type}</span>
+                    <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{r.review_type}</span>
                   </div>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     r.verdict ? verdictBadge(r.verdict) : statusBadge(r.status)
                   }`}>
                     {r.verdict || r.status}
                   </span>
-                  <span className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">{r.status}</span>
+                  <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{r.status}</span>
                 </button>
 
                 {isExpanded && (
@@ -1309,7 +1309,7 @@ export default function CodingLargeProjectPage() {
                         <h4 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray">Severity Summary</h4>
                         <div className="flex flex-wrap gap-2">
                           {Object.entries(r.severity_summary).map(([key, count]) => (
-                            <span key={key} className="rounded-full bg-adv-dark px-2.5 py-0.5 text-[10px] text-adv-off-white">
+                            <span key={key} className="rounded-full bg-adv-dark px-2.5 py-0.5 text-xs text-adv-off-white">
                               {key}: <strong>{count}</strong>
                             </span>
                           ))}
@@ -1318,7 +1318,7 @@ export default function CodingLargeProjectPage() {
                     )}
 
                     {/* Metadata */}
-                    <div className="flex items-center gap-4 text-[10px] text-adv-gray-med">
+                    <div className="flex items-center gap-4 text-xs text-adv-gray">
                       {r.is_mandatory && (
                         <span className="text-adv-gold">Mandatory</span>
                       )}
@@ -1367,7 +1367,7 @@ export default function CodingLargeProjectPage() {
                     value={techDebtForm.title}
                     onChange={(e) => setTechDebtForm((f) => ({ ...f, title: e.target.value }))}
                     placeholder="e.g. Missing error handling in auth module"
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div>
@@ -1377,7 +1377,7 @@ export default function CodingLargeProjectPage() {
                     onChange={(e) => setTechDebtForm((f) => ({ ...f, description: e.target.value }))}
                     placeholder="Describe the tech debt and its impact..."
                     rows={3}
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -1386,7 +1386,7 @@ export default function CodingLargeProjectPage() {
                     <select
                       value={techDebtForm.severity}
                       onChange={(e) => setTechDebtForm((f) => ({ ...f, severity: e.target.value }))}
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -1401,7 +1401,7 @@ export default function CodingLargeProjectPage() {
                       value={techDebtForm.owner}
                       onChange={(e) => setTechDebtForm((f) => ({ ...f, owner: e.target.value }))}
                       placeholder="Optional"
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                   </div>
                 </div>
@@ -1434,7 +1434,7 @@ export default function CodingLargeProjectPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-adv-off-white">{td.title}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           td.severity === 'critical' ? 'bg-adv-red/10 text-adv-red' :
                           td.severity === 'high' ? 'bg-adv-red/10 text-adv-red' :
                           td.severity === 'medium' ? 'bg-adv-gold/10 text-adv-gold' :
@@ -1442,7 +1442,7 @@ export default function CodingLargeProjectPage() {
                         }`}>
                           {td.severity}
                         </span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           td.status === 'resolved' ? 'bg-adv-green/10 text-adv-green' :
                           td.status === 'accepted_risk' ? 'bg-adv-gold/10 text-adv-gold' :
                           td.status === 'deferred' ? 'bg-adv-blue/10 text-adv-blue' :
@@ -1455,7 +1455,7 @@ export default function CodingLargeProjectPage() {
                       {td.description && (
                         <p className="mt-1 text-xs text-adv-gray leading-relaxed">{td.description}</p>
                       )}
-                      <div className="mt-2 flex items-center gap-3 text-[10px] text-adv-gray-med">
+                      <div className="mt-2 flex items-center gap-3 text-xs text-adv-gray">
                         {td.owner && <span>Owner: {td.owner}</span>}
                         {td.target_release_id && <span>Target release: {td.target_release_id}</span>}
                       </div>
@@ -1464,19 +1464,19 @@ export default function CodingLargeProjectPage() {
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleUpdateTechDebtStatus(td.id, 'resolved')}
-                          className="rounded px-2 py-1 text-[10px] font-medium text-adv-green hover:bg-adv-green/10 transition-colors"
+                          className="rounded px-2 py-1 text-xs font-medium text-adv-green hover:bg-adv-green/10 transition-colors"
                         >
                           Resolve
                         </button>
                         <button
                           onClick={() => handleUpdateTechDebtStatus(td.id, 'deferred')}
-                          className="rounded px-2 py-1 text-[10px] font-medium text-adv-blue hover:bg-adv-blue/10 transition-colors"
+                          className="rounded px-2 py-1 text-xs font-medium text-adv-blue hover:bg-adv-blue/10 transition-colors"
                         >
                           Defer
                         </button>
                         <button
                           onClick={() => handleUpdateTechDebtStatus(td.id, 'accepted_risk')}
-                          className="rounded px-2 py-1 text-[10px] font-medium text-adv-gold hover:bg-adv-gold/10 transition-colors"
+                          className="rounded px-2 py-1 text-xs font-medium text-adv-gold hover:bg-adv-gold/10 transition-colors"
                         >
                           Accept Risk
                         </button>
@@ -1513,7 +1513,7 @@ export default function CodingLargeProjectPage() {
                     <select
                       value={changeForm.change_type}
                       onChange={(e) => setChangeForm((f) => ({ ...f, change_type: e.target.value }))}
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       <option value="task">Task</option>
                       <option value="release">Release</option>
@@ -1527,7 +1527,7 @@ export default function CodingLargeProjectPage() {
                     <select
                       value={changeForm.change_level}
                       onChange={(e) => setChangeForm((f) => ({ ...f, change_level: e.target.value }))}
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       <option value="task">Task</option>
                       <option value="release">Release</option>
@@ -1542,7 +1542,7 @@ export default function CodingLargeProjectPage() {
                     value={changeForm.title}
                     onChange={(e) => setChangeForm((f) => ({ ...f, title: e.target.value }))}
                     placeholder="e.g. Switch from REST to GraphQL for API layer"
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div>
@@ -1552,7 +1552,7 @@ export default function CodingLargeProjectPage() {
                     onChange={(e) => setChangeForm((f) => ({ ...f, rationale: e.target.value }))}
                     placeholder="Why is this change needed?"
                     rows={3}
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-1">
@@ -1584,13 +1584,13 @@ export default function CodingLargeProjectPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-medium text-adv-off-white">{c.title}</span>
-                        <span className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">
+                        <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                           {c.change_type}
                         </span>
-                        <span className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">
+                        <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                           {c.change_level}
                         </span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           c.status === 'proposed' ? 'bg-adv-gold/10 text-adv-gold' :
                           c.status === 'approved' ? 'bg-adv-green/10 text-adv-green' :
                           c.status === 'implemented' ? 'bg-adv-teal-dim text-adv-teal' :
@@ -1607,7 +1607,7 @@ export default function CodingLargeProjectPage() {
                       <button
                         onClick={() => handleImpactAnalysis(c.id)}
                         disabled={isStreaming}
-                        className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-adv-teal hover:bg-adv-teal-dim transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-adv-teal hover:bg-adv-teal-dim transition-colors disabled:opacity-50"
                       >
                         <Zap className="h-3 w-3" />
                         Impact Analysis
@@ -1616,13 +1616,13 @@ export default function CodingLargeProjectPage() {
                         <>
                           <button
                             onClick={() => handleUpdateChangeStatus(c.id, 'approved')}
-                            className="rounded px-2 py-1 text-[10px] font-medium text-adv-green hover:bg-adv-green/10 transition-colors"
+                            className="rounded px-2 py-1 text-xs font-medium text-adv-green hover:bg-adv-green/10 transition-colors"
                           >
                             Approve
                           </button>
                           <button
                             onClick={() => handleUpdateChangeStatus(c.id, 'rejected')}
-                            className="rounded px-2 py-1 text-[10px] font-medium text-adv-red hover:bg-adv-red/10 transition-colors"
+                            className="rounded px-2 py-1 text-xs font-medium text-adv-red hover:bg-adv-red/10 transition-colors"
                           >
                             Reject
                           </button>
@@ -1637,7 +1637,7 @@ export default function CodingLargeProjectPage() {
                       <div className="mb-2 flex items-center gap-2">
                         <span className="text-xs font-medium text-adv-teal">Impact Analysis</span>
                         {isStreaming && (
-                          <button onClick={stopStreaming} className="text-[10px] text-adv-red hover:text-adv-red/80">Stop</button>
+                          <button onClick={stopStreaming} className="text-xs text-adv-red hover:text-adv-red/80">Stop</button>
                         )}
                       </div>
                       <ConversationThread
@@ -1677,7 +1677,7 @@ export default function CodingLargeProjectPage() {
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-xs font-medium text-adv-teal">Alignment Check</span>
                   {isStreaming && (
-                    <button onClick={stopStreaming} className="text-[10px] text-adv-red hover:text-adv-red/80">Stop</button>
+                    <button onClick={stopStreaming} className="text-xs text-adv-red hover:text-adv-red/80">Stop</button>
                   )}
                 </div>
                 <ConversationThread
@@ -1714,7 +1714,7 @@ export default function CodingLargeProjectPage() {
                 <div className="mb-2 flex items-center gap-2">
                   <span className="text-xs font-medium text-adv-teal">Operational Readiness</span>
                   {isStreaming && (
-                    <button onClick={stopStreaming} className="text-[10px] text-adv-red hover:text-adv-red/80">Stop</button>
+                    <button onClick={stopStreaming} className="text-xs text-adv-red hover:text-adv-red/80">Stop</button>
                   )}
                 </div>
                 <ConversationThread
@@ -1788,7 +1788,7 @@ export default function CodingLargeProjectPage() {
                             style={{ width: `${Math.max(barWidth, 1)}%` }}
                           />
                         </div>
-                        <div className="mt-0.5 flex items-center gap-4 text-[10px] text-adv-gray-med">
+                        <div className="mt-0.5 flex items-center gap-4 text-xs text-adv-gray">
                           <span>In: {phaseData.input.toLocaleString()} tokens</span>
                           <span>Out: {phaseData.output.toLocaleString()} tokens</span>
                         </div>
@@ -1814,29 +1814,29 @@ export default function CodingLargeProjectPage() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                   {estimate.optimistic && (
                     <div className="rounded-lg border border-border bg-adv-dark p-3 text-center">
-                      <p className="text-[10px] uppercase text-adv-gray">Optimistic</p>
+                      <p className="text-xs uppercase text-adv-gray">Optimistic</p>
                       <p className="mt-1 text-lg font-bold text-adv-green">${estimate.optimistic.total_cost_usd.toFixed(2)}</p>
-                      <p className="text-[10px] text-adv-gray-med">{estimate.optimistic.total_tokens?.toLocaleString()} tokens</p>
+                      <p className="text-xs text-adv-gray">{estimate.optimistic.total_tokens?.toLocaleString()} tokens</p>
                     </div>
                   )}
                   {estimate.realistic && (
                     <div className="rounded-lg border border-border bg-adv-dark p-3 text-center">
-                      <p className="text-[10px] uppercase text-adv-gray">Realistic</p>
+                      <p className="text-xs uppercase text-adv-gray">Realistic</p>
                       <p className="mt-1 text-lg font-bold text-adv-gold">${estimate.realistic.total_cost_usd.toFixed(2)}</p>
-                      <p className="text-[10px] text-adv-gray-med">{estimate.realistic.total_tokens?.toLocaleString()} tokens</p>
+                      <p className="text-xs text-adv-gray">{estimate.realistic.total_tokens?.toLocaleString()} tokens</p>
                     </div>
                   )}
                   {estimate.pessimistic && (
                     <div className="rounded-lg border border-border bg-adv-dark p-3 text-center">
-                      <p className="text-[10px] uppercase text-adv-gray">Pessimistic</p>
+                      <p className="text-xs uppercase text-adv-gray">Pessimistic</p>
                       <p className="mt-1 text-lg font-bold text-adv-red">${estimate.pessimistic.total_cost_usd.toFixed(2)}</p>
-                      <p className="text-[10px] text-adv-gray-med">{estimate.pessimistic.total_tokens?.toLocaleString()} tokens</p>
+                      <p className="text-xs text-adv-gray">{estimate.pessimistic.total_tokens?.toLocaleString()} tokens</p>
                     </div>
                   )}
                   <div className="rounded-lg border border-adv-teal/30 bg-adv-dark p-3 text-center">
-                    <p className="text-[10px] uppercase text-adv-teal">Actual</p>
+                    <p className="text-xs uppercase text-adv-teal">Actual</p>
                     <p className="mt-1 text-lg font-bold text-adv-white">${actual.toFixed(2)}</p>
-                    <p className="text-[10px] text-adv-gray-med">
+                    <p className="text-xs text-adv-gray">
                       {(costData?.actual?.total_input_tokens ?? project?.cost_actual?.total_input_tokens ?? 0) +
                        (costData?.actual?.total_output_tokens ?? project?.cost_actual?.total_output_tokens ?? 0)
                       } tokens
@@ -1885,7 +1885,7 @@ export default function CodingLargeProjectPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-adv-off-white">{item.title}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(item.status)}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(item.status)}`}>
                     {item.status}
                   </span>
                 </div>
@@ -1893,7 +1893,7 @@ export default function CodingLargeProjectPage() {
                   <p className="mt-0.5 text-xs text-adv-gray">{item.detail}</p>
                 )}
               </div>
-              <span className="shrink-0 flex items-center gap-1 text-[10px] text-adv-gray-med">
+              <span className="shrink-0 flex items-center gap-1 text-xs text-adv-gray">
                 <Clock className="h-3 w-3" />
                 {formatTimestamp(item.timestamp)}
               </span>

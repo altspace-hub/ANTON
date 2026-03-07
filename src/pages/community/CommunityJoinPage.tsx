@@ -140,7 +140,7 @@ export default function CommunityJoinPage() {
               value={manualHash}
               onChange={e => setManualHash(e.target.value)}
               placeholder="GRPX-XXXX-XXXX-XXXX"
-              className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 font-mono text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 font-mono text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <label className="mb-1 block text-sm text-adv-gray">Join code</label>
             <input
@@ -149,7 +149,7 @@ export default function CommunityJoinPage() {
               onChange={e => setManualCode(e.target.value.toUpperCase())}
               placeholder="6-character code"
               maxLength={6}
-              className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 font-mono text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 font-mono text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </>
         )}
@@ -161,7 +161,7 @@ export default function CommunityJoinPage() {
           onChange={e => setDisplayName(e.target.value)}
           placeholder="Leave blank to use your profile name"
           maxLength={50}
-          className="mb-5 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-5 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
 
         {error && <p className="mb-3 text-sm text-adv-red">{error}</p>}

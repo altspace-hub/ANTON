@@ -219,7 +219,7 @@ export default function LessonBuilderPage() {
         {/* Title */}
         <div className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray">
               {t('teacher.lesson.titleLabel', 'Lesson Title')}
             </label>
             <input
@@ -227,20 +227,20 @@ export default function LessonBuilderPage() {
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder={t('teacher.lesson.titlePlaceholder', 'e.g. Introduction to Quadratic Equations')}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
           {/* Subject + Tier */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray">
                 {t('teacher.classConfig.subject', 'Subject')}
               </label>
               <select
                 value={subjectId}
                 onChange={e => setSubjectId(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 {SUBJECT_OPTIONS.map(s => (
                   <option key={s.id} value={s.id}>{s.label}</option>
@@ -248,13 +248,13 @@ export default function LessonBuilderPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray">
                 {t('teacher.classConfig.tier', 'Tier')}
               </label>
               <select
                 value={tier}
                 onChange={e => setTier(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 {TIER_OPTIONS.map(t => (
                   <option key={t.id} value={t.id}>{t.label}</option>
@@ -265,13 +265,13 @@ export default function LessonBuilderPage() {
 
           {/* Assign to class */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-adv-gray">
               {t('teacher.lesson.assignTo', 'Assign to Class')} ({t('teacher.lesson.optional', 'optional')})
             </label>
             <select
               value={assignClassId}
               onChange={e => setAssignClassId(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">{t('teacher.lesson.noClass', 'Not assigned to a class')}</option>
               {classes.map(c => (
@@ -286,19 +286,19 @@ export default function LessonBuilderPage() {
           <h2 className="text-sm font-semibold text-adv-white">
             {t('teacher.lesson.objectives', 'Learning Objectives')}
           </h2>
-          <p className="text-xs text-adv-gray-med">
+          <p className="text-xs text-adv-gray">
             {t('teacher.lesson.objectivesHelp', 'What should students know or be able to do by the end?')}
           </p>
           <div className="space-y-2">
             {learningObjectives.map((obj, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-xs font-medium text-adv-gray-med w-4 shrink-0">{i + 1}.</span>
+                <span className="text-xs font-medium text-adv-gray w-4 shrink-0">{i + 1}.</span>
                 <input
                   type="text"
                   value={obj}
                   onChange={e => updateObjective(i, e.target.value)}
                   placeholder={t('teacher.lesson.objectivePlaceholder', 'e.g. Solve quadratic equations using the formula')}
-                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
                 {learningObjectives.length > 1 && (
                   <button
@@ -329,7 +329,7 @@ export default function LessonBuilderPage() {
             <h2 className="text-sm font-semibold text-adv-white">
               {t('teacher.lesson.contentBlocks', 'Lesson Content')}
             </h2>
-            <p className="mt-0.5 text-xs text-adv-gray-med">
+            <p className="mt-0.5 text-xs text-adv-gray">
               {t('teacher.lesson.contentBlocksHelp', 'Structure your lesson as blocks. Alma will deliver them in this order.')}
             </p>
           </div>
@@ -372,13 +372,13 @@ export default function LessonBuilderPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs text-adv-gray-med">
+                    <label className="mb-1 block text-xs text-adv-gray">
                       {t('teacher.lesson.blockType', 'Type')}
                     </label>
                     <select
                       value={block.type}
                       onChange={e => updateBlock(i, { type: e.target.value as ContentBlock['type'] })}
-                      className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-sm text-adv-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       {BLOCK_TYPES.map(bt => (
                         <option key={bt} value={bt}>{BLOCK_TYPE_LABELS[bt]}</option>
@@ -386,7 +386,7 @@ export default function LessonBuilderPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-adv-gray-med">
+                    <label className="mb-1 block text-xs text-adv-gray">
                       {t('teacher.lesson.duration', 'Duration (min)')}
                     </label>
                     <input
@@ -396,13 +396,13 @@ export default function LessonBuilderPage() {
                       value={block.durationMins ?? ''}
                       onChange={e => updateBlock(i, { durationMins: parseInt(e.target.value) || undefined })}
                       placeholder="10"
-                      className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs text-adv-gray-med">
+                  <label className="mb-1 block text-xs text-adv-gray">
                     {t('teacher.lesson.blockContent', 'Content / Instructions')}
                   </label>
                   <textarea
@@ -416,7 +416,7 @@ export default function LessonBuilderPage() {
                         ? t('teacher.lesson.activityPlaceholder', 'Describe the exercise or problem to solve...')
                         : t('teacher.lesson.discussionPlaceholder', 'Write the discussion question or prompt...')
                     }
-                    className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-y"
+                    className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-y"
                   />
                 </div>
               </div>

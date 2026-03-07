@@ -169,7 +169,7 @@ export default function ConversationThread({
           </div>
           <div className="min-w-0 flex-1">
             {streamingThinking && (
-              <div className="mb-2 flex items-center gap-1.5 text-xs text-adv-gray-med">
+              <div className="mb-2 flex items-center gap-1.5 text-xs text-adv-gray">
                 <Brain className="h-3 w-3 animate-pulse" />
                 <span className="italic">Thinking...</span>
               </div>

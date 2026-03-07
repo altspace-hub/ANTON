@@ -340,7 +340,7 @@ export default function Dashboard() {
       {/* Hero */}
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-adv-white">{t('dashboard.title')} <span className="text-sm font-normal text-adv-gray-med">{t('dashboard.byLine')}</span></h1>
+          <h1 className="text-2xl font-bold text-adv-white">{t('dashboard.title')} <span className="text-sm font-normal text-adv-gray">{t('dashboard.byLine')}</span></h1>
           <p className="mt-1 text-sm text-adv-gray">
             {t('dashboard.subtitle')}
           </p>
@@ -374,7 +374,7 @@ export default function Dashboard() {
                   </li>
                 ))}
                 {scheduledNotifications.length > 3 && (
-                  <li className="text-xs text-adv-gray-med">
+                  <li className="text-xs text-adv-gray">
                     +{scheduledNotifications.length - 3} more
                   </li>
                 )}
@@ -520,7 +520,7 @@ export default function Dashboard() {
                   {session.note && (
                     <p className="mb-1 truncate text-[11px] text-adv-gold/60 italic">&ldquo;{session.note}&rdquo;</p>
                   )}
-                  <div className="mt-auto text-[11px] text-adv-gray-med">
+                  <div className="mt-auto text-[11px] text-adv-gray">
                     {formatRelativeTime(session.updated_at || session.created_at)}
                     {formatSessionCost(session) && (
                       <span className="ml-1">{' · '}{formatSessionCost(session)?.split(' · ')[0]}</span>
@@ -561,7 +561,7 @@ export default function Dashboard() {
             <Puzzle className="h-4 w-4 text-adv-teal" />
             <h2 className="text-sm font-semibold text-adv-teal uppercase tracking-wider">My Custom Modules</h2>
             {myCustomModules.length > 0 && (
-              <span className="text-xs text-adv-gray-med">{myCustomModules.length}</span>
+              <span className="text-xs text-adv-gray">{myCustomModules.length}</span>
             )}
           </div>
           <Link to="/build-module" className="text-xs text-adv-teal hover:underline flex items-center gap-1">
@@ -571,7 +571,7 @@ export default function Dashboard() {
         {myCustomModules.length === 0 ? (
           <div className="rounded-xl border border-dashed border-adv-teal/20 bg-adv-teal/5 px-5 py-5 text-center">
             <Puzzle className="h-8 w-8 text-adv-teal/30 mx-auto mb-2" />
-            <p className="text-sm text-adv-gray-med">No custom modules yet.</p>
+            <p className="text-sm text-adv-gray">No custom modules yet.</p>
             <Link to="/build-module" className="mt-2 inline-flex items-center gap-1 text-xs text-adv-teal hover:underline">
               Build your first module <ArrowRight className="h-3 w-3" />
             </Link>
@@ -609,7 +609,7 @@ export default function Dashboard() {
           <div className="mb-3 flex items-center gap-2">
             <Star className="h-4 w-4 fill-adv-gold text-adv-gold" />
             <span className="text-xs font-semibold uppercase tracking-wider text-adv-gold">{t('dashboard.favourites')}</span>
-            <span className="text-xs text-adv-gray-med">{favoriteModules.length}</span>
+            <span className="text-xs text-adv-gray">{favoriteModules.length}</span>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {favoriteModules.map((mod) => {
@@ -635,18 +635,18 @@ export default function Dashboard() {
 
       {/* Module Search */}
       <div className="mb-6 relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray pointer-events-none" />
         <input
           type="text"
           value={moduleSearch}
           onChange={(e) => setModuleSearch(e.target.value)}
           placeholder={t('dashboard.searchPlaceholder')}
-          className="w-full rounded-xl border border-border bg-adv-card py-2.5 pl-9 pr-9 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+          className="w-full rounded-xl border border-border bg-adv-card py-2.5 pl-9 pr-9 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
         />
         {moduleSearch && (
           <button
             onClick={() => setModuleSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray-med hover:text-adv-off-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray hover:text-adv-off-white transition-colors"
           >
             <XIcon className="h-4 w-4" />
           </button>
@@ -658,7 +658,7 @@ export default function Dashboard() {
         /* Search results — flat grid with area badge */
         filteredModules.length === 0 ? (
           <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-            <p className="text-sm text-adv-gray-med">{t('dashboard.noModulesMatch')} &ldquo;{moduleSearch}&rdquo;</p>
+            <p className="text-sm text-adv-gray">{t('dashboard.noModulesMatch')} &ldquo;{moduleSearch}&rdquo;</p>
             <button onClick={() => setModuleSearch('')} className="mt-2 text-xs text-adv-teal hover:underline">{t('dashboard.clearSearch')}</button>
           </div>
         ) : (
@@ -724,7 +724,7 @@ export default function Dashboard() {
           <div className="mb-3 flex items-center gap-2">
             <Users className="h-4 w-4 text-adv-gold" />
             <h2 className="text-sm font-semibold text-adv-gold uppercase tracking-wider">{t('dashboard.communityModules')}</h2>
-            <span className="text-xs text-adv-gray-med">{communityModules.length}</span>
+            <span className="text-xs text-adv-gray">{communityModules.length}</span>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {communityModules.map((mod) => (
@@ -737,7 +737,7 @@ export default function Dashboard() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-adv-gold/10 text-adv-gold border-adv-gold/20">
                     <Puzzle className="h-5 w-5" />
                   </div>
-                  <span className="rounded-full bg-adv-gold/10 border border-adv-gold/30 px-2 py-0.5 text-[10px] font-medium text-adv-gold">
+                  <span className="rounded-full bg-adv-gold/10 border border-adv-gold/30 px-2 py-0.5 text-xs font-medium text-adv-gold">
                     {t('dashboard.community')}
                   </span>
                 </div>
@@ -818,7 +818,7 @@ function ModuleCard({
           <Icon className="h-5 w-5" />
         </div>
         {areaBadge && (
-          <span className={`pr-6 text-[10px] font-medium uppercase tracking-wider ${areaBadgeColor}`}>
+          <span className={`pr-6 text-xs font-medium uppercase tracking-wider ${areaBadgeColor}`}>
             {areaBadge}
           </span>
         )}

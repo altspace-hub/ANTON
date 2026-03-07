@@ -53,10 +53,10 @@ function statusColor(status: StepStatus | ExecutionStatus): string {
     case 'completed': return 'text-adv-green';
     case 'running': return 'text-adv-teal';
     case 'failed': return 'text-adv-red';
-    case 'skipped': return 'text-adv-gray-med';
+    case 'skipped': return 'text-adv-gray';
     case 'paused': return 'text-adv-gold';
     case 'aborted': return 'text-adv-red';
-    default: return 'text-adv-gray-med';
+    default: return 'text-adv-gray';
   }
 }
 
@@ -65,10 +65,10 @@ function StatusIcon({ status, size = 'h-4 w-4' }: { status: StepStatus | Executi
     case 'completed': return <CheckCircle2 className={`${size} text-adv-green`} />;
     case 'running': return <Loader2 className={`${size} text-adv-teal animate-spin`} />;
     case 'failed': return <XCircle className={`${size} text-adv-red`} />;
-    case 'skipped': return <SkipForward className={`${size} text-adv-gray-med`} />;
+    case 'skipped': return <SkipForward className={`${size} text-adv-gray`} />;
     case 'paused': return <AlertTriangle className={`${size} text-adv-gold`} />;
     case 'aborted': return <Ban className={`${size} text-adv-red`} />;
-    default: return <Circle className={`${size} text-adv-gray-med`} />;
+    default: return <Circle className={`${size} text-adv-gray`} />;
   }
 }
 
@@ -90,13 +90,13 @@ function JsonViewer({ data, label }: { data: unknown; label: string }) {
     <div>
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1 text-[10px] text-adv-gray-med hover:text-adv-off-white transition-colors"
+        className="flex items-center gap-1 text-xs text-adv-gray hover:text-adv-off-white transition-colors"
       >
         {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         {label}
       </button>
       {expanded && (
-        <pre className="mt-1 max-h-40 overflow-y-auto rounded bg-adv-dark-2 p-2 text-[10px] text-adv-off-white">
+        <pre className="mt-1 max-h-40 overflow-y-auto rounded bg-adv-dark-2 p-2 text-xs text-adv-off-white">
           {str}
         </pre>
       )}
@@ -316,7 +316,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
             <p className="text-xs font-semibold text-adv-off-white">
               {workflow?.label ?? execution.workflowId}
             </p>
-            <p className="mt-0.5 text-[10px] text-adv-gray-med">
+            <p className="mt-0.5 text-xs text-adv-gray">
               Mode: <span className="capitalize text-adv-off-white">{execution.mode}</span>
               {' · '}
               Started: {new Date(execution.startedAt).toLocaleTimeString()}
@@ -324,7 +324,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[11px] text-adv-gray-med">
+            <p className="text-[11px] text-adv-gray">
               Step {Math.min(execution.currentStepIndex + 1, execution.totalSteps)} / {execution.totalSteps}
             </p>
           </div>
@@ -357,7 +357,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
           {/* Context summary */}
           <div className="mb-4 rounded-lg border border-border bg-adv-dark p-3">
             <h4 className="mb-2 text-[11px] font-medium text-adv-gray">Current Context</h4>
-            <pre className="max-h-48 overflow-y-auto text-[10px] text-adv-off-white">
+            <pre className="max-h-48 overflow-y-auto text-xs text-adv-off-white">
               {JSON.stringify(execution.context, null, 2)}
             </pre>
           </div>
@@ -410,7 +410,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
             <Eye className="h-4 w-4 text-adv-teal" />
             <h3 className="text-sm font-semibold text-adv-teal">Guided Mode — Step Review</h3>
           </div>
-          <p className="mb-3 text-xs text-adv-gray-med">
+          <p className="mb-3 text-xs text-adv-gray">
             Step {execution.currentStepIndex + 1} has completed. Review the output, then choose an action.
           </p>
 
@@ -418,7 +418,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
           {execution.stepResults.length > 0 && (
             <div className="mb-3 rounded-lg border border-border bg-adv-dark p-3">
               <h4 className="mb-1 text-[11px] font-medium text-adv-gray">Step Output</h4>
-              <pre className="max-h-32 overflow-y-auto text-[10px] text-adv-off-white">
+              <pre className="max-h-32 overflow-y-auto text-xs text-adv-off-white">
                 {JSON.stringify(execution.stepResults[execution.stepResults.length - 1]?.output, null, 2)}
               </pre>
             </div>
@@ -432,9 +432,9 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
               <textarea
                 value={modifyText}
                 onChange={(e) => setModifyText(e.target.value)}
-                className="h-40 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 font-mono text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="h-40 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 font-mono text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
-              {error && <p className="text-[10px] text-adv-red">{error}</p>}
+              {error && <p className="text-xs text-adv-red">{error}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={handleModify}
@@ -516,22 +516,22 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] text-adv-gray-med">Step {idx + 1}</span>
+                    <span className="text-xs text-adv-gray">Step {idx + 1}</span>
                     <span className="text-xs font-medium text-adv-off-white">{step.label}</span>
-                    <span className="rounded bg-adv-dark px-1.5 py-0.5 text-[10px] text-adv-gray-med">{step.type}</span>
+                    <span className="rounded bg-adv-dark px-1.5 py-0.5 text-xs text-adv-gray">{step.type}</span>
                     {isCurrent && execution.status === 'paused' && (
-                      <span className="rounded bg-adv-gold/20 px-1.5 py-0.5 text-[10px] font-medium text-adv-gold">waiting for review</span>
+                      <span className="rounded bg-adv-gold/20 px-1.5 py-0.5 text-xs font-medium text-adv-gold">waiting for review</span>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {result && (
-                    <span className="text-[10px] text-adv-gray-med flex items-center gap-1">
+                    <span className="text-xs text-adv-gray flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {formatDuration(result.startedAt, result.completedAt)}
                     </span>
                   )}
-                  {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" /> : <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med" />}
+                  {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray" /> : <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />}
                 </div>
               </button>
 
@@ -540,18 +540,18 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
                   {result.error && (
                     <div className="rounded bg-adv-red/10 border border-adv-red/20 px-2 py-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-[10px] text-adv-red">{result.error}</p>
+                        <p className="text-xs text-adv-red">{result.error}</p>
                         <button
                           onClick={() => void diagnoseStep(result, step.label)}
                           disabled={diagMap[idx]?.loading}
-                          className="shrink-0 flex items-center gap-1 rounded border border-adv-teal/40 bg-adv-teal/10 px-2 py-0.5 text-[10px] text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
+                          className="shrink-0 flex items-center gap-1 rounded border border-adv-teal/40 bg-adv-teal/10 px-2 py-0.5 text-xs text-adv-teal hover:bg-adv-teal/20 disabled:opacity-40 transition-colors"
                         >
                           {diagMap[idx]?.loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
                           Diagnose
                         </button>
                       </div>
                       {diagMap[idx]?.text && (
-                        <div className="mt-2 rounded bg-adv-teal/5 border border-adv-teal/20 px-2 py-1.5 text-[10px] text-adv-off-white whitespace-pre-wrap">
+                        <div className="mt-2 rounded bg-adv-teal/5 border border-adv-teal/20 px-2 py-1.5 text-xs text-adv-off-white whitespace-pre-wrap">
                           {diagMap[idx].text}
                         </div>
                       )}
@@ -573,7 +573,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
             <CheckCircle2 className="h-5 w-5 text-adv-green" />
             <div>
               <p className="text-sm font-semibold text-adv-green">Workflow completed</p>
-              <p className="text-[10px] text-adv-gray-med">
+              <p className="text-xs text-adv-gray">
                 Total duration: {formatDuration(execution.startedAt, execution.completedAt)}
               </p>
             </div>

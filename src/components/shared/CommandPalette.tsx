@@ -322,7 +322,7 @@ export function CommandPalette() {
             onChange={(e) => { setInput(e.target.value); setHistoryIndex(-1); }}
             onKeyDown={handleInputKeyDown}
             placeholder="Type a command… (↑↓ history)"
-            className="flex-1 bg-transparent text-adv-white text-lg outline-none placeholder-adv-gray"
+            className="flex-1 bg-transparent text-adv-white text-lg outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 placeholder-adv-gray"
           />
           {loading && <Loader2 className="w-5 h-5 animate-spin text-adv-teal flex-shrink-0" />}
           <button
@@ -436,7 +436,7 @@ export function CommandPalette() {
                     if (e.key === 'Escape') { setSavingMacro(false); setMacroName(''); }
                   }}
                   placeholder="Macro name…"
-                  className="rounded bg-adv-dark-2 border border-border px-2 py-1 text-xs text-adv-white outline-none focus:border-adv-teal w-40"
+                  className="rounded bg-adv-dark-2 border border-border px-2 py-1 text-xs text-adv-white outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal w-40"
                 />
                 <button
                   onClick={handleSaveMacro}
@@ -476,7 +476,7 @@ export function CommandPalette() {
                     </button>
                     <button
                       onClick={() => deleteMacro(name)}
-                      className="p-0.5 text-adv-gray-med hover:text-adv-red transition-colors rounded-full"
+                      className="p-0.5 text-adv-gray hover:text-adv-red transition-colors rounded-full"
                       title="Delete macro"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -553,7 +553,7 @@ export function CommandPalette() {
             </ul>
           </div>
 
-          <div className="pt-2 border-t border-border text-xs text-adv-gray-med">
+          <div className="pt-2 border-t border-border text-xs text-adv-gray">
             <p className="flex items-center gap-2">
               <Command className="w-3 h-3" />
               Press <kbd className="px-1.5 py-0.5 bg-adv-dark-2 rounded">Ctrl+K</kbd> to open

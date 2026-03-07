@@ -122,7 +122,7 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
             : 'border-border bg-adv-dark hover:border-adv-teal/30'
         }`}
       >
-        <Upload className={`mx-auto mb-2 h-8 w-8 ${dragOver ? 'text-adv-teal' : 'text-adv-gray-med'}`} />
+        <Upload className={`mx-auto mb-2 h-8 w-8 ${dragOver ? 'text-adv-teal' : 'text-adv-gray'}`} />
         <p className="text-sm text-adv-gray">
           {uploading ? 'Uploading...' : 'Drop files here or click to upload'}
         </p>
@@ -149,9 +149,9 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
       {/* File list */}
       {files.length === 0 ? (
         <div className="rounded-xl border border-border bg-adv-card p-6 text-center">
-          <FolderOpen className="mx-auto mb-2 h-8 w-8 text-adv-gray-med" />
-          <p className="text-sm text-adv-gray-med">No files uploaded yet</p>
-          <p className="mt-1 text-xs text-adv-gray-med">
+          <FolderOpen className="mx-auto mb-2 h-8 w-8 text-adv-gray" />
+          <p className="text-sm text-adv-gray">No files uploaded yet</p>
+          <p className="mt-1 text-xs text-adv-gray">
             Upload documents to share with your team and use in modules
           </p>
         </div>
@@ -165,7 +165,7 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
               <FileText className={`h-5 w-5 shrink-0 ${EXT_ICONS[file.extension] || 'text-adv-gray'}`} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-adv-off-white">{file.original_name}</p>
-                <p className="text-xs text-adv-gray-med">
+                <p className="text-xs text-adv-gray">
                   {formatFileSize(file.file_size)} · {formatDate(file.created_at)}
                 </p>
               </div>

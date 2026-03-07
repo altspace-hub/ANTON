@@ -31,6 +31,9 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'ab-test', label: 'A/B Prompt Testing', category: 'interaction' },
   { id: 'council', label: 'AI Council', category: 'interaction' },
 
+  { id: 'presentations', label: 'Presentations', category: 'interaction' },
+  { id: 'school', label: 'ANTON School', category: 'tools' },
+
   // Life Platform Tabs
   { id: 'news', label: 'News', category: 'tools' },
   { id: 'finance', label: 'Finance', category: 'tools' },
@@ -41,6 +44,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'community-calendar', label: 'Community Calendar', category: 'tools' },
 
   // Tools
+  { id: 'task-agent', label: 'ANTON Task Agent', category: 'intelligence' },
   { id: 'orchestrator', label: 'ANTON Orchestrator', category: 'intelligence' },
   { id: 'counsels-desk', label: "Counsel's Desk", category: 'tools' },
   { id: 'gap-assessment', label: 'Gap Assessor', category: 'tools' },
@@ -72,6 +76,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'marketplace', label: 'Marketplace', category: 'features' },
 
   // Intelligence
+  { id: 'orchestration', label: 'Orchestration', category: 'intelligence' },
   { id: 'knowledge', label: 'Knowledge Atoms', category: 'intelligence' },
   { id: 'graph', label: 'Knowledge Graph', category: 'intelligence' },
   { id: 'intelligence', label: 'Intelligence Dashboard', category: 'intelligence' },

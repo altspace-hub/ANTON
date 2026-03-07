@@ -101,6 +101,7 @@ const OrchestratorDashboard = lazy(() => import('./pages/OrchestratorDashboard')
 const OrchestratorTrailViewer = lazy(() => import('./pages/OrchestratorTrailViewer'));
 const GapAssessmentHub = lazy(() => import('./pages/GapAssessmentHub'));
 const GapAssessmentWizard = lazy(() => import('./pages/GapAssessmentWizard'));
+const AntonTaskAgentPage = lazy(() => import('./pages/AntonTaskAgentPage'));
 
 // Data Partnerships — Roaring + Dow Jones
 const RoaringSearchPage = lazy(() => import('./pages/RoaringSearchPage'));
@@ -395,12 +396,14 @@ export default function App() {
           <Route path="/orchestrator/trail/:id" element={<OrchestratorTrailViewer />} />
           <Route path="/gap-assessment" element={<GapAssessmentHub />} />
           <Route path="/gap-assessment/:id" element={<GapAssessmentWizard />} />
+          <Route path="/task-agent" element={<AntonTaskAgentPage />} />
           {/* Data Partnerships — Roaring + Dow Jones */}
           <Route path="/roaring" element={<RoaringSearchPage />} />
           <Route path="/dj-screening" element={<DJScreeningPage />} />
           <Route path="/entity-intelligence" element={<EntityIntelligencePage />} />
           <Route path="/demo/data-partnerships" element={<PartnershipDemo />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/org-context" element={<Navigate to="/settings?tab=org-context" replace />} />
         </Route>
 
         {/* School Mode login — public, no auth required */}

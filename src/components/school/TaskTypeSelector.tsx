@@ -45,14 +45,14 @@ export default function TaskTypeSelector({ onSelect }: TaskTypeSelectorProps) {
           key={option.id}
           type="button"
           onClick={() => onSelect(option.id)}
-          className="flex items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-start transition-colors hover:border-adv-teal/40 hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+          className="flex items-center gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 text-start transition-colors hover:border-adv-teal/40 hover:bg-adv-teal/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-adv-teal/10 text-adv-teal">
             {option.icon}
           </span>
           <div>
             <p className="text-sm font-medium text-adv-off-white">{t(option.labelKey)}</p>
-            <p className="text-xs text-adv-gray-med">{t(option.descKey)}</p>
+            <p className="text-xs text-adv-gray">{t(option.descKey)}</p>
           </div>
         </button>
       ))}

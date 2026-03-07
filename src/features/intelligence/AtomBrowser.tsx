@@ -96,7 +96,7 @@ function AtomCard({ atom, onEntityClick }: {
             {atom.category}
           </span>
           {atom.subcategory && (
-            <span className="text-xs text-adv-gray-med">{atom.subcategory}</span>
+            <span className="text-xs text-adv-gray">{atom.subcategory}</span>
           )}
           {atom.sentiment && (
             <span className={`text-xs font-mono font-bold ${sentimentColor(atom.sentiment)}`}>
@@ -104,7 +104,7 @@ function AtomCard({ atom, onEntityClick }: {
             </span>
           )}
         </div>
-        <span className="shrink-0 text-xs text-adv-gray-med">{formatDate(atom.created_at)}</span>
+        <span className="shrink-0 text-xs text-adv-gray">{formatDate(atom.created_at)}</span>
       </div>
 
       {/* Atom content */}
@@ -112,7 +112,7 @@ function AtomCard({ atom, onEntityClick }: {
 
       {/* Type + area */}
       <div className="mt-2 flex items-center gap-2 flex-wrap">
-        <span className="rounded bg-adv-dark-2 px-1.5 py-0.5 text-[11px] font-mono text-adv-gray-med">
+        <span className="rounded bg-adv-dark-2 px-1.5 py-0.5 text-[11px] font-mono text-adv-gray">
           {atom.atom_type}
         </span>
         {atom.source_area_id && (
@@ -120,7 +120,7 @@ function AtomCard({ atom, onEntityClick }: {
             area: {atom.source_area_id}
           </span>
         )}
-        <span className="text-[11px] text-adv-gray-med">
+        <span className="text-[11px] text-adv-gray">
           {Math.round(atom.confidence * 100)}% confidence
         </span>
       </div>
@@ -268,19 +268,19 @@ export default function AtomBrowser() {
 
       {/* Search box */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search knowledge atoms..."
-          className="w-full rounded-xl border border-border bg-adv-card py-3 pl-10 pr-4 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+          className="w-full rounded-xl border border-border bg-adv-card py-3 pl-10 pr-4 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
         />
       </div>
 
       {/* Filter chips — category */}
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">
           Category
         </div>
         <div className="flex flex-wrap gap-2">
@@ -302,7 +302,7 @@ export default function AtomBrowser() {
 
       {/* Filter chips — sentiment */}
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">
           Sentiment
         </div>
         <div className="flex flex-wrap gap-2">
@@ -325,7 +325,7 @@ export default function AtomBrowser() {
       {/* Results */}
       <div>
         {loading && (
-          <div className="flex justify-center py-12 text-adv-gray-med text-sm">
+          <div className="flex justify-center py-12 text-adv-gray text-sm">
             Loading...
           </div>
         )}
@@ -335,7 +335,7 @@ export default function AtomBrowser() {
           </div>
         )}
         {!loading && !error && atoms.length === 0 && (
-          <div className="flex flex-col items-center gap-3 py-16 text-center text-adv-gray-med">
+          <div className="flex flex-col items-center gap-3 py-16 text-center text-adv-gray">
             <BookOpen className="h-10 w-10 opacity-30" />
             <p className="text-sm">No knowledge atoms yet.</p>
             <p className="text-xs">Atoms are extracted automatically after workflow steps complete.</p>
@@ -344,7 +344,7 @@ export default function AtomBrowser() {
         {!loading && !error && atoms.length > 0 && (
           <>
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs text-adv-gray-med">{atoms.length} atom{atoms.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-adv-gray">{atoms.length} atom{atoms.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="space-y-3">
               {atoms.map((atom) => (

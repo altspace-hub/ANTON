@@ -72,7 +72,7 @@ export default function PythonSandbox({ code }: Props) {
         </button>
       </div>
       {loading && !output && !error && (
-        <div className="px-3 py-2 text-xs text-adv-gray-med">
+        <div className="px-3 py-2 text-xs text-adv-gray">
           {!workerReady ? t('coding.loadingPyodide', 'Loading Python environment (first run)...') : t('coding.runningPython', 'Running...')}
         </div>
       )}

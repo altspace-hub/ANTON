@@ -13,7 +13,7 @@ const MONTH_NAMES = [
 ];
 
 function getLoadColor(count: number): { bg: string; text: string; label: string } {
-  if (count === 0) return { bg: 'bg-adv-dark-2', text: 'text-adv-gray-med', label: 'None' };
+  if (count === 0) return { bg: 'bg-adv-dark-2', text: 'text-adv-gray', label: 'None' };
   if (count <= 3) return { bg: 'bg-adv-green/15', text: 'text-adv-green', label: 'Light' };
   if (count <= 7) return { bg: 'bg-adv-gold/15', text: 'text-adv-gold', label: 'Moderate' };
   return { bg: 'bg-adv-red/15', text: 'text-adv-red', label: 'Heavy' };
@@ -123,7 +123,7 @@ export default function DeadlineYearView({
                   {name}
                 </h4>
                 {isCurrentMonth && (
-                  <span className="rounded bg-adv-teal/15 px-1.5 py-0.5 text-[10px] font-medium text-adv-teal">
+                  <span className="rounded bg-adv-teal/15 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
                     Now
                   </span>
                 )}
@@ -156,7 +156,7 @@ export default function DeadlineYearView({
                 )}
               </div>
 
-              <p className={`mt-1 text-[10px] ${load.text}`}>{load.label}</p>
+              <p className={`mt-1 text-xs ${load.text}`}>{load.label}</p>
             </button>
           );
         })}

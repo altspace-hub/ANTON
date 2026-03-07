@@ -148,12 +148,12 @@ export default function DeadlinesPage() {
         <div className="flex items-center gap-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray" />
             <input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search deadlines..."
-              className="w-56 rounded-lg border border-border bg-adv-dark pl-9 pr-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-56 rounded-lg border border-border bg-adv-dark pl-9 pr-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
@@ -249,7 +249,7 @@ export default function DeadlinesPage() {
       {/* Loading / Error states */}
       {loading ? (
         <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-          <p className="text-sm text-adv-gray-med">Loading deadlines...</p>
+          <p className="text-sm text-adv-gray">Loading deadlines...</p>
         </div>
       ) : error ? (
         <div className="rounded-xl border border-adv-red/30 bg-adv-red/5 p-6">

@@ -59,7 +59,7 @@ export function EntityMergeModal({ fromEntity, entities, onClose, onMerge }: Ent
             <select
               value={selectedTarget}
               onChange={(e) => setSelectedTarget(e.target.value)}
-              className="w-full px-3 py-2 bg-adv-dark-2 border border-adv-gray/20 rounded text-adv-white focus:outline-none focus:border-adv-teal"
+              className="w-full px-3 py-2 bg-adv-dark-2 border border-adv-gray/20 rounded text-adv-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               required
             >
               <option value="">Select target entity...</option>
@@ -81,7 +81,7 @@ export function EntityMergeModal({ fromEntity, entities, onClose, onMerge }: Ent
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g., Duplicate, alternate spelling, etc."
               rows={3}
-              className="w-full px-3 py-2 bg-adv-dark-2 border border-adv-gray/20 rounded text-adv-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+              className="w-full px-3 py-2 bg-adv-dark-2 border border-adv-gray/20 rounded text-adv-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
           </div>
 

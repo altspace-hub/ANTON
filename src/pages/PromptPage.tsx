@@ -530,7 +530,7 @@ export default function PromptPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-adv-off-white">Ask anything</p>
-              <p className="mt-1 max-w-md text-xs text-adv-gray-med">
+              <p className="mt-1 max-w-md text-xs text-adv-gray">
                 Regulatory questions, document analysis, risk assessments, compliance advice,
                 sanctions screening logic, or any FCP topic. Upload documents for context.
               </p>
@@ -657,14 +657,14 @@ export default function PromptPage() {
 
           {/* Original draft */}
           <div className="mb-3 rounded-lg bg-adv-dark/50 px-3 py-2">
-            <span className="text-[10px] uppercase tracking-wider text-adv-gray-med">Your draft</span>
+            <span className="text-xs uppercase tracking-wider text-adv-gray">Your draft</span>
             <p className="mt-1 text-xs text-adv-gray">{improveDraft}</p>
           </div>
 
           {/* Questions from Claude */}
           {improveQuestions && (
             <div className="mb-3 rounded-lg bg-adv-card px-3 py-2">
-              <span className="text-[10px] uppercase tracking-wider text-adv-gray-med">Clarifying questions</span>
+              <span className="text-xs uppercase tracking-wider text-adv-gray">Clarifying questions</span>
               <div className="mt-1 whitespace-pre-wrap text-sm text-adv-off-white">{improveQuestions}</div>
             </div>
           )}
@@ -676,7 +676,7 @@ export default function PromptPage() {
                 value={improveAnswers}
                 onChange={(e) => setImproveAnswers(e.target.value)}
                 placeholder="Answer the questions above... (you can number your answers to match, or write freely)"
-                className="w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+                className="w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
                 rows={4}
               />
               <div className="flex justify-end gap-2">
@@ -706,12 +706,12 @@ export default function PromptPage() {
                   <Sparkles className="h-3.5 w-3.5 text-adv-teal" />
                   <span className="text-xs font-semibold text-adv-teal">Smart Suggestions</span>
                 </div>
-                <p className="text-[11px] text-adv-gray-med">Based on your prompt, these personas and skills may enhance your results. Click to apply — or skip.</p>
+                <p className="text-[11px] text-adv-gray">Based on your prompt, these personas and skills may enhance your results. Click to apply — or skip.</p>
               </div>
 
               {suggestedPersonas.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-wider text-adv-gray-med">
+                  <div className="flex items-center gap-1.5 mb-2 text-xs uppercase tracking-wider text-adv-gray">
                     <Users className="h-3 w-3" /> Recommended personas
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -740,7 +740,7 @@ export default function PromptPage() {
 
               {suggestedSkills.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] uppercase tracking-wider text-adv-gray-med">
+                  <div className="flex items-center gap-1.5 mb-2 text-xs uppercase tracking-wider text-adv-gray">
                     <Zap className="h-3 w-3" /> Recommended skills
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -793,7 +793,7 @@ export default function PromptPage() {
           {/* Building preview */}
           {improveState === 'building' && improveBuildingText && (
             <div className="rounded-lg bg-adv-card px-3 py-2">
-              <span className="text-[10px] uppercase tracking-wider text-adv-gray-med">Improved prompt (generating...)</span>
+              <span className="text-xs uppercase tracking-wider text-adv-gray">Improved prompt (generating...)</span>
               <div className="mt-1 whitespace-pre-wrap text-sm text-adv-off-white">{improveBuildingText}</div>
             </div>
           )}
@@ -807,7 +807,7 @@ export default function PromptPage() {
           onChange={(e) => setUserInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask a question, paste a document, or describe what you need..."
-          className="flex-1 resize-y rounded-xl border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+          className="flex-1 resize-y rounded-xl border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
           rows={4}
           style={{ minHeight: '80px', maxHeight: '400px' }}
           disabled={isStreaming || isImproving}
@@ -858,11 +858,11 @@ export default function PromptPage() {
         </div>
       </div>
       <div className="mt-1.5 flex items-center justify-between">
-        <p className="text-[10px] text-adv-gray-med">
+        <p className="text-xs text-adv-gray">
           Ctrl+Enter to send · Click ✦ to improve your prompt with AI
         </p>
         {!isStreaming && userInput.trim() && (
-          <div className="flex items-center gap-1 text-[11px] text-adv-gray-med">
+          <div className="flex items-center gap-1 text-[11px] text-adv-gray">
             <Coins className="h-3 w-3" />
             <span>{estimatedInputTokens.toLocaleString()} tokens · {costDisplay}</span>
           </div>
@@ -886,12 +886,12 @@ export default function PromptPage() {
         <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-adv-card">
           {historyLoading && historySessions.length === 0 ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-4 w-4 animate-spin text-adv-gray-med" />
+              <Loader2 className="h-4 w-4 animate-spin text-adv-gray" />
             </div>
           ) : historySessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-              <MessageSquare className="h-5 w-5 text-adv-gray-med" />
-              <p className="px-4 text-xs text-adv-gray-med">No chat history yet. Start a conversation and it will appear here.</p>
+              <MessageSquare className="h-5 w-5 text-adv-gray" />
+              <p className="px-4 text-xs text-adv-gray">No chat history yet. Start a conversation and it will appear here.</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
@@ -906,13 +906,13 @@ export default function PromptPage() {
                   <p className={`truncate text-xs font-medium ${s.id === sessionId ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                     {s.title || 'Untitled chat'}
                   </p>
-                  <div className="mt-0.5 flex items-center gap-1 text-[10px] text-adv-gray-med">
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-adv-gray">
                     <Clock className="h-2.5 w-2.5" />
                     {relativeTime(s.created_at)}
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteHistory(s.id); }}
-                    className="absolute right-2 top-2.5 hidden rounded p-0.5 text-adv-gray-med hover:text-adv-red group-hover:block transition-colors"
+                    className="absolute right-2 top-2.5 hidden rounded p-0.5 text-adv-gray hover:text-adv-red group-hover:block transition-colors"
                     title="Delete conversation"
                   >
                     <Trash2 className="h-3 w-3" />

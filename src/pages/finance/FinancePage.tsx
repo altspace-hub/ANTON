@@ -130,7 +130,7 @@ export default function FinancePage() {
         </div>
 
         {/* Footer note */}
-        <p className="text-xs text-adv-gray-med text-center pb-4">
+        <p className="text-xs text-adv-gray text-center pb-4">
           All tools are for educational illustration only. Market data is not live unless an API key is configured.
         </p>
       </div>

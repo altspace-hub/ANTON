@@ -82,7 +82,7 @@ function DecisionBadge({ decision }: { decision: string }) {
   };
   const cls = colors[decision.toLowerCase()] ?? 'bg-adv-gray/20 text-adv-gray border-adv-gray/30';
   return (
-    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-medium capitalize ${cls}`}>
+    <span className={`inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium capitalize ${cls}`}>
       {decision}
     </span>
   );
@@ -212,11 +212,11 @@ export default function CheckpointMemoryPanel({
         <div>
           <h3 className="text-sm font-semibold text-adv-off-white">Institutional Memory</h3>
           {hasHistory ? (
-            <p className="text-[11px] text-adv-gray-med">
+            <p className="text-[11px] text-adv-gray">
               Based on {totalDecisions} past decision{totalDecisions !== 1 ? 's' : ''} at this checkpoint
             </p>
           ) : (
-            <p className="text-[11px] text-adv-gray-med">No history yet at this checkpoint</p>
+            <p className="text-[11px] text-adv-gray">No history yet at this checkpoint</p>
           )}
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function CheckpointMemoryPanel({
                         <span className={`capitalize font-medium ${isMajority ? 'text-adv-teal' : 'text-adv-gray'}`}>
                           {dec}
                         </span>
-                        <span className="text-adv-gray-med">
+                        <span className="text-adv-gray">
                           {pct}% ({count}/{totalDecisions})
                         </span>
                       </div>
@@ -285,7 +285,7 @@ export default function CheckpointMemoryPanel({
                   <span className="text-xs text-adv-off-white">
                     AI agrees with majority decision
                     {aiAlignmentRate > 0 && (
-                      <span className="ml-1 text-adv-gray-med">
+                      <span className="ml-1 text-adv-gray">
                         ({Math.round(aiAlignmentRate * 100)}% alignment)
                       </span>
                     )}
@@ -300,7 +300,7 @@ export default function CheckpointMemoryPanel({
                       ({Math.round(overrideRate * 100)}% override rate)
                     </span>
                     {topOverrideReason && (
-                      <span className="ml-1 text-adv-gray-med">
+                      <span className="ml-1 text-adv-gray">
                         — common reason: {formatOverrideCategory(topOverrideReason)}
                       </span>
                     )}
@@ -308,7 +308,7 @@ export default function CheckpointMemoryPanel({
                 </>
               ) : (
                 <>
-                  <XCircle className="h-4 w-4 text-adv-gray-med" />
+                  <XCircle className="h-4 w-4 text-adv-gray" />
                   <span className="text-xs text-adv-gray">
                     AI recommendation differs from most common past decision
                   </span>
@@ -316,7 +316,7 @@ export default function CheckpointMemoryPanel({
               )}
             </div>
             {aiConfidence !== undefined && (
-              <p className="mt-1.5 text-[10px] text-adv-gray-med">
+              <p className="mt-1.5 text-xs text-adv-gray">
                 AI confidence in current recommendation: {Math.round(aiConfidence * 100)}%
               </p>
             )}
@@ -336,8 +336,8 @@ export default function CheckpointMemoryPanel({
                   </span>
                 </div>
                 {historyOpen
-                  ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" />
-                  : <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med" />
+                  ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray" />
+                  : <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />
                 }
               </button>
               {historyOpen && (
@@ -347,12 +347,12 @@ export default function CheckpointMemoryPanel({
                       <div className="flex items-center gap-2 flex-wrap">
                         <DecisionBadge decision={item.decision} />
                         {item.isOverride && (
-                          <span className="rounded border border-adv-gold/30 bg-adv-gold/10 px-1.5 py-0.5 text-[10px] text-adv-gold">
+                          <span className="rounded border border-adv-gold/30 bg-adv-gold/10 px-1.5 py-0.5 text-xs text-adv-gold">
                             Override
                             {item.overrideCategory && ` — ${formatOverrideCategory(item.overrideCategory)}`}
                           </span>
                         )}
-                        <span className="text-[10px] text-adv-gray-med">
+                        <span className="text-xs text-adv-gray">
                           {item.decidedBy} · {formatDate(item.decidedAt)}
                         </span>
                       </div>
@@ -362,7 +362,7 @@ export default function CheckpointMemoryPanel({
                         </p>
                       )}
                       {item.aiRecommendation && (
-                        <p className="text-[10px] text-adv-gray-med">
+                        <p className="text-xs text-adv-gray">
                           AI recommended: <span className="capitalize">{item.aiRecommendation}</span>
                           {item.aiConfidence !== null && item.aiConfidence !== undefined && (
                             <span> ({Math.round(item.aiConfidence * 100)}% confidence)</span>
@@ -415,7 +415,7 @@ export default function CheckpointMemoryPanel({
               onChange={e => setReasoning(e.target.value)}
               placeholder="Explain your decision — this will help future reviewers understand the context..."
               rows={3}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
           </div>
 
@@ -434,7 +434,7 @@ export default function CheckpointMemoryPanel({
               <span className="text-xs text-adv-gray">
                 This overrides the AI recommendation
                 {aiRecommendation && (
-                  <span className="ml-1 text-adv-gray-med">
+                  <span className="ml-1 text-adv-gray">
                     (AI recommended: <span className="capitalize">{aiRecommendation}</span>)
                   </span>
                 )}
@@ -451,7 +451,7 @@ export default function CheckpointMemoryPanel({
               <select
                 value={overrideCategory}
                 onChange={e => setOverrideCategory(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="">Select a reason...</option>
                 {OVERRIDE_CATEGORIES.map(cat => (

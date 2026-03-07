@@ -105,7 +105,7 @@ function MessageBubble({
           <span className="text-[11px] text-adv-gray">
             {isMe ? 'You' : contactName} · {formatTime(msg.timestamp)}
           </span>
-          <span className="rounded-full bg-adv-teal-dim px-1.5 py-0.5 text-[10px] text-adv-teal">
+          <span className="rounded-full bg-adv-teal-dim px-1.5 py-0.5 text-xs text-adv-teal">
             Encrypted
           </span>
         </div>
@@ -376,7 +376,7 @@ export default function CommunityMessagesPage() {
                     onKeyDown={handleKeyDown}
                     placeholder="Write an encrypted message… (Enter to send)"
                     rows={1}
-                    className="flex-1 resize-none bg-transparent text-sm text-adv-white placeholder-adv-gray focus:outline-none"
+                    className="flex-1 resize-none bg-transparent text-sm text-adv-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     style={{ maxHeight: '120px' }}
                   />
                 </div>

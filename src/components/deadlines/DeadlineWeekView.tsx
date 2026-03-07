@@ -62,7 +62,7 @@ function DayCard({
           {matchedLabels.slice(0, 2).map((l) => (
             <span
               key={l.id}
-              className="rounded px-1 py-0.5 text-[9px]"
+              className="rounded px-1 py-0.5 text-xs"
               style={{ backgroundColor: l.color + '22', color: l.color }}
             >
               {l.name}
@@ -182,7 +182,7 @@ export default function DeadlineWeekView({
                   isToday ? 'bg-adv-teal/5' : ''
                 }`}
               >
-                <p className="text-xs text-adv-gray-med">{DAY_NAMES[i]}</p>
+                <p className="text-xs text-adv-gray">{DAY_NAMES[i]}</p>
                 <p
                   className={`text-sm font-semibold ${
                     isToday ? 'text-adv-teal' : 'text-adv-off-white'
@@ -195,7 +195,7 @@ export default function DeadlineWeekView({
               {/* Deadlines */}
               <div className="flex flex-1 flex-col gap-1.5 px-2 pb-2">
                 {items.length === 0 ? (
-                  <p className="py-4 text-center text-[10px] text-adv-gray-med">
+                  <p className="py-4 text-center text-xs text-adv-gray">
                     No deadlines
                   </p>
                 ) : (

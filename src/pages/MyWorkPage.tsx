@@ -264,18 +264,18 @@ export default function MyWorkPage() {
 
       {/* Search */}
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray pointer-events-none" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('myWork.searchPlaceholder')}
-          className="w-full rounded-xl border border-border bg-adv-card py-2.5 pl-9 pr-9 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+          className="w-full rounded-xl border border-border bg-adv-card py-2.5 pl-9 pr-9 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
         />
         {search && (
           <button
             onClick={() => setSearch('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray-med hover:text-adv-off-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray hover:text-adv-off-white transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -289,7 +289,7 @@ export default function MyWorkPage() {
           <select
             value={moduleFilter}
             onChange={(e) => setModuleFilter(e.target.value)}
-            className="appearance-none rounded-lg border border-border bg-adv-card py-1.5 pl-3 pr-8 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="appearance-none rounded-lg border border-border bg-adv-card py-1.5 pl-3 pr-8 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             <option value="">{t('myWork.allModules')}</option>
             {usedModuleIds.map((mid) => {
@@ -301,7 +301,7 @@ export default function MyWorkPage() {
               );
             })}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray-med" />
+          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray" />
         </div>
 
         {/* Time filter */}
@@ -326,20 +326,20 @@ export default function MyWorkPage() {
           <select
             value={sortMode}
             onChange={(e) => setSortMode(e.target.value as SortMode)}
-            className="appearance-none rounded-lg border border-border bg-adv-card py-1.5 pl-3 pr-8 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="appearance-none rounded-lg border border-border bg-adv-card py-1.5 pl-3 pr-8 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             <option value="recent">{t('myWork.sortMostRecent')}</option>
             <option value="most-used">{t('myWork.sortMostUsed')}</option>
           </select>
-          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray-med" />
+          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray" />
         </div>
       </div>
 
       {/* Session list */}
       {sorted.length === 0 && !loading ? (
         <div className="rounded-xl border border-border bg-adv-card p-12 text-center">
-          <MessageSquare className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
-          <p className="text-sm text-adv-gray-med">
+          <MessageSquare className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
+          <p className="text-sm text-adv-gray">
             {debouncedSearch || moduleFilter || timeFilter !== 'all'
               ? t('myWork.noSessionsMatch')
               : t('myWork.noSessionsYet')}
@@ -389,7 +389,7 @@ export default function MyWorkPage() {
                           onChange={(e) => setRenameValue(e.target.value)}
                           onKeyDown={(e) => handleRenameKey(e, session.id)}
                           onBlur={() => commitRename(session.id)}
-                          className="min-w-0 flex-1 rounded border border-adv-teal bg-adv-dark px-1.5 py-0.5 text-sm text-adv-white focus:outline-none"
+                          className="min-w-0 flex-1 rounded border border-adv-teal bg-adv-dark px-1.5 py-0.5 text-sm text-adv-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         />
                         <button onClick={(e) => { e.preventDefault(); commitRename(session.id); }} className="text-adv-teal hover:text-adv-teal-dark">
                           <Check className="h-3.5 w-3.5" />
@@ -403,13 +403,13 @@ export default function MyWorkPage() {
                         {session.title}
                       </h3>
                     )}
-                    <span className="shrink-0 text-xs text-adv-gray-med">
+                    <span className="shrink-0 text-xs text-adv-gray">
                       {formatRelativeTime(session.updated_at || session.created_at)}
                     </span>
                   </div>
 
                   {/* Meta row */}
-                  <p className="mt-0.5 text-xs text-adv-gray-med">
+                  <p className="mt-0.5 text-xs text-adv-gray">
                     {mod?.shortLabel || session.module_id}
                     {costStr && <> · {costStr}</>}
                     {session.message_count ? <> · {session.message_count} {t('myWork.messages')}</> : null}
@@ -427,7 +427,7 @@ export default function MyWorkPage() {
                           onKeyDown={(e) => handleNoteKey(e, session.id)}
                           onBlur={() => commitNote(session.id)}
                           placeholder={t('myWork.addNote')}
-                          className="min-w-0 flex-1 rounded border border-adv-gold/50 bg-adv-dark px-1.5 py-0.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:outline-none"
+                          className="min-w-0 flex-1 rounded border border-adv-gold/50 bg-adv-dark px-1.5 py-0.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         />
                         <button onClick={(e) => { e.preventDefault(); commitNote(session.id); }} className="text-adv-gold hover:text-adv-gold/80">
                           <Check className="h-3 w-3" />
@@ -447,7 +447,7 @@ export default function MyWorkPage() {
                     ) : (
                       <button
                         onClick={(e) => startNoteEdit(e, session)}
-                        className="flex items-center gap-1 text-xs text-adv-gray-med/50 opacity-0 group-hover:opacity-100 hover:text-adv-gold transition-all"
+                        className="flex items-center gap-1 text-xs text-adv-gray/50 opacity-0 group-hover:opacity-100 hover:text-adv-gold transition-all"
                       >
                         <StickyNote className="h-3 w-3 shrink-0" />
                         {t('myWork.addNote')}
@@ -463,7 +463,7 @@ export default function MyWorkPage() {
                         {proj ? (
                           <button
                             onClick={(e) => handleAssignProject(e, session.id)}
-                            className="flex items-center gap-1 rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors"
+                            className="flex items-center gap-1 rounded-full bg-adv-teal-dim px-2 py-0.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors"
                           >
                             <FolderKanban className="h-3 w-3" />
                             {proj.name}
@@ -471,7 +471,7 @@ export default function MyWorkPage() {
                         ) : (
                           <button
                             onClick={(e) => handleAssignProject(e, session.id)}
-                            className="flex items-center gap-1 text-[10px] text-adv-gray-med/50 opacity-0 group-hover:opacity-100 hover:text-adv-teal transition-all"
+                            className="flex items-center gap-1 text-xs text-adv-gray/50 opacity-0 group-hover:opacity-100 hover:text-adv-teal transition-all"
                           >
                             <FolderKanban className="h-3 w-3" />
                             {t('myWork.addToProject')}
@@ -505,7 +505,7 @@ export default function MyWorkPage() {
                               </button>
                             ))}
                             {projects.length === 0 && (
-                              <p className="px-3 py-2 text-xs text-adv-gray-med">{t('myWork.noProjects')}</p>
+                              <p className="px-3 py-2 text-xs text-adv-gray">{t('myWork.noProjects')}</p>
                             )}
                           </div>
                         )}
@@ -515,7 +515,7 @@ export default function MyWorkPage() {
 
                   {/* Preview */}
                   {session.last_message_preview && (
-                    <p className="mt-1 truncate text-xs text-adv-gray-med/60 italic">
+                    <p className="mt-1 truncate text-xs text-adv-gray/60 italic">
                       {session.last_message_preview}
                     </p>
                   )}
@@ -561,7 +561,7 @@ export default function MyWorkPage() {
       )}
 
       {loading && sessions.length === 0 && (
-        <div className="mt-8 text-center text-sm text-adv-gray-med">{t('myWork.loadingSessions')}</div>
+        <div className="mt-8 text-center text-sm text-adv-gray">{t('myWork.loadingSessions')}</div>
       )}
     </div>
   );

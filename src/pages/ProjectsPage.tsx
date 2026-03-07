@@ -254,14 +254,14 @@ export default function ProjectsPage() {
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="Project name"
-            className="mb-2 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+            className="mb-2 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
           />
           <textarea
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Description (optional)"
             rows={2}
-            className="mb-2 w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+            className="mb-2 w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
           />
           <button
             onClick={runAiScaffold}
@@ -275,12 +275,12 @@ export default function ProjectsPage() {
             <div className="mb-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3 space-y-2">
               {scaffoldData.recommendedModules.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-medium text-adv-teal mb-1">Recommended modules</p>
+                  <p className="text-xs font-medium text-adv-teal mb-1">Recommended modules</p>
                   <div className="flex flex-wrap gap-1">
                     {scaffoldData.recommendedModules.map((m) => {
                       const mod = MODULES.find((x) => x.id === m.id);
                       return (
-                        <span key={m.id} className="rounded-full bg-adv-teal/10 border border-adv-teal/20 px-2 py-0.5 text-[10px] text-adv-teal" title={m.reason}>
+                        <span key={m.id} className="rounded-full bg-adv-teal/10 border border-adv-teal/20 px-2 py-0.5 text-xs text-adv-teal" title={m.reason}>
                           {mod?.shortLabel || m.id}
                         </span>
                       );
@@ -290,12 +290,12 @@ export default function ProjectsPage() {
               )}
               {scaffoldData.suggestedDeadlines.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-medium text-adv-off-white mb-1">Suggested milestones</p>
+                  <p className="text-xs font-medium text-adv-off-white mb-1">Suggested milestones</p>
                   <ul className="space-y-0.5">
                     {scaffoldData.suggestedDeadlines.map((d, i) => (
-                      <li key={i} className="text-[10px] text-adv-gray">
+                      <li key={i} className="text-xs text-adv-gray">
                         <span className="text-adv-off-white">{d.title}</span>
-                        {d.dayOffset > 0 && <span className="text-adv-gray-med"> · day {d.dayOffset}</span>}
+                        {d.dayOffset > 0 && <span className="text-adv-gray"> · day {d.dayOffset}</span>}
                       </li>
                     ))}
                   </ul>
@@ -333,7 +333,7 @@ export default function ProjectsPage() {
                   <FolderOpen className="h-4 w-4" />
                 </div>
                 <div className="text-sm font-medium text-adv-off-white">{t.name}</div>
-                <div className="mt-1 text-xs text-adv-gray-med leading-relaxed">{t.description}</div>
+                <div className="mt-1 text-xs text-adv-gray leading-relaxed">{t.description}</div>
               </button>
             ))}
           </div>
@@ -366,7 +366,7 @@ export default function ProjectsPage() {
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
                           onKeyDown={(e) => { if (e.key === 'Enter') handleRename(project.id); if (e.key === 'Escape') setEditingId(null); }}
-                          className="min-w-0 flex-1 rounded border border-adv-teal bg-adv-dark px-2 py-0.5 text-sm text-adv-white focus:outline-none"
+                          className="min-w-0 flex-1 rounded border border-adv-teal bg-adv-dark px-2 py-0.5 text-sm text-adv-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         />
                         <button onClick={() => handleRename(project.id)} className="text-adv-teal hover:text-adv-teal-dark"><Check className="h-4 w-4" /></button>
                         <button onClick={() => setEditingId(null)} className="text-adv-gray hover:text-adv-red"><X className="h-4 w-4" /></button>
@@ -379,11 +379,11 @@ export default function ProjectsPage() {
                         {project.name}
                       </h3>
                     )}
-                    {project.description && <p className="mt-0.5 text-xs text-adv-gray-med">{project.description}</p>}
-                    <div className="mt-2 flex items-center gap-3 text-xs text-adv-gray-med">
+                    {project.description && <p className="mt-0.5 text-xs text-adv-gray">{project.description}</p>}
+                    <div className="mt-2 flex items-center gap-3 text-xs text-adv-gray">
                       <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{project.session_count} sessions</span>
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{formatRelativeTime(project.updated_at)}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] ${project.status === 'active' ? 'bg-adv-green/10 text-adv-green' : 'bg-adv-gray-med/10 text-adv-gray-med'}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${project.status === 'active' ? 'bg-adv-green/10 text-adv-green' : 'bg-adv-gray-med/10 text-adv-gray'}`}>
                         {project.status}
                       </span>
                     </div>
@@ -454,7 +454,7 @@ export default function ProjectsPage() {
                       <>
                         {projectSessions.length === 0 ? (
                           <div className="text-center py-2">
-                            <p className="text-xs text-adv-gray-med mb-3">No sessions in this project yet.</p>
+                            <p className="text-xs text-adv-gray mb-3">No sessions in this project yet.</p>
                             <button
                               onClick={openSessionPicker}
                               className="inline-flex items-center gap-1.5 rounded-lg bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
@@ -476,12 +476,12 @@ export default function ProjectsPage() {
                                   >
                                     <div className="flex-1 min-w-0">
                                       <p className="text-sm text-adv-off-white truncate">{session.title}</p>
-                                      <p className="text-xs text-adv-gray-med mt-0.5">
+                                      <p className="text-xs text-adv-gray mt-0.5">
                                         {mod?.shortLabel || session.module_id} · {formatRelativeTime(session.updated_at || session.created_at)}
                                       </p>
                                     </div>
                                     {areaInfo && (
-                                      <span className={`flex items-center gap-1.5 shrink-0 text-[10px] font-medium ${areaInfo.colors.text}`}>
+                                      <span className={`flex items-center gap-1.5 shrink-0 text-xs font-medium ${areaInfo.colors.text}`}>
                                         <span className={`h-2 w-2 rounded-full ${areaInfo.colors.dot}`} />
                                         {areaInfo.label}
                                       </span>
@@ -489,7 +489,7 @@ export default function ProjectsPage() {
                                   </Link>
                                   <button
                                     onClick={() => handleUnassignSession(session.id)}
-                                    className="shrink-0 rounded p-1.5 text-adv-gray-med opacity-0 transition-all hover:text-adv-red group-hover/session:opacity-100"
+                                    className="shrink-0 rounded p-1.5 text-adv-gray opacity-0 transition-all hover:text-adv-red group-hover/session:opacity-100"
                                     title="Remove from project"
                                   >
                                     <Unlink className="h-3.5 w-3.5" />
@@ -521,11 +521,11 @@ export default function ProjectsPage() {
                               value={sessionSearch}
                               onChange={(e) => setSessionSearch(e.target.value)}
                               placeholder="Search sessions..."
-                              className="mb-3 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                              className="mb-3 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                             />
                             <div className="max-h-48 overflow-y-auto space-y-1">
                               {filteredPickerSessions.length === 0 ? (
-                                <p className="py-2 text-center text-xs text-adv-gray-med">
+                                <p className="py-2 text-center text-xs text-adv-gray">
                                   {allSessions.length === 0 ? 'No sessions found. Run a module first.' : 'No matching sessions available.'}
                                 </p>
                               ) : (
@@ -539,7 +539,7 @@ export default function ProjectsPage() {
                                     >
                                       <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm text-adv-off-white">{s.title}</p>
-                                        <p className="text-xs text-adv-gray-med">
+                                        <p className="text-xs text-adv-gray">
                                           {mod?.shortLabel || s.module_id} · {formatRelativeTime(s.updated_at || s.created_at)}
                                         </p>
                                       </div>
@@ -665,9 +665,9 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-          <FolderOpen className="mx-auto mb-3 h-10 w-10 text-adv-gray-med" />
+          <FolderOpen className="mx-auto mb-3 h-10 w-10 text-adv-gray" />
           <p className="text-sm font-medium text-adv-gray">No projects yet</p>
-          <p className="mt-1 text-xs text-adv-gray-med">Create a project to organise your sessions and track progress across modules.</p>
+          <p className="mt-1 text-xs text-adv-gray">Create a project to organise your sessions and track progress across modules.</p>
         </div>
       )}
     </div>

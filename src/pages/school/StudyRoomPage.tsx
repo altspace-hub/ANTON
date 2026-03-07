@@ -202,7 +202,7 @@ export default function StudyRoomPage() {
           {messages.map(msg => (
             <div key={msg.id} className={`${msg.isSystem ? 'text-center' : ''}`}>
               {msg.isSystem ? (
-                <span className="text-xs text-adv-gray-med italic">{msg.text}</span>
+                <span className="text-xs text-adv-gray italic">{msg.text}</span>
               ) : (
                 <div className={`flex flex-col ${msg.socketId === socketRef.current?.id ? 'items-end' : 'items-start'}`}>
                   <span className="text-xs text-adv-gray mb-1">{msg.displayName}</span>
@@ -213,7 +213,7 @@ export default function StudyRoomPage() {
                   }`}>
                     {msg.text}
                   </div>
-                  <span className="text-xs text-adv-gray-med mt-1">
+                  <span className="text-xs text-adv-gray mt-1">
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -234,7 +234,7 @@ export default function StudyRoomPage() {
               ? t('studyRoom.placeholder', { defaultValue: 'Type a message...' })
               : t('studyRoom.connectingPlaceholder', { defaultValue: 'Connecting...' })}
             disabled={!connected}
-            className="flex-1 bg-adv-card border border-white/10 rounded-xl px-4 py-3 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal text-sm disabled:opacity-50"
+            className="flex-1 bg-adv-card border border-white/10 rounded-xl px-4 py-3 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal text-sm disabled:opacity-50"
           />
           <button
             onClick={handleSend}

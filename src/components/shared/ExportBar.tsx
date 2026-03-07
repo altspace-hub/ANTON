@@ -114,7 +114,7 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
   return (
     <div className="flex flex-col gap-2">
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs text-adv-gray-med">{t('export.export')}</span>
+      <span className="text-xs text-adv-gray">{t('export.export')}</span>
       {availableFormats.map((fmt) => {
         const config = formatConfig[fmt];
         if (!config) return null;
@@ -160,7 +160,7 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
                   >
                     <Layout className="h-3 w-3 text-adv-teal flex-shrink-0" />
                     <span className="flex-1 truncate">{tpl.name}</span>
-                    <span className="text-adv-gray-med flex-shrink-0">.{tpl.type}</span>
+                    <span className="text-adv-gray flex-shrink-0">.{tpl.type}</span>
                   </button>
                 ))}
               </div>

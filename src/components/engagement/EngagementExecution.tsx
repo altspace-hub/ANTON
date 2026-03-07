@@ -302,7 +302,7 @@ function ContextTile({ icon: Icon, label, value, ok, isText }: {
     <div className={`rounded-xl p-4 border flex flex-col gap-1 ${ok ? 'bg-adv-card border-border' : 'bg-adv-red/5 border-adv-red/20'}`}>
       <div className="flex items-center gap-1.5">
         <Icon className={`h-3.5 w-3.5 ${ok ? 'text-adv-teal' : 'text-adv-red'}`} />
-        <span className="text-[10px] text-adv-gray-med uppercase tracking-wider">{label}</span>
+        <span className="text-xs text-adv-gray uppercase tracking-wider">{label}</span>
       </div>
       <span className={`text-lg font-bold ${ok ? 'text-adv-off-white' : 'text-adv-red'}`}>
         {isText ? value : typeof value === 'number' && value === 0 ? '—' : value}
@@ -313,7 +313,7 @@ function ContextTile({ icon: Icon, label, value, ok, isText }: {
 
 function WorkstreamRow({ ws, selected, onSelect }: { ws: Workstream; selected: boolean; onSelect: () => void }) {
   const statusColors: Record<string, string> = {
-    pending:   'text-adv-gray-med bg-adv-dark border-border',
+    pending:   'text-adv-gray bg-adv-dark border-border',
     ready:     'text-adv-teal bg-adv-teal-dim border-adv-teal/20',
     executing: 'text-adv-gold bg-adv-gold/10 border-adv-gold/20',
     review:    'text-adv-blue bg-adv-blue/10 border-adv-blue/20',
@@ -328,12 +328,12 @@ function WorkstreamRow({ ws, selected, onSelect }: { ws: Workstream; selected: b
         selected ? 'border-adv-teal bg-adv-teal-dim' : 'border-border hover:border-adv-teal/40'
       }`}
     >
-      <CheckCircle className={`h-4 w-4 shrink-0 ${selected ? 'text-adv-teal' : 'text-adv-gray-med'}`} />
+      <CheckCircle className={`h-4 w-4 shrink-0 ${selected ? 'text-adv-teal' : 'text-adv-gray'}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-adv-off-white font-medium">{ws.title}</p>
         {ws.description && <p className="text-xs text-adv-gray mt-0.5 truncate">{ws.description}</p>}
       </div>
-      <span className={`text-[10px] border rounded-full px-2 py-0.5 shrink-0 ${sc}`}>
+      <span className={`text-xs border rounded-full px-2 py-0.5 shrink-0 ${sc}`}>
         {ws.execution_status}
       </span>
     </button>

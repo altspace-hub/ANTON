@@ -192,7 +192,7 @@ function OnboardingScreen({ onActivated }: { onActivated: () => void }) {
           onKeyDown={e => e.key === 'Enter' && handleActivate()}
           placeholder="e.g. Daniel B."
           maxLength={60}
-          className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
         {error && (
           <p className="mb-3 text-sm text-adv-red">{error}</p>

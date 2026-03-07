@@ -186,7 +186,7 @@ export default function CourseJourneyPage() {
           <h1 className="text-xl font-bold text-adv-white">
             {t('journey.title', 'My Learning Journey')}
           </h1>
-          <p className="mt-0.5 text-sm text-adv-gray-med">
+          <p className="mt-0.5 text-sm text-adv-gray">
             {t('journey.subtitle', 'Track your progress through each subject')}
           </p>
         </div>
@@ -205,7 +205,7 @@ export default function CourseJourneyPage() {
               <TrendingUp className="h-6 w-6 text-adv-teal" />
             </div>
             <p className="text-base font-semibold text-adv-white">No classes yet</p>
-            <p className="mt-1 text-sm text-adv-gray-med">Join a class to start your learning journey.</p>
+            <p className="mt-1 text-sm text-adv-gray">Join a class to start your learning journey.</p>
             <Link
               to="/school/subjects"
               className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
@@ -238,7 +238,7 @@ export default function CourseJourneyPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-adv-white truncate">{cls.name}</p>
-                    <span className="rounded-full border border-border px-1.5 py-0.5 text-xs text-adv-gray-med">
+                    <span className="rounded-full border border-border px-1.5 py-0.5 text-xs text-adv-gray">
                       {cls.educationTier}
                     </span>
                   </div>
@@ -253,7 +253,7 @@ export default function CourseJourneyPage() {
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-xs text-adv-gray-med">
+                  <p className="text-xs text-adv-gray">
                     {doneCount}/{modules.length} topics
                   </p>
                   {cls.dueDate && (
@@ -263,21 +263,21 @@ export default function CourseJourneyPage() {
                     </p>
                   )}
                 </div>
-                <ChevronRight className={`h-4 w-4 shrink-0 text-adv-gray-med transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                <ChevronRight className={`h-4 w-4 shrink-0 text-adv-gray transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
               </button>
 
               {/* Topic timeline */}
               {isExpanded && (
                 <div className="border-t border-border px-5 pb-5 pt-4">
                   {cls.currentTopic && (
-                    <p className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray-med">
+                    <p className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray">
                       <Users className="h-3.5 w-3.5" />
                       Class is currently studying: <span className="font-medium text-adv-off-white">{cls.currentTopic}</span>
                     </p>
                   )}
 
                   {modules.length === 0 && (
-                    <p className="text-sm text-adv-gray-med">No topics available for this subject yet.</p>
+                    <p className="text-sm text-adv-gray">No topics available for this subject yet.</p>
                   )}
 
                   <div className="space-y-2">
@@ -293,7 +293,7 @@ export default function CourseJourneyPage() {
                           <div className="flex flex-col items-center">
                             {status === 'done' && <CheckCircle2 className="h-5 w-5 text-adv-green shrink-0" />}
                             {status === 'active' && <PlayCircle className="h-5 w-5 text-adv-teal shrink-0 animate-pulse" />}
-                            {status === 'upcoming' && <Circle className="h-5 w-5 text-adv-gray-med shrink-0" />}
+                            {status === 'upcoming' && <Circle className="h-5 w-5 text-adv-gray shrink-0" />}
                             {!isLast && (
                               <div className={`mt-1 w-px flex-1 min-h-[16px] ${status === 'done' ? 'bg-adv-green/40' : 'bg-border'}`} />
                             )}
@@ -322,7 +322,7 @@ export default function CourseJourneyPage() {
                                   )}
                                 </p>
                                 {topic.description && (
-                                  <p className="mt-0.5 text-xs text-adv-gray-med">{topic.description}</p>
+                                  <p className="mt-0.5 text-xs text-adv-gray">{topic.description}</p>
                                 )}
                               </div>
 
@@ -352,13 +352,13 @@ export default function CourseJourneyPage() {
                     if (!blooms || !Object.values(blooms).some((v) => v > 0)) return null;
                     return (
                       <div className="mt-4 border-t border-border pt-4">
-                        <p className="mb-2.5 text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+                        <p className="mb-2.5 text-xs font-medium uppercase tracking-widest text-adv-gray">
                           {t('journey.bloomsTitle', 'Learning Dimensions')}
                         </p>
                         <div className="space-y-1.5">
                           {BLOOMS_DIMS.map(({ key, label, color }) => (
                             <div key={key} className="flex items-center gap-2">
-                              <span className="w-24 shrink-0 text-xs text-adv-gray-med">
+                              <span className="w-24 shrink-0 text-xs text-adv-gray">
                                 {t(`progress.blooms.${key}`, label)}
                               </span>
                               <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-adv-dark">
@@ -367,7 +367,7 @@ export default function CourseJourneyPage() {
                                   style={{ width: `${blooms[key] ?? 0}%` }}
                                 />
                               </div>
-                              <span className="w-7 shrink-0 text-right text-xs text-adv-gray-med">
+                              <span className="w-7 shrink-0 text-right text-xs text-adv-gray">
                                 {blooms[key] ?? 0}%
                               </span>
                             </div>

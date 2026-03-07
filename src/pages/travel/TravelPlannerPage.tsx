@@ -253,7 +253,7 @@ export default function TravelPlannerPage() {
             </div>
             <p className="text-sm text-adv-gray">{trip?.destination} {trip?.start_date ? `· ${trip.start_date}` : ''}</p>
           </div>
-          <div className="text-right text-xs text-adv-gray-med">
+          <div className="text-right text-xs text-adv-gray">
             <div>Trip total: <span className="text-adv-off-white font-semibold">${tripTotal.toLocaleString()}</span></div>
           </div>
         </div>
@@ -314,12 +314,12 @@ export default function TravelPlannerPage() {
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Number of days</span>
                 <input type="number" min="1" max="30" value={aiDays} onChange={(e) => setAiDays(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Travel style</span>
                 <select value={aiStyle} onChange={(e) => setAiStyle(e.target.value as TravelStyle)}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
                   <option value="budget">Budget</option>
                   <option value="mid">Mid-range</option>
                   <option value="luxury">Luxury</option>
@@ -364,12 +364,12 @@ export default function TravelPlannerPage() {
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Time</span>
                 <input type="time" value={formData.time_slot} onChange={(e) => setFormData({ ...formData, time_slot: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Category</span>
                 <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value as ItineraryItem['category'] })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
                   <option value="activity">Activity</option>
                   <option value="food">Food</option>
                   <option value="transport">Transport</option>
@@ -381,25 +381,25 @@ export default function TravelPlannerPage() {
                 <span className="text-xs text-adv-gray">Title *</span>
                 <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Visit Senso-ji Temple"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Location</span>
                 <input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="e.g. Asakusa, Tokyo"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Estimated cost (USD)</span>
                 <input type="number" value={formData.cost} onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
                   placeholder="0"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1 sm:col-span-2">
                 <span className="text-xs text-adv-gray">Notes</span>
                 <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={2} placeholder="Optional notes…"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none resize-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none" />
               </label>
             </div>
             {error && <p className="text-sm text-adv-red">{error}</p>}
@@ -414,7 +414,7 @@ export default function TravelPlannerPage() {
         {/* Day items */}
         {dayItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12 text-center">
-            <Map className="mb-2 h-8 w-8 text-adv-gray-med" />
+            <Map className="mb-2 h-8 w-8 text-adv-gray" />
             <p className="text-sm text-adv-gray">No activities yet for Day {activeDay}</p>
             <button onClick={() => setShowAddForm(true)} className="mt-3 text-sm text-adv-teal hover:underline">
               + Add an activity
@@ -426,7 +426,7 @@ export default function TravelPlannerPage() {
               <div key={item.id} className="rounded-xl border border-border bg-adv-card p-4 flex gap-4">
                 <div className="shrink-0 w-14 text-center">
                   {item.time_slot && (
-                    <div className="flex items-center gap-1 text-xs text-adv-gray-med">
+                    <div className="flex items-center gap-1 text-xs text-adv-gray">
                       <Clock className="h-3 w-3" />
                       <span>{item.time_slot}</span>
                     </div>
@@ -438,7 +438,7 @@ export default function TravelPlannerPage() {
                       {item.category}
                     </span>
                     {item.cost > 0 && (
-                      <span className="flex items-center gap-0.5 text-xs text-adv-gray-med">
+                      <span className="flex items-center gap-0.5 text-xs text-adv-gray">
                         <DollarSign className="h-3 w-3" />{item.cost}
                       </span>
                     )}
@@ -450,7 +450,7 @@ export default function TravelPlannerPage() {
                     </p>
                   )}
                   {item.description && (
-                    <p className="text-xs text-adv-gray-med mt-1">{item.description}</p>
+                    <p className="text-xs text-adv-gray mt-1">{item.description}</p>
                   )}
                 </div>
               </div>

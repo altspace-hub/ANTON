@@ -114,10 +114,10 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
         <BarChart2 className="h-4 w-4 text-adv-teal shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-medium text-adv-off-white">Peer Benchmarks</p>
-          <p className="text-xs text-adv-gray-med">{benchmarks.length} benchmark{benchmarks.length !== 1 ? 's' : ''} added</p>
+          <p className="text-xs text-adv-gray">{benchmarks.length} benchmark{benchmarks.length !== 1 ? 's' : ''} added</p>
         </div>
-        <span className="text-[10px] bg-adv-blue/10 text-adv-blue border border-adv-blue/20 rounded-full px-2 py-0.5">Optional</span>
-        {expanded ? <ChevronUp className="h-4 w-4 text-adv-gray-med" /> : <ChevronDown className="h-4 w-4 text-adv-gray-med" />}
+        <span className="text-xs bg-adv-blue/10 text-adv-blue border border-adv-blue/20 rounded-full px-2 py-0.5">Optional</span>
+        {expanded ? <ChevronUp className="h-4 w-4 text-adv-gray" /> : <ChevronDown className="h-4 w-4 text-adv-gray" />}
       </div>
 
       {expanded && (
@@ -163,7 +163,7 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
                   onChange={e => setWebQuery(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && runWebSearch()}
                   placeholder="e.g. AML maturity benchmarks Nordic banks 2024"
-                  className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                  className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 />
                 <button
                   onClick={runWebSearch}
@@ -195,7 +195,7 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
                   Loading library…
                 </div>
               ) : library.length === 0 ? (
-                <div className="text-center py-6 text-xs text-adv-gray-med border border-dashed border-border rounded-lg">
+                <div className="text-center py-6 text-xs text-adv-gray border border-dashed border-border rounded-lg">
                   No completed engagements available yet.
                   <br />Complete other engagements and enable them as benchmarks in their settings.
                 </div>
@@ -209,20 +209,20 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
                         <Building className="h-4 w-4 text-adv-blue shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-adv-off-white">{entry.label}</p>
-                          <p className="text-[10px] text-adv-gray-med mt-0.5">{entry.domain} · {entry.engagement_type}</p>
+                          <p className="text-xs text-adv-gray mt-0.5">{entry.domain} · {entry.engagement_type}</p>
                         </div>
                         {entry.overall_score !== null && (
                           <span className="text-xs text-adv-teal font-medium shrink-0">{entry.overall_score}/100</span>
                         )}
                         {isAdded ? (
-                          <span className="flex items-center gap-1 text-[10px] text-adv-green shrink-0">
+                          <span className="flex items-center gap-1 text-xs text-adv-green shrink-0">
                             <CheckCircle className="h-3 w-3" /> Added
                           </span>
                         ) : (
                           <button
                             onClick={() => addFromInternal(entry.id)}
                             disabled={isAdding}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-adv-teal/10 text-adv-teal text-[10px] font-medium hover:bg-adv-teal-dim border border-adv-teal/20 disabled:opacity-50 transition-colors shrink-0"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-adv-teal/10 text-adv-teal text-xs font-medium hover:bg-adv-teal-dim border border-adv-teal/20 disabled:opacity-50 transition-colors shrink-0"
                           >
                             {isAdding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
                             Add
@@ -262,15 +262,15 @@ function BenchmarkCard({ benchmark, onDelete }: { benchmark: PeerBenchmark; onDe
           : <BookOpen className="h-3.5 w-3.5 text-adv-gold shrink-0" />}
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-adv-off-white">{benchmark.anonymized_label}</p>
-          <p className="text-[10px] text-adv-gray-med mt-0.5">
+          <p className="text-xs text-adv-gray mt-0.5">
             {benchmark.domain || 'Unknown domain'}
             {benchmark.scope_similarity && ` · ${benchmark.scope_similarity}`}
           </p>
         </div>
-        <button onClick={() => setExpanded(p => !p)} className="text-adv-gray-med hover:text-adv-teal p-1 transition-colors">
+        <button onClick={() => setExpanded(p => !p)} className="text-adv-gray hover:text-adv-teal p-1 transition-colors">
           {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
-        <button onClick={onDelete} className="text-adv-gray-med hover:text-adv-red p-1 transition-colors">
+        <button onClick={onDelete} className="text-adv-gray hover:text-adv-red p-1 transition-colors">
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -278,7 +278,7 @@ function BenchmarkCard({ benchmark, onDelete }: { benchmark: PeerBenchmark; onDe
         <div className="border-t border-border px-3 py-3 space-y-2">
           {findings.length > 0 && (
             <div>
-              <p className="text-[10px] text-adv-gray-med uppercase tracking-wider mb-1">Key Findings</p>
+              <p className="text-xs text-adv-gray uppercase tracking-wider mb-1">Key Findings</p>
               <ul className="space-y-0.5">
                 {findings.slice(0, 4).map((f, i) => (
                   <li key={i} className="text-xs text-adv-gray flex items-start gap-1.5">
@@ -291,18 +291,18 @@ function BenchmarkCard({ benchmark, onDelete }: { benchmark: PeerBenchmark; onDe
           )}
           {typeof maturity === 'object' && Object.keys(maturity).length > 0 && (
             <div>
-              <p className="text-[10px] text-adv-gray-med uppercase tracking-wider mb-1.5">Maturity Scores</p>
+              <p className="text-xs text-adv-gray uppercase tracking-wider mb-1.5">Maturity Scores</p>
               <div className="space-y-1.5">
                 {Object.entries(maturity).slice(0, 5).map(([area, score]) => (
                   <div key={area} className="flex items-center gap-2">
-                    <span className="text-[10px] text-adv-gray flex-1 truncate capitalize">{area.replace(/_/g, ' ')}</span>
+                    <span className="text-xs text-adv-gray flex-1 truncate capitalize">{area.replace(/_/g, ' ')}</span>
                     <div className="w-24 h-1.5 bg-adv-dark rounded-full overflow-hidden">
                       <div
                         className="h-full bg-adv-teal rounded-full"
                         style={{ width: `${Math.min(100, Number(score) || 0)}%` }}
                       />
                     </div>
-                    <span className="text-[10px] text-adv-off-white w-6 text-right">{String(score)}</span>
+                    <span className="text-xs text-adv-off-white w-6 text-right">{String(score)}</span>
                   </div>
                 ))}
               </div>

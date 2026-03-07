@@ -49,7 +49,7 @@ export default function MessageWithThinking({
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{outputContent}</ReactMarkdown>
           </div>
         ) : (
-          <div className="prose-output max-w-none text-adv-gray-med [&_strong]:text-adv-gray [&_h1]:text-adv-gray [&_h2]:text-adv-gray [&_h3]:text-adv-gray [&_h4]:text-adv-gray">
+          <div className="prose-output max-w-none text-adv-gray [&_strong]:text-adv-gray [&_h1]:text-adv-gray [&_h2]:text-adv-gray [&_h3]:text-adv-gray [&_h4]:text-adv-gray">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{thinkingContent}</ReactMarkdown>
           </div>
         )}

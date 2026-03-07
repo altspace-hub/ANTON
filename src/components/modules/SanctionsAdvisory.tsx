@@ -41,7 +41,7 @@ export default function SanctionsAdvisory({ onInputChange }: Props) {
                 <div className={`text-xs font-medium ${subTask === st.id ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                   {st.label}
                 </div>
-                <div className="text-[11px] text-adv-gray-med">{st.description}</div>
+                <div className="text-[11px] text-adv-gray">{st.description}</div>
               </div>
             </button>
           ))}
@@ -55,7 +55,7 @@ export default function SanctionsAdvisory({ onInputChange }: Props) {
           value={regime}
           onChange={(e) => setRegime(e.target.value)}
           placeholder="e.g., EU, US/OFAC, UN, UK"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -65,7 +65,7 @@ export default function SanctionsAdvisory({ onInputChange }: Props) {
           value={context}
           onChange={(e) => setContext(e.target.value)}
           placeholder="Specific details about the situation, entity type, or concerns..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={3}
         />
       </div>

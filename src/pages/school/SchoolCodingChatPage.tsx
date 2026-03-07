@@ -192,7 +192,7 @@ export default function SchoolCodingChatPage() {
           </button>
           <Code className="h-4 w-4 shrink-0 text-adv-teal" />
           <span className="font-medium text-adv-off-white">{moduleTitleLabel()}</span>
-          <span className="text-adv-gray-med">·</span>
+          <span className="text-adv-gray">·</span>
           <span className="font-mono text-xs text-adv-gray">{language}</span>
           <div className="ms-auto flex items-center gap-2">
             <AssistanceLevelBadge level={assistanceLevel} />
@@ -206,7 +206,7 @@ export default function SchoolCodingChatPage() {
               <Code className="h-6 w-6 text-adv-teal" />
             </div>
             <p className="text-base font-semibold text-adv-white">{moduleTitleLabel()}</p>
-            <p className="max-w-sm text-sm text-adv-gray-med">
+            <p className="max-w-sm text-sm text-adv-gray">
               {moduleId === 'code-explainer' && "Paste your code below, then ask Alma to help you understand it."}
               {moduleId === 'code-mentor' && "Describe what you want to build. Alma will guide you through building it step by step."}
               {moduleId === 'debug-guide' && "Paste your broken code and the error message. Alma will help you find the bug yourself."}
@@ -259,7 +259,7 @@ export default function SchoolCodingChatPage() {
         {showCodeInput && messages.length === 0 && (
           <div className="mb-2 rounded-xl border border-border bg-adv-card">
             <div className="flex items-center justify-between border-b border-border px-3 py-2">
-              <span className="text-xs font-medium text-adv-gray-med uppercase tracking-widest">
+              <span className="text-xs font-medium text-adv-gray uppercase tracking-widest">
                 {t('coding.codePlaceholder', 'Code')} · {language}
               </span>
               <button
@@ -277,7 +277,7 @@ export default function SchoolCodingChatPage() {
                 ? t('coding.codePlaceholder', 'Paste your code here...')
                 : t('coding.errorPlaceholder', 'Paste your code and the error message...')}
               rows={8}
-              className="w-full resize-y bg-transparent px-4 py-3 font-mono text-sm text-adv-off-white placeholder:text-adv-gray-med focus:outline-none"
+              className="w-full resize-y bg-transparent px-4 py-3 font-mono text-sm text-adv-off-white placeholder:text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
         )}
@@ -305,14 +305,14 @@ export default function SchoolCodingChatPage() {
             placeholder={t(meta.inputPlaceholderKey, meta.defaultPlaceholder)}
             rows={2}
             disabled={isStreaming}
-            className="w-full resize-none bg-transparent text-sm text-adv-off-white placeholder:text-adv-gray-med focus:outline-none disabled:opacity-50"
+            className="w-full resize-none bg-transparent text-sm text-adv-off-white placeholder:text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-50"
           />
           <div className="flex items-center justify-end pt-2">
             <button
               type="button"
               onClick={handleSend}
               disabled={!input.trim() || isStreaming}
-              className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-adv-teal transition-colors"
+              className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal transition-colors"
             >
               {isStreaming ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

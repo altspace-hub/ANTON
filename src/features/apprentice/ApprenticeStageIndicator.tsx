@@ -70,7 +70,7 @@ export default function ApprenticeStageIndicator({ moduleId }: ApprenticeStageIn
         <div className="mb-2 text-xs font-semibold text-adv-white">{stageLabel.label}</div>
         <div className="mb-3 text-xs text-adv-gray">{stageLabel.description}</div>
         {nextStageRequirements && nextStageRequirements.sessionsNeeded > 0 && (
-          <div className="text-xs text-adv-gray-med">
+          <div className="text-xs text-adv-gray">
             <span className="font-medium text-adv-teal">{nextStageRequirements.sessionsNeeded}</span> more
             sessions to next stage
             {nextStageRequirements.qualityNeeded && (

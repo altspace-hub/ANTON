@@ -158,7 +158,7 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
 
       {iterations.length === 0 && (
         <div className="text-center py-12">
-          <FileText className="h-10 w-10 text-adv-gray-med mx-auto mb-3" />
+          <FileText className="h-10 w-10 text-adv-gray mx-auto mb-3" />
           <p className="text-sm text-adv-off-white font-medium mb-1">No iterations yet</p>
           <p className="text-xs text-adv-gray">Go to Execution and run the engagement to generate the first draft.</p>
         </div>
@@ -215,7 +215,7 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold text-adv-off-white">Iteration #{latestDraft.iteration_number} — Gap Analysis</p>
-                      <p className="text-xs text-adv-gray-med mt-0.5">{new Date(latestDraft.created_at).toLocaleString()}</p>
+                      <p className="text-xs text-adv-gray mt-0.5">{new Date(latestDraft.created_at).toLocaleString()}</p>
                     </div>
                     {(!latestDraft.gap_analysis || latestDraft.gap_analysis === '{}') ? (
                       <button
@@ -263,7 +263,7 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
               {/* Older iterations gap analyses */}
               {iterations.filter(it => it.id !== latestDraft?.id && it.gap_analysis && it.gap_analysis !== '{}').map(it => (
                 <div key={it.id} className="bg-adv-card border border-border rounded-xl p-5 space-y-3 opacity-60">
-                  <p className="text-xs text-adv-gray-med">Iteration #{it.iteration_number} gap analysis (superseded)</p>
+                  <p className="text-xs text-adv-gray">Iteration #{it.iteration_number} gap analysis (superseded)</p>
                   <GapAnalysisDisplay gapJson={it.gap_analysis} />
                 </div>
               ))}
@@ -442,7 +442,7 @@ function IterationContextPanel({
         {/* Already-added supplements */}
         {supplementResources.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-[10px] text-adv-teal uppercase tracking-wider font-medium">Added since last run ({supplementResources.length})</p>
+            <p className="text-xs text-adv-teal uppercase tracking-wider font-medium">Added since last run ({supplementResources.length})</p>
             {supplementResources.map(r => (
               <div key={r.id} className="flex items-center gap-2.5 bg-adv-dark-2 rounded-lg px-3 py-2">
                 {r.url && !r.file_path
@@ -452,8 +452,8 @@ function IterationContextPanel({
                     : <MessageSquare className="h-3.5 w-3.5 text-adv-gold shrink-0" />
                 }
                 <span className="flex-1 text-xs text-adv-off-white truncate">{r.title}</span>
-                <span className="text-[10px] text-adv-gray-med shrink-0 capitalize">{r.category}</span>
-                <button onClick={() => removeResource(r.id)} className="text-adv-gray-med hover:text-adv-red transition-colors p-0.5 shrink-0">
+                <span className="text-xs text-adv-gray shrink-0 capitalize">{r.category}</span>
+                <button onClick={() => removeResource(r.id)} className="text-adv-gray hover:text-adv-red transition-colors p-0.5 shrink-0">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
@@ -504,7 +504,7 @@ function IterationContextPanel({
               <select
                 value={noteCategory}
                 onChange={e => setNoteCategory(e.target.value as 'meetings' | 'documents' | 'other')}
-                className="ml-auto bg-adv-card border border-border rounded px-2 py-0.5 text-[10px] text-adv-gray focus:outline-none focus:border-adv-teal"
+                className="ml-auto bg-adv-card border border-border rounded px-2 py-0.5 text-xs text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               >
                 <option value="meetings">Meeting notes</option>
                 <option value="documents">Analyst comment</option>
@@ -516,16 +516,16 @@ function IterationContextPanel({
               value={noteTitle}
               onChange={e => setNoteTitle(e.target.value)}
               placeholder="Title (e.g. Post-call clarifications, Interview notes)"
-              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <textarea
               value={noteText}
               onChange={e => setNoteText(e.target.value)}
               placeholder="Paste meeting notes, call outcomes, clarifications, additional analysis or context that addresses the gaps above…"
               rows={5}
-              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal resize-none"
+              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
             />
-            <p className="text-[10px] text-adv-gray-med">{noteText.length} characters · will be included verbatim in the next execution</p>
+            <p className="text-xs text-adv-gray">{noteText.length} characters · will be included verbatim in the next execution</p>
             <div className="flex gap-2 justify-end">
               <button onClick={() => { setAddMode(null); setNoteText(''); setNoteTitle(''); }} className="text-xs text-adv-gray hover:text-adv-off-white px-2 py-1">Cancel</button>
               <button
@@ -552,13 +552,13 @@ function IterationContextPanel({
               value={urlInput}
               onChange={e => setUrlInput(e.target.value)}
               placeholder="https://eur-lex.europa.eu/... or any web URL"
-              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <input
               value={urlTitle}
               onChange={e => setUrlTitle(e.target.value)}
               placeholder="Label (optional)"
-              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <div className="flex gap-2 justify-end">
               <button onClick={() => { setAddMode(null); setUrlInput(''); setUrlTitle(''); }} className="text-xs text-adv-gray hover:text-adv-off-white px-2 py-1">Cancel</button>
@@ -623,7 +623,7 @@ function IterationCard({ iteration, expanded, onToggle, approving, onApprove }: 
     draft:     'text-adv-gold bg-adv-gold/10 border-adv-gold/20',
     reviewed:  'text-adv-blue bg-adv-blue/10 border-adv-blue/20',
     approved:  'text-adv-green bg-adv-green/10 border-adv-green/20',
-    superseded:'text-adv-gray-med bg-adv-dark border-border',
+    superseded:'text-adv-gray bg-adv-dark border-border',
   };
   const sc = statusColors[iteration.status] || statusColors.draft;
   const wordCount = iteration.output_content?.split(/\s+/).length || 0;
@@ -638,13 +638,13 @@ function IterationCard({ iteration, expanded, onToggle, approving, onApprove }: 
         <FileText className="h-4 w-4 text-adv-teal shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-medium text-adv-off-white">Iteration #{iteration.iteration_number}</p>
-          <p className="text-xs text-adv-gray-med mt-0.5">
+          <p className="text-xs text-adv-gray mt-0.5">
             {new Date(iteration.created_at).toLocaleString()} · {wordCount.toLocaleString()} words
             {iteration.thinking_content && <span className="ml-2 text-adv-teal/60">· reasoning recorded</span>}
           </p>
         </div>
-        <span className={`text-[10px] font-medium border rounded-full px-2 py-0.5 ${sc}`}>{iteration.status}</span>
-        {expanded ? <ChevronUp className="h-4 w-4 text-adv-gray-med" /> : <ChevronDown className="h-4 w-4 text-adv-gray-med" />}
+        <span className={`text-xs font-medium border rounded-full px-2 py-0.5 ${sc}`}>{iteration.status}</span>
+        {expanded ? <ChevronUp className="h-4 w-4 text-adv-gray" /> : <ChevronDown className="h-4 w-4 text-adv-gray" />}
       </div>
 
       {expanded && (
@@ -668,9 +668,9 @@ function IterationCard({ iteration, expanded, onToggle, approving, onApprove }: 
               >
                 <Brain className="h-3.5 w-3.5 text-adv-teal/70 shrink-0" />
                 <span className="text-xs font-medium text-adv-gray">How ANTON Thought</span>
-                <span className="text-[10px] text-adv-gray-med ml-1">({thinkingWordCount.toLocaleString()} words)</span>
+                <span className="text-xs text-adv-gray ml-1">({thinkingWordCount.toLocaleString()} words)</span>
                 <span className="ml-auto">
-                  {thinkingOpen ? <ChevronUp className="h-3.5 w-3.5 text-adv-gray-med" /> : <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" />}
+                  {thinkingOpen ? <ChevronUp className="h-3.5 w-3.5 text-adv-gray" /> : <ChevronDown className="h-3.5 w-3.5 text-adv-gray" />}
                 </span>
               </button>
               {thinkingOpen && (
@@ -730,14 +730,14 @@ function ReviewLensSelector({
         <Sliders className="h-4 w-4 text-adv-teal shrink-0" />
         <div className="flex-1 text-left">
           <p className="text-xs font-medium text-adv-off-white">Review Lens: {current.icon} {current.label}</p>
-          <p className="text-[10px] text-adv-gray-med mt-0.5">{current.description}</p>
+          <p className="text-xs text-adv-gray mt-0.5">{current.description}</p>
         </div>
-        {open ? <ChevronUp className="h-4 w-4 text-adv-gray-med shrink-0" /> : <ChevronDown className="h-4 w-4 text-adv-gray-med shrink-0" />}
+        {open ? <ChevronUp className="h-4 w-4 text-adv-gray shrink-0" /> : <ChevronDown className="h-4 w-4 text-adv-gray shrink-0" />}
       </button>
 
       {open && (
         <div className="border-t border-border p-3 space-y-3">
-          <p className="text-[10px] text-adv-gray-med uppercase tracking-wider">Choose how ANTON should review the draft</p>
+          <p className="text-xs text-adv-gray uppercase tracking-wider">Choose how ANTON should review the draft</p>
           <div className="grid grid-cols-2 gap-2">
             {REVIEW_LENSES.map(lens => (
               <button
@@ -752,7 +752,7 @@ function ReviewLensSelector({
                 <span className="text-base leading-none shrink-0 mt-0.5">{lens.icon}</span>
                 <div>
                   <p className="text-xs font-medium leading-tight">{lens.label}</p>
-                  <p className="text-[10px] mt-0.5 leading-tight opacity-80">{lens.description}</p>
+                  <p className="text-xs mt-0.5 leading-tight opacity-80">{lens.description}</p>
                 </div>
               </button>
             ))}
@@ -760,14 +760,14 @@ function ReviewLensSelector({
 
           {selectedLens === 'custom' && (
             <div className="space-y-1.5">
-              <p className="text-[10px] text-adv-gray-med">Custom review instruction</p>
+              <p className="text-xs text-adv-gray">Custom review instruction</p>
               <textarea
                 autoFocus
                 value={customInstruction}
                 onChange={e => onCustomChange(e.target.value)}
                 placeholder="e.g. Review this output through the lens of the FATF Mutual Evaluation methodology. Identify gaps in technical compliance across Recommendations 10, 11, 12, and 20."
                 rows={4}
-                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal resize-none"
+                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
               />
             </div>
           )}
@@ -809,7 +809,7 @@ function GapAnalysisDisplay({ gapJson }: { gapJson: string }) {
   return (
     <div className="space-y-3">
       {lensLabel && (
-        <div className="flex items-center gap-1.5 text-[10px] text-adv-gray-med">
+        <div className="flex items-center gap-1.5 text-xs text-adv-gray">
           <span>{lensLabel.icon}</span>
           <span>Reviewed through <span className="text-adv-teal">{lensLabel.label}</span> lens</span>
         </div>
@@ -834,7 +834,7 @@ function GapAnalysisDisplay({ gapJson }: { gapJson: string }) {
           {sorted.map((g, i) => (
             <div key={i} className="bg-adv-dark-2 rounded-lg px-3 py-3 space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-medium border rounded-full px-2 py-0.5 ${priorityColors[g.priority] || priorityColors.low}`}>
+                <span className={`text-xs font-medium border rounded-full px-2 py-0.5 ${priorityColors[g.priority] || priorityColors.low}`}>
                   {g.priority}
                 </span>
                 <span className="text-xs font-medium text-adv-off-white">{g.area}</span>
@@ -1072,7 +1072,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
           </div>
           <button
             onClick={() => setEnabled(p => !p)}
-            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 ${
               enabled ? 'bg-adv-teal' : 'bg-adv-card border border-border'
             }`}
           >
@@ -1085,7 +1085,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
         <>
           {/* Role selection */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-adv-gray-med mb-3">Select Reviewers</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-adv-gray mb-3">Select Reviewers</p>
             <div className="grid grid-cols-2 gap-3">
               {COUNCIL_ROLES.map(role => {
                 const active = selectedRoles.has(role.id);
@@ -1109,14 +1109,14 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
                       <span className="text-base">{role.icon}</span>
                       <span className={`text-xs font-semibold ${active ? 'text-adv-teal' : 'text-adv-off-white'}`}>{role.label}</span>
                     </div>
-                    <p className="text-[10px] text-adv-gray-med mb-2">{role.description}</p>
+                    <p className="text-xs text-adv-gray mb-2">{role.description}</p>
                     {active && (
                       <select
                         value={roleModels[role.id] || role.defaultModel}
                         onChange={(e) => setRoleModels(prev => ({ ...prev, [role.id]: e.target.value as ModelId }))}
                         onClick={e => e.stopPropagation()}
                         disabled={running}
-                        className="w-full rounded border border-adv-teal/20 bg-adv-dark px-2 py-1 text-[10px] text-adv-off-white focus:outline-none disabled:opacity-60"
+                        className="w-full rounded border border-adv-teal/20 bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
                       >
                         <optgroup label="Claude">
                           <option value="claude-opus-4-6">Claude Opus 4.6</option>
@@ -1208,7 +1208,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
       )}
 
       {existingCouncil && !displayOutputs && (
-        <div className="text-xs text-adv-gray-med flex items-center gap-2 px-1">
+        <div className="text-xs text-adv-gray flex items-center gap-2 px-1">
           <CheckCircle className="h-3.5 w-3.5 text-adv-teal" />
           Previous council run: {new Date(existingCouncil.runAt).toLocaleString()} — enable to view or re-run
         </div>
@@ -1245,7 +1245,7 @@ function TabBtn({ active, onClick, icon: Icon, label }: {
 function StatusTile({ label, value, ok }: { label: string; value: number; ok?: boolean }) {
   return (
     <div className={`rounded-xl p-4 border ${ok ? 'bg-adv-green/5 border-adv-green/20' : 'bg-adv-card border-border'}`}>
-      <p className="text-[10px] text-adv-gray-med uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-xs text-adv-gray uppercase tracking-wider mb-1">{label}</p>
       <p className={`text-2xl font-bold ${ok ? 'text-adv-green' : 'text-adv-off-white'}`}>{value}</p>
     </div>
   );

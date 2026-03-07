@@ -143,18 +143,18 @@ export default function SchoolSettingsPage() {
               {t('settings.programmeSection', 'Programme / Linje')}
             </h2>
           </div>
-          <p className="text-xs text-adv-gray-med">
+          <p className="text-xs text-adv-gray">
             Setting your programme helps ANTON tailor explanations to your curriculum track.
           </p>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               {t('settings.gymnasietProgramme', 'Gymnasiet Programme')}
             </label>
             <select
               value={gymnasietProgram}
               onChange={(e) => setGymnasietProgram(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">— Not set —</option>
               <option value="NA">Naturvetenskapsprogrammet (Science)</option>
@@ -170,13 +170,13 @@ export default function SchoolSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               {t('settings.universityProgramme', 'University Programme')}
             </label>
             <select
               value={universityProgram}
               onChange={(e) => setUniversityProgram(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">— Not set —</option>
               <option value="industriell-ekonomi">Industriell Ekonomi (KTH/Chalmers)</option>
@@ -200,13 +200,13 @@ export default function SchoolSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               App Language
             </label>
             <select
               value={i18n.language}
               onChange={(e) => i18n.changeLanguage(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {UI_LANGUAGES.map((lang) => (
                 <option key={lang.code} value={lang.code}>{lang.label}</option>
@@ -215,14 +215,14 @@ export default function SchoolSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               Teaching Language
             </label>
-            <p className="mb-2 text-xs text-adv-gray-med">The language Alma uses when responding to you</p>
+            <p className="mb-2 text-xs text-adv-gray">The language Alma uses when responding to you</p>
             <select
               value={teachingLang}
               onChange={(e) => setTeachingLang(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {TEACHING_LANGUAGES.map((lang) => (
                 <option key={lang.code} value={lang.code}>{lang.label}</option>
@@ -241,7 +241,7 @@ export default function SchoolSettingsPage() {
           <label className="flex items-center justify-between cursor-pointer">
             <div>
               <p className="text-sm text-adv-off-white">Due date reminders</p>
-              <p className="text-xs text-adv-gray-med">Remind me when assignments are due soon</p>
+              <p className="text-xs text-adv-gray">Remind me when assignments are due soon</p>
             </div>
             <div
               role="switch"
@@ -262,7 +262,7 @@ export default function SchoolSettingsPage() {
             <MessageSquare className="h-4 w-4 text-adv-teal" />
             <h2 className="text-sm font-semibold text-adv-off-white">Conversation Style</h2>
           </div>
-          <p className="text-xs text-adv-gray-med">
+          <p className="text-xs text-adv-gray">
             Alma adapts her teaching style to your assistance level, set by your teacher. If you don't have a class, the default is L2 (Moderate Help).
           </p>
         </section>
@@ -275,10 +275,10 @@ export default function SchoolSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-2">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-2">
               Accessibility Mode
             </label>
-            <p className="mb-3 text-xs text-adv-gray-med">
+            <p className="mb-3 text-xs text-adv-gray">
               Choose a mode that suits how you learn best. Alma will adapt her responses accordingly.
             </p>
             <div className="space-y-2">
@@ -298,7 +298,7 @@ export default function SchoolSettingsPage() {
                   />
                   <div>
                     <p className="text-sm font-medium text-adv-off-white">{opt.label}</p>
-                    <p className="text-xs text-adv-gray-med">{opt.desc}</p>
+                    <p className="text-xs text-adv-gray">{opt.desc}</p>
                   </div>
                 </label>
               ))}
@@ -306,13 +306,13 @@ export default function SchoolSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               Explanation Style
             </label>
             <select
               value={explanationStyle}
               onChange={(e) => setExplanationStyle(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="balanced">Balanced (default)</option>
               <option value="examples_first">Examples first, then theory</option>
@@ -330,7 +330,7 @@ export default function SchoolSettingsPage() {
               <Server className="h-4 w-4 text-adv-teal" />
               <h2 className="text-sm font-semibold text-adv-off-white">Local AI Model (Admin)</h2>
             </div>
-            <p className="text-xs text-adv-gray-med">
+            <p className="text-xs text-adv-gray">
               Run ANTON school chat on a local AI model via Ollama instead of the cloud.
               Requires Ollama running at <code className="text-adv-teal">{ollamaUrl}</code> with <code className="text-adv-teal">mistral:7b</code> pulled.
               If the local model is unavailable, ANTON automatically falls back to the cloud.
@@ -357,7 +357,7 @@ export default function SchoolSettingsPage() {
                   />
                   <div>
                     <p className="text-sm font-medium text-adv-off-white">{opt.label}</p>
-                    <p className="text-xs text-adv-gray-med">{opt.desc}</p>
+                    <p className="text-xs text-adv-gray">{opt.desc}</p>
                   </div>
                 </label>
               ))}
@@ -397,7 +397,7 @@ export default function SchoolSettingsPage() {
             </div>
           ) : (
             <div>
-              <p className="mb-3 text-xs text-adv-gray-med">
+              <p className="mb-3 text-xs text-adv-gray">
                 Clear all your school chat history. This cannot be undone.
               </p>
               <button

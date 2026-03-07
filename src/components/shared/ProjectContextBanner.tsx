@@ -81,7 +81,7 @@ export function ProjectContextBanner({
       {onUseContext && outputCount > 0 && !loading && !error && (
         <button
           onClick={onUseContext}
-          className="ml-auto flex items-center gap-1 px-3 py-1 rounded bg-adv-teal/20 hover:bg-adv-teal/30 text-adv-teal text-xs font-medium transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-adv-teal/50"
+          className="ml-auto flex items-center gap-1 px-3 py-1 rounded bg-adv-teal/20 hover:bg-adv-teal/30 text-adv-teal text-xs font-medium transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/50"
           aria-label="Use previous outputs as context"
         >
           Use previous outputs as context

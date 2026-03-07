@@ -108,12 +108,12 @@ function TimelineEntry({ atom }: { atom: KnowledgeAtom }) {
         <div className="flex-1 min-w-0">
           {/* Date + category */}
           <div className="mb-1 flex items-center gap-2">
-            <span className="text-xs text-adv-gray-med">{formatDate(atom.created_at)}</span>
-            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${categoryBadge(atom.category)}`}>
+            <span className="text-xs text-adv-gray">{formatDate(atom.created_at)}</span>
+            <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${categoryBadge(atom.category)}`}>
               {atom.category}
             </span>
             {atom.source_area_id && (
-              <span className="text-[10px] text-adv-gray-med">/ {atom.source_area_id}</span>
+              <span className="text-xs text-adv-gray">/ {atom.source_area_id}</span>
             )}
           </div>
 
@@ -122,11 +122,11 @@ function TimelineEntry({ atom }: { atom: KnowledgeAtom }) {
 
           {/* Type tag */}
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="rounded bg-adv-dark-2 px-1.5 py-0.5 text-[10px] font-mono text-adv-gray-med">
+            <span className="rounded bg-adv-dark-2 px-1.5 py-0.5 text-xs font-mono text-adv-gray">
               {atom.atom_type}
             </span>
             {atom.temporal_type && (
-              <span className="text-[10px] text-adv-gray-med">{atom.temporal_type}</span>
+              <span className="text-xs text-adv-gray">{atom.temporal_type}</span>
             )}
           </div>
 
@@ -185,11 +185,11 @@ function WeekGroup({ weekKey, atoms }: { weekKey: string; atoms: KnowledgeAtom[]
         <div className="h-px flex-1 bg-border" />
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-adv-gray">{weekLabel}</span>
-          <span className="rounded-full bg-adv-dark-2 px-2 py-0.5 text-[10px] text-adv-gray-med">
+          <span className="rounded-full bg-adv-dark-2 px-2 py-0.5 text-xs text-adv-gray">
             {atoms.length}
           </span>
           {Object.entries(sentimentCounts).map(([s, n]) => (
-            <span key={s} className={`text-[10px] ${sentimentDot(s) === 'bg-adv-green' ? 'text-adv-green' : sentimentDot(s) === 'bg-adv-red' ? 'text-adv-red' : 'text-adv-gold'}`}>
+            <span key={s} className={`text-xs ${sentimentDot(s) === 'bg-adv-green' ? 'text-adv-green' : sentimentDot(s) === 'bg-adv-red' ? 'text-adv-red' : 'text-adv-gold'}`}>
               {n} {s}
             </span>
           ))}
@@ -284,7 +284,7 @@ export default function EntityTimeline() {
             <select
               value={entityType}
               onChange={(e) => setEntityType(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {ENTITY_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -301,7 +301,7 @@ export default function EntityTimeline() {
               onChange={(e) => setEntityIdInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Enter entity ID or name..."
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <button
@@ -323,7 +323,7 @@ export default function EntityTimeline() {
 
       {/* Empty state — no entity searched */}
       {!entityId && !loading && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center text-adv-gray-med">
+        <div className="flex flex-col items-center gap-3 py-16 text-center text-adv-gray">
           <Network className="h-10 w-10 opacity-30" />
           <p className="text-sm">Select an entity type and enter an ID to view its knowledge timeline.</p>
         </div>
@@ -364,7 +364,7 @@ export default function EntityTimeline() {
 
           {/* Timeline */}
           {atoms.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16 text-center text-adv-gray-med">
+            <div className="flex flex-col items-center gap-3 py-16 text-center text-adv-gray">
               <Network className="h-10 w-10 opacity-30" />
               <p className="text-sm">No knowledge atoms found for this entity.</p>
             </div>
@@ -374,7 +374,7 @@ export default function EntityTimeline() {
                 <h2 className="text-sm font-semibold text-adv-off-white">
                   Timeline: {entityType} / {entityId}
                 </h2>
-                <span className="text-xs text-adv-gray-med">
+                <span className="text-xs text-adv-gray">
                   {atoms.length} atom{atoms.length !== 1 ? 's' : ''}
                 </span>
               </div>

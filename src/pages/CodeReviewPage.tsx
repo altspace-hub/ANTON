@@ -322,7 +322,7 @@ export default function CodeReviewPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Paste your code here..."
-                className="h-80 w-full rounded-lg border border-border bg-adv-dark p-4 font-mono text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                className="h-80 w-full rounded-lg border border-border bg-adv-dark p-4 font-mono text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
               />
             )}
             {sourceType === 'directory' && (
@@ -337,14 +337,14 @@ export default function CodeReviewPage() {
                 value={repositoryUrl}
                 onChange={(e) => setRepositoryUrl(e.target.value)}
                 placeholder="https://github.com/user/repo"
-                className="w-full rounded-lg border border-border bg-adv-dark px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             )}
 
             {/* Code preview for paste mode */}
             {sourceType === 'paste' && code.trim() && (
               <div className="mt-2">
-                <p className="mb-1 text-xs text-adv-gray-med">
+                <p className="mb-1 text-xs text-adv-gray">
                   {code.split('\n').length} lines / {code.length.toLocaleString()} characters
                 </p>
               </div>
@@ -610,8 +610,8 @@ export default function CodeReviewPage() {
                 {messages.length === 0 && !isStreaming ? (
                   <div className="flex min-h-[200px] items-center justify-center">
                     <div className="text-center">
-                      <GitBranch className="mx-auto h-8 w-8 text-adv-gray-med" />
-                      <p className="mt-2 text-sm text-adv-gray-med">Preparing code review...</p>
+                      <GitBranch className="mx-auto h-8 w-8 text-adv-gray" />
+                      <p className="mt-2 text-sm text-adv-gray">Preparing code review...</p>
                     </div>
                   </div>
                 ) : (
@@ -645,7 +645,7 @@ export default function CodeReviewPage() {
                         ? 'Waiting for review to complete...'
                         : 'Ask a follow-up question, request more detail on a finding, or ask to focus on a specific area...'
                     }
-                    className="w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal disabled:opacity-50 resize-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal disabled:opacity-50 resize-none"
                     rows={2}
                   />
                 </div>
@@ -692,7 +692,7 @@ export default function CodeReviewPage() {
                 )}
               </div>
 
-              <p className="text-[11px] text-adv-gray-med">
+              <p className="text-[11px] text-adv-gray">
                 Press Ctrl+Enter to send
               </p>
             </div>
@@ -734,7 +734,7 @@ export default function CodeReviewPage() {
                 moduleId="code-review-explain"
               />
             ) : (
-              <p className="text-sm text-adv-gray-med">No output yet.</p>
+              <p className="text-sm text-adv-gray">No output yet.</p>
             )}
           </div>
 

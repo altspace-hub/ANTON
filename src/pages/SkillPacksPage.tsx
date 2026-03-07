@@ -54,7 +54,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
     <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-adv-teal/40 bg-adv-card px-4 py-3 shadow-xl">
       <Check className="h-4 w-4 shrink-0 text-adv-teal" />
       <span className="text-sm text-adv-off-white">{message}</span>
-      <button onClick={onClose} className="text-adv-gray-med hover:text-adv-off-white transition-colors">
+      <button onClick={onClose} className="text-adv-gray hover:text-adv-off-white transition-colors">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -90,7 +90,7 @@ function CreatePackModal({ onClose, onCreated }: CreatePackModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none';
+  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
   const labelCls = 'block text-xs font-medium text-adv-off-white mb-1';
 
   async function handleSubmit() {
@@ -130,7 +130,7 @@ function CreatePackModal({ onClose, onCreated }: CreatePackModalProps) {
             <Plus className="h-4 w-4 text-adv-teal" />
             Create Custom Pack
           </h2>
-          <button onClick={onClose} className="text-adv-gray-med hover:text-adv-off-white transition-colors">
+          <button onClick={onClose} className="text-adv-gray hover:text-adv-off-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -247,7 +247,7 @@ function PackCard({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold text-adv-white">{pack.name}</h3>
             {pack.is_default && (
-              <span className="rounded-full border border-adv-teal/30 bg-adv-teal-dim px-2 py-0.5 text-[10px] font-medium text-adv-teal">
+              <span className="rounded-full border border-adv-teal/30 bg-adv-teal-dim px-2 py-0.5 text-xs font-medium text-adv-teal">
                 Default
               </span>
             )}
@@ -262,15 +262,15 @@ function PackCard({
               <span className="text-adv-off-white font-medium">{pack.target_role}</span>
             )}
             {pack.target_role && pack.target_industry && (
-              <span className="text-adv-gray-med">·</span>
+              <span className="text-adv-gray">·</span>
             )}
             {pack.target_industry && (
               <span className={industryColor}>{pack.target_industry}</span>
             )}
             {pack.modules.length > 0 && (
               <>
-                <span className="text-adv-gray-med">·</span>
-                <span className="text-adv-gray-med">
+                <span className="text-adv-gray">·</span>
+                <span className="text-adv-gray">
                   {pack.modules.length} module{pack.modules.length !== 1 ? 's' : ''}
                 </span>
               </>
@@ -304,7 +304,7 @@ function PackCard({
           {pack.modules.map((mod) => (
             <span
               key={mod}
-              className="rounded-full border border-border bg-adv-dark px-2.5 py-0.5 text-[10px] text-adv-gray-med font-mono"
+              className="rounded-full border border-border bg-adv-dark px-2.5 py-0.5 text-xs text-adv-gray font-mono"
             >
               {mod}
             </span>
@@ -320,8 +320,8 @@ function PackCard({
             className="flex w-full items-center gap-2 px-5 py-2.5 text-left text-xs text-adv-gray hover:text-adv-off-white transition-colors"
           >
             {expanded
-              ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-adv-gray-med" />
-              : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-adv-gray-med" />}
+              ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-adv-gray" />
+              : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-adv-gray" />}
             <span className="font-medium">Getting started guide</span>
           </button>
           {expanded && (
@@ -406,7 +406,7 @@ export default function SkillPacksPage() {
 
       {/* Loading state */}
       {loading && (
-        <div className="flex items-center justify-center py-20 text-adv-gray-med">
+        <div className="flex items-center justify-center py-20 text-adv-gray">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-adv-teal border-t-transparent" />
           <span className="ml-3 text-sm">Loading packs...</span>
         </div>
@@ -418,7 +418,7 @@ export default function SkillPacksPage() {
           <div className="mb-3 flex items-center gap-2">
             <Package className="h-4 w-4 text-adv-teal" />
             <h2 className="text-sm font-semibold text-adv-off-white">Default Packs</h2>
-            <span className="text-xs text-adv-gray-med">{defaultPacks.length}</span>
+            <span className="text-xs text-adv-gray">{defaultPacks.length}</span>
           </div>
           <div className="space-y-3">
             {defaultPacks.map((pack) => (
@@ -439,12 +439,12 @@ export default function SkillPacksPage() {
           <div className="mb-3 flex items-center gap-2">
             <Users className="h-4 w-4 text-adv-gold" />
             <h2 className="text-sm font-semibold text-adv-off-white">Custom Packs</h2>
-            <span className="text-xs text-adv-gray-med">{customPacks.length}</span>
+            <span className="text-xs text-adv-gray">{customPacks.length}</span>
           </div>
 
           {customPacks.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-10 text-center">
-              <Package className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
+              <Package className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
               <p className="text-sm text-adv-gray">No custom packs yet.</p>
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -471,9 +471,9 @@ export default function SkillPacksPage() {
       {/* Empty state (no packs at all) */}
       {!loading && packs.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-16 text-center">
-          <Package className="mx-auto mb-4 h-10 w-10 text-adv-gray-med" />
+          <Package className="mx-auto mb-4 h-10 w-10 text-adv-gray" />
           <p className="text-sm font-medium text-adv-gray">No skill packs found</p>
-          <p className="mt-1 text-xs text-adv-gray-med">
+          <p className="mt-1 text-xs text-adv-gray">
             Default packs are seeded automatically on first launch.
           </p>
         </div>

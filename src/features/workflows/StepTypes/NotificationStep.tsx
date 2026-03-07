@@ -49,7 +49,7 @@ export function NotificationStep({ step, onUpdate, connections = [] }: Notificat
             <select
               value={step.config.connectionId || ''}
               onChange={(e) => onUpdate({ connectionId: e.target.value || undefined })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">— Select connection —</option>
               {webhookConnections.map((c) => (
@@ -64,14 +64,14 @@ export function NotificationStep({ step, onUpdate, connections = [] }: Notificat
           <div>
             <label className="mb-1 block text-[11px] font-medium text-adv-gray">
               Webhook URL
-              <span className="ml-1 text-adv-gray-med font-normal">Slack/Teams/custom webhook</span>
+              <span className="ml-1 text-adv-gray font-normal">Slack/Teams/custom webhook</span>
             </label>
             <input
               type="url"
               value={step.config.webhookUrl || ''}
               onChange={(e) => onUpdate({ webhookUrl: e.target.value })}
               placeholder="https://hooks.slack.com/services/..."
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
         )}
@@ -80,16 +80,16 @@ export function NotificationStep({ step, onUpdate, connections = [] }: Notificat
       <div>
         <label className="mb-1 block text-[11px] font-medium text-adv-gray">
           Message Template
-          <span className="ml-1 text-adv-gray-med font-normal">Supports {'{{variable}}'} substitution</span>
+          <span className="ml-1 text-adv-gray font-normal">Supports {'{{variable}}'} substitution</span>
         </label>
         <textarea
           value={step.config.messageTemplate || ''}
           onChange={(e) => onUpdate({ messageTemplate: e.target.value })}
           placeholder={"Workflow alert: {{workflow.label}} completed\n\nClient: {{step_1.client_name}}\nRisk Score: {{step_3.risk_score}}\n\nView details: {{context.url}}"}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={6}
         />
-        <p className="mt-1 text-[10px] text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           Use {'{{workflow.label}}'}, {'{{context.*}}'}, and {'{{step_N.*}}'} for dynamic content.
         </p>
       </div>

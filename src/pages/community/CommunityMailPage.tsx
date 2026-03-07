@@ -121,7 +121,7 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
           value={to}
           onChange={e => setTo(e.target.value)}
           placeholder="ANTON-XXXX-XXXX-XXXX-XXXX, …"
-          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
 
         <label className="mb-1 block text-xs text-adv-gray">CC (optional)</label>
@@ -129,7 +129,7 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
           value={cc}
           onChange={e => setCc(e.target.value)}
           placeholder="ANTON-XXXX-XXXX-XXXX-XXXX, …"
-          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
 
         <label className="mb-1 block text-xs text-adv-gray">Subject</label>
@@ -137,7 +137,7 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
           value={subject}
           onChange={e => setSubject(e.target.value)}
           placeholder="(no subject)"
-          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-3 w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
 
         <label className="mb-1 block text-xs text-adv-gray">Message</label>
@@ -146,7 +146,7 @@ function ComposeModal({ onClose, replyTo }: { onClose: () => void; replyTo?: Mai
           value={body}
           onChange={e => setBody(e.target.value)}
           rows={8}
-          className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
 
         {error && <p className="mb-3 text-sm text-adv-red">{error}</p>}

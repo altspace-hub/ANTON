@@ -73,7 +73,7 @@ export default function ModelValidation({ onInputChange }: ModelValidationProps)
         <select
           value={fcpArea}
           onChange={(e) => setFcpArea(e.target.value)}
-          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           {FCP_AREAS.map((area) => (
             <option key={area} value={area}>{area}</option>
@@ -89,7 +89,7 @@ export default function ModelValidation({ onInputChange }: ModelValidationProps)
           value={modelName}
           onChange={(e) => setModelName(e.target.value)}
           placeholder="e.g., NICE Actimize TM, Fircosoft Filter, in-house risk model..."
-          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -99,7 +99,7 @@ export default function ModelValidation({ onInputChange }: ModelValidationProps)
         <select
           value={validationType}
           onChange={(e) => setValidationType(e.target.value)}
-          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           {VALIDATION_TYPES.map((t) => (
             <option key={t} value={t}>{t}</option>
@@ -110,13 +110,13 @@ export default function ModelValidation({ onInputChange }: ModelValidationProps)
       {/* Known issues */}
       <div>
         <label className="mb-1 block text-xs font-medium text-adv-off-white">
-          Known issues <span className="text-adv-gray-med">(optional)</span>
+          Known issues <span className="text-adv-gray">(optional)</span>
         </label>
         <textarea
           value={knownIssues}
           onChange={(e) => setKnownIssues(e.target.value)}
           placeholder="Describe any known issues with the model: false positive rates, missed detections, calibration concerns, performance gaps..."
-          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={3}
         />
       </div>

@@ -17,7 +17,7 @@ function formatSEK(n: number): string {
 }
 
 const DISCLAIMER = (
-  <p className="mt-3 text-xs text-adv-gray-med">
+  <p className="mt-3 text-xs text-adv-gray">
     This is for educational illustration only. Actual results may differ. Consult a financial advisor.
   </p>
 );
@@ -85,22 +85,22 @@ function MortgageCalc() {
         <label className="space-y-1">
           <span className="text-xs text-adv-gray">Home price (SEK)</span>
           <input type="number" value={homePrice} onChange={(e) => setHomePrice(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
         </label>
         <label className="space-y-1">
           <span className="text-xs text-adv-gray">Down payment (SEK)</span>
           <input type="number" value={downPayment} onChange={(e) => setDownPayment(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
         </label>
         <label className="space-y-1">
           <span className="text-xs text-adv-gray">Annual interest rate (%)</span>
           <input type="number" step="0.1" value={interestRate} onChange={(e) => setInterestRate(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
         </label>
         <label className="space-y-1">
           <span className="text-xs text-adv-gray">Loan term</span>
           <select value={loanYears} onChange={(e) => setLoanYears(Number(e.target.value) as 25 | 30)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
             <option value={25}>25 years</option>
             <option value={30}>30 years</option>
           </select>
@@ -169,7 +169,7 @@ function CompoundCalc() {
           <label key={label} className="space-y-1">
             <span className="text-xs text-adv-gray">{label}</span>
             <input type="number" value={value} onChange={(e) => set(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </label>
         ))}
       </div>
@@ -236,7 +236,7 @@ function PensionCalc() {
           <label key={label} className="space-y-1">
             <span className="text-xs text-adv-gray">{label}</span>
             <input type="number" value={value} onChange={(e) => set(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </label>
         ))}
       </div>
@@ -300,7 +300,7 @@ function DebtCalc() {
           <label key={label} className="space-y-1">
             <span className="text-xs text-adv-gray">{label}</span>
             <input type="number" value={value} onChange={(e) => set(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </label>
         ))}
       </div>
@@ -358,12 +358,12 @@ function SwedishTaxCalc() {
         <label className="space-y-1">
           <span className="text-xs text-adv-gray">Annual gross income (SEK)</span>
           <input type="number" value={income} onChange={(e) => setIncome(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
         </label>
         <label className="space-y-1">
           <span className="text-xs text-adv-gray">Municipal tax rate (%) — default 32.5</span>
           <input type="number" step="0.1" value={municipalRate} onChange={(e) => setMunicipalRate(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
         </label>
       </div>
       <button onClick={calculate} disabled={loading}

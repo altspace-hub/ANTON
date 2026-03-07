@@ -87,7 +87,7 @@ export default function DeadlineDetailPanel({
       <div className="fixed right-0 top-0 z-50 flex h-full w-[480px] max-w-full flex-col border-l border-border bg-adv-dark-2 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div className="flex items-center gap-2 text-adv-gray-med text-xs">
+          <div className="flex items-center gap-2 text-adv-gray text-xs">
             <Calendar className="h-3.5 w-3.5" />
             <span>Created {formatDate(d.created_at)}</span>
           </div>
@@ -110,7 +110,7 @@ export default function DeadlineDetailPanel({
                 onBlur={saveTitle}
                 onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') { setTitleDraft(d.title); setEditingTitle(false); } }}
                 autoFocus
-                className="w-full rounded-lg border border-adv-teal bg-adv-dark px-3 py-2 text-lg font-bold text-adv-white focus:outline-none"
+                className="w-full rounded-lg border border-adv-teal bg-adv-dark px-3 py-2 text-lg font-bold text-adv-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             ) : (
               <h2
@@ -126,11 +126,11 @@ export default function DeadlineDetailPanel({
           {/* Status + Priority row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Status</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Status</label>
               <select
                 value={d.status}
                 onChange={e => patchField('status', e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                   <option key={key} value={key}>{cfg.label}</option>
@@ -138,11 +138,11 @@ export default function DeadlineDetailPanel({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Priority</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Priority</label>
               <select
                 value={d.priority}
                 onChange={e => patchField('priority', e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => (
                   <option key={key} value={key}>{cfg.label}</option>
@@ -153,15 +153,15 @@ export default function DeadlineDetailPanel({
 
           {/* Due date */}
           <div>
-            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Due Date</label>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Due Date</label>
             <div className="flex items-center gap-3">
               <input
                 type="date"
                 value={d.due_date ? d.due_date.slice(0, 10) : ''}
                 onChange={e => patchField('due_date', new Date(e.target.value).toISOString())}
-                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
-              <span className={`text-xs ${d.status === 'overdue' ? 'text-adv-red font-semibold' : 'text-adv-gray-med'}`}>
+              <span className={`text-xs ${d.status === 'overdue' ? 'text-adv-red font-semibold' : 'text-adv-gray'}`}>
                 <Clock className="mr-1 inline h-3 w-3" />
                 {formatRelativeDue(d.due_date)}
               </span>
@@ -171,14 +171,14 @@ export default function DeadlineDetailPanel({
           {/* Category + Project row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">
                 <Tag className="mr-1 inline h-3 w-3" />
                 Category
               </label>
               <select
                 value={d.category}
                 onChange={e => patchField('category', e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="regulatory">Regulatory</option>
                 <option value="client">Client</option>
@@ -187,14 +187,14 @@ export default function DeadlineDetailPanel({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">
                 <FolderOpen className="mr-1 inline h-3 w-3" />
                 Project
               </label>
               <select
                 value={d.project_id ?? ''}
                 onChange={e => patchField('project_id', e.target.value || null)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="">No project</option>
                 {projects.map(p => (
@@ -206,11 +206,11 @@ export default function DeadlineDetailPanel({
 
           {/* Kanban Column */}
           <div>
-            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Kanban Column</label>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Kanban Column</label>
             <select
               value={d.kanban_column}
               onChange={e => patchField('kanban_column', e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {KANBAN_COLUMNS.map(col => (
                 <option key={col.id} value={col.id}>{col.label}</option>
@@ -220,9 +220,9 @@ export default function DeadlineDetailPanel({
 
           {/* Labels */}
           <div>
-            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Labels</label>
+            <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Labels</label>
             {labels.length === 0 ? (
-              <p className="text-xs text-adv-gray-med">No labels defined.</p>
+              <p className="text-xs text-adv-gray">No labels defined.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {labels.map(l => {
@@ -251,7 +251,7 @@ export default function DeadlineDetailPanel({
 
           {/* Description */}
           <div>
-            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">
               <FileText className="mr-1 inline h-3 w-3" />
               Description
             </label>
@@ -262,7 +262,7 @@ export default function DeadlineDetailPanel({
                 onBlur={saveDescription}
                 rows={4}
                 autoFocus
-                className="w-full rounded-lg border border-adv-teal bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:outline-none resize-none"
+                className="w-full rounded-lg border border-adv-teal bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
               />
             ) : (
               <div
@@ -270,7 +270,7 @@ export default function DeadlineDetailPanel({
                 className="min-h-[60px] cursor-pointer rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-gray hover:border-adv-teal/40 transition-colors"
                 title="Click to edit"
               >
-                {d.description || <span className="text-adv-gray-med italic">Click to add a description...</span>}
+                {d.description || <span className="text-adv-gray italic">Click to add a description...</span>}
               </div>
             )}
           </div>
@@ -278,43 +278,43 @@ export default function DeadlineDetailPanel({
           {/* Prep / Review / Buffer */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Prep Days</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Prep Days</label>
               <input
                 type="number"
                 min={0}
                 max={90}
                 value={d.preparation_days}
                 onChange={e => patchField('preparation_days', Number(e.target.value))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Review Days</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Review Days</label>
               <input
                 type="number"
                 min={0}
                 max={30}
                 value={d.review_days}
                 onChange={e => patchField('review_days', Number(e.target.value))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Buffer Days</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Buffer Days</label>
               <input
                 type="number"
                 min={0}
                 max={14}
                 value={d.buffer_days}
                 onChange={e => patchField('buffer_days', Number(e.target.value))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
           </div>
 
           {/* Effort hours */}
           <div>
-            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Effort Hours</label>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Effort Hours</label>
             <input
               type="number"
               min={0}
@@ -322,7 +322,7 @@ export default function DeadlineDetailPanel({
               value={d.effort_hours ?? ''}
               onChange={e => patchField('effort_hours', e.target.value ? Number(e.target.value) : null)}
               placeholder="Not set"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
@@ -350,7 +350,7 @@ export default function DeadlineDetailPanel({
           {/* Dependencies */}
           {(d.depends_on || d.blocks) && (
             <div>
-              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">
                 <Link2 className="mr-1 inline h-3 w-3" />
                 Dependencies
               </label>
@@ -364,7 +364,7 @@ export default function DeadlineDetailPanel({
           {/* Notes */}
           {d.notes && (
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">Notes</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-adv-gray">Notes</label>
               <p className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-gray">{d.notes}</p>
             </div>
           )}

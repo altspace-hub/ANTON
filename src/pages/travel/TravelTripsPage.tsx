@@ -168,29 +168,29 @@ export default function TravelTripsPage() {
                 <span className="text-xs text-adv-gray">Trip name *</span>
                 <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Japan Spring 2026"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Destination *</span>
                 <input type="text" value={formData.destination} onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
                   placeholder="e.g. Tokyo, Japan"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Start date</span>
                 <input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">End date</span>
                 <input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Budget (USD)</span>
                 <input type="number" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                   placeholder="e.g. 3000"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
             </div>
 
@@ -236,7 +236,7 @@ export default function TravelTripsPage() {
           </div>
         ) : trips.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Briefcase className="mb-3 h-10 w-10 text-adv-gray-med" />
+            <Briefcase className="mb-3 h-10 w-10 text-adv-gray" />
             <h3 className="mb-1 font-semibold text-adv-off-white">No trips yet</h3>
             <p className="text-sm text-adv-gray">Create your first trip to get started.</p>
           </div>
@@ -268,7 +268,7 @@ export default function TravelTripsPage() {
                       {trip.status}
                     </span>
                     {trip.start_date && (
-                      <span className="text-xs text-adv-gray-med">{formatDate(trip.start_date)}</span>
+                      <span className="text-xs text-adv-gray">{formatDate(trip.start_date)}</span>
                     )}
                   </div>
 

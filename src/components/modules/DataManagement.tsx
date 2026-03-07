@@ -20,7 +20,7 @@ export default function DataManagement({ onInputChange }: Props) {
         <select
           value={scope}
           onChange={(e) => setScope(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select scope...</option>
           <option value="full-readiness">Full AMLA Data Readiness Assessment</option>
@@ -38,7 +38,7 @@ export default function DataManagement({ onInputChange }: Props) {
           value={systems}
           onChange={(e) => setSystems(e.target.value)}
           placeholder="e.g., Core banking, CRM, TM system, Screening tool"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -48,7 +48,7 @@ export default function DataManagement({ onInputChange }: Props) {
           value={concerns}
           onChange={(e) => setConcerns(e.target.value)}
           placeholder="Data quality issues, known gaps, legacy system constraints..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>

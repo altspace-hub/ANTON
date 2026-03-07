@@ -123,7 +123,7 @@ export function NotificationDropdown() {
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-adv-red text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-adv-red text-white text-xs font-bold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -146,7 +146,7 @@ export function NotificationDropdown() {
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="py-8 text-center text-sm text-adv-gray-med">
+              <div className="py-8 text-center text-sm text-adv-gray">
                 No notifications yet
               </div>
             ) : (
@@ -174,8 +174,8 @@ export function NotificationDropdown() {
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[11px] text-adv-gray-med">{formatRelativeTime(notification.created_at)}</span>
-                      {notification.link && <ExternalLink className="h-3 w-3 text-adv-gray-med" />}
+                      <span className="text-[11px] text-adv-gray">{formatRelativeTime(notification.created_at)}</span>
+                      {notification.link && <ExternalLink className="h-3 w-3 text-adv-gray" />}
                     </div>
                   </div>
                 </div>
@@ -185,7 +185,7 @@ export function NotificationDropdown() {
 
           {notifications.length > 0 && unreadCount === 0 && (
             <div className="px-4 py-2 border-t border-border text-center">
-              <span className="text-xs text-adv-gray-med flex items-center justify-center gap-1">
+              <span className="text-xs text-adv-gray flex items-center justify-center gap-1">
                 <Check className="h-3 w-3" />
                 All caught up
               </span>

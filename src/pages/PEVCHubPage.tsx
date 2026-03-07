@@ -165,7 +165,7 @@ export default function PEVCHubPage() {
                         <div className="flex items-center gap-1.5">
                           <span className="text-sm font-semibold text-adv-white group-hover:text-adv-blue transition-colors">{mod.label}</span>
                           {hasMyWay && (
-                            <span className="rounded-full bg-adv-gold/20 border border-adv-gold/30 px-1.5 py-0.5 text-[10px] font-medium text-adv-gold">MY WAY</span>
+                            <span className="rounded-full bg-adv-gold/20 border border-adv-gold/30 px-1.5 py-0.5 text-xs font-medium text-adv-gold">MY WAY</span>
                           )}
                         </div>
                         <p className="mt-0.5 text-xs text-adv-gray leading-relaxed line-clamp-2">{mod.description}</p>
@@ -383,7 +383,7 @@ function FundIdentityStep({ onNext, onSkip }: { onNext: () => void; onSkip: () =
         <select
           value={identity[key] ?? ''}
           onChange={e => setIdentity(p => ({ ...p, [key]: e.target.value }))}
-          className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-gold focus:outline-none"
+          className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select…</option>
           {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -393,7 +393,7 @@ function FundIdentityStep({ onNext, onSkip }: { onNext: () => void; onSkip: () =
           value={identity[key] ?? ''}
           onChange={e => setIdentity(p => ({ ...p, [key]: e.target.value }))}
           placeholder={placeholder}
-          className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-gold focus:outline-none"
+          className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       )}
     </div>
@@ -435,7 +435,7 @@ function FundIdentityStep({ onNext, onSkip }: { onNext: () => void; onSkip: () =
           onChange={e => setIdentity(p => ({ ...p, investment_style_notes: e.target.value }))}
           placeholder="e.g., We focus on capital-efficient SaaS with NRR >110%. We lead Series A-B rounds. We value operational founders."
           rows={2}
-          className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-gold focus:outline-none resize-none"
+          className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
         />
       </div>
 
@@ -555,7 +555,7 @@ function IcStyleStep({ onDone, onBack }: { onDone: () => void; onBack: () => voi
             onChange={e => setPastedText(e.target.value)}
             placeholder="Paste the text of a past IC memo here…"
             rows={6}
-            className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray/50 focus:border-adv-blue focus:outline-none resize-none"
+            className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray/50 focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
           />
           {pastedText.trim() && (
             <button onClick={handleTextExtract} disabled={extracting} className="flex items-center gap-1.5 rounded-md bg-adv-blue/20 hover:bg-adv-blue/30 border border-adv-blue/30 px-3 py-1.5 text-xs text-adv-blue transition-colors disabled:opacity-50">
@@ -585,7 +585,7 @@ function IcStyleStep({ onDone, onBack }: { onDone: () => void; onBack: () => voi
           </div>
           <div>
             <label className="mb-1 block text-xs text-adv-gray">Template name</label>
-            <input value={templateName} onChange={e => setTemplateName(e.target.value)} className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-gold focus:outline-none" />
+            <input value={templateName} onChange={e => setTemplateName(e.target.value)} className="w-full rounded-lg bg-adv-dark border border-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </div>
           <button onClick={() => setExtracted(null)} className="text-xs text-adv-gray hover:text-adv-white">← Upload different memo</button>
         </>

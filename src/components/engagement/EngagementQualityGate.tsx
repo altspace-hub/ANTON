@@ -45,7 +45,7 @@ interface CheckProgress {
 }
 
 function scoreColor(score: number | null | undefined) {
-  if (score == null) return 'text-adv-gray-med';
+  if (score == null) return 'text-adv-gray';
   if (score >= 80) return 'text-adv-green';
   if (score >= 60) return 'text-adv-gold';
   return 'text-adv-red';
@@ -302,7 +302,7 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
             <Play className="h-4 w-4" />
             Run Quality Gate
           </button>
-          <p className="text-xs text-adv-gray-med mt-2">Runs 6 checks — approximately 60–90 seconds</p>
+          <p className="text-xs text-adv-gray mt-2">Runs 6 checks — approximately 60–90 seconds</p>
         </div>
       )}
 
@@ -318,7 +318,7 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
                 style={{ width: `${(Object.values(checks).filter(c => c.status === 'done' || c.status === 'skipped').length / CHECKS.length) * 100}%` }}
               />
             </div>
-            <p className="text-[10px] text-adv-gray mt-1">
+            <p className="text-xs text-adv-gray mt-1">
               {Object.values(checks).filter(c => c.status === 'done' || c.status === 'skipped').length} / {CHECKS.length} checks complete
             </p>
           </div>
@@ -391,20 +391,20 @@ function CheckPanelDetails({ def, data }: { def: CheckDef; data: CheckPanelData 
         <div className="space-y-2">
           {addressed?.length ? (
             <div>
-              <p className="text-[10px] text-adv-green uppercase tracking-wider mb-1">Addressed ({addressed.length})</p>
+              <p className="text-xs text-adv-green uppercase tracking-wider mb-1">Addressed ({addressed.length})</p>
               {addressed.slice(0, 3).map((s, i) => <p key={i} className="text-xs text-adv-gray">✓ {s}</p>)}
-              {addressed.length > 3 ? <p className="text-xs text-adv-gray-med">+{addressed.length - 3} more</p> : null}
+              {addressed.length > 3 ? <p className="text-xs text-adv-gray">+{addressed.length - 3} more</p> : null}
             </div>
           ) : null}
           {missing?.length ? (
             <div>
-              <p className="text-[10px] text-adv-red uppercase tracking-wider mb-1">Missing ({missing.length})</p>
+              <p className="text-xs text-adv-red uppercase tracking-wider mb-1">Missing ({missing.length})</p>
               {missing.map((s, i) => <p key={i} className="text-xs text-adv-red">✗ {s}</p>)}
             </div>
           ) : null}
           {partial?.length ? (
             <div>
-              <p className="text-[10px] text-adv-gold uppercase tracking-wider mb-1">Partial ({partial.length})</p>
+              <p className="text-xs text-adv-gold uppercase tracking-wider mb-1">Partial ({partial.length})</p>
               {partial.map((s, i) => <p key={i} className="text-xs text-adv-gold">~ {s}</p>)}
             </div>
           ) : null}
@@ -435,7 +435,7 @@ function CheckPanelDetails({ def, data }: { def: CheckDef; data: CheckPanelData 
               <div key={sc.code} className="bg-adv-dark-2 rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-xs font-medium text-adv-off-white capitalize">{sc.label}</p>
-                  {r.verdict ? <span className={`text-[10px] font-medium ${verdictColor}`}>{r.verdict}</span> : null}
+                  {r.verdict ? <span className={`text-xs font-medium ${verdictColor}`}>{r.verdict}</span> : null}
                 </div>
                 {r.top_concern ? <p className="text-xs text-adv-gold">⚠ {r.top_concern}</p> : null}
                 {r.key_points && r.key_points.length > 0 ? r.key_points.slice(0, 2).map((kp, i) => (
@@ -468,7 +468,7 @@ function CheckPanel({
     done:     score != null
       ? (score >= 60 ? <CheckCircle className="h-4 w-4 text-adv-green shrink-0" /> : <AlertCircle className="h-4 w-4 text-adv-gold shrink-0" />)
       : <CheckCircle className="h-4 w-4 text-adv-green shrink-0" />,
-    skipped:  <SkipForward className="h-4 w-4 text-adv-gray-med shrink-0" />,
+    skipped:  <SkipForward className="h-4 w-4 text-adv-gray shrink-0" />,
     error:    <XCircle className="h-4 w-4 text-adv-red shrink-0" />,
   }[data.status] || <div className="w-4 h-4 rounded-full border border-border shrink-0" />;
 
@@ -480,15 +480,15 @@ function CheckPanel({
         className={`flex items-center gap-3 px-4 py-3 ${hasDetails ? 'cursor-pointer hover:bg-adv-dark-2/30' : ''}`}
         onClick={() => hasDetails && setExpanded(p => !p)}
       >
-        <span className="text-[10px] font-bold text-adv-teal bg-adv-teal-dim border border-adv-teal/20 rounded px-1.5 py-0.5 shrink-0">
+        <span className="text-xs font-bold text-adv-teal bg-adv-teal-dim border border-adv-teal/20 rounded px-1.5 py-0.5 shrink-0">
           {def.code}
         </span>
-        <Icon className={`h-3.5 w-3.5 shrink-0 ${data.status === 'running' ? 'text-adv-teal' : 'text-adv-gray-med'}`} />
+        <Icon className={`h-3.5 w-3.5 shrink-0 ${data.status === 'running' ? 'text-adv-teal' : 'text-adv-gray'}`} />
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium ${data.status === 'running' ? 'text-adv-teal' : 'text-adv-off-white'}`}>{def.label}</p>
-          {data.status === 'pending' && <p className="text-xs text-adv-gray-med truncate">{def.description}</p>}
+          {data.status === 'pending' && <p className="text-xs text-adv-gray truncate">{def.description}</p>}
           {data.status === 'running' && <p className="text-xs text-adv-teal animate-pulse">Analysing…</p>}
-          {data.status === 'skipped' && <p className="text-xs text-adv-gray-med">{(data.result as { reason?: string } | undefined)?.reason || 'Skipped'}</p>}
+          {data.status === 'skipped' && <p className="text-xs text-adv-gray">{(data.result as { reason?: string } | undefined)?.reason || 'Skipped'}</p>}
           {data.status === 'done' && score == null && def.code !== '8A' && def.code !== '8B' && def.code !== '8C' && (
             <p className="text-xs text-adv-green">Generated successfully</p>
           )}
@@ -510,7 +510,7 @@ function CheckPanel({
         {statusIcon}
 
         {hasDetails && (
-          <span className="text-adv-gray-med ml-1">
+          <span className="text-adv-gray ml-1">
             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </span>
         )}

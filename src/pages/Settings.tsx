@@ -664,22 +664,22 @@ export default function Settings() {
                   <div>
                     <label className="mb-1 block text-xs text-adv-gray">{t('settings.username')} *</label>
                     <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="username"
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-adv-gray">{t('settings.password')} *</label>
                     <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="password"
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-adv-gray">{t('settings.displayName')}</label>
                     <input value={newDisplayName} onChange={(e) => setNewDisplayName(e.target.value)} placeholder="Full Name"
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-adv-gray">{t('settings.role')}</label>
                     <select value={newRole} onChange={(e) => setNewRole(e.target.value as 'analyst' | 'viewer' | 'admin')}
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none">
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
                       <option value="analyst">{t('settings.roleAnalyst')}</option>
                       <option value="viewer">{t('settings.roleViewer')}</option>
                       <option value="admin">{t('settings.roleAdmin')}</option>
@@ -688,7 +688,7 @@ export default function Settings() {
                   <div>
                     <label className="mb-1 block text-xs text-adv-gray">{t('settings.monthlyTokenBudget')}</label>
                     <input type="number" min={0} value={newBudget} onChange={(e) => setNewBudget(Number(e.target.value))}
-                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
                   </div>
                 </div>
                 {teamError && <p className="text-xs text-adv-red">{teamError}</p>}
@@ -700,7 +700,7 @@ export default function Settings() {
             )}
 
             {teamLoading ? (
-              <p className="text-xs text-adv-gray-med">{t('settings.loading')}</p>
+              <p className="text-xs text-adv-gray">{t('settings.loading')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -737,7 +737,7 @@ export default function Settings() {
                                   min={0}
                                   value={editBudgetValue}
                                   onChange={(e) => setEditBudgetValue(Number(e.target.value))}
-                                  className="w-28 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white text-right focus:border-adv-teal focus:outline-none"
+                                  className="w-28 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white text-right focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                                 />
                                 <button onClick={() => handleUpdateBudget(u.id)} className="rounded px-2 py-1 text-xs text-adv-teal hover:bg-adv-teal/10 transition-colors">{t('settings.save2')}</button>
                                 <button onClick={() => setEditingBudget(null)} className="rounded px-2 py-1 text-xs text-adv-gray hover:text-adv-off-white transition-colors">{t('settings.cancel')}</button>
@@ -769,13 +769,13 @@ export default function Settings() {
                               )}
                             </div>
                           </td>
-                          <td className="py-2.5 text-right text-adv-gray-med">{u.last_login ? new Date(u.last_login).toLocaleDateString() : t('settings.never')}</td>
+                          <td className="py-2.5 text-right text-adv-gray">{u.last_login ? new Date(u.last_login).toLocaleDateString() : t('settings.never')}</td>
                           <td className="py-2.5 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               {editingUser === u.id ? (
                                 <>
                                   <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder={t('settings.newPasswordPlaceholder')}
-                                    className="w-28 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                                    className="w-28 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
                                   <button onClick={() => handleResetPassword(u.id)} className="rounded px-2 py-1 text-xs text-adv-teal hover:bg-adv-teal/10 transition-colors">{t('settings.save2')}</button>
                                   <button onClick={() => { setEditingUser(null); setEditPassword(''); }} className="rounded px-2 py-1 text-xs text-adv-gray hover:text-adv-off-white transition-colors">{t('settings.cancel')}</button>
                                 </>
@@ -806,7 +806,7 @@ export default function Settings() {
           <div className="rounded-xl border border-border bg-adv-card p-6">
             <h2 className="mb-4 text-sm font-semibold text-adv-white">{t('settings.usageThisMonth')}</h2>
             {usageRows.length === 0 ? (
-              <p className="text-xs text-adv-gray-med">{t('settings.noUsageRecorded')}</p>
+              <p className="text-xs text-adv-gray">{t('settings.noUsageRecorded')}</p>
             ) : (
               <div className="space-y-3">
                 {usageRows.map((row) => {
@@ -816,7 +816,7 @@ export default function Settings() {
                     <div key={row.username}>
                       <div className="mb-1 flex items-center justify-between">
                         <span className="text-xs text-adv-off-white">{row.display_name || row.username}</span>
-                        <span className="text-xs text-adv-gray-med">
+                        <span className="text-xs text-adv-gray">
                           {total.toLocaleString()} {t('settings.tokensUnit')}
                           {row.monthly_token_budget > 0 && ` / ${row.monthly_token_budget.toLocaleString()}`}
                         </span>
@@ -853,11 +853,11 @@ export default function Settings() {
           <div className="border-t border-border pt-8">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+                <span className="text-xs font-semibold uppercase tracking-wider text-adv-gray">
                   Channel Bridges — Mobile &amp; Messaging Pipelines
                 </span>
               </div>
-              <p className="text-xs text-adv-gray-med">
+              <p className="text-xs text-adv-gray">
                 Generate secure HTTP endpoints for WhatsApp bots, SMS gateways, Telegram bots, and
                 other messaging integrations. Partners call ANTON's bridge endpoint; ANTON handles
                 Claude and returns plain-text responses.
@@ -903,7 +903,7 @@ export default function Settings() {
                     : 'fill-adv-red text-adv-red'
                 }`}
               />
-              <span className="text-xs text-adv-gray-med">
+              <span className="text-xs text-adv-gray">
                 {health?.apiKeyConfigured ? t('settings.configured') : t('settings.notConfigured')}
               </span>
             </div>
@@ -913,8 +913,8 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-adv-gray">{t('settings.openai')} API Key</span>
             <div className="flex items-center gap-2">
-              <Circle className={`h-2 w-2 ${providerStatus.OPENAI_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
-              <span className="text-xs text-adv-gray-med">
+              <Circle className={`h-2 w-2 ${providerStatus.OPENAI_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
+              <span className="text-xs text-adv-gray">
                 {providerStatus.OPENAI_API_KEY ? t('settings.configured') : t('settings.notConfigured')}
               </span>
             </div>
@@ -924,8 +924,8 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-adv-gray">{t('settings.googleAi')} API Key</span>
             <div className="flex items-center gap-2">
-              <Circle className={`h-2 w-2 ${providerStatus.GOOGLE_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
-              <span className="text-xs text-adv-gray-med">
+              <Circle className={`h-2 w-2 ${providerStatus.GOOGLE_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
+              <span className="text-xs text-adv-gray">
                 {providerStatus.GOOGLE_API_KEY ? t('settings.configured') : t('settings.notConfigured')}
               </span>
             </div>
@@ -935,8 +935,8 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-adv-gray">{t('settings.mistral')} API Key</span>
             <div className="flex items-center gap-2">
-              <Circle className={`h-2 w-2 ${providerStatus.MISTRAL_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
-              <span className="text-xs text-adv-gray-med">
+              <Circle className={`h-2 w-2 ${providerStatus.MISTRAL_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
+              <span className="text-xs text-adv-gray">
                 {providerStatus.MISTRAL_API_KEY ? t('settings.configured') : t('settings.notConfigured')}
               </span>
             </div>
@@ -954,7 +954,7 @@ export default function Settings() {
                     : 'fill-adv-red text-adv-red'
                 }`}
               />
-              <span className="text-xs text-adv-gray-med">
+              <span className="text-xs text-adv-gray">
                 {health?.database ? t('settings.connected') : t('settings.notConnected')}
               </span>
             </div>
@@ -962,7 +962,7 @@ export default function Settings() {
 
           <div className="flex items-center justify-between">
             <span className="text-sm text-adv-gray">{t('settings.version')}</span>
-            <span className="text-xs text-adv-gray-med">{health?.version || '-'}</span>
+            <span className="text-xs text-adv-gray">{health?.version || '-'}</span>
           </div>
         </div>
 
@@ -982,7 +982,7 @@ export default function Settings() {
           <Key className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">{t('settings.additionalProviders')}</h2>
         </div>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           {t('settings.additionalProvidersDesc')}
         </p>
 
@@ -996,11 +996,11 @@ export default function Settings() {
                 placeholder="sk-..."
                 value={openaiKey}
                 onChange={(e) => setOpenaiKey(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div className="flex items-center gap-2 pt-5">
-              <Circle className={`h-2 w-2 ${providerStatus.OPENAI_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
+              <Circle className={`h-2 w-2 ${providerStatus.OPENAI_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
               <button
                 onClick={() => saveProviderKey('OPENAI_API_KEY', openaiKey, setOpenaiKey)}
                 className="rounded-lg bg-adv-teal-dim px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors"
@@ -1019,11 +1019,11 @@ export default function Settings() {
                 placeholder="AIza..."
                 value={googleKey}
                 onChange={(e) => setGoogleKey(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div className="flex items-center gap-2 pt-5">
-              <Circle className={`h-2 w-2 ${providerStatus.GOOGLE_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
+              <Circle className={`h-2 w-2 ${providerStatus.GOOGLE_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
               <button
                 onClick={() => saveProviderKey('GOOGLE_API_KEY', googleKey, setGoogleKey)}
                 className="rounded-lg bg-adv-teal-dim px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors"
@@ -1042,11 +1042,11 @@ export default function Settings() {
                 placeholder="..."
                 value={mistralKey}
                 onChange={(e) => setMistralKey(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div className="flex items-center gap-2 pt-5">
-              <Circle className={`h-2 w-2 ${providerStatus.MISTRAL_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
+              <Circle className={`h-2 w-2 ${providerStatus.MISTRAL_API_KEY ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
               <button
                 onClick={() => saveProviderKey('MISTRAL_API_KEY', mistralKey, setMistralKey)}
                 className="rounded-lg bg-adv-teal-dim px-3 py-1.5 text-xs text-adv-teal hover:bg-adv-teal/20 transition-colors"
@@ -1064,7 +1064,7 @@ export default function Settings() {
           <Sparkles className="h-4 w-4 text-purple-400" />
           <h2 className="text-sm font-semibold text-adv-white">{t('settings.customModels')}</h2>
         </div>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           {t('settings.customModelsDesc')}
         </p>
 
@@ -1084,13 +1084,13 @@ export default function Settings() {
                     {state.displayName || t('settings.customModelSlot', { slot })}
                   </span>
                   {state.enabled && state.modelId && (
-                    <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-400">
+                    <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-xs font-medium text-purple-400">
                       {t('settings.customModelActive')}
                     </span>
                   )}
                 </div>
                 {state.modelId && (
-                  <span className="text-[10px] text-adv-gray-med font-mono">{state.modelId}</span>
+                  <span className="text-xs text-adv-gray font-mono">{state.modelId}</span>
                 )}
               </button>
 
@@ -1122,7 +1122,7 @@ export default function Settings() {
                         value={state.displayName}
                         onChange={(e) => setter({ ...state, displayName: e.target.value })}
                         placeholder="e.g. Claude 4 Opus Preview"
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
 
@@ -1134,7 +1134,7 @@ export default function Settings() {
                         value={state.modelId}
                         onChange={(e) => setter({ ...state, modelId: e.target.value })}
                         placeholder="e.g. claude-opus-4-20260301"
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
                       />
                     </div>
 
@@ -1144,7 +1144,7 @@ export default function Settings() {
                       <select
                         value={state.provider}
                         onChange={(e) => setter({ ...state, provider: e.target.value as any })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       >
                         <option value="anthropic">Anthropic</option>
                         <option value="openai">OpenAI</option>
@@ -1159,7 +1159,7 @@ export default function Settings() {
                       <select
                         value={state.apiKeySource}
                         onChange={(e) => setter({ ...state, apiKeySource: e.target.value as 'provider' | 'custom' })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       >
                         <option value="provider">{t('settings.customModelUseProviderKey')}</option>
                         <option value="custom">{t('settings.customModelCustomApiKey')}</option>
@@ -1176,7 +1176,7 @@ export default function Settings() {
                         value={state.apiKeyOverride}
                         onChange={(e) => setter({ ...state, apiKeyOverride: e.target.value })}
                         placeholder="sk-..."
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
                   )}
@@ -1190,7 +1190,7 @@ export default function Settings() {
                         min={0}
                         value={state.contextWindow}
                         onChange={(e) => setter({ ...state, contextWindow: Number(e.target.value) })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
 
@@ -1202,7 +1202,7 @@ export default function Settings() {
                         min={0}
                         value={state.maxOutputTokens}
                         onChange={(e) => setter({ ...state, maxOutputTokens: Number(e.target.value) })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
 
@@ -1215,7 +1215,7 @@ export default function Settings() {
                         step={0.01}
                         value={state.inputCostPer1M}
                         onChange={(e) => setter({ ...state, inputCostPer1M: Number(e.target.value) })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
 
@@ -1228,7 +1228,7 @@ export default function Settings() {
                         step={0.01}
                         value={state.outputCostPer1M}
                         onChange={(e) => setter({ ...state, outputCostPer1M: Number(e.target.value) })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
                   </div>
@@ -1240,7 +1240,7 @@ export default function Settings() {
                       <select
                         value={state.costTier}
                         onChange={(e) => setter({ ...state, costTier: Number(e.target.value) as 0 | 1 | 2 | 3 })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       >
                         <option value={0}>Free (0)</option>
                         <option value={1}>Budget (1)</option>
@@ -1303,7 +1303,7 @@ export default function Settings() {
       {/* Default Settings */}
       <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
         <h2 className="text-sm font-semibold text-adv-white">{t('settings.defaultSettings')}</h2>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           {t('settings.defaultSettingsDesc')}
         </p>
 
@@ -1316,7 +1316,7 @@ export default function Settings() {
 
             {/* Claude (always available) */}
             <div className="mb-3">
-              <p className="mb-1.5 text-xs text-adv-gray-med">Claude (Anthropic)</p>
+              <p className="mb-1.5 text-xs text-adv-gray">Claude (Anthropic)</p>
               <div className="flex flex-wrap gap-2">
                 {MODEL_OPTIONS.map((opt) => (
                   <button
@@ -1332,7 +1332,7 @@ export default function Settings() {
 
             {/* OpenAI */}
             <div className="mb-3">
-              <p className="mb-1.5 text-xs text-adv-gray-med">
+              <p className="mb-1.5 text-xs text-adv-gray">
                 OpenAI
                 {!providerStatus.OPENAI_API_KEY && (
                   <span className="ml-1 opacity-50">— {t('settings.notConfigured')}</span>
@@ -1351,7 +1351,7 @@ export default function Settings() {
                       onClick={() => { if (!disabled) handleSetModel(modelValue); }}
                       disabled={disabled}
                       title={disabled ? 'Add OPENAI_API_KEY to .env to enable' : undefined}
-                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray-med/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
                     >
                       {label}
                     </button>
@@ -1362,7 +1362,7 @@ export default function Settings() {
 
             {/* Google AI */}
             <div className="mb-3">
-              <p className="mb-1.5 text-xs text-adv-gray-med">
+              <p className="mb-1.5 text-xs text-adv-gray">
                 Google AI
                 {!providerStatus.GOOGLE_API_KEY && (
                   <span className="ml-1 opacity-50">— {t('settings.notConfigured')}</span>
@@ -1381,7 +1381,7 @@ export default function Settings() {
                       onClick={() => { if (!disabled) handleSetModel(modelValue); }}
                       disabled={disabled}
                       title={disabled ? 'Add GOOGLE_API_KEY to .env to enable' : undefined}
-                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray-med/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
                     >
                       {label}
                     </button>
@@ -1392,7 +1392,7 @@ export default function Settings() {
 
             {/* Mistral */}
             <div className="mb-3">
-              <p className="mb-1.5 text-xs text-adv-gray-med">
+              <p className="mb-1.5 text-xs text-adv-gray">
                 Mistral
                 {!providerStatus.MISTRAL_API_KEY && (
                   <span className="ml-1 opacity-50">— {t('settings.notConfigured')}</span>
@@ -1411,7 +1411,7 @@ export default function Settings() {
                       onClick={() => { if (!disabled) handleSetModel(modelValue); }}
                       disabled={disabled}
                       title={disabled ? 'Add MISTRAL_API_KEY to .env to enable' : undefined}
-                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray-med/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                      className={`${CHIP_BASE} ${defaultModel === modelValue ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
                     >
                       {label}
                     </button>
@@ -1423,7 +1423,7 @@ export default function Settings() {
             {/* Custom model slots */}
             {(customSlot1.enabled && customSlot1.modelId) || (customSlot2.enabled && customSlot2.modelId) ? (
               <div className="mb-3">
-                <p className="mb-1.5 text-xs text-adv-gray-med">{t('settings.customModels')}</p>
+                <p className="mb-1.5 text-xs text-adv-gray">{t('settings.customModels')}</p>
                 <div className="flex flex-wrap gap-2">
                   {customSlot1.enabled && customSlot1.modelId && (
                     <button
@@ -1490,7 +1490,7 @@ export default function Settings() {
           <Globe className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">{t('settings.language')}</h2>
         </div>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           {t('settings.languageDesc')}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -1548,7 +1548,7 @@ export default function Settings() {
           <Server className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">{t('settings.deployment')}</h2>
         </div>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           {t('settings.deploymentDesc')}
         </p>
         <div className="mt-4 space-y-3">
@@ -1562,7 +1562,7 @@ export default function Settings() {
               {deploymentMode === 'team' ? t('settings.team') : t('settings.solo')}
             </span>
           </div>
-          <div className="rounded-lg bg-adv-dark/50 p-3 text-xs text-adv-gray-med">
+          <div className="rounded-lg bg-adv-dark/50 p-3 text-xs text-adv-gray">
             {deploymentMode === 'solo' ? (
               <>{t('settings.soloModeDescription')}</>
             ) : (
@@ -1575,7 +1575,7 @@ export default function Settings() {
       {/* Theme */}
       <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
         <h2 className="text-sm font-semibold text-adv-white">{t('settings.theme')}</h2>
-        <p className="mt-1 text-xs text-adv-gray-med">{t('settings.themeDesc')}</p>
+        <p className="mt-1 text-xs text-adv-gray">{t('settings.themeDesc')}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {THEME_OPTIONS.map((opt) => (
             <button
@@ -1595,7 +1595,7 @@ export default function Settings() {
           <DollarSign className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">{t('settings.budget')}</h2>
         </div>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           {t('settings.budgetDesc')}
         </p>
 
@@ -1638,7 +1638,7 @@ export default function Settings() {
               </>
             )}
             {spendingData.cap === 0 && (
-              <p className="text-xs text-adv-gray-med">{t('settings.noSpendingLimit')}</p>
+              <p className="text-xs text-adv-gray">{t('settings.noSpendingLimit')}</p>
             )}
           </div>
         )}
@@ -1648,7 +1648,7 @@ export default function Settings() {
           <div className="flex-1">
             <label className="mb-1 block text-xs text-adv-gray">{t('settings.monthlyBudgetCap')}</label>
             <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-adv-gray-med text-xs">€</span>
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-adv-gray text-xs">€</span>
               <input
                 type="number"
                 min={0}
@@ -1656,10 +1656,10 @@ export default function Settings() {
                 value={budgetCapInput}
                 onChange={(e) => setBudgetCapInput(e.target.value)}
                 placeholder="0"
-                className="w-full rounded-lg border border-border bg-adv-dark pl-7 pr-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark pl-7 pr-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
-            <p className="mt-1 text-xs text-adv-gray-med">{t('settings.zeroNoLimit')}</p>
+            <p className="mt-1 text-xs text-adv-gray">{t('settings.zeroNoLimit')}</p>
           </div>
           <button
             onClick={saveBudgetCap}
@@ -1685,14 +1685,14 @@ export default function Settings() {
           <Bell className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">{t('settings.notifications')}</h2>
         </div>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           {t('settings.notificationsDesc')}
         </p>
         <div className="mt-4">
           <label className="flex cursor-pointer items-center justify-between gap-4">
             <div>
               <p className="text-sm text-adv-off-white">{t('settings.emailNotification')}</p>
-              <p className="mt-0.5 text-xs text-adv-gray-med">
+              <p className="mt-0.5 text-xs text-adv-gray">
                 {t('settings.emailNotificationDesc')}
               </p>
             </div>
@@ -1703,7 +1703,7 @@ export default function Settings() {
                 setEmailNotificationsEnabled(!emailNotificationsEnabled);
                 flash();
               }}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card ${
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card ${
                 emailNotificationsEnabled ? 'bg-adv-teal' : 'bg-adv-gray-med/40'
               }`}
             >
@@ -1724,7 +1724,7 @@ SMTP_USER=you@yourdomain.com   # login address
 SMTP_PASS=your-app-password    # app password or SMTP password
 SMTP_FROM_NAME=Anton           # display name on outgoing mail
 SMTP_FROM_EMAIL=you@domain.com # optional, defaults to SMTP_USER`}</pre>
-            <p className="mt-2 text-xs text-adv-gray-med">
+            <p className="mt-2 text-xs text-adv-gray">
               Emails will appear to come from <span className="text-adv-off-white">Anton</span> (or your custom <code className="rounded bg-adv-dark px-1">SMTP_FROM_NAME</code>).
               Add these to your <code className="rounded bg-adv-dark px-1">.env</code> file and restart the server.
             </p>
@@ -1738,7 +1738,7 @@ SMTP_FROM_EMAIL=you@domain.com # optional, defaults to SMTP_USER`}</pre>
           <Building2 className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">Single Sign-On (Enterprise SSO)</h2>
         </div>
-        <p className="text-xs text-adv-gray-med mb-4">
+        <p className="text-xs text-adv-gray mb-4">
           OIDC-based SSO supports Azure AD, Okta, Auth0, and any OpenID Connect-compliant identity provider.
           Configure via environment variables and restart the server to enable the "Enterprise SSO" button on the login page.
         </p>
@@ -1747,15 +1747,15 @@ SMTP_FROM_EMAIL=you@domain.com # optional, defaults to SMTP_USER`}</pre>
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm text-adv-gray">SSO status</span>
           <div className="flex items-center gap-2">
-            <Circle className={`h-2 w-2 ${oidcEnabled ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray-med'}`} />
-            <span className="text-xs text-adv-gray-med">
+            <Circle className={`h-2 w-2 ${oidcEnabled ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
+            <span className="text-xs text-adv-gray">
               {oidcEnabled ? 'Configured' : 'Not configured'}
             </span>
           </div>
         </div>
 
         {/* Required env vars */}
-        <div className="rounded-lg bg-adv-dark/50 p-3 text-xs text-adv-gray-med mb-4">
+        <div className="rounded-lg bg-adv-dark/50 p-3 text-xs text-adv-gray mb-4">
           <p className="mb-2 font-semibold text-adv-off-white">Required environment variables:</p>
           <pre className="text-adv-gray leading-relaxed whitespace-pre-wrap">
 {`OIDC_ISSUER_URL=https://login.microsoftonline.com/{tenant}/v2.0
@@ -1763,7 +1763,7 @@ OIDC_CLIENT_ID=your-client-id
 OIDC_CLIENT_SECRET=your-client-secret
 OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
           </pre>
-          <p className="mt-2 text-adv-gray-med">
+          <p className="mt-2 text-adv-gray">
             Add these to your <code className="rounded bg-adv-dark px-1">.env</code> file and restart the server.
             The callback URL must be registered in your identity provider's application settings.
           </p>
@@ -1792,7 +1792,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
       {/* UX-05: Show Onboarding Again */}
       <div className="mt-6 rounded-xl border border-border bg-adv-card p-6">
         <h2 className="text-sm font-semibold text-adv-white">Onboarding Tour</h2>
-        <p className="mt-1 text-xs text-adv-gray-med">Replay the guided onboarding tour that introduces the key features.</p>
+        <p className="mt-1 text-xs text-adv-gray">Replay the guided onboarding tour that introduces the key features.</p>
         <button
           onClick={() => {
             try { localStorage.removeItem('openexpert-tour-completed'); } catch { /* ignore */ }
@@ -1808,7 +1808,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
       {/* ONBOARD-03: Keyboard shortcuts reference */}
       <div className="mt-6 rounded-xl border border-border bg-adv-card p-6">
         <h2 className="text-sm font-semibold text-adv-white">Keyboard Shortcuts</h2>
-        <p className="mt-1 mb-4 text-xs text-adv-gray-med">Keyboard shortcuts available throughout the application.</p>
+        <p className="mt-1 mb-4 text-xs text-adv-gray">Keyboard shortcuts available throughout the application.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-xs">
           {([
             ['Cmd/Ctrl + K', 'Open Command Palette'],
@@ -1822,7 +1822,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
           ] as [string, string][]).map(([key, desc]) => (
             <div key={key} className="flex items-center justify-between gap-2 py-1 border-b border-border/50">
               <span className="font-mono rounded bg-adv-dark px-1.5 py-0.5 text-[11px] text-adv-off-white">{key}</span>
-              <span className="text-adv-gray-med text-right">{desc}</span>
+              <span className="text-adv-gray text-right">{desc}</span>
             </div>
           ))}
         </div>
@@ -1834,7 +1834,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
           <FileText className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">{t('settings.brandTemplates')}</h2>
         </div>
-        <p className="text-xs text-adv-gray-med mb-4">
+        <p className="text-xs text-adv-gray mb-4">
           {t('settings.brandTemplatesDesc')}
         </p>
 
@@ -1857,9 +1857,9 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-adv-gray" />
                   <span className="text-sm text-adv-off-white">{tpl.name}</span>
-                  <span className="text-xs text-adv-gray-med">.{tpl.type}</span>
+                  <span className="text-xs text-adv-gray">.{tpl.type}</span>
                   {tpl.file_size && (
-                    <span className="text-xs text-adv-gray-med">
+                    <span className="text-xs text-adv-gray">
                       {(tpl.file_size / 1024).toFixed(0)} KB
                     </span>
                   )}
@@ -1877,7 +1877,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
         )}
 
         {templates.length === 0 && (
-          <p className="mt-4 text-xs text-adv-gray-med">{t('settings.noTemplatesYet')}</p>
+          <p className="mt-4 text-xs text-adv-gray">{t('settings.noTemplatesYet')}</p>
         )}
       </div>
 
@@ -1887,7 +1887,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
           <Palette className="h-4 w-4 text-adv-teal" />
           <h2 className="text-sm font-semibold text-adv-white">Brand Style</h2>
         </div>
-        <p className="text-xs text-adv-gray-med mb-5">
+        <p className="text-xs text-adv-gray mb-5">
           Define your organisation's typography and colour palette. Used in exports (DOCX, PDF) and charts.
         </p>
 
@@ -1907,7 +1907,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
                 type="text"
                 value={brandConfig.fonts[key].family}
                 onChange={(e) => updateFont(key, 'family', e.target.value)}
-                className="w-28 rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-28 rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 placeholder="Font family"
                 title="Font family"
               />
@@ -1915,7 +1915,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
                 type="text"
                 value={brandConfig.fonts[key].size}
                 onChange={(e) => updateFont(key, 'size', e.target.value)}
-                className="w-16 rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-16 rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 placeholder="Size"
                 title="Font size (e.g. 11pt)"
               />
@@ -1931,7 +1931,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
                   type="text"
                   value={brandConfig.fonts[key].color}
                   onChange={(e) => updateFont(key, 'color', e.target.value)}
-                  className="w-20 rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+                  className="w-20 rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   placeholder="#333333"
                   title="Hex colour code"
                 />
@@ -1942,7 +1942,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
 
         {/* Colour Palette */}
         <h3 className="text-xs font-semibold text-adv-off-white uppercase tracking-wider mb-3">Primary Colour Palette</h3>
-        <p className="text-xs text-adv-gray-med mb-3">
+        <p className="text-xs text-adv-gray mb-3">
           Used in charts, graphs, and accent colours in exports. Default: Office Blue colour scheme.
         </p>
         <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -1959,9 +1959,9 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
                 type="text"
                 value={color}
                 onChange={(e) => updatePaletteColor(idx, e.target.value)}
-                className="w-20 rounded border border-border bg-adv-card px-1.5 py-0.5 text-center text-[10px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+                className="w-20 rounded border border-border bg-adv-card px-1.5 py-0.5 text-center text-xs text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
-              <span className="text-[9px] text-adv-gray-med">Accent {idx + 1}</span>
+              <span className="text-xs text-adv-gray">Accent {idx + 1}</span>
             </div>
           ))}
         </div>
@@ -2101,7 +2101,7 @@ function MyWaySettingsContent() {
             [key]: type === 'number' ? (e.target.value ? Number(e.target.value) : undefined) : e.target.value,
           }))}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
         />
       </div>
     );
@@ -2124,7 +2124,7 @@ function MyWaySettingsContent() {
         </div>
 
         {identityLoading ? (
-          <p className="text-xs text-adv-gray-med">Loading…</p>
+          <p className="text-xs text-adv-gray">Loading…</p>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -2140,7 +2140,7 @@ function MyWaySettingsContent() {
                 <select
                   value={identity.vatRegistered ? 'yes' : 'no'}
                   onChange={e => setIdentity(prev => ({ ...prev, vatRegistered: e.target.value === 'yes' }))}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 >
                   <option value="yes">Yes</option>
                   <option value="no">No</option>
@@ -2165,7 +2165,7 @@ function MyWaySettingsContent() {
                     preferredPaymentMethods: [{ type: 'bankgiro', details: e.target.value }],
                   }))}
                   placeholder="Bankgiro: 123-4567"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
                 />
               </div>
             </div>
@@ -2188,20 +2188,20 @@ function MyWaySettingsContent() {
         <h2 className="mb-1 text-sm font-semibold text-adv-white">Document Templates</h2>
         <p className="mb-4 text-xs text-adv-gray">Learned templates that shape invoice, quote, and message outputs.</p>
         {dataLoading ? (
-          <p className="text-xs text-adv-gray-med">Loading…</p>
+          <p className="text-xs text-adv-gray">Loading…</p>
         ) : templates.length === 0 ? (
-          <p className="text-xs text-adv-gray-med">No templates yet — complete the Trades setup wizard to add one.</p>
+          <p className="text-xs text-adv-gray">No templates yet — complete the Trades setup wizard to add one.</p>
         ) : (
           <div className="space-y-2">
             {templates.map(tmpl => (
               <div key={tmpl.id} className="flex items-center justify-between rounded-lg border border-border bg-adv-dark px-3 py-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-[10px] font-medium text-adv-gold uppercase">
+                  <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-xs font-medium text-adv-gold uppercase">
                     {tmpl.document_type}
                   </span>
                   <span className="text-sm text-adv-off-white">{tmpl.name}</span>
                   {tmpl.isDefault && (
-                    <span className="rounded-full bg-adv-green/10 px-2 py-0.5 text-[10px] font-medium text-adv-green">
+                    <span className="rounded-full bg-adv-green/10 px-2 py-0.5 text-xs font-medium text-adv-green">
                       Default
                     </span>
                   )}
@@ -2217,7 +2217,7 @@ function MyWaySettingsContent() {
                   )}
                   <button
                     onClick={() => deleteTemplate(tmpl.id)}
-                    className="rounded p-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                    className="rounded p-1 text-adv-gray hover:text-adv-red transition-colors"
                     title="Delete template"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -2227,7 +2227,7 @@ function MyWaySettingsContent() {
             ))}
           </div>
         )}
-        <p className="mt-3 text-xs text-adv-gray-med">
+        <p className="mt-3 text-xs text-adv-gray">
           To add a new template, go to <a href="/trades" className="text-adv-teal hover:underline">Trades hub</a> and use the setup wizard.
         </p>
       </div>
@@ -2237,9 +2237,9 @@ function MyWaySettingsContent() {
         <h2 className="mb-1 text-sm font-semibold text-adv-white">Process Patterns</h2>
         <p className="mb-4 text-xs text-adv-gray">Saved work style preferences used when generating Trades outputs.</p>
         {dataLoading ? (
-          <p className="text-xs text-adv-gray-med">Loading…</p>
+          <p className="text-xs text-adv-gray">Loading…</p>
         ) : patterns.length === 0 ? (
-          <p className="text-xs text-adv-gray-med">No patterns yet — complete Step 3 of the Trades setup wizard.</p>
+          <p className="text-xs text-adv-gray">No patterns yet — complete Step 3 of the Trades setup wizard.</p>
         ) : (
           <div className="space-y-2">
             {patterns.map(ptrn => {
@@ -2248,14 +2248,14 @@ function MyWaySettingsContent() {
                 <div key={ptrn.id} className="rounded-lg border border-border bg-adv-dark px-3 py-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-[10px] font-medium text-adv-gold uppercase">
+                      <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-xs font-medium text-adv-gold uppercase">
                         {ptrn.process_type}
                       </span>
                       <span className="text-sm text-adv-off-white">{ptrn.name}</span>
                     </div>
                     <button
                       onClick={() => deletePattern(ptrn.id)}
-                      className="rounded p-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                      className="rounded p-1 text-adv-gray hover:text-adv-red transition-colors"
                       title="Delete pattern"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -2265,8 +2265,8 @@ function MyWaySettingsContent() {
                     <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
                       {Object.entries(pd).filter(([, v]) => v).map(([k, v]) => (
                         <div key={k} className="flex items-baseline gap-1">
-                          <span className="text-[10px] text-adv-gray-med capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
-                          <span className="text-[10px] text-adv-off-white">{v}</span>
+                          <span className="text-xs text-adv-gray capitalize">{k.replace(/([A-Z])/g, ' $1')}:</span>
+                          <span className="text-xs text-adv-off-white">{v}</span>
                         </div>
                       ))}
                     </div>
@@ -2344,7 +2344,7 @@ function CompliancePolicyTab() {
     setForm({ moduleId: policy.module_id, enforce_model: policy.enforce_model || '', enforce_thinking: policy.enforce_thinking || '', enforce_creativity: policy.enforce_creativity || '', note: policy.note || '' });
   }
 
-  const INPUT = 'w-full rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none';
+  const INPUT = 'w-full rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
   const SELECT = `${INPUT} cursor-pointer`;
 
   return (
@@ -2354,7 +2354,7 @@ function CompliancePolicyTab() {
           <Shield className="h-5 w-5 text-adv-teal" />
           <h2 className="text-lg font-semibold text-adv-off-white">Compliance Policy</h2>
         </div>
-        <p className="text-sm text-adv-gray-med">
+        <p className="text-sm text-adv-gray">
           Enforce specific model, thinking level, and creativity for compliance-critical modules.
           <code className="ml-1 text-[11px] bg-adv-dark-2 px-1 rounded">enforce_model</code> is applied server-side;
           <code className="ml-1 text-[11px] bg-adv-dark-2 px-1 rounded">enforce_thinking</code> and <code className="text-[11px] bg-adv-dark-2 px-1 rounded">enforce_creativity</code> are shown to users in the module UI.
@@ -2362,7 +2362,7 @@ function CompliancePolicyTab() {
       </div>
 
       {loading ? (
-        <p className="text-sm text-adv-gray-med">Loading...</p>
+        <p className="text-sm text-adv-gray">Loading...</p>
       ) : (
         <div className="space-y-3">
           {policies.map(policy => (
@@ -2372,18 +2372,18 @@ function CompliancePolicyTab() {
                   <p className="text-xs font-semibold text-adv-teal uppercase tracking-wide">{policy.module_id}</p>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Model</label>
+                      <label className="mb-1 block text-[11px] text-adv-gray">Enforce Model</label>
                       <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="e.g. claude-opus-4-6" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Thinking</label>
+                      <label className="mb-1 block text-[11px] text-adv-gray">Enforce Thinking</label>
                       <select className={SELECT} value={form.enforce_thinking} onChange={e => setForm(f => ({ ...f, enforce_thinking: e.target.value }))}>
                         <option value="">— none —</option>
                         {['quick', 'think', 'think_hard', 'investigate', 'plan_first'].map(v => <option key={v} value={v}>{v}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Creativity</label>
+                      <label className="mb-1 block text-[11px] text-adv-gray">Enforce Creativity</label>
                       <select className={SELECT} value={form.enforce_creativity} onChange={e => setForm(f => ({ ...f, enforce_creativity: e.target.value }))}>
                         <option value="">— none —</option>
                         {['strict', 'balanced', 'creative'].map(v => <option key={v} value={v}>{v}</option>)}
@@ -2391,7 +2391,7 @@ function CompliancePolicyTab() {
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[11px] text-adv-gray-med">Note (reason)</label>
+                    <label className="mb-1 block text-[11px] text-adv-gray">Note (reason)</label>
                     <input className={INPUT} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="e.g. Regulatory requirement — Opus + Investigate mandatory" />
                   </div>
                   <div className="flex gap-2">
@@ -2409,7 +2409,7 @@ function CompliancePolicyTab() {
                       {policy.enforce_model && <span className="rounded bg-adv-blue/10 px-2 py-0.5 text-[11px] text-adv-blue">Model: {policy.enforce_model}</span>}
                       {policy.enforce_thinking && <span className="rounded bg-adv-teal/10 px-2 py-0.5 text-[11px] text-adv-teal">Thinking: {policy.enforce_thinking}</span>}
                       {policy.enforce_creativity && <span className="rounded bg-adv-gold/10 px-2 py-0.5 text-[11px] text-adv-gold">Creativity: {policy.enforce_creativity}</span>}
-                      {policy.note && <span className="text-[11px] text-adv-gray-med italic">{policy.note}</span>}
+                      {policy.note && <span className="text-[11px] text-adv-gray italic">{policy.note}</span>}
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
@@ -2426,23 +2426,23 @@ function CompliancePolicyTab() {
             <div className="rounded-lg border border-adv-teal/30 bg-adv-card p-4 space-y-3">
               <p className="text-xs font-semibold text-adv-teal uppercase tracking-wide">New Policy</p>
               <div>
-                <label className="mb-1 block text-[11px] text-adv-gray-med">Module ID</label>
+                <label className="mb-1 block text-[11px] text-adv-gray">Module ID</label>
                 <input className={INPUT} value={form.moduleId} onChange={e => setForm(f => ({ ...f, moduleId: e.target.value }))} placeholder="e.g. gap-analysis" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Model</label>
+                  <label className="mb-1 block text-[11px] text-adv-gray">Enforce Model</label>
                   <input className={INPUT} value={form.enforce_model} onChange={e => setForm(f => ({ ...f, enforce_model: e.target.value }))} placeholder="claude-opus-4-6" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Thinking</label>
+                  <label className="mb-1 block text-[11px] text-adv-gray">Enforce Thinking</label>
                   <select className={SELECT} value={form.enforce_thinking} onChange={e => setForm(f => ({ ...f, enforce_thinking: e.target.value }))}>
                     <option value="">— none —</option>
                     {['quick', 'think', 'think_hard', 'investigate', 'plan_first'].map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] text-adv-gray-med">Enforce Creativity</label>
+                  <label className="mb-1 block text-[11px] text-adv-gray">Enforce Creativity</label>
                   <select className={SELECT} value={form.enforce_creativity} onChange={e => setForm(f => ({ ...f, enforce_creativity: e.target.value }))}>
                     <option value="">— none —</option>
                     {['strict', 'balanced', 'creative'].map(v => <option key={v} value={v}>{v}</option>)}
@@ -2450,7 +2450,7 @@ function CompliancePolicyTab() {
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-[11px] text-adv-gray-med">Note</label>
+                <label className="mb-1 block text-[11px] text-adv-gray">Note</label>
                 <input className={INPUT} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Optional reason" />
               </div>
               <div className="flex gap-2">

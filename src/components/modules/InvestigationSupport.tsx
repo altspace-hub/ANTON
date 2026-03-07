@@ -31,7 +31,7 @@ export default function InvestigationSupport({ onInputChange }: Props) {
         <select
           value={caseType}
           onChange={(e) => setCaseType(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select case type...</option>
           <option value="tm-alert">Transaction Monitoring Alert</option>
@@ -50,7 +50,7 @@ export default function InvestigationSupport({ onInputChange }: Props) {
           value={caseDescription}
           onChange={(e) => setCaseDescription(e.target.value)}
           placeholder="Describe the case, relevant facts, and what has been identified so far..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={4}
         />
       </div>
@@ -60,7 +60,7 @@ export default function InvestigationSupport({ onInputChange }: Props) {
         <select
           value={supportNeeded}
           onChange={(e) => setSupportNeeded(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select...</option>
           <option value="structure-analysis">Structure the investigation analysis</option>

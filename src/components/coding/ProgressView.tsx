@@ -38,7 +38,7 @@ export default function ProgressView({ entries, currentStep, className = '' }: P
                     <span className={`text-xs font-medium ${entry.status === 'started' ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                       {entry.step}
                     </span>
-                    <span className="text-[10px] text-adv-gray">
+                    <span className="text-xs text-adv-gray">
                       <Clock className="mr-0.5 inline h-2.5 w-2.5" />
                       {new Date(entry.timestamp).toLocaleTimeString()}
                     </span>

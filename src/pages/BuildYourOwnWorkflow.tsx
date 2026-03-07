@@ -83,7 +83,7 @@ function PhaseStepper({ current }: { current: Phase }) {
                   ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
                   : isDone
                   ? 'border-adv-green/50 bg-adv-green/10 text-adv-green'
-                  : 'border-adv-gray-med text-adv-gray-med'
+                  : 'border-adv-gray-med text-adv-gray'
               }`}
             >
               {isDone ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
@@ -91,12 +91,12 @@ function PhaseStepper({ current }: { current: Phase }) {
             <div>
               <div
                 className={`text-xs font-medium ${
-                  isActive ? 'text-adv-teal' : isDone ? 'text-adv-gray' : 'text-adv-gray-med'
+                  isActive ? 'text-adv-teal' : isDone ? 'text-adv-gray' : 'text-adv-gray'
                 }`}
               >
                 {phase.label}
               </div>
-              <div className="text-[10px] text-adv-gray-med">
+              <div className="text-xs text-adv-gray">
                 {phase.id === 'guide' && 'Describe your process'}
                 {phase.id === 'generate' && 'Review AI-generated steps'}
                 {phase.id === 'save' && 'Name and save'}
@@ -309,7 +309,7 @@ export default function BuildYourOwnWorkflow() {
 
         {/* Phase stepper */}
         <div>
-          <div className="mb-3 text-[10px] font-medium uppercase tracking-wider text-adv-gray-med">
+          <div className="mb-3 text-xs font-medium uppercase tracking-wider text-adv-gray">
             Progress
           </div>
           <PhaseStepper current={phase} />
@@ -453,7 +453,7 @@ export default function BuildYourOwnWorkflow() {
                 placeholder="Describe your process... (Enter to send, Shift+Enter for new line)"
                 disabled={isLoading}
                 rows={3}
-                className="flex-1 resize-none bg-transparent text-sm text-adv-off-white placeholder:text-adv-gray-med focus:outline-none disabled:opacity-50 leading-relaxed"
+                className="flex-1 resize-none bg-transparent text-sm text-adv-off-white placeholder:text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-50 leading-relaxed"
               />
               <button
                 onClick={() => void sendMessage()}
@@ -518,7 +518,7 @@ export default function BuildYourOwnWorkflow() {
                       {generatedWorkflow.steps.length} steps
                     </span>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-adv-gray-med">
+                  <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-adv-gray">
                     {generatedWorkflow.estimatedTime && (
                       <span className="rounded bg-adv-dark px-2 py-0.5">
                         {generatedWorkflow.estimatedTime}
@@ -540,7 +540,7 @@ export default function BuildYourOwnWorkflow() {
                       className="flex items-start gap-3 rounded-xl border border-border bg-adv-card px-4 py-3 hover:border-adv-teal/20 transition-colors"
                     >
                       {/* Step number */}
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-adv-dark border border-adv-gray-med text-[11px] text-adv-gray-med font-medium mt-0.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-adv-dark border border-adv-gray-med text-[11px] text-adv-gray font-medium mt-0.5">
                         {idx + 1}
                       </div>
                       {/* Content */}
@@ -550,7 +550,7 @@ export default function BuildYourOwnWorkflow() {
                             {step.label}
                           </span>
                           <span
-                            className={`rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${stepTypeBadge(step.type)}`}
+                            className={`rounded px-2 py-0.5 text-xs font-medium uppercase tracking-wide ${stepTypeBadge(step.type)}`}
                           >
                             {step.type.replace(/_/g, ' ')}
                           </span>
@@ -645,7 +645,7 @@ export default function BuildYourOwnWorkflow() {
                     value={workflowName}
                     onChange={(e) => setWorkflowName(e.target.value)}
                     placeholder="e.g., Weekly Regulatory Update Review"
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none transition-colors"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 transition-colors"
                   />
                 </div>
 
@@ -656,13 +656,13 @@ export default function BuildYourOwnWorkflow() {
 
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="text-adv-gray-med">Steps</span>
+                        <span className="text-adv-gray">Steps</span>
                         <span className="rounded bg-adv-dark px-2 py-0.5 text-adv-off-white font-medium">
                           {generatedWorkflow.steps.length}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-adv-gray-med">Est. time</span>
+                        <span className="text-adv-gray">Est. time</span>
                         <span className="text-adv-off-white">
                           {generatedWorkflow.estimatedTime || 'N/A'}
                         </span>
@@ -671,14 +671,14 @@ export default function BuildYourOwnWorkflow() {
 
                     {/* Step type breakdown */}
                     <div>
-                      <div className="mb-1.5 text-[10px] text-adv-gray-med uppercase tracking-wide">
+                      <div className="mb-1.5 text-xs text-adv-gray uppercase tracking-wide">
                         Step types
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {getUniqueStepTypes(generatedWorkflow.steps).map((type) => (
                           <span
                             key={type}
-                            className={`rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${stepTypeBadge(type)}`}
+                            className={`rounded px-2 py-0.5 text-xs font-medium uppercase tracking-wide ${stepTypeBadge(type)}`}
                           >
                             {type.replace(/_/g, ' ')}
                           </span>
@@ -688,13 +688,13 @@ export default function BuildYourOwnWorkflow() {
 
                     {/* Step names */}
                     <div>
-                      <div className="mb-1.5 text-[10px] text-adv-gray-med uppercase tracking-wide">
+                      <div className="mb-1.5 text-xs text-adv-gray uppercase tracking-wide">
                         Steps
                       </div>
                       <ol className="space-y-1">
                         {generatedWorkflow.steps.map((step, idx) => (
                           <li key={step.id} className="flex items-center gap-2 text-xs">
-                            <span className="w-4 shrink-0 text-right text-adv-gray-med font-mono">
+                            <span className="w-4 shrink-0 text-right text-adv-gray font-mono">
                               {idx + 1}.
                             </span>
                             <span className="text-adv-gray">{step.label}</span>

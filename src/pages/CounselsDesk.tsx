@@ -544,7 +544,7 @@ export default function CounselsDesk() {
             <div className="mb-4">
               <label className="mb-2 block text-xs font-medium text-adv-gray">Session title</label>
               <input
-                className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 placeholder="e.g. AMLR Art.12 EDD Analysis — Nordea Q3 2027"
                 value={newTitle}
                 onChange={e => setNewTitle(e.target.value.slice(0, 200))}
@@ -583,7 +583,7 @@ export default function CounselsDesk() {
         <div className="flex-1 overflow-auto p-6">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <Scale className="mb-4 h-12 w-12 text-adv-gray-med" />
+              <Scale className="mb-4 h-12 w-12 text-adv-gray" />
               <h3 className="mb-2 text-base font-semibold text-adv-off-white">No research sessions yet</h3>
               <p className="mb-6 max-w-sm text-sm text-adv-gray">
                 Open a new session to start structured legal research. Each session maintains a persistent thread,
@@ -612,8 +612,8 @@ export default function CounselsDesk() {
                         <span className="text-xs text-adv-teal font-medium">{mode?.label || s.mode}</span>
                       </div>
                       <h3 className="mb-1 text-sm font-semibold text-adv-off-white group-hover:text-adv-teal transition-colors line-clamp-2 pr-6">{s.title}</h3>
-                      <p className="text-xs text-adv-gray-med">{EXPERT_ROLES.find(r => r.id === s.expert_role)?.label || s.expert_role}</p>
-                      <p className="mt-2 text-[11px] text-adv-gray-med">{new Date(s.updated_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-adv-gray">{EXPERT_ROLES.find(r => r.id === s.expert_role)?.label || s.expert_role}</p>
+                      <p className="mt-2 text-[11px] text-adv-gray">{new Date(s.updated_at).toLocaleDateString()}</p>
                     </button>
                     {deletingSessionId === s.id ? (
                       <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 rounded-b-xl bg-adv-dark-2/95 px-3 py-2 backdrop-blur-sm">
@@ -720,7 +720,7 @@ export default function CounselsDesk() {
                     className={`block w-full text-left rounded-lg px-3 py-2 text-xs transition-colors ${activeSession.expert_role === r.id ? 'bg-adv-teal-dim text-adv-teal' : 'text-adv-gray hover:bg-adv-card hover:text-adv-off-white'}`}
                   >
                     <div className="font-medium">{r.label}</div>
-                    <div className="text-[10px] opacity-70 mt-0.5">{r.focus}</div>
+                    <div className="text-xs opacity-70 mt-0.5">{r.focus}</div>
                   </button>
                 ))}
               </div>
@@ -741,7 +741,7 @@ export default function CounselsDesk() {
                   onClick={() => setActiveTabId(q.id)}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors max-w-[160px] ${activeTabId === q.id ? 'bg-adv-teal-dim text-adv-teal' : 'text-adv-gray hover:text-adv-off-white hover:bg-adv-card'}`}
                 >
-                  <span className="shrink-0 text-[10px] font-bold">Q{i + 1}</span>
+                  <span className="shrink-0 text-xs font-bold">Q{i + 1}</span>
                   <span className="truncate">{q.title.slice(0, 40)}</span>
                 </button>
                 {questions.length > 1 && (
@@ -764,7 +764,7 @@ export default function CounselsDesk() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={outputRef} onMouseUp={pinSelection}>
             {activeQuestion?.messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <ActiveModeIcon className="mb-3 h-10 w-10 text-adv-gray-med" />
+                <ActiveModeIcon className="mb-3 h-10 w-10 text-adv-gray" />
                 <h3 className="mb-1 text-sm font-semibold text-adv-off-white">{activeMode?.label}</h3>
                 <p className="max-w-sm text-xs text-adv-gray">{activeMode?.description}</p>
                 {activeMode?.id === 'deep-dive' && (
@@ -806,7 +806,7 @@ export default function CounselsDesk() {
             <div className="flex items-end gap-2">
               <textarea
                 rows={2}
-                className="flex-1 resize-none rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="flex-1 resize-none rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 placeholder={`Ask a ${activeMode?.label.toLowerCase() || 'legal'} question…`}
                 value={userInput}
                 onChange={e => setUserInput(e.target.value)}
@@ -832,7 +832,7 @@ export default function CounselsDesk() {
                 <Search className="h-3 w-3" />
                 Web search {webSearchEnabled ? 'ON' : 'OFF'}
               </button>
-              <span className="text-[10px] text-adv-gray-med">Select text → Pin finding</span>
+              <span className="text-xs text-adv-gray">Select text → Pin finding</span>
             </div>
           </div>
         </div>
@@ -845,7 +845,7 @@ export default function CounselsDesk() {
               <div className="flex items-center gap-1.5">
                 <Pin className="h-3.5 w-3.5 text-adv-gold" />
                 <span className="text-xs font-semibold text-adv-off-white">Pinned Findings</span>
-                <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-[10px] text-adv-gray">{pinnedFindings.length}</span>
+                <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-xs text-adv-gray">{pinnedFindings.length}</span>
               </div>
               {pinnedFindings.length > 0 && (
                 <button onClick={exportFindings} className="text-adv-gray hover:text-adv-teal transition-colors" title="Export findings">
@@ -855,13 +855,13 @@ export default function CounselsDesk() {
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-2">
               {pinnedFindings.length === 0 && (
-                <p className="px-2 py-4 text-center text-xs text-adv-gray-med">Select text in the conversation and pin key findings here.</p>
+                <p className="px-2 py-4 text-center text-xs text-adv-gray">Select text in the conversation and pin key findings here.</p>
               )}
               {pinnedFindings.map(p => (
                 <div key={p.id} className="group rounded-lg border border-border bg-adv-card p-2.5">
                   <p className="text-xs text-adv-off-white leading-relaxed line-clamp-4">{p.text}</p>
                   <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-[10px] text-adv-gray-med">{p.source}</span>
+                    <span className="text-xs text-adv-gray">{p.source}</span>
                     <button onClick={() => removePin(p.id)} className="hidden group-hover:block text-adv-gray hover:text-adv-red transition-colors">
                       <X className="h-3 w-3" />
                     </button>
@@ -877,7 +877,7 @@ export default function CounselsDesk() {
               <div className="flex items-center gap-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-adv-blue" />
                 <span className="text-xs font-semibold text-adv-off-white">Citations</span>
-                <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-[10px] text-adv-gray">{citations.length}</span>
+                <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-xs text-adv-gray">{citations.length}</span>
               </div>
               {citations.length > 0 && (
                 <button onClick={exportBibliography} className="text-adv-gray hover:text-adv-teal transition-colors" title="Export bibliography">
@@ -887,14 +887,14 @@ export default function CounselsDesk() {
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
               {citations.length === 0 && (
-                <p className="px-2 py-4 text-center text-xs text-adv-gray-med">Legal citations are auto-captured from Claude's responses.</p>
+                <p className="px-2 py-4 text-center text-xs text-adv-gray">Legal citations are auto-captured from Claude's responses.</p>
               )}
               {citations.map((c, i) => (
                 <div key={c.id} className="group flex items-start gap-1.5">
-                  <span className="mt-0.5 text-[10px] text-adv-gray-med font-mono w-5 shrink-0">[{i + 1}]</span>
+                  <span className="mt-0.5 text-xs text-adv-gray font-mono w-5 shrink-0">[{i + 1}]</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] text-adv-off-white leading-snug break-words">{c.ref}</p>
-                    <span className={`text-[9px] font-medium ${c.type === 'regulation' ? 'text-adv-teal' : c.type === 'case-law' ? 'text-adv-gold' : c.type === 'guideline' ? 'text-adv-blue' : 'text-adv-gray'}`}>
+                    <span className={`text-xs font-medium ${c.type === 'regulation' ? 'text-adv-teal' : c.type === 'case-law' ? 'text-adv-gold' : c.type === 'guideline' ? 'text-adv-blue' : 'text-adv-gray'}`}>
                       {c.type}
                     </span>
                   </div>
@@ -911,7 +911,7 @@ export default function CounselsDesk() {
             <div className="flex items-center gap-1.5 px-3 py-2">
               <CheckSquare className="h-3.5 w-3.5 text-adv-teal" />
               <span className="text-xs font-semibold text-adv-off-white">Knowledge Packs</span>
-              <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-[10px] text-adv-gray">{activeKnowledgePacks.length}</span>
+              <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-xs text-adv-gray">{activeKnowledgePacks.length}</span>
             </div>
             <div className="px-2 pb-2 space-y-1">
               {PRIORITY_PACKS.map(pack => {
@@ -943,7 +943,7 @@ export default function CounselsDesk() {
             <h3 className="mb-1 text-sm font-semibold text-adv-off-white">Pin Finding</h3>
             <p className="mb-3 text-xs text-adv-gray line-clamp-3">"{selectionText}"</p>
             <input
-              className="mb-3 w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+              className="mb-3 w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               placeholder="Source (e.g. AMLR Art.12, EBA Guidelines)"
               value={pinSource}
               onChange={e => setPinSource(e.target.value)}

@@ -100,7 +100,7 @@ export default function AudienceAdaptButtons({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[11px] text-adv-gray-med shrink-0">Adapt for:</span>
+      <span className="text-[11px] text-adv-gray shrink-0">Adapt for:</span>
       {AUDIENCE_BUTTONS.map((btn) => {
         const state: ButtonState = buttonStates[btn.id] ?? 'idle';
 
@@ -143,7 +143,7 @@ export default function AudienceAdaptButtons({
             )}
             {btn.label}
             {state === 'success' && (
-              <span className="text-[10px] font-normal opacity-80">done</span>
+              <span className="text-xs font-normal opacity-80">done</span>
             )}
           </button>
         );

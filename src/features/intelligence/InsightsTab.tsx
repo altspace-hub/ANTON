@@ -359,7 +359,7 @@ export function InsightsTab() {
           )}
           {topEntities && Array.isArray(topEntities) && topEntities.map((entity, idx) => (
             <div key={`${entity.entity_type}:${entity.entity_id}`} className="flex items-center gap-3">
-              <div className="w-6 text-xs text-adv-gray-med text-right">#{idx + 1}</div>
+              <div className="w-6 text-xs text-adv-gray text-right">#{idx + 1}</div>
               <div className="flex-1">
                 <div className="text-sm text-adv-off-white">
                   {entity.entity_name || entity.entity_id}

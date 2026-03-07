@@ -56,7 +56,7 @@ export default function SkillAttacher({ selected, onChange }: SkillAttacherProps
           <Zap className="h-4 w-4 text-adv-teal" />
           <span className="text-sm font-medium text-adv-off-white">Skills</span>
           {selected.length > 0 && (
-            <span className="rounded-full bg-adv-teal px-2 py-0.5 text-[10px] font-medium text-adv-dark">
+            <span className="rounded-full bg-adv-teal px-2 py-0.5 text-xs font-medium text-adv-dark">
               {selected.length}
             </span>
           )}
@@ -66,7 +66,7 @@ export default function SkillAttacher({ selected, onChange }: SkillAttacherProps
 
       {expanded && (
         <div className="border-t border-border px-4 pb-4 pt-3">
-          <p className="mb-3 text-xs text-adv-gray-med">
+          <p className="mb-3 text-xs text-adv-gray">
             Attach skills to enhance Claude's expertise or communication style for this session.
           </p>
 
@@ -95,7 +95,7 @@ export default function SkillAttacher({ selected, onChange }: SkillAttacherProps
           <div className="space-y-3">
             {Object.entries(grouped).map(([category, catSkills]) => (
               <div key={category}>
-                <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-adv-gray-med">
+                <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray">
                   {CATEGORY_LABELS[category] || category}
                 </div>
                 <div className="space-y-1.5">

@@ -104,7 +104,7 @@ export default function SharePage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-adv-white">openEXPERT</span>
-                <span className="rounded border border-adv-teal/30 bg-adv-teal-dim px-1.5 py-0.5 text-[10px] font-medium text-adv-teal">
+                <span className="rounded border border-adv-teal/30 bg-adv-teal-dim px-1.5 py-0.5 text-xs font-medium text-adv-teal">
                   Shared Analysis
                 </span>
               </div>
@@ -114,7 +114,7 @@ export default function SharePage() {
             </div>
           </div>
           {formattedDate && (
-            <span className="text-xs text-adv-gray-med">{formattedDate}</span>
+            <span className="text-xs text-adv-gray">{formattedDate}</span>
           )}
         </div>
       </header>
@@ -203,7 +203,7 @@ export default function SharePage() {
 
       {/* Footer */}
       <footer className="border-t border-border bg-adv-dark-2 py-6 text-center">
-        <p className="text-xs text-adv-gray-med">
+        <p className="text-xs text-adv-gray">
           Created with{' '}
           <a
             href="/"

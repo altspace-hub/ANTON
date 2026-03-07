@@ -240,7 +240,7 @@ export default function VersionHistoryPage() {
                         <span className="text-adv-white font-semibold">
                           {version.label ?? `Version ${version.version_number}`}
                         </span>
-                        <span className="text-xs text-adv-gray-med">
+                        <span className="text-xs text-adv-gray">
                           v{version.version_number}
                         </span>
                       </div>
@@ -316,7 +316,7 @@ export default function VersionHistoryPage() {
                   ))}
                 </ul>
               )}
-              <p className="text-xs text-adv-gray-med italic">{changelog.recommendation}</p>
+              <p className="text-xs text-adv-gray italic">{changelog.recommendation}</p>
             </div>
           )}
         </div>

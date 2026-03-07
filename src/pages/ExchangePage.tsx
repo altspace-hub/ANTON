@@ -169,7 +169,7 @@ function ExportTab() {
             <select
               value={selectValue}
               onChange={(e) => handleSelect(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">Select a module...</option>
 
@@ -196,11 +196,11 @@ function ExportTab() {
               ))}
             </select>
             {loadingCustom && (
-              <Loader2 className="pointer-events-none absolute right-8 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-adv-gray-med" />
+              <Loader2 className="pointer-events-none absolute right-8 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-adv-gray" />
             )}
           </div>
           {!loadingCustom && customModules.length > 0 && (
-            <p className="mt-1 text-[11px] text-adv-gray-med">
+            <p className="mt-1 text-[11px] text-adv-gray">
               {customModules.length} custom module{customModules.length !== 1 ? 's' : ''} in My Modules
             </p>
           )}
@@ -215,7 +215,7 @@ function ExportTab() {
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
               placeholder="Your name"
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div>
@@ -225,7 +225,7 @@ function ExportTab() {
               value={authorOrg}
               onChange={(e) => setAuthorOrg(e.target.value)}
               placeholder="Your organisation"
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
         </div>
@@ -238,7 +238,7 @@ function ExportTab() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What does this module do? Who is it for?"
             rows={3}
-            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
           />
         </div>
 
@@ -250,7 +250,7 @@ function ExportTab() {
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="compliance, aml, gap-analysis (comma-separated)"
-            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
 
@@ -260,7 +260,7 @@ function ExportTab() {
           <select
             value={license}
             onChange={(e) => setLicense(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             {LICENSE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -354,12 +354,12 @@ function ImportTab() {
             : 'border-border bg-adv-card hover:border-adv-gray-med'
         }`}
       >
-        <Upload className={`h-8 w-8 ${dragging ? 'text-adv-teal' : 'text-adv-gray-med'}`} />
+        <Upload className={`h-8 w-8 ${dragging ? 'text-adv-teal' : 'text-adv-gray'}`} />
         <div className="text-center">
           <p className="text-sm text-adv-off-white">
             {importing ? 'Importing...' : 'Drag and drop a .anton file here'}
           </p>
-          <p className="mt-1 text-xs text-adv-gray-med">or</p>
+          <p className="mt-1 text-xs text-adv-gray">or</p>
         </div>
         <label className="cursor-pointer rounded-lg border border-border bg-adv-dark-2 px-4 py-2 text-sm text-adv-off-white transition-colors hover:border-adv-teal hover:text-adv-teal">
           Browse files

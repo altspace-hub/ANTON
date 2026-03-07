@@ -33,7 +33,7 @@ export default function DocumentCreation({ onInputChange }: Props) {
         <select
           value={docType}
           onChange={(e) => setDocType(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select document type...</option>
           {DOC_TYPES.map((t) => (
@@ -49,7 +49,7 @@ export default function DocumentCreation({ onInputChange }: Props) {
           value={docName}
           onChange={(e) => setDocName(e.target.value)}
           placeholder="e.g., Nordea AML/CFT Policy v2.0"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -59,7 +59,7 @@ export default function DocumentCreation({ onInputChange }: Props) {
           value={context}
           onChange={(e) => setContext(e.target.value)}
           placeholder="Entity type, jurisdiction, specific requirements, or existing document to update..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={3}
         />
       </div>

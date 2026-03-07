@@ -37,7 +37,7 @@ function TextField({ field, value, onChange }: { field: GuidedInputField; value:
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.placeholder}
-      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
     />
   );
 }
@@ -49,7 +49,7 @@ function TextareaField({ field, value, onChange }: { field: GuidedInputField; va
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.placeholder}
       rows={3}
-      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
     />
   );
 }
@@ -60,14 +60,14 @@ function SelectField({ field, value, onChange }: { field: GuidedInputField; valu
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none rounded-lg border border-border bg-adv-dark px-3 py-2 pr-8 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+        className="w-full appearance-none rounded-lg border border-border bg-adv-dark px-3 py-2 pr-8 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
       >
         <option value="">Select…</option>
         {field.options?.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med" />
+      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray" />
     </div>
   );
 }
@@ -148,7 +148,7 @@ function NumberField({ field, value, onChange }: { field: GuidedInputField; valu
       value={value}
       onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
       placeholder={field.placeholder}
-      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
     />
   );
 }
@@ -174,7 +174,7 @@ export default function DynamicModule({ fields, values, onChange }: DynamicModul
               {field.required && <span className="text-adv-teal">*</span>}
             </label>
             {field.description && (
-              <p className="mb-1.5 text-xs text-adv-gray-med">{field.description}</p>
+              <p className="mb-1.5 text-xs text-adv-gray">{field.description}</p>
             )}
 
             {field.type === 'text' && (

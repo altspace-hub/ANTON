@@ -84,7 +84,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
           value={clientName}
           onChange={(e) => setClientName(e.target.value)}
           placeholder="e.g., Nordea, SEB, Handelsbanken"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -95,7 +95,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
           value={presentationTitle}
           onChange={(e) => setPresentationTitle(e.target.value)}
           placeholder="e.g., AML Gap Analysis — Key Findings & Recommendations"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -106,7 +106,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
           value={presenterNames}
           onChange={(e) => setPresenterNames(e.target.value)}
           placeholder="e.g., Daniel Bardun, Jonas Karlsson"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -115,7 +115,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
         <select
           value={targetAudience}
           onChange={(e) => setTargetAudience(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select...</option>
           {AUDIENCES.map((a) => (
@@ -140,7 +140,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
               <div className={`text-xs font-medium ${duration === opt.id ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                 {opt.label}
               </div>
-              <div className="text-[10px] text-adv-gray-med">{opt.slides}</div>
+              <div className="text-xs text-adv-gray">{opt.slides}</div>
             </button>
           ))}
         </div>
@@ -181,7 +181,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
               <div className={`text-xs font-medium ${tone === opt.id ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                 {opt.label}
               </div>
-              <div className="text-[10px] text-adv-gray-med">{opt.description}</div>
+              <div className="text-xs text-adv-gray">{opt.description}</div>
             </button>
           ))}
         </div>
@@ -193,7 +193,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
           value={keyMessages}
           onChange={(e) => setKeyMessages(e.target.value)}
           placeholder="3-5 takeaways that must land with the audience..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={3}
         />
       </div>
@@ -204,7 +204,7 @@ export default function ManagementPresentation({ onInputChange }: Props) {
           value={specialInstructions}
           onChange={(e) => setSpecialInstructions(e.target.value)}
           placeholder="Any specific requirements for style, branding, or content emphasis..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>

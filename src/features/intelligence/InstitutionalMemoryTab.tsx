@@ -138,7 +138,7 @@ export function InstitutionalMemoryTab() {
       <div className="text-center py-12">
         <Brain className="w-12 h-12 text-adv-gray mx-auto mb-3" />
         <p className="text-adv-gray">No checkpoint decisions recorded yet.</p>
-        <p className="text-sm text-adv-gray-med mt-2">
+        <p className="text-sm text-adv-gray mt-2">
           Institutional Memory learns from checkpoint decisions made during workflows.
         </p>
       </div>
@@ -210,7 +210,7 @@ export function InstitutionalMemoryTab() {
           <Filter className="w-4 h-4 mt-0.5" />
           <div>
             <p>Showing all workflow checkpoint decisions across all workflows.</p>
-            <p className="text-xs text-adv-gray-med mt-1">
+            <p className="text-xs text-adv-gray mt-1">
               Future enhancement: Add workflow-specific filtering
             </p>
           </div>
@@ -345,7 +345,7 @@ export function InstitutionalMemoryTab() {
                     </p>
                   )}
 
-                  <div className="flex items-center gap-3 text-xs text-adv-gray-med">
+                  <div className="flex items-center gap-3 text-xs text-adv-gray">
                     <span>{new Date(decision.createdAt).toLocaleString()}</span>
                     <span>•</span>
                     <span>by {decision.decidedBy}</span>

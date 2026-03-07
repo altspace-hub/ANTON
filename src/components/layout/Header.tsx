@@ -68,7 +68,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       <nav className="flex flex-1 items-center gap-2 text-sm">
         {parts.map((part, i) => (
           <span key={part.path} className="flex items-center gap-2">
-            {i > 0 && <span className="text-adv-gray-med">/</span>}
+            {i > 0 && <span className="text-adv-gray">/</span>}
             {i === parts.length - 1 ? (
               <span className="text-adv-off-white">{part.label}</span>
             ) : (
@@ -89,7 +89,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <Circle
             className={`h-2 w-2 ${apiOk ? 'fill-adv-green text-adv-green' : 'fill-adv-red text-adv-red'}`}
           />
-          <span className="hidden text-adv-gray-med sm:inline">{apiOk ? t('header.apiConnected') : t('header.apiNotConfigured')}</span>
+          <span className="hidden text-adv-gray sm:inline">{apiOk ? t('header.apiConnected') : t('header.apiNotConfigured')}</span>
         </div>
 
         {/* Privacy / Data Sovereignty Indicator */}
@@ -131,7 +131,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         >
           <Command className="h-3.5 w-3.5" />
           <span className="hidden xl:inline">{t('header.commands')}</span>
-          <kbd className="hidden xl:inline-block ml-1 px-1 py-0.5 text-[10px] bg-adv-dark rounded">⌘K</kbd>
+          <kbd className="hidden xl:inline-block ml-1 px-1 py-0.5 text-xs bg-adv-dark rounded">⌘K</kbd>
         </button>
 
         {/* Notification Bell */}

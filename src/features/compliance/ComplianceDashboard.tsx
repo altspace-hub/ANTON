@@ -30,19 +30,22 @@ export default function ComplianceDashboard() {
         headers: getAuthHeader()
       });
       const data = await response.json();
-      if (data.success) {
-        setStats({
-          activeRules: data.activeRules,
-          openViolations: data.openViolations,
-          criticalViolations: data.criticalViolations,
-          recentExecutions: data.recentExecutions || [],
-          violationsByCategory: data.violationsByCategory || [],
-          violationsBySeverity: data.violationsBySeverity || [],
-          executionStats: data.executionStats || []
-        });
-      }
+      setStats({
+        activeRules: data.activeRules ?? 0,
+        openViolations: data.openViolations ?? 0,
+        criticalViolations: data.criticalViolations ?? 0,
+        recentExecutions: data.recentExecutions || [],
+        violationsByCategory: data.violationsByCategory || [],
+        violationsBySeverity: data.violationsBySeverity || [],
+        executionStats: data.executionStats || []
+      });
     } catch (error) {
       console.error('Failed to fetch compliance dashboard:', error);
+      // Show empty dashboard rather than error state
+      setStats({
+        activeRules: 0, openViolations: 0, criticalViolations: 0,
+        recentExecutions: [], violationsByCategory: [], violationsBySeverity: [], executionStats: []
+      });
     } finally {
       setLoading(false);
     }
@@ -134,7 +137,7 @@ export default function ComplianceDashboard() {
         <div className="bg-adv-card rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-adv-white mb-4">Violations by Category</h3>
           {stats.violationsByCategory.length === 0 ? (
-            <div className="text-center py-8 text-adv-gray-med text-sm">No open violations</div>
+            <div className="text-center py-8 text-adv-gray text-sm">No open violations</div>
           ) : (
             <div className="space-y-3">
               {stats.violationsByCategory.map(item => (
@@ -159,7 +162,7 @@ export default function ComplianceDashboard() {
         <div className="bg-adv-card rounded-lg border border-border p-5">
           <h3 className="text-sm font-semibold text-adv-white mb-4">Violations by Severity</h3>
           {stats.violationsBySeverity.length === 0 ? (
-            <div className="text-center py-8 text-adv-gray-med text-sm">No open violations</div>
+            <div className="text-center py-8 text-adv-gray text-sm">No open violations</div>
           ) : (
             <div className="space-y-3">
               {stats.violationsBySeverity.map(item => {
@@ -193,7 +196,7 @@ export default function ComplianceDashboard() {
       <div className="bg-adv-card rounded-lg border border-border p-5">
         <h3 className="text-sm font-semibold text-adv-white mb-4">Recent Rule Executions</h3>
         {stats.recentExecutions.length === 0 ? (
-          <div className="text-center py-8 text-adv-gray-med text-sm">No recent executions</div>
+          <div className="text-center py-8 text-adv-gray text-sm">No recent executions</div>
         ) : (
           <div className="space-y-2">
             {stats.recentExecutions.map((exec, idx) => {
@@ -216,7 +219,7 @@ export default function ComplianceDashboard() {
                     <span className="text-xs text-adv-gray capitalize bg-adv-dark-2 px-2 py-1 rounded">
                       {exec.category.replace('_', ' ')}
                     </span>
-                    <div className="flex items-center gap-1 text-xs text-adv-gray-med">
+                    <div className="flex items-center gap-1 text-xs text-adv-gray">
                       <Clock className="h-3 w-3" />
                       {new Date(exec.executed_at).toLocaleString()}
                     </div>

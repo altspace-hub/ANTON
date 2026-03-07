@@ -306,7 +306,7 @@ export default function InstructionBuilderPage() {
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
                 placeholder="e.g., AML Compliance Dashboard"
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
 
@@ -354,7 +354,7 @@ export default function InstructionBuilderPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-adv-white">{proj.name}</span>
-                      <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] text-adv-teal">
+                      <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-xs text-adv-teal">
                         {proj.status}
                       </span>
                     </div>
@@ -388,7 +388,7 @@ export default function InstructionBuilderPage() {
                       ? 'bg-adv-teal-dim text-adv-white ml-12'
                       : 'bg-adv-dark text-adv-off-white mr-12'
                   }`}>
-                    <div className="text-[10px] text-adv-gray mb-1">{msg.role === 'user' ? 'You' : 'ANTON'}</div>
+                    <div className="text-xs text-adv-gray mb-1">{msg.role === 'user' ? 'You' : 'ANTON'}</div>
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                   </div>
                 ))}
@@ -406,7 +406,7 @@ export default function InstructionBuilderPage() {
                   onChange={e => setUserInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendDiscoveryMessage()}
                   placeholder="Describe your project or answer ANTON's questions..."
-                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   disabled={loading}
                 />
                 <button
@@ -529,7 +529,7 @@ export default function InstructionBuilderPage() {
                   }`}
                 >
                   {file.filename}
-                  <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] ${
+                  <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${
                     file.file_type === 'primary' ? 'bg-adv-teal-dim text-adv-teal' : 'bg-adv-dark text-adv-gray'
                   }`}>
                     {file.file_type}
@@ -619,7 +619,7 @@ function ExpertReviewCard({ review }: { review: ExpertReview }) {
       </div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-2 flex items-center gap-1 text-[10px] opacity-60 hover:opacity-100"
+        className="mt-2 flex items-center gap-1 text-xs opacity-60 hover:opacity-100"
       >
         {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         {expanded ? 'Show less' : 'Show more'}

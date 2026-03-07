@@ -205,7 +205,7 @@ export function EntityIntelligencePanel({ initialQuery = '', sessionId, onContex
             onChange={e => setQuery(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && runSearch()}
             placeholder="Company name or org number (556123-4567)…"
-            className="w-full rounded-lg border border-adv-dark/60 bg-adv-dark/40 pl-9 pr-4 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none"
+            className="w-full rounded-lg border border-adv-dark/60 bg-adv-dark/40 pl-9 pr-4 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
         <button
@@ -229,7 +229,7 @@ export function EntityIntelligencePanel({ initialQuery = '', sessionId, onContex
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-adv-teal">Roaring — Swedish Registry</span>
                 {data.roaring.source === 'mock_demo_data' && (
-                  <span className="text-[10px] text-adv-gold">Mock Demo</span>
+                  <span className="text-xs text-adv-gold">Mock Demo</span>
                 )}
               </div>
               <div className="space-y-1 text-xs text-adv-gray">
@@ -253,7 +253,7 @@ export function EntityIntelligencePanel({ initialQuery = '', sessionId, onContex
               {data.roaring.highRiskFlags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {data.roaring.highRiskFlags.map(f => (
-                    <span key={f} className="rounded-full border border-adv-red/30 bg-red-900/10 px-1.5 py-0.5 text-[10px] text-adv-red">{f.replace(/_/g, ' ')}</span>
+                    <span key={f} className="rounded-full border border-adv-red/30 bg-red-900/10 px-1.5 py-0.5 text-xs text-adv-red">{f.replace(/_/g, ' ')}</span>
                   ))}
                 </div>
               )}
@@ -266,7 +266,7 @@ export function EntityIntelligencePanel({ initialQuery = '', sessionId, onContex
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-adv-blue">Dow Jones — Global Screening</span>
                 {data.dj.source === 'mock_demo_data' && (
-                  <span className="text-[10px] text-adv-gold">Mock Demo</span>
+                  <span className="text-xs text-adv-gold">Mock Demo</span>
                 )}
               </div>
               <div className="space-y-1 text-xs text-adv-gray">
@@ -302,7 +302,7 @@ export function EntityIntelligencePanel({ initialQuery = '', sessionId, onContex
               {data.combined.flags.length > 0 && (
                 <div className="mb-2 flex flex-wrap gap-1">
                   {data.combined.flags.map(f => (
-                    <span key={f} className="rounded-full bg-adv-dark/40 border border-adv-dark/60 px-1.5 py-0.5 text-[10px] text-adv-gray">{f}</span>
+                    <span key={f} className="rounded-full bg-adv-dark/40 border border-adv-dark/60 px-1.5 py-0.5 text-xs text-adv-gray">{f}</span>
                   ))}
                 </div>
               )}

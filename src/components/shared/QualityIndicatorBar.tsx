@@ -166,7 +166,7 @@ function CompletenessBadge({ score, found, missing }: CompletenessBadgeProps) {
       <button
         onClick={() => hasDetail && setOpen((v) => !v)}
         title={hasDetail ? 'Click to see matched and missing sections' : `${score}% of expected sections found`}
-        className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-opacity ${colorClass} ${hasDetail ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
+        className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-opacity ${colorClass} ${hasDetail ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
       >
         <CheckCircle className="h-3 w-3" />
         {score}% {label}
@@ -176,10 +176,10 @@ function CompletenessBadge({ score, found, missing }: CompletenessBadgeProps) {
         <div className="absolute bottom-6 left-0 z-50 w-64 rounded-lg border border-border bg-adv-card shadow-xl">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-adv-teal">
+            <span className="text-xs font-semibold uppercase tracking-wider text-adv-teal">
               Expected sections
             </span>
-            <button onClick={() => setOpen(false)} className="text-adv-gray-med hover:text-adv-off-white">
+            <button onClick={() => setOpen(false)} className="text-adv-gray hover:text-adv-off-white">
               <X className="h-3 w-3" />
             </button>
           </div>
@@ -193,12 +193,12 @@ function CompletenessBadge({ score, found, missing }: CompletenessBadgeProps) {
             {missing.map((kw) => (
               <div key={kw} className="flex items-center gap-2 rounded px-2 py-1">
                 <XCircle className="h-3 w-3 shrink-0 text-adv-red" />
-                <span className="text-[11px] text-adv-gray-med capitalize">{kw}</span>
+                <span className="text-[11px] text-adv-gray capitalize">{kw}</span>
               </div>
             ))}
           </div>
           <div className="border-t border-border px-3 py-2">
-            <p className="text-[10px] text-adv-gray-med leading-relaxed">
+            <p className="text-xs text-adv-gray leading-relaxed">
               Checks whether the output covers the key topics expected for your selected output format.
             </p>
           </div>
@@ -215,7 +215,7 @@ export default function QualityIndicatorBar({ content, moduleId, outputFormatIds
     analyzeQuality(content, moduleId, outputFormatIds);
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-2 mt-2 text-[11px] text-adv-gray-med">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-2 mt-2 text-[11px] text-adv-gray">
       {/* Word count */}
       <span className="flex items-center gap-1">
         <BookOpen className="h-3 w-3" />

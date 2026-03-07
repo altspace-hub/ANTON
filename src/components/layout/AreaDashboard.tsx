@@ -46,7 +46,7 @@ export default function AreaDashboard({
       {/* Toggle header */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-2.5 py-1.5 text-adv-gray-med hover:text-adv-off-white transition-colors"
+        className="flex w-full items-center justify-between px-2.5 py-1.5 text-adv-gray hover:text-adv-off-white transition-colors"
         aria-expanded={open}
         aria-label={`${areaLabel} area overview`}
       >

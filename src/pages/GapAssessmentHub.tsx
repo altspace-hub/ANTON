@@ -38,7 +38,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   scoring:      { label: 'Scoring',      color: 'text-adv-blue' },
   synthesising: { label: 'Synthesising', color: 'text-adv-teal' },
   complete:     { label: 'Complete',     color: 'text-adv-green' },
-  paused:       { label: 'Paused',       color: 'text-adv-gray-med' },
+  paused:       { label: 'Paused',       color: 'text-adv-gray' },
 };
 
 const STEP_LABELS = [
@@ -145,7 +145,7 @@ export default function GapAssessmentHub() {
             <div className="mb-5">
               <label className="mb-2 block text-xs font-medium text-adv-gray">Assessment title</label>
               <input
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 placeholder="e.g. Nordea — AMLR Gap Assessment 2027"
                 value={newTitle}
                 onChange={e => setNewTitle(e.target.value.slice(0, 200))}
@@ -172,7 +172,7 @@ export default function GapAssessmentHub() {
                         {selected && <CheckSquare className="ml-auto h-4 w-4 text-adv-teal" />}
                       </div>
                       <p className="text-xs text-adv-gray mb-1 line-clamp-1">{fw.name}</p>
-                      <div className="flex items-center gap-2 text-[11px] text-adv-gray-med">
+                      <div className="flex items-center gap-2 text-[11px] text-adv-gray">
                         <span>{fw.articleCount} articles/controls</span>
                         <span>·</span>
                         <span>{fw.themes.length} themes</span>
@@ -239,13 +239,13 @@ export default function GapAssessmentHub() {
                     <span className="text-sm font-semibold text-adv-off-white">{fw.shortName}</span>
                   </div>
                   <p className="mb-1 text-xs text-adv-gray line-clamp-2">{fw.name}</p>
-                  <p className="text-[11px] text-adv-gray-med">{fw.reference}</p>
+                  <p className="text-[11px] text-adv-gray">{fw.reference}</p>
                   <div className="mt-3 flex flex-wrap gap-1">
                     {fw.themes.slice(0, 3).map(t => (
-                      <span key={t} className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">{t}</span>
+                      <span key={t} className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{t}</span>
                     ))}
                     {fw.themes.length > 3 && (
-                      <span className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray-med">+{fw.themes.length - 3}</span>
+                      <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">+{fw.themes.length - 3}</span>
                     )}
                   </div>
                 </div>
@@ -278,14 +278,14 @@ export default function GapAssessmentHub() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-adv-off-white group-hover:text-adv-teal transition-colors truncate">{a.title}</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-adv-gray-med">{fwIds.join(', ')}</span>
-                        <span className="text-adv-gray-med">·</span>
-                        <span className="text-xs text-adv-gray-med">Step {step}: {STEP_LABELS[step] || 'Unknown'}</span>
+                        <span className="text-xs text-adv-gray">{fwIds.join(', ')}</span>
+                        <span className="text-adv-gray">·</span>
+                        <span className="text-xs text-adv-gray">Step {step}: {STEP_LABELS[step] || 'Unknown'}</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <span className={`text-xs font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
-                      <span className="text-[11px] text-adv-gray-med">{new Date(a.updated_at).toLocaleDateString()}</span>
+                      <span className="text-[11px] text-adv-gray">{new Date(a.updated_at).toLocaleDateString()}</span>
                     </div>
                     <ChevronRight className="h-4 w-4 text-adv-gray shrink-0" />
                   </button>
@@ -297,7 +297,7 @@ export default function GapAssessmentHub() {
 
         {!loading && assessments.length === 0 && !creating && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ClipboardCheck className="mb-4 h-12 w-12 text-adv-gray-med" />
+            <ClipboardCheck className="mb-4 h-12 w-12 text-adv-gray" />
             <h3 className="mb-2 text-base font-semibold text-adv-off-white">No assessments yet</h3>
             <p className="mb-6 max-w-sm text-sm text-adv-gray">
               Run a structured gap assessment across AMLR, DORA, ISO 27001, and Wolfsberg CBDDQ.

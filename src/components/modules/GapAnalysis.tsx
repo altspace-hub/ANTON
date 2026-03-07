@@ -35,7 +35,7 @@ export default function GapAnalysis({ onInputChange }: Props) {
         <select
           value={entityType}
           onChange={(e) => setEntityType(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select...</option>
           <option value="credit-institution">Credit Institution</option>
@@ -53,7 +53,7 @@ export default function GapAnalysis({ onInputChange }: Props) {
         <select
           value={jurisdiction}
           onChange={(e) => setJurisdiction(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select...</option>
           <option value="eu">EU (AMLR/AMLD6)</option>
@@ -74,7 +74,7 @@ export default function GapAnalysis({ onInputChange }: Props) {
           value={customerSegments}
           onChange={(e) => setCustomerSegments(e.target.value)}
           placeholder="e.g., Retail, Corporate, PEPs, Correspondent banking"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -107,7 +107,7 @@ export default function GapAnalysis({ onInputChange }: Props) {
           value={knownConcerns}
           onChange={(e) => setKnownConcerns(e.target.value)}
           placeholder="Any known compliance gaps, audit findings, or areas of concern..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>

@@ -109,7 +109,7 @@ export default function RoaringSearchPage() {
             }`}>
               <div className={`h-2 w-2 rounded-full ${status.mode === 'live' ? 'bg-adv-green' : 'bg-adv-gold'}`} />
               {status.mode === 'live' ? 'Live API' : 'Mock Demo Mode'}
-              {status.connector && <span className="text-adv-gray-med">· {status.connector.total_calls} calls</span>}
+              {status.connector && <span className="text-adv-gray">· {status.connector.total_calls} calls</span>}
             </div>
           )}
         </div>
@@ -139,7 +139,7 @@ export default function RoaringSearchPage() {
                   onChange={e => setQuery(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   placeholder="Company name or org number (556123-4567)…"
-                  className="w-full rounded-xl border border-adv-dark/60 bg-adv-card pl-9 pr-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none"
+                  className="w-full rounded-xl border border-adv-dark/60 bg-adv-card pl-9 pr-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
               <button
@@ -185,7 +185,7 @@ export default function RoaringSearchPage() {
                 onChange={e => setBatchInput(e.target.value)}
                 placeholder="556123-4567&#10;556234-5678&#10;556345-6789"
                 rows={6}
-                className="w-full rounded-lg border border-adv-dark/60 bg-adv-dark/40 px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none font-mono resize-none"
+                className="w-full rounded-lg border border-adv-dark/60 bg-adv-dark/40 px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono resize-none"
               />
               <div className="mt-3 flex items-center gap-3">
                 <button
@@ -220,7 +220,7 @@ export default function RoaringSearchPage() {
                       const { label, cls } = riskLabel(row.riskScore);
                       return (
                         <tr key={i} className="border-b border-adv-dark/30 hover:bg-adv-dark/20">
-                          <td className="px-4 py-2 text-adv-off-white">{row.entityName} <span className="text-adv-gray-med ml-1">{row.orgNumber}</span></td>
+                          <td className="px-4 py-2 text-adv-off-white">{row.entityName} <span className="text-adv-gray ml-1">{row.orgNumber}</span></td>
                           <td className={`px-4 py-2 text-center font-medium ${cls}`}>{label}</td>
                           <td className="px-4 py-2 text-center text-adv-off-white">{row.hitCount}</td>
                         </tr>

@@ -56,14 +56,14 @@ export default function PWAInstallPrompt() {
       </span>
       <button
         onClick={handleInstall}
-        className="ml-2 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-semibold text-adv-dark hover:bg-adv-teal-dark transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card"
+        className="ml-2 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-semibold text-adv-dark hover:bg-adv-teal-dark transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card"
       >
         Install
       </button>
       <button
         onClick={handleDismiss}
         aria-label="Dismiss install prompt"
-        className="ml-1 rounded-lg p-1 text-adv-gray hover:text-adv-off-white hover:bg-adv-dark-2 transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card"
+        className="ml-1 rounded-lg p-1 text-adv-gray hover:text-adv-off-white hover:bg-adv-dark-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-2 focus:ring-offset-adv-card"
       >
         <X className="h-4 w-4" />
       </button>

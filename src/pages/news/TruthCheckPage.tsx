@@ -242,13 +242,13 @@ export default function TruthCheckPage() {
               placeholder="e.g. &ldquo;The European Central Bank raised interest rates to 5% in January 2025&rdquo;"
               rows={3}
               className="w-full resize-none rounded-lg border border-border bg-adv-dark px-4 py-3 text-sm
-                         text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none
+                         text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1
                          transition-colors"
               style={{ minHeight: '80px', maxHeight: '200px', overflowY: 'auto' }}
               disabled={loading}
             />
             <div className="flex items-center justify-between mt-3">
-              <span className="text-[10px] text-adv-gray-med">Ctrl+Enter to verify</span>
+              <span className="text-xs text-adv-gray">Ctrl+Enter to verify</span>
               <button
                 onClick={handleVerify}
                 disabled={!claim.trim() || loading}
@@ -353,7 +353,7 @@ export default function TruthCheckPage() {
 
                 {/* Checked claim */}
                 <div className="mt-5 pt-4 border-t border-border">
-                  <p className="text-[10px] text-adv-gray-med">
+                  <p className="text-xs text-adv-gray">
                     Claim: <span className="text-adv-gray italic">"{result.claim}"</span>
                   </p>
                 </div>
@@ -377,7 +377,7 @@ export default function TruthCheckPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); clearHistory(); }}
-                    className="rounded p-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                    className="rounded p-1 text-adv-gray hover:text-adv-red transition-colors"
                     title="Clear history"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -405,10 +405,10 @@ export default function TruthCheckPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-adv-off-white line-clamp-1">{item.claim}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`text-[10px] font-medium ${cfg.chipClass.split(' ').find(c => c.startsWith('text-')) ?? 'text-adv-gray'}`}>
+                            <span className={`text-xs font-medium ${cfg.chipClass.split(' ').find(c => c.startsWith('text-')) ?? 'text-adv-gray'}`}>
                               {cfg.label}
                             </span>
-                            <span className="text-[10px] text-adv-gray-med">
+                            <span className="text-xs text-adv-gray">
                               {new Date(item.checked_at).toLocaleDateString()}
                             </span>
                           </div>

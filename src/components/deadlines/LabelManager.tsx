@@ -148,7 +148,7 @@ export default function LabelManager({
                 onKeyDown={handleKeyDown}
                 placeholder="Label name"
                 autoFocus
-                className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
 
@@ -200,7 +200,7 @@ export default function LabelManager({
           {/* Preview */}
           {newName.trim() && (
             <div className="mt-2">
-              <span className="text-xs text-adv-gray-med">Preview: </span>
+              <span className="text-xs text-adv-gray">Preview: </span>
               <span
                 className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
                 style={{
@@ -221,7 +221,7 @@ export default function LabelManager({
       )}
 
       {allLabels.length === 0 && !showCreate && (
-        <p className="mt-2 text-center text-xs text-adv-gray-med">
+        <p className="mt-2 text-center text-xs text-adv-gray">
           No labels created yet.
         </p>
       )}

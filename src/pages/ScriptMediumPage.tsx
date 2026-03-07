@@ -990,7 +990,7 @@ export default function ScriptMediumPage() {
           const isCompleted = currentIdx > idx;
           return (
             <div key={id} className="flex items-center gap-2">
-              {i > 0 && <ArrowRight className="h-3 w-3 text-adv-gray-med" />}
+              {i > 0 && <ArrowRight className="h-3 w-3 text-adv-gray" />}
               <div
                 className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   isActive
@@ -1118,7 +1118,7 @@ export default function ScriptMediumPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the application you want to build. Be specific about features, UI elements, data handling..."
-              className="mt-2 h-32 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none resize-none"
+              className="mt-2 h-32 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
           </div>
 
@@ -1131,7 +1131,7 @@ export default function ScriptMediumPage() {
               value={constraints}
               onChange={(e) => setConstraints(e.target.value)}
               placeholder="e.g., must use specific libraries, no external dependencies, dark theme, responsive design..."
-              className="mt-2 h-20 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none resize-none"
+              className="mt-2 h-20 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
           </div>
 
@@ -1238,7 +1238,7 @@ export default function ScriptMediumPage() {
                       onChange={(e) =>
                         setAnswers((prev) => ({ ...prev, [q]: e.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none"
+                      className="mt-1 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       placeholder="Your answer..."
                     />
                   </div>
@@ -1347,8 +1347,8 @@ export default function ScriptMediumPage() {
                         </>
                       ) : (
                         <>
-                          <Eye className="mx-auto h-8 w-8 text-adv-gray-med" />
-                          <p className="mt-3 text-sm text-adv-gray-med">Preview will appear here once HTML is generated</p>
+                          <Eye className="mx-auto h-8 w-8 text-adv-gray" />
+                          <p className="mt-3 text-sm text-adv-gray">Preview will appear here once HTML is generated</p>
                         </>
                       )}
                     </div>
@@ -1419,7 +1419,7 @@ export default function ScriptMediumPage() {
                       <span className="font-mono text-xs text-adv-gray">Source Code</span>
                     </div>
                     <div className="flex h-40 items-center justify-center">
-                      <p className="text-xs text-adv-gray-med">
+                      <p className="text-xs text-adv-gray">
                         {isStreaming ? 'Generating source...' : 'No source available yet'}
                       </p>
                     </div>
@@ -1438,8 +1438,8 @@ export default function ScriptMediumPage() {
                     {messages.length === 0 && !isStreaming ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="text-center">
-                          <AppWindow className="mx-auto h-8 w-8 text-adv-gray-med" />
-                          <p className="mt-2 text-sm text-adv-gray-med">Preparing generation...</p>
+                          <AppWindow className="mx-auto h-8 w-8 text-adv-gray" />
+                          <p className="mt-2 text-sm text-adv-gray">Preparing generation...</p>
                         </div>
                       </div>
                     ) : (
@@ -1493,7 +1493,7 @@ export default function ScriptMediumPage() {
                           Detecting files...
                         </div>
                       ) : (
-                        <p className="text-xs text-adv-gray-med">No files detected yet</p>
+                        <p className="text-xs text-adv-gray">No files detected yet</p>
                       )}
                     </div>
                   )}
@@ -1524,8 +1524,8 @@ export default function ScriptMediumPage() {
                     </div>
                     <div className="flex h-80 items-center justify-center">
                       <div className="text-center">
-                        <FileCode className="mx-auto h-8 w-8 text-adv-gray-med" />
-                        <p className="mt-2 text-sm text-adv-gray-med">
+                        <FileCode className="mx-auto h-8 w-8 text-adv-gray" />
+                        <p className="mt-2 text-sm text-adv-gray">
                           {displayFiles.length > 0
                             ? 'Click a file in the manifest to view its contents'
                             : isStreaming
@@ -1569,8 +1569,8 @@ export default function ScriptMediumPage() {
                     {messages.length === 0 && !isStreaming ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="text-center">
-                          <AppWindow className="mx-auto h-8 w-8 text-adv-gray-med" />
-                          <p className="mt-2 text-sm text-adv-gray-med">Preparing generation...</p>
+                          <AppWindow className="mx-auto h-8 w-8 text-adv-gray" />
+                          <p className="mt-2 text-sm text-adv-gray">Preparing generation...</p>
                         </div>
                       </div>
                     ) : (
@@ -1708,7 +1708,7 @@ export default function ScriptMediumPage() {
                 value={iterateInput}
                 onChange={(e) => setIterateInput(e.target.value)}
                 placeholder="Describe what you want to change, e.g., 'Add a dark mode toggle', 'Use a sidebar navigation instead', 'Add form validation'..."
-                className="h-24 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none resize-none"
+                className="h-24 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
@@ -1734,7 +1734,7 @@ export default function ScriptMediumPage() {
                 >
                   Cancel
                 </button>
-                <span className="ml-auto self-center text-[10px] text-adv-gray-med">
+                <span className="ml-auto self-center text-xs text-adv-gray">
                   Ctrl+Enter to send
                 </span>
               </div>

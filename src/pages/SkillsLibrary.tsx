@@ -134,7 +134,7 @@ function SubmitSkillModal({ onClose, onSubmitted }: { onClose: () => void; onSub
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none';
+  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
   const labelCls = 'block text-xs font-medium text-adv-off-white mb-1';
 
   return (
@@ -144,7 +144,7 @@ function SubmitSkillModal({ onClose, onSubmitted }: { onClose: () => void; onSub
           <Plus className="h-4 w-4 text-adv-teal" />
           Submit a Skill
         </h2>
-        <p className="mb-5 text-xs text-adv-gray-med">
+        <p className="mb-5 text-xs text-adv-gray">
           Share a reusable skill with other openEXPERT users on this device.
         </p>
 
@@ -267,13 +267,13 @@ export default function SkillsLibrary() {
         <p className="text-xs text-adv-gray leading-relaxed">
           Skills are injected as <strong className="text-adv-off-white">Layer 6</strong> in the prompt composition chain — after the module system prompt (Layer 4) and persona (Layer 5), but before output format instructions. They add specialised domain knowledge, analytical techniques, or communication styles without replacing the module's core behaviour.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-adv-gray-med">
+        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-adv-gray">
           <span className="rounded-full border border-adv-gray-med/20 px-2 py-0.5">Layer 4: Module Prompt</span>
-          <span className="text-adv-gray-med">→</span>
+          <span className="text-adv-gray">→</span>
           <span className="rounded-full border border-adv-gray-med/20 px-2 py-0.5">Layer 5: Persona</span>
-          <span className="text-adv-gray-med">→</span>
+          <span className="text-adv-gray">→</span>
           <span className="rounded-full border border-adv-teal/40 bg-adv-teal/10 px-2 py-0.5 text-adv-teal">Layer 6: Skills ← You are here</span>
-          <span className="text-adv-gray-med">→</span>
+          <span className="text-adv-gray">→</span>
           <span className="rounded-full border border-adv-gray-med/20 px-2 py-0.5">Layer 7: Output Format</span>
         </div>
       </div>
@@ -281,16 +281,16 @@ export default function SkillsLibrary() {
       {/* Search + filter bar */}
       <div className="mb-5 flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search skills by name, description, or tag..."
-            className="w-full rounded-lg border border-border bg-adv-dark pl-9 pr-9 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark pl-9 pr-9 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray-med hover:text-adv-off-white transition-colors">
+            <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray hover:text-adv-off-white transition-colors">
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -316,7 +316,7 @@ export default function SkillsLibrary() {
       </div>
 
       {/* Results summary */}
-      <div className="mb-4 text-xs text-adv-gray-med">
+      <div className="mb-4 text-xs text-adv-gray">
         {totalFiltered} skill{totalFiltered !== 1 ? 's' : ''} {query || activeCategory ? '(filtered)' : 'available'}
       </div>
 
@@ -335,7 +335,7 @@ export default function SkillsLibrary() {
                 <h2 className={`text-sm font-semibold ${cfg?.color || 'text-adv-gray'}`}>
                   {cfg?.label || cat}
                 </h2>
-                <span className="text-xs text-adv-gray-med">{catSkills.length}</span>
+                <span className="text-xs text-adv-gray">{catSkills.length}</span>
               </div>
 
               <div className="space-y-2">
@@ -352,34 +352,34 @@ export default function SkillsLibrary() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-adv-off-white">{skill.name}</span>
-                            <span className="text-[10px] text-adv-gray-med">v{skill.version}</span>
-                            <span className="text-[10px] text-adv-gray-med">by {skill.author}</span>
+                            <span className="text-xs text-adv-gray">v{skill.version}</span>
+                            <span className="text-xs text-adv-gray">by {skill.author}</span>
                           </div>
-                          <p className="text-xs text-adv-gray-med mt-0.5 truncate">{skill.description}</p>
+                          <p className="text-xs text-adv-gray mt-0.5 truncate">{skill.description}</p>
                         </div>
                         {/* Tags */}
                         <div className="hidden sm:flex gap-1 shrink-0">
                           {(skill.tags || []).slice(0, 3).map((tag) => (
-                            <span key={tag} className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray-med">
+                            <span key={tag} className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                               {tag}
                             </span>
                           ))}
                         </div>
                         {isExpanded
-                          ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med shrink-0" />
-                          : <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med shrink-0" />}
+                          ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray shrink-0" />
+                          : <ChevronRight className="h-3.5 w-3.5 text-adv-gray shrink-0" />}
                       </button>
 
                       {/* Expanded: prompt preview */}
                       {isExpanded && skill.prompt && (
                         <div className="border-t border-border px-4 py-4 bg-adv-dark-2">
-                          <div className="text-[10px] font-medium uppercase tracking-wider text-adv-gray-med mb-2">
+                          <div className="text-xs font-medium uppercase tracking-wider text-adv-gray mb-2">
                             Prompt injection (Layer 6)
                           </div>
                           <pre className="text-xs text-adv-gray leading-relaxed whitespace-pre-wrap font-sans">
                             {skill.prompt}
                           </pre>
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-adv-gray-med">
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-adv-gray">
                             <span>ID: <code className="text-adv-teal">{skill.id}</code></span>
                             <span>·</span>
                             <span>Use in SkillAttacher on any module or Open Chat session</span>
@@ -395,10 +395,10 @@ export default function SkillsLibrary() {
                           </div>
                           {resolveSkillPacks(skill.tags || []).length > 0 && (
                             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                              <Package className="h-3 w-3 text-adv-gray-med shrink-0" />
-                              <span className="text-[11px] text-adv-gray-med">Related packs:</span>
+                              <Package className="h-3 w-3 text-adv-gray shrink-0" />
+                              <span className="text-[11px] text-adv-gray">Related packs:</span>
                               {resolveSkillPacks(skill.tags || []).map(p => (
-                                <span key={p.id} className="rounded-full border border-adv-teal/20 bg-adv-teal/5 px-2 py-0.5 text-[10px] text-adv-teal">{p.label}</span>
+                                <span key={p.id} className="rounded-full border border-adv-teal/20 bg-adv-teal/5 px-2 py-0.5 text-xs text-adv-teal">{p.label}</span>
                               ))}
                             </div>
                           )}
@@ -414,7 +414,7 @@ export default function SkillsLibrary() {
 
         {totalFiltered === 0 && (
           <div className="rounded-xl border border-dashed border-border p-10 text-center">
-            <Zap className="h-8 w-8 text-adv-gray-med mx-auto mb-3" />
+            <Zap className="h-8 w-8 text-adv-gray mx-auto mb-3" />
             <p className="text-sm text-adv-gray">No skills match your search.</p>
             <button onClick={() => { setQuery(''); setActiveCategory(null); }} className="mt-2 text-xs text-adv-teal hover:underline">
               Clear filters
@@ -428,13 +428,13 @@ export default function SkillsLibrary() {
         <div className="mb-3 flex items-center gap-2">
           <Users className="h-4 w-4 text-adv-gold" />
           <h2 className="text-sm font-semibold text-adv-gold">Community Skills</h2>
-          <span className="text-xs text-adv-gray-med">{communitySkills.length}</span>
+          <span className="text-xs text-adv-gray">{communitySkills.length}</span>
         </div>
 
         {communitySkills.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-8 text-center">
-            <Users className="h-6 w-6 text-adv-gray-med mx-auto mb-2" />
-            <p className="text-xs text-adv-gray-med">No community skills yet. Be the first to submit one.</p>
+            <Users className="h-6 w-6 text-adv-gray mx-auto mb-2" />
+            <p className="text-xs text-adv-gray">No community skills yet. Be the first to submit one.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -450,32 +450,32 @@ export default function SkillsLibrary() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-adv-off-white">{cs.name}</span>
-                        <span className="rounded-full bg-adv-gold/10 border border-adv-gold/30 px-2 py-0.5 text-[10px] font-medium text-adv-gold">Community</span>
-                        <span className="text-[10px] text-adv-gray-med">{cs.category}</span>
+                        <span className="rounded-full bg-adv-gold/10 border border-adv-gold/30 px-2 py-0.5 text-xs font-medium text-adv-gold">Community</span>
+                        <span className="text-xs text-adv-gray">{cs.category}</span>
                       </div>
-                      <p className="text-xs text-adv-gray-med mt-0.5 truncate">{cs.description}</p>
+                      <p className="text-xs text-adv-gray mt-0.5 truncate">{cs.description}</p>
                     </div>
                     <div className="hidden sm:flex gap-1 shrink-0">
                       {(cs.tags || []).slice(0, 3).map((tag) => (
-                        <span key={tag} className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray-med">
+                        <span key={tag} className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                           {tag}
                         </span>
                       ))}
                     </div>
                     {isExpanded
-                      ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med shrink-0" />
-                      : <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med shrink-0" />}
+                      ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray shrink-0" />
+                      : <ChevronRight className="h-3.5 w-3.5 text-adv-gray shrink-0" />}
                   </button>
 
                   {isExpanded && cs.prompt_instruction && (
                     <div className="border-t border-border px-4 py-4 bg-adv-dark-2">
-                      <div className="text-[10px] font-medium uppercase tracking-wider text-adv-gray-med mb-2">
+                      <div className="text-xs font-medium uppercase tracking-wider text-adv-gray mb-2">
                         Prompt instruction
                       </div>
                       <pre className="text-xs text-adv-gray leading-relaxed whitespace-pre-wrap font-sans">
                         {cs.prompt_instruction}
                       </pre>
-                      <div className="mt-3 text-[11px] text-adv-gray-med">
+                      <div className="mt-3 text-[11px] text-adv-gray">
                         ID: <code className="text-adv-gold">{cs.id}</code>
                       </div>
                     </div>

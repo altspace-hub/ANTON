@@ -69,7 +69,7 @@ export default function EngagementExecution({ onInputChange }: Props) {
           value={clientName}
           onChange={(e) => setClientName(e.target.value)}
           placeholder="e.g., Nordea, SEB, Handelsbanken"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -80,7 +80,7 @@ export default function EngagementExecution({ onInputChange }: Props) {
           value={engagementRef}
           onChange={(e) => setEngagementRef(e.target.value)}
           placeholder="e.g., PROJ-2026-042 or 'Nordea AML Review Q1'"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -90,7 +90,7 @@ export default function EngagementExecution({ onInputChange }: Props) {
           value={scopeFocus}
           onChange={(e) => setScopeFocus(e.target.value)}
           placeholder="Paste scope items from the engagement letter, or describe the deliverables manually..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={4}
         />
       </div>
@@ -111,7 +111,7 @@ export default function EngagementExecution({ onInputChange }: Props) {
               <div className={`text-xs font-medium ${analysisDepth === opt.id ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                 {opt.label}
               </div>
-              <div className="text-[10px] text-adv-gray-med">{opt.description}</div>
+              <div className="text-xs text-adv-gray">{opt.description}</div>
             </button>
           ))}
         </div>
@@ -142,7 +142,7 @@ export default function EngagementExecution({ onInputChange }: Props) {
           value={areasOfConcern}
           onChange={(e) => setAreasOfConcern(e.target.value)}
           placeholder="Any known issues, audit findings, or areas requiring special attention..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>

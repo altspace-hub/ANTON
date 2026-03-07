@@ -174,19 +174,19 @@ export default function FinanceGoalsPage() {
                 <span className="text-xs text-adv-gray">Title *</span>
                 <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Buy a car, Emergency fund, Pay off student loan"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Goal type</span>
                 <select value={formData.goal_type} onChange={(e) => setFormData({ ...formData, goal_type: e.target.value as Goal['goal_type'] })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
                   {GOAL_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Currency</span>
                 <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
                   <option value="SEK">SEK</option>
                   <option value="EUR">EUR</option>
                   <option value="USD">USD</option>
@@ -196,18 +196,18 @@ export default function FinanceGoalsPage() {
                 <span className="text-xs text-adv-gray">Target amount *</span>
                 <input type="number" value={formData.target_amount} onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
                   placeholder="e.g. 100000"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Monthly contribution</span>
                 <input type="number" value={formData.monthly_contribution} onChange={(e) => setFormData({ ...formData, monthly_contribution: e.target.value })}
                   placeholder="e.g. 3000"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <label className="space-y-1">
                 <span className="text-xs text-adv-gray">Target date</span>
                 <input type="date" value={formData.target_date} onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
             </div>
             {error && <p className="text-sm text-adv-red">{error}</p>}
@@ -237,7 +237,7 @@ export default function FinanceGoalsPage() {
                 <span className="text-xs text-adv-gray">New current amount ({progressGoal.currency})</span>
                 <input type="number" value={progressAmount} onChange={(e) => setProgressAmount(e.target.value)}
                   placeholder={String(progressGoal.current_amount)}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
               </label>
               <div className="flex gap-2">
                 <button onClick={handleMarkProgress} disabled={!progressAmount || updatingId !== null}
@@ -261,7 +261,7 @@ export default function FinanceGoalsPage() {
           </div>
         ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Target className="mb-3 h-10 w-10 text-adv-gray-med" />
+            <Target className="mb-3 h-10 w-10 text-adv-gray" />
             <h3 className="mb-1 font-semibold text-adv-off-white">No goals yet</h3>
             <p className="text-sm text-adv-gray">Add your first financial goal to get started.</p>
           </div>

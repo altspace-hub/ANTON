@@ -140,9 +140,9 @@ export default function VersionHistory({ entityType, entityId, onRestore, classN
                   </div>
                 ) : versions.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-32 gap-2 text-center px-6">
-                    <History className="w-8 h-8 text-adv-gray-med" />
+                    <History className="w-8 h-8 text-adv-gray" />
                     <p className="text-sm text-adv-gray">No saved versions yet.</p>
-                    <p className="text-xs text-adv-gray-med">
+                    <p className="text-xs text-adv-gray">
                       Save a version using the button next to the prompt editor.
                     </p>
                   </div>
@@ -161,7 +161,7 @@ export default function VersionHistory({ entityType, entityId, onRestore, classN
                               <span className="text-adv-gray"> — {v.label}</span>
                             ) : null}
                           </div>
-                          <div className="text-xs text-adv-gray-med mt-0.5">
+                          <div className="text-xs text-adv-gray mt-0.5">
                             {new Date(v.created_at).toLocaleString()} &middot;{' '}
                             {Math.round(v.content_length / 1000)}k chars
                           </div>

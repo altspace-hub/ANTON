@@ -257,7 +257,7 @@ export default function BriefMePage() {
                     <div className="h-2 w-2 rounded-full bg-adv-teal" />
                     <span className="text-xs font-medium text-adv-teal">Anton</span>
                     {isStreaming && (
-                      <span className="text-xs text-adv-gray-med">{t('brief.thinking')}</span>
+                      <span className="text-xs text-adv-gray">{t('brief.thinking')}</span>
                     )}
                   </div>
                   {!isStreaming && displayText && (
@@ -300,7 +300,7 @@ export default function BriefMePage() {
                         className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-card px-3 py-2 text-xs text-adv-off-white transition-colors hover:border-adv-teal hover:text-adv-teal"
                       >
                         {area && (
-                          <span className="text-[10px] text-adv-gray">{area.shortLabel} ·</span>
+                          <span className="text-xs text-adv-gray">{area.shortLabel} ·</span>
                         )}
                         <span>{mod.label}</span>
                         <ArrowRight className="h-3 w-3" />
@@ -317,7 +317,7 @@ export default function BriefMePage() {
         <div className="border-t border-border bg-adv-dark-2 px-6 py-4">
           {/* Transparency toggle */}
           <div className="mb-3 flex items-center gap-3">
-            <span className="text-[11px] text-adv-gray-med shrink-0">Transparency:</span>
+            <span className="text-[11px] text-adv-gray shrink-0">Transparency:</span>
             <div className="flex gap-1.5">
               {([
                 { level: 0 as const, label: 'Off' },
@@ -347,7 +347,7 @@ export default function BriefMePage() {
               onKeyDown={handleKeyDown}
               placeholder={t('brief.placeholder')}
               rows={2}
-              className="min-h-[60px] flex-1 resize-none rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="min-h-[60px] flex-1 resize-none rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               style={{ maxHeight: '200px', overflowY: 'auto' }}
               disabled={isStreaming}
             />
@@ -370,7 +370,7 @@ export default function BriefMePage() {
                   {t('brief.askAnton')}
                 </button>
               )}
-              <span className="text-[10px] text-adv-gray-med">{t('brief.ctrlEnter')}</span>
+              <span className="text-xs text-adv-gray">{t('brief.ctrlEnter')}</span>
             </div>
           </div>
         </div>

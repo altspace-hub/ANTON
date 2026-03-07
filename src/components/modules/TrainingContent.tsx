@@ -53,7 +53,7 @@ export default function TrainingContent({ onInputChange }: Props) {
                 <div className={`text-xs font-medium ${audience === a.id ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                   {a.label}
                 </div>
-                <div className="text-[11px] text-adv-gray-med">{a.description}</div>
+                <div className="text-[11px] text-adv-gray">{a.description}</div>
               </div>
             </button>
           ))}
@@ -89,7 +89,7 @@ export default function TrainingContent({ onInputChange }: Props) {
           value={additionalContext}
           onChange={(e) => setAdditionalContext(e.target.value)}
           placeholder="Specific scenarios, industry focus, regulatory changes to highlight..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>

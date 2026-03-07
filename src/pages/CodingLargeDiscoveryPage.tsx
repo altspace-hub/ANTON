@@ -561,7 +561,7 @@ export default function CodingLargeDiscoveryPage() {
                         <p className="truncate text-xs text-adv-gray">{p.description || 'No description'}</p>
                       </div>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           p.status === 'completed'
                             ? 'bg-adv-green/10 text-adv-green'
                             : p.status === 'paused'
@@ -598,7 +598,7 @@ export default function CodingLargeDiscoveryPage() {
               <input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30"
+                className="mt-1 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30"
                 placeholder="My Project"
                 autoFocus
               />
@@ -610,7 +610,7 @@ export default function CodingLargeDiscoveryPage() {
               <textarea
                 value={projectDescription}
                 onChange={(e) => setProjectDescription(e.target.value)}
-                className="mt-1 h-20 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30 resize-none"
+                className="mt-1 h-20 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30 resize-none"
                 placeholder="What are you building?"
               />
             </div>
@@ -618,12 +618,12 @@ export default function CodingLargeDiscoveryPage() {
             {/* Goals */}
             <div>
               <label className="block text-xs font-medium text-adv-gray">
-                Goals <span className="text-adv-gray-med">(optional)</span>
+                Goals <span className="text-adv-gray">(optional)</span>
               </label>
               <textarea
                 value={projectGoals}
                 onChange={(e) => setProjectGoals(e.target.value)}
-                className="mt-1 h-20 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30 resize-none"
+                className="mt-1 h-20 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30 resize-none"
                 placeholder="What are the primary objectives? What does success look like?"
               />
             </div>
@@ -631,12 +631,12 @@ export default function CodingLargeDiscoveryPage() {
             {/* Key Stakeholders */}
             <div>
               <label className="block text-xs font-medium text-adv-gray">
-                Key Stakeholders <span className="text-adv-gray-med">(optional)</span>
+                Key Stakeholders <span className="text-adv-gray">(optional)</span>
               </label>
               <textarea
                 value={projectStakeholders}
                 onChange={(e) => setProjectStakeholders(e.target.value)}
-                className="mt-1 h-16 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30 resize-none"
+                className="mt-1 h-16 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30 resize-none"
                 placeholder="Who will use, own, or be affected by this project?"
               />
             </div>
@@ -644,12 +644,12 @@ export default function CodingLargeDiscoveryPage() {
             {/* Known Constraints */}
             <div>
               <label className="block text-xs font-medium text-adv-gray">
-                Known Constraints <span className="text-adv-gray-med">(optional)</span>
+                Known Constraints <span className="text-adv-gray">(optional)</span>
               </label>
               <textarea
                 value={projectConstraints}
                 onChange={(e) => setProjectConstraints(e.target.value)}
-                className="mt-1 h-16 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30 resize-none"
+                className="mt-1 h-16 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30 resize-none"
                 placeholder="Budget limits, technology requirements, regulatory constraints, timeline..."
               />
             </div>
@@ -725,7 +725,7 @@ export default function CodingLargeDiscoveryPage() {
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value)}
                   disabled={baselineLoading || baselineComplete}
-                  className="h-80 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 font-mono text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30 resize-none disabled:opacity-60"
+                  className="h-80 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 font-mono text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30 resize-none disabled:opacity-60"
                   placeholder="Paste your code here...&#10;&#10;Include key files, configuration, and any relevant documentation."
                 />
               ) : (
@@ -733,7 +733,7 @@ export default function CodingLargeDiscoveryPage() {
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value)}
                   disabled={baselineLoading || baselineComplete}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30 disabled:opacity-60"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30 disabled:opacity-60"
                   placeholder="C:\Users\you\Projects\my-app or /home/you/projects/my-app"
                 />
               )}
@@ -800,12 +800,12 @@ export default function CodingLargeDiscoveryPage() {
 
               {messages.length === 0 && !isStreaming ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <FileCode className="h-12 w-12 text-adv-gray-med/50" />
+                  <FileCode className="h-12 w-12 text-adv-gray/50" />
                   <p className="mt-4 text-sm text-adv-gray">
                     Paste your code or provide a folder path, then click
                     <span className="font-semibold text-adv-gold"> Run Baseline Assessment</span> to begin.
                   </p>
-                  <p className="mt-1 text-xs text-adv-gray-med">
+                  <p className="mt-1 text-xs text-adv-gray">
                     Claude will analyze your codebase for architecture, quality, and improvement opportunities.
                   </p>
                 </div>
@@ -853,9 +853,9 @@ export default function CodingLargeDiscoveryPage() {
                       {isActive ? (
                         <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-adv-gold" />
                       ) : (
-                        <Circle className="h-3.5 w-3.5 flex-shrink-0 text-adv-gray-med" />
+                        <Circle className="h-3.5 w-3.5 flex-shrink-0 text-adv-gray" />
                       )}
-                      <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-adv-gold' : 'text-adv-gray-med'}`} />
+                      <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${isActive ? 'text-adv-gold' : 'text-adv-gray'}`} />
                       <div className="min-w-0">
                         <span className={`block font-medium ${isActive ? 'text-adv-off-white' : 'text-adv-gray'}`}>
                           {phase.label}
@@ -865,7 +865,7 @@ export default function CodingLargeDiscoveryPage() {
                   );
                 })}
               </div>
-              <p className="mt-3 text-[10px] text-adv-gray-med">
+              <p className="mt-3 text-xs text-adv-gray">
                 Phases are detected from the conversation automatically.
               </p>
             </div>
@@ -882,7 +882,7 @@ export default function CodingLargeDiscoveryPage() {
                 )}
                 {projectData.goals && (
                   <div className="mt-2 border-t border-border pt-2">
-                    <p className="text-[10px] font-medium uppercase text-adv-gray-med">Goals</p>
+                    <p className="text-xs font-medium uppercase text-adv-gray">Goals</p>
                     <p className="mt-0.5 text-xs text-adv-gray">{projectData.goals}</p>
                   </div>
                 )}
@@ -913,13 +913,13 @@ export default function CodingLargeDiscoveryPage() {
                   {finalizationStarted ? 'Discovery Document' : 'Discovery Conversation'}
                 </h3>
                 {discoveryStarted && !finalizationStarted && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-adv-gold/10 px-2.5 py-1 text-[10px] font-medium text-adv-gold">
+                  <span className="flex items-center gap-1.5 rounded-full bg-adv-gold/10 px-2.5 py-1 text-xs font-medium text-adv-gold">
                     <div className="h-1.5 w-1.5 rounded-full bg-adv-gold animate-pulse" />
                     Active
                   </span>
                 )}
                 {finalizationComplete && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-adv-green/10 px-2.5 py-1 text-[10px] font-medium text-adv-green">
+                  <span className="flex items-center gap-1.5 rounded-full bg-adv-green/10 px-2.5 py-1 text-xs font-medium text-adv-green">
                     <CheckCircle2 className="h-3 w-3" />
                     Complete
                   </span>
@@ -950,7 +950,7 @@ export default function CodingLargeDiscoveryPage() {
               {/* Empty state when discovery not yet started and not loading */}
               {!discoveryStarted && !discoveryLoading && messages.length === 0 && !isStreaming && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Compass className="h-12 w-12 text-adv-gray-med/50" />
+                  <Compass className="h-12 w-12 text-adv-gray/50" />
                   <p className="mt-4 text-sm text-adv-gray">
                     Discovery will begin shortly...
                   </p>
@@ -969,7 +969,7 @@ export default function CodingLargeDiscoveryPage() {
                     onKeyDown={handleFollowUpKeyDown}
                     disabled={isStreaming}
                     rows={3}
-                    className="flex-1 rounded-lg border border-border bg-adv-card px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/30 resize-none disabled:opacity-60"
+                    className="flex-1 rounded-lg border border-border bg-adv-card px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/30 resize-none disabled:opacity-60"
                     placeholder="Respond to Claude's questions or add more context... (Ctrl+Enter to send)"
                   />
                   <div className="flex flex-col gap-2">
@@ -1007,7 +1007,7 @@ export default function CodingLargeDiscoveryPage() {
                       <FileText className="h-4 w-4" />
                       Finalize Discovery
                     </button>
-                    <p className="text-[10px] text-adv-gray-med">
+                    <p className="text-xs text-adv-gray">
                       When ready, finalize to generate the formal discovery document.
                     </p>
                   </div>

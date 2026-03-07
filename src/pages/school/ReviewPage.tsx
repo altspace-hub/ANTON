@@ -82,7 +82,7 @@ export default function ReviewPage() {
           <p className="text-adv-gray mb-2">
             {reviewed > 0 && `${reviewed} ${t('review.cardsReviewed', 'cards reviewed')} · +${xpEarned} XP`}
           </p>
-          {cards.length === 0 && <p className="text-sm text-adv-gray-med">{t('review.noCardsHint', 'Cards are created automatically as you chat with Alma.')}</p>}
+          {cards.length === 0 && <p className="text-sm text-adv-gray">{t('review.noCardsHint', 'Cards are created automatically as you chat with Alma.')}</p>}
         </div>
       </SchoolLayout>
     );
@@ -119,7 +119,7 @@ export default function ReviewPage() {
             </div>
           ) : (
             <div>
-              <p className="text-xs text-adv-gray-med mb-2">{t('review.tapToFlip', 'Tap to reveal')}</p>
+              <p className="text-xs text-adv-gray mb-2">{t('review.tapToFlip', 'Tap to reveal')}</p>
               <p className="text-lg font-medium text-adv-white">{card.front}</p>
             </div>
           )}
@@ -147,7 +147,7 @@ export default function ReviewPage() {
         )}
 
         {!showBack && (
-          <div className="mt-4 text-center text-xs text-adv-gray-med">
+          <div className="mt-4 text-center text-xs text-adv-gray">
             {t('review.tapToFlip', 'Tap the card to reveal the answer')}
           </div>
         )}

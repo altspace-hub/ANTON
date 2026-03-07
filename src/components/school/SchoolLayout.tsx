@@ -202,7 +202,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
           <p className="text-sm font-semibold text-adv-white truncate">
             {t('nav.schoolMode', 'School Mode')}
           </p>
-          <p className="text-xs text-adv-gray-med capitalize">
+          <p className="text-xs text-adv-gray capitalize">
             {t(`nav.role.${schoolRole}`, schoolRole)}
           </p>
         </div>
@@ -227,7 +227,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
                 key={item.id}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal ${
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal ${
                   isActive
                     ? 'bg-adv-teal/10 text-adv-teal font-medium'
                     : 'text-adv-gray hover:bg-adv-card hover:text-adv-off-white'
@@ -243,7 +243,7 @@ export default function SchoolLayout({ children }: SchoolLayoutProps) {
         {/* Teacher section separator */}
         {(schoolRole === 'teacher' || schoolRole === 'school_admin') && (
           <div className="mt-4 mb-2 px-3">
-            <p className="text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+            <p className="text-xs font-medium uppercase tracking-widest text-adv-gray">
               {t('nav.teacherTools', 'Teacher Tools')}
             </p>
           </div>

@@ -81,12 +81,12 @@ export default function PromptEditor({
           )}
           <span className="text-sm font-medium text-adv-off-white">System Prompt</span>
           {isModified && (
-            <span className="rounded bg-adv-gold/10 px-1.5 py-0.5 text-[10px] text-adv-gold">
+            <span className="rounded bg-adv-gold/10 px-1.5 py-0.5 text-xs text-adv-gold">
               Modified
             </span>
           )}
         </div>
-        <span className="text-[11px] text-adv-gray-med">{wordCount} words</span>
+        <span className="text-[11px] text-adv-gray">{wordCount} words</span>
       </button>
 
       {isOpen && (
@@ -94,7 +94,7 @@ export default function PromptEditor({
           <textarea
             value={editableValue}
             onChange={(e) => handleEditableChange(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark p-3 font-mono text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+            className="w-full rounded-lg border border-border bg-adv-dark p-3 font-mono text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
             rows={12}
             placeholder="System prompt..."
           />
@@ -108,7 +108,7 @@ export default function PromptEditor({
             </div>
           )}
           <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-[11px] text-adv-gray-med">
+            <span className="text-[11px] text-adv-gray">
               This prompt shapes Claude's behavior for this module.
             </span>
             <div className="flex items-center gap-3">

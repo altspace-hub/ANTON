@@ -64,13 +64,13 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
           Enable web search (Claude searches the internet for latest publications)
         </label>
         <div className="mt-2">
-          <label className="text-[11px] text-adv-gray-med">Focus area (optional):</label>
+          <label className="text-[11px] text-adv-gray">Focus area (optional):</label>
           <input
             type="text"
             value={claudeKnowledge.description}
             onChange={(e) => update('modes.claudeKnowledge.description', e.target.value)}
             placeholder="e.g., AMLR Regulation 2024/1624, AMLA RTS consultations"
-            className="mt-1 w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="mt-1 w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
       </SourceCard>
@@ -89,7 +89,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             placeholder="https://eur-lex.europa.eu/..."
-            className="flex-1 rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="flex-1 rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           <button
             onClick={() => {
@@ -114,7 +114,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
                     urls.splice(i, 1);
                     update('modes.onlineReference.urls', urls);
                   }}
-                  className="text-adv-gray-med hover:text-adv-red"
+                  className="text-adv-gray hover:text-adv-red"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -145,7 +145,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
 
         {/* EUR-Lex Quick Load */}
         <div className="mt-3">
-          <p className="text-[11px] text-adv-gray-med mb-1.5">Quick-load from EUR-Lex:</p>
+          <p className="text-[11px] text-adv-gray mb-1.5">Quick-load from EUR-Lex:</p>
           <div className="flex flex-wrap gap-1.5">
             {[
               { label: 'AMLR', celex: '32024R1624' },
@@ -221,7 +221,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
                 value={folderInput}
                 onChange={(e) => setFolderInput(e.target.value)}
                 placeholder="C:\Users\...\Documents\Regulations"
-                className="flex-1 rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="flex-1 rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
               <button
                 onClick={() => {
@@ -247,7 +247,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
                         paths.splice(i, 1);
                         update('modes.localFolder.folderPaths', paths);
                       }}
-                      className="text-adv-gray-med hover:text-adv-red"
+                      className="text-adv-gray hover:text-adv-red"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -270,7 +270,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         {libraryMode === 'library' && (
           <div className="space-y-1.5">
             {libraryEntries.length === 0 ? (
-              <p className="text-xs text-adv-gray-med italic">No corpora in library. Add them in Settings &rarr; Knowledge Library.</p>
+              <p className="text-xs text-adv-gray italic">No corpora in library. Add them in Settings &rarr; Knowledge Library.</p>
             ) : (
               libraryEntries.map(entry => {
                 const selected = localFolder.folderPaths.includes(entry.path);
@@ -298,7 +298,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-medium text-adv-off-white">{entry.label}</span>
-                        <span className={`text-[10px] px-1 py-0.5 rounded border ${
+                        <span className={`text-xs px-1 py-0.5 rounded border ${
                           entry.category === 'regulation' ? 'border-adv-blue/30 text-adv-blue' :
                           entry.category === 'client' ? 'border-adv-teal/30 text-adv-teal' :
                           entry.category === 'case_law' ? 'border-adv-gold/30 text-adv-gold' :
@@ -307,10 +307,10 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
                           {entry.category.replace('_', ' ')}
                         </span>
                         {entry.indexed_at && (
-                          <span className="text-[10px] text-adv-gray-med">{entry.file_count} files</span>
+                          <span className="text-xs text-adv-gray">{entry.file_count} files</span>
                         )}
                       </div>
-                      <p className="text-[10px] text-adv-gray-med mt-0.5 truncate font-mono">{entry.path}</p>
+                      <p className="text-xs text-adv-gray mt-0.5 truncate font-mono">{entry.path}</p>
                     </div>
                   </label>
                 );
@@ -342,12 +342,12 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
           ))}
         </div>
         <div className="mt-2">
-          <label className="text-[11px] text-adv-gray-med">Special instructions (optional):</label>
+          <label className="text-[11px] text-adv-gray">Special instructions (optional):</label>
           <textarea
             value={combinedMode.instructions || ''}
             onChange={(e) => update('modes.combinedMode.instructions', e.target.value)}
             placeholder="e.g., Compare the client's policy against the regulation. Where the client doc is silent, use the regulation text to identify the gap."
-            className="mt-1 w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="mt-1 w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             rows={3}
           />
         </div>
@@ -386,7 +386,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         {/* Top-K slider */}
         <div className="mt-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-adv-gray-med">Retrieve</span>
+            <span className="text-xs text-adv-gray">Retrieve</span>
             <span className="text-xs font-medium text-adv-off-white">
               {config.ragMode?.topK ?? 10} passages
             </span>
@@ -405,7 +405,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
             }
             className="w-full accent-[#2DD4A8]"
           />
-          <div className="flex justify-between text-[10px] text-adv-gray-med mt-0.5">
+          <div className="flex justify-between text-xs text-adv-gray mt-0.5">
             <span>5 (focused)</span>
             <span>30 (broad)</span>
           </div>
@@ -537,17 +537,17 @@ function RegulatoryPacksCard() {
         onClick={() => { if (packs.length > 0) setExpanded((e) => !e); }}
         className="flex w-full items-center gap-3 p-3 text-left"
       >
-        <div className={isEnabled ? 'text-adv-teal' : 'text-adv-gray-med'}>
+        <div className={isEnabled ? 'text-adv-teal' : 'text-adv-gray'}>
           <Package className="h-4 w-4" />
         </div>
         <div className="flex-1">
           <div className={`text-xs font-medium ${isEnabled ? 'text-adv-white' : 'text-adv-gray'}`}>
             Regulatory Knowledge Packs
-            <span className="ml-2 inline-block rounded bg-adv-teal-dim px-1.5 py-0.5 text-[9px] font-normal text-adv-teal">
+            <span className="ml-2 inline-block rounded bg-adv-teal-dim px-1.5 py-0.5 text-xs font-normal text-adv-teal">
               Mode 6
             </span>
           </div>
-          <div className="text-[11px] text-adv-gray-med">
+          <div className="text-[11px] text-adv-gray">
             {loading
               ? 'Loading packs…'
               : activePacks.length > 0
@@ -559,9 +559,9 @@ function RegulatoryPacksCard() {
         </div>
         {packs.length > 0 &&
           (expanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" />
+            <ChevronDown className="h-3.5 w-3.5 text-adv-gray" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med" />
+            <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />
           ))}
       </button>
 
@@ -583,14 +583,14 @@ function RegulatoryPacksCard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-medium text-adv-off-white">{pack.display_name}</span>
-                    <span className="text-[10px] text-adv-gray-med">v{pack.version}</span>
+                    <span className="text-xs text-adv-gray">v{pack.version}</span>
                     {pack.jurisdiction && (
-                      <span className="text-[10px] px-1 py-0.5 rounded bg-adv-dark-2 border border-border text-adv-gray">
+                      <span className="text-xs px-1 py-0.5 rounded bg-adv-dark-2 border border-border text-adv-gray">
                         {pack.jurisdiction}
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-adv-gray-med mt-0.5">
+                  <div className="text-xs text-adv-gray mt-0.5">
                     {pack.entity_count} entities · {pack.relationship_count} relationships
                     {isActive && <span className="ml-2 text-adv-teal font-medium">Active</span>}
                   </div>
@@ -598,9 +598,9 @@ function RegulatoryPacksCard() {
                 <button
                   onClick={() => togglePack(pack)}
                   disabled={isLoading}
-                  className={`shrink-0 rounded px-2.5 py-1 text-[10px] font-medium border transition-colors ${
+                  className={`shrink-0 rounded px-2.5 py-1 text-xs font-medium border transition-colors ${
                     isLoading
-                      ? 'opacity-50 cursor-not-allowed border-border text-adv-gray-med'
+                      ? 'opacity-50 cursor-not-allowed border-border text-adv-gray'
                       : isActive
                       ? 'border-adv-teal/30 bg-adv-teal-dim text-adv-teal hover:border-adv-red/30 hover:bg-red-900/20 hover:text-adv-red'
                       : 'border-border bg-adv-dark-2 text-adv-gray hover:border-adv-teal/30 hover:bg-adv-teal-dim hover:text-adv-teal'
@@ -614,7 +614,7 @@ function RegulatoryPacksCard() {
 
           <button
             onClick={() => { window.location.href = '/knowledge-base?tab=regulatory-packs'; }}
-            className="flex items-center gap-1.5 text-[10px] text-adv-gray-med hover:text-adv-teal transition-colors mt-1"
+            className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors mt-1"
           >
             <ArrowRight className="h-3 w-3" />
             Manage packs in Knowledge Base
@@ -685,7 +685,7 @@ function IndexedFoldersList({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-xs text-adv-gray-med py-2">
+      <div className="flex items-center gap-2 text-xs text-adv-gray py-2">
         <Loader2 className="h-3 w-3 animate-spin" />
         Loading indexed folders...
       </div>
@@ -716,7 +716,7 @@ function IndexedFoldersList({
                 <Database className="h-3 w-3 text-adv-teal shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="truncate text-adv-gray">{folder.folder_path}</div>
-                  <div className="text-[10px] text-adv-gray-med">
+                  <div className="text-xs text-adv-gray">
                     {folder.document_count} docs · {folder.chunk_count} chunks · indexed{' '}
                     {formatRelativeTime(folder.last_indexed)}
                   </div>
@@ -726,7 +726,7 @@ function IndexedFoldersList({
                 ) : (
                   <button
                     onClick={() => handleIndex(folder.folder_path)}
-                    className="text-adv-gray-med hover:text-adv-teal shrink-0"
+                    className="text-adv-gray hover:text-adv-teal shrink-0"
                     title="Reindex"
                   >
                     <RefreshCw className="h-3 w-3" />
@@ -741,7 +741,7 @@ function IndexedFoldersList({
       {/* Unindexed local folders (from Mode 3) */}
       {unindexedLocal.length > 0 && (
         <div className="space-y-1">
-          <div className="text-[10px] text-adv-gray-med font-medium uppercase tracking-wider mt-1">
+          <div className="text-xs text-adv-gray font-medium uppercase tracking-wider mt-1">
             Not yet indexed
           </div>
           {unindexedLocal.map((folderPath) => {
@@ -751,14 +751,14 @@ function IndexedFoldersList({
                 key={folderPath}
                 className="flex items-center gap-2 rounded bg-adv-dark px-2 py-1.5 text-xs"
               >
-                <FolderOpen className="h-3 w-3 text-adv-gray-med shrink-0" />
-                <span className="flex-1 truncate text-adv-gray-med">{folderPath}</span>
+                <FolderOpen className="h-3 w-3 text-adv-gray shrink-0" />
+                <span className="flex-1 truncate text-adv-gray">{folderPath}</span>
                 {isIndexing ? (
                   <Loader2 className="h-3 w-3 animate-spin text-adv-teal shrink-0" />
                 ) : (
                   <button
                     onClick={() => handleIndex(folderPath)}
-                    className="rounded bg-adv-teal-dim px-2 py-0.5 text-[10px] text-adv-teal hover:bg-adv-teal/20 shrink-0"
+                    className="rounded bg-adv-teal-dim px-2 py-0.5 text-xs text-adv-teal hover:bg-adv-teal/20 shrink-0"
                   >
                     Index Now
                   </button>
@@ -771,14 +771,14 @@ function IndexedFoldersList({
 
       {/* Empty state */}
       {indexedFolders.length === 0 && unindexedLocal.length === 0 && (
-        <div className="rounded bg-adv-dark px-3 py-2 text-xs text-adv-gray-med">
+        <div className="rounded bg-adv-dark px-3 py-2 text-xs text-adv-gray">
           No indexed folders yet. Add folders in Mode 3 (Local Folders) first, then index them here for semantic search.
         </div>
       )}
 
       {/* Selection summary */}
       {selectedPaths.length > 0 && (
-        <div className="flex items-center gap-1.5 text-[10px] text-adv-teal mt-1">
+        <div className="flex items-center gap-1.5 text-xs text-adv-teal mt-1">
           <CheckCircle2 className="h-3 w-3" />
           {selectedPaths.length} folder{selectedPaths.length > 1 ? 's' : ''} selected for search
         </div>
@@ -853,23 +853,23 @@ function SourceCard({
           className="rounded border-adv-gray-med accent-adv-teal"
           onClick={(e) => e.stopPropagation()}
         />
-        <div className={enabled ? 'text-adv-teal' : 'text-adv-gray-med'}>{icon}</div>
+        <div className={enabled ? 'text-adv-teal' : 'text-adv-gray'}>{icon}</div>
         <div className="flex-1">
           <div className={`text-xs font-medium ${enabled ? 'text-adv-white' : 'text-adv-gray'}`}>
             {title}
             {badge && (
-              <span className="ml-2 inline-block rounded bg-adv-teal-dim px-1.5 py-0.5 text-[9px] font-normal text-adv-teal">
+              <span className="ml-2 inline-block rounded bg-adv-teal-dim px-1.5 py-0.5 text-xs font-normal text-adv-teal">
                 {badge}
               </span>
             )}
           </div>
-          <div className="text-[11px] text-adv-gray-med">{description}</div>
+          <div className="text-[11px] text-adv-gray">{description}</div>
         </div>
         {enabled &&
           (expanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" />
+            <ChevronDown className="h-3.5 w-3.5 text-adv-gray" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med" />
+            <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />
           ))}
       </button>
       {enabled && expanded && <div className="border-t border-border/50 px-3 pb-3 pt-2">{children}</div>}

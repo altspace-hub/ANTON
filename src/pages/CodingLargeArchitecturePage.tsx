@@ -378,27 +378,27 @@ export default function CodingLargeArchitecturePage() {
   const VerdictBadge = ({ verdict }: { verdict?: string }) => {
     if (verdict === 'endorse') {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-adv-green/10 px-2.5 py-0.5 text-[10px] font-semibold text-adv-green">
+        <span className="inline-flex items-center gap-1 rounded-full bg-adv-green/10 px-2.5 py-0.5 text-xs font-semibold text-adv-green">
           <CheckCircle2 className="h-3 w-3" /> Endorse
         </span>
       );
     }
     if (verdict === 'flag') {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-adv-gold/10 px-2.5 py-0.5 text-[10px] font-semibold text-adv-gold">
+        <span className="inline-flex items-center gap-1 rounded-full bg-adv-gold/10 px-2.5 py-0.5 text-xs font-semibold text-adv-gold">
           <AlertTriangle className="h-3 w-3" /> Flag
         </span>
       );
     }
     if (verdict === 'dissent') {
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-adv-red/10 px-2.5 py-0.5 text-[10px] font-semibold text-adv-red">
+        <span className="inline-flex items-center gap-1 rounded-full bg-adv-red/10 px-2.5 py-0.5 text-xs font-semibold text-adv-red">
           <XCircle className="h-3 w-3" /> Dissent
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-adv-gray/10 px-2.5 py-0.5 text-[10px] font-medium text-adv-gray">
+      <span className="inline-flex items-center gap-1 rounded-full bg-adv-gray/10 px-2.5 py-0.5 text-xs font-medium text-adv-gray">
         Pending
       </span>
     );
@@ -501,7 +501,7 @@ export default function CodingLargeArchitecturePage() {
               value={techStackPrefs}
               onChange={(e) => setTechStackPrefs(e.target.value)}
               placeholder="e.g., React + TypeScript, PostgreSQL, Docker, prefer serverless where possible..."
-              className="h-20 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/50 resize-none"
+              className="h-20 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/50 resize-none"
             />
           </div>
 
@@ -586,7 +586,7 @@ export default function CodingLargeArchitecturePage() {
                 Architecture Document
               </h3>
               {architectureSaved && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-adv-green/10 px-2 py-0.5 text-[10px] font-medium text-adv-green">
+                <span className="inline-flex items-center gap-1 rounded-full bg-adv-green/10 px-2 py-0.5 text-xs font-medium text-adv-green">
                   <CheckCircle2 className="h-3 w-3" /> Saved
                 </span>
               )}
@@ -612,9 +612,9 @@ export default function CodingLargeArchitecturePage() {
               /* Empty state */
               <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-adv-dark/50">
                 <div className="text-center">
-                  <Layers className="mx-auto h-8 w-8 text-adv-gray-med" />
-                  <p className="mt-2 text-sm text-adv-gray-med">Architecture document will appear here</p>
-                  <p className="mt-1 text-xs text-adv-gray-med">
+                  <Layers className="mx-auto h-8 w-8 text-adv-gray" />
+                  <p className="mt-2 text-sm text-adv-gray">Architecture document will appear here</p>
+                  <p className="mt-1 text-xs text-adv-gray">
                     Configure the expert panel and click "Generate Architecture" to begin
                   </p>
                 </div>
@@ -632,7 +632,7 @@ export default function CodingLargeArchitecturePage() {
                       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleFollowUp();
                     }}
                     placeholder="Refine the architecture... (Ctrl+Enter to send)"
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-gold focus:outline-none focus:ring-1 focus:ring-adv-gold/50 resize-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-gold/50 resize-none"
                     rows={2}
                   />
                 </div>
@@ -741,19 +741,19 @@ export default function CodingLargeArchitecturePage() {
                         {review.status === 'completed' ? (
                           <VerdictBadge verdict={review.verdict} />
                         ) : review.status === 'in_progress' ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-adv-blue/10 px-2.5 py-0.5 text-[10px] font-medium text-adv-blue">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-adv-blue/10 px-2.5 py-0.5 text-xs font-medium text-adv-blue">
                             <Loader2 className="h-3 w-3 animate-spin" /> Running
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-adv-gray/10 px-2.5 py-0.5 text-[10px] font-medium text-adv-gray">
+                          <span className="inline-flex items-center rounded-full bg-adv-gray/10 px-2.5 py-0.5 text-xs font-medium text-adv-gray">
                             Pending
                           </span>
                         )}
 
                         {isExpanded ? (
-                          <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" />
+                          <ChevronDown className="h-3.5 w-3.5 text-adv-gray" />
                         ) : (
-                          <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med" />
+                          <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />
                         )}
                       </button>
 
@@ -838,7 +838,7 @@ export default function CodingLargeArchitecturePage() {
                   Estimation
                 </h3>
                 {estimationGenerated && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-adv-green/10 px-2 py-0.5 text-[10px] font-medium text-adv-green">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-adv-green/10 px-2 py-0.5 text-xs font-medium text-adv-green">
                     <CheckCircle2 className="h-3 w-3" /> Complete
                   </span>
                 )}

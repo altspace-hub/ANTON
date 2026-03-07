@@ -108,12 +108,12 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-sm font-medium text-adv-off-white truncate">{currentLabel}</span>
             {currentModel?.recommended && (
-              <span className="flex shrink-0 items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-teal">
+              <span className="flex shrink-0 items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
                 <Star className="h-2.5 w-2.5" />
               </span>
             )}
             {isCustomModel && (
-              <span className="flex shrink-0 items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-400">
+              <span className="flex shrink-0 items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-xs font-medium text-purple-400">
                 <Sparkles className="h-2.5 w-2.5" />
                 Custom
               </span>
@@ -161,7 +161,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                         {model.label}
                       </span>
                       {model.recommended && (
-                        <span className="flex shrink-0 items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-teal">
+                        <span className="flex shrink-0 items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
                           <Star className="h-2.5 w-2.5" />
                           Rec
                         </span>
@@ -170,14 +170,14 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                         const days = daysUntilEol(model.eolDate);
                         if (days > 90) return null;
                         return (
-                          <span className="flex shrink-0 items-center gap-1 rounded bg-adv-gold/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-gold">
+                          <span className="flex shrink-0 items-center gap-1 rounded bg-adv-gold/10 px-1.5 py-0.5 text-xs font-medium text-adv-gold">
                             <AlertTriangle className="h-2.5 w-2.5" />
                             {days <= 0 ? 'Retired' : `EOL ${days}d`}
                           </span>
                         );
                       })()}
                     </div>
-                    <p className="text-[10px] text-adv-gray-med truncate">
+                    <p className="text-xs text-adv-gray truncate">
                       ${model.inputCostPer1M}/M in · ${model.outputCostPer1M}/M out
                     </p>
                   </div>
@@ -191,7 +191,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
               <>
                 <div className="flex items-center gap-2 px-3 py-2 border-t border-border">
                   <Sparkles className="h-3 w-3 text-purple-400" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-adv-gray-med">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-adv-gray">
                     Custom Models
                   </span>
                 </div>
@@ -212,11 +212,11 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                           <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : ''}`}>
                             {model.label}
                           </span>
-                          <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-400">
+                          <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-xs font-medium text-purple-400">
                             Custom
                           </span>
                         </div>
-                        <p className="text-[10px] text-adv-gray-med truncate">
+                        <p className="text-xs text-adv-gray truncate">
                           ${model.inputCostPer1M}/M in · ${model.outputCostPer1M}/M out · {model.provider}
                         </p>
                       </div>
@@ -231,13 +231,13 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
             {ollamaChecked && (
               <>
                 <div className="flex items-center gap-2 px-3 py-2 border-t border-border">
-                  <HardDrive className="h-3 w-3 text-adv-gray-med" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-adv-gray-med">
+                  <HardDrive className="h-3 w-3 text-adv-gray" />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-adv-gray">
                     Local (Ollama)
                   </span>
                 </div>
                 {ollamaModels.length === 0 ? (
-                  <div className="px-3 py-2 text-xs text-adv-gray-med">
+                  <div className="px-3 py-2 text-xs text-adv-gray">
                     Start Ollama to use local models.
                   </div>
                 ) : (
@@ -259,7 +259,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                             <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : ''}`}>
                               {modelName}
                             </span>
-                            <span className="rounded bg-adv-green/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-green">
+                            <span className="rounded bg-adv-green/10 px-1.5 py-0.5 text-xs font-medium text-adv-green">
                               Free
                             </span>
                           </div>
@@ -307,14 +307,14 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                     {model.label}
                   </span>
                   {model.recommended && (
-                    <span className="flex items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-teal">
+                    <span className="flex items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
                       <Star className="h-2.5 w-2.5" />
                       Recommended
                     </span>
                   )}
                 </div>
                 <p className="mt-0.5 text-xs text-adv-gray">{model.description}</p>
-                <p className="mt-1 text-[10px] text-adv-gray-med">
+                <p className="mt-1 text-xs text-adv-gray">
                   ${model.inputCostPer1M}/M input · ${model.outputCostPer1M}/M output
                 </p>
               </div>
@@ -327,7 +327,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
           <div className="pt-1">
             <div className="mb-1.5 flex items-center gap-2">
               <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-adv-gray-med">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-adv-gray">
                 Custom Models
               </span>
             </div>
@@ -355,12 +355,12 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                       <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                         {model.label}
                       </span>
-                      <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-400">
+                      <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-xs font-medium text-purple-400">
                         Custom · {model.provider}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-adv-gray">{model.description}</p>
-                    <p className="mt-1 text-[10px] text-adv-gray-med">
+                    <p className="mt-1 text-xs text-adv-gray">
                       ${model.inputCostPer1M}/M input · ${model.outputCostPer1M}/M output
                     </p>
                   </div>
@@ -373,14 +373,14 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
         {/* Local (Ollama) section */}
         <div className="pt-1">
           <div className="mb-1.5 flex items-center gap-2">
-            <HardDrive className="h-3.5 w-3.5 text-adv-gray-med" />
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-adv-gray-med">
+            <HardDrive className="h-3.5 w-3.5 text-adv-gray" />
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-adv-gray">
               Local (Ollama)
             </span>
           </div>
 
           {ollamaChecked && ollamaModels.length === 0 ? (
-            <div className="rounded-lg border border-border bg-adv-card px-3 py-2.5 text-xs text-adv-gray-med">
+            <div className="rounded-lg border border-border bg-adv-card px-3 py-2.5 text-xs text-adv-gray">
               Start Ollama to use local models.{' '}
               <a
                 href="https://ollama.com"
@@ -392,7 +392,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                 Get Ollama
               </a>
               {' '}then run{' '}
-              <code className="rounded bg-adv-dark px-1 py-0.5 text-[10px]">ollama pull llama3.2</code>
+              <code className="rounded bg-adv-dark px-1 py-0.5 text-xs">ollama pull llama3.2</code>
             </div>
           ) : (
             ollamaModels.map((modelName) => {
@@ -420,7 +420,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                       <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
                         {modelName}
                       </span>
-                      <span className="rounded bg-adv-green/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-green">
+                      <span className="rounded bg-adv-green/10 px-1.5 py-0.5 text-xs font-medium text-adv-green">
                         Free · Local
                       </span>
                     </div>

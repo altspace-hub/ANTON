@@ -137,7 +137,7 @@ export default function VersionHistory({ entityType, entityId, className = '' }:
           Version History
         </span>
         {versions.length > 0 && (
-          <span className="ml-1 rounded-full bg-adv-dark px-1.5 text-[10px] text-adv-gray">
+          <span className="ml-1 rounded-full bg-adv-dark px-1.5 text-xs text-adv-gray">
             {versions.length} version{versions.length !== 1 ? 's' : ''}
           </span>
         )}
@@ -158,7 +158,7 @@ export default function VersionHistory({ entityType, entityId, className = '' }:
           )}
 
           {!loading && !error && versions.length === 0 && (
-            <p className="py-3 text-xs text-adv-gray-med">No versions recorded yet.</p>
+            <p className="py-3 text-xs text-adv-gray">No versions recorded yet.</p>
           )}
 
           {!loading && versions.length > 0 && (
@@ -200,12 +200,12 @@ export default function VersionHistory({ entityType, entityId, className = '' }:
                       {/* Metadata */}
                       <div className="flex items-center gap-3 shrink-0">
                         {ver.content_length !== undefined && (
-                          <span className="flex items-center gap-1 text-[10px] text-adv-gray-med">
+                          <span className="flex items-center gap-1 text-xs text-adv-gray">
                             <FileText className="h-2.5 w-2.5" />
                             {ver.content_length.toLocaleString()} chars
                           </span>
                         )}
-                        <span className="text-[10px] text-adv-gray-med">
+                        <span className="text-xs text-adv-gray">
                           {formatDate(ver.created_at)}
                         </span>
                       </div>
@@ -215,7 +215,7 @@ export default function VersionHistory({ entityType, entityId, className = '' }:
                         <button
                           onClick={() => handleCompare(ver.version, nextVer.version)}
                           disabled={diffLoading}
-                          className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] transition-colors disabled:opacity-50 ${
+                          className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
                             isComparing
                               ? 'border-adv-teal/30 bg-adv-teal-dim text-adv-teal'
                               : 'border-border bg-adv-dark text-adv-gray hover:border-adv-teal hover:text-adv-teal'

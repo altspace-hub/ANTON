@@ -41,12 +41,12 @@ export default function StructureReference({ value, onChange }: StructureReferen
       >
         {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
         <span className="font-medium">Structure reference</span>
-        <span className="text-[11px] text-adv-gray-med">(optional)</span>
+        <span className="text-[11px] text-adv-gray">(optional)</span>
       </button>
 
       {expanded && (
         <div className="mt-2 rounded-lg border border-border bg-adv-dark-2 p-3">
-          <p className="mb-3 text-[11px] text-adv-gray-med">
+          <p className="mb-3 text-[11px] text-adv-gray">
             Provide an example document or describe the structure you want Claude to follow.
           </p>
 
@@ -85,16 +85,16 @@ export default function StructureReference({ value, onChange }: StructureReferen
                   <span className="flex-1 text-xs text-adv-off-white truncate">{value.fileName}</span>
                   <button
                     onClick={() => onChange({ mode: 'upload', description: '' })}
-                    className="text-adv-gray-med hover:text-adv-red transition-colors"
+                    className="text-adv-gray hover:text-adv-red transition-colors"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ) : (
                 <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-4 hover:border-adv-teal/30 transition-colors">
-                  <Upload className="h-5 w-5 text-adv-gray-med" />
-                  <span className="text-xs text-adv-gray-med">Click to upload a reference document</span>
-                  <span className="text-[10px] text-adv-gray-med">.docx, .pdf, .md, .txt</span>
+                  <Upload className="h-5 w-5 text-adv-gray" />
+                  <span className="text-xs text-adv-gray">Click to upload a reference document</span>
+                  <span className="text-xs text-adv-gray">.docx, .pdf, .md, .txt</span>
                   <input
                     type="file"
                     accept=".docx,.pdf,.md,.txt"
@@ -112,7 +112,7 @@ export default function StructureReference({ value, onChange }: StructureReferen
               value={value.description}
               onChange={(e) => onChange({ ...value, description: e.target.value })}
               placeholder="Describe the document structure you want, e.g.:&#10;- Start with an executive summary (1 page)&#10;- Then a findings table with RAG scoring&#10;- Each finding should have: reference, gap description, severity, recommendation&#10;- End with an appendix of source documents"
-              className="w-full rounded-lg border border-border bg-adv-dark p-2.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+              className="w-full rounded-lg border border-border bg-adv-dark p-2.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
               rows={5}
             />
           )}

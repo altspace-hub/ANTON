@@ -126,7 +126,7 @@ export default function ModelRecommendationBadge({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-adv-gray-med animate-pulse">
+      <div className="flex items-center gap-1.5 text-xs text-adv-gray animate-pulse">
         <Sparkles className="h-3 w-3" />
         Checking best model...
       </div>
@@ -162,7 +162,7 @@ export default function ModelRecommendationBadge({
         {recommendation.alternatives.length > 0 && (
           <button
             onClick={() => setDropdownOpen((v) => !v)}
-            className="ml-0.5 rounded p-0.5 text-adv-gray-med hover:text-adv-teal transition-colors"
+            className="ml-0.5 rounded p-0.5 text-adv-gray hover:text-adv-teal transition-colors"
             title="See alternatives"
           >
             <ChevronDown
@@ -177,7 +177,7 @@ export default function ModelRecommendationBadge({
         <div className="absolute left-0 top-full z-50 mt-1 min-w-72 rounded-lg border border-border bg-adv-card shadow-xl">
           <div className="border-b border-border px-3 py-2">
             <p className="text-xs font-medium text-adv-gray">Alternatives</p>
-            <p className="mt-0.5 text-[10px] text-adv-gray-med">
+            <p className="mt-0.5 text-xs text-adv-gray">
               Other models you could use for this task
             </p>
           </div>
@@ -193,15 +193,15 @@ export default function ModelRecommendationBadge({
                       {shortLabel(alt.model)}
                     </span>
                     <span
-                      className={`text-[10px] font-medium ${QUALITY_COLORS[alt.qualityEstimate]}`}
+                      className={`text-xs font-medium ${QUALITY_COLORS[alt.qualityEstimate]}`}
                     >
                       {QUALITY_LABELS[alt.qualityEstimate]}
                     </span>
-                    <span className="text-[10px] text-adv-gray-med ml-auto shrink-0">
+                    <span className="text-xs text-adv-gray ml-auto shrink-0">
                       {formatCostMultiplier(alt.estimatedCostMultiplier)}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[10px] text-adv-gray leading-relaxed">
+                  <p className="mt-0.5 text-xs text-adv-gray leading-relaxed">
                     {alt.reason}
                   </p>
                 </div>

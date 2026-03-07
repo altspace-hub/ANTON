@@ -238,7 +238,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     required
                     disabled={isSubmitting}
                     placeholder="Enter your username"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                   />
                 </div>
 
@@ -275,7 +275,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                       required
                       disabled={isSubmitting}
                       placeholder="Enter your password"
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                     />
                     <button
                       type="button"
@@ -312,7 +312,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                           required
                           disabled={forgotStatus === 'sending'}
                           placeholder="you@example.com"
-                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:outline-none focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
+                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                         />
                         {forgotError && (
                           <p className="text-xs text-red-500">{forgotError}</p>

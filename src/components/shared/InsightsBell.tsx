@@ -125,7 +125,7 @@ export function InsightsBell() {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className={`absolute top-0.5 right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-adv-dark rounded-full px-1 ${BADGE_COLORS[highestSeverity] || 'bg-adv-teal'}`}>
+          <span className={`absolute top-0.5 right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-adv-dark rounded-full px-1 ${BADGE_COLORS[highestSeverity] || 'bg-adv-teal'}`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -184,7 +184,7 @@ export function InsightsBell() {
                       <div className="min-w-0">
                         <p className="text-sm font-medium leading-snug">{insight.title}</p>
                         {!insight.read && (
-                          <span className="inline-block text-[10px] bg-current/20 px-1.5 py-0.5 rounded mt-0.5 opacity-70">NEW</span>
+                          <span className="inline-block text-xs bg-current/20 px-1.5 py-0.5 rounded mt-0.5 opacity-70">NEW</span>
                         )}
                       </div>
                     </div>

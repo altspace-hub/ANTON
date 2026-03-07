@@ -125,7 +125,7 @@ export default function StudentAssignmentsPage() {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal ${
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal ${
                 activeTab === tab.id
                   ? 'bg-adv-teal/10 text-adv-teal'
                   : 'text-adv-gray hover:text-adv-off-white'
@@ -134,7 +134,7 @@ export default function StudentAssignmentsPage() {
               {tab.label}
               {tab.count > 0 && (
                 <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${
-                  activeTab === tab.id ? 'bg-adv-teal/20 text-adv-teal' : 'bg-adv-dark text-adv-gray-med'
+                  activeTab === tab.id ? 'bg-adv-teal/20 text-adv-teal' : 'bg-adv-dark text-adv-gray'
                 }`}>
                   {tab.count}
                 </span>
@@ -159,7 +159,7 @@ export default function StudentAssignmentsPage() {
             <p className="text-base font-semibold text-adv-white">
               {activeTab === 'pending' ? 'No pending assignments' : activeTab === 'completed' ? 'No completed assignments yet' : 'No assignments yet'}
             </p>
-            <p className="mt-1 text-sm text-adv-gray-med">
+            <p className="mt-1 text-sm text-adv-gray">
               Assignments from your classes will appear here.
             </p>
           </div>
@@ -190,7 +190,7 @@ export default function StudentAssignmentsPage() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-adv-gray-med">
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-adv-gray">
                     <span>{a.class_name}</span>
                     <span className="rounded-full border border-border px-2 py-0.5">{typeLabel(a.assignment_type)}</span>
                     {a.assistance_level_override && (

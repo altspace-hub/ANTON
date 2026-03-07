@@ -102,7 +102,7 @@ export default function ReminderConfig({ deadlineId }: ReminderConfigProps) {
                   </span>
                 )}
                 {r.sent_at && (
-                  <span className="rounded bg-adv-green/15 px-1.5 py-0.5 text-[10px] font-medium text-adv-green">
+                  <span className="rounded bg-adv-green/15 px-1.5 py-0.5 text-xs font-medium text-adv-green">
                     Sent
                   </span>
                 )}
@@ -110,7 +110,7 @@ export default function ReminderConfig({ deadlineId }: ReminderConfigProps) {
               <button
                 onClick={() => deleteReminder(r.id)}
                 disabled={deletingId === r.id}
-                className="rounded p-1 text-adv-gray-med transition-colors hover:bg-adv-card hover:text-adv-red"
+                className="rounded p-1 text-adv-gray transition-colors hover:bg-adv-card hover:text-adv-red"
               >
                 {deletingId === r.id ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -122,7 +122,7 @@ export default function ReminderConfig({ deadlineId }: ReminderConfigProps) {
           ))}
         </div>
       ) : (
-        <p className="mb-4 text-center text-xs text-adv-gray-med">
+        <p className="mb-4 text-center text-xs text-adv-gray">
           No reminders set.
         </p>
       )}
@@ -168,7 +168,7 @@ export default function ReminderConfig({ deadlineId }: ReminderConfigProps) {
                   setDaysBefore(null);
                 }}
                 placeholder="Custom"
-                className="w-20 rounded-lg border border-border bg-adv-card px-2 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-20 rounded-lg border border-border bg-adv-card px-2 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
               <span className="text-xs text-adv-gray">days before</span>
             </div>
@@ -185,7 +185,7 @@ export default function ReminderConfig({ deadlineId }: ReminderConfigProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
 

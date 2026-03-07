@@ -104,8 +104,8 @@ export default function DeadlineListView({
             >
               {FILTER_LABELS[f]}
               {count > 0 && filter !== f && (
-                <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${
-                  (f === 'overdue' || f === 'at_risk') ? 'bg-adv-red/20 text-adv-red' : 'bg-adv-dark text-adv-gray-med'
+                <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${
+                  (f === 'overdue' || f === 'at_risk') ? 'bg-adv-red/20 text-adv-red' : 'bg-adv-dark text-adv-gray'
                 }`}>
                   {count}
                 </span>
@@ -125,8 +125,8 @@ export default function DeadlineListView({
       {/* Deadline cards */}
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-border bg-adv-card p-10 text-center">
-          <AlertCircle className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
-          <p className="text-sm text-adv-gray-med">
+          <AlertCircle className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
+          <p className="text-sm text-adv-gray">
             {filter === 'all'
               ? 'No deadlines yet. Click "Add Task" to create one.'
               : `No deadlines match the "${FILTER_LABELS[filter]}" filter.`}

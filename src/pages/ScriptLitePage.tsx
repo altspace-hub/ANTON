@@ -478,7 +478,7 @@ export default function ScriptLitePage() {
           const isCompleted = currentIdx > idx;
           return (
             <div key={id} className="flex items-center gap-2">
-              {i > 0 && <ArrowRight className="h-3 w-3 text-adv-gray-med" />}
+              {i > 0 && <ArrowRight className="h-3 w-3 text-adv-gray" />}
               <div
                 className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   isActive
@@ -520,7 +520,7 @@ export default function ScriptLitePage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g., Read a CSV of transactions, flag duplicates, and output a clean version..."
-              className="mt-2 h-32 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+              className="mt-2 h-32 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
           </div>
 
@@ -532,7 +532,7 @@ export default function ScriptLitePage() {
               value={dataSample}
               onChange={(e) => setDataSample(e.target.value)}
               placeholder="Paste a few rows of your data so the script can be tailored..."
-              className="mt-2 h-24 w-full rounded-lg border border-border bg-adv-dark p-3 font-mono text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+              className="mt-2 h-24 w-full rounded-lg border border-border bg-adv-dark p-3 font-mono text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
           </div>
 
@@ -544,7 +544,7 @@ export default function ScriptLitePage() {
               value={constraints}
               onChange={(e) => setConstraints(e.target.value)}
               placeholder="e.g., must use pandas, output as CSV, handle missing values..."
-              className="mt-2 h-16 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+              className="mt-2 h-16 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
           </div>
 
@@ -631,7 +631,7 @@ export default function ScriptLitePage() {
                       onChange={(e) =>
                         setAnswers((prev) => ({ ...prev, [q]: e.target.value }))
                       }
-                      className="mt-1 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="mt-1 w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       placeholder="Your answer..."
                     />
                   </div>
@@ -830,7 +830,7 @@ export default function ScriptLitePage() {
                 value={modifyInput}
                 onChange={(e) => setModifyInput(e.target.value)}
                 placeholder="Describe what you want to change, e.g., 'Add error handling for missing columns' or 'Make it read from Excel instead of CSV'..."
-                className="h-20 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                className="h-20 w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
@@ -856,7 +856,7 @@ export default function ScriptLitePage() {
                 >
                   Cancel
                 </button>
-                <span className="ml-auto self-center text-[10px] text-adv-gray-med">
+                <span className="ml-auto self-center text-xs text-adv-gray">
                   Ctrl+Enter to send
                 </span>
               </div>

@@ -15,7 +15,7 @@ export default function HelpTooltip({ text }: HelpTooltipProps) {
         onMouseLeave={() => setShow(false)}
         onFocus={() => setShow(true)}
         onBlur={() => setShow(false)}
-        className="text-adv-gray-med hover:text-adv-gray transition-colors"
+        className="text-adv-gray hover:text-adv-gray transition-colors"
         aria-label="Help"
       >
         <Info className="h-3.5 w-3.5" />

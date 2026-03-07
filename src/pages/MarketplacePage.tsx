@@ -221,7 +221,7 @@ export default function MarketplacePage() {
           >
             <FileJson className="w-10 h-10 text-adv-gray mx-auto mb-3" />
             <p className="text-adv-off-white font-medium mb-1">Drop a .anton file here, or click to browse</p>
-            <p className="text-sm text-adv-gray-med">Supports .anton packages from the ANTON Marketplace</p>
+            <p className="text-sm text-adv-gray">Supports .anton packages from the ANTON Marketplace</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -250,13 +250,13 @@ export default function MarketplacePage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xs text-adv-gray-med uppercase tracking-wide mb-1">Package Name</p>
+                <p className="text-xs text-adv-gray uppercase tracking-wide mb-1">Package Name</p>
                 <p className="text-adv-off-white font-medium">
                   {preview.manifest.package?.name || preview.manifest.meta?.name || preview.manifest.name || preview.fileName.replace('.anton', '')}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-adv-gray-med uppercase tracking-wide mb-1">Author</p>
+                <p className="text-xs text-adv-gray uppercase tracking-wide mb-1">Author</p>
                 <div className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-adv-gray" />
                   <p className="text-adv-off-white">{preview.manifest.package?.author?.name || preview.manifest.meta?.author || preview.manifest.author || 'Unknown'}</p>
@@ -264,14 +264,14 @@ export default function MarketplacePage() {
               </div>
               {(preview.manifest.package?.description || preview.manifest.meta?.description || preview.manifest.description) && (
                 <div className="col-span-2">
-                  <p className="text-xs text-adv-gray-med uppercase tracking-wide mb-1">Description</p>
+                  <p className="text-xs text-adv-gray uppercase tracking-wide mb-1">Description</p>
                   <p className="text-adv-gray text-sm">{preview.manifest.package?.description || preview.manifest.meta?.description || preview.manifest.description}</p>
                 </div>
               )}
             </div>
 
             <div>
-              <p className="text-xs text-adv-gray-med uppercase tracking-wide mb-2">Contents</p>
+              <p className="text-xs text-adv-gray uppercase tracking-wide mb-2">Contents</p>
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-adv-dark text-sm">
                   <Layers className="w-3.5 h-3.5 text-adv-teal" />
@@ -378,7 +378,7 @@ export default function MarketplacePage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-adv-off-white truncate">{item.name}</p>
-                <p className="text-xs text-adv-gray-med mt-0.5">
+                <p className="text-xs text-adv-gray mt-0.5">
                   by {item.author} · imported {item.importedAt}
                 </p>
               </div>
@@ -434,12 +434,12 @@ export default function MarketplacePage() {
               loadingExportList ? (
                 <div className="py-8 text-center">
                   <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-adv-teal border-t-transparent" />
-                  <p className="mt-2 text-xs text-adv-gray-med">Loading your modules...</p>
+                  <p className="mt-2 text-xs text-adv-gray">Loading your modules...</p>
                 </div>
               ) : exportableModules.length === 0 ? (
                 <div className="py-8 text-center border border-dashed border-border rounded-lg">
-                  <p className="text-adv-gray-med text-sm">No custom modules yet.</p>
-                  <p className="text-xs text-adv-gray-med mt-1">
+                  <p className="text-adv-gray text-sm">No custom modules yet.</p>
+                  <p className="text-xs text-adv-gray mt-1">
                     <a href="/build-module" className="text-adv-teal hover:underline">Build one →</a>{' '}then return here to export it.
                   </p>
                 </div>
@@ -450,7 +450,7 @@ export default function MarketplacePage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-adv-off-white truncate">{mod.name}</div>
                         {mod.description && (
-                          <div className="text-xs text-adv-gray-med truncate">{mod.description}</div>
+                          <div className="text-xs text-adv-gray truncate">{mod.description}</div>
                         )}
                       </div>
                       <button
@@ -484,10 +484,10 @@ export default function MarketplacePage() {
               )
             ) : (
               <div className="py-8 text-center border border-dashed border-border rounded-lg">
-                <p className="text-adv-gray-med text-sm">
+                <p className="text-adv-gray text-sm">
                   No {exportModal === 'skill-pack' ? 'skill packs' : exportModal + 's'} available to export.
                 </p>
-                <p className="text-xs text-adv-gray-med mt-1">
+                <p className="text-xs text-adv-gray mt-1">
                   Create one first, then return here to export it.
                 </p>
               </div>

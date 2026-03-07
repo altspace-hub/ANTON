@@ -123,14 +123,14 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none';
+  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
   const labelCls = 'block text-xs font-medium text-adv-off-white mb-1';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md rounded-xl border border-border bg-adv-card p-6 shadow-xl">
         <h2 className="mb-1 text-base font-semibold text-adv-white">Save As Custom Module</h2>
-        <p className="mb-5 text-xs text-adv-gray-med">
+        <p className="mb-5 text-xs text-adv-gray">
           Saves the current session's system prompt, personas, skills, output formats, and config as a reusable module.
         </p>
 
@@ -164,12 +164,12 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
                   ))}
                 </optgroup>
               </select>
-              <p className="mt-1 text-[11px] text-adv-gray-med">The module will appear in this area's section in the sidebar and home page.</p>
+              <p className="mt-1 text-[11px] text-adv-gray">The module will appear in this area's section in the sidebar and home page.</p>
             </div>
           </div>
 
           {/* Config summary */}
-          <div className="rounded-lg bg-adv-dark-2 p-3 text-xs text-adv-gray-med space-y-1">
+          <div className="rounded-lg bg-adv-dark-2 p-3 text-xs text-adv-gray space-y-1">
             <div className="text-adv-off-white text-[11px] font-medium mb-2">Will save:</div>
             <div>System prompt: {systemPrompt ? `${systemPrompt.slice(0, 60)}...` : '(empty)'}</div>
             <div>Thinking: {thinking} · Creativity: {creativity} · Model: {model.split('-')[1] || model}</div>
@@ -188,7 +188,7 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
             />
             <div>
               <span className="text-xs font-medium text-adv-off-white">Share with Community</span>
-              <p className="text-[11px] text-adv-gray-med">Shared modules are visible to other openEXPERT users on this device</p>
+              <p className="text-[11px] text-adv-gray">Shared modules are visible to other openEXPERT users on this device</p>
             </div>
           </label>
 
@@ -299,7 +299,7 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
   return (
     <div className="space-y-3">
       {fields.length === 0 && (
-        <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-adv-gray-med">
+        <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-adv-gray">
           No questions yet — add one below
         </div>
       )}
@@ -311,15 +311,15 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
             className="flex items-center gap-2 px-3 py-2.5 cursor-pointer"
             onClick={() => setEditingIdx(editingIdx === idx ? null : idx)}
           >
-            <GripVertical className="h-3.5 w-3.5 text-adv-gray-med shrink-0" />
+            <GripVertical className="h-3.5 w-3.5 text-adv-gray shrink-0" />
             <span className="flex-1 text-sm text-adv-off-white truncate">
-              {field.label || <span className="text-adv-gray-med italic">Untitled question</span>}
+              {field.label || <span className="text-adv-gray italic">Untitled question</span>}
             </span>
-            <span className="rounded bg-adv-dark px-1.5 py-0.5 text-[10px] text-adv-gray-med">
+            <span className="rounded bg-adv-dark px-1.5 py-0.5 text-xs text-adv-gray">
               {FIELD_TYPES.find(t => t.value === field.type)?.label ?? field.type}
             </span>
-            {field.required && <span className="text-[10px] text-adv-teal">required</span>}
-            <button onClick={(e) => { e.stopPropagation(); removeField(idx); }} className="p-0.5 text-adv-gray-med hover:text-adv-red transition-colors">
+            {field.required && <span className="text-xs text-adv-teal">required</span>}
+            <button onClick={(e) => { e.stopPropagation(); removeField(idx); }} className="p-0.5 text-adv-gray hover:text-adv-red transition-colors">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -334,7 +334,7 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
                     value={field.label}
                     onChange={e => updateField(idx, { label: e.target.value })}
                     placeholder="e.g. Institution Type"
-                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div>
@@ -342,7 +342,7 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
                   <select
                     value={field.type}
                     onChange={e => updateField(idx, { type: e.target.value as GuidedInputField['type'], options: needsOptions(e.target.value as GuidedInputField['type']) ? (field.options || []) : undefined })}
-                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   >
                     {FIELD_TYPES.map(t => (
                       <option key={t.value} value={t.value}>{t.label} — {t.hint}</option>
@@ -358,7 +358,7 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
                     value={field.placeholder || ''}
                     onChange={e => updateField(idx, { placeholder: e.target.value })}
                     placeholder="e.g. e.g. Bank / Credit Institution"
-                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
               )}
@@ -369,7 +369,7 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
                   value={field.description || ''}
                   onChange={e => updateField(idx, { description: e.target.value })}
                   placeholder="Short explanation shown below the field"
-                  className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
 
@@ -383,9 +383,9 @@ function GuidedInputEditor({ fields, onChange }: { fields: GuidedInputField[]; o
                           value={opt.label}
                           onChange={e => updateOption(idx, oIdx, e.target.value)}
                           placeholder={`Option ${oIdx + 1}`}
-                          className="flex-1 rounded border border-border bg-adv-dark px-2.5 py-1 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                          className="flex-1 rounded border border-border bg-adv-dark px-2.5 py-1 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         />
-                        <button onClick={() => removeOption(idx, oIdx)} className="text-adv-gray-med hover:text-adv-red transition-colors">
+                        <button onClick={() => removeOption(idx, oIdx)} className="text-adv-gray hover:text-adv-red transition-colors">
                           <X className="h-3 w-3" />
                         </button>
                       </div>
@@ -627,7 +627,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
     }
   }
 
-  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none';
+  const inputCls = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
   const labelCls = 'block text-xs font-medium text-adv-off-white mb-1';
   const chipBase = 'rounded-lg border px-2.5 py-1 text-xs transition-colors cursor-pointer';
   const chipActive = 'border-adv-teal bg-adv-teal-dim text-adv-teal';
@@ -642,7 +642,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
             key={s.id}
             onClick={() => setStep(i)}
             className={`flex-1 pb-3 text-xs font-medium border-b-2 transition-colors ${
-              i === step ? 'border-adv-teal text-adv-teal' : i < step ? 'border-adv-green/50 text-adv-gray' : 'border-transparent text-adv-gray-med'
+              i === step ? 'border-adv-teal text-adv-teal' : i < step ? 'border-adv-green/50 text-adv-gray' : 'border-transparent text-adv-gray'
             }`}
           >
             <span className={`${i < step ? 'line-through opacity-60' : ''}`}>{s.label}</span>
@@ -651,7 +651,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
       </div>
 
       <div className="p-6">
-        <p className="mb-4 text-xs text-adv-gray-med">{WIZARD_STEPS[step].description}</p>
+        <p className="mb-4 text-xs text-adv-gray">{WIZARD_STEPS[step].description}</p>
 
         {/* Step: Basics */}
         {step === 0 && (
@@ -724,7 +724,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                   ))}
                 </optgroup>
               </select>
-              <p className="mt-1 text-[11px] text-adv-gray-med">Module will appear under this area in the sidebar and home page.</p>
+              <p className="mt-1 text-[11px] text-adv-gray">Module will appear under this area in the sidebar and home page.</p>
             </div>
           </div>
         )}
@@ -751,7 +751,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
               value={data.system_prompt}
               onChange={(e) => set('system_prompt', e.target.value)}
             />
-            <p className="mt-2 text-[11px] text-adv-gray-med">
+            <p className="mt-2 text-[11px] text-adv-gray">
               Tip: Use ## headers to structure. This is injected as Layer 4 (Module System Prompt) in the prompt composition chain.
             </p>
           </div>
@@ -765,7 +765,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
               const catLabels = { domain: 'Domain Experts', named: 'Named Characters', audience: 'Write For', analytical: 'Analytical Styles' };
               return (
                 <div key={cat}>
-                  <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-adv-gray-med">{catLabels[cat]}</div>
+                  <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">{catLabels[cat]}</div>
                   <div className="flex flex-wrap gap-1.5">
                     {roles.map((role) => (
                       <button key={role.id} type="button" onClick={() => togglePersona(role.id)} title={role.description}
@@ -784,7 +784,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
         {step === 3 && (
           <div className="space-y-4">
             {availableSkills.length === 0 ? (
-              <p className="text-xs text-adv-gray-med">Loading skills...</p>
+              <p className="text-xs text-adv-gray">Loading skills...</p>
             ) : (
               (['methodology', 'domain', 'language', 'communication', 'style', 'jurisdiction'] as const).map((cat) => {
                 const catSkills = availableSkills.filter((s) => s.category === cat);
@@ -795,7 +795,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                 };
                 return (
                   <div key={cat}>
-                    <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-adv-gray-med">{catLabels[cat]}</div>
+                    <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">{catLabels[cat]}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {catSkills.map((skill) => (
                         <button key={skill.id} type="button" onClick={() => toggleSkill(skill.id)} title={skill.description}
@@ -808,14 +808,14 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                 );
               })
             )}
-            <p className="text-[11px] text-adv-gray-med">Skills add specialized instructions to Claude's prompt. Pick 0-3 that fit your module's purpose.</p>
+            <p className="text-[11px] text-adv-gray">Skills add specialized instructions to Claude's prompt. Pick 0-3 that fit your module's purpose.</p>
           </div>
         )}
 
         {/* Step: Output Formats */}
         {step === 4 && (
           <div>
-            <p className="mb-3 text-xs text-adv-gray-med">Enter output format IDs (comma-separated). Common: executive-summary, action-plan, gap-scoring-matrix, detailed-findings, quick-briefing, policy-document</p>
+            <p className="mb-3 text-xs text-adv-gray">Enter output format IDs (comma-separated). Common: executive-summary, action-plan, gap-scoring-matrix, detailed-findings, quick-briefing, policy-document</p>
             <input
               className={inputCls}
               placeholder="e.g., executive-summary, action-plan, gap-scoring-matrix"
@@ -848,7 +848,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
             {libraryEntries.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center">
                 <p className="text-xs text-adv-gray">No corpora registered yet.</p>
-                <p className="text-xs text-adv-gray-med mt-1">Go to Settings &rarr; Knowledge Library to add corpora first.</p>
+                <p className="text-xs text-adv-gray mt-1">Go to Settings &rarr; Knowledge Library to add corpora first.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -870,8 +870,8 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium text-adv-off-white">{entry.label}</span>
-                          <span className="text-[10px] text-adv-gray-med">{entry.category.replace('_', ' ')}</span>
-                          {entry.indexed_at && <span className="text-[10px] text-adv-gray-med">{entry.file_count} files</span>}
+                          <span className="text-xs text-adv-gray">{entry.category.replace('_', ' ')}</span>
+                          {entry.indexed_at && <span className="text-xs text-adv-gray">{entry.file_count} files</span>}
                         </div>
                       </div>
                     </label>
@@ -902,12 +902,12 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                   set('defaultReferenceUrls', urls);
                 }}
               />
-              <p className="mt-1 text-[11px] text-adv-gray-med">Paste URLs to regulations or online documents. Claude will read them when users open this module.</p>
+              <p className="mt-1 text-[11px] text-adv-gray">Paste URLs to regulations or online documents. Claude will read them when users open this module.</p>
             </div>
 
             <button
               onClick={() => setStep(step + 1)}
-              className="text-xs text-adv-gray-med hover:text-adv-gray underline"
+              className="text-xs text-adv-gray hover:text-adv-gray underline"
             >
               Skip this step &rarr;
             </button>
@@ -928,7 +928,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                 value={data.referenceOutputLabel}
                 onChange={e => setData(prev => ({ ...prev, referenceOutputLabel: e.target.value }))}
                 placeholder="e.g., AMLR gap analysis for payment institution"
-                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
 
@@ -939,7 +939,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                 onChange={e => setData(prev => ({ ...prev, referenceOutput: e.target.value }))}
                 placeholder="Paste a golden example output here..."
                 rows={10}
-                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono resize-y"
+                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono resize-y"
               />
             </div>
 
@@ -973,7 +973,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
               </button>
               <button
                 onClick={() => setStep(step + 1)}
-                className="text-xs text-adv-gray-med hover:text-adv-gray underline"
+                className="text-xs text-adv-gray hover:text-adv-gray underline"
               >
                 Skip &rarr;
               </button>
@@ -1006,7 +1006,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
 
             <button
               onClick={() => setStep(step + 1)}
-              className="text-xs text-adv-gray-med hover:text-adv-gray underline"
+              className="text-xs text-adv-gray hover:text-adv-gray underline"
             >
               Skip &rarr;
             </button>
@@ -1028,7 +1028,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                 onChange={e => setData(prev => ({ ...prev, testQuery: e.target.value }))}
                 placeholder="Enter a representative test query for this module..."
                 rows={3}
-                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
 
@@ -1072,7 +1072,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-adv-gray">Response preview</span>
                   {testRunTokens !== null && (
-                    <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] text-adv-teal">
+                    <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-xs text-adv-teal">
                       Haiku &middot; {testRunTokens.toLocaleString()} tokens
                     </span>
                   )}
@@ -1090,7 +1090,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
           <div className="space-y-3 text-sm">
             <div className="rounded-lg bg-adv-dark-2 p-4 space-y-2">
               <div className="text-adv-white font-medium">{data.name || '(unnamed)'}</div>
-              <div className="text-xs text-adv-gray-med">{data.description || '(no description)'}</div>
+              <div className="text-xs text-adv-gray">{data.description || '(no description)'}</div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-adv-gray">
                 <div>Thinking: <span className="text-adv-off-white">{data.thinking}</span></div>
                 <div>Creativity: <span className="text-adv-off-white">{data.creativity}</span></div>
@@ -1114,7 +1114,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
               />
               <div>
                 <span className="text-xs font-medium text-adv-off-white">Share with Community</span>
-                <p className="text-[11px] text-adv-gray-med">Shared modules are visible to other openEXPERT users on this device</p>
+                <p className="text-[11px] text-adv-gray">Shared modules are visible to other openEXPERT users on this device</p>
               </div>
             </label>
           </div>
@@ -1260,9 +1260,9 @@ function GuidedBuilder({ onModuleReady, onCancel }: {
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
               <div className="text-sm font-semibold text-adv-white">{generatedConfig.name}</div>
-              <div className="text-xs text-adv-gray-med mt-0.5">{generatedConfig.description}</div>
+              <div className="text-xs text-adv-gray mt-0.5">{generatedConfig.description}</div>
             </div>
-            <span className="shrink-0 rounded-full bg-adv-teal/20 px-2 py-0.5 text-[10px] text-adv-teal font-medium">Generated</span>
+            <span className="shrink-0 rounded-full bg-adv-teal/20 px-2 py-0.5 text-xs text-adv-teal font-medium">Generated</span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-[11px] text-adv-gray mb-3">
             <div>Thinking: <span className="text-adv-off-white">{generatedConfig.thinking}</span></div>
@@ -1297,7 +1297,7 @@ function GuidedBuilder({ onModuleReady, onCancel }: {
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-adv-teal-dim">
               <Bot className="h-3.5 w-3.5 text-adv-teal" />
             </div>
-            <div className="rounded-lg bg-adv-dark-2 px-3 py-2 text-xs text-adv-gray-med animate-pulse">
+            <div className="rounded-lg bg-adv-dark-2 px-3 py-2 text-xs text-adv-gray animate-pulse">
               Thinking...
             </div>
           </div>
@@ -1324,7 +1324,7 @@ function GuidedBuilder({ onModuleReady, onCancel }: {
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-adv-teal-dim">
               <Bot className="h-3.5 w-3.5 text-adv-teal" />
             </div>
-            <div className="rounded-lg bg-adv-dark-2 px-3 py-2 text-xs text-adv-gray-med animate-pulse">
+            <div className="rounded-lg bg-adv-dark-2 px-3 py-2 text-xs text-adv-gray animate-pulse">
               Thinking...
             </div>
           </div>
@@ -1349,7 +1349,7 @@ function GuidedBuilder({ onModuleReady, onCancel }: {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
             placeholder={messages.length === 0 ? 'Waiting for AI...' : 'Describe what you want to build...'}
             disabled={isLoading || messages.length === 0}
-            className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none disabled:opacity-50"
+            className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-50"
           />
           <button
             onClick={() => sendMessage(input)}
@@ -1469,7 +1469,7 @@ export default function BuildYourOwnModule() {
           >
             <BookMarked className="h-6 w-6 text-adv-teal mb-3" />
             <div className="font-medium text-adv-off-white">Save Current Session</div>
-            <p className="mt-1 text-xs text-adv-gray-med">Extract the current module's configuration — prompt, personas, skills, output formats — and save as a reusable module.</p>
+            <p className="mt-1 text-xs text-adv-gray">Extract the current module's configuration — prompt, personas, skills, output formats — and save as a reusable module.</p>
             <div className="mt-3 flex items-center gap-1 text-xs text-adv-teal group-hover:gap-2 transition-all">
               Save as module <ChevronRight className="h-3 w-3" />
             </div>
@@ -1481,7 +1481,7 @@ export default function BuildYourOwnModule() {
           >
             <Sparkles className="h-6 w-6 text-adv-teal mb-3" />
             <div className="font-medium text-adv-off-white">Guide Me</div>
-            <p className="mt-1 text-xs text-adv-gray-med">Tell Claude what you're working on. It'll ask questions, then generate a professional system prompt, personas, and settings for you.</p>
+            <p className="mt-1 text-xs text-adv-gray">Tell Claude what you're working on. It'll ask questions, then generate a professional system prompt, personas, and settings for you.</p>
             <div className="mt-3 flex items-center gap-1 text-xs text-adv-teal group-hover:gap-2 transition-all">
               Start AI conversation <ChevronRight className="h-3 w-3" />
             </div>
@@ -1493,7 +1493,7 @@ export default function BuildYourOwnModule() {
           >
             <Wand2 className="h-6 w-6 text-adv-gold mb-3" />
             <div className="font-medium text-adv-off-white">Build From Scratch</div>
-            <p className="mt-1 text-xs text-adv-gray-med">Use the step-by-step wizard to design a new module from the ground up with custom prompts, personas, and output formats.</p>
+            <p className="mt-1 text-xs text-adv-gray">Use the step-by-step wizard to design a new module from the ground up with custom prompts, personas, and output formats.</p>
             <div className="mt-3 flex items-center gap-1 text-xs text-adv-gold group-hover:gap-2 transition-all">
               Open wizard <ChevronRight className="h-3 w-3" />
             </div>
@@ -1576,14 +1576,14 @@ export default function BuildYourOwnModule() {
         <div>
           <h2 className="mb-3 text-sm font-semibold text-adv-off-white flex items-center gap-2">
             My Modules
-            <span className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray-med">{modules.length}</span>
+            <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{modules.length}</span>
           </h2>
 
           {modules.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-10 text-center">
-              <Puzzle className="h-8 w-8 text-adv-gray-med mx-auto mb-3" />
+              <Puzzle className="h-8 w-8 text-adv-gray mx-auto mb-3" />
               <p className="text-sm text-adv-gray">No custom modules yet.</p>
-              <p className="text-xs text-adv-gray-med mt-1">Save a session or build from scratch to get started.</p>
+              <p className="text-xs text-adv-gray mt-1">Save a session or build from scratch to get started.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1594,8 +1594,8 @@ export default function BuildYourOwnModule() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-adv-off-white text-sm truncate">{m.name}</div>
-                    <p className="text-xs text-adv-gray-med truncate mt-0.5">{m.description || 'No description'}</p>
-                    <div className="mt-1 flex gap-3 text-[11px] text-adv-gray-med">
+                    <p className="text-xs text-adv-gray truncate mt-0.5">{m.description || 'No description'}</p>
+                    <div className="mt-1 flex gap-3 text-[11px] text-adv-gray">
                       <span>{(m.config as { thinking?: string }).thinking || 'think_hard'}</span>
                       <span>{(m.config as { creativity?: string }).creativity || 'balanced'}</span>
                       <span>{((m.config as { outputFormats?: string[] }).outputFormats || []).length} formats</span>
@@ -1616,7 +1616,7 @@ export default function BuildYourOwnModule() {
                     <button
                       onClick={() => { setEditingModule(m); setMode('edit'); }}
                       title="Edit module"
-                      className="rounded-lg border border-border p-1.5 text-adv-gray-med hover:border-adv-teal/40 hover:text-adv-teal transition-colors"
+                      className="rounded-lg border border-border p-1.5 text-adv-gray hover:border-adv-teal/40 hover:text-adv-teal transition-colors"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -1624,14 +1624,14 @@ export default function BuildYourOwnModule() {
                       onClick={() => handleExportAnton(m)}
                       disabled={exporting === m.id}
                       title="Export as .anton"
-                      className="rounded-lg border border-border p-1.5 text-adv-gray-med hover:border-adv-teal/40 hover:text-adv-teal transition-colors disabled:opacity-50"
+                      className="rounded-lg border border-border p-1.5 text-adv-gray hover:border-adv-teal/40 hover:text-adv-teal transition-colors disabled:opacity-50"
                     >
                       <Download className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDelete(m.id)}
                       disabled={deleting === m.id}
-                      className="rounded-lg border border-border p-1.5 text-adv-gray-med hover:border-adv-red/40 hover:text-adv-red transition-colors disabled:opacity-50"
+                      className="rounded-lg border border-border p-1.5 text-adv-gray hover:border-adv-red/40 hover:text-adv-red transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

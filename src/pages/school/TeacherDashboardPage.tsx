@@ -102,9 +102,9 @@ export default function TeacherDashboardPage() {
           </div>
         ) : classes.length === 0 ? (
           <div className="rounded-xl border border-border bg-adv-card p-10 text-center">
-            <BookOpen className="mx-auto mb-3 h-10 w-10 text-adv-gray-med" />
+            <BookOpen className="mx-auto mb-3 h-10 w-10 text-adv-gray" />
             <p className="text-sm text-adv-gray">{t('teacher.dashboard.noClasses')}</p>
-            <p className="mt-1 text-xs text-adv-gray-med">{t('teacher.dashboard.setupFirst')}</p>
+            <p className="mt-1 text-xs text-adv-gray">{t('teacher.dashboard.setupFirst')}</p>
             <Link
               to="/school/teacher/classes/new"
               className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark"
@@ -149,7 +149,7 @@ export default function TeacherDashboardPage() {
 
                 {/* Class code */}
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="text-xs text-adv-gray-med">{t('teacher.dashboard.classCode')}:</span>
+                  <span className="text-xs text-adv-gray">{t('teacher.dashboard.classCode')}:</span>
                   <code className="rounded bg-adv-dark px-2 py-0.5 text-xs font-mono text-adv-teal">
                     {cls.classCode}
                   </code>
@@ -202,7 +202,7 @@ export default function TeacherDashboardPage() {
                 <div key={tmpl.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-adv-card p-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-adv-off-white truncate">{tmpl.title}</p>
-                    <p className="text-xs text-adv-gray-med mt-0.5">
+                    <p className="text-xs text-adv-gray mt-0.5">
                       {t(`subject.${tmpl.subject_id}`, tmpl.subject_id)} · {tmpl.assignment_type}
                     </p>
                   </div>

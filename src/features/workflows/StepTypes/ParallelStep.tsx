@@ -51,8 +51,8 @@ export function ParallelStep({ step, onUpdate }: ParallelStepProps) {
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-adv-blue/30 bg-adv-blue/10 p-3">
-        <p className="text-[10px] font-medium text-adv-blue">Parallel Execution</p>
-        <p className="mt-0.5 text-[10px] text-adv-gray-med">
+        <p className="text-xs font-medium text-adv-blue">Parallel Execution</p>
+        <p className="mt-0.5 text-xs text-adv-gray">
           All branches execute simultaneously. Workflow continues when all branches complete.
           Results from each branch are merged into the workflow context.
         </p>
@@ -63,7 +63,7 @@ export function ParallelStep({ step, onUpdate }: ParallelStepProps) {
           <label className="text-[11px] font-medium text-adv-gray">Parallel Branches ({groups.length})</label>
           <button
             onClick={addGroup}
-            className="text-[10px] text-adv-teal hover:text-adv-teal-dark transition-colors flex items-center gap-1"
+            className="text-xs text-adv-teal hover:text-adv-teal-dark transition-colors flex items-center gap-1"
           >
             <Plus className="h-3 w-3" /> Add branch
           </button>
@@ -71,7 +71,7 @@ export function ParallelStep({ step, onUpdate }: ParallelStepProps) {
 
         {groups.length === 0 && (
           <div className="rounded-lg border border-dashed border-border py-4 text-center">
-            <p className="text-[11px] text-adv-gray-med">No branches. Add at least 2 branches for parallel execution.</p>
+            <p className="text-[11px] text-adv-gray">No branches. Add at least 2 branches for parallel execution.</p>
           </div>
         )}
 
@@ -86,11 +86,11 @@ export function ParallelStep({ step, onUpdate }: ParallelStepProps) {
                   type="text"
                   value={group.label}
                   onChange={(e) => updateGroup(gIdx, { label: e.target.value })}
-                  className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] font-medium text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] font-medium text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
                 <button
                   onClick={() => removeGroup(gIdx)}
-                  className="ml-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                  className="ml-1 text-adv-gray hover:text-adv-red transition-colors"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -98,7 +98,7 @@ export function ParallelStep({ step, onUpdate }: ParallelStepProps) {
               <div className="space-y-1">
                 {group.steps.map((s, sIdx) => (
                   <div key={s.id} className="flex items-center gap-1">
-                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-adv-teal/10 text-[9px] text-adv-teal">
+                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-adv-teal/10 text-xs text-adv-teal">
                       {sIdx + 1}
                     </div>
                     <input
@@ -106,11 +106,11 @@ export function ParallelStep({ step, onUpdate }: ParallelStepProps) {
                       value={s.label}
                       onChange={(e) => updateGroupStep(gIdx, sIdx, e.target.value, s.type)}
                       placeholder="Step label"
-                      className="flex-1 min-w-0 rounded border border-border bg-adv-dark-2 px-1.5 py-0.5 text-[10px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="flex-1 min-w-0 rounded border border-border bg-adv-dark-2 px-1.5 py-0.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     <button
                       onClick={() => removeStepFromGroup(gIdx, sIdx)}
-                      className="shrink-0 text-adv-gray-med hover:text-adv-red transition-colors"
+                      className="shrink-0 text-adv-gray hover:text-adv-red transition-colors"
                     >
                       <Trash2 className="h-2.5 w-2.5" />
                     </button>
@@ -118,7 +118,7 @@ export function ParallelStep({ step, onUpdate }: ParallelStepProps) {
                 ))}
                 <button
                   onClick={() => addStepToGroup(gIdx)}
-                  className="w-full rounded border border-dashed border-border py-1 text-[10px] text-adv-gray-med hover:text-adv-teal hover:border-adv-teal/30 transition-colors"
+                  className="w-full rounded border border-dashed border-border py-1 text-xs text-adv-gray hover:text-adv-teal hover:border-adv-teal/30 transition-colors"
                 >
                   + Add step
                 </button>

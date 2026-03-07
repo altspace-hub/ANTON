@@ -104,7 +104,7 @@ function renderTree(
         >
           <File className={`h-3.5 w-3.5 shrink-0 ${LANG_COLORS[node.file.language || ''] || 'text-adv-gray'}`} />
           <span className="truncate font-mono">{node.name}</span>
-          <span className={`ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] ${config.color} ${config.bg}`}>
+          <span className={`ml-auto shrink-0 rounded px-1.5 py-0.5 text-xs ${config.color} ${config.bg}`}>
             {config.label}
           </span>
         </button>

@@ -132,7 +132,7 @@ export default function FinanceMarketPage() {
         <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
           <div className="border-b border-border px-5 py-3 flex items-center justify-between">
             <h2 className="font-semibold text-adv-off-white">Popular Indices</h2>
-            <span className="text-xs text-adv-gray-med bg-adv-dark rounded px-2 py-1">
+            <span className="text-xs text-adv-gray bg-adv-dark rounded px-2 py-1">
               Example data — live data requires API key
             </span>
           </div>
@@ -187,7 +187,7 @@ export default function FinanceMarketPage() {
               onKeyDown={handleKeyDown}
               placeholder="e.g. What is the P/E ratio? How does inflation affect bonds?"
               disabled={isStreaming}
-              className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <button
               onClick={askAnton}

@@ -58,11 +58,11 @@ function PanelistCard({ panelist, status, executionMs, responsePreview, fullResp
           {status === 'complete' && <CheckCircle2 className="h-3 w-3 text-adv-green" />}
           {status === 'error' && <AlertTriangle className="h-3 w-3 text-adv-red" />}
           <span className="text-xs font-semibold text-adv-off-white">{panelist.role}</span>
-          <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-[10px] text-adv-gray">{modelShort}</span>
+          <span className="rounded-full bg-adv-card px-1.5 py-0.5 text-xs text-adv-gray">{modelShort}</span>
         </div>
         <div className="flex items-center gap-2">
           {executionMs !== undefined && (
-            <span className="flex items-center gap-1 text-[10px] text-adv-gray-med">
+            <span className="flex items-center gap-1 text-xs text-adv-gray">
               <Clock className="h-2.5 w-2.5" />
               {(executionMs / 1000).toFixed(1)}s
             </span>
@@ -70,7 +70,7 @@ function PanelistCard({ panelist, status, executionMs, responsePreview, fullResp
           {status === 'complete' && fullResponse && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-0.5 text-[10px] text-adv-teal hover:text-adv-teal-dark"
+              className="flex items-center gap-0.5 text-xs text-adv-teal hover:text-adv-teal-dark"
             >
               {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
               {expanded ? 'Hide' : 'Show'}
@@ -107,8 +107,8 @@ function AgreementBadge({ meta }: { meta: DeliberationMeta }) {
     <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${config.color}`}>
       <span className="text-sm font-mono">{config.icon}</span>
       <span className="text-xs font-semibold">{config.label}</span>
-      <span className="text-[10px] opacity-70">· {confidenceLabel}</span>
-      <span className="text-[10px] font-mono opacity-60">{Math.round(meta.agreementScore * 100)}%</span>
+      <span className="text-xs opacity-70">· {confidenceLabel}</span>
+      <span className="text-xs font-mono opacity-60">{Math.round(meta.agreementScore * 100)}%</span>
     </div>
   );
 }
@@ -322,7 +322,7 @@ export default function DeliberationPanel({ config, onNewDeliberation }: Deliber
                   <div className="space-y-1.5">
                     {Object.entries(d.positions).map(([role, view]) => (
                       <div key={role} className="flex items-start gap-2">
-                        <span className="mt-0.5 min-w-[90px] text-[10px] font-medium text-adv-gray">{role}:</span>
+                        <span className="mt-0.5 min-w-[90px] text-xs font-medium text-adv-gray">{role}:</span>
                         <span className="text-xs text-adv-off-white">{view}</span>
                       </div>
                     ))}

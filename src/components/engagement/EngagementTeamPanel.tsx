@@ -136,7 +136,7 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
           Extract team from engagement letter
         </button>
         {!hasLetter && (
-          <p className="text-xs text-adv-gray-med">Upload the engagement letter in Setup first</p>
+          <p className="text-xs text-adv-gray">Upload the engagement letter in Setup first</p>
         )}
       </div>
 
@@ -204,7 +204,7 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
 
       {/* Continue */}
       <div className="flex items-center justify-between pt-2">
-        <p className="text-xs text-adv-gray-med">
+        <p className="text-xs text-adv-gray">
           {engagement.stakeholders.length} person{engagement.stakeholders.length !== 1 ? 's' : ''} configured
         </p>
         <button
@@ -247,17 +247,17 @@ function ExtractionResults({ result, existingIds, onImport }: {
                   <div key={i} className="flex items-center gap-3 bg-adv-dark rounded-lg px-3 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-adv-off-white font-medium">{p.name}</p>
-                      <p className="text-xs text-adv-gray-med">{p.role}{p.organisation ? ` · ${p.organisation}` : ''}</p>
+                      <p className="text-xs text-adv-gray">{p.role}{p.organisation ? ` · ${p.organisation}` : ''}</p>
                       {p.expertise_areas?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {p.expertise_areas.map((e, j) => (
-                            <span key={j} className="text-[10px] bg-adv-teal-dim text-adv-teal rounded-full px-2 py-0.5">{e}</span>
+                            <span key={j} className="text-xs bg-adv-teal-dim text-adv-teal rounded-full px-2 py-0.5">{e}</span>
                           ))}
                         </div>
                       )}
                     </div>
                     {alreadyAdded ? (
-                      <span className="text-[10px] text-adv-green shrink-0">Added</span>
+                      <span className="text-xs text-adv-green shrink-0">Added</span>
                     ) : (
                       <button onClick={() => onImport('delivery_team', p)} className="text-xs text-adv-teal hover:text-adv-teal-dark shrink-0 font-medium">
                         + Add
@@ -279,10 +279,10 @@ function ExtractionResults({ result, existingIds, onImport }: {
                   <div key={i} className="flex items-center gap-3 bg-adv-dark rounded-lg px-3 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-adv-off-white font-medium">{p.name}</p>
-                      <p className="text-xs text-adv-gray-med">{p.role}{p.organisation ? ` · ${p.organisation}` : ''}</p>
+                      <p className="text-xs text-adv-gray">{p.role}{p.organisation ? ` · ${p.organisation}` : ''}</p>
                     </div>
                     {alreadyAdded ? (
-                      <span className="text-[10px] text-adv-green shrink-0">Added</span>
+                      <span className="text-xs text-adv-green shrink-0">Added</span>
                     ) : (
                       <button onClick={() => onImport('client_contact', p)} className="text-xs text-adv-teal hover:text-adv-teal-dark shrink-0 font-medium">
                         + Add
@@ -346,9 +346,9 @@ function TeamSection({ title, subtitle, icon: Icon, members, onRemove, adding, o
         <Icon className="h-4 w-4 text-adv-teal" />
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-adv-off-white">{title}</h3>
-          <p className="text-xs text-adv-gray-med">{subtitle}</p>
+          <p className="text-xs text-adv-gray">{subtitle}</p>
         </div>
-        <span className="text-xs text-adv-gray-med">{members.length} {members.length === 1 ? 'person' : 'people'}</span>
+        <span className="text-xs text-adv-gray">{members.length} {members.length === 1 ? 'person' : 'people'}</span>
       </div>
 
       <div className="p-4 space-y-2">
@@ -366,7 +366,7 @@ function TeamSection({ title, subtitle, icon: Icon, members, onRemove, adding, o
                   autoFocus
                   value={newName} onChange={e => setNewName(e.target.value)}
                   placeholder="e.g. Daniel Bardun"
-                  className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                  className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 />
               </div>
               <div>
@@ -374,7 +374,7 @@ function TeamSection({ title, subtitle, icon: Icon, members, onRemove, adding, o
                 <input
                   value={newRole} onChange={e => setNewRole(e.target.value)}
                   placeholder="e.g. AML Lead Consultant"
-                  className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                  className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 />
               </div>
             </div>
@@ -383,7 +383,7 @@ function TeamSection({ title, subtitle, icon: Icon, members, onRemove, adding, o
               <input
                 value={newOrg || defaultOrg} onChange={e => setNewOrg(e.target.value)}
                 placeholder={defaultOrg || 'Organisation name'}
-                className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               />
             </div>
 
@@ -413,7 +413,7 @@ function TeamSection({ title, subtitle, icon: Icon, members, onRemove, adding, o
               <input
                 value={newNotes} onChange={e => setNewNotes(e.target.value)}
                 placeholder="e.g. Available weeks 1–3 only"
-                className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               />
             </div>
 
@@ -454,19 +454,19 @@ function MemberCard({ member, onRemove }: { member: Stakeholder; onRemove: () =>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-adv-off-white font-medium">{member.name}</span>
-          {member.role && <span className="text-xs text-adv-gray-med">{member.role}</span>}
-          {member.organisation && <span className="text-xs text-adv-gray-med">· {member.organisation}</span>}
+          {member.role && <span className="text-xs text-adv-gray">{member.role}</span>}
+          {member.organisation && <span className="text-xs text-adv-gray">· {member.organisation}</span>}
         </div>
         {expertise.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {expertise.map((e, i) => (
-              <span key={i} className="text-[10px] bg-adv-teal-dim text-adv-teal rounded-full px-2 py-0.5">{e}</span>
+              <span key={i} className="text-xs bg-adv-teal-dim text-adv-teal rounded-full px-2 py-0.5">{e}</span>
             ))}
           </div>
         )}
-        {member.notes && <p className="text-xs text-adv-gray-med mt-1 italic">{member.notes}</p>}
+        {member.notes && <p className="text-xs text-adv-gray mt-1 italic">{member.notes}</p>}
       </div>
-      <button onClick={onRemove} className="p-1 rounded text-adv-gray-med hover:text-adv-red hover:bg-adv-red/10 transition-colors shrink-0">
+      <button onClick={onRemove} className="p-1 rounded text-adv-gray hover:text-adv-red hover:bg-adv-red/10 transition-colors shrink-0">
         <Trash2 className="h-3.5 w-3.5" />
       </button>
     </div>

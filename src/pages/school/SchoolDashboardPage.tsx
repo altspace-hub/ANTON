@@ -180,7 +180,7 @@ export default function SchoolDashboardPage() {
                     {growthStage} · {info.label}
                   </div>
                   {info.target !== null && sessionsLeft > 0 && (
-                    <span className="text-xs text-adv-gray-med">{sessionsLeft} to next stage</span>
+                    <span className="text-xs text-adv-gray">{sessionsLeft} to next stage</span>
                   )}
                 </div>
               );
@@ -209,7 +209,7 @@ export default function SchoolDashboardPage() {
                   />
                 </div>
               </div>
-              <span className="text-xs text-adv-gray-med shrink-0">
+              <span className="text-xs text-adv-gray shrink-0">
                 {xpData.total} XP{xpData.nextLevelAt ? ` / ${xpData.nextLevelAt}` : ''}
               </span>
             </div>
@@ -281,22 +281,22 @@ export default function SchoolDashboardPage() {
               value={quickQuestion}
               onChange={(e) => setQuickQuestion(e.target.value)}
               placeholder={t('dashboard.quickQuestionPlaceholder')}
-              className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-2 focus:ring-adv-teal/20"
+              className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20"
               aria-label={t('dashboard.quickQuestion')}
             />
             <button
               type="submit"
-              className="rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark focus:outline-none focus:ring-2 focus:ring-adv-teal"
+              className="rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
             >
               <MessageSquare className="h-4 w-4" />
             </button>
           </form>
-          <p className="mt-1.5 text-xs text-adv-gray-med">{t('dashboard.quickQuestionHelp')}</p>
+          <p className="mt-1.5 text-xs text-adv-gray">{t('dashboard.quickQuestionHelp')}</p>
         </div>
 
         {/* This Week section */}
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-adv-gray-med">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-adv-gray">
             {t('dashboard.thisWeek')}
           </h2>
 
@@ -307,9 +307,9 @@ export default function SchoolDashboardPage() {
             </div>
           ) : classes.length === 0 ? (
             <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-              <BookOpen className="mx-auto mb-3 h-10 w-10 text-adv-gray-med" />
+              <BookOpen className="mx-auto mb-3 h-10 w-10 text-adv-gray" />
               <p className="text-sm text-adv-gray">{t('dashboard.noClasses')}</p>
-              <p className="mt-1 text-xs text-adv-gray-med">{t('dashboard.enrollPrompt')}</p>
+              <p className="mt-1 text-xs text-adv-gray">{t('dashboard.enrollPrompt')}</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -324,7 +324,7 @@ export default function SchoolDashboardPage() {
         {classes.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-adv-gray-med">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-adv-gray">
                 {t('dashboard.myProgress')}
               </h2>
               <Link
@@ -423,7 +423,7 @@ export default function SchoolDashboardPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-adv-gold" />
-                <h2 className="text-sm font-semibold uppercase tracking-widest text-adv-gray-med">
+                <h2 className="text-sm font-semibold uppercase tracking-widest text-adv-gray">
                   {t('leaderboard.title', { defaultValue: 'Leaderboard' })}
                 </h2>
               </div>
@@ -446,7 +446,7 @@ export default function SchoolDashboardPage() {
               {leaderboardPeriod === 'weekly' && weeklyLeaderboard.map((entry, i) => (
                 <div key={`${entry.rank}-${i}`} className={`flex items-center gap-3 px-4 py-2.5 ${i < weeklyLeaderboard.length - 1 ? 'border-b border-border' : ''}`}>
                   <span className={`w-6 text-center text-xs font-bold shrink-0 ${
-                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray-med'
+                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray'
                   }`}>{entry.rank}</span>
                   <span className="flex-1 text-sm text-adv-off-white">{entry.display_name}</span>
                   <span className="text-xs font-semibold text-adv-teal shrink-0">{entry.total_xp} XP</span>
@@ -455,10 +455,10 @@ export default function SchoolDashboardPage() {
               {leaderboardPeriod === 'all_time' && leaderboard?.enabled && leaderboard.entries.map((entry, i) => (
                 <div key={i} className={`flex items-center gap-3 px-4 py-2.5 ${i < leaderboard.entries.length - 1 ? 'border-b border-border' : ''}`}>
                   <span className={`w-6 text-center text-xs font-bold shrink-0 ${
-                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray-med'
+                    entry.rank === 1 ? 'text-adv-gold' : entry.rank === 2 ? 'text-slate-300' : entry.rank === 3 ? 'text-amber-600' : 'text-adv-gray'
                   }`}>{entry.rank}</span>
                   <span className="flex-1 text-sm text-adv-off-white">{entry.name}</span>
-                  <span className="text-xs text-adv-gray-med shrink-0">L{entry.level}</span>
+                  <span className="text-xs text-adv-gray shrink-0">L{entry.level}</span>
                   <span className="text-xs font-semibold text-adv-teal shrink-0">{entry.xp} XP</span>
                 </div>
               ))}
@@ -486,7 +486,7 @@ function SubjectCard({ classCard }: SubjectCardProps) {
   return (
     <Link
       to={`/school/chat?classId=${classCard.id}`}
-      className="group flex flex-col rounded-xl border border-border bg-adv-card p-4 transition-colors hover:border-adv-teal/40 hover:bg-adv-teal/5 focus:outline-none focus:ring-2 focus:ring-adv-teal"
+      className="group flex flex-col rounded-xl border border-border bg-adv-card p-4 transition-colors hover:border-adv-teal/40 hover:bg-adv-teal/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
     >
       {/* Icon and subject name */}
       <div className="mb-3 flex items-center gap-2.5">

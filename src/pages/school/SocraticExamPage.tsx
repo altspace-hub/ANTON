@@ -208,7 +208,7 @@ export default function SocraticExamPage() {
           {objectives.length > 0 && (
             <aside className="hidden lg:block w-56 shrink-0">
               <div className="rounded-xl border border-border bg-adv-card p-3 space-y-2 sticky top-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-adv-gray-med mb-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-adv-gray mb-2">
                   Objectives
                 </p>
                 {objectives.map((obj, i) => (
@@ -224,7 +224,7 @@ export default function SocraticExamPage() {
                   >
                     {checkedObjectives.has(i)
                       ? <CheckSquare className="h-3.5 w-3.5 shrink-0 text-adv-teal mt-0.5" />
-                      : <Square className="h-3.5 w-3.5 shrink-0 text-adv-gray-med mt-0.5" />
+                      : <Square className="h-3.5 w-3.5 shrink-0 text-adv-gray mt-0.5" />
                     }
                     <span className={`text-xs leading-relaxed ${checkedObjectives.has(i) ? 'text-adv-gray line-through' : 'text-adv-off-white'}`}>
                       {obj}
@@ -232,7 +232,7 @@ export default function SocraticExamPage() {
                   </button>
                 ))}
                 {objectives.length > 0 && (
-                  <p className="text-xs text-adv-gray-med pt-1 border-t border-border">
+                  <p className="text-xs text-adv-gray pt-1 border-t border-border">
                     {checkedObjectives.size}/{objectives.length} covered
                   </p>
                 )}
@@ -287,7 +287,7 @@ export default function SocraticExamPage() {
                   placeholder={t('assessment.socraticPlaceholder', 'Type your answer... (Enter to send, Shift+Enter for new line)')}
                   rows={3}
                   disabled={isThinking || messages.length === 0}
-                  className="flex-1 resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none disabled:opacity-40"
+                  className="flex-1 resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-40"
                 />
                 <button
                   type="button"

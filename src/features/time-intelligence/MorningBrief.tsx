@@ -61,7 +61,7 @@ export default function MorningBrief() {
   if (loading) {
     return (
       <div className="mb-6 rounded-xl border border-border bg-adv-card p-5">
-        <div className="flex items-center gap-2 text-adv-gray-med">
+        <div className="flex items-center gap-2 text-adv-gray">
           <Calendar className="h-4 w-4 animate-pulse" />
           <span className="text-sm">Loading today's brief...</span>
         </div>
@@ -110,7 +110,7 @@ export default function MorningBrief() {
             Today's Brief
           </span>
           {totalUrgent > 0 && (
-            <span className="rounded-full bg-adv-red/20 px-2 py-0.5 text-[10px] font-semibold text-adv-red">
+            <span className="rounded-full bg-adv-red/20 px-2 py-0.5 text-xs font-semibold text-adv-red">
               {totalUrgent} urgent
             </span>
           )}
@@ -138,7 +138,7 @@ export default function MorningBrief() {
                 </li>
               ))}
               {brief.overdue.length > 3 && (
-                <li className="text-xs text-adv-gray-med">+{brief.overdue.length - 3} more</li>
+                <li className="text-xs text-adv-gray">+{brief.overdue.length - 3} more</li>
               )}
             </ul>
           </div>
@@ -160,7 +160,7 @@ export default function MorningBrief() {
                 </li>
               ))}
               {brief.dueToday.length > 3 && (
-                <li className="text-xs text-adv-gray-med">+{brief.dueToday.length - 3} more</li>
+                <li className="text-xs text-adv-gray">+{brief.dueToday.length - 3} more</li>
               )}
             </ul>
           </div>
@@ -179,11 +179,11 @@ export default function MorningBrief() {
               {brief.atRisk.slice(0, 2).map((d) => (
                 <li key={d.id} className="text-xs text-adv-off-white">
                   <span className="font-medium">{d.title}</span>
-                  <span className="ml-1 text-adv-gray-med">&mdash; should have started</span>
+                  <span className="ml-1 text-adv-gray">&mdash; should have started</span>
                 </li>
               ))}
               {brief.atRisk.length > 2 && (
-                <li className="text-xs text-adv-gray-med">+{brief.atRisk.length - 2} more</li>
+                <li className="text-xs text-adv-gray">+{brief.atRisk.length - 2} more</li>
               )}
             </ul>
           </div>

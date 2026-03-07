@@ -573,7 +573,7 @@ export default function PresentationBuilderPage() {
                 placeholder={isUploading ? 'Reading document...' : isStreaming ? 'Maya is typing...' : 'Type your reply... (Enter to send)'}
                 disabled={isStreaming || isUploading}
                 rows={2}
-                className="flex-1 resize-none bg-adv-card border border-adv-card focus:border-adv-teal outline-none rounded-xl px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med transition-colors disabled:opacity-50"
+                className="flex-1 resize-none bg-adv-card border border-adv-card focus:border-adv-teal outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 rounded-xl px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med transition-colors disabled:opacity-50"
               />
               <button
                 onClick={handleSend}
@@ -583,7 +583,7 @@ export default function PresentationBuilderPage() {
                 <Send className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs text-adv-gray-med pl-1">
+            <p className="text-xs text-adv-gray pl-1">
               Attach documents · Shift+Enter for new line · Enter to send
             </p>
           </div>
@@ -597,7 +597,7 @@ export default function PresentationBuilderPage() {
               {/* Header */}
               <div className="flex flex-col items-center text-center pt-2 pb-1 space-y-2">
                 <div className="p-3 rounded-2xl bg-adv-card">
-                  <MessageSquare className="h-7 w-7 text-adv-gray-med" />
+                  <MessageSquare className="h-7 w-7 text-adv-gray" />
                 </div>
                 <div>
                   <div className="font-medium text-adv-white mb-1">Your brief will appear here</div>
@@ -645,7 +645,7 @@ export default function PresentationBuilderPage() {
                           <code className="text-xs text-adv-teal bg-adv-teal-dim px-1.5 py-0.5 rounded font-mono">{st.type}</code>
                         </div>
                         <p className="text-xs text-adv-gray mt-0.5">{st.desc}</p>
-                        <p className="text-xs text-adv-gray-med mt-0.5 whitespace-pre-line">{st.hint}</p>
+                        <p className="text-xs text-adv-gray mt-0.5 whitespace-pre-line">{st.hint}</p>
                       </div>
                     </div>
                   ))}
@@ -691,7 +691,7 @@ export default function PresentationBuilderPage() {
                   <input
                     value={brief.title}
                     onChange={(e) => updateBriefField('title', e.target.value)}
-                    className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors"
+                    className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors"
                   />
                 ) : (
                   <span className="text-adv-white font-medium">{brief.title}</span>
@@ -705,7 +705,7 @@ export default function PresentationBuilderPage() {
                     value={brief.purpose}
                     onChange={(e) => updateBriefField('purpose', e.target.value)}
                     rows={2}
-                    className="w-full resize-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors"
+                    className="w-full resize-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors"
                   />
                 ) : (
                   <span className="text-adv-off-white text-sm">{brief.purpose}</span>
@@ -718,7 +718,7 @@ export default function PresentationBuilderPage() {
                   <input
                     value={brief.audience}
                     onChange={(e) => updateBriefField('audience', e.target.value)}
-                    className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors"
+                    className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors"
                   />
                 ) : (
                   <span className="text-adv-off-white text-sm">{brief.audience}</span>
@@ -732,7 +732,7 @@ export default function PresentationBuilderPage() {
                     value={brief.coreMessage}
                     onChange={(e) => updateBriefField('coreMessage', e.target.value)}
                     rows={2}
-                    className="w-full resize-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors"
+                    className="w-full resize-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors"
                   />
                 ) : (
                   <span className="text-adv-white font-medium italic text-sm">"{brief.coreMessage}"</span>
@@ -752,7 +752,7 @@ export default function PresentationBuilderPage() {
                         key={i}
                         value={msg}
                         onChange={(e) => updateKeyMessage(i, e.target.value)}
-                        className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors"
+                        className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors"
                       />
                     ) : (
                       <div key={i} className="flex items-start gap-2 text-sm text-adv-off-white">
@@ -775,7 +775,7 @@ export default function PresentationBuilderPage() {
                       <select
                         value={brief.style}
                         onChange={(e) => updateBriefField('style', e.target.value as PresentationBrief['style'])}
-                        className="w-full appearance-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors pr-8"
+                        className="w-full appearance-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors pr-8"
                       >
                         {STYLES.map((s) => (
                           <option key={s.id} value={s.id}>{s.label}</option>
@@ -796,7 +796,7 @@ export default function PresentationBuilderPage() {
                       <select
                         value={brief.tone}
                         onChange={(e) => updateBriefField('tone', e.target.value as PresentationBrief['tone'])}
-                        className="w-full appearance-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors pr-8"
+                        className="w-full appearance-none bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors pr-8"
                       >
                         {TONES.map((t) => (
                           <option key={t} value={t} className="capitalize">{t}</option>
@@ -821,7 +821,7 @@ export default function PresentationBuilderPage() {
                       max={40}
                       value={brief.slideCount}
                       onChange={(e) => updateBriefField('slideCount', Number(e.target.value))}
-                      className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors"
+                      className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors"
                     />
                   ) : (
                     <span className="text-sm text-adv-off-white">{brief.slideCount} slides</span>
@@ -836,7 +836,7 @@ export default function PresentationBuilderPage() {
                       max={120}
                       value={brief.timeMinutes}
                       onChange={(e) => updateBriefField('timeMinutes', Number(e.target.value))}
-                      className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none text-adv-white transition-colors"
+                      className="w-full bg-adv-dark border border-adv-card focus:border-adv-teal rounded-lg px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 text-adv-white transition-colors"
                     />
                   ) : (
                     <span className="text-sm text-adv-off-white">{brief.timeMinutes} minutes</span>
@@ -857,7 +857,7 @@ export default function PresentationBuilderPage() {
                         key={slide.slideNum}
                         className="flex items-center gap-2 text-xs py-1 border-b border-adv-card last:border-0"
                       >
-                        <span className="w-5 text-adv-gray-med shrink-0">{slide.slideNum}</span>
+                        <span className="w-5 text-adv-gray shrink-0">{slide.slideNum}</span>
                         <span className="text-adv-teal shrink-0 capitalize">{slide.type}</span>
                         <span className="text-adv-off-white truncate">{slide.title}</span>
                       </div>
@@ -889,7 +889,7 @@ export default function PresentationBuilderPage() {
                             <code className="text-xs text-adv-teal bg-adv-teal-dim px-1.5 py-0.5 rounded font-mono">{st.type}</code>
                           </div>
                           <p className="text-xs text-adv-gray mt-0.5">{st.desc}</p>
-                          <p className="text-xs text-adv-gray-med mt-0.5 whitespace-pre-line">{st.hint}</p>
+                          <p className="text-xs text-adv-gray mt-0.5 whitespace-pre-line">{st.hint}</p>
                         </div>
                       </div>
                     ))}
@@ -1013,7 +1013,7 @@ export default function PresentationBuilderPage() {
                 <Wand2 className="h-4 w-4" />
                 Generate Presentation
               </button>
-              <p className="text-xs text-adv-gray-med text-center mt-2">
+              <p className="text-xs text-adv-gray text-center mt-2">
                 Generates a .pptx file using the brief above · You can edit the brief first
               </p>
             </div>

@@ -103,7 +103,7 @@ export default function EngagementGoodExample({ engagement, onUpdate, onNext, on
               <Star className="h-10 w-10 text-adv-teal/40 mx-auto mb-3" />
               <p className="text-sm font-medium text-adv-off-white mb-1">Upload a good example deliverable</p>
               <p className="text-xs text-adv-gray">A report, gap analysis, or policy document from a previous engagement</p>
-              <p className="text-xs text-adv-gray-med mt-2">PDF, DOCX, TXT</p>
+              <p className="text-xs text-adv-gray mt-2">PDF, DOCX, TXT</p>
             </>
           )}
         </div>
@@ -226,7 +226,7 @@ function GoodExampleDocCard({ doc, extracting, onExtract }: { doc: EngagementDoc
         <FileText className="h-4 w-4 text-adv-teal shrink-0" />
         <span className="text-sm text-adv-off-white truncate">{doc.file_name}</span>
         {extracted && (
-          <span className="flex items-center gap-1 text-[10px] text-adv-green bg-adv-green/10 border border-adv-green/30 rounded-full px-2 py-0.5 shrink-0">
+          <span className="flex items-center gap-1 text-xs text-adv-green bg-adv-green/10 border border-adv-green/30 rounded-full px-2 py-0.5 shrink-0">
             <CheckCircle className="h-2.5 w-2.5" />Blueprint
           </span>
         )}
@@ -257,7 +257,7 @@ function GoodExampleDocCard({ doc, extracting, onExtract }: { doc: EngagementDoc
 function BlueprintCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-adv-dark-2 rounded-lg p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-adv-teal mb-2">{title}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-adv-teal mb-2">{title}</p>
       <div className="space-y-1 text-xs text-adv-gray">{children}</div>
     </div>
   );

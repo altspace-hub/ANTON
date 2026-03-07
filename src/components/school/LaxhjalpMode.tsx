@@ -139,7 +139,7 @@ export default function LaxhjalpMode({ classId, subjectId, onClose, onResolved }
             <h2 className="text-sm font-semibold text-adv-white">
               {t('laxhjalp.title', { defaultValue: 'Läxhjälp' })}
             </h2>
-            <p className="text-xs text-adv-gray-med">
+            <p className="text-xs text-adv-gray">
               {t('laxhjalp.subtitle', { defaultValue: 'Deep focus homework help' })}
             </p>
           </div>
@@ -172,7 +172,7 @@ export default function LaxhjalpMode({ classId, subjectId, onClose, onResolved }
                 defaultValue: 'e.g. "I understand how to multiply, but when I add negative numbers I get confused..."',
               })}
               rows={4}
-              className="w-full resize-none rounded-xl border border-border bg-adv-dark px-4 py-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full resize-none rounded-xl border border-border bg-adv-dark px-4 py-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <button
               type="button"
@@ -198,7 +198,7 @@ export default function LaxhjalpMode({ classId, subjectId, onClose, onResolved }
           <h2 className="text-sm font-semibold text-adv-white">
             {t('laxhjalp.title', { defaultValue: 'Läxhjälp' })}
           </h2>
-          <p className="truncate text-xs text-adv-gray-med">{stuckPoint}</p>
+          <p className="truncate text-xs text-adv-gray">{stuckPoint}</p>
         </div>
         <button
           type="button"
@@ -285,7 +285,7 @@ export default function LaxhjalpMode({ classId, subjectId, onClose, onResolved }
               placeholder={t('chat.placeholder', { defaultValue: 'Reply to Alma...' })}
               rows={2}
               disabled={isStreaming}
-              className="flex-1 resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none disabled:opacity-50"
+              className="flex-1 resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-50"
             />
             <button
               type="button"

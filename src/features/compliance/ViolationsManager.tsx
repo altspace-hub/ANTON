@@ -117,7 +117,7 @@ export default function ViolationsManager() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white focus:outline-none focus:ring-2 focus:ring-adv-teal"
+            className="px-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
           >
             <option value="all">All Statuses</option>
             <option value="open">Open</option>
@@ -129,7 +129,7 @@ export default function ViolationsManager() {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white focus:outline-none focus:ring-2 focus:ring-adv-teal"
+            className="px-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
           >
             <option value="all">All Severities</option>
             <option value="critical">Critical</option>

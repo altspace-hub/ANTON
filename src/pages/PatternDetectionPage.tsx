@@ -459,7 +459,7 @@ export default function PatternDetectionPage() {
                   value={cronExpression}
                   onChange={e => setCronExpression(e.target.value)}
                   placeholder="0 */6 * * *"
-                  className="w-full px-3 py-2 bg-adv-dark-2 border border-adv-gray/20 rounded text-adv-white focus:outline-none focus:border-adv-teal"
+                  className="w-full px-3 py-2 bg-adv-dark-2 border border-adv-gray/20 rounded text-adv-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 />
                 <p className="text-xs text-adv-gray mt-1">
                   Examples: "0 */6 * * *" (every 6h), "0 0 * * *" (daily at midnight)

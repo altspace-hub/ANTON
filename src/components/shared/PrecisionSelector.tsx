@@ -18,7 +18,7 @@ export function PrecisionSelector({ value, onChange }: PrecisionSelectorProps) {
     <div>
       <div className="mb-1.5 flex items-center justify-between">
         <span className="text-xs font-medium text-adv-gray">Precision</span>
-        <span className="text-[10px] text-adv-gray-med">Controls temperature across providers</span>
+        <span className="text-xs text-adv-gray">Controls temperature across providers</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {PRECISION_LEVELS.map((level) => (

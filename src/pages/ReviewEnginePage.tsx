@@ -369,7 +369,7 @@ export default function ReviewEnginePage() {
 
             {/* Domain Reviewers group */}
             <div className="mt-4">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">
                 Domain Reviewers
               </p>
               <div className="space-y-2">
@@ -422,7 +422,7 @@ export default function ReviewEnginePage() {
 
           {/* Model selector */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
               Model for this review
             </label>
             <div className="flex items-center gap-2">
@@ -449,7 +449,7 @@ export default function ReviewEnginePage() {
 
           {/* Transparency toggle */}
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
               Transparency
             </label>
             <div className="flex gap-1.5">
@@ -505,11 +505,11 @@ export default function ReviewEnginePage() {
                   onChange={(e) => setDocContent(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={t('review.pasteTextPlaceholder')}
-                  className="flex-1 w-full resize-none rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  className="flex-1 w-full resize-none rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   style={{ minHeight: '200px' }}
                   disabled={isStreaming}
                 />
-                <div className="mt-1 text-right text-[10px] text-adv-gray-med">
+                <div className="mt-1 text-right text-xs text-adv-gray">
                   {docContent.length > 0
                     ? `~${Math.ceil(docContent.length / 4).toLocaleString()} tokens`
                     : t('review.ctrlEnterToRun')}
@@ -535,7 +535,7 @@ export default function ReviewEnginePage() {
                     <>
                       <Upload className="h-6 w-6 text-adv-gray" />
                       <span className="text-sm text-adv-gray">{t('review.uploadPrompt')}</span>
-                      <span className="text-xs text-adv-gray-med">{t('review.uploadFormats')}</span>
+                      <span className="text-xs text-adv-gray">{t('review.uploadFormats')}</span>
                     </>
                   )}
                 </label>
@@ -547,7 +547,7 @@ export default function ReviewEnginePage() {
                       <div key={i} className="flex items-center gap-2 rounded-lg border border-border bg-adv-card px-3 py-2">
                         <FileText className="h-4 w-4 shrink-0 text-adv-teal" />
                         <span className="flex-1 truncate text-xs text-adv-off-white">{f.name}</span>
-                        <span className="text-[10px] text-adv-gray-med shrink-0">
+                        <span className="text-xs text-adv-gray shrink-0">
                           ~{Math.ceil(f.text.length / 4).toLocaleString()} tokens
                         </span>
                         <button
@@ -559,7 +559,7 @@ export default function ReviewEnginePage() {
                         </button>
                       </div>
                     ))}
-                    <div className="text-right text-[10px] text-adv-gray-med">
+                    <div className="text-right text-xs text-adv-gray">
                       {uploadedFiles.length} {uploadedFiles.length > 1 ? t('review.files') : t('review.file')} · ~{Math.ceil(uploadedFiles.reduce((s, f) => s + f.text.length, 0) / 4).toLocaleString()} {t('review.tokensTotal')}
                     </div>
                   </div>
@@ -574,7 +574,7 @@ export default function ReviewEnginePage() {
 
           {/* Run / Stop button */}
           {!isStreaming && !effectiveContent && (
-            <p className="text-center text-xs text-adv-gray-med">
+            <p className="text-center text-xs text-adv-gray">
               {inputTab === 'paste' ? t('review.pasteTextToReview') : t('review.uploadFileToReview')}
             </p>
           )}
@@ -641,7 +641,7 @@ export default function ReviewEnginePage() {
                     Anton — {selectedMode.label}
                   </span>
                   {isStreaming && (
-                    <span className="text-xs text-adv-gray-med">{t('review.reviewing')}</span>
+                    <span className="text-xs text-adv-gray">{t('review.reviewing')}</span>
                   )}
                 </div>
                 {!isStreaming && displayText && (

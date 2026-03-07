@@ -81,7 +81,7 @@ function getBias(rating: BiasRating): BiasConfig {
   return BIAS_CONFIG[rating] ?? {
     label: rating ?? 'Unknown',
     dot: 'bg-adv-gray-med',
-    chip: 'bg-adv-gray/10 text-adv-gray-med border-adv-gray/20',
+    chip: 'bg-adv-gray/10 text-adv-gray border-adv-gray/20',
     spectrumPos: 3,
   };
 }
@@ -255,7 +255,7 @@ export default function StoryDetailPage() {
             {story && (
               <div className="flex items-center gap-3 mt-0.5">
                 <span className="text-xs text-adv-gray">{story.article_count} sources</span>
-                <span className="text-xs text-adv-gray-med flex items-center gap-1">
+                <span className="text-xs text-adv-gray flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {formatTimeAgo(story.last_updated)}
                 </span>
@@ -314,7 +314,7 @@ export default function StoryDetailPage() {
             </div>
           ) : !story ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <AlertCircle className="h-8 w-8 text-adv-gray-med mb-3" />
+              <AlertCircle className="h-8 w-8 text-adv-gray mb-3" />
               <p className="text-sm text-adv-gray">Story not found.</p>
             </div>
           ) : (
@@ -330,7 +330,7 @@ export default function StoryDetailPage() {
                       {story.topic_tags.split(',').map((tag, i) => (
                         <span
                           key={i}
-                          className="text-[10px] rounded bg-adv-dark px-2 py-0.5 text-adv-gray-med"
+                          className="text-xs rounded bg-adv-dark px-2 py-0.5 text-adv-gray"
                         >
                           {tag.trim()}
                         </span>
@@ -358,10 +358,10 @@ export default function StoryDetailPage() {
                             className={`w-full rounded-sm transition-all ${SPECTRUM_DOTS[i]} opacity-80`}
                             style={{ height: `${height}px` }}
                           />
-                          <span className="text-[9px] text-adv-gray-med text-center leading-tight">
+                          <span className="text-xs text-adv-gray text-center leading-tight">
                             {SPECTRUM_LABELS[i]}
                           </span>
-                          <span className="text-[10px] text-adv-gray font-medium">
+                          <span className="text-xs text-adv-gray font-medium">
                             {count > 0 ? count : '—'}
                           </span>
                         </div>
@@ -376,7 +376,7 @@ export default function StoryDetailPage() {
                       return (
                         <div key={article.id} className="flex items-center gap-1">
                           <div className={`h-2 w-2 rounded-full shrink-0 ${bias.dot}`} />
-                          <span className="text-[10px] text-adv-gray">{article.source_name}</span>
+                          <span className="text-xs text-adv-gray">{article.source_name}</span>
                         </div>
                       );
                     })}
@@ -426,10 +426,10 @@ export default function StoryDetailPage() {
                               <span className="text-xs font-medium text-adv-off-white/70">
                                 {article.source_name}
                               </span>
-                              <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-medium ${bias.chip}`}>
+                              <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium ${bias.chip}`}>
                                 {bias.label}
                               </span>
-                              <span className="text-[10px] text-adv-gray-med">
+                              <span className="text-xs text-adv-gray">
                                 {formatTimeAgo(article.published_at)}
                               </span>
                             </div>

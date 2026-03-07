@@ -35,8 +35,8 @@ export function DecisionStep({ step, onUpdate, allSteps = [], currentStepIndex =
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/10 p-3">
-        <p className="text-[10px] font-medium text-adv-gold">Decision Gate</p>
-        <p className="mt-0.5 text-[10px] text-adv-gray-med">
+        <p className="text-xs font-medium text-adv-gold">Decision Gate</p>
+        <p className="mt-0.5 text-xs text-adv-gray">
           If the condition is TRUE, execution continues to the next step.
           If FALSE, execution skips to the step you specify below (or ends the workflow).
         </p>
@@ -46,21 +46,21 @@ export function DecisionStep({ step, onUpdate, allSteps = [], currentStepIndex =
         <label className="mb-2 block text-[11px] font-medium text-adv-gray">Condition</label>
         <div className="space-y-2">
           <div>
-            <label className="mb-1 block text-[10px] text-adv-gray-med">Left operand</label>
+            <label className="mb-1 block text-xs text-adv-gray">Left operand</label>
             <input
               type="text"
               value={condition.leftOperand}
               onChange={(e) => updateCondition({ leftOperand: e.target.value })}
               placeholder="{{step_3.risk_score}}"
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
             />
           </div>
           <div>
-            <label className="mb-1 block text-[10px] text-adv-gray-med">Operator</label>
+            <label className="mb-1 block text-xs text-adv-gray">Operator</label>
             <select
               value={condition.operator}
               onChange={(e) => updateCondition({ operator: e.target.value as DecisionCondition['operator'] })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {OPERATORS.map((op) => (
                 <option key={op.value} value={op.value}>{op.label}</option>
@@ -69,13 +69,13 @@ export function DecisionStep({ step, onUpdate, allSteps = [], currentStepIndex =
           </div>
           {condition.operator !== 'exists' && (
             <div>
-              <label className="mb-1 block text-[10px] text-adv-gray-med">Right operand (literal or {'{{variable}}'})</label>
+              <label className="mb-1 block text-xs text-adv-gray">Right operand (literal or {'{{variable}}'})</label>
               <input
                 type="text"
                 value={condition.rightOperand}
                 onChange={(e) => updateCondition({ rightOperand: e.target.value })}
                 placeholder='8 or "high" or {{step_2.threshold}}'
-                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
               />
             </div>
           )}
@@ -86,19 +86,19 @@ export function DecisionStep({ step, onUpdate, allSteps = [], currentStepIndex =
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-adv-green" />
           <div>
-            <p className="text-[10px] font-medium text-adv-gray-med">If TRUE</p>
-            <p className="text-[10px] text-adv-off-white">Continue to next step</p>
+            <p className="text-xs font-medium text-adv-gray">If TRUE</p>
+            <p className="text-xs text-adv-off-white">Continue to next step</p>
           </div>
         </div>
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="h-2 w-2 rounded-full bg-adv-red" />
-            <p className="text-[10px] font-medium text-adv-gray-med">If FALSE — skip to:</p>
+            <p className="text-xs font-medium text-adv-gray">If FALSE — skip to:</p>
           </div>
           <select
             value={step.config.onFalseSkipToStepId || ''}
             onChange={(e) => onUpdate({ onFalseSkipToStepId: e.target.value || undefined })}
-            className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             <option value="">End workflow</option>
             {futureSteps.map((s) => (
@@ -110,7 +110,7 @@ export function DecisionStep({ step, onUpdate, allSteps = [], currentStepIndex =
 
       {condition.leftOperand && condition.operator && (
         <div className="rounded-lg border border-border bg-adv-dark-2 px-3 py-2">
-          <p className="text-[10px] text-adv-gray-med">Preview:</p>
+          <p className="text-xs text-adv-gray">Preview:</p>
           <p className="mt-0.5 font-mono text-[11px] text-adv-off-white">
             {condition.leftOperand} {condition.operator} {condition.operator !== 'exists' ? condition.rightOperand : ''}
           </p>

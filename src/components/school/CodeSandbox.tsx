@@ -79,7 +79,7 @@ export default function CodeSandbox({ code, language }: Props) {
           title="Code output"
         />
       ) : (
-        <div className="flex items-center justify-center h-16 text-xs text-adv-gray-med">
+        <div className="flex items-center justify-center h-16 text-xs text-adv-gray">
           {t('coding.clickRun', 'Click Run to preview')}
         </div>
       )}

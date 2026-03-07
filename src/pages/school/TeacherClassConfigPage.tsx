@@ -173,7 +173,7 @@ export default function TeacherClassConfigPage() {
         {/* Basic info */}
         <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               {t('teacher.classConfig.className')}
             </label>
             <input
@@ -181,19 +181,19 @@ export default function TeacherClassConfigPage() {
               value={config.name}
               onChange={(e) => setConfig((p) => ({ ...p, name: e.target.value }))}
               placeholder="e.g. Matematik 9B"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
                 {t('teacher.classConfig.subject')}
               </label>
               <select
                 value={config.subjectId}
                 onChange={(e) => setConfig((p) => ({ ...p, subjectId: e.target.value }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="mathematics">{t('subject.mathematics')}</option>
                 <option value="svenska">{t('subject.svenska', 'Svenska')}</option>
@@ -205,13 +205,13 @@ export default function TeacherClassConfigPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
                 {t('teacher.classConfig.tier')}
               </label>
               <select
                 value={config.educationTier}
                 onChange={(e) => setConfig((p) => ({ ...p, educationTier: e.target.value }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="T2">{t('onboarding.student.step1.tierT2')}</option>
                 <option value="T3">{t('onboarding.student.step1.tierT3')}</option>
@@ -220,13 +220,13 @@ export default function TeacherClassConfigPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
                 {t('teacher.classConfig.curriculum', 'Curriculum')}
               </label>
               <select
                 value={config.curriculumId}
                 onChange={(e) => setConfig((p) => ({ ...p, curriculumId: e.target.value }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="lgr22">Sweden — Lgr22 (Grundskolan)</option>
                 <option value="lk20">Norway — LK20 (Fagfornyelsen)</option>
@@ -268,7 +268,7 @@ export default function TeacherClassConfigPage() {
         <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
           <div>
             <h2 className="text-sm font-semibold text-adv-off-white">{t('teacher.classConfig.assistanceLevels')}</h2>
-            <p className="text-xs text-adv-gray-med mt-0.5">
+            <p className="text-xs text-adv-gray mt-0.5">
               L1 = Full Guidance (Socratic, never gives answers) · L2 = Moderate · L3 = Practice · L4 = Reference
             </p>
           </div>
@@ -289,7 +289,7 @@ export default function TeacherClassConfigPage() {
                     key={level}
                     type="button"
                     onClick={() => updateAssistanceLevel(key, level)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal ${
+                    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal ${
                       config.assistanceLevels[key] === level
                         ? 'bg-adv-teal text-adv-dark'
                         : 'border border-border text-adv-gray hover:border-adv-teal hover:text-adv-teal'
@@ -308,7 +308,7 @@ export default function TeacherClassConfigPage() {
           <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-adv-off-white">{t('teacher.classConfig.studyPlan')}</h2>
-              <p className="text-xs text-adv-gray-med mt-0.5">{t('teacher.classConfig.uploadHelp')}</p>
+              <p className="text-xs text-adv-gray mt-0.5">{t('teacher.classConfig.uploadHelp')}</p>
             </div>
 
             <div className="flex items-center gap-3">

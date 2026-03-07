@@ -98,7 +98,7 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
                 onUpdate({ your_organisation: e.target.value });
               }}
               placeholder="e.g. openEXPERT"
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
           </div>
           <div>
@@ -114,7 +114,7 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
                 onUpdate({ client_name: e.target.value });
               }}
               placeholder="e.g. Nordea"
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
           </div>
         </div>
@@ -200,8 +200,8 @@ function DocUploadCard({ title, subtitle, required, docType, doc, uploading, ext
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-sm font-semibold text-adv-off-white">{title}</h3>
-            {required && <span className="text-[10px] text-adv-red">required</span>}
-            {!required && <span className="text-[10px] text-adv-gray-med">optional</span>}
+            {required && <span className="text-xs text-adv-red">required</span>}
+            {!required && <span className="text-xs text-adv-gray">optional</span>}
           </div>
           <p className="text-xs text-adv-gray leading-relaxed">{subtitle}</p>
         </div>
@@ -256,11 +256,11 @@ function DocUploadCard({ title, subtitle, required, docType, doc, uploading, ext
             <Loader2 className="h-6 w-6 animate-spin text-adv-teal mx-auto" />
           ) : (
             <>
-              <Upload className="h-6 w-6 text-adv-gray-med group-hover:text-adv-teal mx-auto mb-2 transition-colors" />
+              <Upload className="h-6 w-6 text-adv-gray group-hover:text-adv-teal mx-auto mb-2 transition-colors" />
               <p className="text-sm text-adv-gray">
                 Click to upload or drag & drop
               </p>
-              <p className="text-xs text-adv-gray-med mt-1">PDF, DOCX, XLSX, TXT</p>
+              <p className="text-xs text-adv-gray mt-1">PDF, DOCX, XLSX, TXT</p>
             </>
           )}
         </div>
@@ -312,7 +312,7 @@ function ExtractionPreview({ engagement }: { engagement: EngagementData }) {
               </div>
             ))}
             {scopeItems.length > 4 && (
-              <p className="text-xs text-adv-gray-med ml-3">+{scopeItems.length - 4} more</p>
+              <p className="text-xs text-adv-gray ml-3">+{scopeItems.length - 4} more</p>
             )}
           </div>
         </div>
@@ -323,7 +323,7 @@ function ExtractionPreview({ engagement }: { engagement: EngagementData }) {
           <p className="text-xs font-medium text-adv-off-white mb-1">{deliverables.length} deliverables</p>
           <div className="flex flex-wrap gap-1">
             {deliverables.slice(0, 4).map((d, i) => (
-              <span key={i} className="text-[10px] bg-adv-card border border-border rounded px-2 py-0.5 text-adv-gray">
+              <span key={i} className="text-xs bg-adv-card border border-border rounded px-2 py-0.5 text-adv-gray">
                 {String(d.title || '')} {d.format ? `(${d.format})` : ''}
               </span>
             ))}

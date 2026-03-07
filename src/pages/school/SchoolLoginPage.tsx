@@ -170,7 +170,7 @@ export default function SchoolLoginPage() {
               <div className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-adv-card px-3 text-adv-gray-med">
+              <span className="bg-adv-card px-3 text-adv-gray">
                 {t('login.orLocal', { defaultValue: 'or sign in with username' })}
               </span>
             </div>
@@ -182,7 +182,7 @@ export default function SchoolLoginPage() {
           <div>
             <label
               htmlFor="username"
-              className="block text-xs font-semibold uppercase tracking-widest text-adv-gray-med mb-1.5"
+              className="block text-xs font-semibold uppercase tracking-widest text-adv-gray mb-1.5"
             >
               {t('login.username', { defaultValue: 'Username' })}
             </label>
@@ -195,14 +195,14 @@ export default function SchoolLoginPage() {
               required
               disabled={isSubmitting}
               placeholder={t('login.usernamePlaceholder', { defaultValue: 'Enter your username' })}
-              className="w-full bg-adv-dark border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal disabled:opacity-50 transition-colors"
+              className="w-full bg-adv-dark border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal disabled:opacity-50 transition-colors"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-xs font-semibold uppercase tracking-widest text-adv-gray-med mb-1.5"
+              className="block text-xs font-semibold uppercase tracking-widest text-adv-gray mb-1.5"
             >
               {t('login.password', { defaultValue: 'Password' })}
             </label>
@@ -216,14 +216,14 @@ export default function SchoolLoginPage() {
                 required
                 disabled={isSubmitting}
                 placeholder={t('login.passwordPlaceholder', { defaultValue: 'Enter your password' })}
-                className="w-full bg-adv-dark border border-white/10 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal disabled:opacity-50 transition-colors"
+                className="w-full bg-adv-dark border border-white/10 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal disabled:opacity-50 transition-colors"
               />
               <button
                 type="button"
                 tabIndex={-1}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray-med hover:text-adv-gray transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-adv-gray hover:text-adv-gray transition-colors"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -253,7 +253,7 @@ export default function SchoolLoginPage() {
         </form>
 
         {/* Back link */}
-        <p className="text-center text-xs text-adv-gray-med mt-6">
+        <p className="text-center text-xs text-adv-gray mt-6">
           <button
             type="button"
             onClick={() => navigate('/')}
@@ -265,7 +265,7 @@ export default function SchoolLoginPage() {
       </div>
 
       {/* Footer note */}
-      <p className="mt-6 text-xs text-adv-gray-med text-center max-w-sm">
+      <p className="mt-6 text-xs text-adv-gray text-center max-w-sm">
         {t('login.privacy', { defaultValue: 'Your conversations are private and stored locally on this device.' })}
       </p>
     </div>

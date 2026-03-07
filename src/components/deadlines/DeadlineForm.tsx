@@ -90,7 +90,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Submit AMLR Gap Analysis"
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             required
           />
         </div>
@@ -103,7 +103,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="Optional context or notes..."
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
           />
         </div>
 
@@ -114,7 +114,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             required
           />
         </div>
@@ -125,7 +125,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             <option value="critical">Critical</option>
             <option value="high">High</option>
@@ -140,7 +140,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             <option value="regulatory">Regulatory</option>
             <option value="client">Client</option>
@@ -155,7 +155,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
           <select
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             <option value="">No project</option>
             {projects.map(p => (
@@ -168,7 +168,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
         <div>
           <label className="mb-1 block text-xs font-medium text-adv-gray">
             Preparation Days
-            <span className="ml-1 text-adv-gray-med font-normal">(how many days to prepare)</span>
+            <span className="ml-1 text-adv-gray font-normal">(how many days to prepare)</span>
           </label>
           <input
             type="number"
@@ -176,7 +176,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
             max={90}
             value={prepDays}
             onChange={(e) => setPrepDays(Number(e.target.value))}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
 
@@ -184,7 +184,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
         <div>
           <label className="mb-1 block text-xs font-medium text-adv-gray">
             Review Days
-            <span className="ml-1 text-adv-gray-med font-normal">(review / approval time)</span>
+            <span className="ml-1 text-adv-gray font-normal">(review / approval time)</span>
           </label>
           <input
             type="number"
@@ -192,7 +192,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
             max={30}
             value={reviewDays}
             onChange={(e) => setReviewDays(Number(e.target.value))}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
 
@@ -232,7 +232,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
       <button
         type="button"
         onClick={() => setShowAdvanced(v => !v)}
-        className="mt-4 text-xs text-adv-gray-med hover:text-adv-teal transition-colors"
+        className="mt-4 text-xs text-adv-gray hover:text-adv-teal transition-colors"
       >
         {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
       </button>
@@ -245,7 +245,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
             <select
               value={kanbanColumn}
               onChange={(e) => setKanbanColumn(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {KANBAN_COLUMNS.map(col => (
                 <option key={col.id} value={col.id}>{col.label}</option>
@@ -257,7 +257,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
           <div>
             <label className="mb-1 block text-xs font-medium text-adv-gray">
               Effort Hours
-              <span className="ml-1 text-adv-gray-med font-normal">(estimated)</span>
+              <span className="ml-1 text-adv-gray font-normal">(estimated)</span>
             </label>
             <input
               type="number"
@@ -266,7 +266,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
               value={effortHours}
               onChange={(e) => setEffortHours(e.target.value)}
               placeholder="e.g. 8"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
@@ -278,7 +278,7 @@ export default function DeadlineForm({ onAdded, onCancel, parentId, projects, la
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Internal notes, links, references..."
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
             />
           </div>
         </div>

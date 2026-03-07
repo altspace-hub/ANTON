@@ -55,7 +55,7 @@ export default function FileUploader({ files, onUpload, onRemove }: FileUploader
             : 'border-border hover:border-adv-gray-med'
         }`}
       >
-        <Upload className="mx-auto h-6 w-6 text-adv-gray-med" />
+        <Upload className="mx-auto h-6 w-6 text-adv-gray" />
         <p className="mt-2 text-xs text-adv-gray">
           Drag & drop files here, or{' '}
           <label className="cursor-pointer text-adv-teal hover:underline">
@@ -69,7 +69,7 @@ export default function FileUploader({ files, onUpload, onRemove }: FileUploader
             />
           </label>
         </p>
-        <p className="mt-1 text-[10px] text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           PDF, DOCX, TXT, MD, XLSX, CSV, HTML (max 50MB)
         </p>
       </div>
@@ -84,13 +84,13 @@ export default function FileUploader({ files, onUpload, onRemove }: FileUploader
             >
               <File className="h-3 w-3 text-adv-gray shrink-0" />
               <span className="flex-1 truncate text-adv-gray">{f.name}</span>
-              <span className="text-adv-gray-med">{(f.size / 1024).toFixed(0)}KB</span>
+              <span className="text-adv-gray">{(f.size / 1024).toFixed(0)}KB</span>
               {f.status === 'done' && <CheckCircle className="h-3 w-3 text-adv-green" />}
               {f.status === 'error' && <AlertCircle className="h-3 w-3 text-adv-red" />}
               {f.status === 'uploading' && (
                 <div className="h-3 w-3 animate-spin rounded-full border-2 border-adv-teal border-t-transparent" />
               )}
-              <button onClick={() => onRemove(f.id)} className="text-adv-gray-med hover:text-adv-red">
+              <button onClick={() => onRemove(f.id)} className="text-adv-gray hover:text-adv-red">
                 <X className="h-3 w-3" />
               </button>
             </div>

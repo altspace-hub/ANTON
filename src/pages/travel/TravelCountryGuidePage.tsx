@@ -226,7 +226,7 @@ export default function TravelCountryGuidePage() {
                 value={countryName}
                 onChange={(e) => setCountryName(e.target.value)}
                 placeholder="e.g. Japan, Thailand, Norway"
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </label>
             {error && <p className="text-sm text-adv-red">{error}</p>}
@@ -268,7 +268,7 @@ export default function TravelCountryGuidePage() {
             </div>
             <div>
               <h1 className="text-xl font-semibold text-adv-off-white">{guide.country_name}</h1>
-              <p className="text-xs text-adv-gray-med">
+              <p className="text-xs text-adv-gray">
                 Generated {new Date(guide.generated_at).toLocaleDateString('sv-SE')}
               </p>
             </div>

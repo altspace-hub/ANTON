@@ -62,7 +62,7 @@ export default function EngagementProposal({ onInputChange }: Props) {
           value={clientName}
           onChange={(e) => setClientName(e.target.value)}
           placeholder="e.g., Nordea, SEB, Handelsbanken"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -71,7 +71,7 @@ export default function EngagementProposal({ onInputChange }: Props) {
         <select
           value={engagementType}
           onChange={(e) => setEngagementType(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select...</option>
           {ENGAGEMENT_TYPES.map((t) => (
@@ -87,7 +87,7 @@ export default function EngagementProposal({ onInputChange }: Props) {
           value={proposalDeadline}
           onChange={(e) => setProposalDeadline(e.target.value)}
           placeholder="e.g., 2026-03-15 or 'End of March'"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -117,7 +117,7 @@ export default function EngagementProposal({ onInputChange }: Props) {
           value={budgetRange}
           onChange={(e) => setBudgetRange(e.target.value)}
           placeholder="e.g., EUR 50,000-80,000"
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -127,7 +127,7 @@ export default function EngagementProposal({ onInputChange }: Props) {
           value={specialRequirements}
           onChange={(e) => setSpecialRequirements(e.target.value)}
           placeholder="Any specific client requirements, procurement rules, format requirements..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>
@@ -138,7 +138,7 @@ export default function EngagementProposal({ onInputChange }: Props) {
           value={winThemes}
           onChange={(e) => setWinThemes(e.target.value)}
           placeholder="2-3 key messages that should come through in the proposal..."
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           rows={2}
         />
       </div>

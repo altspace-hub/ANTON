@@ -135,7 +135,7 @@ function StatCard({ icon, label, value, sub, loading }: StatCardProps) {
       ) : (
         <>
           <div className="text-2xl font-bold text-adv-off-white">{value}</div>
-          {sub && <div className="mt-1 text-xs text-adv-gray-med">{sub}</div>}
+          {sub && <div className="mt-1 text-xs text-adv-gray">{sub}</div>}
         </>
       )}
     </div>
@@ -372,7 +372,7 @@ export default function AnalyticsPage() {
       {/* Module usage — full width horizontal bar */}
       <ChartCard title="Most Used Modules" loading={loading}>
         {moduleChartData.length === 0 ? (
-          <div className="flex h-64 items-center justify-center text-sm text-adv-gray-med">
+          <div className="flex h-64 items-center justify-center text-sm text-adv-gray">
             No module usage data yet
           </div>
         ) : (
@@ -428,7 +428,7 @@ export default function AnalyticsPage() {
               <span className="text-adv-off-white font-semibold">{daysSaved} working day{daysSaved !== 1 ? 's' : ''}</span>{' '}
               of consulting time saved.
             </p>
-            <p className="mt-2 text-xs text-adv-gray-med">
+            <p className="mt-2 text-xs text-adv-gray">
               Based on typical compliance consulting rates of €{ratePerHour}/hour and an estimated {hoursPerSession} hours of
               equivalent manual work per AI session.
             </p>

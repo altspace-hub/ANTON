@@ -137,14 +137,14 @@ export default function RulesManager() {
             placeholder="Search rules..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white placeholder-adv-gray focus:outline-none focus:ring-2 focus:ring-adv-teal"
+            className="w-full pl-10 pr-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
           />
         </div>
 
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white focus:outline-none focus:ring-2 focus:ring-adv-teal"
+          className="px-4 py-2 bg-adv-card border border-border rounded-lg text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal"
         >
           {categories.map(cat => (
             <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -191,12 +191,12 @@ export default function RulesManager() {
                 <div className="flex items-center gap-2 mb-1">
                   <Shield className="h-3.5 w-3.5 text-adv-teal" />
                   <span className="text-sm font-medium text-adv-off-white">{s.name}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-adv-dark text-adv-gray capitalize">{s.category}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded capitalize ml-auto ${s.severity === 'error' ? 'text-adv-red' : 'text-adv-gold'}`}>{s.severity}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-adv-dark text-adv-gray capitalize">{s.category}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded capitalize ml-auto ${s.severity === 'error' ? 'text-adv-red' : 'text-adv-gold'}`}>{s.severity}</span>
                 </div>
                 <p className="text-xs text-adv-gray mb-1">{s.description}</p>
                 <p className="text-xs text-adv-off-white"><span className="text-adv-gray">Condition:</span> {s.condition}</p>
-                <p className="text-xs text-adv-gray-med mt-1 italic">{s.rationale}</p>
+                <p className="text-xs text-adv-gray mt-1 italic">{s.rationale}</p>
               </div>
             ))}
           </div>

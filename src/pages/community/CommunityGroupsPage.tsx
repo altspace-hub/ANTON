@@ -84,7 +84,7 @@ function CreateGroupModal({ onClose, onCreated }: { onClose: () => void; onCreat
           onKeyDown={e => e.key === 'Enter' && handleCreate()}
           placeholder="e.g. Futurechain FCP Team"
           maxLength={60}
-          className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-4 w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
 
         <label className="mb-1 block text-sm text-adv-gray">Description (optional)</label>
@@ -94,7 +94,7 @@ function CreateGroupModal({ onClose, onCreated }: { onClose: () => void; onCreat
           placeholder="What is this group for?"
           rows={2}
           maxLength={200}
-          className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="mb-4 w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
 
         <label className="mb-2 block text-sm text-adv-gray">Group color</label>

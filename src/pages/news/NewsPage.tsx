@@ -123,7 +123,7 @@ export default function NewsPage() {
                 key={action.to}
                 onClick={() => navigate(action.to)}
                 className="flex flex-col gap-3 rounded-xl border border-border bg-adv-card p-4 text-left
-                           transition-all hover:border-adv-teal/40 hover:bg-adv-card/80 focus:outline-none
+                           transition-all hover:border-adv-teal/40 hover:bg-adv-card/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1
                            focus:ring-2 focus:ring-adv-teal/50"
               >
                 <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${action.bg}`}>
@@ -159,7 +159,7 @@ export default function NewsPage() {
             </div>
           ) : stories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <AlertCircle className="h-8 w-8 text-adv-gray-med mb-2" />
+              <AlertCircle className="h-8 w-8 text-adv-gray mb-2" />
               <p className="text-sm text-adv-gray">
                 No stories yet. Stories are fetched from tracked sources.
               </p>
@@ -190,11 +190,11 @@ export default function NewsPage() {
                     <ExternalLink className="h-3.5 w-3.5 text-adv-gray shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                   <div className="flex items-center gap-3 mt-1.5">
-                    <span className="text-[10px] text-adv-gray-med">
+                    <span className="text-xs text-adv-gray">
                       {story.article_count} {story.article_count === 1 ? 'source' : 'sources'}
                     </span>
                     {story.topic_tags && (
-                      <span className="text-[10px] text-adv-gray-med truncate">
+                      <span className="text-xs text-adv-gray truncate">
                         {story.topic_tags.split(',').slice(0, 3).join(' · ')}
                       </span>
                     )}
@@ -210,7 +210,7 @@ export default function NewsPage() {
           onClick={() => navigate('/news/feed')}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-adv-teal/30
                      bg-adv-teal-soft py-4 text-sm font-medium text-adv-teal transition-all
-                     hover:bg-adv-teal-dim hover:border-adv-teal/60 focus:outline-none focus:ring-2
+                     hover:bg-adv-teal-dim hover:border-adv-teal/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2
                      focus:ring-adv-teal/50"
         >
           Open Today's Feed

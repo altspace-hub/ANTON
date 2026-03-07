@@ -318,13 +318,13 @@ export default function CoworkerGallery() {
           {/* Search */}
           <div className="mt-4 flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray" />
               <input
                 type="text"
                 placeholder="Search coworkers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-card py-2 pl-9 pr-4 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-card py-2 pl-9 pr-4 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
           </div>
@@ -353,7 +353,7 @@ export default function CoworkerGallery() {
       <div className="mx-auto max-w-6xl px-6 py-6">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Bot className="h-12 w-12 text-adv-gray-med mb-3" />
+            <Bot className="h-12 w-12 text-adv-gray mb-3" />
             <p className="text-adv-gray">No coworkers match your search.</p>
             <button
               onClick={() => { setActiveTag('all'); setSearchQuery(''); }}
@@ -391,7 +391,7 @@ export default function CoworkerGallery() {
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1 mb-4">
                     {template.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${colors.badge}`}>
+                      <span key={tag} className={`rounded-full px-2 py-0.5 text-xs font-medium ${colors.badge}`}>
                         {tag}
                       </span>
                     ))}
@@ -399,7 +399,7 @@ export default function CoworkerGallery() {
 
                   {/* Duration + CTA */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-xs text-adv-gray-med">
+                    <div className="flex items-center gap-1 text-xs text-adv-gray">
                       <Clock className="h-3 w-3" />
                       {template.estimated_duration}
                     </div>
@@ -518,7 +518,7 @@ function CoworkerCustomizer({ template, onBack }: CoworkerCustomizerProps) {
             type="text"
             value={workflowName}
             onChange={(e) => setWorkflowName(e.target.value)}
-            className="w-full rounded-lg border border-border bg-adv-dark py-2 px-3 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark py-2 px-3 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             placeholder="My workflow name..."
           />
         </div>
@@ -536,14 +536,14 @@ function CoworkerCustomizer({ template, onBack }: CoworkerCustomizerProps) {
               return (
                 <div key={step.id} className="flex items-start gap-3">
                   {/* Step number */}
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-adv-dark text-xs font-bold text-adv-gray-med">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-adv-dark text-xs font-bold text-adv-gray">
                     {index + 1}
                   </div>
                   {/* Step card */}
                   <div className="flex-1 rounded-lg border border-border bg-adv-dark p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-adv-off-white">{step.label}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.className}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
                         {badge.label}
                       </span>
                     </div>
@@ -567,7 +567,7 @@ function CoworkerCustomizer({ template, onBack }: CoworkerCustomizerProps) {
             <span className="text-sm text-adv-off-white">ANTON (Claude AI)</span>
             <span className="ml-auto text-xs text-adv-green">Configured</span>
           </div>
-          <p className="mt-2 text-xs text-adv-gray-med">
+          <p className="mt-2 text-xs text-adv-gray">
             This coworker uses ANTON's built-in AI. No additional connections required.
           </p>
         </div>
@@ -576,7 +576,7 @@ function CoworkerCustomizer({ template, onBack }: CoworkerCustomizerProps) {
         <div className="rounded-xl border border-border bg-adv-card p-5">
           <h2 className="mb-2 text-sm font-semibold text-adv-white">About This Coworker</h2>
           <p className="text-sm text-adv-gray">{template.description}</p>
-          <div className="mt-3 flex items-center gap-4 text-xs text-adv-gray-med">
+          <div className="mt-3 flex items-center gap-4 text-xs text-adv-gray">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {template.estimated_duration}

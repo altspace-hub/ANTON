@@ -39,7 +39,7 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
       <button
         type="button"
         onClick={() => handleToggle('work')}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'work'
             ? 'bg-adv-teal text-adv-dark'
             : 'text-adv-gray hover:text-adv-off-white'
@@ -53,7 +53,7 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
       <button
         type="button"
         onClick={() => handleToggle('school')}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'school'
             ? 'bg-adv-teal text-adv-dark'
             : 'text-adv-gray hover:text-adv-off-white'
@@ -67,7 +67,7 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
       <button
         type="button"
         onClick={() => handleToggle('life')}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'life'
             ? 'bg-adv-teal text-adv-dark'
             : 'text-adv-gray hover:text-adv-off-white'

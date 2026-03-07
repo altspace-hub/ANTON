@@ -77,7 +77,7 @@ export default function FeedbackWidget({ sessionId, moduleId, areaId, qualitySco
               className="text-base leading-none transition-colors"
               aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
             >
-              <span className={star <= displayStars ? 'text-adv-teal' : 'text-adv-gray-med'}>
+              <span className={star <= displayStars ? 'text-adv-teal' : 'text-adv-gray'}>
                 {star <= displayStars ? '★' : '☆'}
               </span>
             </button>
@@ -93,7 +93,7 @@ export default function FeedbackWidget({ sessionId, moduleId, areaId, qualitySco
             onChange={(e) => setComment(e.target.value)}
             placeholder="Any comments? (optional)"
             rows={2}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
           />
           <button
             onClick={handleSubmit}

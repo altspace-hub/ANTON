@@ -178,7 +178,7 @@ export default function AssignmentBuilderPage() {
         {/* Basic info */}
         <section className="rounded-xl border border-border bg-adv-card p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               {t('teacher.assignment.assignmentTitle')} *
             </label>
             <input
@@ -186,12 +186,12 @@ export default function AssignmentBuilderPage() {
               value={draft.title}
               onChange={(e) => setDraft((p) => ({ ...p, title: e.target.value }))}
               placeholder={t('teacher.assignment.titlePlaceholder')}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+            <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
               {draft.assignmentType === 'socratic'
                 ? t('teacher.assignment.socraticObjectives', 'Learning Objectives')
                 : t('teacher.assignment.instructions')}
@@ -205,7 +205,7 @@ export default function AssignmentBuilderPage() {
                   : t('teacher.assignment.instructionsPlaceholder')
               }
               rows={draft.assignmentType === 'socratic' ? 5 : 3}
-              className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             {draft.assignmentType === 'socratic' && (
               <p className="mt-1 text-xs text-adv-teal">
@@ -216,13 +216,13 @@ export default function AssignmentBuilderPage() {
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
                 {t('teacher.assignment.type')}
               </label>
               <select
                 value={draft.assignmentType}
                 onChange={(e) => setDraft((p) => ({ ...p, assignmentType: e.target.value as AssignmentDraft['assignmentType'] }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="homework">{t('teacher.assignment.typeHomework')}</option>
                 <option value="exam">{t('teacher.assignment.typeExam')}</option>
@@ -232,13 +232,13 @@ export default function AssignmentBuilderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
                 {t('teacher.assignment.assistanceLevel')}
               </label>
               <select
                 value={draft.assistanceLevel}
                 onChange={(e) => setDraft((p) => ({ ...p, assistanceLevel: e.target.value as AssistanceLevel }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 {(['L1', 'L2', 'L3', 'L4'] as AssistanceLevel[]).map((level) => (
                   <option key={level} value={level}>
@@ -249,14 +249,14 @@ export default function AssignmentBuilderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray-med mb-1">
+              <label className="block text-xs font-medium uppercase tracking-widest text-adv-gray mb-1">
                 {t('teacher.assignment.dueDate')}
               </label>
               <input
                 type="date"
                 value={draft.dueDate}
                 onChange={(e) => setDraft((p) => ({ ...p, dueDate: e.target.value }))}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function AssignmentBuilderPage() {
                 {t('teacher.assignment.questionContent')}s ({draft.questions.length})
               </h2>
               {totalMarks > 0 && (
-                <p className="text-xs text-adv-gray-med">Total: {totalMarks} {t('teacher.assignment.questionMarks')}</p>
+                <p className="text-xs text-adv-gray">Total: {totalMarks} {t('teacher.assignment.questionMarks')}</p>
               )}
             </div>
           </div>
@@ -342,7 +342,7 @@ function QuestionCard({ question, index, onChange, onRemove }: QuestionCardProps
   return (
     <div className="rounded-xl border border-border bg-adv-card p-4 space-y-3">
       <div className="flex items-start gap-2">
-        <GripVertical className="mt-1 h-4 w-4 shrink-0 text-adv-gray-med cursor-grab" />
+        <GripVertical className="mt-1 h-4 w-4 shrink-0 text-adv-gray cursor-grab" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-medium uppercase text-adv-teal">
@@ -355,10 +355,10 @@ function QuestionCard({ question, index, onChange, onRemove }: QuestionCardProps
                 onChange={(e) => onChange({ marks: parseInt(e.target.value) || 1 })}
                 min={1}
                 max={20}
-                className="w-14 rounded border border-border bg-adv-dark px-2 py-0.5 text-xs text-adv-off-white focus:outline-none"
+                className="w-14 rounded border border-border bg-adv-dark px-2 py-0.5 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 aria-label={t('teacher.assignment.questionMarks')}
               />
-              <span className="text-xs text-adv-gray-med">{t('teacher.assignment.questionMarks')}</span>
+              <span className="text-xs text-adv-gray">{t('teacher.assignment.questionMarks')}</span>
             </div>
           </div>
 
@@ -367,14 +367,14 @@ function QuestionCard({ question, index, onChange, onRemove }: QuestionCardProps
             onChange={(e) => onChange({ content: e.target.value })}
             placeholder={t('teacher.assignment.questionContent') + '...'}
             rows={2}
-            className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
 
           {question.type === 'multiple_choice' && question.options && (
             <div className="mt-2 space-y-1">
               {question.options.map((opt, oi) => (
                 <div key={oi} className="flex items-center gap-2">
-                  <span className="text-xs text-adv-gray-med w-4">{String.fromCharCode(65 + oi)})</span>
+                  <span className="text-xs text-adv-gray w-4">{String.fromCharCode(65 + oi)})</span>
                   <input
                     type="text"
                     value={opt}
@@ -384,7 +384,7 @@ function QuestionCard({ question, index, onChange, onRemove }: QuestionCardProps
                       onChange({ options: newOptions });
                     }}
                     placeholder={`Option ${String.fromCharCode(65 + oi)}`}
-                    className="flex-1 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none"
+                    className="flex-1 rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
               ))}

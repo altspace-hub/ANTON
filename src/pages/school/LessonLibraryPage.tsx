@@ -103,11 +103,11 @@ export default function LessonLibraryPage() {
           </div>
         ) : lessons.length === 0 ? (
           <div className="rounded-xl border border-border bg-adv-card p-10 text-center">
-            <BookMarked className="mx-auto mb-3 h-10 w-10 text-adv-gray-med" />
+            <BookMarked className="mx-auto mb-3 h-10 w-10 text-adv-gray" />
             <p className="text-sm text-adv-gray">
               {t('teacher.lesson.noLessons', "You haven't built any lessons yet.")}
             </p>
-            <p className="mt-1 text-xs text-adv-gray-med">
+            <p className="mt-1 text-xs text-adv-gray">
               {t('teacher.lesson.noLessonsHelp', 'Create structured lessons that Alma delivers conversationally to your students.')}
             </p>
             <Link
@@ -163,7 +163,7 @@ export default function LessonLibraryPage() {
 
                 {/* Learning objectives preview */}
                 {lesson.learningObjectives.length > 0 && (
-                  <p className="mt-2 text-xs text-adv-gray-med line-clamp-1">
+                  <p className="mt-2 text-xs text-adv-gray line-clamp-1">
                     {t('teacher.lesson.obj', 'Obj:')} {lesson.learningObjectives.slice(0, 2).join(' · ')}
                     {lesson.learningObjectives.length > 2 && ` +${lesson.learningObjectives.length - 2}`}
                   </p>
@@ -183,7 +183,7 @@ export default function LessonLibraryPage() {
                       <select
                         value={assignClassId}
                         onChange={e => setAssignClassId(e.target.value)}
-                        className="rounded-lg border border-border bg-adv-dark px-2 py-1 text-xs text-adv-white focus:border-adv-teal focus:outline-none"
+                        className="rounded-lg border border-border bg-adv-dark px-2 py-1 text-xs text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         autoFocus
                       >
                         <option value="">{t('teacher.lesson.selectClass', 'Select class…')}</option>

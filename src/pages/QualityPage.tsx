@@ -461,7 +461,7 @@ export default function QualityPage() {
                       <span>{item.sample_size} score{item.sample_size !== 1 ? 's' : ''}</span>
                       {(() => {
                         const fb = leaderboardFeedback[item.module_id];
-                        if (!fb || fb.count === 0) return <span className="text-adv-gray-med">—</span>;
+                        if (!fb || fb.count === 0) return <span className="text-adv-gray">—</span>;
                         return (
                           <span className="text-adv-gold">
                             ★ {fb.avgRating.toFixed(1)} ({fb.count})
@@ -726,7 +726,7 @@ export default function QualityPage() {
                         [threshold.key]: parseFloat(e.target.value),
                       })
                     }
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
               ))}

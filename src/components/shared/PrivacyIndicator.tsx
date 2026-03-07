@@ -42,7 +42,7 @@ export default function PrivacyIndicator() {
       ) : (
         <Cloud className="h-3 w-3 text-adv-teal/70" />
       )}
-      <span className="text-[10px] text-adv-teal/80">
+      <span className="text-xs text-adv-teal/80">
         {fullyOffline ? 'Offline' : `Local + ${providerLabel}`}
       </span>
     </div>

@@ -85,7 +85,7 @@ export default function CitationVerifier({ text, embedded }: CitationVerifierPro
 
           {/* No citations found */}
           {status === 'done' && citations.length === 0 && (
-            <span className="text-xs text-adv-gray-med ml-1">No regulatory citations detected.</span>
+            <span className="text-xs text-adv-gray ml-1">No regulatory citations detected.</span>
           )}
         </div>
 
@@ -94,7 +94,7 @@ export default function CitationVerifier({ text, embedded }: CitationVerifierPro
           {status === 'done' && citations.length > 0 && (
             <button
               onClick={() => setExpanded((v) => !v)}
-              className="text-adv-gray-med hover:text-adv-off-white transition-colors"
+              className="text-adv-gray hover:text-adv-off-white transition-colors"
               aria-label={expanded ? 'Collapse citation list' : 'Expand citation list'}
             >
               {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
@@ -152,7 +152,7 @@ export default function CitationVerifier({ text, embedded }: CitationVerifierPro
                   {c.citation}
                 </span>
                 {c.comment && (
-                  <p className="mt-0.5 text-adv-gray-med leading-relaxed">{c.comment}</p>
+                  <p className="mt-0.5 text-adv-gray leading-relaxed">{c.comment}</p>
                 )}
               </div>
             </div>

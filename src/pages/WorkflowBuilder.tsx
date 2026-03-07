@@ -307,7 +307,7 @@ export default function WorkflowBuilder() {
               value={workflow.label}
               onChange={(e) => updateWorkflow({ label: e.target.value, shortLabel: e.target.value.slice(0, 20) })}
               placeholder="e.g., Client Onboarding Review"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div>
@@ -315,7 +315,7 @@ export default function WorkflowBuilder() {
             <select
               value={workflow.category}
               onChange={(e) => updateWorkflow({ category: e.target.value as WorkflowDefinition['category'] })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {CATEGORY_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -329,7 +329,7 @@ export default function WorkflowBuilder() {
             value={workflow.description}
             onChange={(e) => updateWorkflow({ description: e.target.value })}
             placeholder="Describe what this workflow does..."
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             rows={2}
           />
         </div>
@@ -340,7 +340,7 @@ export default function WorkflowBuilder() {
             value={workflow.estimatedTime}
             onChange={(e) => updateWorkflow({ estimatedTime: e.target.value })}
             placeholder="e.g., 5-10 min"
-            className="w-48 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-48 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
       </div>
@@ -413,7 +413,7 @@ export default function WorkflowBuilder() {
                 className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-adv-dark-2/50 transition-colors"
                 onClick={() => setExpandedStep(isExpanded ? null : step.id)}
               >
-                <GripVertical className="h-4 w-4 text-adv-gray-med shrink-0" />
+                <GripVertical className="h-4 w-4 text-adv-gray shrink-0" />
                 <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
                   isCurrentlyStreaming ? 'bg-adv-teal/20 text-adv-teal animate-pulse' : 'bg-adv-teal/10 text-adv-teal'
                 }`}>
@@ -421,27 +421,27 @@ export default function WorkflowBuilder() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-medium text-adv-gray-med">Step {idx + 1}</span>
+                    <span className="text-xs font-medium text-adv-gray">Step {idx + 1}</span>
                     <span className="text-xs font-medium text-adv-off-white truncate">{step.label}</span>
-                    <span className="rounded bg-adv-dark px-1.5 py-0.5 text-[10px] text-adv-gray-med">{step.type}</span>
+                    <span className="rounded bg-adv-dark px-1.5 py-0.5 text-xs text-adv-gray">{step.type}</span>
                     {/* Connection required badge */}
                     {stepTypeDef?.connectionRequired && (
-                      <span className="rounded border border-adv-blue/30 bg-adv-blue/10 px-1.5 py-0.5 text-[10px] text-adv-blue">
+                      <span className="rounded border border-adv-blue/30 bg-adv-blue/10 px-1.5 py-0.5 text-xs text-adv-blue">
                         {stepTypeDef.connectionRequired}
                       </span>
                     )}
                     {/* Area badge — shown when a module is linked to this step */}
                     {step.config.areaId && (
-                      <span className="rounded bg-adv-teal/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-teal border border-adv-teal/20">
+                      <span className="rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal border border-adv-teal/20">
                         [{AREAS.find((a) => a.id === step.config.areaId)?.shortLabel ?? step.config.areaId}]
                         {step.config.moduleId && ` ${MODULES.find((m) => m.id === step.config.moduleId)?.shortLabel ?? step.config.moduleId}`}
                       </span>
                     )}
                     {isCurrentlyStreaming && (
-                      <span className="text-[10px] text-adv-teal">running...</span>
+                      <span className="text-xs text-adv-teal">running...</span>
                     )}
                     {stepOutput && !isCurrentlyStreaming && (
-                      <span className="rounded bg-adv-green/10 px-1.5 py-0.5 text-[10px] text-adv-green">done</span>
+                      <span className="rounded bg-adv-green/10 px-1.5 py-0.5 text-xs text-adv-green">done</span>
                     )}
                   </div>
                 </div>
@@ -449,20 +449,20 @@ export default function WorkflowBuilder() {
                   <button
                     onClick={(e) => { e.stopPropagation(); moveStep(idx, -1); }}
                     disabled={idx === 0}
-                    className="p-1 text-adv-gray-med hover:text-adv-off-white disabled:opacity-30 transition-colors"
+                    className="p-1 text-adv-gray hover:text-adv-off-white disabled:opacity-30 transition-colors"
                   >
                     <ChevronUp className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); moveStep(idx, 1); }}
                     disabled={idx === workflow.steps.length - 1}
-                    className="p-1 text-adv-gray-med hover:text-adv-off-white disabled:opacity-30 transition-colors"
+                    className="p-1 text-adv-gray hover:text-adv-off-white disabled:opacity-30 transition-colors"
                   >
                     <ChevronDown className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); removeStep(step.id); }}
-                    className="p-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                    className="p-1 text-adv-gray hover:text-adv-red transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -474,7 +474,7 @@ export default function WorkflowBuilder() {
                 <div className="border-t border-border/50 bg-adv-dark/40 px-4 py-3">
                   <div className="mb-1 flex items-center gap-1.5">
                     <div className={`h-1.5 w-1.5 rounded-full ${isCurrentlyStreaming ? 'animate-pulse bg-adv-teal' : 'bg-adv-green'}`} />
-                    <span className="text-[10px] font-medium text-adv-gray-med">
+                    <span className="text-xs font-medium text-adv-gray">
                       {isCurrentlyStreaming ? 'Anton is working...' : 'Output'}
                     </span>
                   </div>
@@ -502,7 +502,7 @@ export default function WorkflowBuilder() {
                           ),
                         });
                       }}
-                      className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       {STEP_TYPE_CATEGORIES.map((cat) => (
                         <optgroup key={cat} label={`── ${cat} ──`}>
@@ -519,12 +519,12 @@ export default function WorkflowBuilder() {
                     <div className="rounded-lg border border-adv-teal/20 bg-adv-teal-soft px-3 py-2">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Info className="h-3 w-3 text-adv-teal" />
-                        <span className="text-[10px] font-medium text-adv-teal">Available context variables</span>
+                        <span className="text-xs font-medium text-adv-teal">Available context variables</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        <span className="rounded bg-adv-dark px-1.5 py-0.5 font-mono text-[10px] text-adv-gray">{'{{input.*}}'}</span>
+                        <span className="rounded bg-adv-dark px-1.5 py-0.5 font-mono text-xs text-adv-gray">{'{{input.*}}'}</span>
                         {workflow.steps.slice(0, idx).map((prevStep, prevIdx) => (
-                          <span key={prevStep.id} className="rounded bg-adv-dark px-1.5 py-0.5 font-mono text-[10px] text-adv-teal">
+                          <span key={prevStep.id} className="rounded bg-adv-dark px-1.5 py-0.5 font-mono text-xs text-adv-teal">
                             {`{{step_${prevIdx + 1}.*}}`}
                           </span>
                         ))}
@@ -540,7 +540,7 @@ export default function WorkflowBuilder() {
                         type="text"
                         value={step.label}
                         onChange={(e) => updateStep(step.id, { label: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
                     <div>
@@ -549,7 +549,7 @@ export default function WorkflowBuilder() {
                         type="text"
                         value={step.description}
                         onChange={(e) => updateStep(step.id, { description: e.target.value })}
-                        className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       />
                     </div>
                   </div>
@@ -561,18 +561,18 @@ export default function WorkflowBuilder() {
                       <div className="rounded-lg border border-border bg-adv-dark/50 p-3 space-y-2">
                         <label className="block text-[11px] font-medium text-adv-off-white">
                           Link to Module (optional)
-                          <span className="ml-1.5 text-adv-gray-med font-normal">— use any module from any area to inherit its system prompt</span>
+                          <span className="ml-1.5 text-adv-gray font-normal">— use any module from any area to inherit its system prompt</span>
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="mb-1 block text-[10px] text-adv-gray">Area</label>
+                            <label className="mb-1 block text-xs text-adv-gray">Area</label>
                             <select
                               value={step.config.areaId || ''}
                               onChange={(e) => {
                                 const areaId = e.target.value || undefined;
                                 updateStepConfig(step.id, { areaId, moduleId: undefined });
                               }}
-                              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                             >
                               <option value="">— All areas —</option>
                               {AREAS.map((area) => (
@@ -581,7 +581,7 @@ export default function WorkflowBuilder() {
                             </select>
                           </div>
                           <div>
-                            <label className="mb-1 block text-[10px] text-adv-gray">Module</label>
+                            <label className="mb-1 block text-xs text-adv-gray">Module</label>
                             <select
                               value={step.config.moduleId || ''}
                               onChange={(e) => {
@@ -595,7 +595,7 @@ export default function WorkflowBuilder() {
                                   areaId: foundArea?.id ?? step.config.areaId,
                                 });
                               }}
-                              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                             >
                               <option value="">— No module —</option>
                               {/* If an area is selected, show only that area's modules; otherwise show all */}
@@ -616,7 +616,7 @@ export default function WorkflowBuilder() {
                           </div>
                         </div>
                         {step.config.moduleId && (
-                          <p className="text-[10px] text-adv-gray-med">
+                          <p className="text-xs text-adv-gray">
                             {MODULES.find((m) => m.id === step.config.moduleId)?.description}
                           </p>
                         )}
@@ -627,7 +627,7 @@ export default function WorkflowBuilder() {
                           <select
                             value={step.config.thinking || 'think_hard'}
                             onChange={(e) => updateStepConfig(step.id, { thinking: e.target.value })}
-                            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                           >
                             {THINKING_OPTIONS.map((t) => (
                               <option key={t} value={t}>{t}</option>
@@ -639,7 +639,7 @@ export default function WorkflowBuilder() {
                           <select
                             value={step.config.creativity || 'balanced'}
                             onChange={(e) => updateStepConfig(step.id, { creativity: e.target.value })}
-                            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                           >
                             {CREATIVITY_OPTIONS.map((c) => (
                               <option key={c} value={c}>{c}</option>
@@ -650,13 +650,13 @@ export default function WorkflowBuilder() {
                       <div>
                         <label className="mb-1 block text-[11px] font-medium text-adv-gray">
                           Prompt template
-                          <span className="ml-1 text-adv-gray-med">Use {'{{fieldId}}'} to reference input values</span>
+                          <span className="ml-1 text-adv-gray">Use {'{{fieldId}}'} to reference input values</span>
                         </label>
                         <textarea
                           value={step.config.promptTemplate || ''}
                           onChange={(e) => updateStepConfig(step.id, { promptTemplate: e.target.value })}
                           placeholder="Write the prompt for Claude..."
-                          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+                          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
                           rows={6}
                         />
                       </div>
@@ -684,7 +684,7 @@ export default function WorkflowBuilder() {
                               ],
                             });
                           }}
-                          className="text-[10px] text-adv-teal hover:text-adv-teal-dark transition-colors"
+                          className="text-xs text-adv-teal hover:text-adv-teal-dark transition-colors"
                         >
                           + Add field
                         </button>
@@ -701,7 +701,7 @@ export default function WorkflowBuilder() {
                                 updateStepConfig(step.id, { inputFields: fields });
                               }}
                               placeholder="Field ID"
-                              className="rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none font-mono"
+                              className="rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
                             />
                             <input
                               type="text"
@@ -712,7 +712,7 @@ export default function WorkflowBuilder() {
                                 updateStepConfig(step.id, { inputFields: fields });
                               }}
                               placeholder="Label"
-                              className="rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                              className="rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                             />
                             <select
                               value={field.type}
@@ -721,7 +721,7 @@ export default function WorkflowBuilder() {
                                 fields[fIdx] = { ...fields[fIdx], type: e.target.value as 'text' | 'textarea' | 'select' | 'file' | 'url' };
                                 updateStepConfig(step.id, { inputFields: fields });
                               }}
-                              className="rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                              className="rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                             >
                               {INPUT_FIELD_TYPES.map((t) => (
                                 <option key={t} value={t}>{t}</option>
@@ -733,7 +733,7 @@ export default function WorkflowBuilder() {
                               const fields = (step.config.inputFields || []).filter((_, i) => i !== fIdx);
                               updateStepConfig(step.id, { inputFields: fields });
                             }}
-                            className="mt-1 text-adv-gray-med hover:text-adv-red transition-colors"
+                            className="mt-1 text-adv-gray hover:text-adv-red transition-colors"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -749,7 +749,7 @@ export default function WorkflowBuilder() {
                       <select
                         value={step.config.exportFormat || 'docx'}
                         onChange={(e) => updateStepConfig(step.id, { exportFormat: e.target.value })}
-                        className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                        className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       >
                         {EXPORT_FORMAT_OPTIONS.map((f) => (
                           <option key={f} value={f}>.{f}</option>
@@ -918,14 +918,14 @@ export default function WorkflowBuilder() {
           <div className="rounded-xl border border-adv-teal/30 bg-adv-card p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-xs font-semibold text-adv-off-white">Choose Step Type</h3>
-              <button onClick={() => setShowStepTypePicker(false)} className="text-[10px] text-adv-gray-med hover:text-adv-off-white">
+              <button onClick={() => setShowStepTypePicker(false)} className="text-xs text-adv-gray hover:text-adv-off-white">
                 Cancel
               </button>
             </div>
             <div className="space-y-4">
               {STEP_TYPE_CATEGORIES.map((cat) => (
                 <div key={cat}>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">{cat}</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">{cat}</p>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                     {STEP_TYPE_OPTIONS.filter((t) => t.category === cat).map(({ type, label, icon: Icon, description, connectionRequired }) => (
                       <button
@@ -939,9 +939,9 @@ export default function WorkflowBuilder() {
                           <span className="text-[11px] font-medium text-adv-off-white group-hover:text-adv-white">{label}</span>
                         </div>
                         {connectionRequired && (
-                          <span className="text-[9px] text-adv-blue">needs {connectionRequired}</span>
+                          <span className="text-xs text-adv-blue">needs {connectionRequired}</span>
                         )}
-                        <span className="text-[9px] text-adv-gray-med leading-tight">{description}</span>
+                        <span className="text-xs text-adv-gray leading-tight">{description}</span>
                       </button>
                     ))}
                   </div>

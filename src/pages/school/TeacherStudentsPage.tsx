@@ -108,7 +108,7 @@ export default function TeacherStudentsPage() {
         {/* No classes */}
         {!isLoading && !error && classes.length === 0 && (
           <div className="rounded-xl border border-border bg-adv-card p-10 text-center">
-            <Users className="mx-auto mb-3 h-10 w-10 text-adv-gray-med" />
+            <Users className="mx-auto mb-3 h-10 w-10 text-adv-gray" />
             <p className="text-sm text-adv-gray">{t('teacher.dashboard.noClasses', 'No classes yet.')}</p>
             <Link
               to="/school/teacher/classes/new"
@@ -128,7 +128,7 @@ export default function TeacherStudentsPage() {
                   key={cls.id}
                   type="button"
                   onClick={() => setActiveClassId(cls.id)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal ${
                     activeClassId === cls.id
                       ? 'bg-adv-teal/10 text-adv-teal'
                       : 'text-adv-gray hover:text-adv-off-white'
@@ -137,7 +137,7 @@ export default function TeacherStudentsPage() {
                   <BookOpen className="h-3.5 w-3.5" />
                   {cls.name}
                   <span className={`rounded-full px-1.5 py-0.5 text-xs ${
-                    activeClassId === cls.id ? 'bg-adv-teal/20 text-adv-teal' : 'bg-adv-dark text-adv-gray-med'
+                    activeClassId === cls.id ? 'bg-adv-teal/20 text-adv-teal' : 'bg-adv-dark text-adv-gray'
                   }`}>
                     {(cls.students ?? []).length}
                   </span>
@@ -150,12 +150,12 @@ export default function TeacherStudentsPage() {
               <div className="flex items-center justify-between rounded-lg border border-border bg-adv-card px-4 py-3">
                 <div className="text-sm">
                   <span className="font-medium text-adv-off-white">{activeClass.name}</span>
-                  <span className="ml-2 text-adv-gray-med">
+                  <span className="ml-2 text-adv-gray">
                     {t(`subject.${activeClass.subjectId}`, activeClass.subjectId)} · {activeClass.educationTier}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-adv-gray-med">
+                  <span className="text-xs text-adv-gray">
                     Code: <code className="font-mono text-adv-teal">{activeClass.classCode}</code>
                   </span>
                   <Link
@@ -174,7 +174,7 @@ export default function TeacherStudentsPage() {
               <>
                 {(activeClass.students ?? []).length === 0 ? (
                   <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-                    <Users className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
+                    <Users className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
                     <p className="text-sm text-adv-gray">
                       No students enrolled yet. Share the class code <code className="font-mono text-adv-teal">{activeClass.classCode}</code> with your students.
                     </p>
@@ -182,7 +182,7 @@ export default function TeacherStudentsPage() {
                 ) : (
                   <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
                     {/* Table header */}
-                    <div className="grid grid-cols-[1fr_120px_80px_100px] gap-4 border-b border-border bg-adv-dark px-5 py-2.5 text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+                    <div className="grid grid-cols-[1fr_120px_80px_100px] gap-4 border-b border-border bg-adv-dark px-5 py-2.5 text-xs font-medium uppercase tracking-widest text-adv-gray">
                       <span>Student</span>
                       <span>Progress</span>
                       <span>Sessions</span>
@@ -208,7 +208,7 @@ export default function TeacherStudentsPage() {
                                   {student.display_name || student.username}
                                 </p>
                                 {student.display_name && (
-                                  <p className="text-xs text-adv-gray-med truncate">@{student.username}</p>
+                                  <p className="text-xs text-adv-gray truncate">@{student.username}</p>
                                 )}
                               </div>
                             </div>

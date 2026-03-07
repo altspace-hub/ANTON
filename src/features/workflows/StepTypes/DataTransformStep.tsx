@@ -66,9 +66,9 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
           value={config.inputDatasetId || ''}
           onChange={(e) => onUpdate({ inputDatasetId: e.target.value })}
           placeholder="{{step_1.dataset.id}}"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
-        <p className="mt-1 text-[10px] text-adv-gray-med">Reference dataset from previous import step</p>
+        <p className="mt-1 text-xs text-adv-gray">Reference dataset from previous import step</p>
       </div>
 
       {/* Operations List */}
@@ -83,7 +83,7 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                   e.target.value = '';
                 }
               }}
-              className="rounded-lg border border-border bg-adv-dark px-2 py-1 pr-6 text-[10px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-2 py-1 pr-6 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">+ Add Operation</option>
               <option value="rename_column">Rename Column</option>
@@ -99,7 +99,7 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
 
         {operations.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border bg-adv-dark-2 p-4 text-center">
-            <p className="text-[11px] text-adv-gray-med">No transformations yet. Add operations above.</p>
+            <p className="text-[11px] text-adv-gray">No transformations yet. Add operations above.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -109,7 +109,7 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                   <span className="text-[11px] font-medium text-adv-teal">{op.type.replace(/_/g, ' ').toUpperCase()}</span>
                   <button
                     onClick={() => removeOperation(idx)}
-                    className="text-adv-gray-med hover:text-adv-red transition-colors"
+                    className="text-adv-gray hover:text-adv-red transition-colors"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -123,14 +123,14 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                       value={op.oldName || ''}
                       onChange={(e) => updateOperation(idx, { oldName: e.target.value })}
                       placeholder="Old name"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     <input
                       type="text"
                       value={op.newName || ''}
                       onChange={(e) => updateOperation(idx, { newName: e.target.value })}
                       placeholder="New name"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                   </div>
                 )}
@@ -142,7 +142,7 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                     value={(op.columns || []).join(', ')}
                     onChange={(e) => updateOperation(idx, { columns: e.target.value.split(',').map((c) => c.trim()) })}
                     placeholder="col1, col2, col3"
-                    className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 )}
 
@@ -154,12 +154,12 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                       value={op.column || ''}
                       onChange={(e) => updateOperation(idx, { column: e.target.value })}
                       placeholder="Column name"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     <select
                       value={op.toType || 'string'}
                       onChange={(e) => updateOperation(idx, { toType: e.target.value })}
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       <option value="string">String</option>
                       <option value="number">Number</option>
@@ -177,12 +177,12 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                       value={op.condition?.column || ''}
                       onChange={(e) => updateOperation(idx, { condition: { ...op.condition, column: e.target.value } })}
                       placeholder="Column"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     <select
                       value={op.condition?.operator || 'equals'}
                       onChange={(e) => updateOperation(idx, { condition: { ...op.condition, operator: e.target.value } })}
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       <option value="equals">=</option>
                       <option value="not_equals">≠</option>
@@ -195,7 +195,7 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                       value={op.condition?.value || ''}
                       onChange={(e) => updateOperation(idx, { condition: { ...op.condition, value: e.target.value } })}
                       placeholder="Value"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                   </div>
                 )}
@@ -208,14 +208,14 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                       value={op.name || ''}
                       onChange={(e) => updateOperation(idx, { name: e.target.value })}
                       placeholder="New column name"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     <input
                       type="text"
                       value={op.formula || ''}
                       onChange={(e) => updateOperation(idx, { formula: e.target.value })}
                       placeholder="Formula: amount * 1.25 or if(amount > 1000, 'high', 'low')"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
                     />
                   </div>
                 )}
@@ -228,12 +228,12 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                       value={op.column || ''}
                       onChange={(e) => updateOperation(idx, { column: e.target.value })}
                       placeholder="Column name"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     <select
                       value={op.order || 'asc'}
                       onChange={(e) => updateOperation(idx, { order: e.target.value })}
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       <option value="asc">Ascending</option>
                       <option value="desc">Descending</option>
@@ -249,12 +249,12 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
                       value={(op.keys || []).join(', ')}
                       onChange={(e) => updateOperation(idx, { keys: e.target.value.split(',').map((k) => k.trim()) })}
                       placeholder="Key columns: id, email"
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     <select
                       value={op.strategy || 'keep_first'}
                       onChange={(e) => updateOperation(idx, { strategy: e.target.value })}
-                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none"
+                      className="w-full rounded border border-border bg-adv-dark px-2 py-1 text-[11px] text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     >
                       <option value="keep_first">Keep First</option>
                       <option value="keep_last">Keep Last</option>
@@ -275,7 +275,7 @@ export default function DataTransformStep({ step, onUpdate }: DataTransformStepP
           value={config.outputVariable || 'transformed_dataset'}
           onChange={(e) => onUpdate({ outputVariable: e.target.value })}
           placeholder="transformed_dataset"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
     </div>

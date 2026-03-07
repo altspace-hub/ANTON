@@ -603,7 +603,7 @@ export default function DataInsightsPage() {
             onChange={(e) => setPastedData(e.target.value)}
             placeholder="Paste CSV, table, or structured data here...&#10;&#10;Example:&#10;Month,SAR Count,Value (EUR)&#10;Jan 2024,12,450000&#10;Feb 2024,18,820000"
             rows={8}
-            className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-4 py-3 font-mono text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-4 py-3 font-mono text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-adv-dark-2 px-6 py-10 text-center">
@@ -620,13 +620,13 @@ export default function DataInsightsPage() {
             >
               Choose file
             </label>
-            <p className="mt-2 text-xs text-adv-gray-med">Accepts .csv, .xlsx, .txt</p>
+            <p className="mt-2 text-xs text-adv-gray">Accepts .csv, .xlsx, .txt</p>
             {uploadedFileName && (
               <div className="mt-3">
                 <p className="text-sm text-adv-off-white">
                   Loaded: <span className="font-semibold">{uploadedFileName}</span>
                   {uploadedContent && (
-                    <span className="ml-2 text-xs text-adv-gray-med">
+                    <span className="ml-2 text-xs text-adv-gray">
                       ({uploadedContent.split('\n').length} rows, {Math.round(uploadedContent.length / 1024)}KB)
                     </span>
                   )}
@@ -652,7 +652,7 @@ export default function DataInsightsPage() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="e.g. Show trends over time, compare by category..."
-            className="w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark-2 px-4 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             onKeyDown={(e) => { if (e.key === 'Enter') { void handleRun(); } }}
           />
 
@@ -672,7 +672,7 @@ export default function DataInsightsPage() {
 
         {/* Transparency toggle */}
         <div className="mt-3 space-y-1">
-          <div className="text-[11px] text-adv-gray-med">Transparency</div>
+          <div className="text-[11px] text-adv-gray">Transparency</div>
           <div className="flex gap-1.5">
             {([
               { level: 0 as const, label: 'Off' },
@@ -696,7 +696,7 @@ export default function DataInsightsPage() {
         </div>
 
         {/* Model note */}
-        <p className="mt-3 text-xs text-adv-gray-med">
+        <p className="mt-3 text-xs text-adv-gray">
           Anton will analyze your data and generate interactive charts using Claude Opus 4.6.
         </p>
 
@@ -735,7 +735,7 @@ export default function DataInsightsPage() {
             <span className="text-xs text-adv-teal">Anton is analyzing your data...</span>
           </div>
           {streamingText && (
-            <div className="max-h-32 overflow-hidden text-xs text-adv-gray-med font-mono">
+            <div className="max-h-32 overflow-hidden text-xs text-adv-gray font-mono">
               {streamingText.slice(-300)}
             </div>
           )}

@@ -18,7 +18,7 @@ export function FileReadStep({ step, onUpdate, connections = [] }: FileReadStepP
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 rounded-md border border-adv-blue/30 bg-adv-blue/10 px-3 py-1.5">
-        <span className="text-[10px] font-medium text-adv-blue">Connection required: Filesystem</span>
+        <span className="text-xs font-medium text-adv-blue">Connection required: Filesystem</span>
       </div>
 
       <div>
@@ -26,7 +26,7 @@ export function FileReadStep({ step, onUpdate, connections = [] }: FileReadStepP
         <select
           value={step.config.connectionId || ''}
           onChange={(e) => onUpdate({ connectionId: e.target.value || undefined })}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">— Select connection —</option>
           {fsConnections.map((c) => (
@@ -41,42 +41,42 @@ export function FileReadStep({ step, onUpdate, connections = [] }: FileReadStepP
       <div>
         <label className="mb-1 block text-[11px] font-medium text-adv-gray">
           Path Pattern
-          <span className="ml-1 text-adv-gray-med font-normal">Glob pattern, supports {'{{variable}}'}</span>
+          <span className="ml-1 text-adv-gray font-normal">Glob pattern, supports {'{{variable}}'}</span>
         </label>
         <input
           type="text"
           value={step.config.pathPattern || ''}
           onChange={(e) => onUpdate({ pathPattern: e.target.value })}
           placeholder="/reports/{{step_1.client_id}}/*.pdf"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
 
       <div>
         <label className="mb-1 block text-[11px] font-medium text-adv-gray">
           File Filter (optional)
-          <span className="ml-1 text-adv-gray-med font-normal">Comma-separated extensions</span>
+          <span className="ml-1 text-adv-gray font-normal">Comma-separated extensions</span>
         </label>
         <input
           type="text"
           value={step.config.fileFilter || ''}
           onChange={(e) => onUpdate({ fileFilter: e.target.value })}
           placeholder=".pdf, .docx, .xlsx"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
       <div>
         <label className="mb-1 block text-[11px] font-medium text-adv-gray">
           Output Variable Name
-          <span className="ml-1 text-adv-gray-med font-normal">Reference as {'{{<name>.files[0].content}}'}</span>
+          <span className="ml-1 text-adv-gray font-normal">Reference as {'{{<name>.files[0].content}}'}</span>
         </label>
         <input
           type="text"
           value={step.config.outputVariable || ''}
           onChange={(e) => onUpdate({ outputVariable: e.target.value })}
           placeholder="file_content"
-          className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
     </div>

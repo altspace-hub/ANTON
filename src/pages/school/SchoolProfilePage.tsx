@@ -185,7 +185,7 @@ export default function SchoolProfilePage() {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setIsEditing(false); }}
-                    className="flex-1 rounded-lg border border-adv-teal bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white focus:outline-none"
+                    className="flex-1 rounded-lg border border-adv-teal bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     autoFocus
                   />
                   <button
@@ -232,14 +232,14 @@ export default function SchoolProfilePage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-border bg-adv-dark p-3 text-center">
               <MessageSquare className="mx-auto mb-1 h-4 w-4 text-adv-teal" />
-              <p className="text-xs text-adv-gray-med">Sessions this week</p>
+              <p className="text-xs text-adv-gray">Sessions this week</p>
               <p className="mt-0.5 text-lg font-bold text-adv-white">
                 {stats.sessionsThisWeek ?? 0}
               </p>
             </div>
             <div className="rounded-lg border border-border bg-adv-dark p-3 text-center">
               <BookOpen className="mx-auto mb-1 h-4 w-4 text-adv-teal" />
-              <p className="text-xs text-adv-gray-med">Enrolled classes</p>
+              <p className="text-xs text-adv-gray">Enrolled classes</p>
               <p className="mt-0.5 text-lg font-bold text-adv-white">
                 {stats.classes?.length ?? 0}
               </p>
@@ -256,7 +256,7 @@ export default function SchoolProfilePage() {
                 <div key={cls.id} className="flex items-center gap-2 text-sm">
                   <BookOpen className="h-3.5 w-3.5 shrink-0 text-adv-teal" />
                   <span className="text-adv-off-white">{cls.name}</span>
-                  <span className="text-adv-gray-med capitalize">· {t(`subject.${cls.subject_id}`, cls.subject_id)}</span>
+                  <span className="text-adv-gray capitalize">· {t(`subject.${cls.subject_id}`, cls.subject_id)}</span>
                 </div>
               ))}
             </div>
@@ -288,9 +288,9 @@ export default function SchoolProfilePage() {
                   >
                     {isEarned
                       ? <CheckCircle2 className="h-5 w-5 text-adv-teal" />
-                      : <Lock className="h-5 w-5 text-adv-gray-med" />
+                      : <Lock className="h-5 w-5 text-adv-gray" />
                     }
-                    <span className={`text-xs font-medium leading-tight ${isEarned ? 'text-adv-off-white' : 'text-adv-gray-med'}`}>
+                    <span className={`text-xs font-medium leading-tight ${isEarned ? 'text-adv-off-white' : 'text-adv-gray'}`}>
                       {ach.label}
                     </span>
                   </div>
@@ -370,7 +370,7 @@ export default function SchoolProfilePage() {
                 onBlur={() => saveAvatar(avatar)}
                 maxLength={30}
                 placeholder={t('avatar.titlePlaceholder', 'e.g. Maths Wizard, History Buff...')}
-                className="w-full bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+                className="w-full bg-adv-dark border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               />
             </div>
 
@@ -387,7 +387,7 @@ export default function SchoolProfilePage() {
               <Users className="h-4 w-4 text-adv-teal" />
               <h2 className="text-sm font-semibold text-adv-off-white">Guardian Access</h2>
             </div>
-            <p className="text-xs text-adv-gray-med">
+            <p className="text-xs text-adv-gray">
               Generate an invite code and share it with your parent or guardian. They can use it to view your learning progress.
             </p>
 
@@ -410,7 +410,7 @@ export default function SchoolProfilePage() {
                     {copiedCode ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
-                <p className="text-xs text-adv-gray-med">This code expires in 48 hours. Generate a new one any time.</p>
+                <p className="text-xs text-adv-gray">This code expires in 48 hours. Generate a new one any time.</p>
                 <button
                   type="button"
                   onClick={handleGenerateInviteCode}

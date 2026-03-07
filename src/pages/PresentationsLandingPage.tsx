@@ -173,7 +173,7 @@ export default function PresentationsLandingPage() {
               </div>
               <div className="font-medium text-adv-white text-sm mb-1">{tpl.label}</div>
               <div className="text-xs text-adv-gray leading-relaxed">{tpl.description}</div>
-              <div className="flex items-center gap-3 mt-3 text-xs text-adv-gray-med">
+              <div className="flex items-center gap-3 mt-3 text-xs text-adv-gray">
                 <span>{tpl.slides} slides</span>
                 <span>·</span>
                 <span>{STYLE_LABELS[tpl.style]}</span>
@@ -194,7 +194,7 @@ export default function PresentationsLandingPage() {
           <div className="text-sm text-adv-gray py-4">Loading...</div>
         ) : history.length === 0 ? (
           <div className="py-12 rounded-xl border border-dashed border-adv-card text-center space-y-2">
-            <Presentation className="h-8 w-8 text-adv-gray-med mx-auto" />
+            <Presentation className="h-8 w-8 text-adv-gray mx-auto" />
             <p className="text-sm text-adv-gray">No presentations yet — click Quick Start or New Presentation above</p>
           </div>
         ) : (
@@ -232,9 +232,9 @@ export default function PresentationsLandingPage() {
                     {p.status}
                   </span>
                   {p.slide_count && (
-                    <span className="text-xs text-adv-gray-med hidden sm:block">{p.slide_count} slides</span>
+                    <span className="text-xs text-adv-gray hidden sm:block">{p.slide_count} slides</span>
                   )}
-                  <span className="text-xs text-adv-gray-med hidden md:block">
+                  <span className="text-xs text-adv-gray hidden md:block">
                     {new Date(p.created_at).toLocaleDateString()}
                   </span>
                   {p.status === 'ready' && p.filename && (

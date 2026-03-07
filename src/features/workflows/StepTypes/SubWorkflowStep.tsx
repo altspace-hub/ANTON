@@ -34,7 +34,7 @@ export function SubWorkflowStep({ step, onUpdate, workflows = [] }: SubWorkflowS
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3">
-        <p className="text-[10px] text-adv-teal">
+        <p className="text-xs text-adv-teal">
           Execute another saved workflow as a step in this workflow.
           Map context variables from this workflow to the sub-workflow's input fields.
         </p>
@@ -45,7 +45,7 @@ export function SubWorkflowStep({ step, onUpdate, workflows = [] }: SubWorkflowS
         <select
           value={step.config.subWorkflowId || ''}
           onChange={(e) => onUpdate({ subWorkflowId: e.target.value || undefined, subWorkflowInputMapping: {} })}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">— Select workflow —</option>
           {workflows.map((w) => (
@@ -60,7 +60,7 @@ export function SubWorkflowStep({ step, onUpdate, workflows = [] }: SubWorkflowS
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label className="text-[11px] font-medium text-adv-gray">Input Parameter Mapping</label>
-          <span className="text-[10px] text-adv-gray-med">sub-workflow input ← this workflow context</span>
+          <span className="text-xs text-adv-gray">sub-workflow input ← this workflow context</span>
         </div>
 
         {Object.entries(mapping).map(([key, value]) => (
@@ -71,15 +71,15 @@ export function SubWorkflowStep({ step, onUpdate, workflows = [] }: SubWorkflowS
               readOnly
               className="w-32 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono"
             />
-            <span className="text-adv-gray-med text-xs">←</span>
+            <span className="text-adv-gray text-xs">←</span>
             <input
               type="text"
               value={value}
               onChange={(e) => onUpdate({ subWorkflowInputMapping: { ...mapping, [key]: e.target.value } })}
               placeholder="{{step_1.client_id}}"
-              className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+              className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
-            <button onClick={() => removeMapping(key)} className="text-adv-gray-med hover:text-adv-red transition-colors">
+            <button onClick={() => removeMapping(key)} className="text-adv-gray hover:text-adv-red transition-colors">
               <Trash2 className="h-3 w-3" />
             </button>
           </div>
@@ -91,15 +91,15 @@ export function SubWorkflowStep({ step, onUpdate, workflows = [] }: SubWorkflowS
             value={newInputKey}
             onChange={(e) => setNewInputKey(e.target.value)}
             placeholder="input_field_id"
-            className="w-32 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+            className="w-32 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
-          <span className="text-adv-gray-med text-xs">←</span>
+          <span className="text-adv-gray text-xs">←</span>
           <input
             type="text"
             value={newInputValue}
             onChange={(e) => setNewInputValue(e.target.value)}
             placeholder="{{step_1.client_id}}"
-            className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none"
+            className="flex-1 rounded border border-border bg-adv-dark-2 px-2 py-1 text-[11px] text-adv-off-white font-mono focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           <button onClick={addMapping} className="text-adv-teal hover:text-adv-teal-dark transition-colors">
             <Plus className="h-3 w-3" />
@@ -114,7 +114,7 @@ export function SubWorkflowStep({ step, onUpdate, workflows = [] }: SubWorkflowS
           value={step.config.outputVariable || ''}
           onChange={(e) => onUpdate({ outputVariable: e.target.value })}
           placeholder="sub_workflow_result"
-          className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-48 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
     </div>

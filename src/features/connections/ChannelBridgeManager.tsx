@@ -64,7 +64,7 @@ function StatusBadge({ status }: { status: ChannelBridge['status'] }) {
   };
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${variants[status]}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${variants[status]}`}
     >
       {icons[status]}
       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -144,11 +144,11 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
             <span className="text-sm font-medium text-adv-off-white truncate">
               {bridge.display_name}
             </span>
-            <span className="text-[10px] text-adv-gray-med uppercase tracking-wide">
+            <span className="text-xs text-adv-gray uppercase tracking-wide">
               {CHANNEL_LABELS[channelType] ?? channelType}
             </span>
           </div>
-          <div className="text-[11px] text-adv-gray-med mt-0.5 font-mono truncate">
+          <div className="text-[11px] text-adv-gray mt-0.5 font-mono truncate">
             {bridge.endpoint_url}
           </div>
         </div>
@@ -157,7 +157,7 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
           <StatusBadge status={bridge.status} />
 
           {/* Usage chip */}
-          <span className="text-[10px] text-adv-gray bg-adv-card rounded-full px-2 py-0.5 border border-border">
+          <span className="text-xs text-adv-gray bg-adv-card rounded-full px-2 py-0.5 border border-border">
             {bridge.config.call_count ?? 0} calls
           </span>
 
@@ -208,7 +208,7 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
           {/* Config grid */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
             <div>
-              <span className="text-adv-gray-med">Allowed modules: </span>
+              <span className="text-adv-gray">Allowed modules: </span>
               <span className="text-adv-off-white">
                 {(bridge.config.allowed_modules ?? []).includes('*')
                   ? 'All modules'
@@ -216,23 +216,23 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
               </span>
             </div>
             <div>
-              <span className="text-adv-gray-med">Default module: </span>
+              <span className="text-adv-gray">Default module: </span>
               <span className="text-adv-off-white">{bridge.config.default_module}</span>
             </div>
             <div>
-              <span className="text-adv-gray-med">Rate limit: </span>
+              <span className="text-adv-gray">Rate limit: </span>
               <span className="text-adv-off-white">{bridge.config.rate_limit_rpm} rpm</span>
             </div>
             <div>
-              <span className="text-adv-gray-med">Max response: </span>
+              <span className="text-adv-gray">Max response: </span>
               <span className="text-adv-off-white">{bridge.config.max_response_length} chars</span>
             </div>
             <div>
-              <span className="text-adv-gray-med">Language hint: </span>
+              <span className="text-adv-gray">Language hint: </span>
               <span className="text-adv-off-white">{bridge.config.language_hint}</span>
             </div>
             <div>
-              <span className="text-adv-gray-med">Last called: </span>
+              <span className="text-adv-gray">Last called: </span>
               <span className="text-adv-off-white">
                 {bridge.config.last_called_at
                   ? new Date(bridge.config.last_called_at).toLocaleString()
@@ -243,7 +243,7 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
 
           {/* Endpoint row */}
           <div>
-            <div className="text-[10px] text-adv-gray-med mb-1">Endpoint URL</div>
+            <div className="text-xs text-adv-gray mb-1">Endpoint URL</div>
             <div className="flex items-center gap-2">
               <code className="flex-1 rounded border border-border bg-adv-card px-2 py-1.5 text-xs text-adv-teal font-mono break-all">
                 {bridge.endpoint_url}
@@ -264,25 +264,25 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
               <div className="text-xs font-medium text-adv-off-white mb-2">Edit limits</div>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <label className="text-[10px] text-adv-gray-med">Rate limit (rpm)</label>
+                  <label className="text-xs text-adv-gray">Rate limit (rpm)</label>
                   <input
                     type="number"
                     min={1}
                     max={300}
                     value={editRpm}
                     onChange={(e) => setEditRpm(Number(e.target.value))}
-                    className="mt-1 w-full rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                    className="mt-1 w-full rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] text-adv-gray-med">Max response (chars)</label>
+                  <label className="text-xs text-adv-gray">Max response (chars)</label>
                   <input
                     type="number"
                     min={100}
                     max={3000}
                     value={editMaxLen}
                     onChange={(e) => setEditMaxLen(Number(e.target.value))}
-                    className="mt-1 w-full rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                    className="mt-1 w-full rounded border border-border bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
               </div>
@@ -378,7 +378,7 @@ export function ChannelBridgeManager() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-adv-off-white">Channel Bridges</h3>
-          <p className="text-xs text-adv-gray-med mt-0.5">
+          <p className="text-xs text-adv-gray mt-0.5">
             Secure HTTP endpoints for WhatsApp bots, SMS gateways, and other messaging channels.
           </p>
         </div>
@@ -442,7 +442,7 @@ export function ChannelBridgeManager() {
         <div className="rounded-lg border border-border bg-adv-dark px-4 py-8 text-center">
           <Globe className="w-8 h-8 text-adv-gray mx-auto mb-2" />
           <p className="text-sm text-adv-off-white mb-1">No channel bridges yet</p>
-          <p className="text-xs text-adv-gray-med mb-4">
+          <p className="text-xs text-adv-gray mb-4">
             Create your first bridge to connect a WhatsApp bot or SMS gateway to ANTON.
           </p>
           <button

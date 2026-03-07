@@ -164,7 +164,7 @@ function SummaryCard({ icon, label, value, sub, accent = 'text-adv-teal', loadin
         ) : (
           <p className={`text-2xl font-bold ${accent}`}>{value}</p>
         )}
-        {sub && !loading && <p className="text-xs text-adv-gray-med mt-1">{sub}</p>}
+        {sub && !loading && <p className="text-xs text-adv-gray mt-1">{sub}</p>}
       </div>
     </div>
   );
@@ -175,7 +175,7 @@ function SummaryCard({ icon, label, value, sub, accent = 'text-adv-teal', loadin
 // ---------------------------------------------------------------------------
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-10 text-adv-gray-med gap-2">
+    <div className="flex flex-col items-center justify-center py-10 text-adv-gray gap-2">
       <Activity className="h-8 w-8 opacity-40" />
       <p className="text-sm">{message}</p>
     </div>
@@ -399,7 +399,7 @@ export default function GovernanceDashboard() {
               <div className="overflow-x-auto -mx-1">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-adv-gray-med text-xs uppercase tracking-wide">
+                    <tr className="text-adv-gray text-xs uppercase tracking-wide">
                       <th className="text-left py-2 px-2 font-medium">Module</th>
                       <th className="text-center py-2 px-2 font-medium">Score</th>
                       <th className="text-center py-2 px-2 font-medium">Samples</th>
@@ -468,7 +468,7 @@ export default function GovernanceDashboard() {
                     >
                       <div className="mt-0.5 shrink-0">
                         {!isEnabled ? (
-                          <Minus className="h-4 w-4 text-adv-gray-med" />
+                          <Minus className="h-4 w-4 text-adv-gray" />
                         ) : passing ? (
                           <CheckCircle2 className="h-4 w-4 text-adv-green" />
                         ) : (
@@ -478,13 +478,13 @@ export default function GovernanceDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-adv-off-white font-medium truncate">{rule.name}</p>
                         {rule.description && (
-                          <p className="text-xs text-adv-gray-med truncate">{rule.description}</p>
+                          <p className="text-xs text-adv-gray truncate">{rule.description}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {rule.severity && <SeverityBadge severity={rule.severity} />}
                         {!isEnabled && (
-                          <span className="text-xs text-adv-gray-med bg-adv-card px-2 py-0.5 rounded border border-border">
+                          <span className="text-xs text-adv-gray bg-adv-card px-2 py-0.5 rounded border border-border">
                             Disabled
                           </span>
                         )}
@@ -498,7 +498,7 @@ export default function GovernanceDashboard() {
                   );
                 })}
                 {rules.length > 8 && (
-                  <p className="text-xs text-adv-gray-med text-center pt-2">
+                  <p className="text-xs text-adv-gray text-center pt-2">
                     + {rules.length - 8} more rules — view in Compliance page
                   </p>
                 )}
@@ -516,7 +516,7 @@ export default function GovernanceDashboard() {
             <div className="overflow-x-auto -mx-1">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-adv-gray-med text-xs uppercase tracking-wide">
+                  <tr className="text-adv-gray text-xs uppercase tracking-wide">
                     <th className="text-left py-2 px-2 font-medium">Rule</th>
                     <th className="text-left py-2 px-2 font-medium">Module</th>
                     <th className="text-center py-2 px-2 font-medium">Severity</th>
@@ -547,7 +547,7 @@ export default function GovernanceDashboard() {
                             {v.status ?? 'open'}
                           </span>
                         </td>
-                        <td className="py-3 px-2 text-right text-adv-gray-med text-xs">
+                        <td className="py-3 px-2 text-right text-adv-gray text-xs">
                           {formatTs(v.created_at)}
                         </td>
                       </tr>
@@ -576,7 +576,7 @@ export default function GovernanceDashboard() {
             <div className="overflow-x-auto -mx-1">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-adv-gray-med text-xs uppercase tracking-wide">
+                  <tr className="text-adv-gray text-xs uppercase tracking-wide">
                     <th className="text-left py-2 px-2 font-medium">Timestamp</th>
                     <th className="text-left py-2 px-2 font-medium">Module</th>
                     <th className="text-left py-2 px-2 font-medium">Model</th>
@@ -587,7 +587,7 @@ export default function GovernanceDashboard() {
                 <tbody className="divide-y divide-border">
                   {auditEvents.map((e) => (
                     <tr key={e.id} className="hover:bg-adv-dark-2 transition-colors">
-                      <td className="py-3 px-2 text-adv-gray-med text-xs whitespace-nowrap">
+                      <td className="py-3 px-2 text-adv-gray text-xs whitespace-nowrap">
                         {formatTs(e.timestamp)}
                       </td>
                       <td className="py-3 px-2 text-adv-off-white font-medium max-w-[160px] truncate">
@@ -604,7 +604,7 @@ export default function GovernanceDashboard() {
                             ? 'bg-adv-green/10 text-adv-green border-adv-green/30'
                             : e.review_status === 'reviewed'
                             ? 'bg-adv-teal-dim text-adv-teal border-adv-teal/30'
-                            : 'bg-adv-card text-adv-gray-med border-border'
+                            : 'bg-adv-card text-adv-gray border-border'
                         }`}>
                           {e.review_status ?? 'draft'}
                         </span>

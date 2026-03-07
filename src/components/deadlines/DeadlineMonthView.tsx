@@ -177,7 +177,7 @@ export default function DeadlineMonthView({
         {DAY_HEADERS.map((dh) => (
           <div
             key={dh}
-            className="py-1 text-center text-xs font-medium text-adv-gray-med"
+            className="py-1 text-center text-xs font-medium text-adv-gray"
           >
             {dh}
           </div>
@@ -214,7 +214,7 @@ export default function DeadlineMonthView({
                     ? 'text-adv-teal'
                     : isCurrentMonth
                     ? 'text-adv-off-white'
-                    : 'text-adv-gray-med'
+                    : 'text-adv-gray'
                 }`}
               >
                 {day.getDate()}

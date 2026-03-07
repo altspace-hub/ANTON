@@ -115,9 +115,9 @@ export default function CommunicationsPanel({
           </span>
         </div>
         {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 text-adv-gray-med" />
+          <ChevronDown className="h-3.5 w-3.5 text-adv-gray" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-adv-gray-med" />
+          <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />
         )}
       </button>
 
@@ -175,7 +175,7 @@ export default function CommunicationsPanel({
             <select
               value={outputLanguage}
               onChange={(e) => onOutputLanguageChange(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
             >
               <option value="en">Auto-detect from user input</option>
               {['Europe', 'Asia', 'Middle East', 'Americas'].map((region) => (

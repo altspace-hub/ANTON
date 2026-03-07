@@ -54,9 +54,9 @@ function UBOTree({ node, depth = 0 }: { node: UBONode; depth?: number }) {
         <span className="text-sm text-adv-off-white">{node.name}</span>
         <span className="ml-auto text-xs font-medium text-adv-teal">{node.ownershipPct}%</span>
         {node.isPEP && (
-          <span className="rounded bg-adv-gold/10 border border-adv-gold/30 px-1.5 text-[10px] text-adv-gold">PEP</span>
+          <span className="rounded bg-adv-gold/10 border border-adv-gold/30 px-1.5 text-xs text-adv-gold">PEP</span>
         )}
-        <span className="text-[10px] text-adv-gray-med">{node.isDirectOwner ? 'Direct' : 'Indirect'}</span>
+        <span className="text-xs text-adv-gray">{node.isDirectOwner ? 'Direct' : 'Indirect'}</span>
       </button>
       {expanded && node.children.map((child, i) => (
         <UBOTree key={i} node={child} depth={depth + 1} />
@@ -87,7 +87,7 @@ export function RoaringEntityCard({ profile, onInjectToSession, onOpenCounselDes
         </div>
         <div className="text-right shrink-0">
           <div className={`text-2xl font-bold ${riskColor(profile.riskScore)}`}>{profile.riskScore}</div>
-          <div className="text-[10px] text-adv-gray-med">Risk Score</div>
+          <div className="text-xs text-adv-gray">Risk Score</div>
         </div>
       </div>
 
@@ -122,19 +122,19 @@ export function RoaringEntityCard({ profile, onInjectToSession, onOpenCounselDes
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">Registered</div>
+                <div className="text-xs text-adv-gray mb-1">Registered</div>
                 <div className="text-sm text-adv-off-white">{profile.company.registrationDate}</div>
               </div>
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">Industry</div>
+                <div className="text-xs text-adv-gray mb-1">Industry</div>
                 <div className="text-xs text-adv-off-white">{profile.company.sniDescription ?? '—'}</div>
               </div>
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">UBO Count</div>
+                <div className="text-xs text-adv-gray mb-1">UBO Count</div>
                 <div className="text-sm text-adv-off-white">{profile.uboChain.totalUBOs} UBOs · Complexity {profile.uboChain.complexityScore}/5</div>
               </div>
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">Sanctions</div>
+                <div className="text-xs text-adv-gray mb-1">Sanctions</div>
                 <div className="flex items-center gap-1 text-sm">
                   {profile.sanctions.hitCount === 0
                     ? <><CheckCircle className="h-3.5 w-3.5 text-adv-green" /><span className="text-adv-green">Clear</span></>
@@ -147,7 +147,7 @@ export function RoaringEntityCard({ profile, onInjectToSession, onOpenCounselDes
             {profile.uboChain.highRiskFlags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {profile.uboChain.highRiskFlags.map(flag => (
-                  <span key={flag} className="flex items-center gap-1 rounded-full border border-adv-red/30 bg-red-900/10 px-2 py-0.5 text-[10px] text-adv-red">
+                  <span key={flag} className="flex items-center gap-1 rounded-full border border-adv-red/30 bg-red-900/10 px-2 py-0.5 text-xs text-adv-red">
                     <AlertTriangle className="h-2.5 w-2.5" />
                     {flag.replace(/_/g, ' ')}
                   </span>
@@ -176,10 +176,10 @@ export function RoaringEntityCard({ profile, onInjectToSession, onOpenCounselDes
                 </div>
                 <div className="flex items-center gap-1">
                   {member.pepFlag && (
-                    <span className="rounded bg-adv-gold/10 border border-adv-gold/30 px-1.5 py-0.5 text-[10px] text-adv-gold">PEP</span>
+                    <span className="rounded bg-adv-gold/10 border border-adv-gold/30 px-1.5 py-0.5 text-xs text-adv-gold">PEP</span>
                   )}
                   {member.sanctionsFlag && (
-                    <span className="rounded bg-red-900/20 border border-adv-red/30 px-1.5 py-0.5 text-[10px] text-adv-red">SANCTIONS</span>
+                    <span className="rounded bg-red-900/20 border border-adv-red/30 px-1.5 py-0.5 text-xs text-adv-red">SANCTIONS</span>
                   )}
                   {!member.pepFlag && !member.sanctionsFlag && (
                     <CheckCircle className="h-4 w-4 text-adv-green" />
@@ -194,11 +194,11 @@ export function RoaringEntityCard({ profile, onInjectToSession, onOpenCounselDes
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">Revenue Band</div>
+                <div className="text-xs text-adv-gray mb-1">Revenue Band</div>
                 <div className="text-sm text-adv-off-white">{profile.financialRisk.revenueband}</div>
               </div>
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">Credit Rating</div>
+                <div className="text-xs text-adv-gray mb-1">Credit Rating</div>
                 <div className={`text-sm font-bold ${
                   profile.financialRisk.creditRating === 'A' ? 'text-adv-green' :
                   profile.financialRisk.creditRating === 'B' ? 'text-adv-teal' :
@@ -206,7 +206,7 @@ export function RoaringEntityCard({ profile, onInjectToSession, onOpenCounselDes
                 }`}>{profile.financialRisk.creditRating}</div>
               </div>
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">Revenue Change (2y)</div>
+                <div className="text-xs text-adv-gray mb-1">Revenue Change (2y)</div>
                 <div className={`flex items-center gap-1 text-sm ${profile.financialRisk.revenueChange2y < 0 ? 'text-adv-red' : 'text-adv-green'}`}>
                   {profile.financialRisk.revenueChange2y < 0
                     ? <TrendingDown className="h-3.5 w-3.5" />
@@ -216,7 +216,7 @@ export function RoaringEntityCard({ profile, onInjectToSession, onOpenCounselDes
                 </div>
               </div>
               <div className="rounded-lg bg-adv-dark/40 px-3 py-2">
-                <div className="text-[10px] text-adv-gray-med mb-1">Payment Remarks</div>
+                <div className="text-xs text-adv-gray mb-1">Payment Remarks</div>
                 <div className={`text-sm ${profile.financialRisk.paymentRemarks > 0 ? 'text-adv-red' : 'text-adv-green'}`}>
                   {profile.financialRisk.paymentRemarks}
                 </div>

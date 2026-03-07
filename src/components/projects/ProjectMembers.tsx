@@ -142,20 +142,20 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
           </div>
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med" />
+              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray" />
               <input
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="colleague@company.com"
                 required
-                className="w-full rounded-lg border border-border bg-adv-dark py-2 pl-9 pr-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark py-2 pl-9 pr-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <select
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value)}
-              className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="member">Member</option>
               <option value="admin">Admin</option>
@@ -175,9 +175,9 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
       {/* Members list */}
       {members.length === 0 ? (
         <div className="rounded-xl border border-border bg-adv-card p-6 text-center">
-          <Users className="mx-auto mb-2 h-8 w-8 text-adv-gray-med" />
-          <p className="text-sm text-adv-gray-med">No members yet</p>
-          <p className="mt-1 text-xs text-adv-gray-med">
+          <Users className="mx-auto mb-2 h-8 w-8 text-adv-gray" />
+          <p className="text-sm text-adv-gray">No members yet</p>
+          <p className="mt-1 text-xs text-adv-gray">
             Invite team members to collaborate on this project
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
                     {member.display_name || member.username}
                   </p>
                   {member.email && (
-                    <p className="text-xs text-adv-gray-med">{member.email}</p>
+                    <p className="text-xs text-adv-gray">{member.email}</p>
                   )}
                 </div>
 
@@ -211,7 +211,7 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
                     onChange={(e) => handleUpdateRole(member.id, e.target.value)}
                     onBlur={() => setEditingRole(null)}
                     autoFocus
-                    className="rounded border border-adv-teal bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none"
+                    className="rounded border border-adv-teal bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   >
                     <option value="owner">Owner</option>
                     <option value="admin">Admin</option>
@@ -221,7 +221,7 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
                 ) : (
                   <button
                     onClick={() => setEditingRole(member.id)}
-                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium ${roleConfig.color} transition-colors hover:opacity-80`}
+                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${roleConfig.color} transition-colors hover:opacity-80`}
                     title="Click to change role"
                   >
                     <RoleIcon className="h-3 w-3" />
@@ -234,7 +234,7 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
                 {member.role !== 'owner' && (
                   <button
                     onClick={() => handleRemoveMember(member.id)}
-                    className="rounded p-1.5 text-adv-gray-med opacity-0 transition-all hover:text-adv-red group-hover:opacity-100"
+                    className="rounded p-1.5 text-adv-gray opacity-0 transition-all hover:text-adv-red group-hover:opacity-100"
                     title="Remove member"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -249,7 +249,7 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
       {/* Pending invitations */}
       {invitations.length > 0 && (
         <div className="mt-6">
-          <h4 className="mb-2 text-xs font-semibold uppercase text-adv-gray-med">
+          <h4 className="mb-2 text-xs font-semibold uppercase text-adv-gray">
             Pending Invitations ({invitations.length})
           </h4>
           <div className="space-y-2">
@@ -258,19 +258,19 @@ export default function ProjectMembers({ projectId }: { projectId: string }) {
                 key={inv.id}
                 className="group flex items-center gap-3 rounded-lg border border-border bg-adv-card px-4 py-3"
               >
-                <Mail className="h-4 w-4 shrink-0 text-adv-gray-med" />
+                <Mail className="h-4 w-4 shrink-0 text-adv-gray" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-adv-off-white">{inv.email}</p>
-                  <p className="text-xs text-adv-gray-med">
+                  <p className="text-xs text-adv-gray">
                     Invited as {inv.role} · Expires {new Date(inv.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                   </p>
                 </div>
-                <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-[10px] font-medium text-adv-gold">
+                <span className="rounded-full bg-adv-gold/10 px-2 py-0.5 text-xs font-medium text-adv-gold">
                   Pending
                 </span>
                 <button
                   onClick={() => handleRevokeInvitation(inv.id)}
-                  className="rounded p-1.5 text-adv-gray-med opacity-0 transition-all hover:text-adv-red group-hover:opacity-100"
+                  className="rounded p-1.5 text-adv-gray opacity-0 transition-all hover:text-adv-red group-hover:opacity-100"
                   title="Revoke"
                 >
                   <X className="h-3.5 w-3.5" />

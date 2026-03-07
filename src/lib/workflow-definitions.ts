@@ -175,6 +175,17 @@ export interface WorkflowStep {
     deduplicateBy?: string[];
     deduplicateStrategy?: 'keep_first' | 'keep_last' | 'merge_values';
 
+    // ── on_complete_trigger — fire when this step finishes ────
+    // Triggers another workflow run when this step completes successfully.
+    onCompleteTrigger?: {
+      type: 'start_workflow';
+      workflowId: string;      // target workflow to start
+      label?: string;          // human-readable label for the trigger
+      // Map context variables from this run to the new run's trigger variables
+      // e.g. { "targetWorkflowInput": "{{step_2.output}}" }
+      variables?: Record<string, string>;
+    };
+
     // ── data_export ───────────────────────────────────────────
     exportDatasetId?: string;
     exportDestination?: 'file' | 'database' | 'api';

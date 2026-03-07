@@ -29,7 +29,7 @@ export function SeedControl({ seed, onChange, modelSupportsSeed }: SeedControlPr
       >
         <Hash className="h-4 w-4" />
         <span>Reproducibility Seed</span>
-        <span className="text-xs text-adv-gray-med ml-auto">
+        <span className="text-xs text-adv-gray ml-auto">
           {expanded ? '▼' : '▶'}
         </span>
       </button>
@@ -52,7 +52,7 @@ export function SeedControl({ seed, onChange, modelSupportsSeed }: SeedControlPr
               placeholder="Enter seed (0-999999)"
               min={0}
               max={999999}
-              className="flex-1 px-3 py-2 bg-adv-dark border border-adv-gray-med rounded text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="flex-1 px-3 py-2 bg-adv-dark border border-adv-gray-med rounded text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <button
               type="button"

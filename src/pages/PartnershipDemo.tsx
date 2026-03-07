@@ -160,14 +160,14 @@ function ApiLogPanel({ entries }: { entries: ApiLogEntry[] }) {
   };
   return (
     <div className="rounded-lg border border-adv-dark/60 bg-adv-dark/70 p-3 font-mono text-[11px] space-y-1">
-      <div className="text-adv-gray-med mb-2 font-sans text-[10px]">API calls</div>
+      <div className="text-adv-gray mb-2 font-sans text-xs">API calls</div>
       {entries.map((entry, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className={SOURCE_COLOR[entry.source]}>[{entry.source.toUpperCase()}]</span>
           <span className="text-adv-gray">{entry.method}</span>
           <span className="text-adv-off-white flex-1 truncate">{entry.endpoint}</span>
           <span className="text-adv-green">{entry.status}</span>
-          <span className="text-adv-gray-med">{entry.responseMs}ms</span>
+          <span className="text-adv-gray">{entry.responseMs}ms</span>
         </div>
       ))}
     </div>
@@ -242,7 +242,7 @@ function ScenePlayer({ scene }: { scene: DemoScene }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm font-medium text-adv-off-white">{step.label}</span>
-                    {state === 'active' && <span className="text-[10px] text-adv-teal animate-pulse">● processing</span>}
+                    {state === 'active' && <span className="text-xs text-adv-teal animate-pulse">● processing</span>}
                   </div>
                   <p className="text-xs text-adv-gray">{step.description}</p>
                   {state !== 'pending' && step.apiCalls && step.apiCalls.length > 0 && (
@@ -366,19 +366,19 @@ export default function PartnershipDemo() {
             <div>
               <div className="font-medium text-adv-teal mb-1">Roaring</div>
               <ul className="space-y-1">
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />Set <code className="text-adv-off-white">ROARING_API_KEY</code> in <code>.env</code></li>
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />All mock responses automatically replaced with live Roaring API data</li>
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />Status indicator changes from "Mock" to "Live API"</li>
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />Sandbox endpoint at <code>api.roaring.io/v2/</code> — no code change needed</li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />Set <code className="text-adv-off-white">ROARING_API_KEY</code> in <code>.env</code></li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />All mock responses automatically replaced with live Roaring API data</li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />Status indicator changes from "Mock" to "Live API"</li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />Sandbox endpoint at <code>api.roaring.io/v2/</code> — no code change needed</li>
               </ul>
             </div>
             <div>
               <div className="font-medium text-adv-blue mb-1">Dow Jones R&C</div>
               <ul className="space-y-1">
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />Set <code className="text-adv-off-white">DOWJONES_API_KEY</code> in <code>.env</code></li>
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />OAuth 2.0 client credentials flow handled automatically</li>
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />Webhook URL: <code>https://[your-domain]/webhooks/inbound/dowjones</code></li>
-                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray-med" />Monitoring alerts flow automatically into Proactive Intelligence</li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />Set <code className="text-adv-off-white">DOWJONES_API_KEY</code> in <code>.env</code></li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />OAuth 2.0 client credentials flow handled automatically</li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />Webhook URL: <code>https://[your-domain]/webhooks/inbound/dowjones</code></li>
+                <li className="flex items-start gap-1.5"><ChevronRight className="h-3 w-3 shrink-0 mt-0.5 text-adv-gray" />Monitoring alerts flow automatically into Proactive Intelligence</li>
               </ul>
             </div>
           </div>

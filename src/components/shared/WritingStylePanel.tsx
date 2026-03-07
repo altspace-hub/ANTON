@@ -78,7 +78,7 @@ export default function WritingStylePanel({
               Persona{selectedPersonas.length > 1 ? 's' : ''}
             </span>
             {selectedPersonas.length > 0 && (
-              <span className="rounded-full bg-adv-teal px-2 py-0.5 text-[10px] font-medium text-adv-dark">
+              <span className="rounded-full bg-adv-teal px-2 py-0.5 text-xs font-medium text-adv-dark">
                 {selectedPersonas.length}/3
               </span>
             )}
@@ -92,7 +92,7 @@ export default function WritingStylePanel({
           <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
             {(() => { const atMax = selectedPersonas.length >= 3; return grouped.map(({ category, label, roles }) => (
               <div key={category}>
-                <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-adv-gray-med">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">
                   {label}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -106,7 +106,7 @@ export default function WritingStylePanel({
                         selectedPersonas.includes(role.id)
                           ? CHIP_ACTIVE
                           : atMax
-                          ? 'border-border bg-adv-dark text-adv-gray-med opacity-40 cursor-not-allowed'
+                          ? 'border-border bg-adv-dark text-adv-gray opacity-40 cursor-not-allowed'
                           : CHIP_INACTIVE
                       }`}
                     >
@@ -117,7 +117,7 @@ export default function WritingStylePanel({
               </div>
             )); })()}
             {activeDescriptions.length > 0 && (
-              <p className="text-[11px] text-adv-gray-med border-t border-border pt-2">
+              <p className="text-[11px] text-adv-gray border-t border-border pt-2">
                 {activeDescriptions.join(' · ')}
               </p>
             )}
@@ -153,7 +153,7 @@ export default function WritingStylePanel({
                 <Users className="h-3.5 w-3.5 text-adv-teal" />
                 Multi-perspective analysis
               </div>
-              <p className="mt-0.5 text-[11px] text-adv-gray-med">
+              <p className="mt-0.5 text-[11px] text-adv-gray">
                 Claude analyses from multiple expert viewpoints (legal, compliance, business, regulatory) then synthesises.
               </p>
             </div>
@@ -176,7 +176,7 @@ export default function WritingStylePanel({
                 <BrainCog className="h-3.5 w-3.5 text-adv-gold" />
                 Meta-cognitive reasoning
               </div>
-              <p className="mt-0.5 text-[11px] text-adv-gray-med">
+              <p className="mt-0.5 text-[11px] text-adv-gray">
                 Structured decomposition with confidence scoring. Claude verifies logic and flags low-confidence areas.
               </p>
             </div>

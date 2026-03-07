@@ -105,7 +105,7 @@ export default function ParentDashboardPage() {
                     <div key={i} className="rounded-xl border border-border bg-adv-card p-4 text-center">
                       <div className="flex justify-center mb-1">{stat.icon}</div>
                       <p className="text-xl font-bold text-adv-white">{stat.value}</p>
-                      <p className="text-xs text-adv-gray-med">{stat.label}</p>
+                      <p className="text-xs text-adv-gray">{stat.label}</p>
                     </div>
                   ))}
                 </div>

@@ -90,11 +90,11 @@ function NewPostModal({ forumId, onClose, onPosted }: { forumId: string; onClose
         </div>
         <form onSubmit={handle} className="flex flex-col gap-3">
           <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Title (optional)" maxLength={120}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="What do you want to share?" rows={5} required
-            className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+            className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           <input type="text" value={authorName} onChange={e => setAuthorName(e.target.value)} placeholder="Your name (optional — defaults to Anonymous)" maxLength={60}
-            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+            className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           {error && <p className="text-sm text-adv-red">{error}</p>}
           <div className="flex gap-3">
             <button type="submit" disabled={loading || !content.trim()}
@@ -128,7 +128,7 @@ function ReplyForm({ forumId, parentId, onReplied, onCancel }: { forumId: string
   return (
     <form onSubmit={handle} className="mt-3 flex flex-col gap-2 pl-4">
       <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Write a reply…" rows={2} autoFocus
-        className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none" />
+        className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
       {error && <p className="text-xs text-adv-red">{error}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={loading || !content.trim()} className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-semibold text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50">

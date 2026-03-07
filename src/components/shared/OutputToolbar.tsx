@@ -290,7 +290,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                 isActive || isFeedbackDone
                   ? 'border-adv-teal bg-adv-teal/10 text-adv-teal'
                   : disabled
-                  ? 'border-border bg-adv-dark text-adv-gray-med opacity-50 cursor-not-allowed'
+                  ? 'border-border bg-adv-dark text-adv-gray opacity-50 cursor-not-allowed'
                   : 'border-border bg-adv-dark text-adv-gray hover:border-adv-teal/50 hover:text-adv-off-white'
               }`}
             >
@@ -341,15 +341,15 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               )}
               {displayThinking ? (
                 <div className="rounded-lg bg-adv-dark p-3">
-                  <div className="prose-output max-w-none text-adv-gray-med [&_strong]:text-adv-gray [&_h1]:text-adv-gray [&_h2]:text-adv-gray [&_h3]:text-adv-gray">
+                  <div className="prose-output max-w-none text-adv-gray [&_strong]:text-adv-gray [&_h1]:text-adv-gray [&_h2]:text-adv-gray [&_h3]:text-adv-gray">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayThinking}</ReactMarkdown>
                   </div>
                 </div>
               ) : (
                 <div className="rounded-lg bg-adv-dark p-4 text-center">
-                  <Brain className="mx-auto mb-2 h-6 w-6 text-adv-gray-med" />
-                  <p className="text-sm text-adv-gray-med">No thinking content available.</p>
-                  <p className="mt-1 text-xs text-adv-gray-med">
+                  <Brain className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
+                  <p className="text-sm text-adv-gray">No thinking content available.</p>
+                  <p className="mt-1 text-xs text-adv-gray">
                     Try using &quot;Think Hard&quot; or &quot;Investigate&quot; thinking level to enable extended reasoning.
                   </p>
                 </div>
@@ -364,7 +364,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                 <span className="text-xs font-medium text-adv-off-white">Composed System Prompt</span>
                 <div className="flex items-center gap-2">
                   {promptTokens > 0 && (
-                    <span className="text-[11px] text-adv-gray-med">
+                    <span className="text-[11px] text-adv-gray">
                       ~{promptTokens.toLocaleString()} tokens
                     </span>
                   )}
@@ -392,16 +392,16 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                 </div>
               </div>
               {promptText ? (
-                <pre className="rounded-lg bg-adv-dark p-3 text-xs text-adv-gray-med font-mono whitespace-pre-wrap leading-relaxed">
+                <pre className="rounded-lg bg-adv-dark p-3 text-xs text-adv-gray font-mono whitespace-pre-wrap leading-relaxed">
                   {promptText}
                 </pre>
               ) : (
                 <div className="rounded-lg bg-adv-dark p-4 text-center">
-                  <ClipboardList className="mx-auto mb-2 h-6 w-6 text-adv-gray-med" />
-                  <p className="text-sm text-adv-gray-med">
+                  <ClipboardList className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
+                  <p className="text-sm text-adv-gray">
                     Click &quot;Load Prompt&quot; to see the full system prompt being sent to Claude.
                   </p>
-                  <p className="mt-1 text-xs text-adv-gray-med">
+                  <p className="mt-1 text-xs text-adv-gray">
                     This includes all layers: foundation, module prompt, personas, skills, output format instructions, and knowledge sources.
                   </p>
                 </div>
@@ -422,7 +422,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
           {/* ── Save as Module Panel ──────────────────────── */}
           {activePanel === 'save' && (
             <div>
-              <p className="mb-3 text-xs text-adv-gray-med">
+              <p className="mb-3 text-xs text-adv-gray">
                 Save the current configuration (system prompt, output formats, personas, skills, and settings) as a reusable custom module.
               </p>
               <div className="flex gap-2">
@@ -431,7 +431,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   value={saveModuleName}
                   onChange={(e) => setSaveModuleName(e.target.value)}
                   placeholder="Module name"
-                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveAsModule()}
                 />
                 <button
@@ -449,7 +449,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               {/* Trust Certificate download */}
               {sessionId && (
                 <div className="mt-4 border-t border-border pt-4">
-                  <p className="mb-2 text-xs text-adv-gray-med">
+                  <p className="mb-2 text-xs text-adv-gray">
                     Download a PDF trust certificate documenting the quality score, model, and session metadata for this output.
                   </p>
                   <button
@@ -489,7 +489,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                 <ShieldCheck className="h-4 w-4 text-adv-teal" />
                 <span className="text-xs font-medium text-adv-off-white">Trust Score</span>
                 <div className="relative ml-0.5 group">
-                  <Info className="h-3.5 w-3.5 cursor-help text-adv-gray-med hover:text-adv-teal transition-colors" />
+                  <Info className="h-3.5 w-3.5 cursor-help text-adv-gray hover:text-adv-teal transition-colors" />
                   <div className="pointer-events-none absolute bottom-5 left-0 z-50 w-64 rounded-lg border border-border bg-adv-dark p-3 text-[11px] leading-relaxed text-adv-gray opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
                     <p className="mb-1.5 font-semibold text-adv-off-white">What is the Trust Score?</p>
                     <p>After every output, Claude Haiku reads the response and rates it across five quality dimensions on a 0–10 scale:</p>
@@ -500,13 +500,13 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                       <li>· <span className="text-adv-off-white">Actionability</span> — specific guidance with owners / timelines</li>
                       <li>· <span className="text-adv-off-white">Citations</span> — references to regulations, articles, frameworks</li>
                     </ul>
-                    <p className="mt-1.5 text-adv-gray-med">Scores are compared to your module's historical baseline to flag regressions.</p>
+                    <p className="mt-1.5 text-adv-gray">Scores are compared to your module's historical baseline to flag regressions.</p>
                   </div>
                 </div>
-                <span className="ml-auto text-[10px] text-adv-gray-med">Scored by Claude Haiku</span>
+                <span className="ml-auto text-xs text-adv-gray">Scored by Claude Haiku</span>
               </div>
               {trustLoading ? (
-                <div className="flex items-center gap-2 text-xs text-adv-gray-med">
+                <div className="flex items-center gap-2 text-xs text-adv-gray">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Scoring output...
                 </div>
@@ -523,7 +523,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                     </div>
                     <div>
                       <p className="text-xs font-medium text-adv-off-white">Overall Quality</p>
-                      <p className="text-[11px] text-adv-gray-med">Out of 10</p>
+                      <p className="text-[11px] text-adv-gray">Out of 10</p>
                       {trustScore.isRegression && (
                         <p className="mt-0.5 text-[11px] text-adv-gold">⚠ Below module baseline</p>
                       )}
@@ -546,13 +546,13 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                           title={isCompleteness ? 'Click to see what\'s expected vs. missing' : undefined}
                         >
                           <div className="mb-1 flex items-center justify-between">
-                            <span className="text-[10px] text-adv-gray-med">{label}</span>
+                            <span className="text-xs text-adv-gray">{label}</span>
                             <div className="flex items-center gap-1">
-                              <span className={`text-[10px] font-medium ${
+                              <span className={`text-xs font-medium ${
                                 val >= 8 ? 'text-adv-green' : val >= 6 ? 'text-adv-teal' : val >= 4 ? 'text-adv-gold' : 'text-adv-red'
                               }`}>{val.toFixed(1)}</span>
                               {isCompleteness && (
-                                <ChevronRight className={`h-2.5 w-2.5 text-adv-gray-med transition-transform ${showBenchmarkBreakdown ? 'rotate-90' : ''}`} />
+                                <ChevronRight className={`h-2.5 w-2.5 text-adv-gray transition-transform ${showBenchmarkBreakdown ? 'rotate-90' : ''}`} />
                               )}
                             </div>
                           </div>
@@ -572,9 +572,9 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   {/* Completeness breakdown — shown when user clicks the Completeness cell */}
                   {showBenchmarkBreakdown && (
                     <div className="mt-2 rounded-md border border-adv-teal/20 bg-adv-dark p-3">
-                      <p className="mb-2 text-[10px] font-medium uppercase tracking-wider text-adv-teal">What's expected vs. missing</p>
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-teal">What's expected vs. missing</p>
                       {benchmarkLoading ? (
-                        <div className="flex items-center gap-2 text-[11px] text-adv-gray-med">
+                        <div className="flex items-center gap-2 text-[11px] text-adv-gray">
                           <Loader2 className="h-3 w-3 animate-spin" /> Checking components...
                         </div>
                       ) : benchmarkData ? (
@@ -594,7 +594,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                               {benchmarkData.missing.map((c) => (
                                 <div key={c} className="flex items-center gap-1.5">
                                   <XCircle className="h-3 w-3 shrink-0 text-adv-red" />
-                                  <span className="text-[11px] text-adv-gray-med">{c}</span>
+                                  <span className="text-[11px] text-adv-gray">{c}</span>
                                 </div>
                               ))}
                             </div>
@@ -602,13 +602,13 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                           {benchmarkData.suggestions.length > 0 && (
                             <div className="mt-2 border-t border-border pt-2">
                               {benchmarkData.suggestions.slice(0, 2).map((s) => (
-                                <p key={s} className="text-[10px] leading-relaxed text-adv-gray-med">· {s}</p>
+                                <p key={s} className="text-xs leading-relaxed text-adv-gray">· {s}</p>
                               ))}
                             </div>
                           )}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-adv-gray-med">No breakdown available.</p>
+                        <p className="text-[11px] text-adv-gray">No breakdown available.</p>
                       )}
                     </div>
                   )}
@@ -619,7 +619,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                       <div className="mt-3 space-y-2 border-t border-border pt-3">
                         {trustScore.reasoning.strengths && trustScore.reasoning.strengths.length > 0 && (
                           <div>
-                            <p className="mb-1 text-[10px] font-medium text-adv-green">✓ Strengths</p>
+                            <p className="mb-1 text-xs font-medium text-adv-green">✓ Strengths</p>
                             {trustScore.reasoning.strengths.map((s, i) => (
                               <p key={i} className="text-[11px] text-adv-gray leading-relaxed">· {s}</p>
                             ))}
@@ -627,7 +627,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                         )}
                         {trustScore.reasoning.weaknesses && trustScore.reasoning.weaknesses.length > 0 && (
                           <div>
-                            <p className="mb-1 text-[10px] font-medium text-adv-gold">⚠ Weaknesses</p>
+                            <p className="mb-1 text-xs font-medium text-adv-gold">⚠ Weaknesses</p>
                             {trustScore.reasoning.weaknesses.map((w, i) => (
                               <p key={i} className="text-[11px] text-adv-gray leading-relaxed">· {w}</p>
                             ))}
@@ -635,7 +635,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                         )}
                         {trustScore.reasoning.improvementSuggestion && (
                           <div className="rounded bg-adv-teal-soft px-2 py-1.5">
-                            <span className="text-[10px] font-medium text-adv-teal">💡 </span>
+                            <span className="text-xs font-medium text-adv-teal">💡 </span>
                             <span className="text-[11px] italic text-adv-gray">{trustScore.reasoning.improvementSuggestion}</span>
                           </div>
                         )}
@@ -645,9 +645,9 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                 </div>
               ) : (
                 <div className="rounded-lg bg-adv-dark p-4 text-center">
-                  <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-adv-gray-med" />
-                  <p className="text-sm text-adv-gray-med">Scoring in progress…</p>
-                  <p className="mt-1 text-xs text-adv-gray-med">
+                  <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
+                  <p className="text-sm text-adv-gray">Scoring in progress…</p>
+                  <p className="mt-1 text-xs text-adv-gray">
                     Claude Haiku is reviewing the output. Reopen this panel in a moment.
                   </p>
                 </div>
@@ -679,7 +679,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   ...(trailStructRef ? [{ label: 'Structure Ref', value: trailStructRef.mode + (trailStructRef.fileName ? ` · ${trailStructRef.fileName}` : ''), color: 'text-adv-gray' }] : []),
                 ] as { label: string; value: string; color: string }[]).map(({ label, value, color }) => (
                   <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-adv-dark px-3 py-2">
-                    <span className="shrink-0 text-[11px] text-adv-gray-med">{label}</span>
+                    <span className="shrink-0 text-[11px] text-adv-gray">{label}</span>
                     <span className={`max-w-[60%] truncate text-right text-[11px] font-medium ${color}`} title={value}>{value}</span>
                   </div>
                 ))}
@@ -796,7 +796,7 @@ function SuggestedNextSteps({ moduleId }: { moduleId: string }) {
             className="flex flex-col gap-1 rounded-lg border border-border bg-adv-dark px-3 py-2.5 hover:border-adv-teal/40 hover:bg-adv-dark-2 transition-colors group"
           >
             <span className="text-xs font-medium text-adv-off-white group-hover:text-adv-teal transition-colors">{step.label}</span>
-            <span className="text-[10px] text-adv-gray-med leading-snug">{step.description}</span>
+            <span className="text-xs text-adv-gray leading-snug">{step.description}</span>
           </a>
         ))}
       </div>

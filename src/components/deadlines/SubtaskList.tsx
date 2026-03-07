@@ -157,7 +157,7 @@ export default function SubtaskList({
               <span
                 className={`flex-1 text-sm ${
                   isCompleted
-                    ? 'text-adv-gray-med line-through'
+                    ? 'text-adv-gray line-through'
                     : 'text-adv-off-white'
                 }`}
               >
@@ -172,7 +172,7 @@ export default function SubtaskList({
 
               {/* Due date */}
               {st.due_date && (
-                <span className="shrink-0 text-xs text-adv-gray-med">
+                <span className="shrink-0 text-xs text-adv-gray">
                   {formatRelativeDue(st.due_date)}
                 </span>
               )}
@@ -189,7 +189,7 @@ export default function SubtaskList({
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Add subtask..."
-          className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
         <button
           onClick={addSubtask}
@@ -206,7 +206,7 @@ export default function SubtaskList({
       </div>
 
       {totalCount === 0 && (
-        <p className="mt-2 text-center text-xs text-adv-gray-med">
+        <p className="mt-2 text-center text-xs text-adv-gray">
           No subtasks yet. Add one above.
         </p>
       )}

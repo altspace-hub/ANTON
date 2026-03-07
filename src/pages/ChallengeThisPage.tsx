@@ -167,28 +167,28 @@ export default function ChallengeThisPage() {
               placeholder="Paste the document, plan, or argument to challenge..."
               rows={10}
               style={{ minHeight: '200px' }}
-              className="w-full resize-y rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold/60 focus:outline-none"
+              className="w-full resize-y rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               disabled={isStreaming}
             />
           </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-adv-off-white">
-              Context <span className="text-adv-gray-med font-normal">(optional)</span>
+              Context <span className="text-adv-gray font-normal">(optional)</span>
             </label>
             <input
               type="text"
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="e.g. This is an AML policy for a Danish payment institution"
-              className="w-full rounded-xl border border-border bg-adv-card px-4 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold/60 focus:outline-none"
+              className="w-full rounded-xl border border-border bg-adv-card px-4 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-gold/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               disabled={isStreaming}
             />
           </div>
 
           {/* Devil's Advocate Model selector */}
           <div className="rounded-xl border border-border bg-adv-card px-4 py-3">
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
               Devil's Advocate Model
             </label>
             <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export default function ChallengeThisPage() {
           {/* Transparency toggle */}
           <div className="rounded-xl border border-border bg-adv-card px-4 py-3">
             <div className="space-y-1">
-              <div className="text-[11px] text-adv-gray-med">Transparency</div>
+              <div className="text-[11px] text-adv-gray">Transparency</div>
               <div className="flex gap-1.5">
                 {([
                   { level: 0 as const, label: 'Off' },
@@ -266,10 +266,10 @@ export default function ChallengeThisPage() {
           {/* Document upload */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-adv-off-white">
-              Upload documents <span className="text-adv-gray-med font-normal">(optional — upload instead of pasting)</span>
+              Upload documents <span className="text-adv-gray font-normal">(optional — upload instead of pasting)</span>
             </label>
             <div className="relative rounded-lg border-2 border-dashed border-border p-3 text-center hover:border-adv-gray-med transition-colors">
-              <Upload className="mx-auto h-5 w-5 text-adv-gray-med" />
+              <Upload className="mx-auto h-5 w-5 text-adv-gray" />
               <p className="mt-1 text-xs text-adv-gray">
                 Drag & drop or{' '}
                 <label className="cursor-pointer text-adv-gold hover:underline">
@@ -277,7 +277,7 @@ export default function ChallengeThisPage() {
                   <input type="file" multiple accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.html" onChange={(e) => { Array.from(e.target.files || []).forEach(upload); e.target.value = ''; }} className="hidden" />
                 </label>
               </p>
-              <p className="text-[10px] text-adv-gray-med">PDF, DOCX, TXT, XLSX, CSV (max 50MB)</p>
+              <p className="text-xs text-adv-gray">PDF, DOCX, TXT, XLSX, CSV (max 50MB)</p>
             </div>
             {files.length > 0 && (
               <div className="mt-2 space-y-1">
@@ -285,11 +285,11 @@ export default function ChallengeThisPage() {
                   <div key={f.id} className="flex items-center gap-2 rounded bg-adv-dark px-2.5 py-1.5 text-xs">
                     <File className="h-3 w-3 text-adv-gray shrink-0" />
                     <span className="flex-1 truncate text-adv-gray">{f.name}</span>
-                    <span className="text-adv-gray-med">{(f.size / 1024).toFixed(0)}KB</span>
+                    <span className="text-adv-gray">{(f.size / 1024).toFixed(0)}KB</span>
                     {f.status === 'done' && <CheckCircle className="h-3 w-3 text-adv-green" />}
                     {f.status === 'error' && <AlertCircle className="h-3 w-3 text-adv-red" />}
                     {f.status === 'uploading' && <div className="h-3 w-3 animate-spin rounded-full border-2 border-adv-gold border-t-transparent" />}
-                    <button onClick={() => remove(f.id)} className="text-adv-gray-med hover:text-adv-red"><X className="h-3 w-3" /></button>
+                    <button onClick={() => remove(f.id)} className="text-adv-gray hover:text-adv-red"><X className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -324,7 +324,7 @@ export default function ChallengeThisPage() {
                 <div className="h-2 w-2 rounded-full bg-adv-gold" />
                 <span className="text-xs font-medium text-adv-gold">Anton — Challenge Mode</span>
                 {isStreaming && (
-                  <span className="text-xs text-adv-gray-med">analysing...</span>
+                  <span className="text-xs text-adv-gray">analysing...</span>
                 )}
               </div>
               {!isStreaming && displayText && (

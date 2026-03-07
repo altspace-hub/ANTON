@@ -148,7 +148,7 @@ function AddContactForm({
           value={hash}
           onChange={e => { setHash(e.target.value); validateHash(e.target.value); }}
           placeholder="ANTON-XXXX-XXXX-XXXX-XXXX"
-          className={`w-full rounded-lg border bg-adv-dark-2 px-3 py-2 font-mono text-sm text-adv-white placeholder-adv-gray focus:outline-none ${hashError ? 'border-adv-red focus:border-adv-red' : 'border-border focus:border-adv-teal'}`}
+          className={`w-full rounded-lg border bg-adv-dark-2 px-3 py-2 font-mono text-sm text-adv-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 ${hashError ? 'border-adv-red focus:border-adv-red' : 'border-border focus:border-adv-teal'}`}
         />
         {hashError && <p className="mt-1 text-xs text-adv-red">{hashError}</p>}
       </div>
@@ -165,7 +165,7 @@ function AddContactForm({
           onChange={e => setName(e.target.value)}
           placeholder="e.g. Jonas K."
           maxLength={60}
-          className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
@@ -180,7 +180,7 @@ function AddContactForm({
           onChange={e => setPubKey(e.target.value)}
           placeholder="Hex-encoded Ed25519 public key"
           rows={2}
-          className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 font-mono text-xs text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+          className="w-full resize-none rounded-lg border border-border bg-adv-dark-2 px-3 py-2 font-mono text-xs text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 

@@ -305,7 +305,7 @@ export default function AlignmentReviewerPage() {
                 value={projectName}
                 onChange={e => setProjectName(e.target.value)}
                 placeholder="e.g., My React App"
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
 
@@ -319,9 +319,9 @@ export default function AlignmentReviewerPage() {
                 value={directoryPath}
                 onChange={e => setDirectoryPath(e.target.value)}
                 placeholder="e.g., C:\Projects\my-app or /home/user/projects/my-app"
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
               />
-              <p className="text-[10px] text-adv-gray-med mt-1">
+              <p className="text-xs text-adv-gray mt-1">
                 The project directory will be scanned for structure, dependencies, and key files
               </p>
             </div>
@@ -350,7 +350,7 @@ export default function AlignmentReviewerPage() {
                       <span className="text-sm font-medium text-adv-white">{rev.project_name}</span>
                       <div className="flex items-center gap-2">
                         {rev.overall_status && (
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                             rev.overall_status === 'on-track' ? 'bg-adv-green/10 text-adv-green' :
                             rev.overall_status === 'off-track' ? 'bg-adv-red/10 text-adv-red' :
                             'bg-adv-gold/10 text-adv-gold'
@@ -358,7 +358,7 @@ export default function AlignmentReviewerPage() {
                             {rev.overall_status}
                           </span>
                         )}
-                        <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-[10px] text-adv-teal">
+                        <span className="rounded-full bg-adv-teal-dim px-2 py-0.5 text-xs text-adv-teal">
                           {rev.status}
                         </span>
                       </div>
@@ -389,7 +389,7 @@ export default function AlignmentReviewerPage() {
                 <select
                   value={selectedIBProject}
                   onChange={e => setSelectedIBProject(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 >
                   <option value="">— Select a project —</option>
                   {ibProjects.map(p => (
@@ -399,7 +399,7 @@ export default function AlignmentReviewerPage() {
               </div>
             )}
 
-            <div className="text-center text-xs text-adv-gray-med">— or —</div>
+            <div className="text-center text-xs text-adv-gray">— or —</div>
 
             <div>
               <label className="block text-sm font-medium text-adv-off-white mb-1">Manual Goals</label>
@@ -408,7 +408,7 @@ export default function AlignmentReviewerPage() {
                 onChange={e => setGoalsText(e.target.value)}
                 placeholder="Describe the project goals, features, architecture decisions, and success criteria..."
                 rows={8}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 disabled={!!selectedIBProject}
               />
             </div>
@@ -516,7 +516,7 @@ export default function AlignmentReviewerPage() {
                   }`}
                 >
                   {file.filename}
-                  <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[9px] ${
+                  <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${
                     file.instruction_type === 'correction' ? 'bg-adv-red/10 text-adv-red' :
                     file.instruction_type === 'refactoring' ? 'bg-adv-gold/10 text-adv-gold' :
                     'bg-adv-teal-dim text-adv-teal'
@@ -583,13 +583,13 @@ function TrafficLightCard({ dimension }: { dimension: DimensionResult }) {
         <div className={`h-3 w-3 rounded-full ${colors.dot}`} />
         <span className={`text-sm font-semibold ${colors.text}`}>{label}</span>
       </div>
-      <div className="text-[10px] text-adv-gray mb-2">{dimension.reviewer_persona}</div>
+      <div className="text-xs text-adv-gray mb-2">{dimension.reviewer_persona}</div>
       <div className={`text-xs whitespace-pre-wrap ${expanded ? '' : 'line-clamp-4'}`}>
         {dimension.findings}
       </div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-2 flex items-center gap-1 text-[10px] opacity-60 hover:opacity-100"
+        className="mt-2 flex items-center gap-1 text-xs opacity-60 hover:opacity-100"
       >
         {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         {expanded ? 'Show less' : 'Show more'}

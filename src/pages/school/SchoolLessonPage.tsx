@@ -320,7 +320,7 @@ export default function SchoolLessonPage() {
                 onChange={e => setAiInput(prev => ({ ...prev, [index]: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && handleAiDiscussion(index, block)}
                 placeholder={block.content || 'Ask a question about this topic...'}
-                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
               <button
                 onClick={() => handleAiDiscussion(index, block)}

@@ -16,7 +16,7 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
         <select
           value={config.importSource || 'file'}
           onChange={(e) => onUpdate({ importSource: e.target.value as 'file' | 'database' | 'api' | 'saved_dataset' })}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="file">File (CSV, Excel, JSON)</option>
           <option value="database">Database Query</option>
@@ -34,9 +34,9 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
             value={config.savedDatasetId || ''}
             onChange={(e) => onUpdate({ savedDatasetId: e.target.value })}
             placeholder="Dataset ID or name"
-            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
-          <p className="mt-1 text-[10px] text-adv-gray-med">Enter the name of a previously saved dataset</p>
+          <p className="mt-1 text-xs text-adv-gray">Enter the name of a previously saved dataset</p>
         </div>
       )}
 
@@ -50,9 +50,9 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
               value={config.filePath || ''}
               onChange={(e) => onUpdate({ filePath: e.target.value })}
               placeholder="./data/input.csv or {{step_1.output_path}}"
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
-            <p className="mt-1 text-[10px] text-adv-gray-med">Use templates like {`{{step_1.file_path}}`} to reference previous steps</p>
+            <p className="mt-1 text-xs text-adv-gray">Use templates like {`{{step_1.file_path}}`} to reference previous steps</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -61,7 +61,7 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
               <select
                 value={config.fileType || 'csv'}
                 onChange={(e) => onUpdate({ fileType: e.target.value as 'csv' | 'excel' | 'json' })}
-                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 <option value="csv">CSV</option>
                 <option value="excel">Excel (.xlsx)</option>
@@ -77,7 +77,7 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
                   value={config.sheetName || ''}
                   onChange={(e) => onUpdate({ sheetName: e.target.value })}
                   placeholder="Sheet1 (optional)"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
             )}
@@ -91,7 +91,7 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
                   onChange={(e) => onUpdate({ delimiter: e.target.value })}
                   placeholder=","
                   maxLength={1}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </div>
             )}
@@ -120,7 +120,7 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
             <select
               value={config.dataConnectionId || ''}
               onChange={(e) => onUpdate({ dataConnectionId: e.target.value })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">Select connection...</option>
               {/* TODO: Load from ConnectionManager */}
@@ -136,7 +136,7 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
               onChange={(e) => onUpdate({ importQuery: e.target.value })}
               placeholder="SELECT * FROM customers WHERE created_at > {{step_1.start_date}}"
               rows={4}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
             />
           </div>
         </>
@@ -145,7 +145,7 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
       {/* API Source */}
       {config.importSource === 'api' && (
         <div className="rounded-lg border border-border bg-adv-dark-2 p-3">
-          <p className="text-[11px] text-adv-gray-med">
+          <p className="text-[11px] text-adv-gray">
             API import coming soon. Use <code className="rounded bg-adv-dark px-1 py-0.5 text-adv-teal">api_call</code> step type for now.
           </p>
         </div>
@@ -184,12 +184,12 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
               value={config.datasetName || ''}
               onChange={(e) => onUpdate({ datasetName: e.target.value })}
               placeholder="Dataset name (e.g., Q1_Sales_2026)"
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <select
               value={config.datasetScope || 'session'}
               onChange={(e) => onUpdate({ datasetScope: e.target.value })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="session">This session only (auto-delete with session)</option>
               <option value="global">Global (available to all users, expires in 30 days)</option>
@@ -206,9 +206,9 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
           value={config.outputVariable || 'dataset'}
           onChange={(e) => onUpdate({ outputVariable: e.target.value })}
           placeholder="dataset"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
-        <p className="mt-1 text-[10px] text-adv-gray-med">Access in next step: {`{{${step.id}.${config.outputVariable || 'dataset'}}}`}</p>
+        <p className="mt-1 text-xs text-adv-gray">Access in next step: {`{{${step.id}.${config.outputVariable || 'dataset'}}}`}</p>
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ export default function CodingBreadcrumb({ items, className = '' }: CodingBreadc
       </Link>
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1">
-          <ChevronRight className="h-3 w-3 text-adv-gray-med" />
+          <ChevronRight className="h-3 w-3 text-adv-gray" />
           {item.href ? (
             <Link to={item.href} className="text-adv-gray hover:text-adv-teal transition-colors">
               {item.label}

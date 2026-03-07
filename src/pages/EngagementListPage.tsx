@@ -33,7 +33,7 @@ interface Project {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  setup:               { label: 'Setup',           color: 'text-adv-gray-med bg-adv-dark border-border' },
+  setup:               { label: 'Setup',           color: 'text-adv-gray bg-adv-dark border-border' },
   scope_agreement:     { label: 'Scope',           color: 'text-adv-blue bg-adv-blue/10 border-adv-blue/30' },
   client_intelligence: { label: 'Intelligence',    color: 'text-adv-gold bg-adv-gold/10 border-adv-gold/30' },
   resource_collection: { label: 'Resources',       color: 'text-adv-teal bg-adv-teal-dim border-adv-teal/30' },
@@ -167,12 +167,12 @@ export default function EngagementListPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-adv-gray-med" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-adv-gray" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search engagements..."
-          className="w-full bg-adv-card border border-border rounded-lg pl-9 pr-4 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+          className="w-full bg-adv-card border border-border rounded-lg pl-9 pr-4 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
         />
       </div>
 
@@ -200,7 +200,7 @@ export default function EngagementListPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
-          <Briefcase className="h-12 w-12 text-adv-gray-med mx-auto mb-4" />
+          <Briefcase className="h-12 w-12 text-adv-gray mx-auto mb-4" />
           <p className="text-adv-gray text-sm">
             {search ? 'No engagements match your search.' : 'No engagements yet. Start with "New Engagement".'}
           </p>
@@ -222,16 +222,16 @@ export default function EngagementListPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-adv-off-white text-base truncate">{eng.title}</h3>
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${st.color}`}>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${st.color}`}>
                         {st.label}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-border text-adv-gray-med">
+                      <span className="text-xs px-2 py-0.5 rounded-full border border-border text-adv-gray">
                         {eng.engagement_type === 'full' ? 'Full' : 'Lite'}
                       </span>
                       {eng.project_id && (() => {
                         const proj = projects.find(p => p.id === eng.project_id);
                         return proj ? (
-                          <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border border-adv-teal/30 text-adv-teal bg-adv-teal-dim">
+                          <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-adv-teal/30 text-adv-teal bg-adv-teal-dim">
                             <FolderOpen className="h-3 w-3" />
                             {proj.name}
                           </span>
@@ -240,17 +240,17 @@ export default function EngagementListPage() {
                     </div>
                     <p className="mt-1 text-sm text-adv-gray">
                       {[eng.your_organisation, eng.client_name].filter(Boolean).join(' → ')}
-                      {domains.length > 0 && <span className="ml-2 text-adv-gray-med">· {domains.slice(0, 2).join(', ')}</span>}
+                      {domains.length > 0 && <span className="ml-2 text-adv-gray">· {domains.slice(0, 2).join(', ')}</span>}
                     </p>
                     {/* Progress bar */}
                     <div className="mt-3 flex items-center gap-3">
                       <div className="flex-1 h-1 bg-adv-dark-2 rounded-full overflow-hidden">
                         <div className="h-full bg-adv-teal rounded-full transition-all" style={{ width: `${progress}%` }} />
                       </div>
-                      <span className="text-[10px] text-adv-gray-med whitespace-nowrap">{progress}% complete</span>
+                      <span className="text-xs text-adv-gray whitespace-nowrap">{progress}% complete</span>
                     </div>
                     {/* Stats */}
-                    <div className="mt-3 flex items-center gap-4 text-xs text-adv-gray-med">
+                    <div className="mt-3 flex items-center gap-4 text-xs text-adv-gray">
                       <span>{eng.scope_count} scope items</span>
                       <span>{eng.resource_count} resources</span>
                       {eng.iteration_count > 0 && <span>{eng.iteration_count} iteration{eng.iteration_count !== 1 ? 's' : ''}</span>}
@@ -264,7 +264,7 @@ export default function EngagementListPage() {
                     <button
                       onClick={e => archiveEngagement(eng.id, e)}
                       title="Archive"
-                      className="p-1.5 rounded text-adv-gray-med hover:text-adv-red hover:bg-adv-red/10 transition-colors"
+                      className="p-1.5 rounded text-adv-gray hover:text-adv-red hover:bg-adv-red/10 transition-colors"
                     >
                       <Archive className="h-4 w-4" />
                     </button>
@@ -272,7 +272,7 @@ export default function EngagementListPage() {
                       <button
                         onClick={e => { e.stopPropagation(); setLinkingEngId(linkingEngId === eng.id ? null : eng.id); }}
                         title="Link to project"
-                        className="p-1.5 rounded text-adv-gray-med hover:text-adv-teal hover:bg-adv-teal-dim transition-colors"
+                        className="p-1.5 rounded text-adv-gray hover:text-adv-teal hover:bg-adv-teal-dim transition-colors"
                       >
                         <Link2 className="h-4 w-4" />
                       </button>
@@ -290,7 +290,7 @@ export default function EngagementListPage() {
                             </button>
                           )}
                           {projects.length === 0 ? (
-                            <p className="px-3 py-2 text-xs text-adv-gray-med">No projects yet</p>
+                            <p className="px-3 py-2 text-xs text-adv-gray">No projects yet</p>
                           ) : (
                             projects.map(p => (
                               <button
@@ -352,7 +352,7 @@ export default function EngagementListPage() {
                   onChange={e => setNewTitle(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && createEngagement()}
                   placeholder="e.g. AMLR Gap Assessment — Nordea Q2 2026"
-                  className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                  className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -362,7 +362,7 @@ export default function EngagementListPage() {
                     value={newOrg}
                     onChange={e => setNewOrg(e.target.value)}
                     placeholder="e.g. openEXPERT"
-                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                   />
                 </div>
                 <div>
@@ -371,7 +371,7 @@ export default function EngagementListPage() {
                     value={newClient}
                     onChange={e => setNewClient(e.target.value)}
                     placeholder="e.g. Nordea"
-                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                    className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                   />
                 </div>
               </div>

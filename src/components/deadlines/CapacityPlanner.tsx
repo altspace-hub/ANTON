@@ -30,7 +30,7 @@ export default function CapacityPlanner() {
         <div className="flex items-center gap-2">
           <BarChart2 className="h-4 w-4 text-adv-teal" />
           <span className="text-sm font-semibold text-adv-off-white">Capacity Planner</span>
-          <span className="text-xs text-adv-gray-med">Week-by-week load analysis</span>
+          <span className="text-xs text-adv-gray">Week-by-week load analysis</span>
         </div>
         <ChevronRight className={`h-4 w-4 text-adv-gray transition-transform ${open ? 'rotate-90' : ''}`} />
       </button>
@@ -38,9 +38,9 @@ export default function CapacityPlanner() {
       {open && (
         <div className="border-t border-border px-5 pb-5">
           {loading ? (
-            <p className="pt-4 text-sm text-adv-gray-med">Loading capacity data...</p>
+            <p className="pt-4 text-sm text-adv-gray">Loading capacity data...</p>
           ) : conflicts.length === 0 ? (
-            <p className="pt-4 text-sm text-adv-gray-med">No capacity data available.</p>
+            <p className="pt-4 text-sm text-adv-gray">No capacity data available.</p>
           ) : (
             <div className="mt-4 space-y-3">
               {conflicts.map((week) => {
@@ -51,7 +51,7 @@ export default function CapacityPlanner() {
                       <span className="text-adv-gray">
                         Week of {formatWeek(week.weekStart)}
                         {week.deadlines.length > 0 && (
-                          <span className="ml-1.5 text-adv-gray-med">
+                          <span className="ml-1.5 text-adv-gray">
                             ({week.deadlines.length} deadline{week.deadlines.length !== 1 ? 's' : ''})
                           </span>
                         )}

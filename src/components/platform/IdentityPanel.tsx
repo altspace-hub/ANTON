@@ -53,9 +53,9 @@ export function IdentityPanel() {
 
   const labelClass = 'block text-xs font-medium text-adv-off-white mb-1';
   const inputClass =
-    'w-full bg-adv-dark border border-border text-adv-off-white rounded-lg px-3 py-2 text-sm focus:border-adv-teal focus:outline-none';
+    'w-full bg-adv-dark border border-border text-adv-off-white rounded-lg px-3 py-2 text-sm focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
   const textareaClass =
-    'w-full bg-adv-dark border border-border text-adv-off-white rounded-lg px-3 py-2 text-sm focus:border-adv-teal focus:outline-none resize-none';
+    'w-full bg-adv-dark border border-border text-adv-off-white rounded-lg px-3 py-2 text-sm focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none';
 
   if (loading) {
     return (

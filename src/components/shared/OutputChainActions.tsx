@@ -113,7 +113,7 @@ export function OutputChainActions({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={handleCreatePresentation}
-          className="flex items-center gap-2 px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/50 hover:bg-adv-teal/10 text-adv-off-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal/50"
+          className="flex items-center gap-2 px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/50 hover:bg-adv-teal/10 text-adv-off-white text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/50"
           aria-label="Create presentation from this output"
         >
           <BarChart2 className="w-3.5 h-3.5 text-adv-teal flex-shrink-0" />
@@ -122,7 +122,7 @@ export function OutputChainActions({
 
         <button
           onClick={handleCreateExecutiveSummary}
-          className="flex items-center gap-2 px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/50 hover:bg-adv-teal/10 text-adv-off-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal/50"
+          className="flex items-center gap-2 px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/50 hover:bg-adv-teal/10 text-adv-off-white text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/50"
           aria-label="Create executive summary from this output"
         >
           <FileText className="w-3.5 h-3.5 text-adv-teal flex-shrink-0" />
@@ -131,7 +131,7 @@ export function OutputChainActions({
 
         <button
           onClick={handleCreateActionPlan}
-          className="flex items-center gap-2 px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/50 hover:bg-adv-teal/10 text-adv-off-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal/50"
+          className="flex items-center gap-2 px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/50 hover:bg-adv-teal/10 text-adv-off-white text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/50"
           aria-label="Create action plan from this output"
         >
           <ClipboardList className="w-3.5 h-3.5 text-adv-teal flex-shrink-0" />
@@ -157,7 +157,7 @@ export function OutputChainActions({
                       },
                     })
                   }
-                  className="w-full flex items-start gap-2 text-left px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/40 hover:bg-adv-teal/5 transition-colors group focus:outline-none focus:ring-2 focus:ring-adv-teal/50"
+                  className="w-full flex items-start gap-2 text-left px-3 py-2 rounded-md bg-adv-dark border border-border hover:border-adv-teal/40 hover:bg-adv-teal/5 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/50"
                   aria-label={`Open ${s.label} module`}
                 >
                   <ArrowRight className="w-3.5 h-3.5 text-adv-teal mt-0.5 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />

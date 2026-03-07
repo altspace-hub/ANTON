@@ -18,9 +18,9 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
           value={config.exportDatasetId || ''}
           onChange={(e) => onUpdate({ exportDatasetId: e.target.value })}
           placeholder="{{step_3.merged_dataset.id}}"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
-        <p className="mt-1 text-[10px] text-adv-gray-med">Reference dataset from previous step</p>
+        <p className="mt-1 text-xs text-adv-gray">Reference dataset from previous step</p>
       </div>
 
       {/* Destination Type */}
@@ -29,7 +29,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
         <select
           value={config.exportDestination || 'file'}
           onChange={(e) => onUpdate({ exportDestination: e.target.value as 'file' | 'database' | 'api' })}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="file">File (CSV, Excel, JSON)</option>
           <option value="database">Database Table</option>
@@ -47,7 +47,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
               value={config.exportFilePath || ''}
               onChange={(e) => onUpdate({ exportFilePath: e.target.value })}
               placeholder="./output/results.xlsx"
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
@@ -56,7 +56,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
             <select
               value={config.exportFileType || 'excel'}
               onChange={(e) => onUpdate({ exportFileType: e.target.value as 'csv' | 'excel' | 'json' })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="csv">CSV</option>
               <option value="excel">Excel (.xlsx)</option>
@@ -87,7 +87,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
             <select
               value={config.dataConnectionId || ''}
               onChange={(e) => onUpdate({ dataConnectionId: e.target.value })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">Select connection...</option>
               {/* TODO: Load from ConnectionManager */}
@@ -103,7 +103,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
               value={config.exportTableName || ''}
               onChange={(e) => onUpdate({ exportTableName: e.target.value })}
               placeholder="customer_data"
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
@@ -112,7 +112,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
             <select
               value={config.exportInsertMode || 'insert'}
               onChange={(e) => onUpdate({ exportInsertMode: e.target.value as 'insert' | 'upsert' | 'replace' })}
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="insert">Insert (fail if exists)</option>
               <option value="upsert">Upsert (insert or update)</option>
@@ -125,7 +125,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
       {/* API Export */}
       {config.exportDestination === 'api' && (
         <div className="rounded-lg border border-border bg-adv-dark-2 p-3">
-          <p className="text-[11px] text-adv-gray-med">
+          <p className="text-[11px] text-adv-gray">
             API export coming soon. Use <code className="rounded bg-adv-dark px-1 py-0.5 text-adv-teal">api_call</code> step type for now.
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function DataExportStep({ step, onUpdate }: DataExportStepProps) 
           value={config.outputVariable || 'export_result'}
           onChange={(e) => onUpdate({ outputVariable: e.target.value })}
           placeholder="export_result"
-          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
         />
       </div>
     </div>

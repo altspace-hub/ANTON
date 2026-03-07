@@ -66,7 +66,7 @@ function similarityColor(sim: number): string {
 
 function LineNum({ n }: { n: number | null }) {
   return (
-    <span className="select-none w-10 shrink-0 text-right pr-3 text-adv-gray-med text-xs leading-5">
+    <span className="select-none w-10 shrink-0 text-right pr-3 text-adv-gray text-xs leading-5">
       {n !== null ? n : ''}
     </span>
   );
@@ -483,7 +483,7 @@ export default function VersionDiffViewer({ oldVersionId, newVersionId, onClose 
               </span>
             </span>
           )}
-          <span className="ml-auto text-adv-gray-med">
+          <span className="ml-auto text-adv-gray">
             {formatDate(diff.oldCreatedAt)} → {formatDate(diff.newCreatedAt)}
           </span>
         </div>

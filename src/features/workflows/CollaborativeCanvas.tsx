@@ -165,7 +165,7 @@ function AssignModal({
               autoFocus
               value={assignTo}
               onChange={(e) => setAssignTo(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               placeholder="e.g. jonas@example.com"
             />
           </div>
@@ -177,7 +177,7 @@ function AssignModal({
               step="0.5"
               value={slaHours}
               onChange={(e) => setSlaHours(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               placeholder="e.g. 24"
             />
           </div>
@@ -187,7 +187,7 @@ function AssignModal({
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               placeholder="Any special instructions..."
             />
           </div>
@@ -350,18 +350,18 @@ export default function CollaborativeCanvas({
         <div className="mb-4 flex items-center gap-2">
           <Users className="h-4 w-4 text-adv-teal" />
           <h3 className="text-sm font-semibold text-adv-white">Step Assignments</h3>
-          <span className="text-xs text-adv-gray-med">{assignments.length} assigned</span>
+          <span className="text-xs text-adv-gray">{assignments.length} assigned</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left">
-                <th className="pb-2 text-xs font-medium text-adv-gray-med">Step</th>
-                <th className="pb-2 text-xs font-medium text-adv-gray-med">Assigned to</th>
-                <th className="pb-2 text-xs font-medium text-adv-gray-med">SLA</th>
-                <th className="pb-2 text-xs font-medium text-adv-gray-med">Status</th>
-                <th className="pb-2 text-xs font-medium text-adv-gray-med">Actions</th>
+                <th className="pb-2 text-xs font-medium text-adv-gray">Step</th>
+                <th className="pb-2 text-xs font-medium text-adv-gray">Assigned to</th>
+                <th className="pb-2 text-xs font-medium text-adv-gray">SLA</th>
+                <th className="pb-2 text-xs font-medium text-adv-gray">Status</th>
+                <th className="pb-2 text-xs font-medium text-adv-gray">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -381,48 +381,48 @@ export default function CollaborativeCanvas({
                     <td className="py-2.5 pr-3">
                       {assignment ? (
                         <div className="flex items-center gap-1.5">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-adv-teal-dim text-[10px] font-bold text-adv-teal">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-adv-teal-dim text-xs font-bold text-adv-teal">
                             {assignment.assigned_to.charAt(0).toUpperCase()}
                           </div>
                           <span className="text-xs text-adv-off-white">{assignment.assigned_to}</span>
                         </div>
                       ) : (
-                        <span className="text-xs text-adv-gray-med italic">Unassigned</span>
+                        <span className="text-xs text-adv-gray italic">Unassigned</span>
                       )}
                     </td>
                     <td className="py-2.5 pr-3">
                       {due ? (
                         <div className="flex items-center gap-1">
-                          <Clock className={`h-3 w-3 ${due.urgent ? 'text-adv-red' : 'text-adv-gray-med'}`} />
-                          <span className={`text-xs ${due.urgent ? 'text-adv-red font-medium' : 'text-adv-gray-med'}`}>
+                          <Clock className={`h-3 w-3 ${due.urgent ? 'text-adv-red' : 'text-adv-gray'}`} />
+                          <span className={`text-xs ${due.urgent ? 'text-adv-red font-medium' : 'text-adv-gray'}`}>
                             {due.label}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs text-adv-gray-med">—</span>
+                        <span className="text-xs text-adv-gray">—</span>
                       )}
                     </td>
                     <td className="py-2.5 pr-3">
                       {assignment ? (
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(assignment.status)}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(assignment.status)}`}>
                           {assignment.status.replace('_', ' ')}
                         </span>
                       ) : (
-                        <span className="text-xs text-adv-gray-med">—</span>
+                        <span className="text-xs text-adv-gray">—</span>
                       )}
                     </td>
                     <td className="py-2.5">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setAssignModal(idx)}
-                          className="rounded px-2 py-0.5 text-[10px] text-adv-teal hover:bg-adv-teal-dim transition-colors"
+                          className="rounded px-2 py-0.5 text-xs text-adv-teal hover:bg-adv-teal-dim transition-colors"
                         >
                           {assignment ? 'Reassign' : 'Assign'}
                         </button>
                         {assignment && assignment.status === 'pending' && (
                           <button
                             onClick={() => handleUpdateAssignmentStatus(assignment.id, 'in_progress')}
-                            className="rounded px-2 py-0.5 text-[10px] text-adv-blue hover:bg-adv-blue/10 transition-colors"
+                            className="rounded px-2 py-0.5 text-xs text-adv-blue hover:bg-adv-blue/10 transition-colors"
                           >
                             Start
                           </button>
@@ -430,7 +430,7 @@ export default function CollaborativeCanvas({
                         {assignment && assignment.status === 'in_progress' && (
                           <button
                             onClick={() => handleUpdateAssignmentStatus(assignment.id, 'completed')}
-                            className="rounded px-2 py-0.5 text-[10px] text-adv-green hover:bg-adv-green/10 transition-colors"
+                            className="rounded px-2 py-0.5 text-xs text-adv-green hover:bg-adv-green/10 transition-colors"
                           >
                             Complete
                           </button>
@@ -453,7 +453,7 @@ export default function CollaborativeCanvas({
             Parallel Reviews — Step {currentStepIndex + 1}
           </h3>
           {consensus && (
-            <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium ${
+            <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${
               consensus.consensus === 'approved' ? 'bg-adv-teal/20 text-adv-teal' :
               consensus.consensus === 'rejected' ? 'bg-adv-red/20 text-adv-red' :
               'bg-adv-gold/20 text-adv-gold'
@@ -485,7 +485,7 @@ export default function CollaborativeCanvas({
           <div className="mb-4 space-y-2">
             {consensus.reviews.map((r) => (
               <div key={r.id} className="flex items-center gap-3 rounded-lg bg-adv-dark-2 px-3 py-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-adv-teal-dim text-[10px] font-bold text-adv-teal">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-adv-teal-dim text-xs font-bold text-adv-teal">
                   {r.reviewer.charAt(0).toUpperCase()}
                 </div>
                 <span className="flex-1 text-xs text-adv-off-white">{r.reviewer}</span>
@@ -496,10 +496,10 @@ export default function CollaborativeCanvas({
                 ) : r.review_status === 'rejected' ? (
                   <XCircle className="h-4 w-4 text-adv-red" />
                 ) : (
-                  <span className="text-xs text-adv-gray-med">Abstained</span>
+                  <span className="text-xs text-adv-gray">Abstained</span>
                 )}
                 {r.review_comment && (
-                  <span className="max-w-[120px] truncate text-xs text-adv-gray-med" title={r.review_comment}>
+                  <span className="max-w-[120px] truncate text-xs text-adv-gray" title={r.review_comment}>
                     "{r.review_comment}"
                   </span>
                 )}
@@ -515,7 +515,7 @@ export default function CollaborativeCanvas({
             onChange={(e) => setReviewerInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddReviewer(); }}
             placeholder="Add reviewer (name or email)..."
-            className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           <button
             onClick={handleAddReviewer}
@@ -533,7 +533,7 @@ export default function CollaborativeCanvas({
             value={reviewerName}
             onChange={(e) => setReviewerName(e.target.value)}
             placeholder="Your name..."
-            className="mb-2 w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="mb-2 w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           <div className="mb-2 flex gap-2">
             {(['approved', 'rejected', 'abstained'] as const).map((s) => (
@@ -545,7 +545,7 @@ export default function CollaborativeCanvas({
                     ? s === 'approved' ? 'border-adv-teal bg-adv-teal/20 text-adv-teal'
                       : s === 'rejected' ? 'border-adv-red bg-adv-red/20 text-adv-red'
                       : 'border-adv-gray-med bg-adv-gray-med/20 text-adv-gray'
-                    : 'border-border text-adv-gray-med hover:border-adv-gray'
+                    : 'border-border text-adv-gray hover:border-adv-gray'
                 }`}
               >
                 {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -557,7 +557,7 @@ export default function CollaborativeCanvas({
             value={reviewComment}
             onChange={(e) => setReviewComment(e.target.value)}
             placeholder="Comment (optional)..."
-            className="mb-2 w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="mb-2 w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           <button
             onClick={handleSubmitReview}
@@ -574,7 +574,7 @@ export default function CollaborativeCanvas({
         <div className="mb-4 flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-adv-teal" />
           <h3 className="text-sm font-semibold text-adv-white">Comments</h3>
-          <span className="text-xs text-adv-gray-med">
+          <span className="text-xs text-adv-gray">
             {comments.filter((c) => !c.resolved).length} open
           </span>
         </div>
@@ -582,7 +582,7 @@ export default function CollaborativeCanvas({
         {/* Comment list */}
         <div className="mb-4 max-h-72 space-y-2 overflow-y-auto pr-1">
           {comments.length === 0 ? (
-            <p className="py-4 text-center text-xs text-adv-gray-med">No comments yet</p>
+            <p className="py-4 text-center text-xs text-adv-gray">No comments yet</p>
           ) : (
             comments.map((c) => (
               <div
@@ -596,23 +596,23 @@ export default function CollaborativeCanvas({
                 }`}
               >
                 <div className="mb-1.5 flex items-center gap-2">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-adv-teal-dim text-[10px] font-bold text-adv-teal">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-adv-teal-dim text-xs font-bold text-adv-teal">
                     {c.author.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-xs font-medium text-adv-off-white">{c.author}</span>
                   {c.step_index !== null && (
-                    <span className="text-[10px] text-adv-gray-med">Step {c.step_index + 1}</span>
+                    <span className="text-xs text-adv-gray">Step {c.step_index + 1}</span>
                   )}
-                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${commentTypeBadge(c.comment_type)}`}>
+                  <span className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${commentTypeBadge(c.comment_type)}`}>
                     {c.comment_type}
                   </span>
-                  <span className="ml-auto text-[10px] text-adv-gray-med">
+                  <span className="ml-auto text-xs text-adv-gray">
                     {new Date(c.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                   {!c.resolved && (
                     <button
                       onClick={() => handleResolveComment(c.id)}
-                      className="text-[10px] text-adv-gray-med hover:text-adv-teal transition-colors"
+                      className="text-xs text-adv-gray hover:text-adv-teal transition-colors"
                       title="Mark resolved"
                     >
                       Resolve
@@ -621,7 +621,7 @@ export default function CollaborativeCanvas({
                 </div>
                 <p className="text-xs leading-relaxed text-adv-off-white">{c.content}</p>
                 {c.resolved && c.resolved_by && (
-                  <p className="mt-1 text-[10px] text-adv-gray-med">Resolved by {c.resolved_by}</p>
+                  <p className="mt-1 text-xs text-adv-gray">Resolved by {c.resolved_by}</p>
                 )}
               </div>
             ))
@@ -635,12 +635,12 @@ export default function CollaborativeCanvas({
               value={commentAuthor}
               onChange={(e) => setCommentAuthor(e.target.value)}
               placeholder="Your name..."
-              className="w-32 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-32 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <select
               value={commentType}
               onChange={(e) => setCommentType(e.target.value as CanvasComment['comment_type'])}
-              className="rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="comment">Comment</option>
               <option value="suggestion">Suggestion</option>
@@ -655,7 +655,7 @@ export default function CollaborativeCanvas({
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && e.ctrlKey) handleAddComment(); }}
               placeholder="Add a comment... (Ctrl+Enter to send)"
-              className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
             <button
               onClick={handleAddComment}

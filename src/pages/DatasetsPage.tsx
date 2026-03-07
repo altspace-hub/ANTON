@@ -161,9 +161,9 @@ export default function DatasetsPage() {
         </div>
       ) : datasets.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-12 text-center">
-          <Database className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
+          <Database className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
           <p className="text-sm text-adv-gray">No saved datasets yet.</p>
-          <p className="mt-1 text-xs text-adv-gray-med">
+          <p className="mt-1 text-xs text-adv-gray">
             Use the "Save dataset for reuse" option in workflow data import steps.
           </p>
         </div>
@@ -187,7 +187,7 @@ export default function DatasetsPage() {
                     )}
                   </div>
                   <span
-                    className={`ml-2 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                    className={`ml-2 shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${
                       dataset.session_id ? scopeColors.session : scopeColors.global
                     }`}
                   >

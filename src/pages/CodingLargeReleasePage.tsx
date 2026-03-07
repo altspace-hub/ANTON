@@ -49,7 +49,7 @@ function statusBadgeClass(status: string): string {
     case 'review': return 'bg-adv-blue/10 text-adv-blue';
     case 'testing': return 'bg-adv-gold/10 text-adv-gold';
     case 'blocked': return 'bg-adv-red/10 text-adv-red';
-    case 'cancelled': return 'bg-adv-gray-med/10 text-adv-gray-med';
+    case 'cancelled': return 'bg-adv-gray-med/10 text-adv-gray';
     default: return 'bg-adv-dark text-adv-gray';
   }
 }
@@ -488,7 +488,7 @@ export default function CodingLargeReleasePage() {
           </h1>
           <p className="mt-1 text-sm text-adv-gray">{release.description}</p>
           {release.milestone_date && (
-            <p className="mt-0.5 text-xs text-adv-gray-med">
+            <p className="mt-0.5 text-xs text-adv-gray">
               <Clock className="mr-1 inline h-3 w-3" />
               Milestone: {new Date(release.milestone_date).toLocaleDateString()}
             </p>
@@ -558,7 +558,7 @@ export default function CodingLargeReleasePage() {
                   <input
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     placeholder="Release name"
                   />
                 </div>
@@ -568,7 +568,7 @@ export default function CodingLargeReleasePage() {
                     type="date"
                     value={editForm.milestone_date}
                     onChange={(e) => setEditForm({ ...editForm, milestone_date: e.target.value })}
-                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
                 </div>
               </div>
@@ -579,7 +579,7 @@ export default function CodingLargeReleasePage() {
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   rows={2}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                   placeholder="What this release delivers"
                 />
               </div>
@@ -590,7 +590,7 @@ export default function CodingLargeReleasePage() {
                   value={editForm.scope}
                   onChange={(e) => setEditForm({ ...editForm, scope: e.target.value })}
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                   placeholder="Technical scope and boundaries"
                 />
               </div>
@@ -601,7 +601,7 @@ export default function CodingLargeReleasePage() {
                   value={editForm.acceptance_criteria}
                   onChange={(e) => setEditForm({ ...editForm, acceptance_criteria: e.target.value })}
                   rows={5}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none font-mono"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none font-mono"
                   placeholder="Each line becomes one acceptance criterion"
                 />
               </div>
@@ -680,7 +680,7 @@ export default function CodingLargeReleasePage() {
                 <input
                   value={addTaskForm.title}
                   onChange={(e) => setAddTaskForm({ ...addTaskForm, title: e.target.value })}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   placeholder="Task title"
                   autoFocus
                 />
@@ -692,7 +692,7 @@ export default function CodingLargeReleasePage() {
                   value={addTaskForm.description}
                   onChange={(e) => setAddTaskForm({ ...addTaskForm, description: e.target.value })}
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                   placeholder="What this task accomplishes"
                 />
               </div>
@@ -724,7 +724,7 @@ export default function CodingLargeReleasePage() {
                   value={addTaskForm.acceptance_criteria}
                   onChange={(e) => setAddTaskForm({ ...addTaskForm, acceptance_criteria: e.target.value })}
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none font-mono"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none font-mono"
                   placeholder="Each line becomes one criterion"
                 />
               </div>
@@ -765,12 +765,12 @@ export default function CodingLargeReleasePage() {
                     ? <ChevronDown className="h-4 w-4 shrink-0 text-adv-gray" />
                     : <ChevronRight className="h-4 w-4 shrink-0 text-adv-gray" />
                   }
-                  <span className="font-mono text-xs text-adv-gray-med">{task.task_number}</span>
+                  <span className="font-mono text-xs text-adv-gray">{task.task_number}</span>
                   <span className="flex-1 text-sm font-medium text-adv-off-white">{task.title}</span>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${complexityBadgeClass(task.complexity_band)}`}>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${complexityBadgeClass(task.complexity_band)}`}>
                     {task.complexity_band}
                   </span>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${statusBadgeClass(task.status)}`}>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(task.status)}`}>
                     {task.status.replace('_', ' ')}
                   </span>
                 </button>
@@ -809,7 +809,7 @@ export default function CodingLargeReleasePage() {
                           {task.depends_on.map((dep) => {
                             const depTask = tasks.find((t) => t.id === dep);
                             return (
-                              <span key={dep} className="rounded-full bg-adv-dark px-2.5 py-0.5 text-[11px] text-adv-gray-med font-mono">
+                              <span key={dep} className="rounded-full bg-adv-dark px-2.5 py-0.5 text-[11px] text-adv-gray font-mono">
                                 {depTask ? `${depTask.task_number}: ${depTask.title}` : dep}
                               </span>
                             );
@@ -845,7 +845,7 @@ export default function CodingLargeReleasePage() {
                           <span className="text-xs font-medium text-adv-teal">Generating execution plan...</span>
                           <button
                             onClick={stopStreaming}
-                            className="ml-auto rounded-lg border border-border px-3 py-1 text-[10px] text-adv-gray hover:text-adv-red hover:border-adv-red transition-colors"
+                            className="ml-auto rounded-lg border border-border px-3 py-1 text-xs text-adv-gray hover:text-adv-red hover:border-adv-red transition-colors"
                           >
                             Stop
                           </button>
@@ -880,7 +880,7 @@ export default function CodingLargeReleasePage() {
                           <span className="text-xs font-medium text-adv-teal">Executing task...</span>
                           <button
                             onClick={stopStreaming}
-                            className="ml-auto rounded-lg border border-border px-3 py-1 text-[10px] text-adv-gray hover:text-adv-red hover:border-adv-red transition-colors"
+                            className="ml-auto rounded-lg border border-border px-3 py-1 text-xs text-adv-gray hover:text-adv-red hover:border-adv-red transition-colors"
                           >
                             Stop
                           </button>
@@ -931,9 +931,9 @@ export default function CodingLargeReleasePage() {
 
           {tasks.length === 0 && (
             <div className="rounded-lg border border-dashed border-border bg-adv-card/50 px-6 py-8 text-center">
-              <Target className="mx-auto h-8 w-8 text-adv-gray-med" />
+              <Target className="mx-auto h-8 w-8 text-adv-gray" />
               <p className="mt-2 text-sm text-adv-gray">No tasks in this release yet.</p>
-              <p className="text-xs text-adv-gray-med">Click "Add Task" above to create your first task.</p>
+              <p className="text-xs text-adv-gray">Click "Add Task" above to create your first task.</p>
             </div>
           )}
         </div>
@@ -975,7 +975,7 @@ export default function CodingLargeReleasePage() {
               ].map(({ key, label, color }) => (
                 <div key={key} className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-center">
                   <span className={`text-lg font-bold ${color}`}>{statusCounts[key] || 0}</span>
-                  <p className="text-[10px] text-adv-gray">{label}</p>
+                  <p className="text-xs text-adv-gray">{label}</p>
                 </div>
               ))}
             </div>
@@ -989,9 +989,9 @@ export default function CodingLargeReleasePage() {
                 <div key={task.id} className="rounded-lg border border-border bg-adv-card p-4 space-y-2">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-teal" />
-                    <span className="font-mono text-xs text-adv-gray-med">{task.task_number}</span>
+                    <span className="font-mono text-xs text-adv-gray">{task.task_number}</span>
                     <span className="text-sm font-medium text-adv-off-white">{task.title}</span>
-                    <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadgeClass(task.status)}`}>
+                    <span className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(task.status)}`}>
                       {task.status.replace('_', ' ')}
                     </span>
                   </div>
@@ -1023,28 +1023,28 @@ export default function CodingLargeReleasePage() {
                   <CheckCircle2 className="h-4 w-4 text-adv-green" />
                   <span className="text-xl font-bold text-adv-green">{completedTasks.length}</span>
                 </div>
-                <span className="text-[10px] text-adv-gray">Tasks Completed</span>
+                <span className="text-xs text-adv-gray">Tasks Completed</span>
               </div>
               <div className="rounded-lg border border-border bg-adv-dark px-3 py-3 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <FileCode className="h-4 w-4 text-adv-teal" />
                   <span className="text-xl font-bold text-adv-teal">{completionStats.totalFilesCreated + completionStats.totalFilesModified}</span>
                 </div>
-                <span className="text-[10px] text-adv-gray">Files Created/Modified</span>
+                <span className="text-xs text-adv-gray">Files Created/Modified</span>
               </div>
               <div className="rounded-lg border border-border bg-adv-dark px-3 py-3 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <TestTube className="h-4 w-4 text-adv-green" />
                   <span className="text-xl font-bold text-adv-green">{completionStats.totalTestsPassed}</span>
                 </div>
-                <span className="text-[10px] text-adv-gray">Tests Passed</span>
+                <span className="text-xs text-adv-gray">Tests Passed</span>
               </div>
               <div className="rounded-lg border border-border bg-adv-dark px-3 py-3 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <AlertTriangle className="h-4 w-4 text-adv-red" />
                   <span className="text-xl font-bold text-adv-red">{completionStats.totalTestsFailed}</span>
                 </div>
-                <span className="text-[10px] text-adv-gray">Tests Failed</span>
+                <span className="text-xs text-adv-gray">Tests Failed</span>
               </div>
             </div>
           </div>
@@ -1057,10 +1057,10 @@ export default function CodingLargeReleasePage() {
                 <div key={task.id} className="rounded-lg border border-border bg-adv-card overflow-hidden">
                   <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-adv-green" />
-                    <span className="font-mono text-xs text-adv-gray-med">{task.task_number}</span>
+                    <span className="font-mono text-xs text-adv-gray">{task.task_number}</span>
                     <span className="flex-1 text-sm font-medium text-adv-off-white">{task.title}</span>
                     {task.completed_at && (
-                      <span className="text-[10px] text-adv-gray-med">
+                      <span className="text-xs text-adv-gray">
                         <Clock className="mr-0.5 inline h-3 w-3" />
                         {new Date(task.completed_at).toLocaleDateString()}
                       </span>
@@ -1076,7 +1076,7 @@ export default function CodingLargeReleasePage() {
             </div>
           ) : (
             <div className="rounded-xl border border-border bg-adv-card/50 px-6 py-8 text-center">
-              <CheckCircle2 className="mx-auto h-8 w-8 text-adv-gray-med" />
+              <CheckCircle2 className="mx-auto h-8 w-8 text-adv-gray" />
               <p className="mt-2 text-sm text-adv-gray">No completed tasks yet.</p>
             </div>
           )}

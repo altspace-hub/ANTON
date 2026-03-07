@@ -166,7 +166,7 @@ export default function TeacherClassProgressPage() {
                   },
                 ].map(({ label, value, icon: Icon }) => (
                   <div key={label} className="rounded-lg bg-adv-dark px-3 py-2.5">
-                    <div className="flex items-center gap-1.5 text-xs text-adv-gray-med mb-1">
+                    <div className="flex items-center gap-1.5 text-xs text-adv-gray mb-1">
                       <Icon className="h-3.5 w-3.5" />
                       {label}
                     </div>
@@ -177,7 +177,7 @@ export default function TeacherClassProgressPage() {
 
               {/* Class-wide progress bar */}
               <div className="mt-4">
-                <div className="mb-1 flex justify-between text-xs text-adv-gray-med">
+                <div className="mb-1 flex justify-between text-xs text-adv-gray">
                   <span>Class average progress</span>
                   <span className="text-adv-teal">{avgProgress}%</span>
                 </div>
@@ -194,7 +194,7 @@ export default function TeacherClassProgressPage() {
                 <div className="mt-5 pt-4 border-t border-border">
                   <div className="flex items-center gap-2 mb-3">
                     <BookOpen className="h-4 w-4 text-adv-teal" />
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-adv-gray-med">
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-adv-gray">
                       Class Average — Bloom's Dimensions
                     </h3>
                   </div>
@@ -207,7 +207,7 @@ export default function TeacherClassProgressPage() {
                         <div key={key}>
                           <div className="mb-1 flex justify-between text-xs">
                             <span className="text-adv-off-white">{label}</span>
-                            <span className="text-adv-gray-med">{pct}%</span>
+                            <span className="text-adv-gray">{pct}%</span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-adv-dark">
                             <div
@@ -226,7 +226,7 @@ export default function TeacherClassProgressPage() {
             {/* Two-column: student list + detail */}
             {classDetail.students.length === 0 ? (
               <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-                <Users className="mx-auto mb-3 h-8 w-8 text-adv-gray-med" />
+                <Users className="mx-auto mb-3 h-8 w-8 text-adv-gray" />
                 <p className="text-sm text-adv-gray">
                   No students enrolled. Share code <code className="font-mono text-adv-teal">{classDetail.classCode}</code>.
                 </p>
@@ -236,7 +236,7 @@ export default function TeacherClassProgressPage() {
                 {/* Student list sidebar */}
                 <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
                   <div className="border-b border-border bg-adv-dark px-4 py-2.5">
-                    <p className="text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+                    <p className="text-xs font-medium uppercase tracking-widest text-adv-gray">
                       {t('nav.students', 'Students')} · {classDetail.students.length}
                     </p>
                   </div>
@@ -268,7 +268,7 @@ export default function TeacherClassProgressPage() {
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>
-                              <span className="text-xs text-adv-gray-med">{pct}%</span>
+                              <span className="text-xs text-adv-gray">{pct}%</span>
                             </div>
                           </div>
                         </button>
@@ -290,7 +290,7 @@ export default function TeacherClassProgressPage() {
                           <p className="text-base font-semibold text-adv-white">
                             {activeStudent.display_name || activeStudent.username}
                           </p>
-                          <p className="text-sm text-adv-gray-med">
+                          <p className="text-sm text-adv-gray">
                             Last active: {formatDate(activeStudent.last_active)}
                           </p>
                         </div>
@@ -298,15 +298,15 @@ export default function TeacherClassProgressPage() {
 
                       <div className="grid grid-cols-3 gap-3 text-sm">
                         <div className="rounded-lg bg-adv-dark px-3 py-2">
-                          <p className="text-xs text-adv-gray-med">Progress</p>
+                          <p className="text-xs text-adv-gray">Progress</p>
                           <p className="text-base font-semibold text-adv-teal">{activeStudent.overall_progress_pct ?? 0}%</p>
                         </div>
                         <div className="rounded-lg bg-adv-dark px-3 py-2">
-                          <p className="text-xs text-adv-gray-med">Sessions</p>
+                          <p className="text-xs text-adv-gray">Sessions</p>
                           <p className="text-base font-semibold text-adv-white">{activeStudent.sessions_count ?? 0}</p>
                         </div>
                         <div className="rounded-lg bg-adv-dark px-3 py-2">
-                          <p className="text-xs text-adv-gray-med">Submitted</p>
+                          <p className="text-xs text-adv-gray">Submitted</p>
                           <p className="text-base font-semibold text-adv-white">{activeStudent.submitted_count ?? 0}</p>
                         </div>
                       </div>
@@ -330,7 +330,7 @@ export default function TeacherClassProgressPage() {
                               <div key={key}>
                                 <div className="mb-1 flex justify-between text-xs">
                                   <span className="text-adv-off-white">{label}</span>
-                                  <span className="text-adv-gray-med">{pct}%</span>
+                                  <span className="text-adv-gray">{pct}%</span>
                                 </div>
                                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-adv-dark">
                                   <div

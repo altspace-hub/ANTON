@@ -194,7 +194,7 @@ export default function NewsSourcesPage() {
       {/* Filter + stats bar */}
       <div className="border-b border-border bg-adv-dark-2 px-6 py-3 shrink-0">
         <div className="flex items-center gap-4 flex-wrap">
-          <span className="text-xs text-adv-gray-med shrink-0">Country:</span>
+          <span className="text-xs text-adv-gray shrink-0">Country:</span>
           <div className="flex gap-1 flex-wrap">
             {countries.map((c) => (
               <button
@@ -211,7 +211,7 @@ export default function NewsSourcesPage() {
             ))}
           </div>
           {!loading && (
-            <span className="ml-auto text-xs text-adv-gray-med">
+            <span className="ml-auto text-xs text-adv-gray">
               {totalActive} active · {filtered.length} total sources
             </span>
           )}
@@ -226,7 +226,7 @@ export default function NewsSourcesPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <AlertCircle className="h-8 w-8 text-adv-gray-med mb-3" />
+            <AlertCircle className="h-8 w-8 text-adv-gray mb-3" />
             <p className="text-sm text-adv-gray">No sources found. Add sources via settings.</p>
           </div>
         ) : (
@@ -240,14 +240,14 @@ export default function NewsSourcesPage() {
                 >
                   <div className="flex items-center justify-center gap-1.5 mb-0.5">
                     <div className={`h-2 w-2 rounded-full ${col.dotClass}`} />
-                    <span className={`text-[10px] font-semibold uppercase tracking-wide hidden lg:block ${col.headerText}`}>
+                    <span className={`text-xs font-semibold uppercase tracking-wide hidden lg:block ${col.headerText}`}>
                       {col.label}
                     </span>
-                    <span className={`text-[10px] font-semibold uppercase tracking-wide lg:hidden ${col.headerText}`}>
+                    <span className={`text-xs font-semibold uppercase tracking-wide lg:hidden ${col.headerText}`}>
                       {col.shortLabel}
                     </span>
                   </div>
-                  <span className="text-[10px] text-adv-gray-med">
+                  <span className="text-xs text-adv-gray">
                     {groupedByRating.find(g => g.rating === col.rating)?.items.length ?? 0}
                   </span>
                 </div>
@@ -260,7 +260,7 @@ export default function NewsSourcesPage() {
                 <div key={col.rating} className="space-y-2">
                   {col.items.length === 0 ? (
                     <div className={`rounded-lg border border-dashed ${col.cardBorder} p-3 text-center`}>
-                      <span className="text-[10px] text-adv-gray-med">—</span>
+                      <span className="text-xs text-adv-gray">—</span>
                     </div>
                   ) : (
                     col.items.map((source) => (
@@ -284,8 +284,8 @@ export default function NewsSourcesPage() {
                         {/* Factuality score */}
                         <div className="mb-1.5">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[9px] text-adv-gray-med uppercase tracking-wide">Factuality</span>
-                            <span className={`text-[10px] font-semibold ${col.scoreColor(source.factuality_score)}`}>
+                            <span className="text-xs text-adv-gray uppercase tracking-wide">Factuality</span>
+                            <span className={`text-xs font-semibold ${col.scoreColor(source.factuality_score)}`}>
                               {source.factuality_score}
                             </span>
                           </div>
@@ -306,12 +306,12 @@ export default function NewsSourcesPage() {
                         {/* Category + active badge */}
                         <div className="flex items-center gap-1 flex-wrap">
                           {source.category && (
-                            <span className="text-[9px] text-adv-gray-med capitalize bg-adv-dark rounded px-1 py-0.5">
+                            <span className="text-xs text-adv-gray capitalize bg-adv-dark rounded px-1 py-0.5">
                               {source.category}
                             </span>
                           )}
                           {!source.active && (
-                            <span className="text-[9px] text-adv-gray-med bg-adv-dark rounded px-1 py-0.5">
+                            <span className="text-xs text-adv-gray bg-adv-dark rounded px-1 py-0.5">
                               inactive
                             </span>
                           )}
@@ -325,7 +325,7 @@ export default function NewsSourcesPage() {
 
             {/* Legend */}
             <div className="mt-6 flex items-center justify-center gap-6 flex-wrap">
-              <span className="text-xs text-adv-gray-med">Factuality score:</span>
+              <span className="text-xs text-adv-gray">Factuality score:</span>
               <div className="flex items-center gap-1.5">
                 <div className="h-2 w-2 rounded-full bg-adv-green" />
                 <span className="text-[11px] text-adv-gray">70–100 High</span>

@@ -61,11 +61,11 @@ interface RecentSession {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const severityColor: Record<string, string> = {
-  critical: 'text-red-400 bg-red-900/30 border-red-800',
-  high:     'text-orange-400 bg-orange-900/30 border-orange-800',
-  medium:   'text-yellow-400 bg-yellow-900/30 border-yellow-800',
-  low:      'text-blue-400 bg-blue-900/30 border-blue-800',
-  info:     'text-gray-400 bg-gray-900/30 border-gray-700',
+  critical: 'text-adv-red bg-adv-red/10 border-adv-red/40',
+  high:     'text-adv-gold bg-adv-gold/10 border-adv-gold/40',
+  medium:   'text-adv-gold bg-adv-gold/5 border-adv-gold/20',
+  low:      'text-adv-blue bg-adv-blue/10 border-adv-blue/30',
+  info:     'text-adv-gray bg-adv-dark-2/60 border-adv-gray/20',
 };
 
 const severityIcon: Record<string, React.ReactNode> = {
@@ -173,7 +173,7 @@ export default function OrchestrationDashboard() {
   useEffect(() => { void fetchAll(); }, [fetchAll]);
 
   const statusColor = (s: string) =>
-    s === 'active' ? 'bg-green-500' : s === 'transitioning' ? 'bg-yellow-500' : 'bg-gray-500';
+    s === 'active' ? 'bg-adv-green' : s === 'transitioning' ? 'bg-adv-gold' : 'bg-adv-gray-med';
 
   return (
     <div className="min-h-screen bg-[#0B1426] text-[#E0E0E0] p-6">
@@ -340,16 +340,16 @@ export default function OrchestrationDashboard() {
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[#0F1B2D] rounded-lg p-2 text-center">
-                  <div className="text-lg font-bold text-green-400">{triggerSummary.active}</div>
-                  <div className="text-xs text-gray-400">Active</div>
+                  <div className="text-lg font-bold text-adv-teal">{triggerSummary.active}</div>
+                  <div className="text-xs text-adv-gray">Active</div>
                 </div>
                 <div className="bg-[#0F1B2D] rounded-lg p-2 text-center">
-                  <div className="text-lg font-bold text-yellow-400">{triggerSummary.paused}</div>
-                  <div className="text-xs text-gray-400">Paused</div>
+                  <div className="text-lg font-bold text-adv-gold">{triggerSummary.paused}</div>
+                  <div className="text-xs text-adv-gray">Paused</div>
                 </div>
                 <div className="bg-[#0F1B2D] rounded-lg p-2 text-center">
-                  <div className="text-lg font-bold text-red-400">{triggerSummary.error}</div>
-                  <div className="text-xs text-gray-400">Error</div>
+                  <div className="text-lg font-bold text-adv-red">{triggerSummary.error}</div>
+                  <div className="text-xs text-adv-gray">Error</div>
                 </div>
               </div>
               <div className="flex justify-between text-sm border-t border-white/10 pt-3">

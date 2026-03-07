@@ -156,9 +156,9 @@ export function KnowledgeLibraryManager() {
 
       {entries.length === 0 && !showAddForm && (
         <div className="rounded-lg border border-dashed border-border px-6 py-10 text-center">
-          <Database className="mx-auto h-8 w-8 text-adv-gray-med mb-3" />
+          <Database className="mx-auto h-8 w-8 text-adv-gray mb-3" />
           <p className="text-sm text-adv-gray">No corpora registered.</p>
-          <p className="text-xs text-adv-gray-med mt-1">Add your first corpus to make it available across all modules.</p>
+          <p className="text-xs text-adv-gray mt-1">Add your first corpus to make it available across all modules.</p>
         </div>
       )}
 
@@ -183,7 +183,7 @@ export function KnowledgeLibraryManager() {
                       <input
                         value={editLabel}
                         onChange={e => setEditLabel(e.target.value)}
-                        className="w-full rounded border border-adv-teal bg-adv-dark px-2 py-0.5 text-xs text-adv-off-white focus:outline-none"
+                        className="w-full rounded border border-adv-teal bg-adv-dark px-2 py-0.5 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         autoFocus
                       />
                     ) : (
@@ -195,7 +195,7 @@ export function KnowledgeLibraryManager() {
                       <select
                         value={editCategory}
                         onChange={e => setEditCategory(e.target.value as KnowledgeLibraryEntry['category'])}
-                        className="rounded border border-border bg-adv-dark px-1 py-0.5 text-xs text-adv-off-white focus:outline-none"
+                        className="rounded border border-border bg-adv-dark px-1 py-0.5 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                       >
                         {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
@@ -204,13 +204,13 @@ export function KnowledgeLibraryManager() {
                     )}
                   </td>
                   <td className="px-3 py-2 hidden md:table-cell">
-                    <span className="text-xs text-adv-gray-med font-mono truncate max-w-xs block" title={entry.path}>{entry.path}</span>
+                    <span className="text-xs text-adv-gray font-mono truncate max-w-xs block" title={entry.path}>{entry.path}</span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-xs text-adv-gray">
                       {entry.indexed_at
                         ? `${entry.file_count} files`
-                        : <span className="text-adv-gray-med italic">Not indexed</span>
+                        : <span className="text-adv-gray italic">Not indexed</span>
                       }
                     </span>
                   </td>
@@ -221,7 +221,7 @@ export function KnowledgeLibraryManager() {
                         {new Date(entry.indexed_at).toLocaleDateString()}
                       </div>
                     ) : (
-                      <span className="text-xs text-adv-gray-med">—</span>
+                      <span className="text-xs text-adv-gray">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2">
@@ -296,7 +296,7 @@ export function KnowledgeLibraryManager() {
                 value={newLabel}
                 onChange={e => setNewLabel(e.target.value)}
                 placeholder="EBA Guidelines Corpus"
-                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
             </div>
             <div>
@@ -304,7 +304,7 @@ export function KnowledgeLibraryManager() {
               <select
                 value={newCategory}
                 onChange={e => setNewCategory(e.target.value as KnowledgeLibraryEntry['category'])}
-                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               >
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
@@ -316,7 +316,7 @@ export function KnowledgeLibraryManager() {
               value={newPath}
               onChange={e => setNewPath(e.target.value)}
               placeholder="C:\FCP_Workbench\RAG_dir\eba"
-              className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs font-mono text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs font-mono text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div>
@@ -325,7 +325,7 @@ export function KnowledgeLibraryManager() {
               value={newDescription}
               onChange={e => setNewDescription(e.target.value)}
               placeholder="Brief description of this corpus"
-              className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div className="flex items-center gap-4">

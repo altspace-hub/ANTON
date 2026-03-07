@@ -66,14 +66,14 @@ export default function SchoolCodingPage() {
           <h1 className="text-xl font-bold text-adv-white">
             {t('coding.title', 'Computational Thinking')}
           </h1>
-          <p className="mt-0.5 text-sm text-adv-gray-med">
+          <p className="mt-0.5 text-sm text-adv-gray">
             {t('coding.subtitle', 'Learn to code with Alma\'s guidance')}
           </p>
         </div>
 
         {/* Language selector */}
         <div className="rounded-xl border border-border bg-adv-card p-4">
-          <label className="mb-2 block text-xs font-medium uppercase tracking-widest text-adv-gray-med">
+          <label className="mb-2 block text-xs font-medium uppercase tracking-widest text-adv-gray">
             {t('coding.language', 'Programming language')}
           </label>
           <div className="flex gap-2">
@@ -82,7 +82,7 @@ export default function SchoolCodingPage() {
                 key={lang.id}
                 type="button"
                 onClick={() => setLanguage(lang.id)}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal ${
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal ${
                   language === lang.id
                     ? 'border-adv-teal bg-adv-teal/10 text-adv-teal'
                     : 'border-border text-adv-gray hover:border-adv-teal/50 hover:text-adv-off-white'
@@ -117,7 +117,7 @@ export default function SchoolCodingPage() {
                   <p className="mt-1 text-sm text-adv-gray">
                     {t(mod.descKey, mod.descKey)}
                   </p>
-                  <p className="mt-2 text-xs italic text-adv-gray-med">
+                  <p className="mt-2 text-xs italic text-adv-gray">
                     {t(mod.exampleKey, '')}
                   </p>
                 </div>

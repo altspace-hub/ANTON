@@ -68,7 +68,7 @@ const BIAS_CONFIG: Record<string, { label: string; dot: string; text: string }> 
 };
 
 function getBiasConfig(rating: BiasRating) {
-  return BIAS_CONFIG[rating] ?? { label: rating ?? 'Unknown', dot: 'bg-adv-gray-med', text: 'text-adv-gray-med' };
+  return BIAS_CONFIG[rating] ?? { label: rating ?? 'Unknown', dot: 'bg-adv-gray-med', text: 'text-adv-gray' };
 }
 
 function formatTimeAgo(isoString: string): string {
@@ -231,7 +231,7 @@ export default function NewsFeedPage() {
       {/* ── Filter bar ──────────────────────────────────────────────── */}
       <div className="border-b border-border bg-adv-dark-2 px-6 py-3 shrink-0">
         <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-1.5 text-xs text-adv-gray-med">
+          <div className="flex items-center gap-1.5 text-xs text-adv-gray">
             <Filter className="h-3.5 w-3.5" />
             Filter:
           </div>
@@ -272,7 +272,7 @@ export default function NewsFeedPage() {
             ))}
           </div>
 
-          <span className="ml-auto text-xs text-adv-gray-med">
+          <span className="ml-auto text-xs text-adv-gray">
             {filtered.length} article{filtered.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -289,7 +289,7 @@ export default function NewsFeedPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <AlertCircle className="h-8 w-8 text-adv-gray-med mb-3" />
+              <AlertCircle className="h-8 w-8 text-adv-gray mb-3" />
               <p className="text-sm text-adv-gray">No articles match the selected filters.</p>
               <button
                 onClick={() => navigate('/news/sources')}
@@ -338,15 +338,15 @@ export default function NewsFeedPage() {
                           <span className="text-xs font-medium text-adv-off-white/70">
                             {article.source_name}
                           </span>
-                          <span className={`text-[10px] font-medium ${bias.text}`}>
+                          <span className={`text-xs font-medium ${bias.text}`}>
                             {bias.label}
                           </span>
                           {article.category && (
-                            <span className="text-[10px] text-adv-gray-med capitalize">
+                            <span className="text-xs text-adv-gray capitalize">
                               {article.category}
                             </span>
                           )}
-                          <span className="text-[10px] text-adv-gray-med">
+                          <span className="text-xs text-adv-gray">
                             {formatTimeAgo(article.published_at)}
                           </span>
 
@@ -355,7 +355,7 @@ export default function NewsFeedPage() {
                             {article.story_id && (
                               <button
                                 onClick={() => navigate(`/news/story/${article.story_id}`)}
-                                className="flex items-center gap-1 rounded px-2 py-0.5 text-[10px] text-adv-gray hover:text-adv-teal hover:bg-adv-teal-soft transition-colors"
+                                className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-adv-gray hover:text-adv-teal hover:bg-adv-teal-soft transition-colors"
                               >
                                 Full story
                                 <ChevronRight className="h-3 w-3" />
@@ -363,7 +363,7 @@ export default function NewsFeedPage() {
                             )}
                             <button
                               onClick={() => handleGenerateExplainer(article)}
-                              className="flex items-center gap-1 rounded px-2 py-0.5 text-[10px] text-adv-gray hover:text-adv-teal hover:bg-adv-teal-soft transition-colors"
+                              className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-adv-gray hover:text-adv-teal hover:bg-adv-teal-soft transition-colors"
                             >
                               <Sparkles className="h-3 w-3" />
                               Explain
@@ -402,7 +402,7 @@ export default function NewsFeedPage() {
                 <p className="text-xs font-medium text-adv-off-white line-clamp-2">
                   {explainerArticle.title}
                 </p>
-                <p className="text-[10px] text-adv-gray mt-0.5">{explainerArticle.source_name}</p>
+                <p className="text-xs text-adv-gray mt-0.5">{explainerArticle.source_name}</p>
               </div>
             )}
 

@@ -95,7 +95,7 @@ function ConfidenceBar({ value }: { value: number }) {
       <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[10px] text-adv-gray w-8 text-right">{pct}%</span>
+      <span className="text-xs text-adv-gray w-8 text-right">{pct}%</span>
     </div>
   );
 }
@@ -199,7 +199,7 @@ export default function OrchestratorTrailViewer() {
             {trail.total_reasoning_cost_usd != null && (
               <span>${trail.total_reasoning_cost_usd.toFixed(4)}</span>
             )}
-            <span className="text-[10px] px-1.5 py-0.5 bg-white/5 rounded">
+            <span className="text-xs px-1.5 py-0.5 bg-white/5 rounded">
               Level {trail.transparency_level} transparency
             </span>
           </div>
@@ -251,7 +251,7 @@ export default function OrchestratorTrailViewer() {
           >
             Expand all
           </button>
-          <span className="text-adv-gray-med">·</span>
+          <span className="text-adv-gray">·</span>
           <button
             onClick={collapseAll}
             className="text-xs text-adv-gray hover:text-adv-off-white transition-colors"
@@ -283,7 +283,7 @@ export default function OrchestratorTrailViewer() {
                   <div className={`w-5 h-5 rounded-full border flex items-center justify-center z-10 mt-1.5 ${config.bg}`}>
                     <IconComponent className={`w-2.5 h-2.5 ${config.color}`} />
                   </div>
-                  <span className="text-[9px] text-adv-gray-med mt-0.5">{index + 1}</span>
+                  <span className="text-xs text-adv-gray mt-0.5">{index + 1}</span>
                 </div>
 
                 {/* Entry card */}
@@ -292,13 +292,13 @@ export default function OrchestratorTrailViewer() {
                     onClick={() => toggleEntry(entry.id)}
                     className="w-full px-4 py-2.5 flex items-center gap-2 text-left hover:bg-white/3 transition-colors"
                   >
-                    <span className={`text-[10px] font-medium uppercase tracking-wide shrink-0 ${config.color}`}>
+                    <span className={`text-xs font-medium uppercase tracking-wide shrink-0 ${config.color}`}>
                       {config.label}
                     </span>
                     <span className="text-xs text-adv-off-white flex-1 truncate">{entry.title}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       {entry.confidence != null && (
-                        <span className="text-[10px] text-adv-gray">{Math.round(entry.confidence * 100)}%</span>
+                        <span className="text-xs text-adv-gray">{Math.round(entry.confidence * 100)}%</span>
                       )}
                       {isExpanded
                         ? <ChevronDown className="w-3.5 h-3.5 text-adv-gray" />
@@ -312,14 +312,14 @@ export default function OrchestratorTrailViewer() {
                       {/* Confidence bar */}
                       {entry.confidence != null && (
                         <div>
-                          <div className="text-[10px] text-adv-gray mb-1">Confidence</div>
+                          <div className="text-xs text-adv-gray mb-1">Confidence</div>
                           <ConfidenceBar value={entry.confidence} />
                         </div>
                       )}
 
                       {/* Main content */}
                       <div>
-                        <div className="text-[10px] text-adv-gray mb-1">Reasoning</div>
+                        <div className="text-xs text-adv-gray mb-1">Reasoning</div>
                         <p className="text-xs text-adv-off-white leading-relaxed whitespace-pre-wrap">
                           {entry.content}
                         </p>
@@ -328,8 +328,8 @@ export default function OrchestratorTrailViewer() {
                       {/* Evidence */}
                       {entry.evidence && entry.evidence !== '{}' && (
                         <div>
-                          <div className="text-[10px] text-adv-gray mb-1">Evidence</div>
-                          <pre className="text-[10px] text-adv-gray bg-adv-dark-2 rounded p-2 overflow-x-auto whitespace-pre-wrap">
+                          <div className="text-xs text-adv-gray mb-1">Evidence</div>
+                          <pre className="text-xs text-adv-gray bg-adv-dark-2 rounded p-2 overflow-x-auto whitespace-pre-wrap">
                             {entry.evidence}
                           </pre>
                         </div>
@@ -338,10 +338,10 @@ export default function OrchestratorTrailViewer() {
                       {/* Metadata */}
                       {metadata && Object.keys(metadata).length > 0 && (
                         <div>
-                          <div className="text-[10px] text-adv-gray mb-1">Metadata</div>
+                          <div className="text-xs text-adv-gray mb-1">Metadata</div>
                           <div className="flex flex-wrap gap-1.5">
                             {Object.entries(metadata).map(([k, v]) => (
-                              <span key={k} className="text-[10px] px-2 py-0.5 bg-white/5 rounded text-adv-gray">
+                              <span key={k} className="text-xs px-2 py-0.5 bg-white/5 rounded text-adv-gray">
                                 <span className="text-adv-off-white">{k}:</span>{' '}
                                 {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                               </span>
@@ -352,7 +352,7 @@ export default function OrchestratorTrailViewer() {
 
                       {/* Model / token info */}
                       {(entry.model_used || entry.tokens_used != null) && (
-                        <div className="flex flex-wrap gap-3 text-[10px] text-adv-gray-med pt-1 border-t border-white/5">
+                        <div className="flex flex-wrap gap-3 text-xs text-adv-gray pt-1 border-t border-white/5">
                           {entry.model_used && <span>Model: {entry.model_used}</span>}
                           {entry.tokens_used != null && <span>{entry.tokens_used.toLocaleString()} tokens</span>}
                           {entry.cost_usd != null && <span>${entry.cost_usd.toFixed(5)}</span>}

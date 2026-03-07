@@ -289,7 +289,7 @@ export default function SchoolChatPage() {
             <span className="font-medium text-adv-off-white">{classContext.name}</span>
             {classContext.currentTopic && (
               <>
-                <span className="text-adv-gray-med">·</span>
+                <span className="text-adv-gray">·</span>
                 <span className="text-adv-gray">{classContext.currentTopic}</span>
               </>
             )}
@@ -457,7 +457,7 @@ export default function SchoolChatPage() {
             placeholder={t('chat.placeholder')}
             rows={2}
             disabled={isStreaming}
-            className="w-full resize-none bg-transparent text-sm text-adv-off-white placeholder:text-adv-gray-med focus:outline-none disabled:opacity-50"
+            className="w-full resize-none bg-transparent text-sm text-adv-off-white placeholder:text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-50"
             aria-label={t('chat.placeholder')}
           />
           <div className="flex items-center justify-between pt-2">
@@ -465,7 +465,7 @@ export default function SchoolChatPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploadingDoc || isStreaming}
-              className="rounded-lg p-1.5 text-adv-gray hover:text-adv-off-white transition-colors focus:outline-none focus:ring-2 focus:ring-adv-teal disabled:opacity-40"
+              className="rounded-lg p-1.5 text-adv-gray hover:text-adv-off-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal disabled:opacity-40"
               aria-label={t('chat.attachFile', 'Attach a document')}
               title={t('chat.uploadsAllowed')}
             >
@@ -479,7 +479,7 @@ export default function SchoolChatPage() {
               type="button"
               onClick={() => handleSend()}
               disabled={!input.trim() || isStreaming}
-              className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-adv-teal transition-colors"
+              className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-4 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal transition-colors"
               aria-label={t('chat.send')}
             >
               {isStreaming ? (

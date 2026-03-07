@@ -96,7 +96,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
             {(form.regulatory_supervisors as string[]).map((s, i) => (
               <span key={i} className="flex items-center gap-1 text-xs bg-adv-card border border-border rounded-full px-2 py-1 text-adv-off-white">
                 {s}
-                <button onClick={() => update('regulatory_supervisors', (form.regulatory_supervisors as string[]).filter((_, j) => j !== i))} className="text-adv-gray-med hover:text-adv-red transition-colors">
+                <button onClick={() => update('regulatory_supervisors', (form.regulatory_supervisors as string[]).filter((_, j) => j !== i))} className="text-adv-gray hover:text-adv-red transition-colors">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </span>
@@ -108,7 +108,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
               onChange={e => setNewSupervisor(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && newSupervisor.trim()) { update('regulatory_supervisors', [...(form.regulatory_supervisors as string[]), newSupervisor.trim()]); setNewSupervisor(''); }}}
               placeholder="Add supervisor (e.g. ECB/SSM, Finansinspektionen SE)"
-              className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-1.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-1.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <button
               onClick={() => { if (newSupervisor.trim()) { update('regulatory_supervisors', [...(form.regulatory_supervisors as string[]), newSupervisor.trim()]); setNewSupervisor(''); }}}
@@ -126,7 +126,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
             {(form.products_in_scope as string[]).map((p, i) => (
               <span key={i} className="flex items-center gap-1 text-xs bg-adv-card border border-border rounded-full px-2 py-1 text-adv-off-white">
                 {p}
-                <button onClick={() => update('products_in_scope', (form.products_in_scope as string[]).filter((_, j) => j !== i))} className="text-adv-gray-med hover:text-adv-red transition-colors">
+                <button onClick={() => update('products_in_scope', (form.products_in_scope as string[]).filter((_, j) => j !== i))} className="text-adv-gray hover:text-adv-red transition-colors">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </span>
@@ -138,7 +138,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
               onChange={e => setNewProduct(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && newProduct.trim()) { update('products_in_scope', [...(form.products_in_scope as string[]), newProduct.trim()]); setNewProduct(''); }}}
               placeholder="Add product (e.g. Retail deposits, Consumer lending)"
-              className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-1.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-1.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <button
               onClick={() => { if (newProduct.trim()) { update('products_in_scope', [...(form.products_in_scope as string[]), newProduct.trim()]); setNewProduct(''); }}}
@@ -158,7 +158,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
             <select
               value={form.engagement_trigger}
               onChange={e => update('engagement_trigger', e.target.value)}
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             >
               <option value="">Select trigger...</option>
               {ENGAGEMENT_TRIGGERS.map(t => <option key={t}>{t}</option>)}
@@ -169,7 +169,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
             <select
               value={form.client_maturity_signal}
               onChange={e => update('client_maturity_signal', e.target.value)}
-              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             >
               <option value="">Select signal...</option>
               {MATURITY_SIGNALS.map(m => <option key={m}>{m}</option>)}
@@ -185,7 +185,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
             {(form.recent_regulatory_history as string[]).map((h, i) => (
               <div key={i} className="flex items-start gap-2 text-xs text-adv-gray bg-adv-card border border-border rounded px-3 py-2">
                 <span className="flex-1">{h}</span>
-                <button onClick={() => update('recent_regulatory_history', (form.recent_regulatory_history as string[]).filter((_, j) => j !== i))} className="text-adv-gray-med hover:text-adv-red shrink-0">
+                <button onClick={() => update('recent_regulatory_history', (form.recent_regulatory_history as string[]).filter((_, j) => j !== i))} className="text-adv-gray hover:text-adv-red shrink-0">
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
@@ -197,7 +197,7 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
               onChange={e => setNewHistoryItem(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && newHistoryItem.trim()) { update('recent_regulatory_history', [...(form.recent_regulatory_history as string[]), newHistoryItem.trim()]); setNewHistoryItem(''); }}}
               placeholder="e.g. ECB thematic AML review 2024, Danish FSA inspection Q3 2025"
-              className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-1.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+              className="flex-1 bg-adv-dark-2 border border-border rounded-lg px-3 py-1.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
             <button
               onClick={() => { if (newHistoryItem.trim()) { update('recent_regulatory_history', [...(form.recent_regulatory_history as string[]), newHistoryItem.trim()]); setNewHistoryItem(''); }}}
@@ -252,7 +252,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.C
 function Field({ label, value, onChange, placeholder, multiline = false }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; multiline?: boolean;
 }) {
-  const cls = "w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal";
+  const cls = "w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal";
   return (
     <div>
       <label className="block text-xs text-adv-gray mb-1">{label}</label>

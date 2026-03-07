@@ -172,7 +172,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
       <div className="bg-adv-card border border-border rounded-xl px-5 py-4 flex items-center gap-6">
         <div className="text-center">
           <p className="text-2xl font-bold text-adv-teal">{totalResources}</p>
-          <p className="text-xs text-adv-gray-med">resources</p>
+          <p className="text-xs text-adv-gray">resources</p>
         </div>
         <div className="flex-1 flex gap-3 flex-wrap">
           {CATEGORIES.map(cat => {
@@ -209,7 +209,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
               <Icon className="h-4 w-4 text-adv-teal shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-adv-off-white">{cat.label}</p>
-                <p className="text-xs text-adv-gray-med">{catResources.length} item{catResources.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-adv-gray">{catResources.length} item{catResources.length !== 1 ? 's' : ''}</p>
               </div>
               {/* Status toggle */}
               <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
@@ -220,8 +220,8 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
                     <button
                       key={s}
                       onClick={() => setCategoryStatus(cat.id, s)}
-                      className={`flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full border transition-all ${
-                        catStatus === s ? sc.color : 'text-adv-gray-med border-border bg-transparent hover:border-adv-gray-med'
+                      className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border transition-all ${
+                        catStatus === s ? sc.color : 'text-adv-gray border-border bg-transparent hover:border-adv-gray-med'
                       }`}
                     >
                       <SIcon className="h-2.5 w-2.5" />
@@ -230,14 +230,14 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
                   );
                 })}
               </div>
-              {isExpanded ? <ChevronUp className="h-4 w-4 text-adv-gray-med" /> : <ChevronDown className="h-4 w-4 text-adv-gray-med" />}
+              {isExpanded ? <ChevronUp className="h-4 w-4 text-adv-gray" /> : <ChevronDown className="h-4 w-4 text-adv-gray" />}
             </div>
 
             {/* Expanded content */}
             {isExpanded && (
               <div className="border-t border-border p-4 space-y-3">
                 <p className="text-xs text-adv-gray">{cat.description}</p>
-                <p className="text-xs text-adv-gray-med italic">Examples: {cat.examples}</p>
+                <p className="text-xs text-adv-gray italic">Examples: {cat.examples}</p>
 
                 {/* Resource list */}
                 {catResources.length > 0 && (
@@ -284,13 +284,13 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
                       value={urlInput}
                       onChange={e => setUrlInput(e.target.value)}
                       placeholder="https://eur-lex.europa.eu/... or any web URL"
-                      className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                      className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                     />
                     <input
                       value={urlTitle}
                       onChange={e => setUrlTitle(e.target.value)}
                       placeholder="Label (optional — defaults to URL)"
-                      className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                      className="w-full bg-adv-card border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                     />
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setAddingUrl(null)} className="text-xs text-adv-gray hover:text-adv-off-white px-2 py-1">Cancel</button>
@@ -329,14 +329,14 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
           <FolderSearch className="h-4 w-4 text-adv-teal shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-medium text-adv-off-white">RAG Knowledge Directory</p>
-            <p className="text-xs text-adv-gray-med">
+            <p className="text-xs text-adv-gray">
               {engagement.rag_directory_path
                 ? `Indexed: ${engagement.rag_directory_path}`
                 : 'Optional — for large document sets (20+ files)'}
             </p>
           </div>
           {engagement.rag_directory_path && (
-            <span className="text-[10px] border border-adv-teal/30 text-adv-teal bg-adv-teal-dim rounded-full px-2 py-0.5">Active</span>
+            <span className="text-xs border border-adv-teal/30 text-adv-teal bg-adv-teal-dim rounded-full px-2 py-0.5">Active</span>
           )}
         </div>
 
@@ -360,7 +360,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
                 <span className="text-xs text-adv-off-white flex-1 truncate font-mono">{engagement.rag_directory_path}</span>
                 <button
                   onClick={removeRagDirectory}
-                  className="text-adv-gray-med hover:text-adv-red transition-colors shrink-0"
+                  className="text-adv-gray hover:text-adv-red transition-colors shrink-0"
                   title="Remove RAG directory"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -387,7 +387,7 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
                 value={ragFolderInput}
                 onChange={e => setRagFolderInput(e.target.value)}
                 placeholder="/Users/daniel/Clients/Nordea/RegLibrary"
-                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray-med font-mono focus:outline-none focus:border-adv-teal"
+                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray-med font-mono focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               />
               <button
                 onClick={setRagDirectory}
@@ -461,7 +461,7 @@ function ResourceRow({ resource, engagementId, onReload }: { resource: Resource;
       {isUrl && resource.url && (
         <a
           href={resource.url} target="_blank" rel="noopener noreferrer"
-          className="text-[10px] text-adv-blue hover:text-adv-teal transition-colors shrink-0 truncate max-w-[120px]"
+          className="text-xs text-adv-blue hover:text-adv-teal transition-colors shrink-0 truncate max-w-[120px]"
           title={resource.url}
         >
           {new URL(resource.url).hostname}

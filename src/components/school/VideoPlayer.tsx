@@ -63,7 +63,7 @@ export default function VideoPlayer({ videoId, title, channel, startTime = 0, cl
             </div>
             <p className="text-xs text-adv-gray text-center px-4">
               Click to load video<br />
-              <span className="text-adv-gray-med">Served via youtube-nocookie.com</span>
+              <span className="text-adv-gray">Served via youtube-nocookie.com</span>
             </p>
             <button
               onClick={handleActivate}

@@ -162,7 +162,7 @@ export default function FinanceWatchlistPage() {
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                   placeholder="e.g. AAPL, BTC, OMXS30"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </label>
               <label className="space-y-1">
@@ -172,7 +172,7 @@ export default function FinanceWatchlistPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Apple Inc."
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </label>
               <label className="space-y-1">
@@ -180,7 +180,7 @@ export default function FinanceWatchlistPage() {
                 <select
                   value={assetType}
                   onChange={(e) => setAssetType(e.target.value as WatchlistItem['asset_type'])}
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 >
                   {ASSET_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -194,7 +194,7 @@ export default function FinanceWatchlistPage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Why you're watching this"
-                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 />
               </label>
             </div>
@@ -218,7 +218,7 @@ export default function FinanceWatchlistPage() {
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Star className="mb-3 h-10 w-10 text-adv-gray-med" />
+            <Star className="mb-3 h-10 w-10 text-adv-gray" />
             <h3 className="mb-1 font-semibold text-adv-off-white">Your watchlist is empty</h3>
             <p className="text-sm text-adv-gray">Add symbols to track them here.</p>
           </div>
@@ -246,7 +246,7 @@ export default function FinanceWatchlistPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 max-w-[200px] truncate text-sm text-adv-gray">{item.notes || '—'}</td>
-                    <td className="px-5 py-3 text-sm text-adv-gray-med">{formatDate(item.created_at)}</td>
+                    <td className="px-5 py-3 text-sm text-adv-gray">{formatDate(item.created_at)}</td>
                     <td className="px-5 py-3 text-right">
                       <button
                         onClick={() => handleDelete(item.id)}

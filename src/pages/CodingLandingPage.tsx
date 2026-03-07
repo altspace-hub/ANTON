@@ -139,7 +139,7 @@ export default function CodingLandingPage() {
               <p className="mt-1 text-sm text-adv-gray">{tier.description}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {tier.features.map((f) => (
-                  <span key={f} className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-off-white">
+                  <span key={f} className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-off-white">
                     {f}
                   </span>
                 ))}
@@ -159,7 +159,7 @@ export default function CodingLandingPage() {
           <div className="space-y-2">
             {recentActivity.map((item) => (
               <div key={item.id} className="flex items-center gap-3 rounded-lg bg-adv-dark px-3 py-2">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                   item.type === 'project' ? 'bg-adv-gold/10 text-adv-gold' :
                   item.type === 'review' ? 'bg-adv-teal-dim text-adv-teal' :
                   'bg-adv-blue/10 text-adv-blue'
@@ -171,7 +171,7 @@ export default function CodingLandingPage() {
                   <QualityScore score={item.quality_score} compact />
                 )}
                 <span className="text-xs text-adv-gray">{item.status}</span>
-                <span className="flex items-center gap-1 text-[10px] text-adv-gray-med">
+                <span className="flex items-center gap-1 text-xs text-adv-gray">
                   <Clock className="h-2.5 w-2.5" />
                   {new Date(item.timestamp).toLocaleDateString()}
                 </span>

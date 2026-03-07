@@ -125,20 +125,20 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
                 value={newScopeTitle}
                 onChange={e => setNewScopeTitle(e.target.value)}
                 placeholder="Scope item title"
-                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal"
+                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
               />
               <textarea
                 value={newScopeDesc}
                 onChange={e => setNewScopeDesc(e.target.value)}
                 placeholder="Description (optional)"
                 rows={2}
-                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus:border-adv-teal resize-none"
+                className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
               />
               <div className="flex items-center gap-3">
                 <select
                   value={newScopeCat}
                   onChange={e => setNewScopeCat(e.target.value)}
-                  className="bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal"
+                  className="bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
                 >
                   {SCOPE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
@@ -177,9 +177,9 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-medium text-adv-off-white">{d.title}</p>
-                  {d.format && <p className="text-xs text-adv-gray-med mt-0.5">{d.format}{d.delivery_date && ` · Due: ${d.delivery_date}`}</p>}
+                  {d.format && <p className="text-xs text-adv-gray mt-0.5">{d.format}{d.delivery_date && ` · Due: ${d.delivery_date}`}</p>}
                 </div>
-                <span className="text-[10px] bg-adv-teal-dim text-adv-teal border border-adv-teal/20 rounded-full px-2 py-0.5">{d.status}</span>
+                <span className="text-xs bg-adv-teal-dim text-adv-teal border border-adv-teal/20 rounded-full px-2 py-0.5">{d.status}</span>
               </div>
               {d.description && <p className="text-xs text-adv-gray mt-1">{d.description}</p>}
             </div>
@@ -200,12 +200,12 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
               'bg-adv-card border-border'
             }`}>
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-[10px] font-medium uppercase rounded-full px-2 py-0.5 ${
+                <span className={`text-xs font-medium uppercase rounded-full px-2 py-0.5 ${
                   b.boundary_type === 'exclusion' ? 'bg-adv-red/20 text-adv-red' :
                   b.boundary_type === 'assumption' ? 'bg-adv-gold/20 text-adv-gold' :
                   'bg-adv-blue/20 text-adv-blue'
                 }`}>{b.boundary_type}</span>
-                {b.source && <span className="text-[10px] text-adv-gray-med">{b.source}</span>}
+                {b.source && <span className="text-xs text-adv-gray">{b.source}</span>}
               </div>
               <p className="text-sm text-adv-off-white">{b.description}</p>
             </div>
@@ -274,8 +274,8 @@ function ScopeItemCard({
     <div className="bg-adv-card border border-border rounded-xl p-4">
       {editing ? (
         <div className="space-y-2">
-          <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-adv-dark-2 border border-border rounded px-3 py-1.5 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal" />
-          <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2} className="w-full bg-adv-dark-2 border border-border rounded px-3 py-1.5 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal resize-none" />
+          <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-adv-dark-2 border border-border rounded px-3 py-1.5 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal" />
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2} className="w-full bg-adv-dark-2 border border-border rounded px-3 py-1.5 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none" />
           <div className="flex gap-2 justify-end">
             <button onClick={() => setEditing(false)} className="text-xs text-adv-gray hover:text-adv-off-white">Cancel</button>
             <button onClick={save} className="px-3 py-1 rounded bg-adv-teal text-adv-dark text-xs font-medium hover:bg-adv-teal-dark">Save</button>
@@ -289,22 +289,22 @@ function ScopeItemCard({
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-sm font-medium text-adv-off-white">{item.title}</p>
                 {item.category && (
-                  <span className={`text-[10px] rounded-full px-2 py-0.5 ${categoryColor[item.category] || 'text-adv-gray-med bg-adv-dark'}`}>
+                  <span className={`text-xs rounded-full px-2 py-0.5 ${categoryColor[item.category] || 'text-adv-gray bg-adv-dark'}`}>
                     {item.category}
                   </span>
                 )}
                 {item.status === 'added' && (
-                  <span className="text-[10px] text-adv-green bg-adv-green/10 border border-adv-green/30 rounded-full px-2 py-0.5">Added</span>
+                  <span className="text-xs text-adv-green bg-adv-green/10 border border-adv-green/30 rounded-full px-2 py-0.5">Added</span>
                 )}
               </div>
               {item.description && <p className="text-xs text-adv-gray mt-1 leading-relaxed">{item.description}</p>}
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <button onClick={() => setEditing(true)} className="p-1 rounded text-adv-gray-med hover:text-adv-teal hover:bg-adv-teal-dim transition-colors">
+            <button onClick={() => setEditing(true)} className="p-1 rounded text-adv-gray hover:text-adv-teal hover:bg-adv-teal-dim transition-colors">
               <Edit2 className="h-3.5 w-3.5" />
             </button>
-            <button onClick={onRemove} className="p-1 rounded text-adv-gray-med hover:text-adv-red hover:bg-adv-red/10 transition-colors">
+            <button onClick={onRemove} className="p-1 rounded text-adv-gray hover:text-adv-red hover:bg-adv-red/10 transition-colors">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>

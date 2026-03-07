@@ -124,7 +124,7 @@ export default function ProfileSettingsTab() {
 
   const labelClass = 'block text-sm text-adv-gray mb-1.5';
   const inputClass =
-    'w-full bg-adv-dark border border-border text-adv-off-white rounded-lg px-3 py-2 text-sm focus:border-adv-teal focus:outline-none placeholder:text-adv-gray-med';
+    'w-full bg-adv-dark border border-border text-adv-off-white rounded-lg px-3 py-2 text-sm focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 placeholder:text-adv-gray';
 
   if (loading) {
     return <div className="text-adv-gray text-sm py-8 text-center">Loading profile...</div>;
@@ -134,7 +134,7 @@ export default function ProfileSettingsTab() {
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-adv-card p-6">
         <h2 className="text-sm font-semibold text-adv-white">This Is Me</h2>
-        <p className="mt-1 text-xs text-adv-gray-med">
+        <p className="mt-1 text-xs text-adv-gray">
           Your professional identity. This context is injected into every prompt so outputs are
           calibrated to your expertise, role, and jurisdiction.
         </p>
@@ -228,7 +228,7 @@ export default function ProfileSettingsTab() {
           {/* Hourly Rate */}
           <div>
             <label className={labelClass} htmlFor="p-hourly-rate">Hourly Rate (€)</label>
-            <p className="mb-1.5 text-xs text-adv-gray-med">
+            <p className="mb-1.5 text-xs text-adv-gray">
               Your consulting hourly rate — used for ROI calculations
             </p>
             <input

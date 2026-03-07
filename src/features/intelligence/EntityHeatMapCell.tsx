@@ -37,7 +37,7 @@ export function EntityHeatMapCell({ entity, size, onClick }: EntityHeatMapCellPr
       <div className="text-xs text-adv-teal mt-2 font-mono">
         {entity.interaction_count} interactions
       </div>
-      <div className="text-xs text-adv-gray-med mt-1">
+      <div className="text-xs text-adv-gray mt-1">
         {relativeTime}
       </div>
     </div>

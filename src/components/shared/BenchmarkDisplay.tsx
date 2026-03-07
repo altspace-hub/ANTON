@@ -92,9 +92,9 @@ export default function BenchmarkDisplay({ content, moduleId }: BenchmarkDisplay
       {/* Empty content */}
       {!content?.trim() && !loading && (
         <div className="py-6 text-center">
-          <BarChart2 className="w-8 h-8 text-adv-gray-med mx-auto mb-2 opacity-40" />
-          <p className="text-sm text-adv-gray-med">No output to benchmark yet.</p>
-          <p className="text-xs text-adv-gray-med mt-1">Run an analysis to see quality benchmarks.</p>
+          <BarChart2 className="w-8 h-8 text-adv-gray mx-auto mb-2 opacity-40" />
+          <p className="text-sm text-adv-gray">No output to benchmark yet.</p>
+          <p className="text-xs text-adv-gray mt-1">Run an analysis to see quality benchmarks.</p>
         </div>
       )}
 
@@ -113,7 +113,7 @@ export default function BenchmarkDisplay({ content, moduleId }: BenchmarkDisplay
 
       {/* Error */}
       {!loading && error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-adv-dark-2 text-adv-gray-med text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-adv-dark-2 text-adv-gray text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>Benchmark failed. Check server connection.</span>
         </div>
@@ -153,7 +153,7 @@ export default function BenchmarkDisplay({ content, moduleId }: BenchmarkDisplay
           {/* Component checklist */}
           {(result.found.length > 0 || result.missing.length > 0) && (
             <div className="space-y-1.5">
-              <p className="text-xs text-adv-gray-med uppercase tracking-wide font-medium mb-2">
+              <p className="text-xs text-adv-gray uppercase tracking-wide font-medium mb-2">
                 Components
               </p>
 
@@ -173,13 +173,13 @@ export default function BenchmarkDisplay({ content, moduleId }: BenchmarkDisplay
                     <div className="flex items-center gap-2.5">
                       {required
                         ? <XCircle className="w-4 h-4 text-adv-red shrink-0" />
-                        : <Minus className="w-4 h-4 text-adv-gray-med shrink-0" />
+                        : <Minus className="w-4 h-4 text-adv-gray shrink-0" />
                       }
                       <span className={`text-sm ${required ? 'text-adv-off-white' : 'text-adv-gray'}`}>
                         {name}
                       </span>
                       {!required && (
-                        <span className="text-xs text-adv-gray-med">(optional)</span>
+                        <span className="text-xs text-adv-gray">(optional)</span>
                       )}
                     </div>
                     {/* Placeholder "Add" button */}
@@ -200,7 +200,7 @@ export default function BenchmarkDisplay({ content, moduleId }: BenchmarkDisplay
           {/* Improvement suggestions */}
           {result.suggestions.length > 0 && (
             <div className="pt-1 border-t border-border">
-              <p className="text-xs text-adv-gray-med uppercase tracking-wide font-medium mb-2">
+              <p className="text-xs text-adv-gray uppercase tracking-wide font-medium mb-2">
                 Improvement Tips
               </p>
               <ul className="space-y-1.5">

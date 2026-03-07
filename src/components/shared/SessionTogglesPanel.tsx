@@ -79,7 +79,7 @@ export default function SessionTogglesPanel({
 
         {/* Writing Tone chips */}
         <div className="mb-3">
-          <div className="mb-1.5 text-[11px] text-adv-gray-med">Writing Tone</div>
+          <div className="mb-1.5 text-[11px] text-adv-gray">Writing Tone</div>
           <div className="flex flex-wrap gap-1.5">
             {TONE_OPTIONS.map(({ value, label }) => (
               <button
@@ -105,9 +105,9 @@ export default function SessionTogglesPanel({
             onChange={onEmojiChange}
             label={
               <div className="flex items-center gap-1.5 text-xs text-adv-off-white">
-                <Smile className="h-3.5 w-3.5 text-adv-gray-med" />
+                <Smile className="h-3.5 w-3.5 text-adv-gray" />
                 <span>Emoji in output</span>
-                <span className="text-[10px] text-adv-gray-med">{emojiEnabled ? 'On' : 'Off'}</span>
+                <span className="text-xs text-adv-gray">{emojiEnabled ? 'On' : 'Off'}</span>
               </div>
             }
           />
@@ -131,7 +131,7 @@ export default function SessionTogglesPanel({
             label={
               <div>
                 <div className="text-xs text-adv-off-white">Structured Reasoning</div>
-                <p className="mt-0.5 text-[10px] text-adv-gray-med">
+                <p className="mt-0.5 text-xs text-adv-gray">
                   {metaCognitiveEnabled
                     ? 'Deep analysis with confidence scoring'
                     : 'Standard'}
@@ -155,7 +155,7 @@ export default function SessionTogglesPanel({
                         <Zap className="h-3 w-3 text-adv-gold" />
                         Native Reasoning Boost
                       </div>
-                      <p className="mt-0.5 text-[10px] text-adv-gray-med">
+                      <p className="mt-0.5 text-xs text-adv-gray">
                         Forces maximum extended thinking. Best for highly complex analysis. Significant cost increase.
                       </p>
                     </div>
@@ -163,7 +163,7 @@ export default function SessionTogglesPanel({
                 }
               />
               {nativeReasoningEnabled && (
-                <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full border border-adv-gold/40 bg-adv-gold/10 px-2 py-0.5 text-[10px] font-medium text-adv-gold">
+                <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full border border-adv-gold/40 bg-adv-gold/10 px-2 py-0.5 text-xs font-medium text-adv-gold">
                   <AlertTriangle className="h-2.5 w-2.5" />
                   High cost
                 </span>
@@ -174,7 +174,7 @@ export default function SessionTogglesPanel({
 
         {/* Transparency level */}
         <div>
-          <div className="mb-1.5 text-[11px] text-adv-gray-med">Approach Transparency</div>
+          <div className="mb-1.5 text-[11px] text-adv-gray">Approach Transparency</div>
           <div className="flex gap-1.5">
             {([
               { level: 0 as const, label: 'Off', icon: <EyeOff className="h-3 w-3" /> },
@@ -201,7 +201,7 @@ export default function SessionTogglesPanel({
 
       {/* Token impact indicator */}
       <div className="border-t border-border pt-2">
-        <div className="text-[10px] text-adv-gray-med">
+        <div className="text-xs text-adv-gray">
           Token impact: {estimateTokenImpact(metaCognitiveEnabled, writingTone)}
         </div>
       </div>

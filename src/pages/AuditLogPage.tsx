@@ -188,7 +188,7 @@ export default function AuditLogPage() {
           <input
             type="text"
             placeholder="e.g. gap-analysis"
-            className="rounded-md border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray-med"
+            className="rounded-md border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray"
             value={filters.moduleId}
             onChange={(e) => { setFilters((f) => ({ ...f, moduleId: e.target.value })); setPage(0); }}
           />
@@ -221,7 +221,7 @@ export default function AuditLogPage() {
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-border text-xs uppercase tracking-wider text-adv-gray-med">
+              <tr className="border-b border-border text-xs uppercase tracking-wider text-adv-gray">
                 <th className="px-4 py-3">Timestamp</th>
                 <th className="px-4 py-3">Module</th>
                 <th className="px-4 py-3">Model</th>
@@ -238,7 +238,7 @@ export default function AuditLogPage() {
                     {formatTimestamp(entry.timestamp)}
                   </td>
                   <td className="px-4 py-3 text-adv-off-white">
-                    {entry.module_id || <span className="text-adv-gray-med">--</span>}
+                    {entry.module_id || <span className="text-adv-gray">--</span>}
                   </td>
                   <td className="px-4 py-3 text-adv-off-white">
                     {entry.model.replace('claude-', '').split('-')[0]}

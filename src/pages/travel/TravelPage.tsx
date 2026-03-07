@@ -293,7 +293,7 @@ export default function TravelPage() {
 
             {recentTrips.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Plane className="mb-2 h-8 w-8 text-adv-gray-med" />
+                <Plane className="mb-2 h-8 w-8 text-adv-gray" />
                 <p className="text-sm text-adv-gray">No trips yet. Start planning!</p>
                 <button onClick={() => navigate('/travel/trips')}
                   className="mt-3 rounded-lg border border-adv-teal/30 px-3 py-1.5 text-sm text-adv-teal hover:bg-adv-teal-dim transition-colors">

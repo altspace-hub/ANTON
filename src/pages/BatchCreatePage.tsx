@@ -392,7 +392,7 @@ export default function BatchCreatePage() {
                   ? 'border-adv-teal bg-adv-teal/10 text-adv-teal'
                   : n < step
                   ? 'cursor-pointer border-adv-teal/30 bg-adv-teal-dim text-adv-teal'
-                  : 'cursor-default border-border bg-adv-dark text-adv-gray-med'
+                  : 'cursor-default border-border bg-adv-dark text-adv-gray'
               }`}
             >
               {n < step ? (
@@ -402,7 +402,7 @@ export default function BatchCreatePage() {
               )}
               {label}
             </button>
-            {n < 3 && <ArrowRight className="h-3 w-3 text-adv-gray-med" />}
+            {n < 3 && <ArrowRight className="h-3 w-3 text-adv-gray" />}
           </div>
         ))}
       </div>
@@ -419,9 +419,9 @@ export default function BatchCreatePage() {
                 onDragOver={(e) => e.preventDefault()}
                 className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-adv-card py-16 transition-colors hover:border-adv-teal/50"
               >
-                <Upload className="mb-3 h-8 w-8 text-adv-gray-med" />
+                <Upload className="mb-3 h-8 w-8 text-adv-gray" />
                 <p className="mb-1 text-sm font-medium text-adv-off-white">Drop a CSV file here</p>
-                <p className="mb-4 text-xs text-adv-gray-med">or click to browse</p>
+                <p className="mb-4 text-xs text-adv-gray">or click to browse</p>
                 <label className="cursor-pointer rounded-lg bg-adv-teal px-4 py-2 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                   Choose File
                   <input type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
@@ -433,7 +433,7 @@ export default function BatchCreatePage() {
                   <div className="flex items-center gap-2">
                     <FileSpreadsheet className="h-4 w-4 text-adv-teal" />
                     <span className="text-sm font-medium text-adv-off-white">{csvFile.name}</span>
-                    <span className="text-xs text-adv-gray-med">
+                    <span className="text-xs text-adv-gray">
                       {parsed?.headers.length} columns · {totalRows} rows
                     </span>
                   </div>
@@ -472,7 +472,7 @@ export default function BatchCreatePage() {
                       </tbody>
                     </table>
                     {totalRows > 5 && (
-                      <div className="border-t border-border bg-adv-dark px-3 py-1.5 text-[10px] text-adv-gray-med">
+                      <div className="border-t border-border bg-adv-dark px-3 py-1.5 text-xs text-adv-gray">
                         Showing 5 of {totalRows} rows
                       </div>
                     )}
@@ -508,7 +508,7 @@ export default function BatchCreatePage() {
                       <span className="text-sm font-medium text-adv-off-white">{m.label}</span>
                     </div>
                     <span className="text-[11px] text-adv-gray">{m.subtitle}</span>
-                    <span className="text-[10px] text-adv-gray-med">
+                    <span className="text-xs text-adv-gray">
                       ${m.inputCostPer1M}/${m.outputCostPer1M} per 1M tokens
                     </span>
                   </button>
@@ -525,7 +525,7 @@ export default function BatchCreatePage() {
               <select
                 value={selectedModuleId}
                 onChange={(e) => setSelectedModuleId(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
               >
                 <option value="">-- None (use custom system prompt) --</option>
                 {MODULES.map((m) => (
@@ -551,7 +551,7 @@ export default function BatchCreatePage() {
               </p>
               {parsed && parsed.headers.length > 0 && (
                 <div className="mb-3">
-                  <p className="mb-1.5 text-[10px] uppercase tracking-wider text-adv-gray-med">
+                  <p className="mb-1.5 text-xs uppercase tracking-wider text-adv-gray">
                     Click to insert column
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -572,7 +572,7 @@ export default function BatchCreatePage() {
                 value={messageTemplate}
                 onChange={(e) => setMessageTemplate(e.target.value)}
                 placeholder={`e.g. Analyze the AML policy for {{company_name}} in {{jurisdiction}}. Focus on {{risk_area}}.`}
-                className="w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+                className="w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
                 rows={5}
               />
             </div>
@@ -600,7 +600,7 @@ export default function BatchCreatePage() {
                     value={systemPromptOverride}
                     onChange={(e) => setSystemPromptOverride(e.target.value)}
                     placeholder="You are a compliance expert specialised in..."
-                    className="w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none focus:ring-1 focus:ring-adv-teal"
+                    className="w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
                     rows={4}
                   />
                   {selectedModuleId && !systemPromptOverride.trim() && moduleSystemPrompt && (
@@ -677,20 +677,20 @@ export default function BatchCreatePage() {
               <div className="grid grid-cols-4 gap-3 text-center">
                 <div className="rounded-lg border border-border bg-adv-dark px-3 py-3">
                   <div className="text-lg font-bold text-adv-teal">{totalRows}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-adv-gray-med">Rows</div>
+                  <div className="text-xs uppercase tracking-wider text-adv-gray">Rows</div>
                 </div>
                 <div className="rounded-lg border border-border bg-adv-dark px-3 py-3">
                   <div className="flex items-center justify-center gap-1 text-base font-bold text-adv-off-white">
                     {selectedModel.icon}
                     <span>{selectedModel.label}</span>
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-adv-gray-med">Model</div>
+                  <div className="text-xs uppercase tracking-wider text-adv-gray">Model</div>
                 </div>
                 <div className="rounded-lg border border-border bg-adv-dark px-3 py-3">
                   <div className="text-lg font-bold text-adv-off-white">
                     ~${estimatedCost.toFixed(2)}
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-adv-gray-med">
+                  <div className="text-xs uppercase tracking-wider text-adv-gray">
                     Est. Cost
                   </div>
                 </div>
@@ -698,7 +698,7 @@ export default function BatchCreatePage() {
                   <div className="text-lg font-bold text-adv-off-white">
                     ~{Math.round((estimatedInputTokens + estimatedOutputTokens) / 1000)}k
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-adv-gray-med">
+                  <div className="text-xs uppercase tracking-wider text-adv-gray">
                     Tokens
                   </div>
                 </div>
@@ -772,7 +772,7 @@ export default function BatchCreatePage() {
                           {errorCount} failed
                         </span>
                       )}
-                      <span className="text-adv-gray-med">
+                      <span className="text-adv-gray">
                         {totalInputTokens.toLocaleString()} in + {totalOutputTokens.toLocaleString()}{' '}
                         out tokens
                       </span>
@@ -803,7 +803,7 @@ export default function BatchCreatePage() {
             {/* Results table */}
             {(isRunning || isDone || rowResults.some((r) => r.status !== 'pending')) && parsed && (
               <div className="rounded-xl border border-border bg-adv-card overflow-hidden">
-                <div className="border-b border-border bg-adv-dark px-4 py-2.5 text-[10px] font-medium uppercase tracking-wider text-adv-gray-med">
+                <div className="border-b border-border bg-adv-dark px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-adv-gray">
                   Results
                 </div>
                 <div className="divide-y divide-border">
@@ -816,7 +816,7 @@ export default function BatchCreatePage() {
                           onClick={() => result.status === 'done' && toggleRowExpanded(ri)}
                         >
                           {/* Row number */}
-                          <span className="w-5 shrink-0 text-right text-adv-gray-med">
+                          <span className="w-5 shrink-0 text-right text-adv-gray">
                             {ri + 1}
                           </span>
 
@@ -835,7 +835,7 @@ export default function BatchCreatePage() {
 
                           {/* Token count (done rows) */}
                           {result.status === 'done' && (
-                            <span className="shrink-0 text-adv-gray-med">
+                            <span className="shrink-0 text-adv-gray">
                               {result.outputTokens?.toLocaleString()} tok
                             </span>
                           )}
@@ -843,7 +843,7 @@ export default function BatchCreatePage() {
                           {/* Status badge */}
                           <div className="shrink-0">
                             {result.status === 'pending' && (
-                              <span className="text-adv-gray-med">Pending</span>
+                              <span className="text-adv-gray">Pending</span>
                             )}
                             {result.status === 'running' && (
                               <span className="flex items-center gap-1 text-adv-teal">
@@ -867,7 +867,7 @@ export default function BatchCreatePage() {
 
                           {/* Expand chevron for done rows */}
                           {result.status === 'done' && (
-                            <span className="shrink-0 text-adv-gray-med">
+                            <span className="shrink-0 text-adv-gray">
                               {result.expanded ? (
                                 <ChevronDown className="h-3.5 w-3.5" />
                               ) : (

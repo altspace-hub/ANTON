@@ -292,7 +292,7 @@ You are speaking directly with the person described above. Address their situati
           <div className="mt-4 rounded-xl border border-border bg-adv-card p-4 space-y-4">
             {/* Persona selector */}
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
                 Advisor Persona
               </label>
               <div className="flex flex-wrap gap-2">
@@ -311,14 +311,14 @@ You are speaking directly with the person described above. Address their situati
                   </button>
                 ))}
               </div>
-              <p className="mt-1.5 text-[11px] text-adv-gray-med">
+              <p className="mt-1.5 text-[11px] text-adv-gray">
                 {selectedPersona.description}
               </p>
             </div>
 
             {/* User context */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
                 About You
               </label>
               <textarea
@@ -326,16 +326,16 @@ You are speaking directly with the person described above. Address their situati
                 onChange={(e) => setUserContext(e.target.value)}
                 placeholder="I am a Head of Compliance at a Nordic bank. My focus is AML/CFT. My current challenge is preparing for AMLA supervision."
                 rows={3}
-                className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
               />
-              <p className="mt-1 text-[11px] text-adv-gray-med">
+              <p className="mt-1 text-[11px] text-adv-gray">
                 This context is saved locally and included in every message to your advisor.
               </p>
             </div>
 
             {/* Transparency toggle */}
             <div className="space-y-1">
-              <div className="text-[11px] text-adv-gray-med">Transparency</div>
+              <div className="text-[11px] text-adv-gray">Transparency</div>
               <div className="flex gap-1.5">
                 {([
                   { level: 0 as const, label: 'Off' },
@@ -381,7 +381,7 @@ You are speaking directly with the person described above. Address their situati
               will respond with focused, expert-level guidance.
             </p>
             {!userContext.trim() && (
-              <p className="mb-6 text-xs text-adv-gray-med">
+              <p className="mb-6 text-xs text-adv-gray">
                 Tip: Add your context above so your advisor can give more relevant advice.
               </p>
             )}
@@ -431,7 +431,7 @@ You are speaking directly with the person described above. Address their situati
                       </div>
                       <button
                         onClick={() => handleCopy(msg.id, msg.content)}
-                        className="mt-2 flex items-center gap-1 text-[11px] text-adv-gray-med hover:text-adv-gray transition-colors"
+                        className="mt-2 flex items-center gap-1 text-[11px] text-adv-gray hover:text-adv-gray transition-colors"
                       >
                         {copiedId === msg.id ? (
                           <>
@@ -447,7 +447,7 @@ You are speaking directly with the person described above. Address their situati
                       </button>
                     </>
                   )}
-                  <div className="mt-1 text-[10px] opacity-50">
+                  <div className="mt-1 text-xs opacity-50">
                     {new Date(msg.createdAt).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -475,7 +475,7 @@ You are speaking directly with the person described above. Address their situati
                       <span className="animate-pulse text-adv-teal">&#x258A;</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-adv-gray-med">
+                    <div className="flex items-center gap-2 text-adv-gray">
                       <span className="animate-pulse">...</span>
                       <span className="text-xs">Thinking</span>
                     </div>
@@ -498,7 +498,7 @@ You are speaking directly with the person described above. Address their situati
             onKeyDown={handleKeyDown}
             placeholder={`Ask your ${selectedPersona.label}...`}
             rows={2}
-            className="min-h-[60px] flex-1 resize-none rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="min-h-[60px] flex-1 resize-none rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             style={{ maxHeight: '200px', overflowY: 'auto' }}
             disabled={isStreaming}
           />
@@ -521,7 +521,7 @@ You are speaking directly with the person described above. Address their situati
                 Ask Advisor
               </button>
             )}
-            <span className="text-[10px] text-adv-gray-med">Ctrl+Enter to send</span>
+            <span className="text-xs text-adv-gray">Ctrl+Enter to send</span>
           </div>
         </div>
       </div>

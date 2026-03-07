@@ -90,8 +90,8 @@ export default function TeamWorkloadView() {
   if (assignments.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-adv-card p-6 text-center">
-        <Clock className="mx-auto mb-2 h-8 w-8 text-adv-gray-med" />
-        <p className="text-sm text-adv-gray-med">No workflow tasks assigned to you</p>
+        <Clock className="mx-auto mb-2 h-8 w-8 text-adv-gray" />
+        <p className="text-sm text-adv-gray">No workflow tasks assigned to you</p>
       </div>
     );
   }
@@ -126,13 +126,13 @@ export default function TeamWorkloadView() {
                 <h4 className="mb-0.5 truncate text-sm font-semibold text-adv-white">
                   {assignment.workflow_name || `Workflow ${assignment.workflow_id.slice(0, 8)}`}
                 </h4>
-                <p className="text-xs text-adv-gray-med">
+                <p className="text-xs text-adv-gray">
                   Step {assignment.step_index + 1} · assigned by {assignment.assigned_by}
                 </p>
               </div>
               <div className={`flex items-center gap-1 rounded-full px-2 py-1 ${badge.bg} ${badge.text}`}>
                 {badge.icon}
-                <span className="text-[10px] font-medium capitalize">
+                <span className="text-xs font-medium capitalize">
                   {assignment.status.replace('_', ' ')}
                 </span>
               </div>
@@ -142,13 +142,13 @@ export default function TeamWorkloadView() {
               <p className="mb-2 text-xs leading-relaxed text-adv-gray">{assignment.notes}</p>
             )}
 
-            <div className="mb-3 flex items-center gap-3 text-xs text-adv-gray-med">
+            <div className="mb-3 flex items-center gap-3 text-xs text-adv-gray">
               <div className="flex items-center gap-1">
                 <Clock className={`h-3 w-3 ${due.urgent ? 'text-adv-red' : ''}`} />
                 <span className={due.urgent ? 'font-medium text-adv-red' : ''}>{due.label}</span>
               </div>
               {assignment.started_at && (
-                <span className="text-adv-gray-med/70">
+                <span className="text-adv-gray/70">
                   Started {new Date(assignment.started_at).toLocaleString('en-GB', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
@@ -184,7 +184,7 @@ export default function TeamWorkloadView() {
               )}
               <a
                 href={`/workflows/${assignment.execution_id}`}
-                className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-adv-gray-med transition-colors hover:border-adv-teal hover:text-adv-teal"
+                className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-adv-gray transition-colors hover:border-adv-teal hover:text-adv-teal"
               >
                 View Workflow
               </a>

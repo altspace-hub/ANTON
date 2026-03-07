@@ -517,11 +517,11 @@ export default function RadarPage() {
                         setCronError('');
                       }}
                       placeholder="0 6 * * * (min hour day month weekday)"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-adv-dark text-adv-off-white font-mono placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-adv-dark text-adv-off-white font-mono placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                     />
                     {cronError && <p className="text-xs text-adv-red mt-1">{cronError}</p>}
                     {cronExpression && !cronError && (
-                      <p className="text-xs text-adv-gray-med mt-1">
+                      <p className="text-xs text-adv-gray mt-1">
                         Cron: {cronExpression}
                       </p>
                     )}
@@ -538,7 +538,7 @@ export default function RadarPage() {
             </div>
           )}
 
-          <p className="mt-2 text-xs text-adv-gray-med">
+          <p className="mt-2 text-xs text-adv-gray">
             {radarSettings.autoScanEnabled
               ? scanScheduleType === 'cron' && cronExpression
                 ? `Scheduled scan with cron: ${cronExpression}`
@@ -549,7 +549,7 @@ export default function RadarPage() {
       )}
 
       {/* Scan status line */}
-      <div className="mb-4 flex items-center gap-2 text-xs text-adv-gray-med">
+      <div className="mb-4 flex items-center gap-2 text-xs text-adv-gray">
         <span>
           {lastScanTime
             ? `Last scanned: ${formatRelativeTime(lastScanTime)}`
@@ -697,13 +697,13 @@ export default function RadarPage() {
 
         {/* Search */}
         <div className="ml-auto relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray-med pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-adv-gray pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search items..."
-            className="w-64 rounded-lg border border-border bg-adv-card py-1.5 pl-9 pr-3 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-64 rounded-lg border border-border bg-adv-card py-1.5 pl-9 pr-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
       </div>}
@@ -744,11 +744,11 @@ export default function RadarPage() {
             </button>
           </div>
           {sources.length === 0 ? (
-            <div className="p-8 text-center text-sm text-adv-gray-med">No sources yet. Add a source to start monitoring.</div>
+            <div className="p-8 text-center text-sm text-adv-gray">No sources yet. Add a source to start monitoring.</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs text-adv-gray-med uppercase tracking-wider">
+                <tr className="border-b border-border text-left text-xs text-adv-gray uppercase tracking-wider">
                   <th className="px-4 py-2">Name</th>
                   <th className="px-4 py-2">URL</th>
                   <th className="px-4 py-2">Type</th>
@@ -769,7 +769,7 @@ export default function RadarPage() {
                     <td className="px-4 py-3 text-adv-gray text-xs">{s.source_type}</td>
                     <td className="px-4 py-3 text-adv-gray text-xs capitalize">{s.category}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${s.is_active === 1 ? 'bg-adv-green/20 text-adv-green' : 'bg-adv-gray-med/20 text-adv-gray-med'}`}>
+                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${s.is_active === 1 ? 'bg-adv-green/20 text-adv-green' : 'bg-adv-gray-med/20 text-adv-gray'}`}>
                         {s.is_active === 1 ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -802,7 +802,7 @@ export default function RadarPage() {
       {/* Item Cards */}
       {mainTab === 'items' && (filteredItems.length === 0 ? (
         <div className="rounded-xl border border-border bg-adv-card p-8 text-center">
-          <p className="text-sm text-adv-gray-med">
+          <p className="text-sm text-adv-gray">
             {searchQuery
               ? `No items match "${searchQuery}"`
               : 'No items yet. Add sources and run a scan, or add manual items.'}
@@ -835,10 +835,10 @@ export default function RadarPage() {
                         title={RADAR_CATEGORIES[item.category].label}
                       />
                     )}
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-medium uppercase ${SOURCE_TYPE_COLORS[item.source_type] ?? 'bg-adv-gray/20 text-adv-gray'}`}>
+                    <span className={`rounded px-2 py-0.5 text-xs font-medium uppercase ${SOURCE_TYPE_COLORS[item.source_type] ?? 'bg-adv-gray/20 text-adv-gray'}`}>
                       {item.source_name}
                     </span>
-                    <span className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-medium ${typeConfig.color}`}>
+                    <span className={`flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium ${typeConfig.color}`}>
                       <TypeIcon className="h-3 w-3" />
                       {typeConfig.label}
                     </span>
@@ -869,7 +869,7 @@ export default function RadarPage() {
 
                 {/* Relevance Bar */}
                 <div className="mb-3">
-                  <div className="mb-1 flex items-center justify-between text-[10px] text-adv-gray-med">
+                  <div className="mb-1 flex items-center justify-between text-xs text-adv-gray">
                     <span>Relevance</span>
                     <span>{Math.round(item.relevance_score * 100)}%</span>
                   </div>
@@ -882,7 +882,7 @@ export default function RadarPage() {
                 </div>
 
                 {/* Published Date */}
-                <p className="mb-3 text-[10px] text-adv-gray-med">
+                <p className="mb-3 text-xs text-adv-gray">
                   Published {formatRelativeTime(item.published_at)}
                 </p>
 
@@ -993,7 +993,7 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="e.g. Finansinspektionen"
               required
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div>
@@ -1004,9 +1004,9 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://www.fi.se/sv/publicerat/"
               required
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
-            <p className="mt-1 text-xs text-adv-gray-med">
+            <p className="mt-1 text-xs text-adv-gray">
               {sourceType === 'rss'
                 ? 'Direct link to the RSS/Atom feed XML'
                 : 'Main page or section — Claude searches around this URL for recent publications'}
@@ -1017,7 +1017,7 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
             <select
               value={sourceType}
               onChange={(e) => setSourceType(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="web_page">Web Page (Claude searches for publications)</option>
               <option value="rss">RSS Feed (direct feed parsing)</option>
@@ -1030,7 +1030,7 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {Object.entries(RADAR_CATEGORIES).map(([key, cat]) => (
                 <option key={key} value={key}>{cat.label}</option>
@@ -1044,9 +1044,9 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
               placeholder="AML, sanctions, enforcement, penningtvätt"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
-            <p className="mt-1 text-xs text-adv-gray-med">
+            <p className="mt-1 text-xs text-adv-gray">
               Comma-separated. Guides what Claude looks for from this source.
             </p>
           </div>
@@ -1057,9 +1057,9 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
               value={areas}
               onChange={(e) => setAreas(e.target.value)}
               placeholder="fcp, banking, legal"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
-            <p className="mt-1 text-xs text-adv-gray-med">
+            <p className="mt-1 text-xs text-adv-gray">
               Comma-separated. Used for relevance scoring (e.g. fcp, banking, legal, investment).
             </p>
           </div>
@@ -1135,18 +1135,18 @@ function EditSourceModal({ source, onClose, onSuccess }: { source: RadarSource; 
           <div>
             <label className="mb-1 block text-sm text-adv-gray">Display Name</label>
             <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </div>
           <div>
             <label className="mb-1 block text-sm text-adv-gray">URL</label>
             <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} required
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-sm text-adv-gray">Source Type</label>
               <select value={sourceType} onChange={(e) => setSourceType(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
                 <option value="web_page">Web Page</option>
                 <option value="rss">RSS Feed</option>
                 <option value="eur_lex">EUR-Lex</option>
@@ -1156,7 +1156,7 @@ function EditSourceModal({ source, onClose, onSuccess }: { source: RadarSource; 
             <div>
               <label className="mb-1 block text-sm text-adv-gray">Category</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none">
+                className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1">
                 {Object.entries(RADAR_CATEGORIES).map(([key, cat]) => (
                   <option key={key} value={key}>{cat.label}</option>
                 ))}
@@ -1166,12 +1166,12 @@ function EditSourceModal({ source, onClose, onSuccess }: { source: RadarSource; 
           <div>
             <label className="mb-1 block text-sm text-adv-gray">Keywords (comma-separated)</label>
             <input type="text" value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="AML, sanctions, DORA"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </div>
           <div>
             <label className="mb-1 block text-sm text-adv-gray">Areas (comma-separated)</label>
             <input type="text" value={areas} onChange={(e) => setAreas(e.target.value)} placeholder="fcp, compliance"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none" />
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1" />
           </div>
           <label className="flex items-center gap-3 cursor-pointer">
             <button type="button" onClick={() => setIsActive((v) => !v)}
@@ -1244,7 +1244,7 @@ function AddItemModal({
               value={sourceId}
               onChange={(e) => setSourceId(e.target.value)}
               required
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">Select source...</option>
               {sources.map((s) => (
@@ -1261,7 +1261,7 @@ function AddItemModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div>
@@ -1271,7 +1271,7 @@ function AddItemModal({
               onChange={(e) => setSummary(e.target.value)}
               required
               rows={3}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div>
@@ -1280,7 +1280,7 @@ function AddItemModal({
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
           <div>
@@ -1288,7 +1288,7 @@ function AddItemModal({
             <select
               value={itemType}
               onChange={(e) => setItemType(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="publication">Publication</option>
               <option value="consultation">Consultation</option>

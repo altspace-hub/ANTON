@@ -95,7 +95,7 @@ function TemplateModal({ template, onClose }: TemplateModalProps) {
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CATEGORY_COLORS[template.category]}`}>
                   {CATEGORY_LABELS[template.category]}
                 </span>
-                <span className="text-xs text-adv-gray-med">
+                <span className="text-xs text-adv-gray">
                   {TYPE_LABELS[template.type]}
                 </span>
                 {template.isRegulatory && (
@@ -325,7 +325,7 @@ export default function ConnectorTemplatesBrowser() {
               </p>
 
               {/* Type indicator */}
-              <div className="flex items-center justify-between text-xs text-adv-gray-med">
+              <div className="flex items-center justify-between text-xs text-adv-gray">
                 <span>{TYPE_LABELS[template.type]}</span>
                 {template.permissionsRequired.length > 0 && (
                   <span>{template.permissionsRequired.length} permission{template.permissionsRequired.length !== 1 ? 's' : ''} needed</span>

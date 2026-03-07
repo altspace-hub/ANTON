@@ -105,7 +105,7 @@ export function RAGSearchPanel({
                 </label>
                 <div className="space-y-2 max-h-48 overflow-auto">
                   {collections.length === 0 ? (
-                    <div className="text-xs text-adv-gray-med bg-adv-dark/50 p-3 rounded border border-border">
+                    <div className="text-xs text-adv-gray bg-adv-dark/50 p-3 rounded border border-border">
                       No collections available. Create collections in the Knowledge Base section first.
                     </div>
                   ) : (
@@ -135,7 +135,7 @@ export function RAGSearchPanel({
                             {collection.display_name}
                           </div>
                           {collection.description && (
-                            <div className="text-xs text-adv-gray-med truncate">
+                            <div className="text-xs text-adv-gray truncate">
                               {collection.description}
                             </div>
                           )}
@@ -165,9 +165,9 @@ export function RAGSearchPanel({
                         onTopKChange(val);
                       }
                     }}
-                    className="w-full px-2 py-1 bg-adv-dark border border-adv-gray-med rounded text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                    className="w-full px-2 py-1 bg-adv-dark border border-adv-gray-med rounded text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   />
-                  <div className="text-[10px] text-adv-gray-med mt-1">
+                  <div className="text-xs text-adv-gray mt-1">
                     {topK <= 10 ? 'Focused' : topK <= 20 ? 'Balanced' : 'Comprehensive'}
                   </div>
                 </div>

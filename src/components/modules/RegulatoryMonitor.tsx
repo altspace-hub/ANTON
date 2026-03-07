@@ -60,7 +60,7 @@ export default function RegulatoryMonitor({ onInputChange }: Props) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="e.g., The EBA published final guidelines on internal policies, procedures and controls to ensure compliance with restrictive measures..."
-            className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             rows={4}
           />
         </div>
@@ -74,7 +74,7 @@ export default function RegulatoryMonitor({ onInputChange }: Props) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://eur-lex.europa.eu/..."
-            className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
         </div>
       )}
@@ -84,7 +84,7 @@ export default function RegulatoryMonitor({ onInputChange }: Props) {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+          className="w-full rounded border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         >
           <option value="">Select category...</option>
           {CATEGORIES.map((c) => (

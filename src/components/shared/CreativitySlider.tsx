@@ -40,7 +40,7 @@ export default function CreativitySlider({ value, onChange }: CreativitySliderPr
           );
         })}
       </div>
-      <p className="mt-1.5 text-[11px] text-adv-gray-med">
+      <p className="mt-1.5 text-[11px] text-adv-gray">
         {options.find((o) => o.id === value)?.description}
       </p>
     </div>

@@ -123,7 +123,7 @@ export default function MyRadarPage() {
                 {t('radar.title', 'My Radar')}
               </h1>
             </div>
-            <p className="text-sm text-adv-gray-med">
+            <p className="text-sm text-adv-gray">
               {t('radar.subtitle', 'See how today\'s world connects to your studies')}
             </p>
           </div>
@@ -179,8 +179,8 @@ export default function MyRadarPage() {
         {/* Empty */}
         {!isLoading && !error && items.length === 0 && (
           <div className="rounded-xl border border-border bg-adv-card p-10 text-center">
-            <Newspaper className="mx-auto mb-3 h-10 w-10 text-adv-gray-med" />
-            <p className="text-sm text-adv-gray-med">
+            <Newspaper className="mx-auto mb-3 h-10 w-10 text-adv-gray" />
+            <p className="text-sm text-adv-gray">
               {t('radar.noItems', 'No connections found. Try refreshing or selecting another subject.')}
             </p>
           </div>
@@ -213,7 +213,7 @@ export default function MyRadarPage() {
                   </div>
 
                   {/* Discussion question */}
-                  <p className="text-xs italic text-adv-gray-med">
+                  <p className="text-xs italic text-adv-gray">
                     💬 {item.discussionQuestion}
                   </p>
 

@@ -73,7 +73,7 @@ export default function StatusIndicator({
             <div className="flex items-center gap-1.5 text-xs text-adv-gray">
               <Zap className="h-3 w-3" />
               <span>{formatTokens(inputTokens)} in</span>
-              <span className="text-adv-gray-med">·</span>
+              <span className="text-adv-gray">·</span>
               <span>{formatTokens(outputTokens)} out</span>
             </div>
 

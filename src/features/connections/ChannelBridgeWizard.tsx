@@ -178,7 +178,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-adv-white">New Channel Bridge</h3>
-          <p className="text-xs text-adv-gray-med mt-0.5">
+          <p className="text-xs text-adv-gray mt-0.5">
             Generate a secure HTTP endpoint for your messaging bot or SMS gateway.
           </p>
         </div>
@@ -235,7 +235,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="e.g. NGO Partner WhatsApp Bot"
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
 
@@ -261,7 +261,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
                   </span>
                   <div>
                     <div className="text-sm font-medium">{ct.label}</div>
-                    <div className="text-xs text-adv-gray-med mt-0.5">{ct.description}</div>
+                    <div className="text-xs text-adv-gray mt-0.5">{ct.description}</div>
                   </div>
                 </button>
               ))}
@@ -301,7 +301,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
 
           {!allModules && (
             <div>
-              <label className="block text-xs text-adv-gray-med mb-2">Select allowed modules:</label>
+              <label className="block text-xs text-adv-gray mb-2">Select allowed modules:</label>
               <div className="flex flex-wrap gap-2">
                 {MODULES.map((m) => (
                   <button
@@ -330,7 +330,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
             <select
               value={defaultModule}
               onChange={(e) => setDefaultModule(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               {MODULES.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -361,7 +361,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
               onChange={(e) => setRateLimitRpm(Number(e.target.value))}
               className="w-full accent-adv-teal"
             />
-            <div className="flex justify-between text-[10px] text-adv-gray-med mt-1">
+            <div className="flex justify-between text-xs text-adv-gray mt-1">
               <span>10 rpm</span>
               <span>300 rpm</span>
             </div>
@@ -383,11 +383,11 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
               onChange={(e) => setMaxResponseLength(Number(e.target.value))}
               className="w-full accent-adv-teal"
             />
-            <div className="flex justify-between text-[10px] text-adv-gray-med mt-1">
+            <div className="flex justify-between text-xs text-adv-gray mt-1">
               <span>300 (SMS)</span>
               <span>3000 (chat)</span>
             </div>
-            <p className="text-[10px] text-adv-gray-med mt-1">
+            <p className="text-xs text-adv-gray mt-1">
               WhatsApp: ~1500. SMS: ~300. Chat: up to 3000.
             </p>
           </div>
@@ -399,7 +399,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
             <select
               value={languageHint}
               onChange={(e) => setLanguageHint(e.target.value)}
-              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="en">English</option>
               <option value="sv">Swedish</option>
@@ -412,7 +412,7 @@ export function ChannelBridgeWizard({ onCreated, onCancel }: ChannelBridgeWizard
               <option value="es">Spanish</option>
               <option value="pt">Portuguese</option>
             </select>
-            <p className="text-[10px] text-adv-gray-med mt-1">
+            <p className="text-xs text-adv-gray mt-1">
               Claude will respond in this language unless overridden per-request.
             </p>
           </div>

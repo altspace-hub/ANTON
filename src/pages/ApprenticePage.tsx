@@ -149,7 +149,7 @@ export default function ApprenticePage() {
       {/* Module progress cards */}
       {profiles.length === 0 ? (
         <div className="rounded-lg border border-border bg-adv-card p-12 text-center">
-          <GraduationCap className="mx-auto h-12 w-12 text-adv-gray-med mb-4" />
+          <GraduationCap className="mx-auto h-12 w-12 text-adv-gray mb-4" />
           <h3 className="text-lg font-semibold text-adv-white mb-2">Start Your Expert Journey</h3>
           <p className="text-sm text-adv-gray mb-6">
             Begin using modules to track your progression from observer to autonomous expert
@@ -268,7 +268,7 @@ export default function ApprenticePage() {
                         ))}
                       </ul>
                     )}
-                    <p className="text-xs text-adv-gray-med italic">{nextStepsMap[profile.id].data!.encouragement}</p>
+                    <p className="text-xs text-adv-gray italic">{nextStepsMap[profile.id].data!.encouragement}</p>
                   </div>
                 )}
               </div>

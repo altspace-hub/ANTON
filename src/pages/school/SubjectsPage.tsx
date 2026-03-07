@@ -512,7 +512,7 @@ export default function SubjectsPage() {
                 value={joinForm.code}
                 onChange={(e) => setJoinForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))}
                 placeholder={t('onboarding.student.step3.codePlaceholder', 'e.g. MATH-9B-2026')}
-                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm font-mono text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm font-mono text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
               />
               <button
@@ -552,7 +552,7 @@ export default function SubjectsPage() {
           >
             My Classes
             {classes.length > 0 && (
-              <span className="ml-1.5 rounded-full bg-adv-dark px-1.5 py-0.5 text-xs text-adv-gray-med">
+              <span className="ml-1.5 rounded-full bg-adv-dark px-1.5 py-0.5 text-xs text-adv-gray">
                 {classes.length}
               </span>
             )}
@@ -606,7 +606,7 @@ export default function SubjectsPage() {
                         {t(subject.nameKey, subject.name)}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-adv-gray-med">
+                    <p className="mt-0.5 text-xs text-adv-gray">
                       with {subject.persona} · {subject.modules.join(', ')}
                     </p>
                   </div>
@@ -641,7 +641,7 @@ export default function SubjectsPage() {
                 <p className="text-base font-semibold text-adv-white">
                   {t('dashboard.noClasses', "You're not enrolled in any classes yet.")}
                 </p>
-                <p className="mt-1.5 text-sm text-adv-gray-med">
+                <p className="mt-1.5 text-sm text-adv-gray">
                   {t('dashboard.enrollPrompt', 'Ask your teacher for a class code to get started.')}
                 </p>
                 <button
@@ -686,7 +686,7 @@ export default function SubjectsPage() {
 
                 {cls.completion_pct !== undefined && (
                   <div>
-                    <div className="mb-1 flex items-center justify-between text-xs text-adv-gray-med">
+                    <div className="mb-1 flex items-center justify-between text-xs text-adv-gray">
                       <span>{cls.last_topic ?? t(`subject.${cls.subject_id}`, cls.subject_id)}</span>
                       <span>{t('dashboard.progressLabel', '{{pct}}% complete', { pct: Math.round(cls.completion_pct ?? 0) })}</span>
                     </div>

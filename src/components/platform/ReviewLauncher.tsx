@@ -86,7 +86,7 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
   const innerContent = (
     <div className={embedded ? '' : 'border-t border-border px-4 pb-4 pt-3'}>
       {/* Mode selector */}
-      <p className="mb-3 text-xs text-adv-gray-med">Select a review mode to get a structured critique of the output above.</p>
+      <p className="mb-3 text-xs text-adv-gray">Select a review mode to get a structured critique of the output above.</p>
 
       {/* Standard review modes */}
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -115,7 +115,7 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
       {/* Domain Reviewers */}
       {modes.some((m) => DOMAIN_REVIEWER_IDS.has(m.id)) && (
         <>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">
             Domain Reviewers
           </p>
           <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -145,7 +145,7 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
       )}
 
       {selectedMode && (
-        <div className="mb-3 rounded-lg bg-adv-dark px-3 py-2 text-xs text-adv-gray-med">
+        <div className="mb-3 rounded-lg bg-adv-dark px-3 py-2 text-xs text-adv-gray">
           {modes.find((m) => m.id === selectedMode)?.description}
         </div>
       )}
@@ -212,7 +212,7 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
           <Sparkles className="h-4 w-4 text-adv-teal" />
           <span className="text-sm font-medium text-adv-off-white">Review & Quality Check</span>
           {reviewText && !isReviewing && (
-            <span className="rounded-full bg-adv-teal/20 px-2 py-0.5 text-[10px] text-adv-teal">Done</span>
+            <span className="rounded-full bg-adv-teal/20 px-2 py-0.5 text-xs text-adv-teal">Done</span>
           )}
         </div>
         {expanded ? <ChevronDown className="h-3.5 w-3.5 text-adv-gray" /> : <ChevronRight className="h-3.5 w-3.5 text-adv-gray" />}

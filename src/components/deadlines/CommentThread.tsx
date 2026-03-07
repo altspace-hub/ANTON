@@ -122,7 +122,7 @@ export default function CommentThread({ deadlineId }: CommentThreadProps) {
         style={{ maxHeight: '320px' }}
       >
         {comments.length === 0 ? (
-          <div className="flex flex-col items-center py-8 text-adv-gray-med">
+          <div className="flex flex-col items-center py-8 text-adv-gray">
             <MessageSquare className="mb-2 h-8 w-8" />
             <p className="text-sm">No comments yet</p>
             <p className="text-xs">Be the first to add one.</p>
@@ -147,7 +147,7 @@ export default function CommentThread({ deadlineId }: CommentThreadProps) {
                     <span className="text-sm font-medium text-adv-off-white">
                       {comment.user_id || 'User'}
                     </span>
-                    <span className="text-xs text-adv-gray-med">
+                    <span className="text-xs text-adv-gray">
                       {formatTimestamp(comment.created_at)}
                     </span>
                   </div>
@@ -169,7 +169,7 @@ export default function CommentThread({ deadlineId }: CommentThreadProps) {
           onKeyDown={handleKeyDown}
           placeholder="Add a comment..."
           rows={1}
-          className="flex-1 resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="flex-1 resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           style={{ minHeight: '38px', maxHeight: '120px' }}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
@@ -190,7 +190,7 @@ export default function CommentThread({ deadlineId }: CommentThreadProps) {
         </button>
       </div>
 
-      <p className="mt-1.5 text-[10px] text-adv-gray-med">
+      <p className="mt-1.5 text-xs text-adv-gray">
         Press Enter to send, Shift+Enter for new line
       </p>
     </div>

@@ -131,11 +131,11 @@ function StepIndicator({ step, current }: { step: typeof STEPS[0]; current: numb
   const done = current > step.id;
   const active = current === step.id;
   return (
-    <div className={`flex flex-col items-center gap-1 ${active ? 'text-adv-teal' : done ? 'text-adv-green' : 'text-adv-gray-med'}`}>
+    <div className={`flex flex-col items-center gap-1 ${active ? 'text-adv-teal' : done ? 'text-adv-green' : 'text-adv-gray'}`}>
       <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${active ? 'border-adv-teal bg-adv-teal-dim' : done ? 'border-adv-green bg-adv-green/10' : 'border-adv-gray-med/30'}`}>
         {done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
       </div>
-      <span className="text-[10px] font-medium hidden sm:block">{step.label}</span>
+      <span className="text-xs font-medium hidden sm:block">{step.label}</span>
     </div>
   );
 }
@@ -489,7 +489,7 @@ export default function GapAssessmentWizard() {
                   <p className="text-xs text-adv-gray mb-3">{fw.articleCount} articles/controls across {fw.themes.length} themes</p>
                   <div className="flex flex-wrap gap-1">
                     {fw.themes.map(t => (
-                      <span key={t} className="rounded-full bg-adv-dark px-2 py-0.5 text-[10px] text-adv-gray">{t}</span>
+                      <span key={t} className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{t}</span>
                     ))}
                   </div>
                 </div>
@@ -566,7 +566,7 @@ export default function GapAssessmentWizard() {
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-adv-gray">Entity type</label>
                 <select
-                  className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   value={contextConfig.entityType}
                   onChange={e => setContextConfig(c => ({ ...c, entityType: e.target.value }))}
                 >
@@ -583,7 +583,7 @@ export default function GapAssessmentWizard() {
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-adv-gray">Jurisdiction(s)</label>
                 <input
-                  className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   placeholder="e.g. Sweden, Finland, EU"
                   value={contextConfig.jurisdiction}
                   onChange={e => setContextConfig(c => ({ ...c, jurisdiction: e.target.value }))}
@@ -592,7 +592,7 @@ export default function GapAssessmentWizard() {
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-adv-gray">Customer segments</label>
                 <input
-                  className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   placeholder="e.g. Retail, SME, Corporate, HNW"
                   value={contextConfig.segments}
                   onChange={e => setContextConfig(c => ({ ...c, segments: e.target.value }))}
@@ -607,7 +607,7 @@ export default function GapAssessmentWizard() {
                   onChange={e => setContextConfig(c => ({ ...c, maturity: parseInt(e.target.value) }))}
                   className="w-full accent-adv-teal"
                 />
-                <div className="flex justify-between text-[11px] text-adv-gray-med">
+                <div className="flex justify-between text-[11px] text-adv-gray">
                   <span>1 — Initial</span><span>3 — Defined</span><span>5 — Optimising</span>
                 </div>
                 <p className="mt-1 text-xs text-adv-teal font-medium">{MATURITY_LABELS[contextConfig.maturity]} ({contextConfig.maturity}/5)</p>
@@ -617,7 +617,7 @@ export default function GapAssessmentWizard() {
               <label className="mb-1.5 block text-xs font-medium text-adv-gray">Known concerns or focus areas (optional)</label>
               <textarea
                 rows={3}
-                className="w-full resize-none rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                className="w-full resize-none rounded-lg border border-border bg-adv-card px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                 placeholder="e.g. Recent FIU feedback on TM alert quality, new CASP business line, upcoming supervisory review..."
                 value={contextConfig.concerns}
                 onChange={e => setContextConfig(c => ({ ...c, concerns: e.target.value }))}
@@ -665,7 +665,7 @@ export default function GapAssessmentWizard() {
                       {e.type === 'error' ? <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> : e.type === 'complete' ? <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0" /> : <Circle className="h-3 w-3 mt-0.5 shrink-0" />}
                       <span>{e.message || e.type}</span>
                       {e.type === 'batch_complete' && e.batchIndex !== undefined && e.totalBatches !== undefined && (
-                        <span className="ml-auto text-adv-gray-med">{e.batchIndex + 1}/{e.totalBatches}</span>
+                        <span className="ml-auto text-adv-gray">{e.batchIndex + 1}/{e.totalBatches}</span>
                       )}
                     </div>
                   ))}
@@ -697,7 +697,7 @@ export default function GapAssessmentWizard() {
                 <p className="text-xs text-adv-gray">{findings.length} findings across {fwIds.length} framework(s)</p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <select className="rounded-lg border border-border bg-adv-card px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                <select className="rounded-lg border border-border bg-adv-card px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   value={filterScore} onChange={e => setFilterScore(e.target.value)}>
                   <option value="all">All scores</option>
                   <option value="red">🔴 Red</option>
@@ -705,7 +705,7 @@ export default function GapAssessmentWizard() {
                   <option value="yellow">🟡 Yellow</option>
                   <option value="green">🟢 Green</option>
                 </select>
-                <select className="rounded-lg border border-border bg-adv-card px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                <select className="rounded-lg border border-border bg-adv-card px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                   value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                   <option value="priority">Sort by priority</option>
                   <option value="score">Sort by score</option>
@@ -721,18 +721,18 @@ export default function GapAssessmentWizard() {
                   onClick={() => setFilterScore(filterScore === score ? 'all' : score)}>
                   <div className="text-sm">{emoji}</div>
                   <div className={`text-base font-bold ${SCORE_COLORS[score].text}`}>{count as number}</div>
-                  <div className="text-[10px] text-adv-gray capitalize">{score}</div>
+                  <div className="text-xs text-adv-gray capitalize">{score}</div>
                 </div>
               ))}
               <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-center">
                 <div className="text-sm text-red-400">⚡</div>
                 <div className="text-base font-bold text-red-400">{scoreSummary.critical}</div>
-                <div className="text-[10px] text-adv-gray">Critical</div>
+                <div className="text-xs text-adv-gray">Critical</div>
               </div>
               <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-2 text-center">
                 <div className="text-sm text-orange-400">⬆</div>
                 <div className="text-base font-bold text-orange-400">{scoreSummary.high}</div>
-                <div className="text-[10px] text-adv-gray">High</div>
+                <div className="text-xs text-adv-gray">High</div>
               </div>
             </div>
 
@@ -827,7 +827,7 @@ export default function GapAssessmentWizard() {
                       <p className="mb-2 text-xs text-adv-gray leading-relaxed">{cap.description}</p>
                       {cap.keyGaps.length > 0 && (
                         <div className="mb-2">
-                          <p className="text-[10px] font-semibold text-adv-gray-med mb-1">Key Gaps</p>
+                          <p className="text-xs font-semibold text-adv-gray mb-1">Key Gaps</p>
                           <ul className="space-y-0.5">
                             {cap.keyGaps.slice(0, 2).map((g, i) => (
                               <li key={i} className="text-[11px] text-adv-off-white flex gap-1"><span className="text-red-400">•</span>{g}</li>
@@ -837,7 +837,7 @@ export default function GapAssessmentWizard() {
                       )}
                       {cap.quickWins.length > 0 && (
                         <div>
-                          <p className="text-[10px] font-semibold text-adv-gray-med mb-1">Quick Wins</p>
+                          <p className="text-xs font-semibold text-adv-gray mb-1">Quick Wins</p>
                           <ul className="space-y-0.5">
                             {cap.quickWins.slice(0, 1).map((w, i) => (
                               <li key={i} className="text-[11px] text-adv-teal flex gap-1"><span>⚡</span>{w}</li>
@@ -932,14 +932,14 @@ export default function GapAssessmentWizard() {
                     <div className="divide-y divide-border">
                       {phase.items.map(item => (
                         <div key={item.id} className="flex items-start gap-3 px-4 py-3">
-                          <span className={`mt-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${item.priority === 'critical' ? 'bg-red-500/20 text-red-400' : item.priority === 'high' ? 'bg-orange-500/20 text-orange-400' : 'bg-adv-dark text-adv-gray'}`}>
+                          <span className={`mt-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium ${item.priority === 'critical' ? 'bg-red-500/20 text-red-400' : item.priority === 'high' ? 'bg-orange-500/20 text-orange-400' : 'bg-adv-dark text-adv-gray'}`}>
                             {item.effort}
                           </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-adv-off-white">{item.title}</p>
                             <p className="mt-0.5 text-[11px] text-adv-gray line-clamp-2">{item.description}</p>
                           </div>
-                          <span className="shrink-0 text-[10px] text-adv-gray-med">{item.owner}</span>
+                          <span className="shrink-0 text-xs text-adv-gray">{item.owner}</span>
                         </div>
                       ))}
                     </div>

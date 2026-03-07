@@ -93,7 +93,7 @@ export default function ProjectNotes({ projectId }: { projectId: string }) {
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="Add a note, update, or milestone..."
             rows={3}
-            className="mb-3 w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+            className="mb-3 w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export default function ProjectNotes({ projectId }: { projectId: string }) {
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                       noteType === type
                         ? config.color
-                        : 'text-adv-gray-med hover:text-adv-off-white'
+                        : 'text-adv-gray hover:text-adv-off-white'
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -132,9 +132,9 @@ export default function ProjectNotes({ projectId }: { projectId: string }) {
       {/* Notes feed */}
       {notes.length === 0 ? (
         <div className="rounded-xl border border-border bg-adv-card p-6 text-center">
-          <MessageSquare className="mx-auto mb-2 h-8 w-8 text-adv-gray-med" />
-          <p className="text-sm text-adv-gray-med">No notes yet</p>
-          <p className="mt-1 text-xs text-adv-gray-med">
+          <MessageSquare className="mx-auto mb-2 h-8 w-8 text-adv-gray" />
+          <p className="text-sm text-adv-gray">No notes yet</p>
+          <p className="mt-1 text-xs text-adv-gray">
             Add notes to track progress, decisions, and milestones
           </p>
         </div>
@@ -150,20 +150,20 @@ export default function ProjectNotes({ projectId }: { projectId: string }) {
               >
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium ${config.color}`}>
+                    <span className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${config.color}`}>
                       <Icon className="h-3 w-3" />
                       {config.label}
                     </span>
                     <span className="text-xs font-medium text-adv-off-white">
                       {note.user_name}
                     </span>
-                    <span className="text-xs text-adv-gray-med">
+                    <span className="text-xs text-adv-gray">
                       {formatRelativeTime(note.created_at)}
                     </span>
                   </div>
                   <button
                     onClick={() => handleDelete(note.id)}
-                    className="rounded p-1 text-adv-gray-med opacity-0 transition-all hover:text-adv-red group-hover:opacity-100"
+                    className="rounded p-1 text-adv-gray opacity-0 transition-all hover:text-adv-red group-hover:opacity-100"
                     title="Delete"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

@@ -228,13 +228,13 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
       <button
         onClick={onRemove}
         disabled={disabled}
-        className="absolute right-2 top-2 rounded p-1 text-adv-gray-med hover:text-adv-red transition-colors disabled:opacity-40"
+        className="absolute right-2 top-2 rounded p-1 text-adv-gray hover:text-adv-red transition-colors disabled:opacity-40"
       >
         <X className="h-3 w-3" />
       </button>
 
       <div className="mb-3">
-        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">Role</label>
+        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-adv-gray">Role</label>
         <select
           value={isCustom ? 'custom' : member.role}
           onChange={(e) => {
@@ -245,7 +245,7 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
             }
           }}
           disabled={disabled}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none disabled:opacity-60"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
         >
           {ROLE_PRESETS.map((r) => (
             <option key={r.id} value={r.id}>{r.label}</option>
@@ -261,18 +261,18 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
             }}
             placeholder="Enter role name…"
             disabled={disabled}
-            className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none disabled:opacity-60"
+            className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
           />
         )}
       </div>
 
       <div>
-        <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-adv-gray-med">Model</label>
+        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-adv-gray">Model</label>
         <select
           value={selectValue}
           onChange={(e) => handleModelChange(e.target.value)}
           disabled={disabled}
-          className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none disabled:opacity-60"
+          className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
         >
           {MODEL_GROUPS.map((g) => (
             <optgroup key={g.groupLabel} label={g.groupLabel}>
@@ -292,7 +292,7 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
             }}
             placeholder="e.g. llama3.2, mistral, gemma3"
             disabled={disabled}
-            className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none disabled:opacity-60"
+            className="mt-1.5 w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
           />
         )}
       </div>
@@ -528,13 +528,13 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
           onChange={(e) => setSetup((prev) => ({ ...prev, topic: e.target.value }))}
           placeholder="Describe the document, decision, plan, or question for the council to deliberate on…"
           rows={4}
-          className="w-full resize-y rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none"
+          className="w-full resize-y rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
       </div>
 
       {/* Presets */}
       <div>
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
           Quick Presets
         </label>
         <div className="flex flex-wrap gap-2">
@@ -559,7 +559,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
         <div className="mb-2 flex items-center justify-between">
           <label className="text-sm font-semibold text-adv-off-white">
             Council Members{' '}
-            <span className="text-xs font-normal text-adv-gray-med">(2–6 members)</span>
+            <span className="text-xs font-normal text-adv-gray">(2–6 members)</span>
           </label>
           <button
             onClick={addMember}
@@ -587,13 +587,13 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {/* Chair model */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
             Chair Model
           </label>
           <select
             value={setup.chairModel}
             onChange={(e) => setSetup((prev) => ({ ...prev, chairModel: e.target.value as ModelId }))}
-            className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-full rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           >
             {MODEL_GROUPS.map((g) => (
               <optgroup key={g.groupLabel} label={g.groupLabel}>
@@ -607,7 +607,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
 
         {/* Rounds */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
             Rounds
           </label>
           <div className="flex gap-1.5">
@@ -629,7 +629,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
 
         {/* Web search */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
             Web Search
           </label>
           <div className="flex gap-1.5">
@@ -654,7 +654,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
 
         {/* Consensus */}
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
             Consensus
           </label>
           <div className="flex gap-1.5 flex-wrap">
@@ -668,7 +668,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
               <button
                 key={value}
                 onClick={() => setSetup((prev) => ({ ...prev, consensus: value }))}
-                className={`rounded border px-2 py-1 text-[10px] font-medium transition-colors ${
+                className={`rounded border px-2 py-1 text-xs font-medium transition-colors ${
                   setup.consensus === value
                     ? 'border-adv-teal bg-adv-teal-dim text-adv-teal'
                     : 'border-border text-adv-gray hover:border-adv-teal/40'
@@ -683,7 +683,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
 
       {/* Output format */}
       <div>
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-adv-gray">
           Output Format
         </label>
         <div className="flex flex-wrap gap-2">
@@ -707,7 +707,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
       <div className="flex items-center gap-3">
         <button
           onClick={() => setSetup((prev) => ({ ...prev, chainMode: !prev.chainMode }))}
-          className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+          className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 ${
             setup.chainMode ? 'bg-adv-teal' : 'bg-adv-card border border-border'
           }`}
         >
@@ -719,7 +719,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
         </button>
         <div>
           <span className="text-sm font-medium text-adv-off-white">Chain Mode</span>
-          <p className="text-xs text-adv-gray-med">Each member sees prior members' outputs in the same round (Peer Review Chain style)</p>
+          <p className="text-xs text-adv-gray">Each member sees prior members' outputs in the same round (Peer Review Chain style)</p>
         </div>
       </div>
 
@@ -767,7 +767,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
         <div key={round}>
           <div className="mb-3 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-adv-gray-med">
+            <span className="text-xs font-semibold uppercase tracking-wider text-adv-gray">
               Round {round} of {setup.rounds}
             </span>
             <div className="h-px flex-1 bg-border" />
@@ -793,7 +793,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
                     <span className="text-xs font-semibold text-adv-off-white capitalize">
                       {member.role.replace(/-/g, ' ')}
                     </span>
-                    <span className="text-[10px] text-adv-gray-med">
+                    <span className="text-xs text-adv-gray">
                       {MODEL_LABELS[member.model] ?? member.model}
                     </span>
                   </div>
@@ -803,7 +803,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
                       {isActive && <span className="animate-pulse text-adv-teal">▊</span>}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-adv-gray-med text-xs">
+                    <div className="flex items-center gap-2 text-adv-gray text-xs">
                       <span className="animate-pulse">…</span>
                       <span>Thinking</span>
                     </div>

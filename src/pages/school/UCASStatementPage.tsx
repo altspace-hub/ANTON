@@ -143,7 +143,7 @@ export default function UCASStatementPage() {
               value={form.courseTitle}
               onChange={e => updateForm('courseTitle', e.target.value)}
               placeholder={t('ucas.coursePlaceholder', { defaultValue: 'e.g. Computer Science BSc, Medicine MBBS...' })}
-              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
           </div>
 
@@ -157,7 +157,7 @@ export default function UCASStatementPage() {
               value={form.universities}
               onChange={e => updateForm('universities', e.target.value)}
               placeholder={t('ucas.universitiesPlaceholder', { defaultValue: 'e.g. Imperial, UCL, Edinburgh, Bristol, Manchester' })}
-              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
           </div>
 
@@ -171,7 +171,7 @@ export default function UCASStatementPage() {
               value={form.subjectsSummary}
               onChange={e => updateForm('subjectsSummary', e.target.value)}
               placeholder={t('ucas.subjectsPlaceholder', { defaultValue: 'e.g. Mathematics A*, Physics A, Chemistry A' })}
-              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal"
+              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
             />
           </div>
 
@@ -185,7 +185,7 @@ export default function UCASStatementPage() {
               onChange={e => updateForm('whyThisSubject', e.target.value)}
               placeholder={t('ucas.whyPlaceholder', { defaultValue: 'Describe what drew you to this subject — a book, project, experiment, realisation...' })}
               rows={4}
-              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal resize-none"
+              className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
             />
           </div>
 
@@ -209,7 +209,7 @@ export default function UCASStatementPage() {
                   onChange={e => updateForm('workExperience', e.target.value)}
                   placeholder={t('ucas.workPlaceholder', { defaultValue: 'Internships, shadowing, part-time work, volunteering...' })}
                   rows={3}
-                  className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal resize-none"
+                  className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
                 />
               </div>
 
@@ -222,7 +222,7 @@ export default function UCASStatementPage() {
                   onChange={e => updateForm('extracurriculars', e.target.value)}
                   placeholder={t('ucas.extrasPlaceholder', { defaultValue: 'Sports, music, clubs, competitions, achievements...' })}
                   rows={3}
-                  className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal resize-none"
+                  className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
                 />
               </div>
 
@@ -235,7 +235,7 @@ export default function UCASStatementPage() {
                   onChange={e => updateForm('futureGoals', e.target.value)}
                   placeholder={t('ucas.goalsPlaceholder', { defaultValue: 'Where do you see yourself after university?' })}
                   rows={2}
-                  className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus:border-adv-teal resize-none"
+                  className="w-full bg-adv-card border border-white/10 rounded-lg px-3 py-2 text-white placeholder-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal resize-none"
                 />
               </div>
 

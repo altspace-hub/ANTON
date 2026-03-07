@@ -74,7 +74,7 @@ function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps)
 
             return (
               <div key={cat}>
-                <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-adv-gray-med">
+                <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-adv-gray">
                   {CATEGORY_LABELS[cat]}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -103,7 +103,7 @@ function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps)
 
         {/* Footer */}
         {selected.length > 0 && (
-          <div className="border-t border-border pt-2 text-[11px] text-adv-gray-med">
+          <div className="border-t border-border pt-2 text-[11px] text-adv-gray">
             <span className="text-adv-off-white">{selected.length}</span> format{selected.length !== 1 ? 's' : ''} selected
             {recommendedExports.length > 0 && (
               <span className="ml-2">

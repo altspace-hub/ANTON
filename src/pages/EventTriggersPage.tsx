@@ -480,7 +480,7 @@ function CreateTriggerModal({ onClose, onCreated }: { onClose: () => void; onCre
                   >
                     <Icon className={`w-4 h-4 mb-1 ${triggerType === type ? 'text-adv-teal' : 'text-adv-gray'}`} />
                     <p className="text-xs font-medium">{label}</p>
-                    <p className="text-[10px] text-adv-gray mt-0.5">{desc}</p>
+                    <p className="text-xs text-adv-gray mt-0.5">{desc}</p>
                   </button>
                 ))}
               </div>
@@ -496,7 +496,7 @@ function CreateTriggerModal({ onClose, onCreated }: { onClose: () => void; onCre
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. GitHub Code Review Trigger"
-                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal/50"
+                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                 />
               </div>
               <div>
@@ -505,7 +505,7 @@ function CreateTriggerModal({ onClose, onCreated }: { onClose: () => void; onCre
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="What does this trigger do?"
-                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal/50"
+                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                 />
               </div>
               <div>
@@ -513,7 +513,7 @@ function CreateTriggerModal({ onClose, onCreated }: { onClose: () => void; onCre
                 <select
                   value={workflowId}
                   onChange={(e) => setWorkflowId(e.target.value)}
-                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal/50"
+                  className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                 >
                   <option value="">Select workflow…</option>
                   {workflows.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -534,7 +534,7 @@ function CreateTriggerModal({ onClose, onCreated }: { onClose: () => void; onCre
                     <select
                       value={authMethod}
                       onChange={(e) => setAuthMethod(e.target.value as typeof authMethod)}
-                      className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal/50"
+                      className="w-full bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                     >
                       <option value="hmac_sha256">HMAC SHA-256 (GitHub, GitLab)</option>
                       <option value="signing_secret">Signing Secret (Slack)</option>
@@ -547,7 +547,7 @@ function CreateTriggerModal({ onClose, onCreated }: { onClose: () => void; onCre
                       value={secret}
                       onChange={(e) => setSecret(e.target.value)}
                       type="text"
-                      className="w-full font-mono bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal/50"
+                      className="w-full font-mono bg-adv-dark border border-white/10 rounded px-2.5 py-2 text-sm text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal/50"
                     />
                     <p className="text-xs text-adv-gray/60 mt-1">Store this secret in your webhook provider settings</p>
                   </div>

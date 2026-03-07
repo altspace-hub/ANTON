@@ -382,7 +382,7 @@ export default function NGOHubPage() {
 
         {/* ── Needs Wizard ─────────────────────────────────────── */}
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-adv-gray-med mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-adv-gray mb-4">
             What does your community need today?
           </h2>
 
@@ -503,7 +503,7 @@ export default function NGOHubPage() {
 
         {/* ── Common Journeys ───────────────────────────────────── */}
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-adv-gray-med mb-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-adv-gray mb-4">
             Common journeys
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -526,7 +526,7 @@ export default function NGOHubPage() {
                         key={step}
                         className="flex items-center gap-1 rounded bg-adv-dark px-2 py-0.5 text-xs text-adv-gray"
                       >
-                        <span className="text-adv-gray-med">{i + 1}.</span>
+                        <span className="text-adv-gray">{i + 1}.</span>
                         {step}
                       </span>
                     ))}
@@ -542,7 +542,7 @@ export default function NGOHubPage() {
           <section key={cluster}>
             <div className="flex items-center gap-2 mb-4">
               <ClusterIcon className="h-4 w-4 text-adv-teal" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-adv-gray-med">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-adv-gray">
                 {cluster}
               </h2>
             </div>
@@ -560,7 +560,7 @@ export default function NGOHubPage() {
                         <Icon className={`h-5 w-5 ${area.color} shrink-0`} />
                         <span className="text-sm font-semibold text-adv-white">{area.name}</span>
                       </div>
-                      <span className="text-xs text-adv-gray-med shrink-0 mt-0.5">
+                      <span className="text-xs text-adv-gray shrink-0 mt-0.5">
                         {area.moduleCount} modules
                       </span>
                     </div>

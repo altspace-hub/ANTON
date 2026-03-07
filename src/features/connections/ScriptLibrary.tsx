@@ -46,12 +46,12 @@ function ScriptRow({ script, isAdmin, onDelete }: ScriptRowProps) {
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-adv-off-white">{script.display_name}</p>
-          {script.description && <p className="truncate text-xs text-adv-gray-med">{script.description}</p>}
+          {script.description && <p className="truncate text-xs text-adv-gray">{script.description}</p>}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
           <LangBadge language={script.language} />
-          <span className="text-xs text-adv-gray-med">v{script.version}</span>
+          <span className="text-xs text-adv-gray">v{script.version}</span>
           {script.approved_by ? (
             <span className="inline-flex items-center gap-1 rounded-md border border-adv-green/30 bg-adv-green/20 px-2 py-0.5 text-xs text-adv-green">
               <CheckCircle2 className="h-3 w-3" /> Approved
@@ -96,7 +96,7 @@ function ScriptRow({ script, isAdmin, onDelete }: ScriptRowProps) {
             {script.file_hash && (
               <div className="col-span-2">
                 <p className="text-adv-gray">File Hash (SHA-256)</p>
-                <p className="mt-0.5 break-all font-mono text-xs text-adv-gray-med">{script.file_hash}</p>
+                <p className="mt-0.5 break-all font-mono text-xs text-adv-gray">{script.file_hash}</p>
               </div>
             )}
           </div>
@@ -176,7 +176,7 @@ function AddScriptForm({ onCreated, onCancel }: AddScriptFormProps) {
     }
   };
 
-  const INPUT_CLASS = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none';
+  const INPUT_CLASS = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
   const LABEL_CLASS = 'mb-1 block text-xs font-medium text-adv-gray';
 
   return (
@@ -294,7 +294,7 @@ export function ScriptLibrary() {
         <div className="flex items-center gap-2">
           <Code className="h-5 w-5 text-adv-teal" />
           <h2 className="text-lg font-semibold text-adv-white">Script Library</h2>
-          <span className="text-xs text-adv-gray-med">({scripts.length} scripts)</span>
+          <span className="text-xs text-adv-gray">({scripts.length} scripts)</span>
         </div>
         {isAdmin && !showAddForm && (
           <button
@@ -315,12 +315,12 @@ export function ScriptLibrary() {
       )}
 
       {loading ? (
-        <p className="text-sm text-adv-gray-med">Loading scripts...</p>
+        <p className="text-sm text-adv-gray">Loading scripts...</p>
       ) : scripts.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
-          <Code className="mx-auto mb-2 h-6 w-6 text-adv-gray-med" />
+          <Code className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
           <p className="text-sm text-adv-gray">No scripts in the library.</p>
-          {isAdmin && <p className="mt-1 text-xs text-adv-gray-med">Register approved scripts to make them available to workflows.</p>}
+          {isAdmin && <p className="mt-1 text-xs text-adv-gray">Register approved scripts to make them available to workflows.</p>}
         </div>
       ) : (
         <div className="space-y-2">

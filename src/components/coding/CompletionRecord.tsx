@@ -109,7 +109,7 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
   return (
     <div className="rounded border border-border bg-adv-dark px-3 py-2 text-center">
       <div className="flex items-center justify-center gap-1">{icon}<span className={`text-lg font-bold ${color}`}>{value}</span></div>
-      <span className="text-[10px] text-adv-gray">{label}</span>
+      <span className="text-xs text-adv-gray">{label}</span>
     </div>
   );
 }

@@ -216,7 +216,7 @@ export default function MyBiasPage() {
             </div>
           ) : !preferences ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <AlertCircle className="h-8 w-8 text-adv-gray-med mb-3" />
+              <AlertCircle className="h-8 w-8 text-adv-gray mb-3" />
               <p className="text-sm text-adv-gray">No reading history yet. Start reading articles in the Feed.</p>
             </div>
           ) : (

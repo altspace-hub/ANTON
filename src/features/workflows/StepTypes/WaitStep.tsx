@@ -57,10 +57,10 @@ export function WaitStep({ step, onUpdate }: WaitStepProps) {
             max={86400}
             value={step.config.waitSeconds ?? 60}
             onChange={(e) => onUpdate({ waitSeconds: parseInt(e.target.value, 10) || 60 })}
-            className="w-32 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+            className="w-32 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
           />
           {(step.config.waitSeconds ?? 60) >= 60 && (
-            <p className="mt-1 text-[10px] text-adv-gray-med">
+            <p className="mt-1 text-xs text-adv-gray">
               = {Math.round((step.config.waitSeconds ?? 60) / 60)} minute{Math.round((step.config.waitSeconds ?? 60) / 60) !== 1 ? 's' : ''}
             </p>
           )}
@@ -72,20 +72,20 @@ export function WaitStep({ step, onUpdate }: WaitStepProps) {
           <div>
             <label className="mb-1 block text-[11px] font-medium text-adv-gray">
               Condition Expression
-              <span className="ml-1 text-adv-gray-med font-normal">Polling checks this every 10 seconds</span>
+              <span className="ml-1 text-adv-gray font-normal">Polling checks this every 10 seconds</span>
             </label>
             <input
               type="text"
               value={step.config.waitCondition || ''}
               onChange={(e) => onUpdate({ waitCondition: e.target.value })}
               placeholder="{{step_2.status}} == 'completed'"
-              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none font-mono"
+              className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 font-mono"
             />
           </div>
           <div>
             <label className="mb-1 block text-[11px] font-medium text-adv-gray">
               Max Wait Time (seconds)
-              <span className="ml-1 text-adv-gray-med font-normal">Abort if condition not met within this time</span>
+              <span className="ml-1 text-adv-gray font-normal">Abort if condition not met within this time</span>
             </label>
             <input
               type="number"
@@ -93,7 +93,7 @@ export function WaitStep({ step, onUpdate }: WaitStepProps) {
               max={86400}
               value={step.config.maxWaitSeconds ?? 300}
               onChange={(e) => onUpdate({ maxWaitSeconds: parseInt(e.target.value, 10) || 300 })}
-              className="w-32 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+              className="w-32 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             />
           </div>
         </div>

@@ -239,7 +239,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
           <div className="absolute bottom-full left-0 mb-1 z-50 min-w-52 rounded-lg border border-border bg-adv-card shadow-xl">
             <div className="px-3 py-2 border-b border-border">
               <p className="text-xs font-medium text-adv-gray">Choose audience</p>
-              <p className="text-[10px] text-adv-gray-med mt-0.5">Claude will rewrite the output for them</p>
+              <p className="text-xs text-adv-gray mt-0.5">Claude will rewrite the output for them</p>
             </div>
             <div className="py-1">
               {AUDIENCES.map((audience) => (
@@ -255,7 +255,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
                   <span className="flex-shrink-0 w-4 text-center">{audience.emoji}</span>
                   <span className="flex-1">{audience.label}</span>
                   {selectedAudience?.id === audience.id && showPanel && (
-                    <span className="text-[10px] text-adv-teal flex-shrink-0">Active</span>
+                    <span className="text-xs text-adv-teal flex-shrink-0">Active</span>
                   )}
                 </button>
               ))}
@@ -275,13 +275,13 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
                 For {selectedAudience.label}
               </span>
               {isStreaming && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-adv-teal/20 px-2 py-0.5 text-[10px] text-adv-teal">
+                <span className="inline-flex items-center gap-1 rounded-full bg-adv-teal/20 px-2 py-0.5 text-xs text-adv-teal">
                   <span className="h-1.5 w-1.5 rounded-full bg-adv-teal animate-pulse" />
                   Generating...
                 </span>
               )}
               {!isStreaming && explainedContent && (
-                <span className="rounded-full bg-adv-green/20 px-2 py-0.5 text-[10px] text-adv-green">
+                <span className="rounded-full bg-adv-green/20 px-2 py-0.5 text-xs text-adv-green">
                   Ready
                 </span>
               )}
@@ -298,7 +298,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
               ) : null}
               <button
                 onClick={handleClose}
-                className="rounded-md p-1 text-adv-gray-med hover:bg-adv-dark hover:text-adv-off-white transition-colors"
+                className="rounded-md p-1 text-adv-gray hover:bg-adv-dark hover:text-adv-off-white transition-colors"
                 title="Close"
               >
                 <X className="h-3.5 w-3.5" />
@@ -335,7 +335,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
             {activeTab === 'explained' ? (
               <div className="min-h-24">
                 {!explainedContent && isStreaming && (
-                  <div className="flex items-center gap-2 text-xs text-adv-gray-med">
+                  <div className="flex items-center gap-2 text-xs text-adv-gray">
                     <span className="h-1.5 w-1.5 rounded-full bg-adv-teal animate-pulse" />
                     Rewriting for {selectedAudience.label}...
                   </div>
@@ -378,7 +378,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
                 )}
               </button>
               <div className="h-4 w-px bg-border" />
-              <span className="text-[10px] text-adv-gray-med">Export:</span>
+              <span className="text-xs text-adv-gray">Export:</span>
               <button
                 onClick={handleDownload}
                 disabled={isExporting}

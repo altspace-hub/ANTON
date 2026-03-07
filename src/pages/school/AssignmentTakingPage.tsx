@@ -227,7 +227,7 @@ export default function AssignmentTakingPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-adv-white">Submitted!</h1>
-            <p className="mt-1 text-sm text-adv-gray-med">
+            <p className="mt-1 text-sm text-adv-gray">
               Your answers have been saved. Your teacher will review them soon.
             </p>
           </div>
@@ -285,7 +285,7 @@ export default function AssignmentTakingPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h1 className="text-lg font-bold text-adv-white">{assignment.title}</h1>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-adv-gray-med">
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-adv-gray">
                     {assignment.class_name && <span>{assignment.class_name}</span>}
                     <span className="rounded-full border border-border px-2 py-0.5 capitalize">
                       {assignment.assignment_type}
@@ -322,7 +322,7 @@ export default function AssignmentTakingPage() {
 
               {/* Progress bar */}
               <div className="mt-4">
-                <div className="mb-1 flex justify-between text-xs text-adv-gray-med">
+                <div className="mb-1 flex justify-between text-xs text-adv-gray">
                   <span>{answeredCount} of {totalQuestions} answered</span>
                   <span className="text-adv-teal">{progressPct}%</span>
                 </div>
@@ -339,7 +339,7 @@ export default function AssignmentTakingPage() {
             {isAdaptive && adaptiveQuestion && (
               <div className="space-y-4">
                 {/* Progress indicator */}
-                <div className="flex items-center justify-between text-xs text-adv-gray-med">
+                <div className="flex items-center justify-between text-xs text-adv-gray">
                   <span>Question {adaptivePos + 1} of {assignment.questions.length}</span>
                   <span className="text-adv-teal">Adaptive mode</span>
                 </div>
@@ -355,7 +355,7 @@ export default function AssignmentTakingPage() {
                         <p className="text-sm font-medium text-adv-off-white leading-snug">{q.content}</p>
                         <div className="flex shrink-0 items-center gap-1.5">
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${bloomsClass}`}>{q.blooms}</span>
-                          <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray-med">{q.marks} marks</span>
+                          <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">{q.marks} marks</span>
                         </div>
                       </div>
 
@@ -379,14 +379,14 @@ export default function AssignmentTakingPage() {
                           onChange={(e) => setAnswer(q.id, e.target.value)}
                           rows={3}
                           placeholder="Write your answer here..."
-                          className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                          className="w-full resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         />
                       )}
 
                       {/* Self-rating — shown after answering */}
                       {answered && (
                         <div className="mt-4 pt-4 border-t border-border">
-                          <p className="text-xs text-adv-gray-med mb-2">How did that feel?</p>
+                          <p className="text-xs text-adv-gray mb-2">How did that feel?</p>
                           <div className="flex gap-2">
                             {([
                               { id: 'easy', label: 'Too Easy', icon: <TrendingUp className="h-3.5 w-3.5" /> },
@@ -454,7 +454,7 @@ export default function AssignmentTakingPage() {
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-start gap-2.5">
                         <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                          answered ? 'bg-adv-teal text-adv-dark' : 'bg-adv-dark text-adv-gray-med'
+                          answered ? 'bg-adv-teal text-adv-dark' : 'bg-adv-dark text-adv-gray'
                         }`}>
                           {idx + 1}
                         </span>
@@ -464,7 +464,7 @@ export default function AssignmentTakingPage() {
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${bloomsClass}`}>
                           {q.blooms}
                         </span>
-                        <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray-med">
+                        <span className="rounded-full bg-adv-dark px-2 py-0.5 text-xs text-adv-gray">
                           {q.marks} {q.marks === 1 ? 'mark' : 'marks'}
                         </span>
                       </div>
@@ -512,7 +512,7 @@ export default function AssignmentTakingPage() {
                           onChange={(e) => setAnswer(q.id, e.target.value)}
                           rows={3}
                           placeholder="Write your answer here..."
-                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                         />
                       </div>
                     )}
@@ -525,9 +525,9 @@ export default function AssignmentTakingPage() {
                           value={answers[q.id] ?? ''}
                           onChange={(e) => setAnswer(q.id, e.target.value)}
                           placeholder="Enter your answer..."
-                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm font-mono text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none"
+                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm font-mono text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                         />
-                        <p className="text-xs text-adv-gray-med">
+                        <p className="text-xs text-adv-gray">
                           Show your working in the box below (optional):
                         </p>
                         <textarea
@@ -535,7 +535,7 @@ export default function AssignmentTakingPage() {
                           onChange={(e) => setAnswer(`${q.id}_working`, e.target.value)}
                           rows={2}
                           placeholder="Working / steps..."
-                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                          className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
                         />
                       </div>
                     )}
@@ -554,7 +554,7 @@ export default function AssignmentTakingPage() {
               )}
 
               <div className="flex items-center justify-between">
-                <div className="text-sm text-adv-gray-med">
+                <div className="text-sm text-adv-gray">
                   {answeredCount < totalQuestions && (
                     <span className="flex items-center gap-1.5 text-adv-gold">
                       <AlertCircle className="h-3.5 w-3.5" />
@@ -585,7 +585,7 @@ export default function AssignmentTakingPage() {
               </div>
 
               {answeredCount > 0 && answeredCount < totalQuestions && (
-                <p className="mt-2 text-xs text-adv-gray-med">
+                <p className="mt-2 text-xs text-adv-gray">
                   You can submit with unanswered questions — unanswered questions will receive 0 marks.
                 </p>
               )}

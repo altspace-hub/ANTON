@@ -47,7 +47,7 @@ function HitCard({ hit }: { hit: DJHit }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-adv-off-white truncate">{hit.entityName}</span>
-            <span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${MATCH_COLOR[hit.matchStrength]}`}>
+            <span className={`rounded border px-1.5 py-0.5 text-xs font-medium ${MATCH_COLOR[hit.matchStrength]}`}>
               {hit.matchStrength}
             </span>
           </div>
@@ -63,11 +63,11 @@ function HitCard({ hit }: { hit: DJHit }) {
             <p className="text-xs text-adv-gray">{hit.details}</p>
           )}
           <div className="flex flex-wrap gap-1">
-            <span className="text-[10px] text-adv-gray-med">Added: {hit.dateAdded}</span>
+            <span className="text-xs text-adv-gray">Added: {hit.dateAdded}</span>
             {hit.associatedEntities && hit.associatedEntities.length > 0 && (
               <>
-                <span className="text-[10px] text-adv-gray-med">·</span>
-                <span className="text-[10px] text-adv-gray-med">Associated: {hit.associatedEntities.join(', ')}</span>
+                <span className="text-xs text-adv-gray">·</span>
+                <span className="text-xs text-adv-gray">Associated: {hit.associatedEntities.join(', ')}</span>
               </>
             )}
           </div>
@@ -127,8 +127,8 @@ export function DJScreeningPanel({ result, adverseMedia, pepProfile, onAddToMoni
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-adv-gray-med">Ref: {result.referenceId}</div>
-            <div className="text-xs text-adv-gray-med">{new Date(result.screenedAt).toLocaleString()}</div>
+            <div className="text-xs text-adv-gray">Ref: {result.referenceId}</div>
+            <div className="text-xs text-adv-gray">{new Date(result.screenedAt).toLocaleString()}</div>
             <div className="mt-1 text-xs font-medium text-adv-off-white">
               {result.hits.length === 0 ? 'No hits' : `${result.hits.length} hit(s) found`}
             </div>
@@ -193,7 +193,7 @@ export function DJScreeningPanel({ result, adverseMedia, pepProfile, onAddToMoni
                   <p className="text-xs text-adv-gray">{article.summary}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {article.riskCategories.map(cat => (
-                      <span key={cat} className="rounded-full bg-adv-blue/10 border border-adv-blue/20 px-1.5 py-0.5 text-[10px] text-adv-blue">{cat}</span>
+                      <span key={cat} className="rounded-full bg-adv-blue/10 border border-adv-blue/20 px-1.5 py-0.5 text-xs text-adv-blue">{cat}</span>
                     ))}
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export function DJScreeningPanel({ result, adverseMedia, pepProfile, onAddToMoni
 
       {/* AMLR regulatory context */}
       <div className="rounded-lg border border-adv-teal/20 bg-adv-teal/5 px-3 py-2">
-        <div className="text-[10px] font-medium text-adv-teal mb-1">AMLR Regulatory Context</div>
+        <div className="text-xs font-medium text-adv-teal mb-1">AMLR Regulatory Context</div>
         <div className="text-xs text-adv-gray">
           {result.hits.some(h => h.listType === 'PEP')
             ? 'PEP match triggers Art. 22 (enhanced due diligence for PEPs) and Art. 21 (senior management approval). Ongoing monitoring required per Art. 40.'
