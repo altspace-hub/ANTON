@@ -52,6 +52,7 @@
     "@google/generative-ai": "^0.24.1",
     "@mistralai/mistralai": "^1.14.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
+    "@tanstack/react-virtual": "^3.13.21",
     "@types/jszip": "^3.4.1",
     "adm-zip": "^0.5.16",
     "bcryptjs": "^3.0.3",

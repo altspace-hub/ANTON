@@ -35,56 +35,99 @@ export async function fetchModels() {
   return res.json();
 }
 
+// STREAM-06: SSE retry with exponential backoff (1s, 2s, 4s) on network drops
+const STREAM_RETRY_DELAYS = [1000, 2000, 4000];
+
 export async function* streamMessage(
   config: ClaudeRunConfig,
   signal?: AbortSignal
 ): AsyncGenerator<StreamEvent> {
-  const res = await fetchWithAuth(`${API_BASE}/claude/message`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
-    signal,
-  });
+  let lastError: unknown;
 
-  if (!res.ok) {
-    const error = await res.text();
-    yield { type: 'error', message: error };
-    return;
-  }
+  for (let attempt = 0; attempt <= STREAM_RETRY_DELAYS.length; attempt++) {
+    // Don't retry if the caller aborted
+    if (signal?.aborted) return;
 
-  const reader = res.body?.getReader();
-  if (!reader) {
-    yield { type: 'error', message: 'No response body' };
-    return;
-  }
+    // Delay before retrying (skip on first attempt)
+    if (attempt > 0) {
+      const delay = STREAM_RETRY_DELAYS[attempt - 1];
+      yield { type: 'error', message: `Connection dropped — retrying in ${delay / 1000}s (attempt ${attempt + 1})…` };
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
+      if (signal?.aborted) return;
+    }
 
-  const decoder = new TextDecoder();
-  let buffer = '';
+    let res: Response;
+    try {
+      res = await fetchWithAuth(`${API_BASE}/claude/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+        signal,
+      });
+    } catch (fetchErr) {
+      lastError = fetchErr;
+      // Network error (offline, ECONNRESET) — retry
+      if (attempt < STREAM_RETRY_DELAYS.length) continue;
+      yield { type: 'error', message: 'Network error — unable to connect to server.' };
+      return;
+    }
 
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    if (!res.ok) {
+      const error = await res.text();
+      // 429 / 503 → retry; other errors → fail immediately
+      if ((res.status === 429 || res.status === 503) && attempt < STREAM_RETRY_DELAYS.length) {
+        lastError = error;
+        continue;
+      }
+      yield { type: 'error', message: error };
+      return;
+    }
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+    const reader = res.body?.getReader();
+    if (!reader) {
+      yield { type: 'error', message: 'No response body' };
+      return;
+    }
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') return;
-          try {
-            yield JSON.parse(data) as StreamEvent;
-          } catch {
-            // Skip malformed JSON
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let streamSuccess = false;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) { streamSuccess = true; break; }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') { streamSuccess = true; return; }
+            try {
+              yield JSON.parse(data) as StreamEvent;
+            } catch {
+              // Skip malformed JSON
+            }
           }
         }
       }
+    } catch (streamErr) {
+      lastError = streamErr;
+      // Stream read error — will retry in next loop iteration
+    } finally {
+      reader.releaseLock();
     }
-  } finally {
-    reader.releaseLock();
+
+    if (streamSuccess) return;
+    // If we reach here, the stream was cut mid-way — retry
+    if (attempt >= STREAM_RETRY_DELAYS.length) break;
   }
+
+  yield { type: 'error', message: `Stream failed after ${STREAM_RETRY_DELAYS.length + 1} attempts. Please try again.` };
+  void lastError; // referenced to satisfy TS 'unused variable' check
 }
 
 // ── Prompt Preview API ────────────────────────────────────

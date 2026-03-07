@@ -1,10 +1,15 @@
 import { useRef, useEffect, memo } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Message } from '@/lib/types';
 import { User, Bot, Brain, Pencil, BookOpen } from 'lucide-react';
 import QualityIndicatorBar from '@/components/shared/QualityIndicatorBar';
 import MessageWithThinking from '@/components/shared/MessageWithThinking';
+
+// PERF-03: virtualise the conversation list when it grows large (> 20 messages)
+// Below that threshold, render directly to avoid virtualiser overhead.
+const VIRTUALISE_THRESHOLD = 20;
 
 // ── Memoized message row — prevents re-render when streamingText changes ──
 
@@ -147,19 +152,64 @@ export default function ConversationThread({
     };
   }, []);
 
+  // PERF-03: virtualised list for large conversation histories
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualiser = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => {
+      // Heuristic: user messages ~60px, assistant messages ~300px (markdown-heavy)
+      const msg = messages[index];
+      if (!msg) return 200;
+      if (msg.role === 'user') return Math.max(60, Math.ceil(msg.content.length / 3));
+      return Math.max(150, Math.ceil(msg.content.length / 2));
+    },
+    overscan: 5,
+    enabled: messages.length > VIRTUALISE_THRESHOLD,
+  });
+
   if (messages.length === 0 && !isStreaming) return null;
 
+  const useVirtual = messages.length > VIRTUALISE_THRESHOLD;
+
   return (
-    <div className="space-y-4">
-      {messages.map((msg) => (
-        <MemoMessage
-          key={msg.id}
-          msg={msg}
-          moduleId={moduleId}
-          canEdit={!isStreaming}
-          onEditMessage={onEditMessage}
-        />
-      ))}
+    <div
+      ref={useVirtual ? parentRef : undefined}
+      className={useVirtual ? 'overflow-auto' : 'space-y-4'}
+      style={useVirtual ? { maxHeight: '70vh' } : undefined}
+    >
+      {useVirtual ? (
+        <div style={{ height: virtualiser.getTotalSize(), position: 'relative' }}>
+          {virtualiser.getVirtualItems().map((vItem) => {
+            const msg = messages[vItem.index];
+            return (
+              <div
+                key={vItem.key}
+                data-index={vItem.index}
+                ref={virtualiser.measureElement}
+                style={{ position: 'absolute', top: vItem.start, left: 0, width: '100%', paddingBottom: '1rem' }}
+              >
+                <MemoMessage
+                  msg={msg}
+                  moduleId={moduleId}
+                  canEdit={!isStreaming}
+                  onEditMessage={onEditMessage}
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        messages.map((msg) => (
+          <MemoMessage
+            key={msg.id}
+            msg={msg}
+            moduleId={moduleId}
+            canEdit={!isStreaming}
+            onEditMessage={onEditMessage}
+          />
+        ))
+      )}
 
       {/* Streaming indicator */}
       {isStreaming && (
