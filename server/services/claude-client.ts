@@ -51,6 +51,10 @@ export interface StreamCompletionData {
   thinking: string;
   inputTokens: number;
   outputTokens: number;
+  /** Tokens read from the prompt cache (billed at ~10% of standard input rate). */
+  cacheReadTokens: number;
+  /** Tokens written to the prompt cache (billed at ~125% of standard input rate). */
+  cacheCreationTokens: number;
   /** Full content array from the API response (includes thinking blocks with signatures).
    *  Must be preserved and replayed in subsequent turns when thinking is enabled. */
   rawContentBlocks?: unknown[];
@@ -400,6 +404,8 @@ export async function streamToResponse(
         thinking: fullThinking,
         inputTokens: finalInputTokens,
         outputTokens: finalOutputTokens,
+        cacheReadTokens: finalUsage.cache_read_input_tokens || 0,
+        cacheCreationTokens: finalUsage.cache_creation_input_tokens || 0,
         rawContentBlocks: finalMessage.content as unknown[],
       });
     }
@@ -466,5 +472,5 @@ export async function callSync(config: SyncCallConfig): Promise<StreamCompletion
     }
   }
 
-  return { text, thinking, inputTokens, outputTokens };
+  return { text, thinking, inputTokens, outputTokens, cacheReadTokens: 0, cacheCreationTokens: 0 };
 }

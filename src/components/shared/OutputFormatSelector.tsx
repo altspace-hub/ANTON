@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { getFormatsByCategory, CATEGORY_LABELS, getRecommendedExportFormats } from '@/lib/output-format-definitions';
 import HelpTooltip from './HelpTooltip';
 import { FileText } from 'lucide-react';
@@ -8,7 +9,7 @@ interface OutputFormatSelectorProps {
   onChange: (selected: string[]) => void;
 }
 
-export default function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps) {
+function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps) {
   const plainTextMode = useSessionStore((state) => state.plainTextMode);
   const setPlainTextMode = useSessionStore((state) => state.setPlainTextMode);
   const grouped = getFormatsByCategory();
@@ -115,3 +116,5 @@ export default function OutputFormatSelector({ selected, onChange }: OutputForma
     </div>
   );
 }
+
+export default memo(OutputFormatSelector);

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Search, Database, FolderOpen, Brain, Link, Combine } from 'lucide-react';
 import type { KnowledgeSourceConfig } from '@/lib/types';
 
@@ -5,7 +6,7 @@ interface ContextPanelProps {
   knowledgeSources: KnowledgeSourceConfig;
 }
 
-export default function ContextPanel({ knowledgeSources }: ContextPanelProps) {
+function ContextPanel({ knowledgeSources }: ContextPanelProps) {
   const { claudeKnowledge, onlineReference, localFolder, combinedMode } = knowledgeSources.modes;
   const ragMode = knowledgeSources.ragMode;
 
@@ -103,3 +104,5 @@ export default function ContextPanel({ knowledgeSources }: ContextPanelProps) {
     </div>
   );
 }
+
+export default memo(ContextPanel);

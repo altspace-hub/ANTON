@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Zap, Brain, Microscope, SearchCode, ListChecks } from 'lucide-react';
 import type { ThinkingLevel } from '@/lib/types';
 
@@ -27,7 +28,7 @@ interface ThinkingControlsProps {
   onChange: (value: ThinkingLevel) => void;
 }
 
-export default function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
+function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-adv-off-white">
@@ -57,3 +58,5 @@ export default function ThinkingControls({ value, onChange }: ThinkingControlsPr
     </div>
   );
 }
+
+export default memo(ThinkingControls);

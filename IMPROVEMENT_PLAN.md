@@ -321,7 +321,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | PERF-01 | Split monolithic 58-property `useSessionStore` into 3 focused stores: session metadata, streaming state, config | 6, 8 | L | [ ] |
-| PERF-02 | Add `React.memo` to ContextPanel, OutputFormatSelector, ThinkingControls, KnowledgeSourcePanel | 6 | M | [ ] |
+| PERF-02 | Add `React.memo` to ContextPanel, OutputFormatSelector, ThinkingControls, KnowledgeSourcePanel | 6 | M | [x] |
 | PERF-03 | Virtualise `ConversationThread` using `react-virtual` — render only visible messages | 6 | M | [ ] |
 | PERF-04 | Lazy-load heavy export libraries: `docx`, `exceljs`, `pdf-parse` only on export button click | 6 | M | [ ] |
 | PERF-05 | Debounce streaming text updates: batch `streamingText` updates every 100ms instead of per-token | 6 | S | [x] |
@@ -332,9 +332,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 5B — Prompt Caching
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| CACHE-01 | Implement mandatory 3-layer caching in `claude-client.ts`: foundation layer (never changes) + area-context layer (per-area) + knowledge-source layer (per-request) | 64, 99 | L | [ ] |
+| CACHE-01 | Implement mandatory 3-layer caching in `claude-client.ts`: foundation layer (never changes) + area-context layer (per-area) + knowledge-source layer (per-request) | 64, 99 | L | [x] |
 | CACHE-02 | Apply `cache_control: { type: 'ephemeral' }` to static system prompt blocks on all routes | 64, 99 | M | [x] |
-| CACHE-03 | Add cache hit/miss tracking to audit log; display "saved $X.XX from prompt caching" in session summary | 64 | M | [ ] |
+| CACHE-03 | Add cache hit/miss tracking to audit log; display "saved $X.XX from prompt caching" in session summary | 64 | M | [x] |
 
 ---
 
@@ -348,7 +348,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | TEST-05 | Add 3 streaming chaos tests: 429 retry, mid-stream disconnect, malformed SSE | 86, 87 | M | [ ] |
 | TEST-06 | Add load test suite (k6 or artillery): 10/50/100 concurrent users; measure p95 latency and error rate | 53, 89 | L | [ ] |
 | TEST-07 | Add Playwright cross-browser matrix: Chrome, Firefox, WebKit (Safari); run nightly | 90 | M | [ ] |
-| TEST-08 | Configure vitest coverage reporting in CI: fail if critical module coverage drops below 60% | 86 | S | [ ] |
+| TEST-08 | Configure vitest coverage reporting in CI: fail if critical module coverage drops below 60% | 86 | S | [x] |
 
 ---
 
@@ -366,9 +366,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 5E — Observability & Logging
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| OBS-01 | Add structured JSON logging with `pino` or `winston`: replace all `console.log` calls | 54, 96 | M | [ ] |
+| OBS-01 | Add structured JSON logging with `pino` or `winston`: replace all `console.log` calls | 54, 96 | M | [x] |
 | OBS-02 | Add OpenTelemetry tracing for cross-request flows (Claude API latency, DB query time) | 54, 96 | L | [ ] |
-| OBS-03 | Add `/metrics` endpoint exposing Prometheus-format counters (requests/s, error rate, stream count) | 54, 96 | M | [ ] |
+| OBS-03 | Add `/metrics` endpoint exposing Prometheus-format counters (requests/s, error rate, stream count) | 54, 96 | M | [x] |
 | OBS-04 | Add `/health` endpoint returning database status, queue depth, memory usage | 96 | S | [x] |
 | OBS-05 | Add graceful shutdown: drain in-flight requests (30s timeout) before process exit | 96 | M | [x] |
 

@@ -523,7 +523,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
-        ? (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; rawContentBlocks?: unknown[] }) => {
+        ? (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[] }) => {
             // Build config snapshot first — used in both INSERT and UPDATE below
             const configSnapshot = {
               model: selectedModel,
@@ -580,6 +580,17 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
                 systemPromptVersionId = spRow?.id;
               } catch { /* non-fatal */ }
             }
+            // CACHE-03: include cache read/write tokens and compute cache-adjusted cost
+            const cacheReadTokens = data.cacheReadTokens || 0;
+            const cacheCreationTokens = data.cacheCreationTokens || 0;
+            // Cache read is ~10% of input rate; cache write is ~125% of input rate
+            const billableInputTokens = (data.inputTokens || 0) - cacheReadTokens - cacheCreationTokens;
+            const estimatedCostUsd = (
+              Math.max(0, billableInputTokens) * costIn +
+              cacheReadTokens * (costIn * 0.10) +
+              cacheCreationTokens * (costIn * 1.25) +
+              (data.outputTokens || 0) * costOut
+            ) / 1_000_000;
             writeAuditEntry(db, {
               sessionId,
               moduleId,
@@ -593,7 +604,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
               transparencyLevel: transparencyLevel || 0,
               inputTokenCount: data.inputTokens || 0,
               outputTokenCount: data.outputTokens || 0,
-              estimatedCostUsd: ((data.inputTokens || 0) * costIn + (data.outputTokens || 0) * costOut) / 1_000_000,
+              cachedTokens: cacheReadTokens,
+              cacheCreationTokens,
+              estimatedCostUsd,
               seed: seed !== undefined ? seed : undefined,
               userId: req.user?.id,
               ragChunks: ragChunks.length > 0 ? JSON.stringify(ragChunks.map(c => ({ citation: c.citation, relevance: c.relevanceScore }))) : undefined,
@@ -853,7 +866,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           });
 
           if (onComplete) {
-            onComplete({ text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens });
+            onComplete({ text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens, cacheReadTokens: 0, cacheCreationTokens: 0 });
           }
         } catch (adapterError) {
           const errMsg = adapterError instanceof Error ? adapterError.message : 'Unknown adapter error';

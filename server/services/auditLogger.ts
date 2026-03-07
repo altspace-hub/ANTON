@@ -1,5 +1,8 @@
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'crypto';
+import { childLogger } from '../lib/logger.js';
+
+const log = childLogger('audit-logger');
 
 /**
  * Enhanced Audit Logger Service
@@ -104,9 +107,9 @@ export function writeAuditEntry(db: Database.Database, entry: AuditEntry): strin
       entry.ragChunks || null,
       entry.systemPromptVersionId || null
     );
-    console.log(`[AuditLogger] Logged AI usage: ${entry.model} (session: ${entry.sessionId || 'none'})`);
+    log.info({ model: entry.model, sessionId: entry.sessionId, cachedTokens: entry.cachedTokens }, 'AI usage logged');
   } catch (e) {
-    console.error('[AuditLogger] Failed to write audit entry:', e);
+    log.error({ err: e }, 'Failed to write audit entry');
   }
   return id;
 }
@@ -126,10 +129,10 @@ export function logSecurityEvent(db: Database.Database, event: SecurityEvent): n
       event.details || null,
       event.severity || 'medium'
     );
-    console.log(`[AuditLogger] Security event: ${event.event_type} (severity: ${event.severity})`);
+    log.info({ eventType: event.event_type, severity: event.severity }, 'Security event logged');
     return result.lastInsertRowid as number;
   } catch (e) {
-    console.error('[AuditLogger] Failed to log security event:', e);
+    log.error({ err: e }, 'Failed to log security event');
     return null;
   }
 }
@@ -150,10 +153,10 @@ export function logLoginAttempt(db: Database.Database, attempt: LoginAttempt): n
       attempt.success ? 1 : 0,
       attempt.failure_reason || null
     );
-    console.log(`[AuditLogger] Login attempt: ${attempt.username} - ${attempt.success ? 'SUCCESS' : 'FAILED'}`);
+    log.info({ username: attempt.username, success: attempt.success }, 'Login attempt recorded');
     return result.lastInsertRowid as number;
   } catch (e) {
-    console.error('[AuditLogger] Failed to log login attempt:', e);
+    log.error({ err: e }, 'Failed to log login attempt');
     return null;
   }
 }
@@ -170,7 +173,7 @@ export function logAuditEvent(db: Database.Database, event: GeneralAuditEvent): 
       .get();
 
     if (!tableExists) {
-      console.warn('[AuditLogger] audit_log table does not exist, skipping general audit');
+      log.warn('audit_log table does not exist, skipping general audit');
       return;
     }
 
@@ -192,13 +195,13 @@ export function logAuditEvent(db: Database.Database, event: GeneralAuditEvent): 
         event.success !== false ? 1 : 0,
         event.error_message || null
       );
-      console.log(`[AuditLogger] General audit: ${event.action} on ${event.resource_type}`);
+      log.info({ action: event.action, resourceType: event.resource_type }, 'General audit event');
     } catch (e) {
       // Table might have different schema - that's OK, just skip
-      console.debug('[AuditLogger] Could not log to general audit table:', e);
+      log.debug({ err: e }, 'Could not log to general audit table');
     }
   } catch (e) {
-    console.error('[AuditLogger] Failed to log general audit event:', e);
+    log.error({ err: e }, 'Failed to log general audit event');
   }
 }
 
@@ -280,5 +283,5 @@ export function getAuditStats(db: Database.Database) {
   };
 }
 
-console.log('[AuditLogger Service] Enhanced audit logging initialized');
+log.debug('Enhanced audit logging initialized');
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Brain, Link, FolderOpen, Combine, ChevronDown, ChevronRight, Globe, Plus, X, Search, RefreshCw, Loader2, Database, CheckCircle2, Package, ArrowRight, Zap } from 'lucide-react';
 import type { KnowledgeSourceConfig, RagIndexedFolder, RagCollection, KnowledgeLibraryEntry } from '@/lib/types';
 import { fetchRagFolders, indexRagFolder, fetchRagCollections } from '@/lib/api';
@@ -10,7 +10,7 @@ interface KnowledgeSourcePanelProps {
   onChange: (config: KnowledgeSourceConfig) => void;
 }
 
-export default function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
+function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
   const [urlInput, setUrlInput] = useState('');
   const [folderInput, setFolderInput] = useState('');
   const [libraryEntries, setLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
@@ -469,6 +469,8 @@ export default function KnowledgeSourcePanel({ config, onChange }: KnowledgeSour
     </div>
   );
 }
+
+export default memo(KnowledgeSourcePanel);
 
 // ── RegulatoryPacksCard sub-component ─────────────────────────
 

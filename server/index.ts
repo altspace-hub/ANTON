@@ -113,10 +113,12 @@ import jwt from 'jsonwebtoken';
 import { ensureWorkspacesRoot } from './services/workspace.js';
 import { createServer as createHttpServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import { logger } from './lib/logger.js';
+import { createMetricsRouter, incrementRequests, incrementErrors } from './routes/metrics.js';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
-  console.warn('[openEXPERT] WARNING: ANTHROPIC_API_KEY is not set. Claude API calls will fail.');
+  logger.warn('ANTHROPIC_API_KEY is not set — Claude API calls will fail');
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -316,6 +318,15 @@ app.use('/api', authMiddleware);
 app.use('/api', userLimiter);
 
 app.use('/api', createHealthRouter(db));
+app.use('/', createMetricsRouter(db)); // OBS-03: Prometheus /metrics — mounted at root, not /api
+
+// OBS-03: request + error counters
+app.use((_req, _res, next) => { incrementRequests(); next(); });
+app.use((_err: unknown, _req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
+  incrementErrors();
+  next(_err);
+});
+
 app.use('/api', createClaudeRoutes(db, anthropic));
 app.use('/api', filesRouter);
 app.use('/api', createSessionRoutes(db));
@@ -491,10 +502,7 @@ communityNS.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`ANTON by openEXPERT — server running on http://localhost:${PORT}`);
-  console.log(`Claude API key configured: ${!!process.env.ANTHROPIC_API_KEY}`);
-  console.log(`Study Rooms WebSocket: ws://localhost:${PORT}/school-ws (namespace: /study-rooms)`);
-  console.log(`Community WebSocket: ws://localhost:${PORT}/school-ws (namespace: /community)`);
+  logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
 
   // Start background dataset cleanup (runs every hour)
   startDatasetCleanup(db);
@@ -562,23 +570,23 @@ httpServer.listen(PORT, () => {
 const DRAIN_TIMEOUT_MS = 30_000;
 
 function shutdown(signal: string): void {
-  console.log(`[server] ${signal} received — shutting down gracefully`);
+  logger.info({ signal }, 'Graceful shutdown initiated');
 
   // Stop accepting new connections
   httpServer.close((closeErr) => {
     if (closeErr) {
-      console.error('[server] Error closing HTTP server:', closeErr);
+      logger.error({ err: closeErr }, 'Error closing HTTP server');
     } else {
-      console.log('[server] HTTP server closed');
+      logger.info('HTTP server closed');
     }
     try { db.close(); } catch { /* ignore */ }
-    console.log('[server] Database closed — exiting');
+    logger.info('Database closed — exiting');
     process.exit(closeErr ? 1 : 0);
   });
 
   // Force-kill if drain takes too long
   setTimeout(() => {
-    console.error(`[server] Drain timeout (${DRAIN_TIMEOUT_MS}ms) exceeded — forcing exit`);
+    logger.error({ timeoutMs: DRAIN_TIMEOUT_MS }, 'Drain timeout exceeded — forcing exit');
     try { db.close(); } catch { /* ignore */ }
     process.exit(1);
   }, DRAIN_TIMEOUT_MS).unref();
