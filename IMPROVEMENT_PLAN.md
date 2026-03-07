@@ -382,14 +382,14 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 6A — FCP Module System Prompts
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| MOD-01 | Upgrade `gap-analysis.md`: AMLR thematic framework, severity scale, gap categorisation types, remediation effort scale | 22, 58, 67 | M | [ ] |
-| MOD-02 | Upgrade `risk-assessment.md`: BWRA 5-dimension framework, inherent/control/residual scoring, 5-level maturity model | 22, 66 | M | [ ] |
-| MOD-03 | Upgrade `sanctions-advisory.md`: add EBA false-positive guidance, name-bias warnings, screening confidence thresholds | 26, 94 | M | [ ] |
-| MOD-04 | Upgrade `document-creation.md`: 8 document type frameworks with EBA-aligned structures (BWRA dimensions, TM policy decision trees) | 25, 67 | L | [ ] |
-| MOD-05 | Upgrade `investigation-support.md`: 5-phase framework, 7-typology library, SAR narrative structure, counter-hypothesis requirement | 70 | M | [ ] |
-| MOD-06 | Upgrade `training-content.md`: AMLR Art. 18 obligations, 5-audience frameworks, bias-aware scenario design | 47, 94 | M | [ ] |
-| MOD-07 | Upgrade `regulatory-monitor.md`: Level 1/2/3/soft-law classification, 5-dimension impact assessment, output templates | 69 | M | [ ] |
-| MOD-08 | Upgrade `data-management.md`: AMLA data domains, 5-level readiness scale, GoAML data requirements, DORA interface | 68 | M | [ ] |
+| MOD-01 | Upgrade `gap-analysis.md`: AMLR thematic framework, severity scale, gap categorisation types, remediation effort scale | 22, 58, 67 | M | [x] |
+| MOD-02 | Upgrade `risk-assessment.md`: BWRA 5-dimension framework, inherent/control/residual scoring, 5-level maturity model | 22, 66 | M | [x] |
+| MOD-03 | Upgrade `sanctions-advisory.md`: add EBA false-positive guidance, name-bias warnings, screening confidence thresholds | 26, 94 | M | [x] |
+| MOD-04 | Upgrade `document-creation.md`: 8 document type frameworks with EBA-aligned structures (BWRA dimensions, TM policy decision trees) | 25, 67 | L | [x] |
+| MOD-05 | Upgrade `investigation-support.md`: 5-phase framework, 7-typology library, SAR narrative structure, counter-hypothesis requirement | 70 | M | [x] |
+| MOD-06 | Upgrade `training-content.md`: AMLR Art. 18 obligations, 5-audience frameworks, bias-aware scenario design | 47, 94 | M | [x] |
+| MOD-07 | Upgrade `regulatory-monitor.md`: Level 1/2/3/soft-law classification, 5-dimension impact assessment, output templates | 69 | M | [x] |
+| MOD-08 | Upgrade `data-management.md`: AMLA data domains, 5-level readiness scale, GoAML data requirements, DORA interface | 68 | M | [x] |
 
 ---
 
@@ -409,10 +409,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 6C — Foundation Prompts for Non-FCP Domains
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| FOUND-01 | Create `server/prompts/healthcare-foundation.md`: patient safety disclaimers, evidence hierarchy, HIPAA/GDPR obligations, duty of care — inject into all healthcare modules | 72 | M | [ ] |
-| FOUND-02 | Create `server/prompts/ngo-foundation.md`: Do No Harm, PSEA, beneficiary data protection, Sphere Standards — inject into all NGO modules | 75 | M | [ ] |
-| FOUND-03 | Create `server/prompts/creative-ip-foundation.md`: IP/copyright guidance, originality disclaimer, defamation awareness — inject into all creative modules | 73 | M | [ ] |
-| FOUND-04 | Create `server/prompts/school-safety-foundation.md`: safeguarding response layer, age-appropriate content, safe messaging — inject into all School Mode modules | 74 | M | [ ] |
+| FOUND-01 | Create `server/prompts/healthcare-foundation.md`: patient safety disclaimers, evidence hierarchy, HIPAA/GDPR obligations, duty of care — inject into all healthcare modules | 72 | M | [x] |
+| FOUND-02 | Create `server/prompts/ngo-foundation.md`: Do No Harm, PSEA, beneficiary data protection, Sphere Standards — inject into all NGO modules | 75 | M | [x] |
+| FOUND-03 | Create `server/prompts/creative-ip-foundation.md`: IP/copyright guidance, originality disclaimer, defamation awareness — inject into all creative modules | 73 | M | [x] |
+| FOUND-04 | Create `server/prompts/school-safety-foundation.md`: safeguarding response layer, age-appropriate content, safe messaging — inject into all School Mode modules | 74 | M | [x] |
 
 ---
 
