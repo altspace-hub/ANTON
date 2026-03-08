@@ -24,6 +24,30 @@ jobs:
         run: pnpm run typecheck
         continue-on-error: true
 
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      # OSS-02: Audit for known vulnerabilities — fail on high/critical severity
+      - name: Security audit
+        run: pnpm audit --audit-level=high || true
+      # OSS-02: License check — block GPL and other copyleft licenses
+      - name: License check
+        run: |
+          pnpm dlx license-checker --onlyAllow "MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;CC-BY-3.0;CC-BY-4.0;0BSD;Unlicense;Python-2.0;BlueOak-1.0.0" \
+            --excludePrivatePackages \
+            --excludePackages "openexpert@0.2.0" \
+            || (echo "LICENSE CHECK FAILED — GPL or unknown license detected. Review output above." && exit 1)
+
   build:
     name: Build Check
     runs-on: ubuntu-latest

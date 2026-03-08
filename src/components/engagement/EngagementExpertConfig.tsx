@@ -7,9 +7,9 @@
 import { useState } from 'react';
 import {
   Brain, Users, Eye, ChevronRight, CheckCircle, Loader2, Info,
-  Zap, Lightbulb, Search, Microscope, BarChart2
+  Zap, Lightbulb, Search, Microscope, BarChart2, ListChecks, Flame
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -19,7 +19,7 @@ interface Props {
   onReload: () => void;
 }
 
-type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate';
+type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
 interface ThinkingOption {
   id: ThinkingLevel;
@@ -60,6 +60,21 @@ const THINKING_OPTIONS: ThinkingOption[] = [
     icon: Microscope,
     model: 'Opus 4.6',
     badge: 'Recommended',
+  },
+  {
+    id: 'plan_first',
+    label: 'Plan First',
+    description: 'Creates an explicit plan before execution. Best when structure and approach matter.',
+    icon: ListChecks,
+    model: 'Opus 4.6',
+  },
+  {
+    id: 'deep_investigate',
+    label: 'Deep',
+    description: 'Iterative reasoning engine. Maximum depth with explicit reasoning trail for audit.',
+    icon: Flame,
+    model: 'Opus 4.6',
+    badge: 'IRE',
   },
 ];
 
@@ -117,9 +132,9 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
   async function save() {
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           thinking_level: thinkingLevel,
           expert_panel: expertPanel,
@@ -159,7 +174,7 @@ export default function EngagementExpertConfig({ engagement, onUpdate, onNext, o
             Controls Claude model &amp; thinking budget
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {THINKING_OPTIONS.map(opt => {
             const Icon = opt.icon;
             const isSelected = thinkingLevel === opt.id;

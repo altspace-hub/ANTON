@@ -1,17 +1,50 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs-extra';
+import crypto from 'crypto';
 import type Database from 'better-sqlite3';
-import { generateDocx } from '../services/export-docx.js';
-import { generateXlsx } from '../services/export-xlsx.js';
-import { generatePdf }  from '../services/export-pdf.js';
-import { generatePptx } from '../services/export-pptx.js';
-import { injectIntoDocxTemplate, injectIntoPptxTemplate } from '../services/template-injector.js';
+// PERF-04: Heavy export libraries (docx, exceljs, puppeteer) are loaded lazily on first use
+// to improve server startup time. Dynamic imports are cached by Node's module system after first call.
+let _generateDocx: typeof import('../services/export-docx.js').generateDocx | undefined;
+let _generateXlsx: typeof import('../services/export-xlsx.js').generateXlsx | undefined;
+let _generatePdf:  typeof import('../services/export-pdf.js').generatePdf   | undefined;
+let _generatePptx: typeof import('../services/export-pptx.js').generatePptx | undefined;
+let _templateInjector: typeof import('../services/template-injector.js') | undefined;
+
+async function getExporter(format: string) {
+  if (format === 'docx') {
+    if (!_generateDocx) _generateDocx = (await import('../services/export-docx.js')).generateDocx;
+    return _generateDocx;
+  }
+  if (format === 'xlsx') {
+    if (!_generateXlsx) _generateXlsx = (await import('../services/export-xlsx.js')).generateXlsx;
+    return _generateXlsx;
+  }
+  if (format === 'pdf') {
+    if (!_generatePdf) _generatePdf = (await import('../services/export-pdf.js')).generatePdf;
+    return _generatePdf;
+  }
+  if (format === 'pptx') {
+    if (!_generatePptx) _generatePptx = (await import('../services/export-pptx.js')).generatePptx;
+    return _generatePptx;
+  }
+  return null;
+}
+async function getTemplateInjector() {
+  if (!_templateInjector) _templateInjector = await import('../services/template-injector.js');
+  return _templateInjector;
+}
 import { validate } from '../lib/validate.js';
 import { ExportSchema, ExportWithTemplateSchema, TrustCertificateSchema } from '../lib/schemas.js';
+// LONE-08: Script formats — loaded synchronously (no binary deps, pure TS)
+import { generateFountain, generateFdx } from '../services/export-fountain.js';
 
 const OUTPUT_DIR = process.env.OUTPUT_DIR || './outputs';
 fs.ensureDirSync(OUTPUT_DIR);
+
+function getUserId(req: unknown): string {
+  return (req as { user?: { id?: string } }).user?.id ?? 'default';
+}
 
 // Factory function — accepts the shared db instance from server/index.ts
 export function createExportRouter(db: Database.Database): Router {
@@ -41,6 +74,47 @@ export function createExportRouter(db: Database.Database): Router {
       const creativity      = (metadata?.creativity      as string | undefined);
       const documentsLoaded = (metadata?.documentsLoaded as string[] | undefined);
 
+      // EXPORT-03: Track exports per session and inject a change log section
+      let exportedContent = content;
+      if (sessionId && format !== 'pptx') {
+        try {
+          const contentHash = crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
+
+          // Ensure table exists (idempotent)
+          db.exec(`CREATE TABLE IF NOT EXISTS session_exports (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            session_id TEXT NOT NULL, module_id TEXT, format TEXT NOT NULL,
+            version INTEGER NOT NULL DEFAULT 1, content_hash TEXT NOT NULL,
+            exported_at TEXT NOT NULL DEFAULT (datetime('now')), exported_by TEXT
+          )`);
+
+          // Look up prior exports for this session
+          const priorExports = db.prepare(
+            `SELECT version, exported_at FROM session_exports WHERE session_id = ? ORDER BY version DESC LIMIT 5`
+          ).all(sessionId) as Array<{ version: number; exported_at: string }>;
+
+          const newVersion = priorExports.length > 0 ? priorExports[0].version + 1 : 1;
+          const isRevision = priorExports.length > 0;
+
+          // Insert export record
+          db.prepare(
+            `INSERT INTO session_exports (session_id, module_id, format, version, content_hash) VALUES (?, ?, ?, ?, ?)`
+          ).run(sessionId, moduleId ?? null, format, newVersion, contentHash);
+
+          // Inject change log table into exported content
+          const versionLabel = `v${newVersion}.0`;
+          const priorRows = priorExports.map((e) => {
+            const d = new Date(e.exported_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            return `| v${e.version}.0 | ${d} | Prior export |`;
+          }).join('\n');
+          const changeLog = isRevision
+            ? `\n\n---\n\n## Document Change Log\n\n| Version | Date | Summary |\n|---------|------|---------|\n| ${versionLabel} | ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} | Revised analysis |\n${priorRows}\n`
+            : `\n\n---\n\n## Document Change Log\n\n| Version | Date | Summary |\n|---------|------|---------|\n| ${versionLabel} | ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} | Initial export |\n`;
+
+          exportedContent = content + changeLog;
+        } catch { /* non-fatal — export continues without change log */ }
+      }
+
       // Load brand config from user profile
       let brandConfig = null;
       try {
@@ -53,16 +127,17 @@ export function createExportRouter(db: Database.Database): Router {
       switch (format) {
         case 'md': {
           const filename = `${basename}.md`;
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), content, 'utf-8');
+          await fs.writeFile(path.join(OUTPUT_DIR, filename), exportedContent, 'utf-8');
           res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-          res.send(content);
+          res.send(exportedContent);
           break;
         }
 
         case 'docx': {
           const filename = `${basename}.docx`;
-          const buffer = await generateDocx(content, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
+          const fn = await getExporter('docx') as typeof import('../services/export-docx.js').generateDocx;
+          const buffer = await fn(exportedContent, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -72,7 +147,8 @@ export function createExportRouter(db: Database.Database): Router {
 
         case 'xlsx': {
           const filename = `${basename}.xlsx`;
-          const buffer = await generateXlsx(content, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
+          const fn = await getExporter('xlsx') as typeof import('../services/export-xlsx.js').generateXlsx;
+          const buffer = await fn(exportedContent, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -82,7 +158,8 @@ export function createExportRouter(db: Database.Database): Router {
 
         case 'pdf': {
           const filename = `${basename}.pdf`;
-          const buffer = await generatePdf(content, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
+          const fn = await getExporter('pdf') as typeof import('../services/export-pdf.js').generatePdf;
+          const buffer = await fn(exportedContent, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/pdf');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -92,9 +169,32 @@ export function createExportRouter(db: Database.Database): Router {
 
         case 'pptx': {
           const filename = `${basename}.pptx`;
-          const buffer = await generatePptx(content, { title, author });
+          const fn = await getExporter('pptx') as typeof import('../services/export-pptx.js').generatePptx;
+          const buffer = await fn(content, { title, author });
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+          res.send(buffer);
+          break;
+        }
+
+        // LONE-08: Fountain screenplay export
+        case 'fountain': {
+          const filename = `${basename}.fountain`;
+          const buffer = generateFountain(content, { title, author });
+          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+          res.send(buffer);
+          break;
+        }
+
+        // LONE-08: Final Draft XML export
+        case 'fdx': {
+          const filename = `${basename}.fdx`;
+          const buffer = generateFdx(content, { title, author });
+          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          res.setHeader('Content-Type', 'application/xml; charset=utf-8');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(buffer);
           break;
@@ -140,8 +240,9 @@ export function createExportRouter(db: Database.Database): Router {
       const outputFilename = `template-export-${timestamp}.${format}`;
       const outputPath = path.join(OUTPUT_DIR, outputFilename);
 
+      const ti = await getTemplateInjector();
       if (format === 'docx') {
-        await injectIntoDocxTemplate(tpl.file_path, content, outputPath);
+        await ti.injectIntoDocxTemplate(tpl.file_path, content, outputPath);
         res.setHeader(
           'Content-Type',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -149,7 +250,7 @@ export function createExportRouter(db: Database.Database): Router {
         res.setHeader('Content-Disposition', `attachment; filename="${outputFilename}"`);
         res.send(await fs.readFile(outputPath));
       } else {
-        await injectIntoPptxTemplate(tpl.file_path, content, outputPath);
+        await ti.injectIntoPptxTemplate(tpl.file_path, content, outputPath);
         res.setHeader(
           'Content-Type',
           'application/vnd.openxmlformats-officedocument.presentationml.presentation'
@@ -168,9 +269,10 @@ export function createExportRouter(db: Database.Database): Router {
   router.post('/export/trust-certificate', validate(TrustCertificateSchema), async (req, res) => {
     try {
       const { sessionId } = req.body as { sessionId: string };
+      const userId = getUserId(req);
 
-      // Fetch session row
-      const session = db.prepare('SELECT id, module_id, title, config, created_at FROM sessions WHERE id = ?').get(sessionId) as
+      // Fetch session row (with ownership check)
+      const session = db.prepare('SELECT id, module_id, title, config, created_at FROM sessions WHERE id = ? AND user_id = ?').get(sessionId, userId) as
         | { id: string; module_id: string | null; title: string | null; config: string | null; created_at: string }
         | undefined;
 
@@ -264,7 +366,8 @@ export function createExportRouter(db: Database.Database): Router {
       ].join('\n');
 
       const brandConfig: null = null; // use defaults
-      const buffer = await generatePdf(markdown, { title: `Trust Certificate — ${sessionTitle}`, author: 'ANTON by openEXPERT' }, brandConfig);
+      const generatePdfFn = await getExporter('pdf') as typeof import('../services/export-pdf.js').generatePdf;
+      const buffer = await generatePdfFn(markdown, { title: `Trust Certificate — ${sessionTitle}`, author: 'ANTON by openEXPERT' }, brandConfig);
 
       const filename = `trust-certificate-${sessionId.slice(0, 8)}-${certDate}.pdf`;
       await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);

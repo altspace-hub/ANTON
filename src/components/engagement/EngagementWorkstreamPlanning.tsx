@@ -10,7 +10,7 @@ import {
   GitBranch, Plus, Trash2, ChevronRight, ChevronDown, ChevronUp,
   Loader2, CheckCircle, Calendar, Brain, Edit3, GripVertical, AlertCircle
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, Workstream } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -65,9 +65,9 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
     if (!form.title.trim()) return;
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/workstreams`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/workstreams`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: form.title.trim(),
           description: form.description.trim() || null,
@@ -86,9 +86,8 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
   }
 
   async function deleteWorkstream(wsId: string) {
-    await fetch(`/api/engagements/${engagement.id}/workstreams/${wsId}`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}/workstreams/${wsId}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     });
     onReload();
   }
@@ -96,9 +95,9 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
   async function saveEdit(wsId: string) {
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/workstreams/${wsId}`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/workstreams/${wsId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm),
       });
       setEditingId(null);
@@ -111,9 +110,9 @@ export default function EngagementWorkstreamPlanning({ engagement, onUpdate, onN
   async function confirmPlanning() {
     setConfirming(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workstream_plan_confirmed: true }),
       });
       onNext();

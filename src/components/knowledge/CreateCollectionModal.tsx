@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, FolderPlus, Palette } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
 
 interface CreateCollectionModalProps {
   isOpen: boolean;
@@ -21,12 +22,9 @@ export function CreateCollectionModal({ isOpen, onClose, onSuccess }: CreateColl
     setLoading(true);
 
     try {
-      const response = await fetch('/api/collections', {
+      const response = await fetchWithAuth('/api/collections', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('openexpert-token')}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name || displayName.toLowerCase().replace(/\s+/g, '-'),
           displayName,

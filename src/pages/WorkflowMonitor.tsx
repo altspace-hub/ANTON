@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { fetchWithAuth } from '@/lib/api';
 import {
   ArrowLeft, CheckCircle2, Circle, XCircle, Loader2, AlertTriangle,
   ChevronDown, ChevronRight, Play, SkipForward, Ban, Edit3, Eye,
@@ -151,7 +152,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
     if (!execId || actionLoading) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/workflows/executions/${execId}/continue`, {
+      const res = await fetchWithAuth(`/api/workflows/executions/${execId}/continue`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(decisionData ?? {}),
@@ -170,7 +171,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
     setActionLoading(true);
     try {
       const modifications = JSON.parse(modifyText);
-      const res = await fetch(`/api/workflows/executions/${execId}/modify-step`, {
+      const res = await fetchWithAuth(`/api/workflows/executions/${execId}/modify-step`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modifications }),
@@ -189,7 +190,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
     if (!execId || actionLoading) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/workflows/executions/${execId}/skip-step`, {
+      const res = await fetchWithAuth(`/api/workflows/executions/${execId}/skip-step`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -208,7 +209,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
     if (!window.confirm('Abort workflow execution?')) return;
     setActionLoading(true);
     try {
-      await fetch(`/api/workflows/executions/${execId}/abort`, { method: 'POST' });
+      await fetchWithAuth(`/api/workflows/executions/${execId}/abort`, { method: 'POST' });
       await fetchStatus();
     } catch (err) {
       setError((err as Error).message);
@@ -221,7 +222,7 @@ export default function WorkflowMonitor({ executionId: propExecId, workflow, onC
     const idx = result.stepIndex;
     setDiagMap((prev) => ({ ...prev, [idx]: { text: null, loading: true } }));
     try {
-      const r = await fetch('/api/ai-assist/workflow-diagnose', {
+      const r = await fetchWithAuth('/api/ai-assist/workflow-diagnose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stepLabel, errorMessage: result.error ?? 'Unknown error', stepType: 'workflow-step', input: result.input }),

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, AlertTriangle, ChevronDown, ChevronRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ChevronDown, ChevronRight, ShieldCheck, Loader2, BookOpen, Globe } from 'lucide-react';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -7,6 +7,8 @@ interface CitationResult {
   citation: string;
   verified: boolean;
   comment: string;
+  // ATTR-04: source grounding
+  sourceMatch?: 'loaded_source' | 'ai_knowledge' | 'uncertain';
 }
 
 interface CitationVerifierProps {
@@ -14,11 +16,13 @@ interface CitationVerifierProps {
   text: string;
   /** When true, skip the outer card wrapper (used when embedded in OutputToolbar) */
   embedded?: boolean;
+  /** ATTR-04: Source manifest from last completed request — used to cross-check citations */
+  sourceManifest?: string[];
 }
 
 // ── Component ───────────────────────────────────────────────
 
-export default function CitationVerifier({ text, embedded }: CitationVerifierProps) {
+export default function CitationVerifier({ text, embedded, sourceManifest }: CitationVerifierProps) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [citations, setCitations] = useState<CitationResult[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -37,7 +41,7 @@ export default function CitationVerifier({ text, embedded }: CitationVerifierPro
       const res = await fetch('/api/claude/verify-citations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, sourceManifest }),
       });
 
       if (!res.ok) {
@@ -147,10 +151,25 @@ export default function CitationVerifier({ text, embedded }: CitationVerifierPro
               ) : (
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-adv-gold" />
               )}
-              <div className="min-w-0">
-                <span className={`font-medium ${c.verified ? 'text-adv-off-white' : 'text-adv-gold'}`}>
-                  {c.citation}
-                </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`font-medium ${c.verified ? 'text-adv-off-white' : 'text-adv-gold'}`}>
+                    {c.citation}
+                  </span>
+                  {/* ATTR-04: source grounding badge */}
+                  {c.sourceMatch === 'loaded_source' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-adv-teal/10 px-1.5 py-0.5 text-adv-teal">
+                      <BookOpen className="h-2.5 w-2.5" />
+                      Loaded source
+                    </span>
+                  )}
+                  {c.sourceMatch === 'ai_knowledge' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-adv-blue/10 px-1.5 py-0.5 text-adv-blue">
+                      <Globe className="h-2.5 w-2.5" />
+                      AI knowledge
+                    </span>
+                  )}
+                </div>
                 {c.comment && (
                   <p className="mt-0.5 text-adv-gray leading-relaxed">{c.comment}</p>
                 )}

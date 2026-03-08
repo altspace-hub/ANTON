@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchWithAuth } from '@/lib/api';
 import { Radio, Plus, Search, Filter, ExternalLink, Check, X, AlertCircle, FileText, Gavel, BookOpen, MessageSquare, FileCheck, RefreshCw, Square, Settings, ChevronDown, ChevronUp, Shield, Users, Cpu, Landmark, AlertTriangle, TrendingUp, Layers, Pencil, Trash2, Database } from 'lucide-react';
 
 interface RadarSource {
@@ -256,9 +257,9 @@ export default function RadarPage() {
     };
     setRadarSettings(merged);
     try {
-      await fetch('/api/radar/settings', {
+      await fetchWithAuth('/api/radar/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(merged),
       });
     } catch (err) {
@@ -273,9 +274,9 @@ export default function RadarPage() {
     setShowScanBanner(false);
     setScanProgress({ currentSource: null, completed: 0, total: 0 });
     try {
-      await fetch('/api/radar/scan', {
+      await fetchWithAuth('/api/radar/scan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
       });
       // Scan runs in background — start polling for progress
       startPolling();
@@ -287,9 +288,9 @@ export default function RadarPage() {
 
   async function handleStopScan() {
     try {
-      await fetch('/api/radar/stop', {
+      await fetchWithAuth('/api/radar/stop', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (err) {
       console.error('[radar] stop error:', err);
@@ -305,9 +306,9 @@ export default function RadarPage() {
 
   async function updateStatus(itemId: string, status: string) {
     try {
-      await fetch(`/api/radar/items/${itemId}/status`, {
+      await fetchWithAuth(`/api/radar/items/${itemId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
       fetchData();
@@ -337,7 +338,7 @@ export default function RadarPage() {
   async function handleDeleteSource(id: string, name: string) {
     if (!confirm(`Delete source "${name}"? This cannot be undone.`)) return;
     try {
-      await fetch(`/api/radar/sources/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+      await fetchWithAuth(`/api/radar/sources/${id}`, { method: 'DELETE' });
       fetchData();
     } catch (err) {
       console.error('[radar] source delete error:', err);
@@ -956,9 +957,9 @@ function AddSourceModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
     try {
       const keywordList = keywords.split(',').map((k) => k.trim()).filter(Boolean);
       const areaList = areas.split(',').map((a) => a.trim()).filter(Boolean);
-      await fetch('/api/radar/sources', {
+      await fetchWithAuth('/api/radar/sources', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           displayName,
           url,
@@ -1105,9 +1106,9 @@ function EditSourceModal({ source, onClose, onSuccess }: { source: RadarSource; 
     e.preventDefault();
     setLoading(true);
     try {
-      await fetch(`/api/radar/sources/${source.id}`, {
+      await fetchWithAuth(`/api/radar/sources/${source.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           displayName,
           url,
@@ -1216,9 +1217,9 @@ function AddItemModal({
     e.preventDefault();
     setLoading(true);
     try {
-      await fetch('/api/radar/items', {
+      await fetchWithAuth('/api/radar/items', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sourceId, title, summary, url, itemType }),
       });
       onSuccess();

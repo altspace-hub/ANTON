@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Lightbulb, AlertTriangle, TrendingUp, Search, AlertCircle, Zap } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
 
 interface Insight {
   id: string;
@@ -96,7 +97,7 @@ export function InsightsBell() {
   }
 
   async function handleMarkRead(insightId: string) {
-    await fetch(`/api/insights/${insightId}/read`, { method: 'PATCH' });
+    await fetchWithAuth(`/api/insights/${insightId}/read`, { method: 'PATCH' });
     setInsights((prev) => prev.map((i) => i.id === insightId ? { ...i, read: true } : i));
     setUnreadCount((c) => Math.max(0, c - 1));
   }
@@ -104,7 +105,7 @@ export function InsightsBell() {
   async function handleDismiss(insightId: string) {
     // Capture wasUnread BEFORE removing from state (stale-closure fix)
     const wasUnread = insights.find((i) => i.id === insightId)?.read === false;
-    await fetch(`/api/insights/${insightId}/dismiss`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    await fetchWithAuth(`/api/insights/${insightId}/dismiss`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     setInsights((prev) => prev.filter((i) => i.id !== insightId));
     if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
   }

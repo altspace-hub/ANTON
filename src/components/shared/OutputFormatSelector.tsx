@@ -10,8 +10,7 @@ interface OutputFormatSelectorProps {
 }
 
 function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps) {
-  const plainTextMode = useSessionStore((state) => state.plainTextMode);
-  const setPlainTextMode = useSessionStore((state) => state.setPlainTextMode);
+  const { plainTextMode, setPlainTextMode } = useSessionStore();
   const grouped = getFormatsByCategory();
   const categoryOrder = ['strategic', 'analytical', 'operational', 'scoring', 'communication', 'planning'];
 

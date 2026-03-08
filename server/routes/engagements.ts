@@ -14,8 +14,18 @@ import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
 
+const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+
+const engagementStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  },
+});
+
 const upload = multer({
-  dest: process.env.UPLOAD_DIR || './uploads',
+  storage: engagementStorage,
   limits: { fileSize: 50 * 1024 * 1024 },
 });
 
@@ -277,11 +287,21 @@ export function createEngagementsRoutes(db: Database.Database): Router {
     try {
       const doc = db.prepare('SELECT * FROM engagement_documents WHERE id = ? AND engagement_id = ?').get(String(req.params.docId), String(req.params.id)) as Record<string, unknown> | undefined;
       if (!doc) return res.status(404).json({ error: 'Document not found' });
-      // Read file content
+      // Read file content — if file on disk has no extension, rename it using original file_name
+      let filePath = doc.file_path as string;
+      if (filePath && !path.extname(filePath) && doc.file_name) {
+        const ext = path.extname(String(doc.file_name));
+        if (ext) {
+          const newPath = filePath + ext;
+          try { await fs.rename(filePath, newPath); filePath = newPath;
+            db.prepare('UPDATE engagement_documents SET file_path = ? WHERE id = ?').run(newPath, String(req.params.docId));
+          } catch { /* keep original path */ }
+        }
+      }
       let fileContent = '';
       try {
         const { extractTextFromFile } = await import('../services/text-extractor.js');
-        fileContent = (await extractTextFromFile(doc.file_path as string)) ?? '';
+        fileContent = (await extractTextFromFile(filePath)) ?? '';
       } catch {
         fileContent = 'Could not extract text from file.';
       }
@@ -784,6 +804,61 @@ ${peerBenchmarks.map(pb => {
 
 Use these benchmarks to position the client relative to industry peers where relevant.` : '';
 
+      // ── Knowledge Sources (web search, indexed KB, knowledge packs) ──
+      let knowledgeConfig: Record<string, unknown> = {};
+      try { knowledgeConfig = JSON.parse(String(engagement.knowledge_config || '{}')); } catch { /**/ }
+
+      let knowledgeContext = '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tools: any[] = [];
+
+      // Web search
+      if (knowledgeConfig.webSearchEnabled) {
+        tools.push({ type: 'web_search_20250305', name: 'web_search' });
+        knowledgeContext += `\n\nWEB SEARCH ENABLED — use web search for latest regulatory texts and publications.`;
+        if (knowledgeConfig.webSearchFocus) {
+          knowledgeContext += ` Focus: ${knowledgeConfig.webSearchFocus}. Cite all web sources.`;
+        }
+      }
+
+      // Knowledge Packs (Mode 6) — inject active pack entities
+      if (knowledgeConfig.knowledgePacksEnabled) {
+        try {
+          const packRows = db.prepare(`
+            SELECT kp.name, kp.jurisdiction, en.label, en.entity_type, en.description
+            FROM knowledge_packs kp
+            JOIN entity_nodes en ON en.pack_id = kp.pack_id
+            WHERE kp.is_active = 1
+            ORDER BY kp.name, en.entity_type
+            LIMIT 200
+          `).all() as Array<{ name: string; jurisdiction: string; label: string; entity_type: string; description: string }>;
+          if (packRows.length > 0) {
+            const grouped = new Map<string, string[]>();
+            for (const r of packRows) {
+              const key = `${r.name} (${r.jurisdiction})`;
+              if (!grouped.has(key)) grouped.set(key, []);
+              grouped.get(key)!.push(`- ${r.label} [${r.entity_type}]: ${(r.description || '').slice(0, 200)}`);
+            }
+            knowledgeContext += '\n\nREGULATORY KNOWLEDGE PACKS (curated entity graph):\n';
+            for (const [packName, entities] of grouped) {
+              knowledgeContext += `\n### ${packName}\n${entities.slice(0, 40).join('\n')}\n`;
+            }
+          }
+        } catch { /* non-fatal */ }
+      }
+
+      // Indexed KB (Mode 5a) — semantic search using scope as query
+      if (knowledgeConfig.indexedKBEnabled) {
+        try {
+          const scopeQuery = scope_items.slice(0, 5).map(si => si.title).join(' ');
+          const kbChunks = retrieveChunks(db, scopeQuery || String(engagement.title), [], 15, 0.05);
+          if (kbChunks.length > 0) {
+            knowledgeContext += `\n\nINDEXED KNOWLEDGE BASE (${kbChunks.length} relevant passages):\n` +
+              kbChunks.map(c => `[${c.documentName}]\n${c.text}`).join('\n\n---\n\n');
+          }
+        } catch { /* non-fatal */ }
+      }
+
       const systemPrompt = `You are ANTON, an expert engagement manager and compliance analyst. You are executing a professional consulting engagement with maximum quality.
 
 ENGAGEMENT: ${engagement.title}
@@ -808,7 +883,7 @@ EXECUTION INSTRUCTIONS:
 4. Clearly identify areas where additional information would improve the assessment
 5. Flag any scope questions or ambiguities without making assumptions
 
-Format your output as professional consulting deliverables. Use clear headings, structured findings, and actionable recommendations.`;
+Format your output as professional consulting deliverables. Use clear headings, structured findings, and actionable recommendations.${knowledgeContext}`;
 
       const Anthropic = (await import('@anthropic-ai/sdk')).default;
       const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -818,34 +893,44 @@ Format your output as professional consulting deliverables. Use clear headings, 
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const isQuick = engagement.thinking_level === 'quick';
+      // Map thinking level to model + budget
+      const thinkingLevel = String(engagement.thinking_level || 'think_hard');
+      const isQuick = thinkingLevel === 'quick';
       const execModel = isQuick ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-6';
-      // Opus 4.6: adaptive thinking with effort=high (recommended, deprecates fixed budget_tokens).
-      // Haiku: no thinking, direct execution.
+      const budgetMap: Record<string, number> = {
+        think: 8000, think_hard: 16000, investigate: 32000,
+        plan_first: 16000, deep_investigate: 32000,
+      };
+      const budget = budgetMap[thinkingLevel] ?? 16000;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const thinkingParam: any = isQuick ? {} : { thinking: { type: 'adaptive' } };
+      const thinkingParam: any = isQuick ? {} : { thinking: { type: 'enabled', budget_tokens: budget } };
 
-      // 1M context beta: add header when enabled via ANTHROPIC_LONG_CONTEXT_BETA=true in .env
-      const longContextEnabled = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
+      // Plan First mode: prepend planning instructions
+      const planFirstInstr = thinkingLevel === 'plan_first'
+        ? '\n\nBEFORE WRITING: Create an explicit plan (sections, order, depth, assumptions, gaps). Present your plan first as a brief outline, then execute it systematically.\n'
+        : '';
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const longContextOpts: any = longContextEnabled
-        ? { headers: { 'anthropic-beta': 'context-1m-2025-08-07' } }
-        : undefined;
+      const requestOptions: any = {};
+      if (process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true') {
+        requestOptions.headers = { 'anthropic-beta': 'context-1m-2025-08-07' };
+      }
 
       let fullContent = '';
       let fullThinking = '';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const stream = await anthropic.messages.stream({
+      const stream = anthropic.messages.stream({
         model: execModel,
-        max_tokens: isQuick ? 32000 : 128000,  // Opus 4.6 supports 128k output tokens
-        system: systemPrompt,
+        max_tokens: 32000,
+        system: systemPrompt + planFirstInstr,
         messages: [{ role: 'user', content: `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}` }],
         ...thinkingParam,
-      }, longContextOpts);
+        ...(tools.length > 0 ? { tools } : {}),
+      }, Object.keys(requestOptions).length ? requestOptions : undefined);
 
-      // Capture both text and thinking content from the stream
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (stream as any).on('event', (event: any) => {
+      // Use for-await pattern (proven in claude-client.ts) instead of .on('event')
+      for await (const event of stream) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const evt = event as any;
         if (evt.type === 'content_block_delta') {
           if (evt.delta?.type === 'thinking_delta') {
@@ -858,7 +943,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
             res.write(`data: ${JSON.stringify({ type: 'text', text })}\n\n`);
           }
         }
-      });
+      }
 
       await stream.finalMessage();
 
@@ -1086,10 +1171,21 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       const doc = letterDoc || planDoc;
       if (!doc) return res.status(400).json({ error: 'No engagement letter uploaded. Upload the letter first.' });
 
+      // Fix extensionless files from old multer config
+      let teamFilePath = doc.file_path as string;
+      if (teamFilePath && !path.extname(teamFilePath) && doc.file_name) {
+        const ext = path.extname(String(doc.file_name));
+        if (ext) {
+          const newPath = teamFilePath + ext;
+          try { await fs.rename(teamFilePath, newPath); teamFilePath = newPath;
+            db.prepare('UPDATE engagement_documents SET file_path = ? WHERE id = ?').run(newPath, String(doc.id));
+          } catch { /* keep original */ }
+        }
+      }
       let fileContent = '';
       try {
         const { extractTextFromFile } = await import('../services/text-extractor.js');
-        fileContent = (await extractTextFromFile(doc.file_path as string)) ?? '';
+        fileContent = (await extractTextFromFile(teamFilePath)) ?? '';
       } catch {
         fileContent = String(doc.extracted_content || '');
       }

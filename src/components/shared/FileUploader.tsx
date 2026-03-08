@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, File, Image, X, CheckCircle, AlertCircle } from 'lucide-react';
+
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
 
 interface UploadedFile {
   id: string;
@@ -7,6 +9,8 @@ interface UploadedFile {
   size: number;
   extension: string;
   status: 'uploading' | 'done' | 'error';
+  isImage?: boolean;
+  previewUrl?: string;
 }
 
 interface FileUploaderProps {
@@ -63,14 +67,14 @@ export default function FileUploader({ files, onUpload, onRemove }: FileUploader
             <input
               type="file"
               multiple
-              accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.html"
+              accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.html,.png,.jpg,.jpeg,.gif,.webp"
               onChange={handleFileInput}
               className="hidden"
             />
           </label>
         </p>
         <p className="mt-1 text-xs text-adv-gray">
-          PDF, DOCX, TXT, MD, XLSX, CSV, HTML (max 50MB)
+          PDF, DOCX, TXT, XLSX, HTML — or images PNG, JPG, GIF, WebP (max 50MB)
         </p>
       </div>
 
@@ -82,7 +86,13 @@ export default function FileUploader({ files, onUpload, onRemove }: FileUploader
               key={f.id}
               className="flex items-center gap-2 rounded bg-adv-dark px-2.5 py-1.5 text-xs"
             >
-              <File className="h-3 w-3 text-adv-gray shrink-0" />
+              {f.isImage && f.previewUrl ? (
+                <img src={f.previewUrl} alt={f.name} className="h-5 w-5 shrink-0 rounded object-cover" />
+              ) : f.isImage ? (
+                <Image className="h-3 w-3 text-adv-blue shrink-0" />
+              ) : (
+                <File className="h-3 w-3 text-adv-gray shrink-0" />
+              )}
               <span className="flex-1 truncate text-adv-gray">{f.name}</span>
               <span className="text-adv-gray">{(f.size / 1024).toFixed(0)}KB</span>
               {f.status === 'done' && <CheckCircle className="h-3 w-3 text-adv-green" />}

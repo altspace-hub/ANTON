@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import https from 'https';
+import type Database from 'better-sqlite3';
+import Anthropic from '@anthropic-ai/sdk';
 
 // Known regulation shortcuts
 const REGULATION_LOOKUP: Record<string, { title: string; celexNumber: string }> = {
@@ -46,7 +48,7 @@ async function fetchEurLexText(celexNumber: string): Promise<string> {
   });
 }
 
-export function createEurLexRoutes() {
+export function createEurLexRoutes(db?: Database.Database, anthropic?: Anthropic) {
   const router = Router();
 
   // GET /api/eurlex/lookup?q=AMLR — find a regulation by shorthand
@@ -89,6 +91,168 @@ export function createEurLexRoutes() {
       res.json({ celexNumber, url, text, chars: text.length });
     } catch {
       res.status(502).json({ error: 'Failed to fetch from EUR-Lex. Check your internet connection.' });
+    }
+  });
+
+  /**
+   * POST /api/eurlex/validate-pack — DATA-08
+   * Fetches EUR-Lex official text and uses Claude to systematically validate
+   * the entities in an active knowledge pack against the official regulatory text.
+   *
+   * Body: { packId: string, celexNumber?: string }
+   * Streams SSE: { type: 'progress'|'finding'|'summary'|'done', ... }
+   */
+  router.post('/eurlex/validate-pack', async (req, res) => {
+    if (!db || !anthropic) {
+      res.status(503).json({ error: 'Database and AI service required for validation' });
+      return;
+    }
+
+    const { packId, celexNumber } = req.body as { packId?: string; celexNumber?: string };
+    if (!packId) {
+      res.status(400).json({ error: 'packId is required' });
+      return;
+    }
+
+    // Load pack metadata
+    const pack = db.prepare('SELECT * FROM knowledge_packs WHERE id = ?').get(packId) as Record<string, unknown> | undefined;
+    if (!pack) {
+      res.status(404).json({ error: 'Knowledge pack not found' });
+      return;
+    }
+
+    // Resolve CELEX number: from request or from pack regulation_ids
+    let celex = celexNumber;
+    if (!celex) {
+      const regIds = JSON.parse((pack.regulation_ids as string) || '[]') as string[];
+      const firstReg = regIds[0] || '';
+      const match = Object.values(REGULATION_LOOKUP).find(r =>
+        regIds.some(id => r.title.toLowerCase().includes(id.toLowerCase()) || id.includes(r.celexNumber))
+      );
+      if (!match && !firstReg) {
+        res.status(400).json({ error: 'Could not determine CELEX number for this pack. Provide celexNumber explicitly.' });
+        return;
+      }
+      celex = match?.celexNumber ?? '';
+    }
+
+    if (celex && !/^\d{5}[A-Z]\d{4}/.test(celex)) {
+      res.status(400).json({ error: 'Invalid CELEX number format' });
+      return;
+    }
+
+    // Set up SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const send = (data: unknown) => {
+      if (!res.destroyed) res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      // Step 1: Fetch EUR-Lex text
+      send({ type: 'progress', message: `Fetching EUR-Lex text for CELEX ${celex}…` });
+      let eurLexText = '';
+      if (celex) {
+        try {
+          eurLexText = await fetchEurLexText(celex);
+          send({ type: 'progress', message: `Fetched ${eurLexText.length.toLocaleString()} characters from EUR-Lex` });
+        } catch {
+          send({ type: 'progress', message: 'EUR-Lex fetch failed — validation will use Claude knowledge only' });
+        }
+      }
+
+      // Step 2: Load pack entities
+      const entities = db.prepare(
+        `SELECT entity_type, entity_id, canonical_name, metadata
+         FROM entity_nodes WHERE pack_id = ? ORDER BY entity_type, canonical_name LIMIT 200`
+      ).all(packId) as Array<{ entity_type: string; entity_id: string; canonical_name: string; metadata: string }>;
+
+      send({ type: 'progress', message: `Validating ${entities.length} entities from pack "${pack.display_name}"…` });
+
+      // Step 3: Stream validation via Claude
+      const entitySummary = entities.slice(0, 100).map(e => {
+        const meta = (() => { try { return JSON.parse(e.metadata || '{}'); } catch { return {}; } })();
+        return `- ${e.entity_id} (${e.entity_type}): "${e.canonical_name}" — ${meta.description?.slice(0, 150) || 'no description'}`;
+      }).join('\n');
+
+      const systemPrompt = `You are a senior EU regulatory expert validating a structured knowledge graph against the official EUR-Lex regulatory text.
+
+Your task:
+1. For each entity in the knowledge pack, verify that:
+   - The entity ID correctly corresponds to the article/concept in the official text
+   - The canonical_name accurately represents the article or concept
+   - Any description metadata is factually correct
+2. Flag discrepancies as CRITICAL (wrong article number/content), MODERATE (misleading label), or MINOR (style/wording)
+3. Note missing important articles or concepts
+4. Confirm correct entries as VALID
+
+Format each finding as:
+**[ENTITY_ID]** — [VALID|CRITICAL|MODERATE|MINOR]: [explanation]
+
+After all findings, provide a SUMMARY section with:
+- Total entities validated
+- Count by status
+- Top 3 most important corrections needed`;
+
+      const userMessage = `Validate this knowledge pack against the regulatory text.
+
+PACK: ${pack.display_name}
+CELEX: ${celex || 'not available — use your knowledge'}
+
+ENTITIES TO VALIDATE:
+${entitySummary}
+
+${eurLexText ? `OFFICIAL EUR-LEX TEXT (first 40,000 chars):\n${eurLexText.slice(0, 40000)}` : 'No EUR-Lex text available — validate using your knowledge of the regulation.'}`;
+
+      const stream = anthropic.messages.stream({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 8192,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+      });
+
+      let fullText = '';
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          fullText += event.delta.text;
+          send({ type: 'text', delta: event.delta.text });
+        }
+      }
+
+      // Parse findings summary
+      const criticalCount = (fullText.match(/CRITICAL:/g) || []).length;
+      const moderateCount = (fullText.match(/MODERATE:/g) || []).length;
+      const minorCount = (fullText.match(/MINOR:/g) || []).length;
+      const validCount = (fullText.match(/VALID:/g) || []).length;
+
+      // Store validation record
+      try {
+        db.prepare(`
+          UPDATE knowledge_packs
+          SET description = description || ' [Validated vs EUR-Lex ' || date('now') || ']'
+          WHERE id = ?
+        `).run(packId);
+      } catch { /* non-critical */ }
+
+      send({
+        type: 'summary',
+        packId,
+        entitiesChecked: entities.length,
+        critical: criticalCount,
+        moderate: moderateCount,
+        minor: minorCount,
+        valid: validCount,
+        validatedAt: new Date().toISOString(),
+      });
+      send({ type: 'done' });
+    } catch (error: unknown) {
+      send({ type: 'error', message: error instanceof Error ? error.message : 'Validation failed' });
+    } finally {
+      res.end();
     }
   });
 

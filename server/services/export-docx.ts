@@ -229,7 +229,7 @@ function resolveStyle(brand?: BrandConfig | null) {
   const h4Font      = brand?.fonts?.h4?.family    || 'Montserrat';
   const h4Size      = brand?.fonts?.h4            ? ptToHalf(brand.fonts.h4.size)    : 16; // 8 pt bold
   const h4Color     = brand?.fonts?.h4?.color     ? hex(brand.fonts.h4.color) : DEF_HEADING;
-  const columns     = brand?.layout?.columns    ?? 2;
+  const columns     = brand?.layout?.columns    ?? 1;
   const colSpacing  = brand?.layout?.columnSpacing ?? COL_GAP_DXA;
   return {
     accent, bodyFont, bodySize,
@@ -473,20 +473,19 @@ export async function generateDocx(
       children.push(new Paragraph({
         children: makeRuns(parseInline(`${h1n}  ${clean}`)),
         heading: HeadingLevel.HEADING_1,
-        pageBreakBefore: true,
+        pageBreakBefore: h1n > 1,  // Page break before each major section except the first
         spacing: PARA_SPACING,
       }));
       i++; continue;
     }
 
-    // ── Heading 2 — page break before, 11 pt Montserrat, numbered ──
+    // ── Heading 2 — no page break, numbered ──
     if (line.startsWith('## ')) {
       h2n++; h3n = 0; h4n = 0;
       const clean = stripHeadingPrefix(line.slice(3).trim());
       children.push(new Paragraph({
         children: makeRuns(parseInline(`${h1n}.${h2n}  ${clean}`)),
         heading: HeadingLevel.HEADING_2,
-        pageBreakBefore: true,
         spacing: PARA_SPACING,
       }));
       i++; continue;

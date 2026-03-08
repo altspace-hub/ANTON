@@ -1,11 +1,34 @@
 import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent } from './types';
 import { safeStorage } from './safe-storage';
 
-const API_BASE = '/api';
+export const API_BASE = '/api';
 
 export function getAuthHeader(): Record<string, string> {
   const token = safeStorage.getItem('openexpert-token');
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// SEC-14: CSRF token — fetched once on startup, refreshed on 403
+let _csrfToken: string | null = null;
+
+export async function ensureCsrfToken(force = false): Promise<string> {
+  if (_csrfToken && !force) return _csrfToken;
+  try {
+    const res = await fetch(`${API_BASE}/csrf-token`, {
+      headers: getAuthHeader(),
+    });
+    if (res.ok) {
+      const { csrfToken } = await res.json();
+      _csrfToken = csrfToken as string;
+    }
+  } catch {
+    // Fail silently — server may not require CSRF in solo mode
+  }
+  return _csrfToken ?? '';
+}
+
+function getCsrfHeader(): Record<string, string> {
+  return _csrfToken ? { 'X-CSRF-Token': _csrfToken } : {};
 }
 
 function handle401(response: Response): void {
@@ -16,9 +39,27 @@ function handle401(response: Response): void {
   }
 }
 
-async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-  const headers = { ...getAuthHeader(), ...options.headers };
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const method = (options.method ?? 'GET').toUpperCase();
+  const isMutating = method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
+
+  // Attach CSRF token on mutating requests
+  if (isMutating && !_csrfToken) await ensureCsrfToken();
+  const csrfHeaders = isMutating ? getCsrfHeader() : {};
+
+  const headers = { ...getAuthHeader(), ...csrfHeaders, ...options.headers };
   const res = await fetch(url, { ...options, headers });
+
+  // If CSRF token was rejected, refresh it and retry once
+  if (res.status === 403 && isMutating) {
+    _csrfToken = null;
+    await ensureCsrfToken(true);
+    const retryHeaders = { ...getAuthHeader(), ...getCsrfHeader(), ...options.headers };
+    const retry = await fetch(url, { ...options, headers: retryHeaders });
+    handle401(retry);
+    return retry;
+  }
+
   handle401(res);
   return res;
 }
@@ -83,51 +124,115 @@ export async function* streamMessage(
       return;
     }
 
-    const reader = res.body?.getReader();
-    if (!reader) {
-      yield { type: 'error', message: 'No response body' };
-      return;
-    }
+    // COMPAT-04: prefer ReadableStream; fall back to XHR incremental polling
+    // when ReadableStream or getReader() is unavailable (old Safari, some mobile browsers).
+    const canStream = typeof ReadableStream !== 'undefined' && res.body?.getReader != null;
 
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let streamSuccess = false;
+    if (canStream) {
+      // ── Primary path: ReadableStream ──────────────────────────
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let streamSuccess = false;
 
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) { streamSuccess = true; break; }
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) { streamSuccess = true; break; }
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim();
-            if (data === '[DONE]') { streamSuccess = true; return; }
-            try {
-              yield JSON.parse(data) as StreamEvent;
-            } catch {
-              // Skip malformed JSON
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') { streamSuccess = true; return; }
+              try {
+                yield JSON.parse(data) as StreamEvent;
+              } catch {
+                // Skip malformed JSON
+              }
             }
           }
         }
+      } catch (streamErr) {
+        lastError = streamErr;
+      } finally {
+        reader.releaseLock();
       }
-    } catch (streamErr) {
-      lastError = streamErr;
-      // Stream read error — will retry in next loop iteration
-    } finally {
-      reader.releaseLock();
-    }
 
-    if (streamSuccess) return;
-    // If we reach here, the stream was cut mid-way — retry
-    if (attempt >= STREAM_RETRY_DELAYS.length) break;
+      if (streamSuccess) return;
+      if (attempt >= STREAM_RETRY_DELAYS.length) break;
+    } else {
+      // ── Fallback path: XHR incremental read (COMPAT-04) ──────
+      yield* xhrStreamFallback(res.url || `${API_BASE}/claude/message`, config, signal);
+      return;
+    }
   }
 
   yield { type: 'error', message: `Stream failed after ${STREAM_RETRY_DELAYS.length + 1} attempts. Please try again.` };
-  void lastError; // referenced to satisfy TS 'unused variable' check
+  void lastError;
+}
+
+/**
+ * COMPAT-04: XHR-based SSE fallback for browsers without ReadableStream.
+ * Uses XMLHttpRequest onprogress to read the incrementally growing responseText.
+ */
+async function* xhrStreamFallback(
+  _url: string,
+  config: ClaudeRunConfig,
+  signal?: AbortSignal,
+): AsyncGenerator<StreamEvent> {
+  const events: StreamEvent[] = [];
+  let resolve: (() => void) | null = null;
+  let done = false;
+  let error: string | null = null;
+
+  const enqueue = (event: StreamEvent) => {
+    events.push(event);
+    resolve?.();
+    resolve = null;
+  };
+
+  const wait = () => new Promise<void>(r => { resolve = r; });
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `${API_BASE}/claude/message`, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  const authHeader = getAuthHeader();
+  if (authHeader.Authorization) xhr.setRequestHeader('Authorization', authHeader.Authorization);
+  if (_csrfToken) xhr.setRequestHeader('X-CSRF-Token', _csrfToken);
+
+  let cursor = 0;
+  xhr.onprogress = () => {
+    const chunk = xhr.responseText.slice(cursor);
+    cursor = xhr.responseText.length;
+    const lines = chunk.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') { done = true; resolve?.(); return; }
+        try { enqueue(JSON.parse(data) as StreamEvent); } catch { /* skip */ }
+      }
+    }
+  };
+
+  xhr.onload = () => { done = true; resolve?.(); };
+  xhr.onerror = () => { error = 'XHR stream error'; done = true; resolve?.(); };
+
+  if (signal) {
+    signal.addEventListener('abort', () => { xhr.abort(); done = true; resolve?.(); }, { once: true });
+  }
+
+  xhr.send(JSON.stringify(config));
+
+  while (!done || events.length > 0) {
+    if (events.length === 0 && !done) await wait();
+    while (events.length > 0) yield events.shift()!;
+  }
+
+  if (error) yield { type: 'error', message: error };
 }
 
 // ── Prompt Preview API ────────────────────────────────────
@@ -169,9 +274,9 @@ export async function fetchSessions(moduleId?: string, options?: {
 }
 
 export async function createSession(data: { moduleId: string; title: string; config: unknown }) {
-  const res = await fetch(`${API_BASE}/sessions`, {
+  const res = await fetchWithAuth(`${API_BASE}/sessions`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to create session');
@@ -179,29 +284,29 @@ export async function createSession(data: { moduleId: string; title: string; con
 }
 
 export async function updateSessionTitle(sessionId: string, title: string): Promise<void> {
-  await fetch(`${API_BASE}/sessions/${sessionId}`, {
+  await fetchWithAuth(`${API_BASE}/sessions/${sessionId}`, {
     method: 'PATCH',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title }),
   });
 }
 
 export async function updateSessionNote(sessionId: string, note: string): Promise<void> {
-  await fetch(`${API_BASE}/sessions/${sessionId}`, {
+  await fetchWithAuth(`${API_BASE}/sessions/${sessionId}`, {
     method: 'PATCH',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ note }),
   });
 }
 
 export async function fetchSession(sessionId: string) {
-  const res = await fetch(`${API_BASE}/sessions/${sessionId}`, { headers: { ...getAuthHeader() } });
+  const res = await fetchWithAuth(`${API_BASE}/sessions/${sessionId}`);
   if (!res.ok) return null;
   return res.json();
 }
 
 export async function deleteSession(sessionId: string): Promise<void> {
-  await fetch(`${API_BASE}/sessions/${sessionId}`, { method: 'DELETE', headers: { ...getAuthHeader() } });
+  await fetchWithAuth(`${API_BASE}/sessions/${sessionId}`, { method: 'DELETE' });
 }
 
 // ── File API ───────────────────────────────────────────────
@@ -209,9 +314,8 @@ export async function deleteSession(sessionId: string): Promise<void> {
 export async function uploadFile(file: File) {
   const formData = new FormData();
   formData.append('file', file);
-  const res = await fetch(`${API_BASE}/files/upload`, {
+  const res = await fetchWithAuth(`${API_BASE}/files/upload`, {
     method: 'POST',
-    headers: { ...getAuthHeader() },
     body: formData,
   });
   if (!res.ok) throw new Error('Failed to upload file');
@@ -227,9 +331,9 @@ export async function fetchRegisteredFolders() {
 }
 
 export async function registerFolder(folderPath: string, label: string) {
-  const res = await fetch(`${API_BASE}/folders/register`, {
+  const res = await fetchWithAuth(`${API_BASE}/folders/register`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ path: folderPath, label }),
   });
   if (!res.ok) throw new Error('Failed to register folder');
@@ -237,9 +341,9 @@ export async function registerFolder(folderPath: string, label: string) {
 }
 
 export async function browseFolder(folderPath: string) {
-  const res = await fetch(`${API_BASE}/folders/browse`, {
+  const res = await fetchWithAuth(`${API_BASE}/folders/browse`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ path: folderPath }),
   });
   if (!res.ok) throw new Error('Failed to browse folder');
@@ -270,12 +374,12 @@ export async function fetchModulePrompt(moduleId: string): Promise<string> {
 // ── Export API ──────────────────────────────────────────────
 
 export async function exportDocument(format: string, content: string, metadata?: Record<string, unknown>) {
-  const res = await fetch(`${API_BASE}/export`, {
+  const res = await fetchWithAuth(`${API_BASE}/export`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ format, content, metadata }),
   });
-  if (!res.ok) throw new Error('Failed to export');
+  if (!res.ok) throw new Error(await res.text());
   const blob = await res.blob();
   return blob;
 }
@@ -331,9 +435,9 @@ export async function* streamReviewDirect(
   sessionId?: string,
   signal?: AbortSignal
 ): AsyncGenerator<StreamEvent> {
-  const res = await fetch(`${API_BASE}/reviews`, {
+  const res = await fetchWithAuth(`${API_BASE}/reviews`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ modeId, content, model, sessionId }),
     signal,
   });
@@ -369,8 +473,8 @@ export async function fetchProjects() {
 }
 
 export async function createProject(data: { name: string; description?: string }) {
-  const res = await fetch(`${API_BASE}/projects`, {
-    method: 'POST', headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+  const res = await fetchWithAuth(`${API_BASE}/projects`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to create project');
   return res.json();
@@ -383,18 +487,18 @@ export async function fetchProject(projectId: string) {
 }
 
 export async function updateProject(projectId: string, data: { name?: string; description?: string; status?: string }) {
-  await fetch(`${API_BASE}/projects/${projectId}`, {
-    method: 'PATCH', headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+  await fetchWithAuth(`${API_BASE}/projects/${projectId}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
   });
 }
 
 export async function deleteProject(projectId: string) {
-  await fetch(`${API_BASE}/projects/${projectId}`, { method: 'DELETE', headers: { ...getAuthHeader() } });
+  await fetchWithAuth(`${API_BASE}/projects/${projectId}`, { method: 'DELETE' });
 }
 
 export async function assignSessionToProject(sessionId: string, projectId: string | null) {
-  await fetch(`${API_BASE}/sessions/${sessionId}/project`, {
-    method: 'PATCH', headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId }),
+  await fetchWithAuth(`${API_BASE}/sessions/${sessionId}/project`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ projectId }),
   });
 }
 
@@ -419,9 +523,9 @@ export async function submitCommunitySkill(data: {
   promptInstruction: string;
   tags?: string;
 }) {
-  const res = await fetch(`${API_BASE}/skills/community`, {
+  const res = await fetchWithAuth(`${API_BASE}/skills/community`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to submit community skill');
@@ -456,9 +560,9 @@ export async function fetchCustomModule(id: string): Promise<CustomModuleData | 
 }
 
 export async function createCustomModule(data: Partial<CustomModuleData>): Promise<CustomModuleData> {
-  const res = await fetch(`${API_BASE}/custom-modules`, {
+  const res = await fetchWithAuth(`${API_BASE}/custom-modules`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to create custom module');
@@ -466,9 +570,9 @@ export async function createCustomModule(data: Partial<CustomModuleData>): Promi
 }
 
 export async function patchCustomModule(id: string, data: Partial<CustomModuleData>): Promise<CustomModuleData> {
-  const res = await fetch(`${API_BASE}/custom-modules/${id}`, {
+  const res = await fetchWithAuth(`${API_BASE}/custom-modules/${id}`, {
     method: 'PATCH',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to update custom module');
@@ -476,13 +580,13 @@ export async function patchCustomModule(id: string, data: Partial<CustomModuleDa
 }
 
 export async function deleteCustomModule(id: string): Promise<void> {
-  await fetch(`${API_BASE}/custom-modules/${id}`, { method: 'DELETE', headers: { ...getAuthHeader() } });
+  await fetchWithAuth(`${API_BASE}/custom-modules/${id}`, { method: 'DELETE' });
 }
 
 export async function shareModuleWithCommunity(moduleId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/modules/community`, {
+  const res = await fetchWithAuth(`${API_BASE}/modules/community`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ moduleId }),
   });
   if (!res.ok) throw new Error('Failed to share module');
@@ -503,9 +607,9 @@ export async function fetchProfile(): Promise<Record<string, string | null>> {
 }
 
 export async function saveProfile(profile: Record<string, string>): Promise<void> {
-  await fetch(`${API_BASE}/profile`, {
+  await fetchWithAuth(`${API_BASE}/profile`, {
     method: 'PUT',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(profile),
   });
 }
@@ -519,9 +623,9 @@ export async function fetchRagFolders(): Promise<RagIndexedFolder[]> {
 }
 
 export async function indexRagFolder(folderPath: string): Promise<{ success: boolean; documents: number; chunks: number }> {
-  const res = await fetch(`${API_BASE}/rag/index`, {
+  const res = await fetchWithAuth(`${API_BASE}/rag/index`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ folderPath }),
   });
   if (!res.ok) throw new Error('Failed to index folder');
@@ -529,9 +633,9 @@ export async function indexRagFolder(folderPath: string): Promise<{ success: boo
 }
 
 export async function deleteRagIndex(folderPath: string): Promise<{ success: boolean }> {
-  const res = await fetch(`${API_BASE}/rag/index`, {
+  const res = await fetchWithAuth(`${API_BASE}/rag/index`, {
     method: 'DELETE',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ folderPath }),
   });
   if (!res.ok) throw new Error('Failed to delete index');
@@ -554,9 +658,9 @@ export async function createRagCollection(collection: {
   icon: string;
   color: string;
 }): Promise<{ collectionId: string }> {
-  const res = await fetch(`${API_BASE}/collections`, {
+  const res = await fetchWithAuth(`${API_BASE}/collections`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(collection),
   });
   if (!res.ok) throw new Error('Failed to create collection');
@@ -564,9 +668,8 @@ export async function createRagCollection(collection: {
 }
 
 export async function deleteRagCollection(collectionId: string): Promise<{ success: boolean }> {
-  const res = await fetch(`${API_BASE}/collections/${collectionId}`, {
+  const res = await fetchWithAuth(`${API_BASE}/collections/${collectionId}`, {
     method: 'DELETE',
-    headers: { ...getAuthHeader() },
   });
   if (!res.ok) throw new Error('Failed to delete collection');
   return res.json();
@@ -578,9 +681,9 @@ export async function searchRagChunks(
   topK?: number,
   minScore?: number
 ): Promise<Array<{ text: string; score: number; source: string; chunk_index: number }>> {
-  const res = await fetch(`${API_BASE}/rag/search`, {
+  const res = await fetchWithAuth(`${API_BASE}/rag/search`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, folderPaths, topK, minScore }),
   });
   if (!res.ok) return [];
@@ -656,9 +759,9 @@ export async function lookupEurLex(q: string): Promise<Array<{
 }
 
 export async function fetchEurLexText(celexNumber: string): Promise<{ text: string; url: string; chars: number }> {
-  const res = await fetch(`${API_BASE}/eurlex/fetch`, {
+  const res = await fetchWithAuth(`${API_BASE}/eurlex/fetch`, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ celexNumber }),
   });
   if (!res.ok) throw new Error('EUR-Lex fetch failed');

@@ -26,7 +26,9 @@ import FileUploader from '@/components/shared/FileUploader';
 import ConversationThread from '@/components/shared/ConversationThread';
 import { ResumePanel } from '@/components/shared/ResumePanel';
 import StatusIndicator from '@/components/shared/StatusIndicator';
+import RevelationTrailPanel, { IREPhaseProgress } from '@/components/shared/RevelationTrailPanel';
 import ExportBar from '@/components/shared/ExportBar';
+import HumanOversightGate from '@/components/shared/HumanOversightGate';
 import ContextBudgetBar from '@/components/shared/ContextBudgetBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
 import SkillAttacher from '@/components/platform/SkillAttacher';
@@ -106,9 +108,11 @@ export default function ModulePage() {
     setAudience, setChannel, setOutputLanguage, setSeed,
     deliberationEnabled, setDeliberationEnabled,
     setPlainTextMode, setMultiAgentEnabled,
+    plainTextMode,
+    isAssemblingContext, lastSourcesUsed,
   } = useSessionStore();
 
-  const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens } = useClaude();
+  const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens, ireChainId, ireCurrentPhase, ireTotalPhases, ireCurrentPhaseName } = useClaude();
   const { files, upload, remove } = useFileUpload();
   const { doExport, isExporting } = useExport();
   const { isListening, transcript, startListening, stopListening, isSupported: isSpeechSupported } = useSpeechRecognition();
@@ -121,6 +125,7 @@ export default function ModulePage() {
 
   const [userInput, setUserInput] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showSources, setShowSources] = useState(false); // ATTR-05
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [bannerDismissedAtLength, setBannerDismissedAtLength] = useState(0);
   const [showReframePicker, setShowReframePicker] = useState(false);
@@ -981,8 +986,8 @@ export default function ModulePage() {
                   )}
                 </button>
               )}
-              {/* Cost estimate (WP-13) */}
-              {!isStreaming && userInput.trim() && (
+              {/* Cost estimate (TOKEN-04) — shown before run whenever context is non-trivial */}
+              {!isStreaming && estimatedInputTokens > 200 && (
                 <div className={`flex items-center gap-1 text-[11px] ${estimatedInputTokens > 50000 ? 'text-adv-gold' : 'text-adv-gray'}`}>
                   <Coins className="h-3 w-3" />
                   <span>
@@ -1016,6 +1021,44 @@ export default function ModulePage() {
           />
         </div>
 
+        {/* TOKEN-03: Context assembly progress indicator */}
+        {isAssemblingContext && (
+          <div className="shrink-0 pb-3">
+            <div className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal-soft px-3 py-2 text-xs text-adv-teal">
+              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Indexing documents and assembling context…
+            </div>
+          </div>
+        )}
+
+        {/* ATTR-05: Sources used collapsible panel */}
+        {lastSourcesUsed.length > 0 && !isStreaming && (
+          <div className="shrink-0 pb-2">
+            <button
+              onClick={() => setShowSources(v => !v)}
+              className="flex w-full items-center gap-1.5 rounded-lg border border-adv-card bg-adv-dark-2 px-3 py-1.5 text-xs text-adv-gray hover:text-adv-off-white transition-colors"
+              aria-expanded={showSources}
+            >
+              {showSources ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
+              <span className="font-medium">Sources used</span>
+              <span className="ml-1 rounded-full bg-adv-teal-dim px-1.5 py-0.5 text-xs font-medium text-adv-teal">{lastSourcesUsed.length}</span>
+            </button>
+            {showSources && (
+              <ul className="mt-1 rounded-lg border border-adv-card bg-adv-dark-2 px-3 py-2 space-y-1">
+                {lastSourcesUsed.map((src, i) => (
+                  <li key={i} className="flex items-start gap-1.5 text-xs text-adv-gray">
+                    <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0 text-adv-teal" />
+                    {src}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         {/* Session Resume Panel — shown when resuming a paused session */}
         {sessionId && messages.length === 0 && !isStreaming && (
           <div className="shrink-0 pb-3">
@@ -1046,6 +1089,15 @@ export default function ModulePage() {
             />
           )}
 
+          {/* IRE phase progress — shown while iterative reasoning is streaming */}
+          {isStreaming && ireTotalPhases > 0 && (
+            <IREPhaseProgress
+              currentPhase={ireCurrentPhase}
+              totalPhases={ireTotalPhases}
+              currentPhaseName={ireCurrentPhaseName}
+            />
+          )}
+
           {/* Conversation (shown when deliberation mode is off) */}
           {!deliberationEnabled && <div className="rounded-xl border border-border bg-adv-card p-5">
             {messages.length === 0 && !isStreaming ? (
@@ -1070,6 +1122,13 @@ export default function ModulePage() {
           {/* Export */}
           {outputContent && !isStreaming && (
             <>
+              {/* EUAI-02: Human oversight sign-off for high-risk FCP modules */}
+              {sessionId && ['gap-analysis', 'sanctions-advisory', 'investigation-support'].includes(moduleId ?? '') && (
+                <HumanOversightGate
+                  sessionId={sessionId}
+                  moduleId={moduleId ?? ''}
+                />
+              )}
               <ExportBar
               content={outputContent}
               availableFormats={exportFormats.length > 0 ? exportFormats : ['md']}
@@ -1087,6 +1146,7 @@ export default function ModulePage() {
               onReframe={handleReframe}
               moduleContext={module?.label ?? customModuleLabel ?? moduleId}
               entityId={sessionId ?? moduleId}
+              moduleId={moduleId ?? undefined}
             />
             {showReframePicker && (
               <div className="flex items-center gap-2 rounded-lg border border-border bg-adv-card px-3 py-2">
@@ -1189,11 +1249,11 @@ export default function ModulePage() {
             streamingThinking={streamingThinking}
             thinkingContent={lastAssistantMessage?.thinkingContent}
             moduleId={moduleId}
-            areaId={useSessionStore.getState().areaId ?? undefined}
+            areaId={areaId ?? undefined}
             systemPrompt={systemPrompt}
             creativity={creativity}
             thinking={thinking}
-            plainTextMode={useSessionStore.getState().plainTextMode}
+            plainTextMode={plainTextMode}
             selectedPersonas={selectedPersonas}
             selectedSkills={selectedSkills}
             multiPerspective={multiPerspective}
@@ -1218,7 +1278,18 @@ export default function ModulePage() {
             }}
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
+            sourceManifest={lastSourcesUsed}
           />
+        )}
+        {/* Revelation Trail — shown after IRE completes */}
+        {ireChainId && !isStreaming && (
+          <div className="rounded-xl border border-adv-gold/20 bg-adv-card p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-adv-gold">
+              <span className="text-adv-gold">⚗</span>
+              Reasoning Trail
+            </h3>
+            <RevelationTrailPanel chainId={ireChainId} />
+          </div>
         )}
         </div>{/* end scrollable output area */}
       </div>

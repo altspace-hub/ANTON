@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { fetchWithAuth } from '@/lib/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -45,7 +46,7 @@ async function* streamConsult(
   messages: Message[],
   signal?: AbortSignal
 ): AsyncGenerator<{ type: string; text?: string; content?: string }> {
-  const res = await fetch('/api/presentations/consult', {
+  const res = await fetchWithAuth('/api/presentations/consult', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages }),
@@ -291,7 +292,7 @@ export default function PresentationBuilderPage() {
       try {
         const form = new FormData();
         form.append('file', file);
-        const res = await fetch('/api/files/upload', { method: 'POST', body: form });
+        const res = await fetchWithAuth('/api/files/upload', { method: 'POST', body: form });
         if (res.ok) {
           const data = await res.json() as { originalName: string; text: string };
           if (data.text) newDocs.push({ name: data.originalName, text: data.text });
@@ -372,7 +373,7 @@ export default function PresentationBuilderPage() {
       // Save the presentation record first (or update if we already have an id)
       let id = presentationId;
       if (!id) {
-        const saveRes = await fetch('/api/presentations', {
+        const saveRes = await fetchWithAuth('/api/presentations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -392,7 +393,7 @@ export default function PresentationBuilderPage() {
 
       setGenerationStatus('Writing slide content...');
 
-      const genRes = await fetch('/api/presentations/generate', {
+      const genRes = await fetchWithAuth('/api/presentations/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, brief }),

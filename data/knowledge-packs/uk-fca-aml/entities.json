@@ -1,0 +1,250 @@
+[
+  {
+    "ref_id": "REG-MLR2017",
+    "entity_type": "regulation",
+    "entity_id": "MLR-2017",
+    "canonical_name": "Money Laundering, Terrorist Financing and Transfer of Funds (Information on the Payer) Regulations 2017",
+    "description": "UK primary AML/CFT legislation for regulated firms. Transposes AMLD4/5 into UK law (now retained post-Brexit). Amended by MLR 2019, MLR 2020, and MLR 2023 amendments. Sets out CDD, EDD, SDD, PEP screening, beneficial ownership, risk assessments, record-keeping, and reporting obligations.",
+    "metadata": { "short_ref": "MLR 2017", "amended": "2019, 2020, 2023", "regulator": "HM Treasury / FCA / HMRC" }
+  },
+  {
+    "ref_id": "REG-POCA",
+    "entity_type": "regulation",
+    "entity_id": "POCA-2002",
+    "canonical_name": "Proceeds of Crime Act 2002",
+    "description": "UK primary legislation establishing money laundering offences (s.327–329), failure to disclose (s.330), and the Suspicious Activity Report (SAR) / Authorised Disclosure regime. Applies to the 'regulated sector' (as defined in Schedule 9).",
+    "metadata": { "short_ref": "POCA 2002", "key_sections": "s.327-329 (ML offences), s.330-332 (failure to disclose), s.338 (authorised disclosure)" }
+  },
+  {
+    "ref_id": "REG-TA2000",
+    "entity_type": "regulation",
+    "entity_id": "TA-2000",
+    "canonical_name": "Terrorism Act 2000",
+    "description": "UK primary legislation establishing terrorist financing offences and the SAR reporting obligation for terrorist financing suspicions. Amended by the Anti-terrorism, Crime and Security Act 2001 and Counter-Terrorism Act 2008.",
+    "metadata": { "short_ref": "TA 2000", "key_sections": "s.15-18 (TF offences), s.19 (failure to disclose TF)" }
+  },
+  {
+    "ref_id": "REG-FCA-SYSC",
+    "entity_type": "guidance",
+    "entity_id": "FCA-SYSC-6-3",
+    "canonical_name": "FCA SYSC 6.3 — Financial Crime",
+    "description": "FCA Handbook rules on financial crime systems and controls. Requires firms to have adequate policies, procedures, and systems to prevent financial crime. Key obligation: appoint a Money Laundering Reporting Officer (MLRO).",
+    "metadata": { "handbook_ref": "SYSC 6.3", "related": "FCA FCG" }
+  },
+  {
+    "ref_id": "REG-FCG",
+    "entity_type": "guidance",
+    "entity_id": "FCA-FCG",
+    "canonical_name": "FCA Financial Crime Guide (FCG)",
+    "description": "FCA non-binding guidance on financial crime frameworks. Covers: governance and management information; risk assessment; CDD and KYC; suspicious activity reporting; sanctions; fraud; bribery and corruption. Updated periodically.",
+    "metadata": { "ref": "FCA FCG", "status": "non-binding guidance", "applies_to": "FCA authorised firms" }
+  },
+  {
+    "ref_id": "REG-JMLSG",
+    "entity_type": "guidance",
+    "entity_id": "JMLSG-GUIDANCE",
+    "canonical_name": "JMLSG Guidance — Prevention of Money Laundering / Combating Terrorist Financing",
+    "description": "Joint Money Laundering Steering Group guidance. Industry guidance approved by HM Treasury under MLR 2017 reg.86. Part I: general obligations. Part II: sector-specific guidance (retail banking, wealth management, capital markets, insurance, etc.). Part III: specialist areas.",
+    "metadata": { "ref": "JMLSG Guidance 2022 (as amended)", "approved_by": "HM Treasury" }
+  },
+  {
+    "ref_id": "REG-OFSI",
+    "entity_type": "authority",
+    "entity_id": "OFSI",
+    "canonical_name": "Office of Financial Sanctions Implementation (OFSI)",
+    "description": "HM Treasury body responsible for implementing financial sanctions in the UK. Publishes the UK Consolidated List of sanctioned individuals and entities. Administers the UK autonomous sanctions regime post-Brexit (UK-specific designations independent of EU).",
+    "metadata": { "parent": "HM Treasury", "website": "https://www.gov.uk/ofsi" }
+  },
+  {
+    "ref_id": "REG-UKSA",
+    "entity_type": "regulation",
+    "entity_id": "UK-SANCTIONS-ACT-2018",
+    "canonical_name": "Sanctions and Anti-Money Laundering Act 2018 (SAMLA)",
+    "description": "UK primary sanctions legislation enabling the UK to impose its own financial and other sanctions post-Brexit. Basis for UK sanctions statutory instruments (SIs) covering Russia, Iran, Belarus, Myanmar, etc.",
+    "metadata": { "short_ref": "SAMLA 2018" }
+  },
+  {
+    "ref_id": "AUTH-FCA",
+    "entity_type": "authority",
+    "entity_id": "FCA",
+    "canonical_name": "Financial Conduct Authority (FCA)",
+    "description": "UK conduct regulator for financial services. Responsible for AML supervision of FCA-authorised firms. Publishes AML Dear CEO letters, thematic reviews, and enforcement actions.",
+    "metadata": { "type": "national regulator", "country": "UK" }
+  },
+  {
+    "ref_id": "AUTH-PRA",
+    "entity_type": "authority",
+    "entity_id": "PRA",
+    "canonical_name": "Prudential Regulation Authority (PRA)",
+    "description": "UK prudential regulator for banks, insurers, and systemic investment firms. Joint supervisor (with FCA) for dual-regulated firms. Issues PRA Rulebook expectations on financial crime.",
+    "metadata": { "type": "national regulator", "country": "UK", "parent": "Bank of England" }
+  },
+  {
+    "ref_id": "AUTH-NCA",
+    "entity_type": "authority",
+    "entity_id": "NCA-UKFIU",
+    "canonical_name": "National Crime Agency — UK Financial Intelligence Unit (UKFIU)",
+    "description": "UK FIU receiving all Suspicious Activity Reports (SARs) from the regulated sector. Processes SARs, issues Consent or Refusal decisions, and disseminates intelligence to law enforcement.",
+    "metadata": { "type": "FIU", "country": "UK", "sar_portal": "SARs Online" }
+  },
+  {
+    "ref_id": "AUTH-HMRC",
+    "entity_type": "authority",
+    "entity_id": "HMRC-AML",
+    "canonical_name": "HM Revenue & Customs — AML Supervision",
+    "description": "HMRC is the AML supervisor for money service businesses, high-value dealers, accountants, estate agents, and trust or company service providers not supervised by a professional body.",
+    "metadata": { "supervised_sectors": "MSBs, HVDs, accountants, estate agents, TCSPs" }
+  },
+  {
+    "ref_id": "CONCEPT-MLRO",
+    "entity_type": "concept",
+    "entity_id": "MLRO",
+    "canonical_name": "Money Laundering Reporting Officer (MLRO)",
+    "description": "Nominated officer required under MLR 2017 and FCA SYSC 6.3.9. Responsible for receiving internal SARs, deciding whether to file external SARs with the UKFIU, and overseeing the firm's AML/CFT compliance programme. Must be a senior manager in a FCA-authorised firm.",
+    "metadata": { "legal_basis": "MLR 2017 reg.21; SYSC 6.3.9; POCA s.330-332" }
+  },
+  {
+    "ref_id": "CONCEPT-CDD-UK",
+    "entity_type": "concept",
+    "entity_id": "UK-CDD",
+    "canonical_name": "Customer Due Diligence (CDD) — UK MLR 2017",
+    "description": "MLR 2017 Part 3 CDD obligations. CDD triggers: establishing a business relationship, occasional transactions ≥ €15,000, suspicion of ML/TF, doubt about previous identification. Includes: identification/verification, beneficial ownership (≥25% threshold), understanding purpose and nature of relationship.",
+    "metadata": { "regulation": "MLR 2017 regs.27-28", "threshold": "€15,000 occasional transactions" }
+  },
+  {
+    "ref_id": "CONCEPT-EDD-UK",
+    "entity_type": "concept",
+    "entity_id": "UK-EDD",
+    "canonical_name": "Enhanced Due Diligence (EDD) — UK MLR 2017",
+    "description": "MLR 2017 reg.33 EDD mandatory triggers: PEPs, high-risk third countries, correspondent banking, private banking, complex/unusual transactions. UK maintains its own list of high-risk third countries (diverging from EU list post-Brexit). Additional EDD measures must include source of wealth and source of funds.",
+    "metadata": { "regulation": "MLR 2017 reg.33", "pep_basis": "reg.35", "correspondent_basis": "reg.34" }
+  },
+  {
+    "ref_id": "CONCEPT-PEP-UK",
+    "entity_type": "concept",
+    "entity_id": "UK-PEP",
+    "canonical_name": "Politically Exposed Person (PEP) — UK Definition",
+    "description": "UK PEP definition under MLR 2017 reg.35. Includes domestic UK PEPs (following FCA 2023 guidance clarifying UK domestic PEPs should be treated as lower risk than foreign PEPs absent other risk factors). Post-Brexit UK does not apply automatic EDD to UK nationals in UK public functions — risk-based approach required.",
+    "metadata": { "regulation": "MLR 2017 reg.35", "fca_guidance": "Dear CEO letter 2023 on domestic PEPs" }
+  },
+  {
+    "ref_id": "CONCEPT-SAR-UK",
+    "entity_type": "concept",
+    "entity_id": "UK-SAR",
+    "canonical_name": "Suspicious Activity Report (SAR) — UK",
+    "description": "UK SAR framework under POCA s.330 and TA s.19. Filed with UKFIU via SARs Online portal. Consent SARs: required before proceeding with a transaction where suspicion exists. Disclosure SARs: filed after the fact. 7-working-day moratorium period for consent SARs. NCA can refuse, extend, or grant consent.",
+    "metadata": { "portal": "SARs Online (NCA UKFIU)", "moratorium": "7 working days for consent; 31 days extended" }
+  },
+  {
+    "ref_id": "CONCEPT-BO-UK",
+    "entity_type": "concept",
+    "entity_id": "UK-BENEFICIAL-OWNER",
+    "canonical_name": "Beneficial Ownership — UK MLR 2017 + Companies House",
+    "description": "UK BO identification threshold: ≥25% shares, voting rights, or other control (MLR 2017). Linked to PSC (Person with Significant Control) register at Companies House. Economic Crime (Transparency and Enforcement) Act 2022 strengthened BO transparency requirements.",
+    "metadata": { "regulation": "MLR 2017 reg.5; CA 2006 Part 21A (PSC regime)", "ecte_act": "2022" }
+  },
+  {
+    "ref_id": "CONCEPT-TIPPING-OFF",
+    "entity_type": "concept",
+    "entity_id": "UK-TIPPING-OFF",
+    "canonical_name": "Tipping Off — UK POCA s.333A",
+    "description": "Criminal offence of disclosing to a customer or third party that a SAR has been filed or an investigation is underway (POCA s.333A). Exemptions for information shared within a group or with professional advisers in connection with legal proceedings.",
+    "metadata": { "legal_basis": "POCA s.333A", "penalty": "Criminal — up to 5 years imprisonment" }
+  },
+  {
+    "ref_id": "CONCEPT-CONSENT-REGIME",
+    "entity_type": "concept",
+    "entity_id": "UK-CONSENT-REGIME",
+    "canonical_name": "Consent / Authorised Disclosure Regime — UK",
+    "description": "POCA s.338 allows a firm to proceed with a transaction that would otherwise constitute a money laundering offence if an 'authorised disclosure' (SAR with consent request) is made to the NCA and consent is granted, or the 7-day moratorium expires without refusal, or a 31-day extended moratorium expires.",
+    "metadata": { "legal_basis": "POCA s.338", "moratorium": "7 working days (consent), 31 days (extended)" }
+  },
+  {
+    "ref_id": "CONCEPT-NRA-UK",
+    "entity_type": "guidance",
+    "entity_id": "UK-NRA",
+    "canonical_name": "UK National Risk Assessment (NRA)",
+    "description": "HM Treasury / Home Office national ML/TF risk assessment (last updated 2023). Identifies high-risk sectors (professional services, retail banking, investment management), ML typologies, geographic risks, and new/emerging threats. Firms must consider the UK NRA when conducting their own risk assessments.",
+    "metadata": { "published_by": "HM Treasury / Home Office", "latest": "2023" }
+  },
+  {
+    "ref_id": "CONCEPT-POST-BREXIT-DIV",
+    "entity_type": "concept",
+    "entity_id": "UK-POST-BREXIT-DIVERGENCE",
+    "canonical_name": "UK–EU AML/CFT Divergence Post-Brexit",
+    "description": "Key divergence points between UK and EU AML frameworks post-Brexit: (1) UK High-Risk Third Country list diverges from EU list (UK-specific assessments); (2) UK domestic PEP guidance differs from EU AMLR Art.21 (lower risk for UK domestic PEPs); (3) UK does not implement AMLR 2024/1624 (EU regulation not applicable); (4) UK Wire Transfer Regulations 2017 (retained from Funds Transfer Regulation) vs EU TFR 2023/1113; (5) UK sanctions list (OFSI) is independent from EU sanctions list.",
+    "metadata": { "effective": "2021-01-01", "brexit_date": "2020-01-31" }
+  },
+  {
+    "ref_id": "CONCEPT-MLPO",
+    "entity_type": "concept",
+    "entity_id": "ML-PREVENTION-OFFICER",
+    "canonical_name": "Money Laundering Compliance Principal (MLCP)",
+    "description": "Senior manager responsible for the firm's AML compliance programme under FCA SUP 10C Senior Managers Regime (SMR). Distinct from the MLRO nominated officer role. The MLCO/MLCP is accountable under the Senior Managers and Certification Regime (SM&CR).",
+    "metadata": { "regime": "SM&CR", "relevant_function": "SMF17 (MLRO)" }
+  },
+  {
+    "ref_id": "CONCEPT-SMCR",
+    "entity_type": "regulation",
+    "entity_id": "UK-SMCR",
+    "canonical_name": "Senior Managers and Certification Regime (SM&CR)",
+    "description": "UK accountability framework requiring individual accountability for senior decision-makers in FCA/PRA-authorised firms. Key AML function: SMF17 (Money Laundering Reporting Officer). Under SM&CR, AML failures can result in personal liability for senior managers.",
+    "metadata": { "applies_to": "All FCA-authorised firms", "mlro_function": "SMF17" }
+  },
+  {
+    "ref_id": "CONCEPT-ECRCEA",
+    "entity_type": "regulation",
+    "entity_id": "ECTE-ACT-2022",
+    "canonical_name": "Economic Crime (Transparency and Enforcement) Act 2022",
+    "description": "UK legislation strengthening sanctions enforcement (OFSI civil penalty regime), introducing the Register of Overseas Entities (ROE) for foreign entities owning UK property, and enhancing Unexplained Wealth Orders (UWOs). Followed by Economic Crime and Corporate Transparency Act 2023.",
+    "metadata": { "passed": "2022-03-15", "key_elements": "ROE, enhanced OFSI powers, UWOs" }
+  },
+  {
+    "ref_id": "CONCEPT-ECCTA",
+    "entity_type": "regulation",
+    "entity_id": "ECCTA-2023",
+    "canonical_name": "Economic Crime and Corporate Transparency Act 2023",
+    "description": "UK legislation improving corporate transparency at Companies House, creating a new failure to prevent fraud offence for large organisations, strengthening AML supervision, and reforms to limited partnerships.",
+    "metadata": { "passed": "2023-10-26", "key_elements": "Companies House reforms, failure to prevent fraud, LP reforms" }
+  },
+  {
+    "ref_id": "CONCEPT-MLTS",
+    "entity_type": "guidance",
+    "entity_id": "FCA-DEAR-CEO-AML",
+    "canonical_name": "FCA Dear CEO Letters — AML / Financial Crime",
+    "description": "FCA supervisory communications identifying widespread weaknesses in AML controls across sectors. Key letters: 2021 (private banks/wealth managers — CDD gaps), 2022 (retail banks — sanctions screening), 2023 (payment firms — AML frameworks), 2023 (domestic PEP guidance clarification).",
+    "metadata": { "type": "supervisory guidance", "issued_by": "FCA" }
+  },
+  {
+    "ref_id": "CONCEPT-WTR",
+    "entity_type": "regulation",
+    "entity_id": "UK-WTR-2017",
+    "canonical_name": "UK Wire Transfer Regulations 2017",
+    "description": "UK retained legislation implementing the EU Funds Transfer Regulation requirements for information accompanying wire transfers. Requires payer and payee information on all wire transfers ≥ £1,000. Post-Brexit: UK maintains its own Wire Transfer Regulations; note EU has replaced with TFR 2023/1113 (Travel Rule for crypto included).",
+    "metadata": { "short_ref": "WTR 2017", "threshold": "£1,000", "crypto_coverage": "Not yet — UK extending separately" }
+  },
+  {
+    "ref_id": "CONCEPT-HMRC-MSB",
+    "entity_type": "concept",
+    "entity_id": "UK-MSB",
+    "canonical_name": "Money Service Business (MSB) — UK",
+    "description": "Regulated sector category under MLR 2017 Schedule 2. MSBs include currency exchange operators, transmitters of money, cheque cashers, and payment institutions. Supervised by HMRC (not FCA) unless also FCA-authorised. Must register with HMRC AML register before operating.",
+    "metadata": { "supervisor": "HMRC", "regulation": "MLR 2017 Schedule 2" }
+  },
+  {
+    "ref_id": "CONCEPT-UWO",
+    "entity_type": "concept",
+    "entity_id": "UK-UWO",
+    "canonical_name": "Unexplained Wealth Order (UWO)",
+    "description": "UK court order requiring a person to explain how they obtained assets worth ≥ £50,000 (POCA s.362A-362I, as amended by Economic Crime Act 2022). A UWO does not itself freeze assets but can be used as evidence in civil recovery proceedings. Extended by ECTE Act 2022 to make UWOs more effective.",
+    "metadata": { "legal_basis": "POCA s.362A-362I (as amended)", "threshold": "£50,000" }
+  },
+  {
+    "ref_id": "CONCEPT-CRYPTO-UK",
+    "entity_type": "regulation",
+    "entity_id": "UK-CRYPTO-MLR",
+    "canonical_name": "UK Cryptoasset AML Registration — MLR 2017 (as amended)",
+    "description": "MLR 2017 (as amended by 2019/2020 regulations) requires cryptoasset exchange providers and custodian wallet providers operating in the UK to register with the FCA for AML purposes. Separate from FCA authorisation. UK will introduce full MiCA-equivalent framework via the Financial Services and Markets Act 2023 crypto regime.",
+    "metadata": { "supervisor": "FCA", "basis": "MLR 2017 reg.14A", "fsma_crypto": "FSMA 2023 — crypto regime TBC" }
+  }
+]

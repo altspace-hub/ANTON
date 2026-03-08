@@ -1,0 +1,26 @@
+{
+  "bundle_type": "regulatory-knowledge-pack",
+  "name": "uk-fca-aml",
+  "display_name": "UK FCA AML / Financial Crime Rules — Post-Brexit",
+  "version": "1.0.0",
+  "description": "Structured knowledge graph for UK financial crime prevention requirements post-Brexit. Covers FCA's SYSC 6.3 (financial crime), the Money Laundering Regulations 2017 (as amended), Proceeds of Crime Act 2002 (POCA), Terrorism Act 2000, JMLSG Guidance, FCA Financial Crime Guide (FCG), FCA Dear CEO letters, HM Treasury AML/CFT National Risk Assessment, and UK Sanctions (OFSI). Includes post-Brexit divergence points from EU AMLR/AMLD framework.",
+  "author": "Futurechain FCP Team",
+  "publisher": "ANTON FCP Workbench",
+  "jurisdiction": "United Kingdom",
+  "regulatory_area": "AML/CFT — UK Post-Brexit",
+  "regulation_ids": [
+    "MLR 2017",
+    "Money Laundering Regulations 2017",
+    "POCA 2002",
+    "TA 2000",
+    "JMLSG Guidance",
+    "FCA FCG",
+    "FCA SYSC 6.3",
+    "OFSI",
+    "UK National Risk Assessment"
+  ],
+  "tier": 2,
+  "entity_count": 32,
+  "relationship_count": 48,
+  "alias_entry_count": 32
+}

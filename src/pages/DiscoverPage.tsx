@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { fetchWithAuth } from '@/lib/api';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -244,9 +245,9 @@ export default function DiscoverPage() {
     setError(null);
     try {
       // Create session
-      const createRes = await fetch('/api/discovery/sessions', {
+      const createRes = await fetchWithAuth('/api/discovery/sessions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier }),
       });
       if (!createRes.ok) throw new Error('Failed to create session');
@@ -296,7 +297,7 @@ export default function DiscoverPage() {
 
   async function deleteSession(sid: string) {
     try {
-      await fetch(`/api/discovery/sessions/${sid}`, { method: 'DELETE', headers: getAuthHeader() });
+      await fetchWithAuth(`/api/discovery/sessions/${sid}`, { method: 'DELETE' });
       setPreviousSessions(prev => prev.filter(s => s.id !== sid));
     } catch {
       // ignore
@@ -306,9 +307,9 @@ export default function DiscoverPage() {
   async function upgradeTier(newTier: DiscoveryTier) {
     if (!sessionId) return;
     try {
-      const res = await fetch(`/api/discovery/sessions/${sessionId}/upgrade`, {
+      const res = await fetchWithAuth(`/api/discovery/sessions/${sessionId}/upgrade`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newTier }),
       });
       if (!res.ok) throw new Error('Upgrade failed');
@@ -332,9 +333,9 @@ export default function DiscoverPage() {
       else if (type === '60_day') scheduledDate.setDate(scheduledDate.getDate() + 60);
       else scheduledDate.setDate(scheduledDate.getDate() + 90);
 
-      await fetch(`/api/discovery/sessions/${sessionId}/followup`, {
+      await fetchWithAuth(`/api/discovery/sessions/${sessionId}/followup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, scheduledDate: scheduledDate.toISOString().split('T')[0] }),
       });
       setShowFollowUpModal(false);
@@ -346,9 +347,9 @@ export default function DiscoverPage() {
   async function activatePack(packId: string) {
     if (!sessionId) return;
     try {
-      await fetch(`/api/discovery/sessions/${sessionId}/pack`, {
+      await fetchWithAuth(`/api/discovery/sessions/${sessionId}/pack`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packId }),
       });
       // Refresh state
@@ -377,9 +378,9 @@ export default function DiscoverPage() {
     } : prev);
 
     try {
-      const res = await fetch(`/api/discovery/sessions/${sessionId}/respond`, {
+      const res = await fetchWithAuth(`/api/discovery/sessions/${sessionId}/respond`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
       });
       if (!res.ok) {
@@ -404,9 +405,9 @@ export default function DiscoverPage() {
     setIsGenerating(true);
 
     try {
-      const res = await fetch(`/api/discovery/sessions/${sessionId}/generate`, {
+      const res = await fetchWithAuth(`/api/discovery/sessions/${sessionId}/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!res.ok) throw new Error('Failed to generate report');
       const data = await res.json();
@@ -440,9 +441,9 @@ export default function DiscoverPage() {
   async function exportReport(format: 'docx' | 'pdf') {
     if (!sessionId) return;
     try {
-      const res = await fetch(`/api/discovery/sessions/${sessionId}/export`, {
+      const res = await fetchWithAuth(`/api/discovery/sessions/${sessionId}/export`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ format }),
       });
       if (!res.ok) throw new Error('Export failed');

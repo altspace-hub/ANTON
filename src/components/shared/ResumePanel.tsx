@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clock, ChevronDown, ChevronUp, Bookmark, RefreshCw, CheckSquare, HelpCircle, ArrowRight } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
 
 interface Snapshot {
   id: string;
@@ -63,7 +64,7 @@ export function ResumePanel({ sessionId, onResumeContextReady, onSaveSnapshot }:
   async function handleAutoGenerate() {
     setGenerating(true);
     try {
-      const res = await fetch(`/api/sessions/${sessionId}/snapshots/auto`, { method: 'POST' });
+      const res = await fetchWithAuth(`/api/sessions/${sessionId}/snapshots/auto`, { method: 'POST' });
       if (res.ok) {
         await loadLatestSnapshot();
       }

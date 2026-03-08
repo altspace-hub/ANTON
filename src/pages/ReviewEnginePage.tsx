@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Users, Shield, Scale, Briefcase, FileSearch, Zap, Send, Square, Copy, Check, Download, Upload, FileText, X as XIcon, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { streamMessage, exportReviewPanelAnton } from '@/lib/api';
+import { streamMessage, exportReviewPanelAnton, fetchWithAuth } from '@/lib/api';
 import type { StreamEvent, ModelId } from '@/lib/types';
 import { DOMAIN_REVIEWERS } from '@/lib/domain-reviewers';
 
@@ -175,7 +175,7 @@ export default function ReviewEnginePage() {
       try {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch('/api/files/upload', { method: 'POST', body: formData });
+        const res = await fetchWithAuth('/api/files/upload', { method: 'POST', body: formData });
         if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
         const data = await res.json() as { text?: string; content?: string; extractedText?: string };
         const text = data.text ?? data.content ?? data.extractedText ?? '';

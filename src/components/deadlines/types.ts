@@ -1,3 +1,5 @@
+import { fetchWithAuth } from '@/lib/api';
+
 export interface Deadline {
   id: string;
   title: string;
@@ -113,21 +115,16 @@ export const KANBAN_COLUMNS = [
 ] as const;
 
 // API helpers
-function getAuthHeader(): Record<string, string> {
-  const token = localStorage.getItem('openexpert-token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 export async function apiGet<T>(path: string): Promise<T> {
-  const r = await fetch(path, { headers: { ...getAuthHeader() } });
+  const r = await fetchWithAuth(path);
   if (!r.ok) throw new Error(`API error ${r.status}`);
   return r.json() as Promise<T>;
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const r = await fetch(path, {
+  const r = await fetchWithAuth(path, {
     method: 'POST',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!r.ok) {
@@ -138,9 +135,9 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const r = await fetch(path, {
+  const r = await fetchWithAuth(path, {
     method: 'PUT',
-    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error(`API error ${r.status}`);
@@ -148,7 +145,7 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function apiDelete(path: string): Promise<void> {
-  const r = await fetch(path, { method: 'DELETE', headers: { ...getAuthHeader() } });
+  const r = await fetchWithAuth(path, { method: 'DELETE' });
   if (!r.ok) throw new Error(`API error ${r.status}`);
 }
 

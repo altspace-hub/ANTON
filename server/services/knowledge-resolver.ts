@@ -23,6 +23,10 @@ import { estimateTokens } from './token-estimator.js';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
 
+// TOKEN-05: Hard caps to prevent accidental indexing of enormous folder trees
+const MAX_FILES_PER_FOLDER = 1_000;
+const MAX_FILES_TOTAL = 5_000;
+
 // Token budget: leave room for the system prompt + response
 const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 160_000;
 const ESTIMATED_SYSTEM_PROMPT_TOKENS = 8_000;
@@ -145,9 +149,25 @@ export async function resolveKnowledgeSources(
       ? config.modes.localFolder.fileFilter
       : SUPPORTED_EXTENSIONS;
     const recursive = config.modes.localFolder.recursive ?? true;
+    let totalFilesIndexed = 0;
 
     for (const folderPath of config.modes.localFolder.folderPaths) {
-      const filePaths = await scanFolder(folderPath, recursive, extensions);
+      if (totalFilesIndexed >= MAX_FILES_TOTAL) {
+        contextParts.push(`\n### LOCAL FOLDER (SKIPPED — total file cap of ${MAX_FILES_TOTAL} reached): ${folderPath}`);
+        continue;
+      }
+
+      const allFilePaths = await scanFolder(folderPath, recursive, extensions);
+      // TOKEN-05: Cap per-folder and apply remaining total budget
+      const remainingTotal = MAX_FILES_TOTAL - totalFilesIndexed;
+      const filePaths = allFilePaths
+        .slice(0, Math.min(MAX_FILES_PER_FOLDER, remainingTotal));
+
+      if (allFilePaths.length > filePaths.length) {
+        const skipped = allFilePaths.length - filePaths.length;
+        contextParts.push(`\n### NOTE: ${skipped} file(s) in "${path.basename(folderPath)}" were skipped (limit: ${MAX_FILES_PER_FOLDER}/folder, ${MAX_FILES_TOTAL} total).`);
+      }
+      totalFilesIndexed += filePaths.length;
 
       for (const filePath of filePaths) {
         if (usedTokens >= effectiveBudget) {

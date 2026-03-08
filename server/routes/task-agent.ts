@@ -88,6 +88,8 @@ interface IntakeTaskContext {
   };
   intakeAnswers?: Record<string, string>;
   currentStep?: number;
+  attachedFileNames?: string[];
+  activePackNames?: string[];
 }
 
 interface CapabilityRow {
@@ -178,13 +180,23 @@ ${allInputs.map((inp) => `- ${inp}`).join('\n')}
 
 **Already known from the task description:**
 "${taskCtx.description}"${answersText}
+${(taskCtx.attachedFileNames?.length ?? 0) > 0 ? `\n**Documents already attached by the user:**\n${taskCtx.attachedFileNames!.map((f) => `- 📄 ${f}`).join('\n')}\nAcknowledge these documents and use them in your analysis.` : '\n**No documents attached yet.**\nYou MUST ask the user to attach relevant documents before marking intake as complete.'}
+${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n${taskCtx.activePackNames!.map((p) => `- 📚 ${p}`).join('\n')}\nThese regulatory knowledge packs are loaded and available.` : ''}
 
 **YOUR JOB NOW — INTAKE RULES:**
 - Do NOT propose new approaches or explain capabilities
+- Do NOT use <clarifying> or <approaches> tags — those are ONLY for Phase 1
+- Ask your questions as NATURAL CONVERSATION — numbered list, plain text, no XML/JSON tags
 - Ask specifically for inputs NOT already covered in the task description above
 - Ask for 2-3 items at a time — never overwhelm the user
 - Be concrete: "What entity type is the client?" not "tell me about the context"
-- For documents or policies: "Please paste the text directly in the chat"
+- **IMPORTANT: Always ask the user to attach relevant documents** using the "Attach doc" button below the chat:
+  - Existing policies, procedures, or frameworks being assessed
+  - Client documents, regulatory texts, or reference materials
+  - Say something like: "Please attach the relevant [policy/document] using the 📎 Attach doc button below"
+- **Also suggest activating relevant Knowledge Packs** if the task involves specific regulations:
+  - Say: "You can also activate relevant regulatory knowledge packs (e.g. EU Sanctions, EBA Guidelines) using the 📚 Knowledge packs button"
+- Start IMMEDIATELY with your questions — no preamble like "great, let me ask..."
 - When you have enough context to do excellent work, output EXACTLY this (valid JSON inside the tags):
 
 <intake_complete>
@@ -327,6 +339,13 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     const userId = getUserId(req);
     const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
+    // Resolve execution steps from chosen approach
+    let executionSteps: ExecutionStep[] = [];
+    if (task.chosen_approach_id) {
+      const approach = db.prepare('SELECT execution_steps FROM anton_approaches WHERE id=?').get(task.chosen_approach_id) as { execution_steps: string } | undefined;
+      if (approach) executionSteps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
+    }
+
     res.json({
       ...task,
       conversation: parseJson(task.conversation, []),
@@ -341,6 +360,7 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
       intake_ready: task.intake_ready ?? 0,
       task_files: parseJson<TaskFile[]>(task.task_files ?? '[]', []).map((f) => ({ id: f.id, name: f.name, size: f.size, uploaded_at: f.uploaded_at })),
       active_knowledge_packs: parseJson<string[]>(task.active_knowledge_packs ?? '[]', []),
+      execution_steps: executionSteps,
     });
   });
 
@@ -382,6 +402,16 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
           } : undefined,
           intakeAnswers: parseJson<Record<string, string>>(task.intake_answers ?? '{}', {}),
           currentStep: task.current_step ?? 0,
+          attachedFileNames: parseJson<TaskFile[]>(task.task_files ?? '[]', []).map((f) => f.name),
+          activePackNames: (() => {
+            const packIds = parseJson<string[]>(task.active_knowledge_packs ?? '[]', []);
+            if (packIds.length === 0) return [];
+            try {
+              return db.prepare(
+                `SELECT display_name FROM knowledge_packs WHERE id IN (${packIds.map(() => '?').join(',')}) AND status='active'`
+              ).all(...packIds).map((r: any) => r.display_name as string);
+            } catch { return []; }
+          })(),
         };
       }
     }
@@ -405,8 +435,8 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
 
     try {
       const stream = ai.messages.stream({
-        model: 'claude-sonnet-4-6', // Sonnet for quality approach proposals
-        max_tokens: 2000,
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
         system: systemPrompt,
         messages: history.map((m) => ({ role: m.role, content: m.content })),
       });
@@ -653,25 +683,146 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    let fullOutput = '';
-    try {
+    // Quality gate thresholds — FCP compliance demands high accuracy
+    const DELIVERY_THRESHOLD = 8.5;  // warn if final score is below this
+    const RETRY_THRESHOLD = 8.0;     // retry if score is below this (anything less than "Good")
+    const MAX_RETRIES = 2;
+
+    // Thinking level progression for retries: default → think_hard → investigate
+    const RETRY_THINKING: Array<{ budget_tokens: number; label: string }> = [
+      { budget_tokens: 10000, label: 'think_hard' },
+      { budget_tokens: 20000, label: 'investigate' },
+    ];
+
+    /** Score the output using Haiku (fast, cheap). Returns 0–10 or null on error. */
+    async function scoreOutput(output: string, taskTitle: string, stepName: string): Promise<number | null> {
+      try {
+        const scorePrompt = `You are a quality assessor for FCP compliance deliverables.
+Score this deliverable on a scale of 0–10 where:
+- 9–10: Exceptional — board/client ready, comprehensive, fully cited, no gaps
+- 8–9: Good — solid, accurate, actionable, minor improvements only
+- 6–7: Adequate — covers basics but missing depth, structure, or key requirements
+- 4–5: Weak — significant gaps, vague conclusions, not client-ready
+- 0–3: Poor — incomplete, off-topic, factually unreliable, or harmful
+
+Be strict. For FCP/AML/sanctions compliance work, an 8 means the output is defensible and actionable. A 7 means you would want revisions before sending to a client.
+
+Task: ${taskTitle}
+Step: ${stepName}
+
+Output (first 2000 chars):
+${output.slice(0, 2000)}
+
+Respond with ONLY a number (e.g. "7.5"). No explanation.`;
+
+        const response = await ai.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 10,
+          messages: [{ role: 'user', content: scorePrompt }],
+        });
+        const raw = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '';
+        const score = parseFloat(raw);
+        return isNaN(score) ? null : Math.min(10, Math.max(0, score));
+      } catch {
+        return null;
+      }
+    }
+
+    /** Run one execution attempt (streaming to res). Returns { output, thinking }. */
+    let lastThinkingContent = '';
+    async function runExecution(thinkingBudget?: number): Promise<{ output: string; thinking: string }> {
+      let output = '';
+      let thinking = '';
+      // Always enable thinking for transparency — adaptive for default, explicit budget for retries
+      const thinkingConfig = thinkingBudget
+        ? { thinking: { type: 'enabled' as const, budget_tokens: thinkingBudget } }
+        : { thinking: { type: 'enabled' as const, budget_tokens: 5000 } };
+
       const stream = ai.messages.stream({
         model: 'claude-opus-4-6',
-        max_tokens: 8192,
+        max_tokens: thinkingBudget ? thinkingBudget + 8192 : 5000 + 8192,
         system: fullSystemPrompt,
         messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.` }],
+        ...thinkingConfig,
       });
 
       for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          fullOutput += event.delta.text;
-          res.write(`data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`);
+        if (event.type === 'content_block_delta') {
+          if (event.delta.type === 'text_delta') {
+            output += event.delta.text;
+            res.write(`data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`);
+          } else if (event.delta.type === 'thinking_delta') {
+            thinking += event.delta.thinking;
+            res.write(`data: ${JSON.stringify({ type: 'thinking', text: event.delta.thinking })}\n\n`);
+          }
         }
+      }
+      lastThinkingContent = thinking;
+      return { output, thinking };
+    }
+
+    try {
+      let fullOutput = '';
+      let qualityScore: number | null = null;
+      let retryCount = 0;
+      let thinkingLabel = 'standard';
+
+      // Attempt 1 — standard execution (no extended thinking)
+      const firstResult = await runExecution();
+      fullOutput = firstResult.output;
+      qualityScore = await scoreOutput(fullOutput, task.title, step.name);
+
+      // Auto-retry loop when quality is below retry threshold
+      while (
+        qualityScore !== null &&
+        qualityScore < RETRY_THRESHOLD &&
+        retryCount < MAX_RETRIES
+      ) {
+        const retryConfig = RETRY_THINKING[retryCount];
+        thinkingLabel = retryConfig.label;
+        retryCount++;
+
+        res.write(`data: ${JSON.stringify({
+          type: 'quality_retry',
+          attempt: retryCount,
+          score: qualityScore,
+          reason: `Quality score ${qualityScore.toFixed(1)} < ${RETRY_THRESHOLD} threshold. Retrying with deeper reasoning (${thinkingLabel}).`,
+        })}\n\n`);
+
+        // Clear previous output from stream (client replaces on retry event)
+        const retryResult = await runExecution(retryConfig.budget_tokens);
+        fullOutput = retryResult.output;
+        qualityScore = await scoreOutput(fullOutput, task.title, step.name);
+      }
+
+      // Warn if final quality is below delivery threshold but above retry threshold
+      if (qualityScore !== null && qualityScore < DELIVERY_THRESHOLD) {
+        res.write(`data: ${JSON.stringify({
+          type: 'quality_warning',
+          score: qualityScore,
+          threshold: DELIVERY_THRESHOLD,
+          message: `Output quality score ${qualityScore.toFixed(1)} is below the ${DELIVERY_THRESHOLD} delivery threshold. Human review recommended before use.`,
+        })}\n\n`);
       }
 
       // Save result + advance step
-      const existingResults = parseJson<Array<{ step: number; name: string; output: string; at: string }>>(task.execution_results ?? '[]', []);
-      existingResults.push({ step: currentStepIdx, name: step.name, output: fullOutput, at: new Date().toISOString() });
+      const existingResults = parseJson<Array<{
+        step: number; name: string; output: string; at: string;
+        quality_score?: number | null; retry_count?: number; thinking_level?: string;
+        thinking?: string; description?: string;
+      }>>(task.execution_results ?? '[]', []);
+
+      existingResults.push({
+        step: currentStepIdx,
+        name: step.name,
+        output: fullOutput,
+        at: new Date().toISOString(),
+        quality_score: qualityScore,
+        retry_count: retryCount,
+        thinking_level: thinkingLabel,
+        thinking: lastThinkingContent || undefined,
+        description: step.description || undefined,
+      });
 
       const nextStepIdx = currentStepIdx + 1;
       const hasMoreSteps = nextStepIdx < steps.length;
@@ -679,9 +830,10 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
 
       // Add completion message to conversation
       const conversation = parseJson<Array<{ role: string; content: string }>>(task.conversation, []);
+      const qualityNote = qualityScore !== null ? ` (quality score: ${qualityScore.toFixed(1)}/10)` : '';
       const stepSummaryMsg = hasMoreSteps
-        ? `Step ${step.step} complete. Ready for Step ${nextStepIdx + 1}: **${steps[nextStepIdx].name}**.`
-        : `All steps complete. Task finished.`;
+        ? `Step ${step.step} complete${qualityNote}. Ready for Step ${nextStepIdx + 1}: **${steps[nextStepIdx].name}**.`
+        : `All steps complete${qualityNote}. Task finished.`;
       conversation.push({ role: 'assistant', content: stepSummaryMsg });
 
       if (newStatus === 'completed') {
@@ -691,16 +843,40 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
           WHERE id=?
         `).run(JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
         db.prepare('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?').run(approach.id);
+
+        // Update approach quality rolling average
+        if (qualityScore !== null) {
+          const approachRow = db.prepare(
+            'SELECT avg_quality_score, times_completed FROM anton_approaches WHERE id=?'
+          ).get(approach.id) as { avg_quality_score: number | null; times_completed: number } | undefined;
+          if (approachRow) {
+            const prevAvg = approachRow.avg_quality_score ?? qualityScore;
+            const n = approachRow.times_completed;
+            const newAvg = n > 0 ? (prevAvg * (n - 1) + qualityScore) / n : qualityScore;
+            db.prepare('UPDATE anton_approaches SET avg_quality_score=? WHERE id=?').run(newAvg, approach.id);
+          }
+        }
       } else {
+        // Auto-advance: set intake_ready=1 so the user can immediately run the next step.
+        // Context carries forward from previous steps — no additional intake needed by default.
+        // The user can still chat / attach docs before clicking "Run Step N".
         db.prepare(`
-          UPDATE anton_tasks SET execution_results=?, current_step=?, intake_ready=0,
+          UPDATE anton_tasks SET execution_results=?, current_step=?, intake_ready=1,
             status='clarifying', conversation=?, updated_at=datetime('now')
           WHERE id=?
         `).run(JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
       }
 
       const nextStep = hasMoreSteps ? steps[nextStepIdx] : null;
-      res.write(`data: ${JSON.stringify({ type: 'done', status: newStatus, hasMoreSteps, nextStep })}\n\n`);
+      res.write(`data: ${JSON.stringify({
+        type: 'done',
+        status: newStatus,
+        hasMoreSteps,
+        nextStep,
+        qualityScore,
+        retryCount,
+        thinkingLevel: thinkingLabel,
+      })}\n\n`);
       res.end();
     } catch (err) {
       console.error('[task-agent] execute-step failed:', err);

@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Plus, X, Trash2, Loader2, ChevronRight, AlertCircle } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 interface Trip {
   id: number;
@@ -77,9 +77,9 @@ export default function TravelTripsPage() {
     setSaving(true);
     setError('');
     try {
-      const res = await fetch('/api/travel/trips', {
+      const res = await fetchWithAuth('/api/travel/trips', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           budget: formData.budget ? Number(formData.budget) : null,
@@ -105,7 +105,7 @@ export default function TravelTripsPage() {
   async function handleDelete(id: number) {
     setDeletingId(id);
     try {
-      await fetch(`/api/travel/trips/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+      await fetchWithAuth(`/api/travel/trips/${id}`, { method: 'DELETE' });
       setTrips((prev) => prev.filter((t) => t.id !== id));
     } catch {
       // non-fatal

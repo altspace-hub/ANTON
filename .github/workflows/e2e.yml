@@ -1,0 +1,65 @@
+name: E2E Cross-Browser Tests
+
+# TEST-07: Nightly cross-browser matrix — Chrome, Firefox, WebKit
+# Also runs on push to main (smoke test) but only Chromium to keep it fast.
+on:
+  schedule:
+    # Nightly at 02:00 UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: E2E — ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm dlx playwright install --with-deps ${{ matrix.project }}
+
+      - name: Build app
+        run: pnpm run build
+        env:
+          ANTHROPIC_API_KEY: sk-ant-placeholder-for-build
+
+      - name: Start server and run E2E tests
+        run: |
+          # Start the production server in background
+          ANTHROPIC_API_KEY=sk-ant-placeholder PORT=5173 node dist/server/index.js &
+          SERVER_PID=$!
+          # Wait for server to be ready
+          npx wait-on http://localhost:5173 --timeout 30000
+          # Run E2E tests against this project
+          pnpm test:e2e --project=${{ matrix.project }}
+          # Cleanup
+          kill $SERVER_PID || true
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:5173
+          CI: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14

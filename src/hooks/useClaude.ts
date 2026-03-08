@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useSessionStore } from '@/stores/useSessionStore';
+import { useStreamStore } from '@/stores/useStreamStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { streamMessage, createSession, updateSessionTitle } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
@@ -84,6 +85,7 @@ export function useClaude() {
     writingTone,
     emojiEnabled,
     nativeReasoningEnabled,
+    iterativeReasoningEnabled,
     audience,
     channel,
     outputLanguage,
@@ -99,6 +101,8 @@ export function useClaude() {
     stopStreaming,
     setSessionId,
   } = useSessionStore();
+
+  const { ireChainId, ireCurrentPhase, ireTotalPhases, ireCurrentPhaseName } = useStreamStore();
 
   const { isTeamMode, user } = useAuthStore();
   const [budgetWarning, setBudgetWarning] = useState<string | null>(null);
@@ -228,6 +232,7 @@ export function useClaude() {
             writingTone,
             emojiEnabled,
             nativeReasoningEnabled,
+            iterativeReasoningEnabled: iterativeReasoningEnabled || undefined,
             audience: audience || undefined,
             channel: channel || undefined,
             outputLanguage: outputLanguage || undefined,
@@ -240,13 +245,30 @@ export function useClaude() {
         for await (const event of stream) {
           handleStreamEvent(event);
           if (event.type === 'text_delta') responseText += event.content;
-          if (event.type === 'error') break;
+          if (event.type === 'error') {
+            console.error('[useClaude] stream error event:', event.message);
+            // Surface the error as an assistant message so it's visible
+            addMessage({
+              id: crypto.randomUUID(),
+              sessionId: activeSessionId || '',
+              role: 'assistant',
+              content: `⚠️ Error: ${event.message}`,
+              createdAt: new Date().toISOString(),
+            });
+            break;
+          }
         }
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
-          handleStreamEvent({
-            type: 'error',
-            message: error instanceof Error ? error.message : 'Unknown error',
+          const msg = error instanceof Error ? error.message : 'Unknown error';
+          console.error('[useClaude] stream catch error:', msg);
+          handleStreamEvent({ type: 'error', message: msg });
+          addMessage({
+            id: crypto.randomUUID(),
+            sessionId: activeSessionId || '',
+            role: 'assistant',
+            content: `⚠️ Error: ${msg}`,
+            createdAt: new Date().toISOString(),
           });
         }
       }
@@ -261,7 +283,7 @@ export function useClaude() {
       metaCognitiveEnabled, structureReference, systemPrompt, selectedOutputFormats, plainTextMode,
       multiAgentEnabled, multiAgentTeam, multiAgentStyle,
       knowledgeSources, messages, moduleInputs, uploadedFileIds, isStreaming,
-      writingTone, emojiEnabled, nativeReasoningEnabled, audience, channel, outputLanguage, seed,
+      writingTone, emojiEnabled, nativeReasoningEnabled, iterativeReasoningEnabled, audience, channel, outputLanguage, seed,
       transparencyLevel, addMessage, handleStreamEvent, startStreaming, setSessionId, budgetWarning,
     ]
   );
@@ -277,5 +299,10 @@ export function useClaude() {
     lastOutputTokens,
     model,
     budgetWarning,
+    // IRE state
+    ireChainId,
+    ireCurrentPhase,
+    ireTotalPhases,
+    ireCurrentPhaseName,
   };
 }

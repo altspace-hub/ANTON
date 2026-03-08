@@ -6,6 +6,8 @@ export interface CitationResult {
   citation: string;
   verified: boolean;
   comment: string;
+  // ATTR-04: which source grounded this citation
+  sourceMatch?: 'loaded_source' | 'ai_knowledge' | 'uncertain';
 }
 
 // ── Regex patterns for regulatory citations ─────────────────
@@ -51,7 +53,30 @@ function extractCitations(text: string): string[] {
 
 // ── Main verification function ──────────────────────────────
 
-export async function verifyCitations(text: string): Promise<CitationResult[]> {
+// ATTR-04: Check which citations are grounded in the loaded source manifest
+function matchCitationToSources(citation: string, sourceManifest: string[]): 'loaded_source' | 'uncertain' {
+  const citLower = citation.toLowerCase();
+  for (const src of sourceManifest) {
+    const srcLower = src.toLowerCase();
+    // Match common regulation names
+    if (
+      (citLower.includes('amlr') && (srcLower.includes('amlr') || srcLower.includes('2024/1624'))) ||
+      (citLower.includes('dora') && srcLower.includes('dora')) ||
+      (citLower.includes('gdpr') && srcLower.includes('gdpr')) ||
+      (citLower.includes('mica') && srcLower.includes('mica')) ||
+      // Match local file/folder references
+      (srcLower.includes('local') || srcLower.includes('folder') || srcLower.includes('file'))
+    ) {
+      return 'loaded_source';
+    }
+    // Generic: if a significant word from the citation appears in the source label
+    const words = citLower.split(/\W+/).filter(w => w.length > 4);
+    if (words.some(w => srcLower.includes(w))) return 'loaded_source';
+  }
+  return 'uncertain';
+}
+
+export async function verifyCitations(text: string, sourceManifest?: string[]): Promise<CitationResult[]> {
   const citations = extractCitations(text);
 
   if (citations.length === 0) {
@@ -62,6 +87,11 @@ export async function verifyCitations(text: string): Promise<CitationResult[]> {
 
   const citationList = citations.map((c, i) => `${i + 1}. ${c}`).join('\n');
 
+  // ATTR-04: Include source manifest context in the prompt if available
+  const sourcesContext = sourceManifest && sourceManifest.length > 0
+    ? `\n\nLoaded knowledge sources for this session:\n${sourceManifest.map(s => `- ${s}`).join('\n')}\n\nFor each citation, also determine whether it is grounded in one of the loaded sources above, or relies on AI general knowledge.`
+    : '';
+
   const systemPrompt = `You are a regulatory citation verifier specialising in EU financial regulation (AML, banking, capital markets).
 You verify whether regulatory citations are real, accurately named, and exist in the actual body of law.
 You must respond ONLY with valid JSON — no prose, no markdown, no explanation outside the JSON.`;
@@ -70,6 +100,7 @@ You must respond ONLY with valid JSON — no prose, no markdown, no explanation 
 For each citation, determine:
 1. Does it exist as a real regulatory reference?
 2. Is it correctly named/numbered (to the best of your knowledge)?
+3. Is it grounded in the loaded sources, or based on general AI knowledge?${sourcesContext}
 
 Citations to verify:
 ${citationList}
@@ -78,11 +109,12 @@ Respond with a JSON array. Each element must have exactly these fields:
 - "citation": the exact citation string as given
 - "verified": true if the citation appears to be real and correctly referenced, false if it seems invented, incorrectly numbered, or cannot be confirmed
 - "comment": brief explanation (1 sentence max). For verified citations: confirm what it is. For unverified: explain the issue.
+- "sourceMatch": "loaded_source" if this citation is clearly covered by a loaded knowledge source, "ai_knowledge" if it relies on general AI knowledge, "uncertain" if unclear.
 
 Example format:
 [
-  {"citation": "Article 3 of Directive 2015/849/EU", "verified": true, "comment": "Article 3 of the 4th AML Directive defines obliged entities."},
-  {"citation": "Article 999 AMLR", "verified": false, "comment": "AMLR (Regulation 2024/1624) does not contain an Article 999."}
+  {"citation": "Article 3 of Directive 2015/849/EU", "verified": true, "comment": "Article 3 of the 4th AML Directive defines obliged entities.", "sourceMatch": "ai_knowledge"},
+  {"citation": "Article 999 AMLR", "verified": false, "comment": "AMLR (Regulation 2024/1624) does not contain an Article 999.", "sourceMatch": "uncertain"}
 ]`;
 
   const response = await client.messages.create({
@@ -109,10 +141,18 @@ Example format:
     const parsed = JSON.parse(jsonText) as unknown[];
     results = parsed.map((item) => {
       const obj = item as Record<string, unknown>;
+      const citation = String(obj.citation ?? '');
+      // ATTR-04: Use Claude's sourceMatch, then fall back to local heuristic cross-check
+      let sourceMatch = (obj.sourceMatch as CitationResult['sourceMatch']) ?? 'uncertain';
+      if (sourceManifest && sourceManifest.length > 0 && sourceMatch !== 'loaded_source') {
+        const heuristic = matchCitationToSources(citation, sourceManifest);
+        if (heuristic === 'loaded_source') sourceMatch = 'loaded_source';
+      }
       return {
-        citation: String(obj.citation ?? ''),
+        citation,
         verified: Boolean(obj.verified),
         comment: String(obj.comment ?? ''),
+        sourceMatch,
       };
     });
   } catch {
@@ -121,6 +161,7 @@ Example format:
       citation: c,
       verified: false,
       comment: 'Verification service returned an unexpected response.',
+      sourceMatch: 'uncertain' as const,
     }));
   }
 

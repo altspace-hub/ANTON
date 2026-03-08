@@ -3,12 +3,10 @@ import { useSessionStore } from '@/stores/useSessionStore';
 import HelpTooltip from './HelpTooltip';
 
 export default function MultiAgentPanel() {
-  const multiAgentEnabled = useSessionStore((state) => state.multiAgentEnabled);
-  const multiAgentTeam = useSessionStore((state) => state.multiAgentTeam);
-  const multiAgentStyle = useSessionStore((state) => state.multiAgentStyle);
-  const setMultiAgentEnabled = useSessionStore((state) => state.setMultiAgentEnabled);
-  const setMultiAgentTeam = useSessionStore((state) => state.setMultiAgentTeam);
-  const setMultiAgentStyle = useSessionStore((state) => state.setMultiAgentStyle);
+  const {
+    multiAgentEnabled, multiAgentTeam, multiAgentStyle,
+    setMultiAgentEnabled, setMultiAgentTeam, setMultiAgentStyle,
+  } = useSessionStore();
 
   return (
     <div className="rounded-xl border border-border bg-adv-card p-4">

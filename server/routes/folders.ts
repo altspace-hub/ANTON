@@ -20,6 +20,10 @@ function isPathAllowed(resolvedPath: string): boolean {
   );
 }
 
+function getUserId(req: unknown): string {
+  return (req as { user?: { id?: string } }).user?.id ?? 'default';
+}
+
 export function createFolderRoutes(db: Database.Database) {
   const router = Router();
 
@@ -88,11 +92,12 @@ export function createFolderRoutes(db: Database.Database) {
         e => e.isFile() && SUPPORTED_EXTENSIONS.includes(path.extname(e.name).toLowerCase())
       ).length;
 
+      const userId = getUserId(req);
       db.prepare(
-        'INSERT OR REPLACE INTO registered_folders (path, label, file_count, last_indexed) VALUES (?, ?, ?, datetime("now"))'
-      ).run(folderPath, label || path.basename(folderPath), fileCount);
+        'INSERT OR REPLACE INTO registered_folders (path, label, file_count, last_indexed, user_id) VALUES (?, ?, ?, datetime("now"), ?)'
+      ).run(folderPath, label || path.basename(folderPath), fileCount, userId);
 
-      const folder = db.prepare('SELECT * FROM registered_folders WHERE path = ?').get(folderPath);
+      const folder = db.prepare('SELECT * FROM registered_folders WHERE path = ? AND user_id = ?').get(folderPath, userId);
       res.json(folder);
     } catch (error) {
       res.status(500).json({ error: 'Failed to register folder' });
@@ -100,9 +105,10 @@ export function createFolderRoutes(db: Database.Database) {
   });
 
   // GET /api/folders/registered
-  router.get('/folders/registered', (_req, res) => {
+  router.get('/folders/registered', (req, res) => {
     try {
-      const folders = db.prepare('SELECT * FROM registered_folders ORDER BY label ASC').all();
+      const userId = getUserId(req);
+      const folders = db.prepare('SELECT * FROM registered_folders WHERE user_id = ? ORDER BY label ASC').all(userId);
       res.json(folders);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch folders' });
@@ -112,7 +118,8 @@ export function createFolderRoutes(db: Database.Database) {
   // DELETE /api/folders/registered/:id
   router.delete('/folders/registered/:id', (req, res) => {
     try {
-      db.prepare('DELETE FROM registered_folders WHERE id = ?').run(req.params.id);
+      const userId = getUserId(req);
+      db.prepare('DELETE FROM registered_folders WHERE id = ? AND user_id = ?').run(req.params.id, userId);
       res.json({ ok: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to delete folder' });

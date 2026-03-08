@@ -12,7 +12,7 @@ import {
   CalendarDays, Clock, MapPin, Link, Repeat, Download,
   Check, X, Minus, Trash2, Edit2, Users,
 } from 'lucide-react';
-import { getAuthHeader } from '../../lib/api';
+import { getAuthHeader, fetchWithAuth } from '../../lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -105,9 +105,9 @@ export default function CommunityEventPage() {
     if (!id) return;
     setRsvpLoading(true);
     try {
-      await fetch(`/api/community/events/${id}/rsvp`, {
+      await fetchWithAuth(`/api/community/events/${id}/rsvp`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
       void loadEvent();
@@ -129,7 +129,7 @@ export default function CommunityEventPage() {
   async function handleDelete() {
     if (!id) return;
     setDeleting(true);
-    await fetch(`/api/community/events/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    await fetchWithAuth(`/api/community/events/${id}`, { method: 'DELETE' });
     navigate('/community/calendar');
   }
 

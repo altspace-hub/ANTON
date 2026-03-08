@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { fetchWithAuth } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -146,7 +147,7 @@ export default function Settings() {
       const formData = new FormData();
       formData.append('template', file);
       formData.append('name', file.name.replace(/\.[^.]+$/, ''));
-      const res = await fetch('/api/templates/upload', { method: 'POST', body: formData });
+      const res = await fetchWithAuth('/api/templates/upload', { method: 'POST', body: formData });
       if (res.ok) {
         await loadTemplates();
         flash();
@@ -163,7 +164,7 @@ export default function Settings() {
   async function deleteTemplate(id: string) {
     if (!confirm('Delete this template?')) return;
     try {
-      await fetch(`/api/templates/${id}`, { method: 'DELETE' });
+      await fetchWithAuth(`/api/templates/${id}`, { method: 'DELETE' });
       await loadTemplates();
     } catch {
       // non-fatal
@@ -206,7 +207,7 @@ export default function Settings() {
       const res = await fetch('/api/profile');
       if (!res.ok) return;
       const current = await res.json() as Record<string, string>;
-      await fetch('/api/profile', {
+      await fetchWithAuth('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...current, brand_config: JSON.stringify(brandConfig) }),
@@ -283,9 +284,9 @@ export default function Settings() {
     setBudgetSaving(true);
     try {
       const cap = parseFloat(budgetCapInput) || 0;
-      await fetch('/api/analytics/budget-cap', {
+      await fetchWithAuth('/api/analytics/budget-cap', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cap }),
       });
       setBudgetCap(cap);
@@ -319,9 +320,9 @@ export default function Settings() {
     setTeamError('');
     if (!newUsername || !newPassword) { setTeamError('Username and password are required.'); return; }
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetchWithAuth('/api/admin/users', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole, display_name: newDisplayName || newUsername, monthly_token_budget: newBudget }),
       });
       if (!res.ok) { const e = await res.json() as { error?: string }; setTeamError(e.error || 'Failed'); return; }
@@ -333,15 +334,15 @@ export default function Settings() {
 
   async function handleDeleteUser(id: string) {
     if (!confirm('Delete this user?')) return;
-    await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
+    await fetchWithAuth(`/api/admin/users/${id}`, { method: 'DELETE' });
     await loadTeamData();
   }
 
   async function handleResetPassword(id: string) {
     if (!editPassword) return;
-    await fetch(`/api/admin/users/${id}`, {
+    await fetchWithAuth(`/api/admin/users/${id}`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password: editPassword }),
     });
     setEditingUser(null);
@@ -350,9 +351,9 @@ export default function Settings() {
 
   async function handleUpdateBudget(id: string) {
     try {
-      await fetch(`/api/admin/users/${id}/budget`, {
+      await fetchWithAuth(`/api/admin/users/${id}/budget`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ monthlyTokenBudget: editBudgetValue, alertThreshold: 0.8 }),
       });
       setEditingBudget(null);
@@ -366,9 +367,8 @@ export default function Settings() {
   async function handleResetUsage(id: string) {
     if (!confirm('Reset monthly usage for this user? This will clear their usage counter for the current month.')) return;
     try {
-      await fetch(`/api/admin/users/${id}/reset-usage`, {
+      await fetchWithAuth(`/api/admin/users/${id}/reset-usage`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
       });
       await loadTeamData();
       flash();
@@ -469,7 +469,7 @@ export default function Settings() {
         supportsJsonMode: slotData.supportsJsonMode,
       } : null;
 
-      await fetch('/api/settings/custom-models', {
+      await fetchWithAuth('/api/settings/custom-models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slot, config }),
@@ -488,7 +488,7 @@ export default function Settings() {
 
   async function saveProviderKey(key: string, value: string, clearFn: (v: string) => void) {
     try {
-      await fetch('/api/settings/set-env', {
+      await fetchWithAuth('/api/settings/set-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value }),
@@ -505,7 +505,7 @@ export default function Settings() {
     setLanguageState(lang);
     localStorage.setItem('openexpert-language', lang);
     i18n.changeLanguage(lang);
-    fetch('/api/profile', {
+    fetchWithAuth('/api/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ output_language: lang }),
@@ -2061,9 +2061,9 @@ function MyWaySettingsContent() {
   async function saveIdentity() {
     setIdentitySaving(true);
     try {
-      await fetch('/api/trades/identity', {
+      await fetchWithAuth('/api/trades/identity', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(identity),
       });
       setIdentitySaved(true);
@@ -2074,18 +2074,18 @@ function MyWaySettingsContent() {
 
   async function deleteTemplate(id: string) {
     if (!confirm('Delete this template?')) return;
-    await fetch(`/api/trades/templates/${id}`, { method: 'DELETE', headers: authHeaders() });
+    await fetchWithAuth(`/api/trades/templates/${id}`, { method: 'DELETE' });
     setTemplates(prev => prev.filter(t => t.id !== id));
   }
 
   async function setDefaultTemplate(id: string) {
-    await fetch(`/api/trades/templates/${id}/set-default`, { method: 'POST', headers: authHeaders() });
+    await fetchWithAuth(`/api/trades/templates/${id}/set-default`, { method: 'POST' });
     setTemplates(prev => prev.map(t => ({ ...t, isDefault: t.id === id })));
   }
 
   async function deletePattern(id: string) {
     if (!confirm('Delete this pattern?')) return;
-    await fetch(`/api/trades/patterns/${id}`, { method: 'DELETE', headers: authHeaders() });
+    await fetchWithAuth(`/api/trades/patterns/${id}`, { method: 'DELETE' });
     setPatterns(prev => prev.filter(p => p.id !== id));
   }
 
@@ -2310,7 +2310,7 @@ function CompliancePolicyTab() {
   async function handleSave(moduleId: string) {
     setSaving(true);
     try {
-      const res = await fetch(`/api/compliance-policy/${moduleId}`, {
+      const res = await fetchWithAuth(`/api/compliance-policy/${moduleId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -2335,7 +2335,7 @@ function CompliancePolicyTab() {
   }
 
   async function handleDelete(moduleId: string) {
-    await fetch(`/api/compliance-policy/${moduleId}`, { method: 'DELETE' });
+    await fetchWithAuth(`/api/compliance-policy/${moduleId}`, { method: 'DELETE' });
     setPolicies(prev => prev.filter(p => p.module_id !== moduleId));
   }
 

@@ -228,7 +228,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
         <button
           onClick={() => setDropdownOpen((v) => !v)}
           className="flex items-center gap-1.5 rounded-md border border-adv-teal/40 bg-adv-teal-dim px-2.5 py-1.5 text-xs text-adv-teal hover:border-adv-teal hover:bg-adv-teal/10 transition-colors"
-          title="Rewrite this output for a different audience"
+          aria-label="Rewrite this output for a different audience"
         >
           <Users className="h-3 w-3" />
           Explain for...
@@ -299,7 +299,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
               <button
                 onClick={handleClose}
                 className="rounded-md p-1 text-adv-gray hover:bg-adv-dark hover:text-adv-off-white transition-colors"
-                title="Close"
+                aria-label="Close"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

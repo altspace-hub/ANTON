@@ -37,6 +37,8 @@ import {
   Users2, Mail, CalendarDays,
   // Orchestration Dashboard
   LayoutDashboard,
+  // Regulatory Feed
+  Rss,
 } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -602,6 +604,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'intelligence': { to: '/intelligence', icon: Brain, label: t('nav.intelligence') },
                 'patterns': { to: '/patterns', icon: Zap, label: t('nav.patterns') },
                 'compliance': { to: '/compliance', icon: ShieldCheck, label: t('nav.compliance') },
+                'compliance-posture': { to: '/compliance-posture', icon: ShieldCheck, label: 'Compliance Posture' },
+                'risk-appetite': { to: '/risk-appetite', icon: ShieldAlert, label: 'Risk Appetite' },
                 'deadlines': { to: '/deadlines', icon: Calendar, label: t('nav.deadlines') },
                 'radar': { to: '/radar', icon: Radar, label: t('nav.radar') },
                 'quality': { to: '/quality', icon: Star, label: t('nav.quality') },
@@ -614,6 +618,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'orchestrator': { to: '/orchestrator', icon: Brain, label: 'ANTON Orchestrator' },
                 'counsels-desk': { to: '/counsels-desk', icon: Scale, label: "Counsel's Desk" },
                 'gap-assessment': { to: '/gap-assessment', icon: ClipboardCheck, label: 'Gap Assessor' },
+                'regulatory-feed': { to: '/regulatory-feed', icon: Rss, label: 'Regulatory Feed' },
+                'lore-ledger': { to: '/lore-ledger', icon: BookOpen, label: 'Lore Ledger' },
                 'roaring': { to: '/roaring', icon: Building2, label: 'Roaring Registry' },
                 'dj-screening': { to: '/dj-screening', icon: Shield, label: 'DJ Screening' },
                 'entity-intelligence': { to: '/entity-intelligence', icon: ScanSearch, label: 'Entity Intelligence' },
@@ -853,6 +859,34 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <ClipboardCheck className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && 'Gap Assessor'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/lore-ledger"
+          navId="lore-ledger"
+          title={sidebarCollapsed ? 'Lore Ledger' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('lore-ledger')}
+          isHidden={hiddenNavItems.has('lore-ledger')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <BookOpen className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Lore Ledger'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/regulatory-feed"
+          navId="regulatory-feed"
+          title={sidebarCollapsed ? 'Regulatory Feed' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('regulatory-feed')}
+          isHidden={hiddenNavItems.has('regulatory-feed')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Rss className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Regulatory Feed'}
         </NavLinkWithStar>
 
         <NavLinkWithStar
@@ -1408,6 +1442,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <ShieldCheck className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.compliance')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/system-cards"
+          navId="system-cards"
+          title={sidebarCollapsed ? t('nav.systemCards', 'AI System Cards') : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('system-cards')}
+          isHidden={hiddenNavItems.has('system-cards')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <FileText className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && t('nav.systemCards', 'AI System Cards')}
         </NavLinkWithStar>
 
         {/* Deadlines — with urgency badge */}

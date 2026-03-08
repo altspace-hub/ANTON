@@ -17,11 +17,14 @@ export interface ExportMetadata {
 export function useExport() {
   const [isExporting, setIsExporting] = useState(false);
 
-  const doExport = useCallback(async (format: string, content: string, metadata?: ExportMetadata) => {
+  const doExport = useCallback(async (format: string, content: string, metadata?: ExportMetadata | string) => {
     setIsExporting(true);
-    const filename = metadata?.filename || 'output';
+    // Accept plain string as filename shorthand (legacy call sites pass e.g. 'open-chat-output')
+    const resolvedMeta: ExportMetadata | undefined =
+      typeof metadata === 'string' ? { filename: metadata } : metadata;
+    const filename = resolvedMeta?.filename || 'output';
     try {
-      const blob = await exportDocument(format, content, metadata);
+      const blob = await exportDocument(format, content, resolvedMeta as Record<string, unknown>);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

@@ -78,6 +78,8 @@ interface OrchestratorConfig {
   briefing_model: string;
   orchestrator_paused: number;
   fully_disabled: number;
+  /** When 1, enables extended thinking on briefing + workflow plan generation */
+  briefing_thinking_enabled?: number;
 }
 
 // ── Hard limits (safety ceiling — cannot be overridden via config) ────────────
@@ -123,17 +125,17 @@ export function getOrchestratorConfig(db: Database.Database): OrchestratorConfig
 function readRadarSignals(db: Database.Database, threshold: number, since: Date): PlatformSignal[] {
   const rows = db.prepare(`
     SELECT ri.id, ri.title, ri.urgency_score, ri.relevance_score, ri.item_type,
-           ri.published_date, ri.summary, rs.display_name as source_name
+           ri.published_at, ri.summary, rs.display_name as source_name
     FROM radar_items ri
     LEFT JOIN radar_sources rs ON ri.source_id = rs.id
     WHERE ri.urgency_score >= ?
       AND ri.status = 'new'
-      AND (ri.created_at >= ? OR ri.published_date >= ?)
+      AND (ri.created_at >= ? OR ri.published_at >= ?)
     ORDER BY ri.urgency_score DESC
     LIMIT 10
   `).all(threshold, since.toISOString(), since.toISOString().substring(0, 10)) as Array<{
     id: string; title: string; urgency_score: number; relevance_score: number;
-    item_type: string; published_date: string; summary: string | null; source_name: string | null;
+    item_type: string; published_at: string; summary: string | null; source_name: string | null;
   }>;
 
   return rows.map(r => ({
@@ -142,7 +144,7 @@ function readRadarSignals(db: Database.Database, threshold: number, since: Date)
     summary: `${r.item_type === 'consultation' ? 'Consultation' : 'Regulatory update'}: "${r.title}" from ${r.source_name ?? 'regulatory source'} — urgency ${Math.round(r.urgency_score * 100)}%`,
     urgency: r.urgency_score,
     relevance: r.relevance_score,
-    detected_at: r.published_date ?? new Date().toISOString(),
+    detected_at: r.published_at ?? new Date().toISOString(),
     raw_data: { id: r.id, title: r.title, item_type: r.item_type, summary: r.summary },
   }));
 }
@@ -519,7 +521,8 @@ export async function generateBriefing(
   signals: PlatformSignal[],
   anthropic: AnthropicSDK,
   model: string,
-  period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'daily'
+  period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'daily',
+  thinkingEnabled = false
 ): Promise<{ content: string; proposals: OrchestratorProposal[] }> {
   const signalSummary = signals
     .slice(0, 20)
@@ -533,15 +536,28 @@ ${signalSummary || 'No significant signals detected.'}
 
 Current date: ${new Date().toISOString().substring(0, 10)}`;
 
+  // Enable thinking for complex briefings (many high-urgency signals)
+  const shouldThink = thinkingEnabled || signals.filter(s => s.urgency >= 0.7).length >= 3;
+  const thinkingConfig = shouldThink && (model === 'claude-opus-4-6' || model === 'claude-sonnet-4-6')
+    ? { thinking: { type: 'enabled' as const, budget_tokens: 8000 } }
+    : {};
+  const maxTokens = shouldThink && thinkingConfig.thinking ? 12000 : 4000;
+
   let raw = '';
   try {
-    const response = await anthropic.messages.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await (anthropic.messages as any).create({
       model,
-      max_tokens: 4000,
+      max_tokens: maxTokens,
       system: BRIEFING_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
+      ...thinkingConfig,
     });
-    raw = response.content[0]?.type === 'text' ? response.content[0].text : '';
+    // Extract text from content blocks (skip thinking blocks)
+    const textBlock = Array.isArray(response.content)
+      ? response.content.find((b: { type: string }) => b.type === 'text')
+      : response.content[0];
+    raw = textBlock?.type === 'text' ? (textBlock.text as string) : '';
   } catch (err) {
     // Fallback: generate minimal briefing without LLM
     const fallbackContent = `# ANTON Orchestrator — ${period} Briefing\n\n*${signals.length} platform signals detected. LLM briefing generation temporarily unavailable.*\n\n${signals.slice(0, 5).map(s => `- **${s.source}**: ${s.summary}`).join('\n')}`;
@@ -865,7 +881,8 @@ Keep plans specific and executable. Reference real ANTON modules and step patter
 export async function generateWorkflowPlan(
   proposal: OrchestratorProposal,
   anthropic: AnthropicSDK,
-  model: string = 'claude-opus-4-6'
+  model: string = 'claude-opus-4-6',
+  thinkingEnabled = false
 ): Promise<string | null> {
   const userMsg = `Generate a complete workflow execution plan for this proposal:
 
@@ -877,16 +894,27 @@ Estimated effort: ${proposal.estimated_effort ?? 'unknown'}
 
 Produce a concrete, executable workflow plan using ANTON's existing step types.`;
 
+  const planThinkingConfig = thinkingEnabled && (model === 'claude-opus-4-6' || model === 'claude-sonnet-4-6')
+    ? { thinking: { type: 'enabled' as const, budget_tokens: 10000 } }
+    : {};
+  const planMaxTokens = planThinkingConfig.thinking ? 14000 : 2000;
+
   try {
-    const response = await anthropic.messages.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await (anthropic.messages as any).create({
       model,
-      max_tokens: 2000,
+      max_tokens: planMaxTokens,
       system: PLAN_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMsg }],
+      ...planThinkingConfig,
     });
-    const raw = response.content[0]?.type === 'text' ? response.content[0].text : '';
+    // Extract text block (skip thinking blocks)
+    const textBlock = Array.isArray(response.content)
+      ? response.content.find((b: { type: string }) => b.type === 'text')
+      : response.content[0];
+    const raw = textBlock?.type === 'text' ? (textBlock.text as string) : '';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return raw; // Return raw if no JSON found
+    if (!jsonMatch) return raw;
     JSON.parse(jsonMatch[0]); // Validate JSON
     return jsonMatch[0];
   } catch (err) {
@@ -1219,7 +1247,8 @@ export async function runHeartbeatCycle(
         metadata: { model: config.briefing_model, signal_count: signals.length, period },
       });
 
-      const { content, proposals } = await generateBriefing(signals, anthropic, config.briefing_model, period);
+      const briefingThinking = !!(config as OrchestratorConfig).briefing_thinking_enabled;
+      const { content, proposals } = await generateBriefing(signals, anthropic, config.briefing_model, period, briefingThinking);
 
       addTrailEntry(db, trailId, {
         entry_type: 'completion_summary',

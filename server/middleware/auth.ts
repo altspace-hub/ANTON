@@ -36,14 +36,19 @@ export function createAuthMiddleware(db: Database) {
       return next();
     }
 
+    // SEC-05: Accept token from httpOnly cookie (preferred) or Authorization header (legacy fallback)
+    const cookieToken = req.cookies?.['openexpert_session'];
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const rawToken = cookieToken || bearerToken;
+
+    if (!rawToken) {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
 
     try {
-      const token = authHeader.slice(7);
+      const token = rawToken;
       const payload = jwt.verify(token, JWT_SECRET!) as AuthUser & { exp: number };
       // Check token still in DB (allows logout to work)
       const session = db.prepare('SELECT * FROM user_sessions WHERE token = ? AND expires_at > datetime("now")').get(token);

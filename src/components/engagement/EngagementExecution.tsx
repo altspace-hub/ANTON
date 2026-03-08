@@ -9,7 +9,7 @@ import {
   Play, Loader2, ChevronRight, CheckCircle, AlertCircle,
   GitBranch, Clock, Zap, FileText, RotateCcw, ExternalLink, Brain, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, Workstream } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -58,9 +58,9 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
     abortRef.current = new AbortController();
 
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/execute`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/execute`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workstream_id: selectedWorkstream || undefined }),
         signal: abortRef.current.signal,
       });

@@ -804,6 +804,28 @@
     }
   },
   {
+    "ref_id": "AMLR-A22",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-22-BOIdent",
+    "canonical_name": "AMLR Art. 22 — Identification of Beneficial Owners",
+    "description": "Obliged entities must identify and verify the beneficial owner(s) of legal entities and legal arrangements as part of CDD. For companies: ≥25% ownership or control threshold identifies the beneficial owner. Where no natural person is identified at that threshold, the senior managing officials must be identified as the (substitute) BO. For trusts and similar arrangements: no percentage threshold applies — settlor, all trustees, protector, all beneficiaries, and any natural person exercising effective control must be identified.",
+    "metadata": {
+      "article": "22",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624",
+      "threshold_pct_companies": 25,
+      "threshold_note": "25% threshold for companies; no threshold for trusts/legal arrangements",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 22: obliged entities SHALL identify and verify the identity of beneficial owners",
+      "cross_references": [
+        "OBL-UBO",
+        "AMLR-A23",
+        "AMLR-A24",
+        "DEF-BO"
+      ]
+    }
+  },
+  {
     "ref_id": "AMLR-A23",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-23-BOVerif",
@@ -947,6 +969,25 @@
       "article": "39",
       "chapter": "III",
       "regulation": "AMLR 2024/1624"
+    }
+  },
+  {
+    "ref_id": "AMLR-A40",
+    "entity_type": "obligation",
+    "entity_id": "AMLR-Art-40-nonf2f",
+    "canonical_name": "AMLR Art. 40 — Non-Face-to-Face Business Relationships",
+    "description": "Obliged entities must apply specific risk-mitigating measures for non-face-to-face customer onboarding and business relationships. Technology-based identification and verification methods (eIDAS-compliant electronic ID, video identification, biometric checks) may be used where appropriately risk-assessed. The use of remote identification must be documented in the BWRA and subject to appropriate controls.",
+    "metadata": {
+      "article": "40",
+      "chapter": "III",
+      "regulation": "AMLR 2024/1624",
+      "obligation_type": "shall",
+      "obligation_type_note": "Art. 40: specific controls required for non-face-to-face relationships",
+      "cross_references": [
+        "OBL-CDD",
+        "OBL-EDD",
+        "AMLR-A41"
+      ]
     }
   },
   {

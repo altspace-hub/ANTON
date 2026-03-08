@@ -140,6 +140,18 @@ const NGO_AREAS: NgoArea[] = [
     moduleCount: 5,
     firstModuleId: 'financial-inclusion-strategy',
   },
+  {
+    id: 'humanitarian',
+    name: 'Humanitarian & NGO Programme Design',
+    description: 'Log frames, theory of change, M&E frameworks, donor reporting, and grant writing for NGO professionals.',
+    icon: Globe,
+    color: 'text-adv-green',
+    bg: 'bg-adv-green/10',
+    border: 'border-adv-green/20',
+    clusterLabel: 'Programme Management',
+    moduleCount: 4,
+    firstModuleId: 'log-frame-generator',
+  },
 ];
 
 // ── Needs wizard ─────────────────────────────────────────────────────

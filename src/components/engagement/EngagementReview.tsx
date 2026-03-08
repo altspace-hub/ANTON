@@ -14,7 +14,7 @@ import {
   Download, BarChart2, Plus, Upload, Link, MessageSquare, ArrowRight,
   Trash2, RefreshCw, Sliders, Brain, Users2, Play, Square
 } from 'lucide-react';
-import { getAuthHeader, streamMessage } from '@/lib/api';
+import { fetchWithAuth, streamMessage } from '@/lib/api';
 import type { ModelId, StreamEvent } from '@/lib/types';
 import type { EngagementData, Iteration, Resource } from '@/pages/EngagementWorkspacePage';
 
@@ -84,9 +84,9 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
     setGeneratingGap(iterationId);
     setError(null);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/iterations/${iterationId}/gap-analysis`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/iterations/${iterationId}/gap-analysis`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lens: selectedLens,
           custom_instruction: selectedLens === 'custom' ? customInstruction : undefined,
@@ -104,9 +104,9 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
   async function approveIteration(iterationId: string) {
     setApprovingIteration(iterationId);
     try {
-      await fetch(`/api/engagements/${engagement.id}/iterations/${iterationId}`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/iterations/${iterationId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'approved' }),
       });
       onReload();
@@ -118,9 +118,9 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
   async function exportDraft(format: 'docx' | 'xlsx' | 'pdf' | 'md') {
     setExporting(format);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/export`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/export`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ format }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -355,9 +355,9 @@ function IterationContextPanel({
     if (!noteText.trim()) return;
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/resources`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category: noteCategory,
           title: noteTitle.trim() || `Note — ${new Date().toLocaleDateString()}`,
@@ -377,9 +377,9 @@ function IterationContextPanel({
     if (!urlInput.trim()) return;
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/resources`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category: 'documents',
           url: urlInput.trim(),
@@ -402,9 +402,8 @@ function IterationContextPanel({
       fd.append('file', file);
       fd.append('category', 'documents');
       fd.append('title', file.name);
-      await fetch(`/api/engagements/${engagement.id}/resources`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
         method: 'POST',
-        headers: getAuthHeader(),
         body: fd,
       });
       onReload();
@@ -414,9 +413,9 @@ function IterationContextPanel({
   }
 
   async function removeResource(resourceId: string) {
-    await fetch(`/api/engagements/${engagement.id}/resources/${resourceId}`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}/resources/${resourceId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'not_available' }),
     });
     onReload();
@@ -626,8 +625,8 @@ function IterationCard({ iteration, expanded, onToggle, approving, onApprove }: 
     superseded:'text-adv-gray bg-adv-dark border-border',
   };
   const sc = statusColors[iteration.status] || statusColors.draft;
-  const wordCount = iteration.output_content?.split(/\s+/).length || 0;
-  const thinkingWordCount = iteration.thinking_content?.split(/\s+/).length || 0;
+  const wordCount = iteration.output_content?.trim() ? iteration.output_content.trim().split(/\s+/).length : 0;
+  const thinkingWordCount = iteration.thinking_content?.trim() ? iteration.thinking_content.trim().split(/\s+/).length : 0;
 
   return (
     <div className="bg-adv-card border border-border rounded-xl overflow-hidden">
@@ -1032,9 +1031,9 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
         chairSynthesis: chairText,
       };
 
-      await fetch(`/api/engagements/${engagement.id}/iterations/${iteration.id}`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/iterations/${iteration.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ expert_reviews: councilData }),
       });
 

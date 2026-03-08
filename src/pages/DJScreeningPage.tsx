@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Loader2, Shield, Clock, AlertTriangle, CheckCircle, Bell, Globe, Upload } from 'lucide-react';
 import { DJScreeningPanel } from '../components/dowjones/DJScreeningPanel';
 import type { DJScreenResult, AdverseMediaResult } from '../../server/services/dowjones-connector.js';
+import { fetchWithAuth } from '@/lib/api';
 
 interface RecentScreen {
   id: string;
@@ -55,7 +56,7 @@ export default function DJScreeningPage() {
     setAdverseMedia(null);
     try {
       const [screenRes, amRes] = await Promise.allSettled([
-        fetch('/api/dowjones/screen', {
+        fetchWithAuth('/api/dowjones/screen', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: entityName.trim() }),
@@ -82,7 +83,7 @@ export default function DJScreeningPage() {
     if (entities.length === 0) return;
     setBatchLoading(true);
     try {
-      const res = await fetch('/api/dowjones/batch', {
+      const res = await fetchWithAuth('/api/dowjones/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entities }),
@@ -99,7 +100,7 @@ export default function DJScreeningPage() {
   async function handleAddToMonitoring() {
     if (!result) return;
     try {
-      const res = await fetch('/api/dowjones/monitor', {
+      const res = await fetchWithAuth('/api/dowjones/monitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entityId: result.referenceId, entityName: result.entityQueried }),
@@ -320,7 +321,7 @@ export default function DJScreeningPage() {
                           {row.status === 'active' && (
                             <button
                               onClick={async () => {
-                                await fetch(`/api/dowjones/monitor/${row.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
+                                await fetchWithAuth(`/api/dowjones/monitor/${row.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'cancelled' }) });
                                 const d = await fetch('/api/dowjones/monitoring').then(r => r.json());
                                 setMonitoring(d.monitoring ?? []);
                               }}

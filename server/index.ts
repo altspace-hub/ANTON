@@ -1,6 +1,9 @@
 // Must be first — loads .env before any other module evaluates top-level env checks
 import 'dotenv/config';
+// OBS-02: OpenTelemetry — must be imported before all other modules for auto-instrumentation
+import './lib/telemetry.js';
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
@@ -102,9 +105,15 @@ import { createAiAssistRoutes } from './routes/ai-assist.js';
 import { createTaskAgentRoutes } from './routes/task-agent.js';
 import { createRoaringRoutes } from './routes/roaring.js';
 import { createDowJonesRoutes } from './routes/dowjones.js';
+import { createRegulatoryFeedRoutes } from './routes/regulatory-feed.js';
+import { createLoreLedgerRoutes } from './routes/lore-ledger.js';
 import { createOrchestratorRoutes } from './routes/orchestrator.js';
 import { initOrchestratorHeartbeat } from './services/orchestrator-heartbeat.js';
 import { createContinuityRoutes } from './routes/continuity.js';
+import { createHumanOversightRoutes } from './routes/human-oversight.js';
+import { createPostMarketMonitoringRoutes } from './routes/post-market-monitoring.js';
+import { createOpenApiRouter } from './routes/openapi.js';
+import { csrfTokenRoute, csrfProtection, pruneExpiredCsrfTokens } from './middleware/csrf.js';
 import { createWebhookListener } from './services/webhook-listener.js';
 import { setEventEmitter } from './services/event-emitter.js';
 import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
@@ -121,6 +130,18 @@ import { getTotalActiveStreams } from './services/stream-limiter.js';
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
   logger.warn('ANTHROPIC_API_KEY is not set — Claude API calls will fail');
+}
+
+// SCALE-02: Auto-detect deployment mode from environment signals.
+// If DATABASE_URL (PostgreSQL) is present and DEPLOYMENT_MODE is not explicitly set → team mode.
+// Otherwise default to solo (SQLite local mode).
+if (!process.env.DEPLOYMENT_MODE) {
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres')) {
+    process.env.DEPLOYMENT_MODE = 'team';
+    logger.info('[deploy] Auto-detected team mode (DATABASE_URL is set)');
+  } else {
+    process.env.DEPLOYMENT_MODE = 'solo';
+  }
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -140,7 +161,7 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],  // TODO: Add nonce for inline scripts in production
+        scriptSrc: ["'self'"],  // SEC-02: no unsafe-inline; Vite prod build uses ES module scripts
         styleSrc:  ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         imgSrc:    ["'self'", 'data:', 'blob:', 'https:'],
         connectSrc: [
@@ -197,6 +218,9 @@ app.use('/api/auth/reset-password', authLimiter);
 // Apply Claude-specific rate limiter to AI endpoints
 app.use('/api/claude/message', claudeLimiter);
 app.use('/api/claude/message-sync', claudeLimiter);
+
+// SEC-05: Parse cookies so auth middleware can read httpOnly session cookie
+app.use(cookieParser());
 
 app.use(express.json({
   limit: '50mb',
@@ -285,6 +309,9 @@ if (process.env.DEPLOYMENT_MODE === 'team' && process.env.MCP_SECRET) {
 // MCP clients (Cursor, Claude Code) do not perform browser auth
 app.use('/mcp', createMcpRouter(db));
 
+// Prune expired CSRF tokens every hour
+setInterval(pruneExpiredCsrfTokens, 60 * 60 * 1000);
+
 // API routes — auth routes and config must be registered BEFORE the auth middleware
 app.use('/api', createAuthRoutes(db));
 
@@ -325,6 +352,15 @@ app.get('/api/config', (req, res) => {
 const authMiddleware = createAuthMiddleware(db);
 app.use('/api', authMiddleware);
 
+// SEC-14: CSRF token endpoint — registered AFTER auth middleware so req.user is
+// populated. This ensures the token is stored under the correct user key ('solo'
+// in solo mode, or the real user ID in team mode), matching the key used during
+// CSRF validation on mutating requests.
+app.get('/api/csrf-token', csrfTokenRoute);
+
+// SEC-14: CSRF protection on all state-mutating authenticated routes
+app.use('/api', csrfProtection);
+
 // Apply per-user rate limiter to all authenticated API routes
 app.use('/api', userLimiter);
 
@@ -357,7 +393,7 @@ app.use('/api', createExchangeRoutes(db));
 app.use('/api', createSettingsRoutes(db));
 app.use('/api', createRagRoutes(db));
 app.use('/api', createKnowledgeLibraryRoutes(db));
-app.use('/api', createEurLexRoutes());
+app.use('/api', createEurLexRoutes(db, anthropic));
 app.use('/api', createAdminRoutes(db));
 app.use('/api', createCompliancePolicyRoutes(db));
 app.use('/api/analytics', createAnalyticsRouter(db));
@@ -403,7 +439,12 @@ app.use('/api', createAiAssistRoutes());                     // AI-assist endpoi
 app.use('/api/task-agent', createTaskAgentRoutes(db, anthropic)); // ANTON Task Agent — conversational task intake + approach proposal
 app.use('/api', createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
 app.use('/api', createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
+app.use('/api', createRegulatoryFeedRoutes(db, anthropic)); // Regulatory Feed — subscribe + AI digest (LONE-07/18)
+app.use('/api', createLoreLedgerRoutes(db, anthropic));    // Lore Ledger — world-building + consistency checker (LONE-09)
 app.use('/api', createOrchestratorRoutes(db, anthropic));   // ANTON Orchestrator — AI management layer
+app.use('/api', createHumanOversightRoutes(db));            // EUAI-02: Human oversight sign-off for high-risk FCP modules
+app.use('/api', createPostMarketMonitoringRoutes(db));      // EUAI-04: Post-market monitoring log (quality, reversals, complaints)
+app.use('/api', createOpenApiRouter());                     // OSS-05: OpenAPI 3.0 spec at /api/openapi.json
 app.use('/api', createKnowledgeGraphRoutes(db));
 app.use('/api', createIntelligenceDashboardRoutes(db));
 app.use('/api', createPatternDetectionRoutes(db));

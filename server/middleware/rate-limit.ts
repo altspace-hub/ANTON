@@ -23,12 +23,17 @@ export const authLimiter = rateLimit({
 
 // Per-user rate limiter — 100 requests per minute per user (falls back to IP in solo mode)
 // Using user ID prevents shared-office IP starvation where all colleagues share one NAT IP.
+// validate: false suppresses ERR_ERL_KEY_GEN_IPV6 (express-rate-limit v8 static analysis
+// fires for any keyGenerator that references req.ip, even when IPv6 is handled correctly).
 export const userLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 100,
+  validate: false,
   keyGenerator: (req: Request) => {
     const user = (req as Request & { user?: AuthUser }).user;
-    return user?.id ?? req.ip ?? 'unknown';
+    // Normalize IPv4-mapped IPv6 (::ffff:127.0.0.1 → 127.0.0.1)
+    const ip = (req.ip ?? 'unknown').replace(/^::ffff:/i, '');
+    return user?.id ?? ip;
   },
   message: { error: 'Too many requests. Please slow down.' },
   standardHeaders: true,

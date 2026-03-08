@@ -115,8 +115,8 @@ export const ClaudeMessageSchema = z.object({
   history: z.array(MessageSchema).max(200).optional(),
 
   // Knowledge sources — passthrough to avoid breaking existing flexible structure
-  knowledgeSources: z.record(z.unknown()).optional(),
-  moduleInputs: z.record(z.unknown()).optional(),
+  knowledgeSources: z.record(z.string(), z.unknown()).optional(),
+  moduleInputs: z.record(z.string(), z.unknown()).optional(),
 
   // Feature flags (booleans)
   plainTextMode: z.boolean().optional(),
@@ -127,7 +127,7 @@ export const ClaudeMessageSchema = z.object({
   nativeReasoningEnabled: z.boolean().optional(),
 
   // Multi-agent
-  multiAgentTeam: z.array(z.string().max(100)).max(20).optional(),
+  multiAgentTeam: z.enum(['compliance', 'strategic', 'quality']).optional(),
   multiAgentStyle: z.string().max(50).optional(),
 
   // Personas and skills
@@ -135,14 +135,25 @@ export const ClaudeMessageSchema = z.object({
   selectedSkills: z.array(z.string().max(100)).max(20).optional(),
 
   // Reference content
-  structureReference: z.string().max(50_000).optional(),
+  structureReference: z.object({
+    mode: z.enum(['none', 'upload', 'describe']),
+    description: z.string().max(50_000),
+    fileName: z.string().max(500).optional(),
+  }).optional(),
   referenceOutput: z.string().max(50_000).optional(),
 
   // UI/UX settings
-  transparencyLevel: z.enum(['off', 'summary', 'detailed']).optional(),
+  // transparencyLevel is sent as a number (0=off, 1=summary, 2=detailed) from the client
+  transparencyLevel: z.number().int().min(0).max(2).optional(),
   writingTone: z.string().max(50).optional(),
   audience: z.string().max(100).optional(),
   channel: z.string().max(50).optional(),
+
+  // Iterative Reasoning Engine
+  iterativeReasoningEnabled: z.boolean().optional(),
+
+  // File uploads
+  uploadedFileIds: z.array(z.string().max(500)).max(50).optional(),
 });
 
 // ─── Task Agent ───────────────────────────────────────────────────────────────
@@ -163,7 +174,7 @@ export const TaskMessageSchema = z.object({
 
 export const TaskSelectApproachSchema = z.object({
   approach_id: z.string().min(1).max(100),
-  config: z.record(z.unknown()).optional().default({}),
+  config: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 export const TaskIngestSchema = z.object({
@@ -172,5 +183,5 @@ export const TaskIngestSchema = z.object({
   description: z.string().min(1).max(4_000).trim(),
   source_ref: z.string().max(200).optional(),
   priority: z.enum(['low', 'normal', 'high', 'critical']).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });

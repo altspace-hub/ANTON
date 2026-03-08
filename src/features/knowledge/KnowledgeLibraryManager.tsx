@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, RefreshCw, Database, CheckCircle2, AlertCircle, Loader2, Edit2, Check, X } from 'lucide-react';
 import type { KnowledgeLibraryEntry } from '@/lib/types';
+import { fetchWithAuth } from '@/lib/api';
 
 const CATEGORIES = [
   { value: 'regulation', label: 'Regulation', color: 'text-adv-blue' },
@@ -18,7 +19,7 @@ async function fetchLibrary(): Promise<KnowledgeLibraryEntry[]> {
 }
 
 async function createEntry(data: { label: string; path: string; category: string; recursive: boolean; file_filter: string[] | null; description: string }): Promise<KnowledgeLibraryEntry> {
-  const r = await fetch('/api/knowledge-library', {
+  const r = await fetchWithAuth('/api/knowledge-library', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -28,12 +29,12 @@ async function createEntry(data: { label: string; path: string; category: string
 }
 
 async function deleteEntry(id: string): Promise<void> {
-  const r = await fetch(`/api/knowledge-library/${id}`, { method: 'DELETE' });
+  const r = await fetchWithAuth(`/api/knowledge-library/${id}`, { method: 'DELETE' });
   if (!r.ok) throw new Error('Delete failed');
 }
 
 async function updateEntry(id: string, data: Partial<KnowledgeLibraryEntry>): Promise<KnowledgeLibraryEntry> {
-  const r = await fetch(`/api/knowledge-library/${id}`, {
+  const r = await fetchWithAuth(`/api/knowledge-library/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -43,7 +44,7 @@ async function updateEntry(id: string, data: Partial<KnowledgeLibraryEntry>): Pr
 }
 
 async function indexEntry(id: string): Promise<KnowledgeLibraryEntry & { chunks: number }> {
-  const r = await fetch(`/api/knowledge-library/${id}/index`, { method: 'POST' });
+  const r = await fetchWithAuth(`/api/knowledge-library/${id}/index`, { method: 'POST' });
   if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Indexing failed'); }
   return r.json();
 }

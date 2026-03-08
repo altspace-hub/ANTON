@@ -16,7 +16,7 @@ import {
   CheckCircle2, Circle, Loader2, Save, X, Plus, Brain,
   FileUp, Building2, Star, AlertCircle
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -345,9 +345,9 @@ function FundIdentityStep({ onNext, onSkip }: { onNext: () => void; onSkip: () =
     setSaving(true);
     setError('');
     try {
-      const res = await fetch('/api/pe-vc/identity', {
+      const res = await fetchWithAuth('/api/pe-vc/identity', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(identity),
       });
       if (!res.ok) throw new Error('Save failed');
@@ -366,7 +366,7 @@ function FundIdentityStep({ onNext, onSkip }: { onNext: () => void; onSkip: () =
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/pe-vc/identity/extract', { method: 'POST', headers: getAuthHeader(), body: formData });
+      const res = await fetchWithAuth('/api/pe-vc/identity/extract', { method: 'POST', body: formData });
       if (res.ok) {
         const extracted = await res.json() as FundIdentity;
         setIdentity(prev => ({ ...prev, ...extracted }));
@@ -471,7 +471,7 @@ function IcStyleStep({ onDone, onBack }: { onDone: () => void; onBack: () => voi
       const formData = new FormData();
       formData.append('file', file);
       formData.append('memoType', 'full-ic-memo');
-      const res = await fetch('/api/pe-vc/templates/extract', { method: 'POST', headers: getAuthHeader(), body: formData });
+      const res = await fetchWithAuth('/api/pe-vc/templates/extract', { method: 'POST', body: formData });
       if (res.ok) setExtracted(await res.json() as { sections?: string[]; style_notes?: string; template_content?: string });
       else setError('Could not extract from this file. Try pasting text instead.');
     } catch {
@@ -486,9 +486,9 @@ function IcStyleStep({ onDone, onBack }: { onDone: () => void; onBack: () => voi
     setExtracting(true);
     setError('');
     try {
-      const res = await fetch('/api/pe-vc/templates/extract', {
+      const res = await fetchWithAuth('/api/pe-vc/templates/extract', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: pastedText, memoType: 'full-ic-memo' }),
       });
       if (res.ok) setExtracted(await res.json() as { sections?: string[]; style_notes?: string; template_content?: string });
@@ -512,9 +512,9 @@ function IcStyleStep({ onDone, onBack }: { onDone: () => void; onBack: () => voi
         styleNotes: extracted.style_notes || '',
         isDefault: true,
       };
-      const res = await fetch('/api/pe-vc/templates/new', {
+      const res = await fetchWithAuth('/api/pe-vc/templates/new', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Save failed');

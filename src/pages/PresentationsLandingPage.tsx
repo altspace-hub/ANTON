@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchWithAuth } from '@/lib/api';
 import {
   Presentation, Plus, Clock, Trash2, Download, ChevronRight,
   Users, Target, LayoutTemplate, FileUp,
@@ -115,7 +116,7 @@ export default function PresentationsLandingPage() {
   async function handleDelete(id: string, e: React.MouseEvent) {
     e.stopPropagation();
     if (!confirm('Delete this presentation?')) return;
-    await fetch(`/api/presentations/${id}`, { method: 'DELETE' });
+    await fetchWithAuth(`/api/presentations/${id}`, { method: 'DELETE' });
     setHistory((prev) => prev.filter((p) => p.id !== id));
   }
 

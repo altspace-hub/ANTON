@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, FileText, Trash2, Pencil, Database, CheckCircle,
   Square, Star, Radio,
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -174,9 +174,9 @@ export default function InnovationRadarPage() {
   async function saveScoringCriteria(value: string) {
     setSavingCriteria(true);
     try {
-      await fetch('/api/radar/settings', {
+      await fetchWithAuth('/api/radar/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHdr() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pevcScoringCriteria: value }),
       });
       setScoringCriteria(value);
@@ -197,9 +197,9 @@ export default function InnovationRadarPage() {
       if (scanScheduleType === 'cron' && cronExpression) {
         (next as Record<string, unknown>).cronExpression = cronExpression;
       }
-      await fetch('/api/radar/settings', {
+      await fetchWithAuth('/api/radar/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHdr() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(next),
       });
       setRadarSettings(prev => ({ ...prev, ...partial }));
@@ -254,9 +254,9 @@ export default function InnovationRadarPage() {
     setShowScanBanner(false);
     setScanProgress(null);
     try {
-      await fetch('/api/radar/scan', {
+      await fetchWithAuth('/api/radar/scan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHdr() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category: 'pe-vc' }),
       });
       startPolling();
@@ -267,7 +267,7 @@ export default function InnovationRadarPage() {
 
   async function handleStopScan() {
     try {
-      await fetch('/api/radar/stop', { method: 'POST', headers: getAuthHdr() });
+      await fetchWithAuth('/api/radar/stop', { method: 'POST' });
       setIsScanning(false);
       setScanProgress(null);
       stopPolling();
@@ -277,14 +277,14 @@ export default function InnovationRadarPage() {
   // ── Item actions ─────────────────────────────────────────────────────────
 
   async function dismissItem(itemId: string) {
-    await fetch(`/api/radar/items/${itemId}/dismiss`, { method: 'POST', headers: getAuthHdr() });
+    await fetchWithAuth(`/api/radar/items/${itemId}/dismiss`, { method: 'POST' });
     setItems(prev => prev.filter(i => i.id !== itemId));
   }
 
   async function markReviewed(itemId: string) {
-    await fetch(`/api/radar/items/${itemId}/status`, {
+    await fetchWithAuth(`/api/radar/items/${itemId}/status`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHdr() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'reviewed' }),
     });
     setItems(prev => prev.map(i => i.id === itemId ? { ...i, status: 'reviewed' } : i));
@@ -326,7 +326,7 @@ export default function InnovationRadarPage() {
     };
     const url = editingSource ? `/api/radar/sources/${editingSource.id}` : '/api/radar/sources';
     const method = editingSource ? 'PUT' : 'POST';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json', ...getAuthHdr() }, body: JSON.stringify(payload) });
+    await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setShowAddSource(false);
     setEditingSource(null);
     fetchData();
@@ -334,7 +334,7 @@ export default function InnovationRadarPage() {
 
   async function deleteSource(sourceId: string) {
     if (!confirm('Delete this source?')) return;
-    await fetch(`/api/radar/sources/${sourceId}`, { method: 'DELETE', headers: getAuthHdr() });
+    await fetchWithAuth(`/api/radar/sources/${sourceId}`, { method: 'DELETE' });
     fetchData();
   }
 

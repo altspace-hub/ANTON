@@ -44,3 +44,5 @@ nsis:
   perMachine: false
   createDesktopShortcut: false
   createStartMenuShortcut: true
+  # LONE-16: Graceful uninstall — prompts to remove .env + database + uploads
+  include: electron/uninstall.nsh

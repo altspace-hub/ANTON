@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Zap, Brain, Microscope, SearchCode, ListChecks } from 'lucide-react';
+import { Zap, Brain, Microscope, SearchCode, ListChecks, FlaskConical } from 'lucide-react';
 import type { ThinkingLevel } from '@/lib/types';
 import HelpTooltip from './HelpTooltip';
 
@@ -9,6 +9,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Microscope,
   SearchCode,
   ListChecks,
+  FlaskConical,
 };
 
 const levels: Array<{
@@ -16,12 +17,20 @@ const levels: Array<{
   label: string;
   description: string;
   icon: string;
+  iterative?: boolean; // marks levels that use the Iterative Reasoning Engine
 }> = [
   { id: 'quick', label: 'Quick', description: 'Fast response, minimal analysis', icon: 'Zap' },
   { id: 'think', label: 'Think', description: 'Standard analysis depth', icon: 'Brain' },
   { id: 'think_hard', label: 'Think Hard', description: 'Deep analysis with careful reasoning', icon: 'Microscope' },
   { id: 'investigate', label: 'Investigate', description: 'Thorough investigation, maximum depth', icon: 'SearchCode' },
   { id: 'plan_first', label: 'Plan First', description: 'Create explicit plan before executing', icon: 'ListChecks' },
+  {
+    id: 'deep_investigate',
+    label: 'Deep',
+    description: 'Iterative multi-phase reasoning: Analyse → Reflect → Deepen → Explore → Validate → Synthesise. Highest quality, highest cost.',
+    icon: 'FlaskConical',
+    iterative: true,
+  },
 ];
 
 interface ThinkingControlsProps {
@@ -38,10 +47,10 @@ function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
         </label>
         <HelpTooltip
           wide
-          text={"Controls Claude's reasoning depth, time, and cost.\n\n• Quick — instant, minimal reasoning. Good for simple questions.\n• Think — standard analysis. Suits most compliance tasks.\n• Think Hard — deep reasoning with careful multi-step logic.\n• Investigate — maximum depth. Ideal for gap analysis and legal research.\n• Plan First — Claude outlines its approach before writing. Best for complex multi-deliverable work.\n\nHigher levels cost more but produce significantly better output for complex regulatory analysis."}
+          text={"Controls Claude's reasoning depth, time, and cost.\n\n• Quick — instant, minimal reasoning. Good for simple questions.\n• Think — standard analysis. Suits most compliance tasks.\n• Think Hard — deep reasoning with careful multi-step logic. Uses iterative phases.\n• Investigate — thorough multi-phase investigation. Ideal for gap analysis and legal research.\n• Plan First — Claude outlines its approach before writing. Best for complex multi-deliverable work.\n• Deep — 6-phase iterative loop (Analyse → Reflect → Deepen → Explore → Validate → Synthesise). Best possible quality for the most complex regulatory and legal analysis. Significantly higher cost and time."}
         />
       </div>
-      <div className="grid grid-cols-5 gap-1.5">
+      <div className="grid grid-cols-6 gap-1.5">
         {levels.map((level) => {
           const Icon = iconMap[level.icon];
           const isActive = value === level.id;
@@ -50,18 +59,32 @@ function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
               key={level.id}
               onClick={() => onChange(level.id)}
               className={`flex flex-col items-center gap-1.5 rounded-lg border p-2.5 text-center transition-all ${
-                isActive
+                isActive && level.iterative
+                  ? 'border-adv-gold bg-adv-gold/10 text-adv-gold shadow-sm shadow-adv-gold/10'
+                  : isActive
                   ? 'border-adv-teal bg-adv-teal-dim text-adv-teal shadow-sm shadow-adv-teal/10'
+                  : level.iterative
+                  ? 'border-adv-gold/30 bg-adv-card text-adv-gray hover:border-adv-gold/60 hover:text-adv-gold'
                   : 'border-border bg-adv-card text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
               }`}
               title={level.description}
             >
               <Icon className="h-4 w-4" />
               <span className="text-[11px] font-medium leading-tight">{level.label}</span>
+              {level.iterative && (
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-adv-gold/80">
+                  IRE
+                </span>
+              )}
             </button>
           );
         })}
       </div>
+      {value === 'deep_investigate' && (
+        <p className="mt-2 rounded-md border border-adv-gold/20 bg-adv-gold/5 px-3 py-2 text-xs text-adv-gold">
+          Deep mode uses the Iterative Reasoning Engine — 6 reasoning phases before synthesising. Expect 3–5× longer processing time and higher token cost. Best for critical regulatory analysis, gap assessments, and high-stakes legal research.
+        </p>
+      )}
     </div>
   );
 }

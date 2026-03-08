@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = process.env.DB_PATH || './data/workbench.sqlite';
@@ -201,6 +202,33 @@ export function initDatabase(): Database.Database {
       seed INTEGER
     )`);
   }
+
+  // GOV-01: system_prompts — required by audit_log FK (migration 030 may have failed)
+  db.exec(`CREATE TABLE IF NOT EXISTS system_prompts (
+    id           TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+    module_id    TEXT NOT NULL,
+    version      INTEGER NOT NULL DEFAULT 1,
+    content      TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    author       TEXT NOT NULL DEFAULT 'system',
+    effective_date TEXT NOT NULL DEFAULT (date('now')),
+    deprecated_at  TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
+
+  // Ensure audit_log has the system_prompt_version_id column (migration 031)
+  try {
+    const auditCols = db.prepare("PRAGMA table_info('audit_log')").all().map((c: any) => c.name);
+    if (!auditCols.includes('system_prompt_version_id')) {
+      db.exec('ALTER TABLE audit_log ADD COLUMN system_prompt_version_id TEXT');
+    }
+    if (!auditCols.includes('user_id')) {
+      db.exec('ALTER TABLE audit_log ADD COLUMN user_id TEXT');
+    }
+    if (!auditCols.includes('rag_chunks')) {
+      db.exec('ALTER TABLE audit_log ADD COLUMN rag_chunks TEXT');
+    }
+  } catch { /* non-fatal */ }
 
   // Add note column for session annotations
   if (!colNames.includes('note')) {
@@ -2821,6 +2849,9 @@ export function initDatabase(): Database.Database {
     console.warn('[db] Migration 023b partial (non-fatal):', e);
   }
 
+  // Shared migrations directory path (used by inline blocks 024–027 and generic runner below)
+  const migrationsDir = path.join(__dirname, 'migrations');
+
   // ── Migration 024: Demo Mode state + Pattern Recognition tables ──────────
   {
     const sentinel024 = db.prepare(
@@ -2918,6 +2949,20 @@ export function initDatabase(): Database.Database {
   // server/db/migrations/ with a numeric prefix >= 028. Earlier migrations
   // (001–027b) are handled by the explicit sentinel blocks above and are
   // marked as already-applied on first boot so they don't run again.
+
+  // Guard: if schema_migrations exists but has a non-TEXT id column (INTEGER from an older
+  // DB version), drop it and recreate with TEXT so string migration IDs can be stored.
+  {
+    const cols = db.prepare("PRAGMA table_info(schema_migrations)").all() as Array<{ name: string; type: string }>;
+    if (cols.length > 0) {
+      const idCol = cols.find(c => c.name === 'id');
+      if (idCol && idCol.type.toUpperCase() !== 'TEXT') {
+        console.log('[db] schema_migrations has wrong column type — recreating with TEXT id');
+        db.exec('DROP TABLE schema_migrations');
+      }
+    }
+  }
+
   db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
     id TEXT PRIMARY KEY,
     applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -2931,13 +2976,17 @@ export function initDatabase(): Database.Database {
   ];
   const insertMig = db.prepare('INSERT OR IGNORE INTO schema_migrations (id) VALUES (?)');
   for (const id of LEGACY_MIGRATIONS) {
-    insertMig.run(id);
+    try {
+      insertMig.run(id);
+    } catch (_e) {
+      // Should not happen after the recreation guard above, but ignore just in case.
+    }
   }
 
   // Scan for new migration files and run each exactly once inside a transaction
-  const _migrationsDir = path.join(__dirname, 'migrations');
+  // (migrationsDir already defined above for inline blocks 024–027)
   try {
-    const migFiles = fs.readdirSync(_migrationsDir)
+    const migFiles = fs.readdirSync(migrationsDir as string)
       .filter((f: string) => f.endsWith('.sql'))
       .sort(); // lexicographic sort keeps numeric prefix order
 
@@ -2951,7 +3000,7 @@ export function initDatabase(): Database.Database {
       if (applied.has(migId)) continue;
 
       try {
-        const sql = fs.readFileSync(path.join(_migrationsDir, file), 'utf-8');
+        const sql = fs.readFileSync(path.join(migrationsDir as string, file), 'utf-8');
         // Wrap each migration in a transaction for atomicity (DB-05)
         db.transaction(() => {
           db.exec(sql);
@@ -2970,7 +3019,6 @@ export function initDatabase(): Database.Database {
   // FRAME-01/02: Auto-seed bundled knowledge packs from data/knowledge-packs/
   // Scans for *.anton bundles, importing any not already registered in the DB.
   try {
-    const { createKnowledgePackService } = await import('../services/knowledge-pack-service.js');
     const kpService = createKnowledgePackService(db);
     const packsDir = path.resolve(__dirname, '../../data/knowledge-packs');
     if (fs.existsSync(packsDir)) {

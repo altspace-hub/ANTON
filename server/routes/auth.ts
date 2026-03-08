@@ -145,6 +145,17 @@ export function createAuthRoutes(db: Database) {
     // Auto-accept any pending project invitations for this email
     acceptPendingInvitations(db, user.id as string, user.email as string);
 
+    // SEC-05: Set token in httpOnly, Secure, SameSite=Strict cookie (7 days)
+    const isSecure = process.env.NODE_ENV === 'production' || process.env.HTTPS === 'true';
+    res.cookie('openexpert_session', token, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+      path: '/',
+    });
+
+    // Also return token in body for backward compatibility with existing clients
     res.json({ user: authUser, token });
   });
 
@@ -205,8 +216,13 @@ export function createAuthRoutes(db: Database) {
 
   // POST /api/auth/logout
   router.post('/auth/logout', (req, res) => {
-    const token = req.headers.authorization?.slice(7);
+    // SEC-05: Accept cookie token or Authorization header
+    const cookieToken = (req as any).cookies?.['openexpert_session'];
+    const bearerToken = req.headers.authorization?.slice(7);
+    const token = cookieToken || bearerToken;
     if (token) db.prepare('DELETE FROM user_sessions WHERE token = ?').run(token);
+    // SEC-05: Clear the session cookie
+    res.clearCookie('openexpert_session', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/' });
     res.json({ success: true });
   });
 
@@ -509,6 +525,136 @@ export function createAuthRoutes(db: Database) {
     }
     authCodeStore.delete(req.params.code); // one-time use
     res.json({ token: entry.token });
+  });
+
+  // ── AUTH-03: TOTP / MFA endpoints ──────────────────────────────────────────
+
+  // POST /api/auth/mfa/enable — generate a TOTP secret and return QR code URL
+  router.post('/auth/mfa/enable', async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(400).json({ error: 'MFA is only available in team mode' }); return; }
+    const userId = req.user?.id;
+    if (!userId) { res.status(401).json({ error: 'Authentication required' }); return; }
+
+    try {
+      const speakeasy = await import('speakeasy');
+      const qrcode = await import('qrcode');
+
+      const secret = speakeasy.default.generateSecret({
+        name: `openEXPERT (${req.user?.username})`,
+        issuer: 'openEXPERT',
+        length: 32,
+      });
+
+      // Store pending secret (not active until confirmed)
+      db.prepare(`
+        INSERT OR REPLACE INTO mfa_pending (user_id, secret) VALUES (?, ?)
+      `).run(userId, secret.base32);
+
+      const otpAuthUrl = secret.otpauth_url!;
+      const qrDataUrl = await qrcode.default.toDataURL(otpAuthUrl);
+
+      res.json({ secret: secret.base32, qrDataUrl, otpAuthUrl });
+    } catch (err) {
+      console.error('[auth] MFA enable error:', err);
+      res.status(500).json({ error: 'Failed to generate MFA secret' });
+    }
+  });
+
+  // POST /api/auth/mfa/confirm — verify TOTP token and activate MFA
+  router.post('/auth/mfa/confirm', async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(400).json({ error: 'MFA is only available in team mode' }); return; }
+    const userId = req.user?.id;
+    if (!userId) { res.status(401).json({ error: 'Authentication required' }); return; }
+
+    const { token: totpToken } = req.body as { token?: string };
+    if (!totpToken || typeof totpToken !== 'string' || !/^\d{6}$/.test(totpToken)) {
+      res.status(400).json({ error: 'A 6-digit TOTP token is required' });
+      return;
+    }
+
+    try {
+      const pending = db.prepare('SELECT secret FROM mfa_pending WHERE user_id = ?').get(userId) as { secret: string } | undefined;
+      if (!pending) { res.status(400).json({ error: 'No pending MFA setup found — call /api/auth/mfa/enable first' }); return; }
+
+      const speakeasy = await import('speakeasy');
+      const verified = speakeasy.default.totp.verify({
+        secret: pending.secret,
+        encoding: 'base32',
+        token: totpToken,
+        window: 1, // Allow 30s clock drift
+      });
+
+      if (!verified) { res.status(400).json({ error: 'Invalid TOTP token — check your authenticator app and try again' }); return; }
+
+      // Activate MFA
+      db.prepare('UPDATE users SET mfa_enabled = 1, mfa_secret = ? WHERE id = ?').run(pending.secret, userId);
+      db.prepare('DELETE FROM mfa_pending WHERE user_id = ?').run(userId);
+
+      res.json({ success: true, message: 'MFA is now active on your account' });
+    } catch (err) {
+      console.error('[auth] MFA confirm error:', err);
+      res.status(500).json({ error: 'Failed to confirm MFA' });
+    }
+  });
+
+  // POST /api/auth/mfa/disable — deactivate MFA (requires current TOTP token)
+  router.post('/auth/mfa/disable', async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(400).json({ error: 'MFA is only available in team mode' }); return; }
+    const userId = req.user?.id;
+    if (!userId) { res.status(401).json({ error: 'Authentication required' }); return; }
+
+    const { token: totpToken } = req.body as { token?: string };
+    if (!totpToken || typeof totpToken !== 'string' || !/^\d{6}$/.test(totpToken)) {
+      res.status(400).json({ error: 'A 6-digit TOTP token is required to disable MFA' });
+      return;
+    }
+
+    try {
+      const user = db.prepare('SELECT mfa_enabled, mfa_secret FROM users WHERE id = ?').get(userId) as { mfa_enabled: number; mfa_secret: string | null } | undefined;
+      if (!user?.mfa_enabled || !user.mfa_secret) { res.status(400).json({ error: 'MFA is not enabled on this account' }); return; }
+
+      const speakeasy = await import('speakeasy');
+      const verified = speakeasy.default.totp.verify({
+        secret: user.mfa_secret,
+        encoding: 'base32',
+        token: totpToken,
+        window: 1,
+      });
+
+      if (!verified) { res.status(400).json({ error: 'Invalid TOTP token' }); return; }
+
+      db.prepare('UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE id = ?').run(userId);
+      res.json({ success: true, message: 'MFA has been disabled' });
+    } catch (err) {
+      console.error('[auth] MFA disable error:', err);
+      res.status(500).json({ error: 'Failed to disable MFA' });
+    }
+  });
+
+  // POST /api/auth/mfa/verify — verify TOTP during login (called after password check)
+  router.post('/auth/mfa/verify', async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(400).json({ error: 'MFA is only available in team mode' }); return; }
+    const { userId, token: totpToken } = req.body as { userId?: string; token?: string };
+    if (!userId || !totpToken) { res.status(400).json({ error: 'userId and token required' }); return; }
+    if (!/^\d{6}$/.test(totpToken)) { res.status(400).json({ error: 'Token must be 6 digits' }); return; }
+
+    try {
+      const user = db.prepare('SELECT mfa_secret FROM users WHERE id = ? AND mfa_enabled = 1').get(userId) as { mfa_secret: string } | undefined;
+      if (!user?.mfa_secret) { res.status(400).json({ error: 'MFA not enabled for this user' }); return; }
+
+      const speakeasy = await import('speakeasy');
+      const verified = speakeasy.default.totp.verify({
+        secret: user.mfa_secret,
+        encoding: 'base32',
+        token: totpToken,
+        window: 1,
+      });
+
+      res.json({ verified });
+    } catch (err) {
+      console.error('[auth] MFA verify error:', err);
+      res.status(500).json({ error: 'MFA verification failed' });
+    }
   });
 
   return router;

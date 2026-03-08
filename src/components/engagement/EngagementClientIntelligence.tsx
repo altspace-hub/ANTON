@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { Users, ChevronRight, Plus, Trash2, Building, Globe, Shield, AlertTriangle } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, ClientIntelligence } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -48,9 +48,9 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
   async function save() {
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/client-intelligence`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/client-intelligence`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, source_channels: ['user_input'] }),
       });
       onReload();

@@ -17,7 +17,8 @@ import {
   Trash2, Tag, Calendar, ExternalLink, RefreshCw, X, ListTodo,
   ChevronDown, Play, Copy, ChevronsRight, Paperclip, BookOpen,
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { useExport } from '@/hooks/useExport';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,11 @@ interface ExecutionResult {
   name: string;
   output: string;
   at: string;
+  quality_score?: number | null;
+  retry_count?: number;
+  thinking_level?: string;
+  thinking?: string;
+  description?: string;
 }
 
 interface TaskDetail extends Task {
@@ -64,6 +70,7 @@ interface TaskDetail extends Task {
   intake_ready: number;
   task_files: Array<{ id: string; name: string; size: number; uploaded_at: string }>;
   active_knowledge_packs: string[];
+  execution_steps: ExecutionStep[];
 }
 
 interface ConversationMessage {
@@ -150,12 +157,19 @@ function stripStructuredBlocks(text: string): string {
     .replace(/<approaches>[\s\S]*?<\/approaches>/g, '')
     .replace(/<clarifying>[\s\S]*?<\/clarifying>/g, '')
     .replace(/<execution>[\s\S]*?<\/execution>/g, '')
+    .replace(/<intake_complete>[\s\S]*?<\/intake_complete>/g, '')
     .trim();
 }
+
+const STRUCTURED_TAGS = ['<clarifying>', '<approaches>', '<execution>', '<intake_complete>'];
 
 /** Extract plain text portion of ANTON's response */
 function getDisplayText(content: string): string {
   const stripped = stripStructuredBlocks(content);
+  // If the response was ONLY structured tags, don't fall back to showing raw XML
+  if (!stripped && STRUCTURED_TAGS.some((tag) => content.includes(tag))) {
+    return '';
+  }
   return stripped || content;
 }
 
@@ -164,6 +178,9 @@ function getDisplayText(content: string): string {
 function ConversationBubble({ msg }: { msg: ConversationMessage }) {
   const isUser = msg.role === 'user';
   const displayText = isUser ? msg.content : getDisplayText(msg.content);
+
+  // Don't render empty bubbles (e.g. assistant responses that were only structured tags)
+  if (!isUser && !displayText) return null;
 
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
@@ -242,53 +259,175 @@ function ProposalCard({
 
 // ─── Execution Result Panel ───────────────────────────────────────────────────
 
-function ExecutionResultPanel({
-  results,
-  streamingStepName,
-  streamingText,
-  isStreaming,
+function StepResultCard({
+  result,
+  onExport,
+  isExporting,
+  defaultExpanded = false,
 }: {
-  results: ExecutionResult[];
-  streamingStepName?: string;
-  streamingText: string;
-  isStreaming: boolean;
+  result: ExecutionResult;
+  onExport: (format: string, content: string, filename: string) => void;
+  isExporting: boolean;
+  defaultExpanded?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [activeTab, setActiveTab] = useState<'output' | 'thinking'>('output');
+
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text).catch(() => {});
   }
 
+  const hasThinking = !!result.thinking && result.thinking.length > 0;
+  const qualityColor = result.quality_score != null
+    ? result.quality_score >= 8.5 ? 'text-adv-green' : result.quality_score >= 7 ? 'text-adv-gold' : 'text-adv-red'
+    : '';
+  const thinkingBadge = result.thinking_level && result.thinking_level !== 'standard'
+    ? result.thinking_level === 'investigate' ? 'Deep' : 'Extended'
+    : null;
+  const stepFilename = `step-${result.step + 1}-${result.name.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}`;
+
   return (
-    <div className="border-t border-adv-teal/20 bg-adv-dark">
-      {/* Completed step results */}
-      {results.map((result) => (
-        <div key={result.step} className="border-b border-border">
-          <div className="flex items-center justify-between gap-3 bg-adv-teal-soft px-5 py-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-adv-green shrink-0" />
-              <span className="text-sm font-semibold text-adv-white">
-                Step {result.step + 1}: {result.name}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-adv-gray">
-                {new Date(result.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+    <div className="border-b border-border">
+      {/* Collapsible header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between gap-3 bg-adv-teal-soft px-5 py-3 text-left hover:bg-adv-teal-soft/80 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <CheckCircle2 className="h-4 w-4 text-adv-green shrink-0" />
+          <span className="text-sm font-semibold text-adv-white truncate">
+            Step {result.step + 1}: {result.name}
+          </span>
+          {result.quality_score != null && (
+            <span className={`ml-1 rounded-full bg-adv-dark/40 px-2 py-0.5 text-[10px] font-bold ${qualityColor}`}>
+              {result.quality_score.toFixed(1)}/10
+            </span>
+          )}
+          {thinkingBadge && (
+            <span className="rounded-full bg-adv-blue/20 px-2 py-0.5 text-[10px] font-medium text-adv-blue">
+              {thinkingBadge} reasoning
+            </span>
+          )}
+          {result.retry_count != null && result.retry_count > 0 && (
+            <span className="rounded-full bg-adv-gold/20 px-2 py-0.5 text-[10px] font-medium text-adv-gold">
+              {result.retry_count} {result.retry_count === 1 ? 'retry' : 'retries'}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-adv-gray">
+            {new Date(result.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <ChevronDown className={`h-4 w-4 text-adv-gray transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {/* Step description / purpose note */}
+      {expanded && result.description && (
+        <div className="bg-adv-card/50 border-b border-border/50 px-5 py-2">
+          <p className="text-xs text-adv-gray italic">
+            <span className="font-medium text-adv-off-white">Purpose:</span> {result.description}
+          </p>
+        </div>
+      )}
+
+      {/* Expanded content */}
+      {expanded && (
+        <div>
+          {/* Tab bar + action buttons */}
+          <div className="flex items-center justify-between border-b border-border/50 bg-adv-dark-2 px-5">
+            <div className="flex">
               <button
-                onClick={() => copyToClipboard(result.output)}
+                onClick={() => setActiveTab('output')}
+                className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                  activeTab === 'output'
+                    ? 'border-adv-teal text-adv-teal'
+                    : 'border-transparent text-adv-gray hover:text-adv-off-white'
+                }`}
+              >
+                Output
+              </button>
+              {hasThinking && (
+                <button
+                  onClick={() => setActiveTab('thinking')}
+                  className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                    activeTab === 'thinking'
+                      ? 'border-adv-blue text-adv-blue'
+                      : 'border-transparent text-adv-gray hover:text-adv-off-white'
+                  }`}
+                >
+                  Reasoning
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1 py-1">
+              <button
+                onClick={() => copyToClipboard(activeTab === 'thinking' && result.thinking ? result.thinking : result.output)}
                 className="flex items-center gap-1 rounded px-2 py-1 text-xs text-adv-gray hover:text-adv-teal transition-colors"
-                title="Copy output"
+                title="Copy to clipboard"
               >
                 <Copy className="h-3 w-3" />
-                Copy
               </button>
+              {['md', 'docx', 'pdf'].map((fmt) => (
+                <button
+                  key={fmt}
+                  onClick={() => onExport(fmt, result.output, stepFilename)}
+                  disabled={isExporting}
+                  className="rounded px-2 py-1 text-[10px] font-semibold uppercase text-adv-gray hover:text-adv-teal hover:bg-adv-card transition-colors disabled:opacity-40"
+                  title={`Download as .${fmt}`}
+                >
+                  .{fmt}
+                </button>
+              ))}
             </div>
           </div>
-          <div className="max-h-96 overflow-y-auto p-5">
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-adv-off-white">
-              {result.output}
-            </pre>
+
+          {/* Content area */}
+          <div className="max-h-[500px] overflow-y-auto p-5">
+            {activeTab === 'output' ? (
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-adv-off-white">
+                {result.output}
+              </pre>
+            ) : (
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-adv-gray">
+                {result.thinking}
+              </pre>
+            )}
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function ExecutionResultPanel({
+  results,
+  streamingStepName,
+  streamingText,
+  streamingThinking,
+  isStreaming,
+  onExport,
+  isExporting,
+}: {
+  results: ExecutionResult[];
+  streamingStepName?: string;
+  streamingText: string;
+  streamingThinking?: string;
+  isStreaming: boolean;
+  onExport: (format: string, content: string, filename: string) => void;
+  isExporting: boolean;
+}) {
+  return (
+    <div className="border-t border-adv-teal/20 bg-adv-dark">
+      {/* Completed step results — collapsed by default, latest expanded */}
+      {results.map((result, idx) => (
+        <StepResultCard
+          key={result.step}
+          result={result}
+          onExport={onExport}
+          isExporting={isExporting}
+          defaultExpanded={idx === results.length - 1 && !isStreaming}
+        />
       ))}
 
       {/* Streaming: current step in progress */}
@@ -300,6 +439,18 @@ function ExecutionResultPanel({
               {streamingStepName ? `Executing: ${streamingStepName}` : 'ANTON is working...'}
             </span>
           </div>
+          {/* Thinking indicator */}
+          {streamingThinking && (
+            <div className="border-b border-border/30 bg-adv-dark-2 px-5 py-2">
+              <div className="flex items-center gap-1.5 text-xs text-adv-gray mb-1">
+                <Layers className="h-3 w-3 animate-pulse" />
+                <span className="italic">Reasoning...</span>
+              </div>
+              <pre className="max-h-24 overflow-y-auto whitespace-pre-wrap font-sans text-xs leading-relaxed text-adv-gray/70">
+                {streamingThinking.slice(-500)}
+              </pre>
+            </div>
+          )}
           <div className="max-h-96 overflow-y-auto p-5">
             <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-adv-off-white">
               {streamingText}
@@ -340,9 +491,9 @@ function NewTaskModal({
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/task-agent/tasks', {
+      const res = await fetchWithAuth('/api/task-agent/tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, priority, source, source_ref: sourceRef || undefined }),
       });
       const data = await res.json();
@@ -487,6 +638,8 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [executingStep, setExecutingStep] = useState(false);
   const [executingStepName, setExecutingStepName] = useState('');
   const [executingStepText, setExecutingStepText] = useState('');
+  const [executingStepThinking, setExecutingStepThinking] = useState('');
+  const { doExport, isExporting } = useExport();
   // Attachment state
   const [uploadingFile, setUploadingFile] = useState(false);
   const [knowledgePacks, setKnowledgePacks] = useState<Array<{ id: string; display_name: string; regulatory_area: string | null; status: string }>>([]);
@@ -524,9 +677,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     setStreamText('');
     setSendError(null);
     try {
-      const res = await fetch(`/api/task-agent/tasks/${taskId}/message`, {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${taskId}/message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: content.trim() }),
       });
       if (!res.ok || !res.body) throw new Error('Stream failed');
@@ -572,9 +725,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     } : prev);
 
     try {
-      const res = await fetch(`/api/task-agent/tasks/${task.id}/message`, {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: msg }),
       });
 
@@ -620,25 +773,65 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     if (!selectedProposal || !task || confirmingApproach) return;
     setConfirmingApproach(true);
     try {
-      const res = await fetch(`/api/task-agent/tasks/${task.id}/select-approach`, {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/select-approach`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approach_id: selectedProposal }),
       });
       const data = await res.json();
       if (res.ok) {
         await loadTask();
         onStatusChange();
-        // Trigger ANTON's intake phase — send message so ANTON asks what it needs
+        // Trigger ANTON's intake phase — stream so user sees questions immediately
         const approachName = (data.approach as { name?: string })?.name ?? 'the selected approach';
-        await fetch(`/api/task-agent/tasks/${task.id}/message`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-          body: JSON.stringify({
-            content: `Approach confirmed: "${approachName}". Please ask me for the specific information you need to execute this well. I've already described the task — ask only for what's still missing.`,
-          }),
-        });
-        await loadTask();
+        const intakeMsg = `Approach confirmed: "${approachName}". Ask me for the specific information you need. I've already described the task — ask only for what's still missing.`;
+
+        // Add user message to conversation optimistically
+        setTask((prev) => prev ? {
+          ...prev,
+          conversation: [...prev.conversation, { role: 'user', content: intakeMsg }],
+        } : prev);
+
+        setStreaming(true);
+        setStreamText('');
+
+        try {
+          const streamRes = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: intakeMsg }),
+          });
+
+          if (streamRes.ok && streamRes.body) {
+            const reader = streamRes.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulated = '';
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n');
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const raw = line.slice(6).trim();
+                if (!raw) continue;
+                try {
+                  const parsed = JSON.parse(raw);
+                  if (parsed.type === 'text') {
+                    accumulated += parsed.text;
+                    setStreamText(accumulated);
+                  } else if (parsed.type === 'done') {
+                    await loadTask();
+                    onStatusChange();
+                  }
+                } catch { /* skip */ }
+              }
+            }
+          }
+        } finally {
+          setStreaming(false);
+          setStreamText('');
+        }
       }
     } finally {
       setConfirmingApproach(false);
@@ -648,16 +841,17 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   async function runStep() {
     if (!task || executingStep) return;
     const stepIdx = task.current_step;
-    // Get step name from approach proposals (stored in task.proposals as rendered proposals)
-    const stepName = `Step ${stepIdx + 1}`;
+    const stepDef = task.execution_steps?.[stepIdx];
+    const stepName = stepDef ? `Step ${stepIdx + 1}: ${stepDef.name}` : `Step ${stepIdx + 1}`;
     setExecutingStep(true);
     setExecutingStepName(stepName);
     setExecutingStepText('');
+    setExecutingStepThinking('');
 
     try {
-      const res = await fetch(`/api/task-agent/tasks/${task.id}/execute-step`, {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       if (!res.ok || !res.body) {
@@ -668,6 +862,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = '';
+      let accThinking = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -681,6 +876,13 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             if (parsed.type === 'text' && parsed.text) {
               accumulated += parsed.text;
               setExecutingStepText(accumulated);
+            } else if (parsed.type === 'thinking' && parsed.text) {
+              accThinking += parsed.text;
+              setExecutingStepThinking(accThinking);
+            } else if (parsed.type === 'quality_retry') {
+              // Reset text on retry — new attempt starts fresh
+              accumulated = '';
+              setExecutingStepText('');
             } else if (parsed.type === 'done') {
               await loadTask();
               onStatusChange();
@@ -697,6 +899,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
       setExecutingStep(false);
       setExecutingStepText('');
       setExecutingStepName('');
+      setExecutingStepThinking('');
     }
   }
 
@@ -718,9 +921,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     if (!task) return;
     const current = task.active_knowledge_packs ?? [];
     const next = current.includes(packId) ? current.filter((id) => id !== packId) : [...current, packId];
-    await fetch(`/api/task-agent/tasks/${task.id}/knowledge-packs`, {
+    await fetchWithAuth(`/api/task-agent/tasks/${task.id}/knowledge-packs`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pack_ids: next }),
     });
     await loadTask();
@@ -732,9 +935,8 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch(`/api/task-agent/tasks/${task.id}/upload`, {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/upload`, {
         method: 'POST',
-        headers: getAuthHeader(),
         body: formData,
       });
       if (res.ok) {
@@ -752,9 +954,8 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
 
   async function removeFile(fileId: string) {
     if (!task) return;
-    await fetch(`/api/task-agent/tasks/${task.id}/upload/${fileId}`, {
+    await fetchWithAuth(`/api/task-agent/tasks/${task.id}/upload/${fileId}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     });
     await loadTask();
   }
@@ -839,7 +1040,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-adv-teal" />
                 <span className="text-sm font-semibold text-adv-teal">
-                  All information gathered — ready to execute Step 1
+                  All information gathered — ready to execute Step 1{task.execution_steps?.[0]?.name ? `: ${task.execution_steps[0].name}` : ''}
                 </span>
               </div>
               <button
@@ -860,7 +1061,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               <div className="flex items-center gap-2">
                 <ChevronsRight className="h-4 w-4 text-adv-gold" />
                 <span className="text-sm font-semibold text-adv-gold">
-                  Ready for Step {task.current_step + 1}
+                  Step {task.current_step} complete — ready for Step {task.current_step + 1}{task.execution_steps?.[task.current_step]?.name ? `: ${task.execution_steps[task.current_step].name}` : ''}
                 </span>
               </div>
               <button
@@ -926,10 +1127,16 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
       {/* Execution Results Panel */}
       {(task.execution_results.length > 0 || executingStep) && (
         <ExecutionResultPanel
-          results={task.execution_results}
+          results={task.execution_results.map((r, i) => ({
+            ...r,
+            description: task.execution_steps?.[r.step]?.description,
+          }))}
           streamingStepName={executingStepName}
           streamingText={executingStepText}
+          streamingThinking={executingStepThinking}
           isStreaming={executingStep}
+          onExport={(fmt, content, filename) => doExport(fmt, content, { filename, title: task.title })}
+          isExporting={isExporting}
         />
       )}
 
@@ -1164,7 +1371,7 @@ function AntonTaskAgentPageInner() {
 
   async function deleteTask(id: string) {
     if (!window.confirm('Delete this task? This cannot be undone.')) return;
-    await fetch(`/api/task-agent/tasks/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    await fetchWithAuth(`/api/task-agent/tasks/${id}`, { method: 'DELETE' });
     setTasks((prev) => prev.filter((t) => t.id !== id));
     if (selectedTaskId === id) setSelectedTaskId(null);
   }

@@ -9,7 +9,7 @@ import {
   Search, BookOpen, Globe, Loader2, Trash2, ChevronDown, ChevronUp,
   Plus, BarChart2, AlertCircle, CheckCircle, Building
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 import type { EngagementData, PeerBenchmark } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -65,9 +65,9 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
     setWebSearching(true);
     setWebError(null);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/peer-benchmarks/web-search`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/peer-benchmarks/web-search`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: webQuery.trim() }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -83,9 +83,9 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
   async function addFromInternal(sourceId: string) {
     setAddingFromInternal(sourceId);
     try {
-      await fetch(`/api/engagements/${engagement.id}/peer-benchmarks/from-internal/${sourceId}`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/peer-benchmarks/from-internal/${sourceId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       onReload();
@@ -95,9 +95,8 @@ export default function EngagementPeerBenchmarks({ engagement, onReload }: Props
   }
 
   async function deleteBenchmark(benchmarkId: string) {
-    await fetch(`/api/engagements/${engagement.id}/peer-benchmarks/${benchmarkId}`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}/peer-benchmarks/${benchmarkId}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     });
     onReload();
   }

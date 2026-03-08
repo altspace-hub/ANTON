@@ -12,6 +12,7 @@ import {
   BarChart3,
   AlertTriangle,
 } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
 import { PatternCard } from '../features/intelligence/PatternCard';
 import { DetectedPattern } from '../features/intelligence/types';
 
@@ -94,7 +95,7 @@ export default function PatternDetectionPage() {
   async function runDetectionNow() {
     try {
       setRunningDetection(true);
-      const res = await fetch('/api/patterns/scheduler/run-now', { method: 'POST' });
+      const res = await fetchWithAuth('/api/patterns/scheduler/run-now', { method: 'POST' });
       const data = await res.json();
 
       if (data.success) {
@@ -117,7 +118,7 @@ export default function PatternDetectionPage() {
         ? '/api/patterns/scheduler/stop'
         : '/api/patterns/scheduler/start';
 
-      const res = await fetch(endpoint, { method: 'POST' });
+      const res = await fetchWithAuth(endpoint, { method: 'POST' });
       const data = await res.json();
 
       if (data.success) {
@@ -130,7 +131,7 @@ export default function PatternDetectionPage() {
 
   async function updateSchedulerConfig() {
     try {
-      const res = await fetch('/api/patterns/scheduler/config', {
+      const res = await fetchWithAuth('/api/patterns/scheduler/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,7 +157,7 @@ export default function PatternDetectionPage() {
 
     try {
       const notes = prompt('Resolution notes (optional):');
-      await fetch(`/api/patterns/${pattern.id}/status`, {
+      await fetchWithAuth(`/api/patterns/${pattern.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -174,7 +175,7 @@ export default function PatternDetectionPage() {
 
   async function investigatePattern(pattern: DetectedPattern) {
     try {
-      await fetch(`/api/patterns/${pattern.id}/status`, {
+      await fetchWithAuth(`/api/patterns/${pattern.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

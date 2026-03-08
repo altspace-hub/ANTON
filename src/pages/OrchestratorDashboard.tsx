@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -173,10 +173,9 @@ const RATING_OPTIONS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function ConfigPanel({ config, onSaved, authHeader }: {
+function ConfigPanel({ config, onSaved }: {
   config: OrchestratorConfig;
   onSaved: (updated: OrchestratorConfig) => void;
-  authHeader: Record<string, string>;
 }) {
   const [interval, setInterval] = React.useState(String(config.heartbeat_interval_minutes));
   const [schedule, setSchedule] = React.useState(config.briefing_schedule);
@@ -187,9 +186,9 @@ function ConfigPanel({ config, onSaved, authHeader }: {
     const next = config.heartbeat_enabled ? 0 : 1;
     setSaving(true);
     try {
-      const r = await fetch('/api/orchestrator/config', {
+      const r = await fetchWithAuth('/api/orchestrator/config', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeader },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ heartbeat_enabled: next }),
       });
       if (r.ok) onSaved({ ...config, heartbeat_enabled: next });
@@ -201,9 +200,9 @@ function ConfigPanel({ config, onSaved, authHeader }: {
     setInterval(String(val));
     setSaving(true);
     try {
-      const r = await fetch('/api/orchestrator/config', {
+      const r = await fetchWithAuth('/api/orchestrator/config', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeader },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ heartbeat_interval_minutes: val, briefing_schedule: schedule }),
       });
       if (r.ok) { onSaved({ ...config, heartbeat_interval_minutes: val, briefing_schedule: schedule }); setSaved(true); setTimeout(() => setSaved(false), 2000); }
@@ -426,9 +425,8 @@ export default function OrchestratorDashboard() {
     setGenerating(true);
     setStatusMsg('');
     try {
-      const r = await fetch('/api/orchestrator/briefings/generate', {
+      const r = await fetchWithAuth('/api/orchestrator/briefings/generate', {
         method: 'POST',
-        headers: getAuthHeader(),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
@@ -447,9 +445,9 @@ export default function OrchestratorDashboard() {
 
   const rateProposal = async (proposalId: string, rating: string) => {
     try {
-      await fetch(`/api/orchestrator/proposals/${proposalId}`, {
+      await fetchWithAuth(`/api/orchestrator/proposals/${proposalId}`, {
         method: 'PATCH',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ human_rating: rating }),
       });
       setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, human_rating: rating } : p));
@@ -460,9 +458,9 @@ export default function OrchestratorDashboard() {
 
   const approveProposal = async (proposalId: string) => {
     try {
-      const r = await fetch(`/api/orchestrator/proposals/${proposalId}/approve`, {
+      const r = await fetchWithAuth(`/api/orchestrator/proposals/${proposalId}/approve`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       if (!r.ok) {
@@ -481,9 +479,9 @@ export default function OrchestratorDashboard() {
 
   const rejectProposal = async (proposalId: string) => {
     try {
-      await fetch(`/api/orchestrator/proposals/${proposalId}/reject`, {
+      await fetchWithAuth(`/api/orchestrator/proposals/${proposalId}/reject`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, status: 'rejected', human_rating: 'wrong' } : p));
@@ -495,9 +493,9 @@ export default function OrchestratorDashboard() {
     const notes = prompt(`Modify scope before approval:\n\nCurrent: ${proposedAction}\n\nEnter modification notes (or leave blank to proceed):`) ?? '';
     if (notes === null) return; // user cancelled
     try {
-      const r = await fetch(`/api/orchestrator/proposals/${proposalId}/modify`, {
+      const r = await fetchWithAuth(`/api/orchestrator/proposals/${proposalId}/modify`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modification_notes: notes }),
       });
       if (!r.ok) {
@@ -519,9 +517,8 @@ export default function OrchestratorDashboard() {
   const handlePause = async () => {
     const paused = config?.orchestrator_paused;
     try {
-      await fetch(`/api/orchestrator/${paused ? 'resume' : 'pause'}`, {
+      await fetchWithAuth(`/api/orchestrator/${paused ? 'resume' : 'pause'}`, {
         method: 'POST',
-        headers: getAuthHeader(),
       });
       await fetchStatus();
     } catch { /* ignore */ }
@@ -530,7 +527,7 @@ export default function OrchestratorDashboard() {
   const handleReset = async () => {
     if (!confirm('Reset Orchestrator to Stage 1 (Observer)? All progression metrics will be cleared.')) return;
     try {
-      await fetch('/api/orchestrator/reset', { method: 'POST', headers: getAuthHeader() });
+      await fetchWithAuth('/api/orchestrator/reset', { method: 'POST' });
       await fetchStatus();
       setStatusMsg('Orchestrator reset to Stage 1');
     } catch { /* ignore */ }
@@ -538,9 +535,9 @@ export default function OrchestratorDashboard() {
 
   const handleDemoActivate = async (mode: 'demo' | 'simulation' | 'accelerated') => {
     try {
-      const r = await fetch('/api/orchestrator/demo/activate', {
+      const r = await fetchWithAuth('/api/orchestrator/demo/activate', {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode }),
       });
       if (r.ok) {
@@ -554,7 +551,7 @@ export default function OrchestratorDashboard() {
 
   const handleDemoDeactivate = async () => {
     try {
-      await fetch('/api/orchestrator/demo/deactivate', { method: 'POST', headers: getAuthHeader() });
+      await fetchWithAuth('/api/orchestrator/demo/deactivate', { method: 'POST' });
       setDemoMode('off');
       setDemoSignals(0);
       setStatusMsg('Demo Mode deactivated — synthetic signals removed');
@@ -756,7 +753,7 @@ export default function OrchestratorDashboard() {
 
       {/* ── Config panel (collapsible, interactive) ─────────────────────── */}
       {showConfig && config && (
-        <ConfigPanel config={config} onSaved={(updated) => setConfig(updated)} authHeader={getAuthHeader()} />
+        <ConfigPanel config={config} onSaved={(updated) => setConfig(updated)} />
       )}
 
       {/* ── Main content: briefing + proposals ────────────────────────────── */}

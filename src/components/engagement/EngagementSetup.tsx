@@ -9,7 +9,7 @@ import {
   FileText, Upload, CheckCircle, Loader2, AlertCircle,
   ChevronRight, X, RefreshCw, Briefcase
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, EngagementDocument } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -36,9 +36,8 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
       const fd = new FormData();
       fd.append('file', file);
       fd.append('document_type', docType);
-      const res = await fetch(`/api/engagements/${engagement.id}/documents`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/documents`, {
         method: 'POST',
-        headers: getAuthHeader(),
         body: fd,
       });
       if (!res.ok) throw new Error(await res.text());
@@ -54,9 +53,9 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
     setExtracting(docId);
     setError(null);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/documents/${docId}/extract`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/documents/${docId}/extract`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -90,9 +89,9 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
             <input
               defaultValue={engagement.your_organisation || ''}
               onBlur={async e => {
-                await fetch(`/api/engagements/${engagement.id}`, {
+                await fetchWithAuth(`/api/engagements/${engagement.id}`, {
                   method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ your_organisation: e.target.value }),
                 });
                 onUpdate({ your_organisation: e.target.value });
@@ -106,9 +105,9 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
             <input
               defaultValue={engagement.client_name || ''}
               onBlur={async e => {
-                await fetch(`/api/engagements/${engagement.id}`, {
+                await fetchWithAuth(`/api/engagements/${engagement.id}`, {
                   method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ client_name: e.target.value }),
                 });
                 onUpdate({ client_name: e.target.value });

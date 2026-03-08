@@ -9,7 +9,7 @@ import {
   CheckCircle, Edit2, Plus, Trash2, ChevronRight,
   AlertTriangle, FileText, Target, List, Shield
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, ScopeItem, Deliverable, Boundary } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -37,9 +37,9 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
     if (!newScopeTitle.trim()) return;
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/scope-items`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/scope-items`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: newScopeTitle, description: newScopeDesc, category: newScopeCat }),
       });
       setNewScopeTitle(''); setNewScopeDesc(''); setAddingScope(false);
@@ -50,9 +50,9 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
   }
 
   async function removeScopeItem(itemId: string) {
-    await fetch(`/api/engagements/${engagement.id}/scope-items/${itemId}`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}/scope-items/${itemId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'removed' }),
     });
     onReload();
@@ -60,9 +60,9 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
 
   async function confirmAll() {
     // Update engagement status to scope_agreement confirmed
-    await fetch(`/api/engagements/${engagement.id}`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scope_confirmed_at: new Date().toISOString() }),
     });
     onNext();
@@ -255,9 +255,9 @@ function ScopeItemCard({
   const [desc, setDesc] = useState(item.description || '');
 
   async function save() {
-    await fetch(`/api/engagements/${engagementId}/scope-items/${item.id}`, {
+    await fetchWithAuth(`/api/engagements/${engagementId}/scope-items/${item.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, description: desc }),
     });
     setEditing(false);

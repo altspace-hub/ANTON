@@ -59,6 +59,38 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
     }
   });
 
+  // GET /api/knowledge-graph/entities/:type/:id/transitive — KG-06 transitive closure
+  // ?relationship=requires,implements  &maxDepth=10  &packId=...
+  router.get('/knowledge-graph/entities/:type/:id/transitive', (req, res) => {
+    try {
+      const { type, id } = req.params;
+      const maxDepth = Math.min(parseInt(req.query.maxDepth as string) || 10, 20);
+      const packId = req.query.packId as string | undefined;
+
+      const relParam = (req.query.relationship as string) || 'requires';
+      const relationshipTypes = relParam
+        .split(',')
+        .map(r => r.trim())
+        .filter(Boolean);
+
+      if (relationshipTypes.length === 0) {
+        return res.status(400).json({ error: 'At least one relationship type required (e.g. ?relationship=requires)' });
+      }
+
+      const closure = graphService.getTransitiveClosure(type, id, relationshipTypes, maxDepth, packId);
+
+      res.json({
+        start: { entity_type: type, entity_id: id },
+        relationship_types: relationshipTypes,
+        max_depth: maxDepth,
+        total: closure.length,
+        nodes: closure,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/knowledge-graph/entities/:type/:id/subgraph — get subgraph
   router.get('/knowledge-graph/entities/:type/:id/subgraph', (req, res) => {
     try {

@@ -4,14 +4,14 @@
  * Upload and manage resources across 6 categories with status toggles.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   FileText, Mic, BookOpen, BarChart2, Code2, Upload,
   ChevronRight, Loader2, CheckCircle, Clock, AlertCircle,
   ChevronDown, ChevronUp, Trash2, Star, Link, Plus,
-  FolderSearch, X, RefreshCw, Info
+  FolderSearch, X, RefreshCw, Info, Brain, Globe, Search, Package
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, Resource } from '@/pages/EngagementWorkspacePage';
 import EngagementPeerBenchmarks from './EngagementPeerBenchmarks';
 
@@ -74,9 +74,8 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
       fd.append('file', file);
       fd.append('category', category);
       fd.append('title', file.name);
-      await fetch(`/api/engagements/${engagement.id}/resources`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
         method: 'POST',
-        headers: getAuthHeader(),
         body: fd,
       });
       onReload();
@@ -89,9 +88,9 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
     if (!urlInput.trim()) return;
     setAddingUrlLoading(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/resources`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/resources`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category, url: urlInput.trim(), title: urlTitle.trim() || urlInput.trim() }),
       });
       setUrlInput(''); setUrlTitle(''); setAddingUrl(null);
@@ -102,9 +101,9 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
   }
 
   async function setCategoryStatus(category: string, status: CategoryStatus) {
-    await fetch(`/api/engagements/${engagement.id}/resource-categories`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}/resource-categories`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category, status }),
     });
     onReload();
@@ -114,9 +113,9 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
     if (!ragFolderInput.trim()) return;
     setRagIndexing(true); setRagError(null); setRagIndexResult(null);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/rag-directory`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/rag-directory`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folderPath: ragFolderInput.trim() }),
       });
       const data = await res.json() as { ok?: boolean; chunkCount?: number; fileCount?: number; error?: string };
@@ -131,8 +130,8 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
   }
 
   async function removeRagDirectory() {
-    await fetch(`/api/engagements/${engagement.id}/rag-directory`, {
-      method: 'DELETE', headers: getAuthHeader(),
+    await fetchWithAuth(`/api/engagements/${engagement.id}/rag-directory`, {
+      method: 'DELETE',
     });
     setRagIndexResult(null); setRagFolderInput(''); setRagError(null);
     onReload();
@@ -141,8 +140,8 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
   async function reindexRagDirectory() {
     setRagIndexing(true); setRagError(null);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/rag-directory/reindex`, {
-        method: 'POST', headers: getAuthHeader(),
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/rag-directory/reindex`, {
+        method: 'POST',
       });
       const data = await res.json() as { ok?: boolean; chunkCount?: number; fileCount?: number; error?: string };
       if (!res.ok) { setRagError(data.error || 'Reindex failed'); return; }
@@ -409,6 +408,9 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
         </div>
       </div>
 
+      {/* Knowledge Sources (Mode 5a, 5b, 6) */}
+      <EngagementKnowledgeSources engagement={engagement} onReload={onReload} />
+
       {/* Peer Benchmarks */}
       <EngagementPeerBenchmarks engagement={engagement} onReload={onReload} />
 
@@ -441,9 +443,9 @@ export default function EngagementResourceCollection({ engagement, onUpdate, onN
 
 function ResourceRow({ resource, engagementId, onReload }: { resource: Resource; engagementId: string; onReload: () => void }) {
   async function remove() {
-    await fetch(`/api/engagements/${engagementId}/resources/${resource.id}`, {
+    await fetchWithAuth(`/api/engagements/${engagementId}/resources/${resource.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'not_available' }),
     });
     onReload();
@@ -469,6 +471,162 @@ function ResourceRow({ resource, engagementId, onReload }: { resource: Resource;
       )}
       {resource.status === 'reviewed' && <CheckCircle className="h-3 w-3 text-adv-green shrink-0" />}
       {resource.status === 'processing' && <Loader2 className="h-3 w-3 text-adv-gold animate-spin shrink-0" />}
+    </div>
+  );
+}
+
+// ── Knowledge Sources (Mode 5a, 5b, 6) ─────────────────────────────────────
+
+interface KnowledgeConfig {
+  webSearchEnabled?: boolean;
+  webSearchFocus?: string;
+  indexedKBEnabled?: boolean;
+  indexedKBFolders?: string[];
+  indexedKBTopK?: number;
+  knowledgePacksEnabled?: boolean;
+  activePackIds?: string[];
+}
+
+interface KnowledgePack {
+  id: string;
+  pack_id: string;
+  name: string;
+  version: string;
+  jurisdiction: string;
+  entity_count: number;
+  relationship_count: number;
+  is_active: number;
+}
+
+function EngagementKnowledgeSources({ engagement, onReload }: { engagement: EngagementData; onReload: () => void }) {
+  const [config, setConfig] = useState<KnowledgeConfig>(() => {
+    try { return JSON.parse(engagement.knowledge_config || '{}'); } catch { return {}; }
+  });
+  const [packs, setPacks] = useState<KnowledgePack[]>([]);
+  const [indexedFolders, setIndexedFolders] = useState<Array<{ path: string; file_count: number }>>([]);
+  const [saving, setSaving] = useState(false);
+
+  // Load knowledge packs + indexed folders on mount
+  useEffect(() => {
+    fetchWithAuth('/api/knowledge-packs').then(r => r.json()).then((d: KnowledgePack[]) => setPacks(Array.isArray(d) ? d : [])).catch(() => {});
+    fetchWithAuth('/api/folders/registered').then(r => r.json()).then((d: Array<{ path: string; file_count: number }>) => setIndexedFolders(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+
+  async function saveConfig(updated: KnowledgeConfig) {
+    setConfig(updated);
+    setSaving(true);
+    try {
+      await fetchWithAuth(`/api/engagements/${engagement.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ knowledge_config: updated }),
+      });
+      onReload();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const activePacks = packs.filter(p => p.is_active);
+  const enabledCount = [config.webSearchEnabled, config.indexedKBEnabled, config.knowledgePacksEnabled].filter(Boolean).length;
+
+  return (
+    <div className="bg-adv-card border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4">
+        <Brain className="h-4 w-4 text-adv-teal shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-adv-off-white">Knowledge Sources</p>
+          <p className="text-xs text-adv-gray">
+            {enabledCount > 0 ? `${enabledCount} source${enabledCount > 1 ? 's' : ''} active` : 'Optional — enhance execution with knowledge bases and web search'}
+          </p>
+        </div>
+        {saving && <Loader2 className="h-3.5 w-3.5 text-adv-teal animate-spin" />}
+      </div>
+
+      <div className="border-t border-border p-4 space-y-3">
+        {/* Web Search */}
+        <div
+          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+            config.webSearchEnabled ? 'border-adv-teal bg-adv-teal-dim' : 'border-border hover:border-adv-teal/30'
+          }`}
+          onClick={() => saveConfig({ ...config, webSearchEnabled: !config.webSearchEnabled })}
+        >
+          <Globe className={`h-4 w-4 mt-0.5 shrink-0 ${config.webSearchEnabled ? 'text-adv-teal' : 'text-adv-gray'}`} />
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-medium ${config.webSearchEnabled ? 'text-adv-teal' : 'text-adv-off-white'}`}>Web Search</p>
+            <p className="text-xs text-adv-gray">Claude searches the internet for latest regulatory publications during execution.</p>
+          </div>
+          <div className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center ${config.webSearchEnabled ? 'bg-adv-teal border-adv-teal' : 'border-adv-gray-med'}`}>
+            {config.webSearchEnabled && <CheckCircle className="h-3 w-3 text-adv-dark" />}
+          </div>
+        </div>
+        {config.webSearchEnabled && (
+          <div className="ml-7">
+            <input
+              value={config.webSearchFocus || ''}
+              onChange={e => setConfig(prev => ({ ...prev, webSearchFocus: e.target.value }))}
+              onBlur={() => saveConfig(config)}
+              placeholder="Focus area (optional): e.g., AMLR Regulation 2024/1624, AMLA RTS"
+              className="w-full bg-adv-dark-2 border border-border rounded-lg px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray-med focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:border-adv-teal"
+            />
+          </div>
+        )}
+
+        {/* Indexed Knowledge Base (Mode 5a) */}
+        <div
+          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+            config.indexedKBEnabled ? 'border-adv-teal bg-adv-teal-dim' : 'border-border hover:border-adv-teal/30'
+          }`}
+          onClick={() => saveConfig({ ...config, indexedKBEnabled: !config.indexedKBEnabled })}
+        >
+          <Search className={`h-4 w-4 mt-0.5 shrink-0 ${config.indexedKBEnabled ? 'text-adv-teal' : 'text-adv-gray'}`} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className={`text-sm font-medium ${config.indexedKBEnabled ? 'text-adv-teal' : 'text-adv-off-white'}`}>Indexed Knowledge Base</p>
+              <span className="text-[10px] bg-adv-teal/20 text-adv-teal px-1.5 py-0.5 rounded font-medium">Mode 5a</span>
+            </div>
+            <p className="text-xs text-adv-gray">
+              Semantic search across indexed document library. Retrieves the most relevant passages — not whole documents.
+              {indexedFolders.length > 0 ? ` ${indexedFolders.length} indexed folder${indexedFolders.length > 1 ? 's' : ''} available.` : ' No folders indexed yet — use Knowledge Base page to index.'}
+            </p>
+          </div>
+          <div className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center ${config.indexedKBEnabled ? 'bg-adv-teal border-adv-teal' : 'border-adv-gray-med'}`}>
+            {config.indexedKBEnabled && <CheckCircle className="h-3 w-3 text-adv-dark" />}
+          </div>
+        </div>
+
+        {/* Regulatory Knowledge Packs (Mode 6) */}
+        <div
+          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+            config.knowledgePacksEnabled ? 'border-adv-teal bg-adv-teal-dim' : 'border-border hover:border-adv-teal/30'
+          }`}
+          onClick={() => saveConfig({ ...config, knowledgePacksEnabled: !config.knowledgePacksEnabled })}
+        >
+          <Package className={`h-4 w-4 mt-0.5 shrink-0 ${config.knowledgePacksEnabled ? 'text-adv-teal' : 'text-adv-gray'}`} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className={`text-sm font-medium ${config.knowledgePacksEnabled ? 'text-adv-teal' : 'text-adv-off-white'}`}>Regulatory Knowledge Packs</p>
+              <span className="text-[10px] bg-adv-teal/20 text-adv-teal px-1.5 py-0.5 rounded font-medium">Mode 6</span>
+            </div>
+            <p className="text-xs text-adv-gray">
+              {activePacks.length > 0
+                ? `${activePacks.length} active pack${activePacks.length > 1 ? 's' : ''}: ${activePacks.slice(0, 3).map(p => p.name).join(', ')}${activePacks.length > 3 ? '...' : ''}`
+                : 'No packs active — activate packs in the Knowledge Base page.'}
+              {' '}Curated regulatory entity graphs injected into analysis.
+            </p>
+          </div>
+          <div className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center ${config.knowledgePacksEnabled ? 'bg-adv-teal border-adv-teal' : 'border-adv-gray-med'}`}>
+            {config.knowledgePacksEnabled && <CheckCircle className="h-3 w-3 text-adv-dark" />}
+          </div>
+        </div>
+
+        {enabledCount > 0 && (
+          <p className="text-xs text-adv-teal flex items-center gap-1">
+            <CheckCircle className="h-3 w-3" />
+            {enabledCount} knowledge source{enabledCount > 1 ? 's' : ''} will be used during execution
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import type { ChannelBridge, ChannelType } from './types';
 import { ChannelBridgeWizard } from './ChannelBridgeWizard';
+import { fetchWithAuth } from '@/lib/api';
 
 // ── Icons by channel type ─────────────────────────────────
 
@@ -98,7 +99,7 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
   async function approveBridge() {
     setApproving(true);
     try {
-      await fetch(`/api/bridges/${bridge.id}/approve`, { method: 'POST' });
+      await fetchWithAuth(`/api/bridges/${bridge.id}/approve`, { method: 'POST' });
       onRefresh();
     } finally {
       setApproving(false);
@@ -110,7 +111,7 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
       return;
     setDeleting(true);
     try {
-      await fetch(`/api/bridges/${bridge.id}`, { method: 'DELETE' });
+      await fetchWithAuth(`/api/bridges/${bridge.id}`, { method: 'DELETE' });
       onRefresh();
     } finally {
       setDeleting(false);
@@ -120,7 +121,7 @@ function BridgeRow({ bridge, onRefresh }: BridgeRowProps) {
   async function saveLimits() {
     setSaving(true);
     try {
-      await fetch(`/api/bridges/${bridge.id}`, {
+      await fetchWithAuth(`/api/bridges/${bridge.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rate_limit_rpm: editRpm, max_response_length: editMaxLen }),

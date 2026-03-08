@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { fetchWithAuth } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import {
   Plus, Trash2, FileText, Database as DatabaseIcon, AlertCircle, RefreshCw,
@@ -119,7 +120,7 @@ function CollectionsTab() {
   const handleDeleteDocument = async (documentId: string) => {
     if (!confirm('Delete this document? This will remove all indexed chunks.')) return;
     try {
-      await fetch(`/api/documents/${documentId}`, { method: 'DELETE', headers: authHeader() });
+      await fetchWithAuth(`/api/documents/${documentId}`, { method: 'DELETE' });
       if (selectedCollection) loadDocuments(selectedCollection);
     } catch (e) { console.error('Failed to delete document:', e); }
   };
@@ -557,9 +558,8 @@ function RegulatoryPacksTab() {
     try {
       const form = new FormData();
       form.append('bundle', file);
-      const res = await fetch('/api/knowledge-packs/import', {
+      const res = await fetchWithAuth('/api/knowledge-packs/import', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('openexpert-token')}` },
         body: form,
       });
       const data = await res.json();
@@ -577,9 +577,8 @@ function RegulatoryPacksTab() {
     setInstallingSlug(slug);
     setError(null);
     try {
-      const res = await fetch(`/api/knowledge-packs/bundled/${slug}/install`, {
+      const res = await fetchWithAuth(`/api/knowledge-packs/bundled/${slug}/install`, {
         method: 'POST',
-        headers: authHeader(),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Install failed');
@@ -596,7 +595,7 @@ function RegulatoryPacksTab() {
   const handleActivate = async (pack: KnowledgePack) => {
     setConfirmActivate(null);
     try {
-      const res = await fetch(`/api/knowledge-packs/${pack.id}/activate`, { method: 'PATCH', headers: authHeader() });
+      const res = await fetchWithAuth(`/api/knowledge-packs/${pack.id}/activate`, { method: 'PATCH' });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Activate failed'); }
       await loadAll();
     } catch (e) {
@@ -606,7 +605,7 @@ function RegulatoryPacksTab() {
 
   const handleDeactivate = async (id: string) => {
     try {
-      const res = await fetch(`/api/knowledge-packs/${id}/deactivate`, { method: 'PATCH', headers: authHeader() });
+      const res = await fetchWithAuth(`/api/knowledge-packs/${id}/deactivate`, { method: 'PATCH' });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Deactivate failed'); }
       await loadAll();
     } catch (e) {
@@ -617,7 +616,7 @@ function RegulatoryPacksTab() {
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Delete pack "${name}"?\n\nEntities that were only in this pack will be removed from the knowledge graph. Entities shared with workflow extractions will be retained.`)) return;
     try {
-      const res = await fetch(`/api/knowledge-packs/${id}`, { method: 'DELETE', headers: authHeader() });
+      const res = await fetchWithAuth(`/api/knowledge-packs/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error || 'Delete failed');

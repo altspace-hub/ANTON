@@ -9,7 +9,7 @@ import {
   Briefcase, Plus, Clock, ChevronRight, Archive, Copy,
   CheckCircle, Circle, Loader2, Search, Filter, FolderOpen, Link2
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 interface Engagement {
   id: string;
@@ -105,9 +105,9 @@ export default function EngagementListPage() {
     if (!newTitle.trim()) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/engagements', {
+      const res = await fetchWithAuth('/api/engagements', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: newTitle, engagement_type: newType, client_name: newClient, your_organisation: newOrg }),
       });
       if (res.ok) {
@@ -121,15 +121,15 @@ export default function EngagementListPage() {
 
   async function archiveEngagement(id: string, e: React.MouseEvent) {
     e.stopPropagation();
-    await fetch(`/api/engagements/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    await fetchWithAuth(`/api/engagements/${id}`, { method: 'DELETE' });
     setEngagements(prev => prev.filter(e => e.id !== id));
   }
 
   async function linkToProject(engId: string, projectId: string | null, e: React.MouseEvent) {
     e.stopPropagation();
-    await fetch(`/api/engagements/${engId}/project`, {
+    await fetchWithAuth(`/api/engagements/${engId}/project`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ project_id: projectId }),
     });
     setLinkingEngId(null);

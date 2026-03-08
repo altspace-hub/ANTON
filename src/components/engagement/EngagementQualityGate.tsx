@@ -11,7 +11,7 @@ import {
   ChevronDown, ChevronUp, Download, FileText, BarChart2, RefreshCw,
   ListChecks, Star, Layers, BookOpen, Zap, Users, GitBranch, SkipForward
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, QualityGate } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -83,9 +83,9 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
     abortRef.current = new AbortController();
 
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/quality-gate/run`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/quality-gate/run`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
         signal: abortRef.current.signal,
       });
@@ -163,9 +163,9 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
   async function exportEngagement(format: 'docx' | 'xlsx' | 'pdf') {
     setExporting(format);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/export`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/export`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ format }),
       });
       if (!res.ok) throw new Error(await res.text());

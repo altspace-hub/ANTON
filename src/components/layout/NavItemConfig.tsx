@@ -48,6 +48,8 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'orchestrator', label: 'ANTON Orchestrator', category: 'intelligence' },
   { id: 'counsels-desk', label: "Counsel's Desk", category: 'tools' },
   { id: 'gap-assessment', label: 'Gap Assessor', category: 'tools' },
+  { id: 'regulatory-feed', label: 'Regulatory Feed', category: 'tools' },
+  { id: 'lore-ledger', label: 'Lore Ledger', category: 'tools' },
   { id: 'roaring', label: 'Roaring Entity Registry', category: 'tools' },
   { id: 'dj-screening', label: 'DJ Risk & Compliance', category: 'tools' },
   { id: 'entity-intelligence', label: 'Entity Intelligence', category: 'tools' },
@@ -72,6 +74,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'apprentice', label: 'Apprentice Model', category: 'features' },
   { id: 'knowledge-base', label: 'Knowledge Base', category: 'features' },
   { id: 'governance', label: 'Governance Dashboard', category: 'features' },
+  { id: 'system-cards', label: 'AI System Cards', category: 'features' },
   { id: 'compare', label: 'Compare ANTON', category: 'features' },
   { id: 'marketplace', label: 'Marketplace', category: 'features' },
 
@@ -90,6 +93,8 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'insights', label: 'Data Insights', category: 'admin' },
   { id: 'audit', label: 'Audit Log', category: 'admin' },
   { id: 'compliance', label: 'Compliance', category: 'admin' },
+  { id: 'compliance-posture', label: 'Compliance Posture', category: 'admin' },
+  { id: 'risk-appetite', label: 'Risk Appetite Dashboard', category: 'admin' },
 ];
 
 // UX-01: Role-based nav presets — show only relevant items for each persona

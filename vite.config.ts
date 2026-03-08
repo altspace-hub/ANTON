@@ -92,6 +92,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/client',
+    target: 'es2015',   // COMPAT-01: target ES2015 for broader browser compatibility
     chunkSizeWarningLimit: 800,
     // Limit parallel file processing to reduce peak RAM usage on Windows
     // (Rollup 4.x WebAssembly can try to reserve huge contiguous blocks otherwise)

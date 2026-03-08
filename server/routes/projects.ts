@@ -103,7 +103,12 @@ export function createProjectRoutes(db: Database.Database) {
   // GET /api/projects/:id
   router.get('/projects/:id', (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+      // In team mode, non-admins can only fetch projects they are a member of
+      const project = (IS_TEAM_MODE && userRole !== 'admin')
+        ? db.prepare('SELECT p.* FROM projects p INNER JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ? WHERE p.id = ?').get(userId, req.params.id)
+        : db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
       if (!project) { res.status(404).json({ error: 'Project not found' }); return; }
       // D3: Return sessions from ALL areas (no area filter), include module_id as areaId
       const sessions = db.prepare(
@@ -118,6 +123,13 @@ export function createProjectRoutes(db: Database.Database) {
   // GET /api/projects/:id/stats
   router.get('/projects/:id/stats', (req, res) => {
     const { id } = req.params;
+    const userId = getUserId(req);
+    const userRole = getUserRole(req);
+    // Verify project access
+    const hasAccess = (IS_TEAM_MODE && userRole !== 'admin')
+      ? db.prepare('SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?').get(id, userId)
+      : db.prepare('SELECT 1 FROM projects WHERE id = ?').get(id);
+    if (!hasAccess) { res.status(404).json({ error: 'Project not found' }); return; }
     try {
       const totals = db.prepare(`
         SELECT

@@ -13,7 +13,7 @@ import {
   SearchCheck, Globe, Zap, Plus, X, Pin, Download, Trash2,
   ChevronDown, RefreshCw, Copy, CheckSquare, Languages,
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -238,7 +238,7 @@ export default function CounselsDesk() {
 
   // ── Delete session ─────────────────────────────────────────────────────────
   const deleteSession = async (id: string) => {
-    await fetch(`/api/legal-research/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    await fetchWithAuth(`/api/legal-research/${id}`, { method: 'DELETE' });
     setSessions(prev => prev.filter(s => s.id !== id));
     setDeletingSessionId(null);
     if (activeSession?.id === id) setActiveSession(null);
@@ -248,9 +248,9 @@ export default function CounselsDesk() {
   const createSession = async () => {
     if (!newTitle.trim()) return;
     try {
-      const r = await fetch('/api/legal-research', {
+      const r = await fetchWithAuth('/api/legal-research', {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: newTitle, mode: selectedMode, expert_role: selectedRole, active_knowledge_packs: DEFAULT_PACK_IDS }),
       });
       if (!r.ok) return;
@@ -286,9 +286,9 @@ export default function CounselsDesk() {
     if (updates.expert_role) body.expert_role = updates.expert_role;
     if (updates.active_knowledge_packs !== undefined) body.active_knowledge_packs = updates.active_knowledge_packs;
     try {
-      await fetch(`/api/legal-research/${activeSession.id}`, {
+      await fetchWithAuth(`/api/legal-research/${activeSession.id}`, {
         method: 'PATCH',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
     } catch { /* ignore */ }
@@ -318,9 +318,9 @@ export default function CounselsDesk() {
 
     // SSE streaming
     try {
-      const response = await fetch(`/api/legal-research/${activeSession.id}/message`, {
+      const response = await fetchWithAuth(`/api/legal-research/${activeSession.id}/message`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: updatedQuestion.messages.map(m => ({ role: m.role, content: m.content })),
           webSearchEnabled,
@@ -681,9 +681,9 @@ export default function CounselsDesk() {
                       onClick={async () => {
                         setShowModeSelector(false);
                         setActiveSession(prev => prev ? { ...prev, mode: m.id } : prev);
-                        await fetch(`/api/legal-research/${activeSession.id}`, {
+                        await fetchWithAuth(`/api/legal-research/${activeSession.id}`, {
                           method: 'PATCH',
-                          headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+                          headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ mode: m.id }),
                         });
                       }}
@@ -714,9 +714,9 @@ export default function CounselsDesk() {
                     onClick={async () => {
                       setShowRoleDropdown(false);
                       setActiveSession(prev => prev ? { ...prev, expert_role: r.id } : prev);
-                      await fetch(`/api/legal-research/${activeSession.id}`, {
+                      await fetchWithAuth(`/api/legal-research/${activeSession.id}`, {
                         method: 'PATCH',
-                        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ expert_role: r.id }),
                       });
                     }}

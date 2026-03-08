@@ -89,7 +89,13 @@ export class SQLiteVectorStore {
     const rows = this.db.prepare(sql).all(...args) as EmbeddingRow[];
     const dims = queryVector.length;
 
-    const scored = rows
+    // KG-02: Skip rows with mismatched embedding dimensions (different model or re-embedded with different dim)
+    const compatRows = rows.filter(row => row.embedding_dimension === dims);
+    if (compatRows.length < rows.length) {
+      console.warn(`[vector-store] Skipped ${rows.length - compatRows.length} embedding(s) with dimension mismatch (expected ${dims})`);
+    }
+
+    const scored = compatRows
       .map(row => {
         const vec = deserializeVector(row.embedding, dims);
         const sim = cosineSimilarity(queryVector, vec);

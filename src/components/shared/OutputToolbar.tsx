@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award } from 'lucide-react';
+import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History } from 'lucide-react';
 import CitationVerifier from '@/components/shared/CitationVerifier';
 import ReviewLauncher from '@/components/platform/ReviewLauncher';
 import FeedbackWidget from '@/components/shared/FeedbackWidget';
@@ -10,7 +10,7 @@ import { buildOutputInstruction } from '@/lib/output-format-definitions';
 
 // ── Types ────────────────────────────────────────────────────
 
-type PanelId = 'citations' | 'review' | 'thinking' | 'prompt' | 'feedback' | 'save' | 'trust' | 'trail' | null;
+type PanelId = 'citations' | 'review' | 'thinking' | 'prompt' | 'feedback' | 'save' | 'trust' | 'trail' | 'history' | null;
 
 interface OutputToolbarProps {
   /** The last assistant output text (for citations & review) */
@@ -60,6 +60,8 @@ interface OutputToolbarProps {
   onUpgradeThinking?: (level: 'think_hard' | 'investigate') => void;
   /** Per-message config snapshot — used for accurate "How ANTON Thought" display on old sessions */
   configSnapshot?: Record<string, unknown> | null;
+  /** ATTR-04: Source manifest from last request — passed to CitationVerifier for cross-checking */
+  sourceManifest?: string[];
 }
 
 // ── Chip config ──────────────────────────────────────────────
@@ -70,6 +72,7 @@ const CHIPS: Array<{ id: PanelId & string; label: string; icon: React.ComponentT
   { id: 'citations', label: 'Citations', icon: Search },
   { id: 'review', label: 'Review', icon: Sparkles },
   { id: 'thinking', label: 'Thinking', icon: Brain, streamingOnly: false },
+  { id: 'history', label: 'History', icon: History },
   { id: 'prompt', label: 'Full Prompt', icon: ClipboardList },
   { id: 'feedback', label: 'Feedback', icon: ThumbsUp },
   { id: 'save', label: 'Save', icon: Puzzle },
@@ -88,7 +91,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     audience, channel, outputLanguage, knowledgeSources, uploadedFileIds,
     moduleLabel, moduleIcon, selectedOutputFormats, knowledgeSourcesRaw,
     onSaveSuccess, onApplyReview, onUpgradeThinking,
-    configSnapshot,
+    configSnapshot, sourceManifest,
   } = props;
 
   // Derive trail display values — prefer per-message configSnapshot over live store state
@@ -129,6 +132,12 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   // Trust score state
   const [trustScore, setTrustScore] = useState<SessionQualityScore | null>(null);
   const [trustLoading, setTrustLoading] = useState(false);
+
+  // VER-02/03: Version history state
+  interface VersionSummary { id: number; version_number: number; label: string | null; created_at: string; content_length: number }
+  const [versionList, setVersionList] = useState<VersionSummary[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [latestDiff, setLatestDiff] = useState<string | null>(null);
 
   // Completeness breakdown state — fetched from /api/benchmark on demand
   interface BenchmarkResult { score: number; found: string[]; missing: string[]; suggestions: string[] }
@@ -186,6 +195,30 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     tryFetch(1);
     return () => { cancelled = true; };
   }, [activePanel, sessionId]);
+
+  // VER-02/03: Fetch version list + latest diff when history panel opens
+  useEffect(() => {
+    if (activePanel !== 'history') return;
+    const entityId = sessionId || moduleId;
+    if (!entityId) return;
+    setVersionsLoading(true);
+    setLatestDiff(null);
+    fetch(`/api/versions/output/${encodeURIComponent(entityId)}`, { headers: getAuthHeader() })
+      .then((r) => r.ok ? r.json() as Promise<VersionSummary[]> : [])
+      .then((data) => {
+        setVersionList(data);
+        if (data.length >= 2) {
+          const [newest, older] = data; // newest first
+          fetch(`/api/versions/diff?oldId=${older.id}&newId=${newest.id}`, { headers: getAuthHeader() })
+            .then((r) => r.ok ? r.json() as Promise<{ semanticSummary: string }> : null)
+            .then((d) => { if (d) setLatestDiff(d.semanticSummary); })
+            .catch(() => {});
+        }
+      })
+      .catch(() => setVersionList([]))
+      .finally(() => setVersionsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePanel]);
 
   // Determine if thinking content is available
   const hasThinkingContent = !!(streamingThinking || thinkingContent);
@@ -310,7 +343,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
         <div className="rounded-xl border border-border bg-adv-card p-4">
           {/* ── Citations Panel ────────────────────────────── */}
           {activePanel === 'citations' && (
-            <CitationVerifier text={outputContent} embedded />
+            <CitationVerifier text={outputContent} embedded sourceManifest={sourceManifest} />
           )}
 
           {/* ── Review Panel ──────────────────────────────── */}
@@ -655,6 +688,61 @@ export default function OutputToolbar(props: OutputToolbarProps) {
             </div>
           )}
 
+          {/* ── Version History Panel ────────────────────── */}
+          {activePanel === 'history' && (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-adv-teal" />
+                  <span className="text-xs font-medium text-adv-off-white">Output History</span>
+                  {versionList.length > 0 && (
+                    <span className="rounded-full bg-adv-teal/20 px-1.5 py-0.5 text-[10px] font-medium text-adv-teal">
+                      {versionList.length} run{versionList.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                {(sessionId || moduleId) && versionList.length > 0 && (
+                  <a
+                    href={`/versions?entityType=output&entityId=${encodeURIComponent(sessionId || moduleId || '')}`}
+                    className="text-[11px] text-adv-teal hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Compare all
+                  </a>
+                )}
+              </div>
+              {versionsLoading ? (
+                <p className="py-2 text-xs text-adv-gray">Loading versions…</p>
+              ) : versionList.length === 0 ? (
+                <div className="rounded-lg bg-adv-dark p-4 text-center">
+                  <History className="mx-auto mb-2 h-5 w-5 text-adv-gray" />
+                  <p className="text-xs text-adv-gray">No saved versions yet.</p>
+                  <p className="mt-1 text-[11px] text-adv-gray">Re-run this module to generate a v2 and unlock comparison.</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {latestDiff && (
+                    <div className="mb-2 rounded-md border border-adv-teal/20 bg-adv-teal-soft px-3 py-2">
+                      <p className="text-[11px] text-adv-teal">Latest change: {latestDiff}</p>
+                    </div>
+                  )}
+                  {versionList.slice(0, 6).map((v) => (
+                    <div key={v.id} className="flex items-center justify-between rounded-md bg-adv-dark px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-adv-off-white">v{v.version_number}</span>
+                        {v.label && <span className="text-[11px] text-adv-gray">{v.label}</span>}
+                      </div>
+                      <span className="text-[11px] text-adv-gray">
+                        {new Date(v.created_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── How ANTON Thought Panel ───────────────────── */}
           {activePanel === 'trail' && (
             <div>
@@ -743,38 +831,38 @@ function GoDeeperPrompt({
 
 const NEXT_STEPS: Record<string, Array<{ label: string; description: string; url: string }>> = {
   'gap-analysis': [
-    { label: 'Create Remediation Policy',   description: 'Draft a policy that addresses the identified gaps', url: '/modules/document-creation' },
-    { label: 'Build Action Plan',           description: 'Turn gap findings into a prioritised action plan',   url: '/modules/document-creation' },
-    { label: 'Generate Board Summary',      description: 'Produce an executive summary of findings',          url: '/modules/document-creation' },
+    { label: 'Create Remediation Policy',   description: 'Draft a policy that addresses the identified gaps', url: '/module/document-creation' },
+    { label: 'Build Action Plan',           description: 'Turn gap findings into a prioritised action plan',   url: '/module/document-creation' },
+    { label: 'Generate Board Summary',      description: 'Produce an executive summary of findings',          url: '/module/document-creation' },
   ],
   'document-creation': [
-    { label: 'Assess Risk Profile',         description: 'Run a risk assessment against the new policy',      url: '/modules/risk-assessment' },
-    { label: 'Run Gap Analysis',            description: 'Check for compliance gaps against regulations',     url: '/modules/gap-analysis' },
-    { label: 'Create Training Content',     description: 'Build staff training from the policy',              url: '/modules/training-content' },
+    { label: 'Assess Risk Profile',         description: 'Run a risk assessment against the new policy',      url: '/module/risk-assessment' },
+    { label: 'Run Gap Analysis',            description: 'Check for compliance gaps against regulations',     url: '/module/gap-analysis' },
+    { label: 'Create Training Content',     description: 'Build staff training from the policy',              url: '/module/training-content' },
   ],
   'sanctions-advisory': [
-    { label: 'Run Sanctions Gap Analysis',  description: 'Analyse your sanctions framework for gaps',         url: '/modules/gap-analysis' },
-    { label: 'Update Sanctions Policy',     description: 'Revise your sanctions policy to reflect findings',  url: '/modules/document-creation' },
+    { label: 'Run Sanctions Gap Analysis',  description: 'Analyse your sanctions framework for gaps',         url: '/module/gap-analysis' },
+    { label: 'Update Sanctions Policy',     description: 'Revise your sanctions policy to reflect findings',  url: '/module/document-creation' },
   ],
   'regulatory-monitor': [
-    { label: 'Analyse Regulatory Impact',   description: 'Deep-dive impact analysis of the regulatory change', url: '/modules/gap-analysis' },
-    { label: 'Update Compliance Policy',    description: 'Revise affected policies to comply',                url: '/modules/document-creation' },
+    { label: 'Analyse Regulatory Impact',   description: 'Deep-dive impact analysis of the regulatory change', url: '/module/gap-analysis' },
+    { label: 'Update Compliance Policy',    description: 'Revise affected policies to comply',                url: '/module/document-creation' },
   ],
   'risk-assessment': [
-    { label: 'Document Risk Findings',      description: 'Create a formal risk report from the assessment',   url: '/modules/document-creation' },
-    { label: 'Build Remediation Plan',      description: 'Plan how to address the identified risks',          url: '/modules/document-creation' },
+    { label: 'Document Risk Findings',      description: 'Create a formal risk report from the assessment',   url: '/module/document-creation' },
+    { label: 'Build Remediation Plan',      description: 'Plan how to address the identified risks',          url: '/module/document-creation' },
   ],
   'training-content': [
-    { label: 'Create Supporting Policy',    description: 'Draft a policy to underpin the training',           url: '/modules/document-creation' },
-    { label: 'Run Risk Assessment',         description: 'Validate training addresses key risk areas',        url: '/modules/risk-assessment' },
+    { label: 'Create Supporting Policy',    description: 'Draft a policy to underpin the training',           url: '/module/document-creation' },
+    { label: 'Run Risk Assessment',         description: 'Validate training addresses key risk areas',        url: '/module/risk-assessment' },
   ],
   'data-management': [
-    { label: 'Run Data Gap Analysis',       description: 'Identify data quality and completeness gaps',       url: '/modules/gap-analysis' },
-    { label: 'Document Data Standards',     description: 'Create a data management policy',                   url: '/modules/document-creation' },
+    { label: 'Run Data Gap Analysis',       description: 'Identify data quality and completeness gaps',       url: '/module/gap-analysis' },
+    { label: 'Document Data Standards',     description: 'Create a data management policy',                   url: '/module/document-creation' },
   ],
   'investigation-support': [
-    { label: 'Document Investigation',      description: 'Create a formal case summary',                      url: '/modules/document-creation' },
-    { label: 'Assess Risk Indicators',      description: 'Run risk assessment on the patterns identified',    url: '/modules/risk-assessment' },
+    { label: 'Document Investigation',      description: 'Create a formal case summary',                      url: '/module/document-creation' },
+    { label: 'Assess Risk Indicators',      description: 'Run risk assessment on the patterns identified',    url: '/module/risk-assessment' },
   ],
 };
 

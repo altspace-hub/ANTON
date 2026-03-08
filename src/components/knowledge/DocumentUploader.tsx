@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, Loader, CheckCircle, XCircle } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
 
 interface DocumentUploaderProps {
   collectionId: string;
@@ -37,11 +38,8 @@ export function DocumentUploader({ collectionId, onUploadComplete }: DocumentUpl
       formData.append('collectionId', collectionId);
 
       try {
-        const response = await fetch('/api/documents/upload', {
+        const response = await fetchWithAuth('/api/documents/upload', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('openexpert-token')}`,
-          },
           body: formData,
         });
 

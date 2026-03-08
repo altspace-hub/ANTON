@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { fetchWithAuth } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
-import { FileText, FileSpreadsheet, FileDown, File, Presentation, Share2, Check, Copy, RefreshCw, ChevronDown, Layout } from 'lucide-react';
+import { FileText, FileSpreadsheet, FileDown, File, Presentation, Share2, Check, Copy, RefreshCw, ChevronDown, Layout, Star } from 'lucide-react';
 import ExplainFor from './ExplainFor';
 
 interface BrandTemplate {
@@ -18,6 +19,7 @@ interface ExportBarProps {
   onReframe?: () => void;
   moduleContext?: string;   // Optional — module name for ExplainFor context
   entityId?: string;        // Optional — entity ID for saving explained versions
+  moduleId?: string;        // Optional — module ID for post-market quality rating (EUAI-04)
 }
 
 const formatConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string }> = {
@@ -26,11 +28,16 @@ const formatConfig: Record<string, { icon: React.ComponentType<{ className?: str
   xlsx: { icon: FileSpreadsheet, label: '.xlsx' },
   pdf: { icon: FileDown, label: '.pdf' },
   pptx: { icon: Presentation, label: '.pptx' },
+  // LONE-08: Script/screenplay formats
+  fountain: { icon: FileText, label: '.fountain' },
+  fdx: { icon: File, label: '.fdx' },
 };
 
-export default function ExportBar({ content, availableFormats, onExport, isExporting, sessionId, onReframe, moduleContext, entityId }: ExportBarProps) {
+export default function ExportBar({ content, availableFormats, onExport, isExporting, sessionId, onReframe, moduleContext, entityId, moduleId }: ExportBarProps) {
   const { t } = useTranslation();
   const [shareState, setShareState] = useState<'idle' | 'loading' | 'copied'>('idle');
+  const [qualityRating, setQualityRating] = useState<number | null>(null);
+  const [qualitySubmitted, setQualitySubmitted] = useState(false);
   const [templates, setTemplates] = useState<BrandTemplate[]>([]);
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [templateExporting, setTemplateExporting] = useState(false);
@@ -61,7 +68,7 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
     if (!sessionId || shareState !== 'idle') return;
     setShareState('loading');
     try {
-      const res = await fetch(`/api/sessions/${sessionId}/share`, { method: 'POST' });
+      const res = await fetchWithAuth(`/api/sessions/${sessionId}/share`, { method: 'POST' });
       if (res.ok) {
         const { token } = await res.json() as { token: string };
         const shareUrl = `${window.location.origin}/share/${token}`;
@@ -78,7 +85,7 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
     setShowTemplateDropdown(false);
     setTemplateExporting(true);
     try {
-      const res = await fetch('/api/export/with-template', {
+      const res = await fetchWithAuth('/api/export/with-template', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -211,6 +218,49 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
         </button>
       )}
     </div>
+
+    {/* EUAI-04: Output quality rating (post-market monitoring) */}
+    {sessionId && !qualitySubmitted && (
+      <div className="flex items-center gap-2 text-xs text-adv-gray">
+        <Star className="h-3 w-3 flex-shrink-0" />
+        <span>{t('export.rateQuality', 'Rate output quality:')}</span>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            title={`${star}/5`}
+            onClick={async () => {
+              setQualityRating(star);
+              setQualitySubmitted(true);
+              try {
+                await fetchWithAuth('/api/pmm/events', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    session_id: sessionId,
+                    module_id: moduleId,
+                    event_type: 'quality_rating',
+                    quality_score: star,
+                    description: `User rated output quality ${star}/5 in module: ${moduleContext ?? moduleId ?? 'unknown'}`,
+                  }),
+                });
+              } catch { /* non-blocking */ }
+            }}
+            className={`h-4 w-4 transition-colors ${
+              qualityRating !== null && star <= qualityRating
+                ? 'text-adv-gold fill-adv-gold'
+                : 'text-adv-gray hover:text-adv-gold'
+            }`}
+          >
+            <Star className="h-3.5 w-3.5" />
+          </button>
+        ))}
+      </div>
+    )}
+    {qualitySubmitted && (
+      <p className="text-xs text-adv-gray">
+        {t('export.qualityRated', 'Quality rated')} {qualityRating}/5 — {t('export.thankYou', 'thank you')}
+      </p>
+    )}
 
     {/* Explain-It-Different: trigger button + slide-out panel (renders below the button row) */}
     <ExplainFor

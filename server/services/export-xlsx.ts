@@ -310,6 +310,8 @@ export async function generateXlsx(
   workbook.creator = metadata.author || 'ANTON by openEXPERT';
   workbook.created = new Date();
   workbook.title = metadata.title || 'openEXPERT Output';
+  // EXPORT-06: Force Excel to recalculate all formulas on open — prevents #VALUE/#REF errors
+  workbook.calcProperties = { fullCalcOnLoad: true };
 
   const sections = parseMarkdown(markdown);
 

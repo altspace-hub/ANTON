@@ -2,6 +2,7 @@ import { Router } from 'express';
 import path from 'path';
 import type Database from 'better-sqlite3';
 import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
+import { runIterativeReasoning, getRevelationChain } from '../services/iterative-reasoning.js';
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
@@ -84,6 +85,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         sessionId,
         seed,
         moduleInputs,
+        iterativeReasoningEnabled,
       } = req.body;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
@@ -231,17 +233,55 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           finalUserMessage = `## Module Settings\n${inputLines.join('\n')}\n\n---\n\n${userMessage}`;
         }
       }
-      messages.push({ role: 'user', content: finalUserMessage });
+      // Resolve uploaded file IDs → absolute paths in the uploads directory
+      // The client sends file IDs (filenames) from the /api/files/upload response.
+      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
+      const IMAGE_EXTENSIONS_SERVER = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
+      const IMAGE_MEDIA_TYPES_SERVER: Record<string, string> = {
+        '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif', '.webp': 'image/webp',
+      };
+
+      // Separate image files from document files
+      const imageFileIds: string[] = [];
+      const documentFileIds: string[] = [];
+      for (const id of uploadedFileIds) {
+        const ext = path.extname(id).toLowerCase();
+        if (IMAGE_EXTENSIONS_SERVER.has(ext)) imageFileIds.push(id);
+        else documentFileIds.push(id);
+      }
+
+      // NEXT-02: Vision — build multimodal content if image files were uploaded
+      if (imageFileIds.length > 0) {
+        const contentBlocks: object[] = [];
+        for (const id of imageFileIds) {
+          const imgPath = path.join(UPLOAD_DIR, id);
+          const safe = imgPath.startsWith(UPLOAD_DIR);
+          if (!safe) continue;
+          try {
+            const imgBuf = await import('fs-extra').then(m => m.default.readFile(imgPath));
+            const ext = path.extname(id).toLowerCase();
+            const mediaType = IMAGE_MEDIA_TYPES_SERVER[ext] || 'image/png';
+            contentBlocks.push({
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: imgBuf.toString('base64') },
+            });
+          } catch (imgErr) {
+            console.error(`[claude] Failed to read image ${id}:`, imgErr);
+          }
+        }
+        contentBlocks.push({ type: 'text', text: finalUserMessage });
+        messages.push({ role: 'user', content: contentBlocks });
+      } else {
+        messages.push({ role: 'user', content: finalUserMessage });
+      }
 
       // WP-11: Load user profile for Layer 0 prompt personalisation
       const userProfile = db
         .prepare('SELECT * FROM user_profiles WHERE id = ?')
         .get('default') as Record<string, string | null> | undefined;
 
-      // Resolve uploaded file IDs → absolute paths in the uploads directory
-      // The client sends file IDs (filenames) from the /api/files/upload response.
-      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
-      const uploadedFilePaths = uploadedFileIds
+      const uploadedFilePaths = documentFileIds
         .map((id) => path.join(UPLOAD_DIR, id))
         .filter((p) => {
           // Security: ensure the resolved path is within UPLOAD_DIR
@@ -256,10 +296,33 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const longContextBetaEnabled = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
       const knowledgeBudget = longContextBetaEnabled ? 800_000 : undefined;
 
+      // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
+      // Set SSE headers early so we can stream progress before the Claude API call starts.
+      const hasLocalFolders = !!(knowledgeSources as any)?.modes?.localFolder?.enabled &&
+        ((knowledgeSources as any)?.modes?.localFolder?.folderPaths?.length ?? 0) > 0;
+      const hasUploadedFiles = uploadedFilePaths.length > 0 || imageFileIds.length > 0;
+      const needsEarlySSE = hasLocalFolders || hasUploadedFiles;
+
+      const sendProgress = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+
+      if (needsEarlySSE && !res.headersSent) {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+        sendProgress({ type: 'context_assembly_start' });
+      }
+
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
       const resolved = knowledgeSources
         ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths, { contextBudget: knowledgeBudget })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
+
+      if (needsEarlySSE) {
+        sendProgress({ type: 'context_assembly_complete', tokenEstimate: resolved.tokenEstimate });
+      }
 
       // NEW: RAG Search Integration (Phase 4.8 + 4.9)
       let ragContext = '';
@@ -811,14 +874,59 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const abortController = new AbortController();
       req.on('close', () => abortController.abort());
 
-      // RATE-03: per-attempt request timeout (30s) and total timeout (90s across retries)
-      // This is enforced inside streamToResponse via the AbortController signal timeout.
-      const timeoutMs = Number(process.env.CLAUDE_REQUEST_TIMEOUT_MS) || 90_000;
+      // RATE-03: total request timeout — scales with thinking level.
+      // Extended thinking can take 2-5+ min before first token (especially with large context).
+      const thinkingTimeouts: Record<string, number> = {
+        quick: 90_000,
+        think: 180_000,
+        think_hard: 300_000,
+        investigate: 420_000,
+        plan_first: 420_000,
+        deep_investigate: 600_000,
+      };
+      const baseTimeout = Number(process.env.CLAUDE_REQUEST_TIMEOUT_MS) || thinkingTimeouts[thinking as string] || 300_000;
+      const timeoutMs = Math.max(baseTimeout, thinkingTimeouts[thinking as string] || 300_000);
       const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
       res.on('close', () => clearTimeout(timeoutId));
       res.on('finish', () => clearTimeout(timeoutId));
 
       try {
+      // IRE branch: route to iterative reasoning engine when explicitly enabled
+      // or when thinking level is 'deep_investigate'
+      const ireThinkingLevel = thinking as string;
+      const useIRE = (iterativeReasoningEnabled === true || ireThinkingLevel === 'deep_investigate')
+        && provider === 'anthropic'
+        && ['think_hard', 'investigate', 'plan_first', 'deep_investigate'].includes(ireThinkingLevel);
+
+      if (useIRE) {
+        const ireSummary = await runIterativeReasoning(
+          {
+            thinkingLevel: ireThinkingLevel as 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
+            model: selectedModel,
+            staticSystemPrompt: staticSystemPrompt || composedPrompt,
+            dynamicSystemPrompt: staticSystemPrompt ? composedPrompt : '',
+            messages,
+            tools: tools.length > 0 ? tools : undefined,
+            sessionId: sessionId as string | undefined,
+            sourceManifest: resolved.sourceManifest,
+          },
+          res,
+          db,
+        );
+        recordSuccess();
+        // Quality auto-scoring for IRE outputs (fire-and-forget)
+        if (ireSummary.synthesisText && ireSummary.synthesisText.length > 200) {
+          ratchet.scoreOutput({
+            content: ireSummary.synthesisText,
+            moduleId: moduleId || 'open-chat',
+            areaId,
+            sessionId,
+            anthropicClient: anthropic || getClient(),
+          }).catch(() => {});
+        }
+        return;
+      }
+
       await streamToResponse(
           {
             model: selectedModel as 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
@@ -830,6 +938,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             nativeReasoningEnabled: !!nativeReasoningEnabled,
             useLongContext,
             signal: abortController.signal,
+            sourceManifest: resolved.sourceManifest,  // ATTR-05
           },
           res,
           onComplete
@@ -1387,14 +1496,16 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         return;
       }
 
-      const { text } = req.body as { text?: string; sessionId?: string };
+      const { text, sourceManifest } = req.body as { text?: string; sessionId?: string; sourceManifest?: string[] };
 
       if (!text || typeof text !== 'string' || text.trim().length === 0) {
         res.status(400).json({ error: 'text is required and must be a non-empty string.' });
         return;
       }
 
-      const citations = await verifyCitations(text);
+      // ATTR-04: pass source manifest for cross-checking citations against loaded sources
+      const safeManifest = Array.isArray(sourceManifest) ? sourceManifest.filter(s => typeof s === 'string') : undefined;
+      const citations = await verifyCitations(text, safeManifest);
       res.json({ citations });
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
@@ -1442,6 +1553,21 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
     }
+  });
+
+  // GET /api/revelation-chains/:chainId — fetch a full revelation chain with steps
+  router.get('/revelation-chains/:chainId', (req, res) => {
+    const { chainId } = req.params;
+    if (!chainId || typeof chainId !== 'string') {
+      res.status(400).json({ error: 'chainId required' });
+      return;
+    }
+    const chain = getRevelationChain(db, chainId);
+    if (!chain) {
+      res.status(404).json({ error: 'Revelation chain not found' });
+      return;
+    }
+    res.json(chain);
   });
 
   return router;

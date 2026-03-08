@@ -1484,6 +1484,60 @@ Structure:
 
 Style: Precise, authoritative, neutral. Use passive voice for legal propositions. Flag every ambiguity. Do not express opinions not grounded in cited authority.`,
   },
+
+  // ── CREATIVE PRODUCTION ────────────────────────────────────
+  {
+    id: 'screenplay',
+    label: 'Screenplay / Script',
+    icon: 'Film',
+    description: 'Formatted screenplay or script: scene headings, action, character cues, dialogue — exports to .fountain and .fdx',
+    category: 'communication',
+    exportFormats: ['fountain', 'fdx', 'md'],
+    estimatedLength: '1-120 pages',
+    audience: 'Writers, directors, producers',
+    promptInstruction: `## OUTPUT FORMAT: SCREENPLAY / SCRIPT
+Produce a properly formatted screenplay or script using standard screenplay conventions. Every element must follow industry-standard formatting so the output can be exported directly to Fountain (.fountain) or Final Draft (.fdx) without manual reformatting.
+
+**FORMATTING RULES (strict)**
+
+1. **Scene Headings** — Always uppercase, start with INT. or EXT., include location and time of day:
+   \`INT. INTERROGATION ROOM — NIGHT\`
+   \`EXT. HARBOUR FRONT — DAY\`
+
+2. **Action lines** — Present tense, visual and concrete. Describe only what can be seen or heard on screen. No internal thoughts unless shown visually. Keep blocks to 4 lines maximum — white space is pacing.
+
+3. **Character cues** — ALL CAPS, centred (use **CHARACTER NAME** in Markdown):
+   \`**DETECTIVE RASK**\`
+
+4. **Dialogue** — Follows immediately after character cue. Natural speech rhythm. Subtext over text where possible. Avoid on-the-nose exposition.
+
+5. **Parentheticals** — Use sparingly. Only when the reading of a line is genuinely ambiguous:
+   \`(to himself)\`  \`(beat)\`  \`(sotto voce)\`
+
+6. **Transitions** — All caps, only when narratively significant:
+   \`FADE IN:\`  \`CUT TO:\`  \`DISSOLVE TO:\`  \`SMASH CUT:\`
+
+7. **Page breaks** — Use \`---\` to indicate page breaks between major sequences.
+
+**STRUCTURAL GUIDANCE**
+
+- **Three-act structure** for features: Act 1 (pp. 1–25), Act 2 (pp. 26–85), Act 3 (pp. 86–110)
+- **Scene economy**: every scene must accomplish at least two things (advance plot AND reveal character)
+- **Visual storytelling**: show, don't tell. If a character is nervous, show physical behaviour — don't write "(nervously)"
+- **Dialogue**: characters speak differently. Read each character's lines aloud in your head — if they sound the same, differentiate them.
+
+**CONTENT REQUIREMENTS**
+
+If given a brief/concept, produce the script. If asked to develop from existing content, adapt faithfully while applying proper format. If given an existing script to review, provide notes scene-by-scene before producing any rewrite.
+
+For short-form (3-10 min): 3–10 pages, one clear dramatic arc, single location preferred.
+For feature-length: Use act breaks, escalating stakes, clear protagonist goal, antagonist force, and resolution.
+
+**OUTPUT STRUCTURE**
+Begin with FADE IN: and end with FADE OUT. / THE END.
+Number scenes if requested (Scene headings as INT./EXT.).
+Include a title page block at the top with Title, Written by, and Draft date if details are provided.`,
+  },
 ];
 
 // ── Helper functions ───────────────────────────────────────

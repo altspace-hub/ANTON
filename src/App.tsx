@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MainLayout from './components/layout/MainLayout';
 import { useAuthStore } from './stores/useAuthStore';
+import { ensureCsrfToken } from './lib/api';
 import PWAInstallPrompt from './components/shared/PWAInstallPrompt';
 import { CommandPalette } from './components/shared/CommandPalette';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
@@ -54,6 +55,8 @@ const KnowledgeGraphPage = lazy(() => import('./pages/KnowledgeGraphPage'));
 const IntelligenceDashboard = lazy(() => import('./pages/IntelligenceDashboard'));
 const PatternDetectionPage = lazy(() => import('./pages/PatternDetectionPage'));
 const CompliancePage = lazy(() => import('./pages/CompliancePage'));
+const CompliancePosturePage = lazy(() => import('./pages/CompliancePosturePage'));
+const RiskAppetiteDashboard = lazy(() => import('./pages/RiskAppetiteDashboard'));
 const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'));
 const MyWorkPage = lazy(() => import('./pages/MyWorkPage'));
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage'));
@@ -102,11 +105,14 @@ const OrchestratorTrailViewer = lazy(() => import('./pages/OrchestratorTrailView
 const GapAssessmentHub = lazy(() => import('./pages/GapAssessmentHub'));
 const GapAssessmentWizard = lazy(() => import('./pages/GapAssessmentWizard'));
 const AntonTaskAgentPage = lazy(() => import('./pages/AntonTaskAgentPage'));
+const SystemCardsPage = lazy(() => import('./pages/SystemCardsPage'));
 
 // Data Partnerships — Roaring + Dow Jones
 const RoaringSearchPage = lazy(() => import('./pages/RoaringSearchPage'));
 const DJScreeningPage = lazy(() => import('./pages/DJScreeningPage'));
 const PartnershipDemo = lazy(() => import('./pages/PartnershipDemo'));
+const RegulatoryFeedPage = lazy(() => import('./pages/RegulatoryFeedPage'));
+const LoreLedgerPage = lazy(() => import('./pages/LoreLedgerPage'));
 const EntityIntelligencePage = lazy(() => import('./pages/EntityIntelligencePage'));
 
 // News Tab pages
@@ -163,6 +169,7 @@ const TeacherDashboardPage = lazy(() => import('./pages/school/TeacherDashboardP
 const TeacherClassConfigPage = lazy(() => import('./pages/school/TeacherClassConfigPage'));
 const TeacherStudentsPage = lazy(() => import('./pages/school/TeacherStudentsPage'));
 const TeacherClassProgressPage = lazy(() => import('./pages/school/TeacherClassProgressPage'));
+const TeacherOversightPage = lazy(() => import('./pages/school/TeacherOversightPage'));
 const GuardianDashboardPage = lazy(() => import('./pages/school/GuardianDashboardPage'));
 const AssignmentBuilderPage = lazy(() => import('./pages/school/AssignmentBuilderPage'));
 const AssignmentTakingPage = lazy(() => import('./pages/school/AssignmentTakingPage'));
@@ -212,6 +219,11 @@ export default function App() {
         }
       })
       .catch(() => {}); // best-effort
+  }, []);
+
+  useEffect(() => {
+    // Pre-fetch CSRF token so it's ready before the first mutating request
+    ensureCsrfToken();
   }, []);
 
   useEffect(() => {
@@ -325,11 +337,15 @@ export default function App() {
           <Route path="/intelligence" element={<IntelligenceDashboard />} />
           <Route path="/patterns" element={<PatternDetectionPage />} />
           <Route path="/compliance" element={<CompliancePage />} />
+          <Route path="/compliance-posture" element={<CompliancePosturePage />} />
+          <Route path="/risk-appetite" element={<RiskAppetiteDashboard />} />
           <Route path="/knowledge-base" element={<KnowledgeBasePage />} />
           <Route path="/my-work" element={<MyWorkPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/compare" element={<ComparisonPage />} />
           <Route path="/governance" element={<GovernanceDashboard />} />
+          <Route path="/system-cards" element={<SystemCardsPage />} />
+          <Route path="/system-cards/:moduleId" element={<SystemCardsPage />} />
           <Route path="/skill-packs" element={<SkillPacksPage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
           {/* Presentations Area */}
@@ -402,6 +418,8 @@ export default function App() {
           <Route path="/dj-screening" element={<DJScreeningPage />} />
           <Route path="/entity-intelligence" element={<EntityIntelligencePage />} />
           <Route path="/demo/data-partnerships" element={<PartnershipDemo />} />
+          <Route path="/regulatory-feed" element={<RegulatoryFeedPage />} />
+          <Route path="/lore-ledger" element={<LoreLedgerPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/org-context" element={<Navigate to="/settings?tab=org-context" replace />} />
         </Route>
@@ -425,6 +443,7 @@ export default function App() {
           <Route path="/school/teacher/classes/:classId/settings" element={<TeacherClassConfigPage />} />
           <Route path="/school/teacher/classes/:classId/progress" element={<TeacherClassProgressPage />} />
           <Route path="/school/teacher/students" element={<TeacherStudentsPage />} />
+          <Route path="/school/teacher/oversight" element={<TeacherOversightPage />} />
           <Route path="/school/teacher/assignments/new" element={<AssignmentBuilderPage />} />
           <Route path="/school/assignments/:id/take" element={<AssignmentTakingPage />} />
           <Route path="/school/assignments/:id/socratic" element={<SocraticExamPage />} />

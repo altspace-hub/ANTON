@@ -6,7 +6,7 @@
 
 import { useState, useRef } from 'react';
 import { Star, Upload, Loader2, RefreshCw, ChevronRight, CheckCircle, FileText, AlertCircle } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, EngagementDocument } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -44,9 +44,8 @@ export default function EngagementGoodExample({ engagement, onUpdate, onNext, on
       const fd = new FormData();
       fd.append('file', file);
       fd.append('document_type', 'good_example');
-      const res = await fetch(`/api/engagements/${engagement.id}/documents`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/documents`, {
         method: 'POST',
-        headers: getAuthHeader(),
         body: fd,
       });
       if (!res.ok) throw new Error(await res.text());
@@ -62,9 +61,9 @@ export default function EngagementGoodExample({ engagement, onUpdate, onNext, on
     setExtracting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/documents/${docId}/extract`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/documents/${docId}/extract`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(await res.text());

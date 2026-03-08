@@ -276,19 +276,39 @@ function searchKnowledgeAtomsKeyword(
   // Only search knowledge_atoms if that content type is included (or no filter)
   if (contentTypes && !contentTypes.includes('knowledge_atom')) return [];
 
-  const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-  if (words.length === 0) return [];
+  const q = query.trim();
+  if (!q) return [];
 
-  const pattern = `%${words.slice(0, 3).join('%')}%`;
+  // KG-03: Use FTS5 BM25 scoring; fall back to LIKE if FTS5 table not yet created
   try {
+    // Build FTS5 match expression: each word as a prefix query, OR-joined
+    const words = q.split(/\s+/).filter(w => w.length > 1);
+    if (words.length === 0) return [];
+    const ftsQuery = words.map(w => `"${w.replace(/"/g, '').replace(/\*/g, '')}"*`).join(' OR ');
+
     return db.prepare(
-      `SELECT id, content, category, atom_type, COALESCE(tags, '[]') as tags
-       FROM knowledge_atoms
-       WHERE is_active = 1 AND LOWER(content) LIKE ?
-       ORDER BY created_at DESC LIMIT ?`
-    ).all(pattern, limit) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
+      `SELECT ka.id, ka.content, ka.category, ka.atom_type, COALESCE(ka.tags, '[]') as tags
+       FROM knowledge_atoms ka
+       JOIN knowledge_atoms_fts ON knowledge_atoms_fts.rowid = ka.rowid
+       WHERE knowledge_atoms_fts MATCH ? AND ka.is_active = 1
+       ORDER BY rank
+       LIMIT ?`
+    ).all(ftsQuery, limit) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
   } catch {
-    return [];
+    // FTS5 table not available yet — fall back to LIKE substring search
+    const words = q.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    if (words.length === 0) return [];
+    const pattern = `%${words.slice(0, 3).join('%')}%`;
+    try {
+      return db.prepare(
+        `SELECT id, content, category, atom_type, COALESCE(tags, '[]') as tags
+         FROM knowledge_atoms
+         WHERE is_active = 1 AND LOWER(content) LIKE ?
+         ORDER BY created_at DESC LIMIT ?`
+      ).all(pattern, limit) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
+    } catch {
+      return [];
+    }
   }
 }
 

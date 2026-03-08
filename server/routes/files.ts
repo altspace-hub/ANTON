@@ -18,11 +18,20 @@ const storage = multer.diskStorage({
   },
 });
 
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
+const IMAGE_MEDIA_TYPES: Record<string, string> = {
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif':  'image/gif',
+  '.webp': 'image/webp',
+};
+
 const upload = multer({
   storage,
   limits: { fileSize: (Number(process.env.MAX_FILE_SIZE_MB) || 50) * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
+    const allowed = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html', ...IMAGE_EXTENSIONS];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) {
       cb(null, true);
@@ -49,6 +58,11 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     '.csv':  'text/csv',
     '.html': 'text/html',
+    '.png':  'image/png',
+    '.jpg':  'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif':  'image/gif',
+    '.webp': 'image/webp',
   };
 
   const ext = path.extname(req.file.originalname).toLowerCase();
@@ -93,6 +107,25 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
     }
   }
 
+  const isImage = IMAGE_EXTENSIONS.has(ext);
+
+  // For images: return base64 data for Claude vision API; for documents: extract text
+  if (isImage) {
+    const mediaType = IMAGE_MEDIA_TYPES[ext] || 'image/png';
+    const base64 = fileBuffer.toString('base64');
+    res.json({
+      id: req.file.filename,
+      originalName: req.file.originalname,
+      path: req.file.path,
+      size: req.file.size,
+      extension: ext,
+      isImage: true,
+      mediaType,
+      base64,
+    });
+    return;
+  }
+
   // Extract text content from the uploaded file
   let text = '';
   try {
@@ -106,7 +139,7 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
     originalName: req.file.originalname,
     path: req.file.path,
     size: req.file.size,
-    extension: path.extname(req.file.originalname).toLowerCase(),
+    extension: ext,
     text,
   });
 });

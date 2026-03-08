@@ -69,7 +69,7 @@ export default function PromptPage() {
     sessionId, systemPrompt: currentSystemPrompt,
     plainTextMode, structureReference, transparencyLevel, writingTone, emojiEnabled,
     nativeReasoningEnabled,
-    audience, channel, outputLanguage, uploadedFileIds,
+    audience, channel, outputLanguage, uploadedFileIds, lastSourcesUsed,
     setThinking, setCreativity, setModel, setSystemPrompt,
     setKnowledgeSources, setSelectedOutputFormats,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, clearSession,
@@ -600,6 +600,7 @@ export default function PromptPage() {
             }}
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
+            sourceManifest={lastSourcesUsed}
           />
       )}
 

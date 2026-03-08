@@ -38,8 +38,8 @@ function DatabaseForm({ config, onChange }: { config: Record<string, unknown>; o
   return (
     <div className="space-y-3">
       <div>
-        <label className={LABEL_CLASS}>Driver</label>
-        <select value={String(config.driver ?? 'sqlite')} onChange={(e) => set('driver', e.target.value)} className={INPUT_CLASS}>
+        <label htmlFor="db-driver" className={LABEL_CLASS}>Driver</label>
+        <select id="db-driver" value={String(config.driver ?? 'sqlite')} onChange={(e) => set('driver', e.target.value)} className={INPUT_CLASS}>
           <option value="sqlite">SQLite</option>
           <option value="postgresql">PostgreSQL</option>
           <option value="mysql">MySQL / MariaDB</option>
@@ -49,20 +49,20 @@ function DatabaseForm({ config, onChange }: { config: Record<string, unknown>; o
       </div>
       {String(config.driver ?? 'sqlite') === 'sqlite' ? (
         <div>
-          <label className={LABEL_CLASS}>Database File Path</label>
-          <input type="text" placeholder="/path/to/database.sqlite" value={String(config.host ?? '')} onChange={(e) => set('host', e.target.value)} className={INPUT_CLASS} />
+          <label htmlFor="db-file-path" className={LABEL_CLASS}>Database File Path</label>
+          <input id="db-file-path" type="text" placeholder="/path/to/database.sqlite" value={String(config.host ?? '')} onChange={(e) => set('host', e.target.value)} className={INPUT_CLASS} />
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={LABEL_CLASS}>Host / IP Address</label>
-              <input type="text" placeholder="localhost or 192.168.1.100" value={String(config.host ?? '')} onChange={(e) => set('host', e.target.value)} className={INPUT_CLASS} />
+              <label htmlFor="db-host" className={LABEL_CLASS}>Host / IP Address</label>
+              <input id="db-host" type="text" placeholder="localhost or 192.168.1.100" value={String(config.host ?? '')} onChange={(e) => set('host', e.target.value)} className={INPUT_CLASS} />
               <p className="mt-1 text-xs text-adv-gray">Use IP or hostname for remote servers</p>
             </div>
             <div>
-              <label className={LABEL_CLASS}>Port</label>
-              <input type="number" placeholder={
+              <label htmlFor="db-port" className={LABEL_CLASS}>Port</label>
+              <input id="db-port" type="number" placeholder={
                 String(config.driver) === 'postgresql' ? '5432' :
                 String(config.driver) === 'mysql' ? '3306' :
                 String(config.driver) === 'mssql' ? '1433' :
@@ -71,17 +71,17 @@ function DatabaseForm({ config, onChange }: { config: Record<string, unknown>; o
             </div>
           </div>
           <div>
-            <label className={LABEL_CLASS}>Database Name</label>
-            <input type="text" placeholder="mydb" value={String(config.database ?? '')} onChange={(e) => set('database', e.target.value)} className={INPUT_CLASS} />
+            <label htmlFor="db-name" className={LABEL_CLASS}>Database Name</label>
+            <input id="db-name" type="text" placeholder="mydb" value={String(config.database ?? '')} onChange={(e) => set('database', e.target.value)} className={INPUT_CLASS} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={LABEL_CLASS}>Username</label>
-              <input type="text" value={String(config.username ?? '')} onChange={(e) => set('username', e.target.value)} className={INPUT_CLASS} />
+              <label htmlFor="db-username" className={LABEL_CLASS}>Username</label>
+              <input id="db-username" type="text" value={String(config.username ?? '')} onChange={(e) => set('username', e.target.value)} className={INPUT_CLASS} />
             </div>
             <div>
-              <label className={LABEL_CLASS}>Password</label>
-              <input type="password" value={String(config.password ?? '')} onChange={(e) => set('password', e.target.value)} className={INPUT_CLASS} />
+              <label htmlFor="db-password" className={LABEL_CLASS}>Password</label>
+              <input id="db-password" type="password" value={String(config.password ?? '')} onChange={(e) => set('password', e.target.value)} className={INPUT_CLASS} />
             </div>
           </div>
           <div className="space-y-2">
@@ -99,12 +99,12 @@ function DatabaseForm({ config, onChange }: { config: Record<string, unknown>; o
         </>
       )}
       <div>
-        <label className={LABEL_CLASS}>Max Rows Per Query</label>
-        <input type="number" min={1} max={100000} placeholder="10000" value={String(config.max_rows_per_query ?? '')} onChange={(e) => set('max_rows_per_query', parseInt(e.target.value) || undefined)} className={INPUT_CLASS} />
+        <label htmlFor="db-max-rows" className={LABEL_CLASS}>Max Rows Per Query</label>
+        <input id="db-max-rows" type="number" min={1} max={100000} placeholder="10000" value={String(config.max_rows_per_query ?? '')} onChange={(e) => set('max_rows_per_query', parseInt(e.target.value) || undefined)} className={INPUT_CLASS} />
       </div>
       <div>
-        <label className={LABEL_CLASS}>Allowed Tables (comma-separated, leave blank for all)</label>
-        <input type="text" placeholder="users, orders, products" value={String(config.allowed_tables ?? '')} onChange={(e) => set('allowed_tables', e.target.value)} className={INPUT_CLASS} />
+        <label htmlFor="db-allowed-tables" className={LABEL_CLASS}>Allowed Tables (comma-separated, leave blank for all)</label>
+        <input id="db-allowed-tables" type="text" placeholder="users, orders, products" value={String(config.allowed_tables ?? '')} onChange={(e) => set('allowed_tables', e.target.value)} className={INPUT_CLASS} />
       </div>
     </div>
   );
@@ -125,12 +125,12 @@ function ApiForm({ config, onChange }: { config: Record<string, unknown>; onChan
   return (
     <div className="space-y-3">
       <div>
-        <label className={LABEL_CLASS}>Base URL *</label>
-        <input type="url" placeholder="https://api.example.com" value={String(config.base_url ?? '')} onChange={(e) => set('base_url', e.target.value)} className={INPUT_CLASS} />
+        <label htmlFor="api-base-url" className={LABEL_CLASS}>Base URL *</label>
+        <input id="api-base-url" type="url" placeholder="https://api.example.com" value={String(config.base_url ?? '')} onChange={(e) => set('base_url', e.target.value)} className={INPUT_CLASS} />
       </div>
       <div>
-        <label className={LABEL_CLASS}>Auth Type</label>
-        <select value={String(config.auth_type ?? 'bearer')} onChange={(e) => set('auth_type', e.target.value)} className={INPUT_CLASS}>
+        <label htmlFor="api-auth-type" className={LABEL_CLASS}>Auth Type</label>
+        <select id="api-auth-type" value={String(config.auth_type ?? 'bearer')} onChange={(e) => set('auth_type', e.target.value)} className={INPUT_CLASS}>
           <option value="bearer">Bearer Token</option>
           <option value="basic">Basic Auth (base64)</option>
           <option value="apikey">API Key Header</option>
@@ -139,18 +139,18 @@ function ApiForm({ config, onChange }: { config: Record<string, unknown>; onChan
       </div>
       {String(config.auth_type ?? 'bearer') !== 'none' && (
         <div>
-          <label className={LABEL_CLASS}>Auth Value</label>
-          <input type="password" placeholder="Token / credentials" value={String(config.auth_value ?? '')} onChange={(e) => set('auth_value', e.target.value)} className={INPUT_CLASS} />
+          <label htmlFor="api-auth-value" className={LABEL_CLASS}>Auth Value</label>
+          <input id="api-auth-value" type="password" placeholder="Token / credentials" value={String(config.auth_value ?? '')} onChange={(e) => set('auth_value', e.target.value)} className={INPUT_CLASS} />
         </div>
       )}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={LABEL_CLASS}>Rate Limit (req/min, 0 = unlimited)</label>
-          <input type="number" min={0} placeholder="60" value={String(config.rate_limit ?? '')} onChange={(e) => set('rate_limit', parseInt(e.target.value) || 0)} className={INPUT_CLASS} />
+          <label htmlFor="api-rate-limit" className={LABEL_CLASS}>Rate Limit (req/min, 0 = unlimited)</label>
+          <input id="api-rate-limit" type="number" min={0} placeholder="60" value={String(config.rate_limit ?? '')} onChange={(e) => set('rate_limit', parseInt(e.target.value) || 0)} className={INPUT_CLASS} />
         </div>
         <div>
-          <label className={LABEL_CLASS}>Timeout (seconds)</label>
-          <input type="number" min={1} max={300} placeholder="30" value={String(config.timeout_seconds ?? '')} onChange={(e) => set('timeout_seconds', parseInt(e.target.value) || 30)} className={INPUT_CLASS} />
+          <label htmlFor="api-timeout" className={LABEL_CLASS}>Timeout (seconds)</label>
+          <input id="api-timeout" type="number" min={1} max={300} placeholder="30" value={String(config.timeout_seconds ?? '')} onChange={(e) => set('timeout_seconds', parseInt(e.target.value) || 30)} className={INPUT_CLASS} />
         </div>
       </div>
 

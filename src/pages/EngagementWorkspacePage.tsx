@@ -11,7 +11,7 @@ import {
   Briefcase, FileText, Users, FolderOpen, Star, Settings,
   GitBranch, Play, Search, ShieldCheck, Clock, Link2
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 import EngagementSetup from '@/components/engagement/EngagementSetup';
 import EngagementScopeAgreement from '@/components/engagement/EngagementScopeAgreement';
 import EngagementClientIntelligence from '@/components/engagement/EngagementClientIntelligence';
@@ -266,9 +266,9 @@ export default function EngagementWorkspacePage() {
 
   async function updateStatus(newStatus: string) {
     if (!id) return;
-    const res = await fetch(`/api/engagements/${id}`, {
+    const res = await fetchWithAuth(`/api/engagements/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
     if (res.ok) {
@@ -279,9 +279,9 @@ export default function EngagementWorkspacePage() {
 
   async function linkToProject(projectId: string | null) {
     if (!id) return;
-    const res = await fetch(`/api/engagements/${id}/project`, {
+    const res = await fetchWithAuth(`/api/engagements/${id}/project`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ project_id: projectId }),
     });
     if (res.ok) {

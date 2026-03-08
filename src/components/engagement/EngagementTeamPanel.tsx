@@ -10,7 +10,7 @@ import {
   Users, Plus, Trash2, ChevronRight, Loader2, Zap,
   AlertCircle, CheckCircle, X, Building, UserCheck, Lightbulb
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, Stakeholder } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -56,9 +56,9 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
     setError(null);
     setExtractResult(null);
     try {
-      const res = await fetch(`/api/engagements/${engagement.id}/team/extract`, {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/team/extract`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -72,9 +72,9 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
   }
 
   async function importExtracted(type: StakeholderType, person: { name: string; role: string; organisation: string; expertise_areas?: string[] }) {
-    await fetch(`/api/engagements/${engagement.id}/team`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}/team`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: person.name, role: person.role, organisation: person.organisation,
         stakeholder_type: type, expertise_areas: person.expertise_areas || [],
@@ -87,9 +87,9 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      await fetch(`/api/engagements/${engagement.id}/team`, {
+      await fetchWithAuth(`/api/engagements/${engagement.id}/team`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newName, role: newRole, organisation: newOrg || engagement.your_organisation || '',
           stakeholder_type: type, expertise_areas: newExpertise, notes: newNotes,
@@ -104,9 +104,8 @@ export default function EngagementTeamPanel({ engagement, onNext, onReload }: Pr
   }
 
   async function removeMember(memberId: string) {
-    await fetch(`/api/engagements/${engagement.id}/team/${memberId}`, {
+    await fetchWithAuth(`/api/engagements/${engagement.id}/team/${memberId}`, {
       method: 'DELETE',
-      headers: getAuthHeader(),
     });
     onReload();
   }

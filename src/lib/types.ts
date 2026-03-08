@@ -28,7 +28,7 @@ export type ModelId =
 
 export type ModelProvider = 'anthropic' | 'openai' | 'google' | 'mistral' | 'ollama';
 
-export type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first';
+export type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
 export type CreativityLevel = 'strict' | 'balanced' | 'creative';
 
@@ -240,17 +240,53 @@ export interface ContentBlock {
   metadata?: Record<string, unknown>;
 }
 
+export interface RevelationStep {
+  id: string;
+  chainId: string;
+  sessionId: string | null;
+  phaseIndex: number;       // 0=analyse, 1=reflect, 2=deepen, 3=synthesise, 4-5=tool passes
+  phaseName: string;
+  thinkingContent: string;
+  outputContent: string;
+  confidenceScore: number | null;
+  revisionNeeded: boolean | null;
+  nextAction: string | null;
+  inputTokens: number;
+  outputTokens: number;
+  durationMs: number;
+  createdAt: string;
+}
+
+export interface RevelationChain {
+  id: string;
+  sessionId: string | null;
+  messageId: string | null;
+  thinkingLevel: ThinkingLevel;
+  phaseCount: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalDurationMs: number;
+  synthesisQualityScore: number | null;
+  createdAt: string;
+  steps: RevelationStep[];
+}
+
 // ── Streaming ──────────────────────────────────────────────
 
 export type StreamEvent =
   | { type: 'stream_start'; messageId: string }
+  | { type: 'context_assembly_start' }
+  | { type: 'context_assembly_complete'; tokenEstimate: number }
   | { type: 'thinking_delta'; content: string }
   | { type: 'text_delta'; content: string }
   | { type: 'web_search_start'; query: string }
   | { type: 'web_search_result'; url: string; title: string }
   | { type: 'usage'; inputTokens: number; outputTokens: number; thinkingTokens: number; cacheCreationTokens: number; cacheReadTokens: number }
   | { type: 'error'; message: string }
-  | { type: 'stream_end'; contentBlocks: ContentBlock[] };
+  | { type: 'stream_end'; contentBlocks: ContentBlock[]; sourceManifest?: string[] }
+  | { type: 'phase_start'; phaseIndex: number; phaseName: string; totalPhases: number }
+  | { type: 'phase_end'; phaseIndex: number; phaseName: string; durationMs: number; confidenceScore: number | null }
+  | { type: 'revelation_chain_id'; chainId: string };
 
 // ── Claude API Request ─────────────────────────────────────
 
@@ -293,6 +329,7 @@ export interface ClaudeRunConfig {
   sessionId?: string;
   uploadedFileIds?: string[];
   seed?: number;
+  iterativeReasoningEnabled?: boolean;
 }
 
 // ── Multi-Model Deliberation ────────────────────────────────

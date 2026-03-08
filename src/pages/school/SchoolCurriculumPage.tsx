@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, ChevronRight, Plus, Clock, Brain, Loader2, Pencil, Trash2, Sparkles } from 'lucide-react';
 import SchoolLayout from '../../components/school/SchoolLayout';
+import { fetchWithAuth } from '@/lib/api';
 
 interface Lesson {
   id: string;
@@ -71,7 +72,7 @@ export default function SchoolCurriculumPage() {
     setGenerating(true);
     setGenOutput('');
 
-    const response = await fetch('/api/school/lessons/generate', {
+    const response = await fetchWithAuth('/api/school/lessons/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ subject_id: subjectId || 'general', topic: genTopic }),
@@ -118,7 +119,7 @@ export default function SchoolCurriculumPage() {
 
   async function deleteLesson(id: string) {
     if (!confirm('Delete this lesson?')) return;
-    await fetch(`/api/school/lessons/${id}`, { method: 'DELETE' });
+    await fetchWithAuth(`/api/school/lessons/${id}`, { method: 'DELETE' });
     setLessons(prev => prev.filter(l => l.id !== id));
   }
 

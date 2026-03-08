@@ -201,8 +201,97 @@ export function createKnowledgeGraph(db: Database.Database) {
     `).all(limit);
   }
 
+  /**
+   * KG-06: Transitive closure via SQLite recursive CTE.
+   * Returns all entities reachable from the starting entity by following
+   * directed edges of the specified relationship type(s).
+   *
+   * @param entityType - starting entity type
+   * @param entityId   - starting entity ID
+   * @param relationshipTypes - relationship type(s) to follow (e.g. ['requires'])
+   * @param maxDepth   - prevent infinite traversal (default 10)
+   * @param packId     - optional: restrict traversal to a specific knowledge pack
+   */
+  function getTransitiveClosure(
+    entityType: string,
+    entityId: string,
+    relationshipTypes: string[],
+    maxDepth = 10,
+    packId?: string,
+  ): Array<{
+    entity_type: string;
+    entity_id: string;
+    canonical_name: string | null;
+    depth: number;
+    path: string;
+  }> {
+    if (relationshipTypes.length === 0) return [];
+    maxDepth = Math.min(maxDepth, 20); // hard cap
+
+    // Build relationship type filter: IN (?,?,...)
+    const relPlaceholders = relationshipTypes.map(() => '?').join(', ');
+    const packClause = packId ? 'AND r.pack_id = ?' : '';
+
+    const params: unknown[] = [
+      entityType,
+      entityId,
+      entityId,
+      ...relationshipTypes,
+      ...(packId ? [packId] : []),
+      maxDepth,
+    ];
+
+    try {
+      return db.prepare(`
+        WITH RECURSIVE closure(entity_type, entity_id, depth, path) AS (
+          -- Base: the starting entity itself
+          SELECT ?, ?, 0, ?
+
+          UNION ALL
+
+          -- Recursive: follow outgoing edges of the specified type(s)
+          SELECT
+            n.entity_type,
+            n.entity_id,
+            c.depth + 1,
+            c.path || ' → ' || n.entity_id
+          FROM entity_relationships r
+          JOIN entity_nodes n
+            ON n.entity_type = r.target_type AND n.entity_id = r.target_id
+          JOIN closure c
+            ON c.entity_type = r.source_type AND c.entity_id = r.source_id
+          WHERE r.relationship_type IN (${relPlaceholders})
+            ${packClause}
+            AND c.depth < ?
+            -- Cycle prevention: entity not already in path
+            AND ('→ ' || n.entity_id) NOT LIKE ('%→ ' || n.entity_id || ' →%')
+            AND c.path NOT LIKE ('%→ ' || n.entity_id)
+        )
+        SELECT DISTINCT
+          c.entity_type,
+          c.entity_id,
+          n.canonical_name,
+          c.depth,
+          c.path
+        FROM closure c
+        LEFT JOIN entity_nodes n
+          ON n.entity_type = c.entity_type AND n.entity_id = c.entity_id
+        WHERE c.depth > 0
+        ORDER BY c.depth, c.entity_id
+      `).all(...params) as Array<{
+        entity_type: string;
+        entity_id: string;
+        canonical_name: string | null;
+        depth: number;
+        path: string;
+      }>;
+    } catch {
+      return [];
+    }
+  }
+
   return {
     buildGraph, getEntityNeighbors, getEntitySubgraph,
-    mergeEntities, getTopEntities,
+    mergeEntities, getTopEntities, getTransitiveClosure,
   };
 }

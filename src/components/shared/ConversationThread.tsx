@@ -76,7 +76,7 @@ const MemoMessage = memo(function MemoMessage({ msg, moduleId, canEdit, onEditMe
           <button
             onClick={() => onEditMessage(msg)}
             className="absolute -right-1 top-0 rounded p-1 text-adv-gray opacity-0 transition-all group-hover:opacity-100 hover:text-adv-teal"
-            title="Edit and resend"
+            aria-label="Edit and resend"
           >
             <Pencil className="h-3 w-3" />
           </button>

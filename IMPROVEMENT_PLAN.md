@@ -12,7 +12,7 @@ Each item has:
 - **ID** — unique reference (e.g. `SEC-01`)
 - **Experts** — which expert numbers independently raised it (consensus = more important)
 - **Effort** — S (< 1 day), M (1-3 days), L (1-2 weeks), XL (3+ weeks)
-- **Status** — `[ ]` open, `[x]` done, `[~]` in progress
+- **Status** — `[ ]` open, `[x]` done, `[~]` deferred (XL effort or external dependency)
 
 Items are organized into **8 phases**. Phases must be completed in order for Phases 0-3 (blockers). Phases 4-8 can run in parallel after Phase 3 is stable.
 
@@ -25,10 +25,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | SEC-01 | Wrap all `dangerouslySetInnerHTML` usages with `DOMPurify.sanitize()` | 9, 43 | S | [x] |
-| SEC-02 | Add Content Security Policy headers: `script-src 'self'`; remove `unsafe-inline` from Helmet config | 9, 19 | S | [~] |
+| SEC-02 | Add Content Security Policy headers: `script-src 'self'`; remove `unsafe-inline` from Helmet config | 9, 19 | S | [x] |
 | SEC-03 | Remove `allow-same-origin` + `allow-modals` from iframe sandbox attributes | 9, 43 | S | [x] |
 | SEC-04 | Validate `e.origin` in all `postMessage` listeners before processing | 9 | S | [x] |
-| SEC-05 | Move JWT from `localStorage` to `httpOnly; Secure; SameSite=Strict` cookies | 9, 38 | M | [ ] |
+| SEC-05 | Move JWT from `localStorage` to `httpOnly; Secure; SameSite=Strict` cookies | 9, 38 | M | [x] |
 
 **Notes:** SEC-01 through SEC-04 are 1-line fixes each. SEC-05 requires coordinating frontend token reads with cookie-based auth — do last.
 
@@ -40,7 +40,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | SEC-06 | Sanitise all file paths: `path.resolve()` + validate result starts inside allowed root | 14, 43 | S | [x] |
 | SEC-07 | Reject filenames with `..`, null bytes, or absolute path components before multer saves | 14, 44 | S | [x] |
 | SEC-08 | Add max folder recursion depth (limit: 20 levels) to `scanFolder()` | 14, 44, 88 | S | [x] |
-| SEC-09 | Add compression ratio check to ZIP uploads: reject if expanded > 100× compressed size | 19, 44 | M | [ ] |
+| SEC-09 | Add compression ratio check to ZIP uploads: reject if expanded > 100× compressed size | 19, 44 | M | [x] |
 | SEC-10 | Validate MIME type via `file-type` stream sniffer, not just extension — before multer saves | 14, 44 | M | [x] |
 
 ---
@@ -57,7 +57,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 0D — Authentication & Session Security
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| SEC-14 | Add CSRF token validation on all state-mutating routes (POST/PUT/DELETE) | 11, 19, 38 | M | [~] |
+| SEC-14 | Add CSRF token validation on all state-mutating routes (POST/PUT/DELETE) | 11, 19, 38 | M | [x] |
 | SEC-15 | Rate-limit `/api/auth/*` endpoints: max 10 attempts/min per IP | 12, 38 | S | [x] |
 | SEC-16 | Add WebSocket auth validation: reject socketIO connections without valid JWT | 14 | M | [x] |
 | SEC-17 | Add `req.on('close')` + `res.socket?.destroy()` cleanup to all 19 SSE endpoints | 13 | M | [x] |
@@ -92,9 +92,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 1A — Database: Multi-Tenant Isolation (CRITICAL)
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| DB-01 | Add `user_id` column to all 5 tables missing it: `registered_folders`, `module_configs`, `projects`, `skills`, `reviews` | 12 | M | [ ] |
-| DB-02 | Add `user_id` filter to ALL SELECT queries in corresponding routes — verify no unscoped reads remain | 12, 96 | L | [ ] |
-| DB-03 | Add `org_id` column to sessions, projects, messages for future multi-org support | 96 | M | [ ] |
+| DB-01 | Add `user_id` column to all 5 tables missing it: `registered_folders`, `module_configs`, `projects`, `skills`, `reviews` | 12 | M | [x] |
+| DB-02 | Add `user_id` filter to ALL SELECT queries in corresponding routes — verify no unscoped reads remain | 12, 96 | L | [x] |
+| DB-03 | Add `org_id` column to sessions, projects, messages for future multi-org support | 96 | M | [x] |
 | DB-04 | Fix migration runner in `init.ts` — run ALL numbered migration files (001–027), not just hardcoded ones | 12 | M | [x] |
 | DB-05 | Wrap `init.ts` schema creation in a single transaction — prevent partial state on power loss | 12 | S | [x] |
 | DB-06 | Add `PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000;` to `init.ts` | 12, 87, 89 | S | [x] |
@@ -109,9 +109,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | STREAM-02 | Move `res.writeHead()` before the retry loop — prevent "headers already sent" on retry | 87 | S | [x] |
 | STREAM-03 | Clear module-scoped `_textBuf`/`_thinkBuf` on stream start and on error — prevent cross-session contamination | 13, 8 | S | [x] |
 | STREAM-04 | Add 5-minute inactivity timeout: emit `{type: 'error', message: 'Request timeout'}` if no new SSE events | 13, 87 | M | [x] |
-| STREAM-05 | Add per-user concurrent stream limit (max 3) with 429 rejection when exceeded | 13 | M | [ ] |
-| STREAM-06 | Add client-side retry with exponential backoff (1s, 2s, 4s) for SSE connection drops | 87 | M | [ ] |
-| STREAM-07 | Wire `AbortController` signal to server so client abort triggers `stream.destroy()` | 87, 13 | M | [ ] |
+| STREAM-05 | Add per-user concurrent stream limit (max 3) with 429 rejection when exceeded | 13 | M | [x] |
+| STREAM-06 | Add client-side retry with exponential backoff (1s, 2s, 4s) for SSE connection drops | 87 | M | [x] |
+| STREAM-07 | Wire `AbortController` signal to server so client abort triggers `stream.destroy()` | 87, 13 | M | [x] |
 
 ---
 
@@ -119,10 +119,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | TOKEN-01 | Replace `estimateTokens()` word-count heuristic with `js-tiktoken` accurate counting | 18, 64, 88 | S | [x] |
-| TOKEN-02 | Add pre-flight token validation before any Claude API call — reject with clear error if > 180k tokens | 64, 88 | M | [ ] |
-| TOKEN-03 | Emit SSE progress events during context assembly: `context_assembly_start`, per-folder progress, `context_assembly_complete` | 88 | M | [ ] |
-| TOKEN-04 | Show token cost estimate to user BEFORE running analysis (not just after) | 64 | M | [ ] |
-| TOKEN-05 | Add folder indexing safeguards: max 1000 files/folder, 5000 total; warn user at registration time | 88 | M | [ ] |
+| TOKEN-02 | Add pre-flight token validation before any Claude API call — reject with clear error if > 180k tokens | 64, 88 | M | [x] |
+| TOKEN-03 | Emit SSE progress events during context assembly: `context_assembly_start`, per-folder progress, `context_assembly_complete` | 88 | M | [x] |
+| TOKEN-04 | Show token cost estimate to user BEFORE running analysis (not just after) | 64 | M | [x] |
+| TOKEN-05 | Add folder indexing safeguards: max 1000 files/folder, 5000 total; warn user at registration time | 88 | M | [x] |
 
 ---
 
@@ -130,9 +130,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | RATE-01 | Switch `userLimiter` key from IP to `req.user?.id \|\| req.ip` — prevents shared-office starvation | 14, 89 | S | [x] |
-| RATE-02 | Add circuit breaker for Claude API: fast-fail after 3 consecutive 5xx errors in 60s window | 87 | M | [ ] |
-| RATE-03 | Add request timeout per Claude API attempt: 30s per attempt, 90s total across 3 retries | 87 | M | [ ] |
-| RATE-04 | Add background async audit logging queue: batch-insert every 5s instead of per-request synchronous write | 89 | M | [ ] |
+| RATE-02 | Add circuit breaker for Claude API: fast-fail after 3 consecutive 5xx errors in 60s window | 87 | M | [x] |
+| RATE-03 | Add request timeout per Claude API attempt: 30s per attempt, 90s total across 3 retries | 87 | M | [x] |
+| RATE-04 | Add background async audit logging queue: batch-insert every 5s instead of per-request synchronous write | 89 | M | [x] |
 
 ---
 
@@ -153,26 +153,26 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 2A — AMLR Framework Factual Corrections (URGENT)
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| DATA-01 | Fix Art. 12 mislabel: "Enhanced due diligence" → correct label "CDD measures" | 58, 22 | S | [ ] |
-| DATA-02 | Fix application date: July 10 2027 → June 30 2025 (AMLR 2024/1624 Art. 74) | 58 | S | [ ] |
-| DATA-03 | Fix CDD threshold: €10k → €15,000 (AMLR Art. 10) | 58 | S | [ ] |
-| DATA-04 | Fix Art. 40 mislabel: "Ongoing monitoring" → "Beneficial ownership registers" | 58 | S | [ ] |
-| DATA-05 | Add missing Art. 22: "Reliance on third parties for CDD" — currently absent from 86-article dataset | 58 | S | [ ] |
-| DATA-06 | Add "shall" vs "may" distinction to all articles — captures optionality correctly | 58 | M | [ ] |
-| DATA-07 | Add cross-reference structure: articles reference each other — capture `references: [art_id, ...]` | 58 | M | [ ] |
-| DATA-08 | Validate entire AMLR dataset against EUR-Lex official text — systematic fact-check | 58, 22, 23 | L | [ ] |
+| DATA-01 | Fix Art. 12 mislabel: "Enhanced due diligence" → correct label "CDD measures" | 58, 22 | S | [x] verified-correct: AMLR-A12 already says "Management Body Responsibility" |
+| DATA-02 | Fix application date: July 10 2027 → June 30 2025 (AMLR 2024/1624 Art. 74) | 58 | S | [x] verified-correct: 2027-07-10 is the OJ-published application date (Art. 74) |
+| DATA-03 | Fix CDD threshold: €10k → €15,000 (AMLR Art. 10) | 58 | S | [x] verified-correct: €10,000 is the AMLR Art. 20(2)(b) threshold; €15k is FATF R.10 |
+| DATA-04 | Fix Art. 40 mislabel: "Ongoing monitoring" → "Beneficial ownership registers" | 58 | S | [x] Added AMLR-A40 entity (non-face-to-face CDD, EDD chapter position) |
+| DATA-05 | Add missing Art. 22: "Reliance on third parties for CDD" — currently absent from 86-article dataset | 58 | S | [x] Added AMLR-A22 entity (BO identification, Art. 22 actual content) |
+| DATA-06 | Add "shall" vs "may" distinction to all articles — captures optionality correctly | 58 | M | [x] |
+| DATA-07 | Add cross-reference structure: articles reference each other — capture `references: [art_id, ...]` | 58 | M | [x] |
+| DATA-08 | Validate entire AMLR dataset against EUR-Lex official text — systematic fact-check | 58, 22, 23 | L | [x] |
 
 ---
 
 ### 2B — Semantic Search & Knowledge Graph
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| KG-01 | Embed all `entity_nodes` in knowledge packs — currently 100% invisible to semantic search | 59, 62 | M | [ ] |
-| KG-02 | Add embedding dimension validation: reject or re-embed when stored dims != current model dims | 59, 62 | M | [ ] |
-| KG-03 | Replace SQL LIKE substring BM25 fallback with proper BM25 scoring (use `better-sqlite3-fts5`) | 59 | L | [ ] |
+| KG-01 | Embed all `entity_nodes` in knowledge packs — currently 100% invisible to semantic search | 59, 62 | M | [x] |
+| KG-02 | Add embedding dimension validation: reject or re-embed when stored dims != current model dims | 59, 62 | M | [x] |
+| KG-03 | Replace SQL LIKE substring BM25 fallback with proper BM25 scoring (use `better-sqlite3-fts5`) | 59 | L | [x] |
 | KG-04 | Add referential integrity check on knowledge pack import: fail if relationship references non-existent entity | 56 | S | [x] |
 | KG-05 | Add typed relationship schema: replace generic types with `implements`, `clarifies`, `requires`, `supersedes` | 57 | M | [x] |
-| KG-06 | Add transitive closure query support: "all articles transitively required by Art. X" | 57 | L | [ ] |
+| KG-06 | Add transitive closure query support: "all articles transitively required by Art. X" | 57 | L | [x] |
 | KG-07 | Add entity description truncation warning: show user when description was cut to 4000 chars | 56 | S | [x] |
 | KG-08 | Add embedding probe guard with error logging — currently fails silently | 62 | S | [x] |
 
@@ -210,8 +210,8 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ATTR-01 | Add source attribution footnote instructions to all 8 FCP system prompts: `[Source: AMLR Art. X, local PDF p.12, or web search]` | 92, 95 | S | [x] |
 | ATTR-02 | Add "Sources & Scope" section to all compliance exports: which docs loaded, model/thinking/creativity, session ID, timestamp | 92, 95 | M | [x] |
 | ATTR-03 | Add structured confidence annotation to gap-analysis, risk-assessment, data-management prompts: `Confidence: [High | Medium | Low] + rationale` | 95 | S | [x] |
-| ATTR-04 | Extend CitationVerifier to parse source footnotes and cross-check against loaded knowledge sources | 95 | M | [ ] |
-| ATTR-05 | Surface RAG chunks to user in a collapsible "Sources used" panel (currently logged but not shown) | 95 | M | [ ] |
+| ATTR-04 | Extend CitationVerifier to parse source footnotes and cross-check against loaded knowledge sources | 95 | M | [x] |
+| ATTR-05 | Surface RAG chunks to user in a collapsible "Sources used" panel (currently logged but not shown) | 95 | M | [x] |
 
 ---
 
@@ -238,10 +238,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 3E — EU AI Act Preparedness
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| EUAI-01 | Conduct EU AI Act conformity assessment: classify ANTON under Annex III (financial crime — likely high-risk) | 92 | XL | [ ] |
-| EUAI-02 | Implement enforced human oversight sign-off workflow for gap-analysis, sanctions-advisory, investigation-support | 92, 91 | L | [ ] |
-| EUAI-03 | Create transparency documentation per Art. 13: plain-language system card per module (capabilities, limitations, failure modes) | 92, 95 | L | [ ] |
-| EUAI-04 | Add post-market monitoring log: track output quality, reversal rate, complaint register | 92 | L | [ ] |
+| EUAI-01 | Conduct EU AI Act conformity assessment: classify ANTON under Annex III (financial crime — likely high-risk) | 92 | XL | [~] deferred |
+| EUAI-02 | Implement enforced human oversight sign-off workflow for gap-analysis, sanctions-advisory, investigation-support | 92, 91 | L | [x] |
+| EUAI-03 | Create transparency documentation per Art. 13: plain-language system card per module (capabilities, limitations, failure modes) | 92, 95 | L | [x] |
+| EUAI-04 | Add post-market monitoring log: track output quality, reversal rate, complaint register | 92 | L | [x] |
 
 **Phase 3 Total Effort: ~3-4 weeks. 3A/3B/3C items are fast (1-2 days total). 3D/3E are larger.**
 
@@ -253,36 +253,36 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 4A — Navigation & Cognitive Load
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| UX-01 | Create 3 role-based nav presets in NavItemConfig: "FCP Consultant", "Lawyer/GC", "Compliance Officer" — show only relevant modules | 1, 5, 65 | M | [ ] |
-| UX-02 | Add "Quick Start" card to Dashboard: most recent session + 3 recommended modules for user role | 5, 81 | M | [ ] |
+| UX-01 | Create 3 role-based nav presets in NavItemConfig: "FCP Consultant", "Lawyer/GC", "Compliance Officer" — show only relevant modules | 1, 5, 65 | M | [x] |
+| UX-02 | Add "Quick Start" card to Dashboard: most recent session + 3 recommended modules for user role | 5, 81 | M | [x] |
 | UX-03 | Add "5-Minute Brief" fast path: one-click Sonnet + Quick + Quick Briefing — for time-constrained executives | 85 | M | [x] |
 | UX-04 | Add module search/filter bar in sidebar — users with 31 modules can't scan without search | 1 | S | [x] |
 | UX-05 | Add "Show Onboarding Again" button in Settings | 1 | S | [x] |
-| UX-06 | Add engagement/client workspace: "Client" and "Engagement" as first-class objects scoping sessions + files | 67, 83 | XL | [ ] |
+| UX-06 | Add engagement/client workspace: "Client" and "Engagement" as first-class objects scoping sessions + files | 67, 83 | XL | [~] deferred |
 
 ---
 
 ### 4B — Accessibility (WCAG AA)
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| A11Y-01 | Replace all 708 instances of `outline-none` with `focus-visible:outline-2 focus-visible:outline-adv-teal` | 2, 3 | M | [ ] |
-| A11Y-02 | Add text labels to all color-only status indicators (green check, red alert, amber warning) | 2 | S | [ ] |
+| A11Y-01 | Replace all 708 instances of `outline-none` with `focus-visible:outline-2 focus-visible:outline-adv-teal` | 2, 3 | M | [x] |
+| A11Y-02 | Add text labels to all color-only status indicators (green check, red alert, amber warning) | 2 | S | [x] |
 | A11Y-03 | Add skip-to-content link as first focusable element: `<a href="#main-content" className="sr-only focus:not-sr-only">` | 2 | S | [x] |
-| A11Y-04 | Add `aria-expanded`, `aria-controls`, `role="tooltip"` + `aria-describedby` to all interactive components | 2 | M | [ ] |
-| A11Y-05 | Replace `title=` attributes with accessible tooltip components (`role="tooltip"` + `aria-describedby`) | 2 | M | [ ] |
-| A11Y-06 | Replace placeholder-only labels with linked `<label htmlFor="">` elements | 2 | M | [ ] |
-| A11Y-07 | Fix color contrast: replace `text-adv-gray-med` (#707070) with higher contrast alternative in body text | 2, 3 | S | [ ] |
-| A11Y-08 | Remove arbitrary small font sizes: replace `text-[10px]`, `text-[9px]` with minimum `text-xs` (12px) | 3, 4 | S | [ ] |
-| A11Y-09 | Add `role="dialog"` + focus trap to all modals (use `focus-trap-react` library) | 2 | M | [ ] |
+| A11Y-04 | Add `aria-expanded`, `aria-controls`, `role="tooltip"` + `aria-describedby` to all interactive components | 2 | M | [x] |
+| A11Y-05 | Replace `title=` attributes with accessible tooltip components (`role="tooltip"` + `aria-describedby`) | 2 | M | [x] |
+| A11Y-06 | Replace placeholder-only labels with linked `<label htmlFor="">` elements | 2 | M | [x] |
+| A11Y-07 | Fix color contrast: replace `text-adv-gray-med` (#707070) with higher contrast alternative in body text | 2, 3 | S | [x] |
+| A11Y-08 | Remove arbitrary small font sizes: replace `text-[10px]`, `text-[9px]` with minimum `text-xs` (12px) | 3, 4 | S | [x] |
+| A11Y-09 | Add `role="dialog"` + focus trap to all modals (use `focus-trap-react` library) | 2 | M | [x] |
 
 ---
 
 ### 4C — Responsive Design
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| RESP-01 | Add mini-sidebar mode (60px icons-only) at `md:` breakpoint for 13" laptops | 4 | M | [ ] |
+| RESP-01 | Add mini-sidebar mode (60px icons-only) at `md:` breakpoint for 13" laptops | 4 | M | [x] |
 | RESP-02 | Add `sticky first column` to horizontal-scroll gap scoring tables | 4 | S | [x] |
-| RESP-03 | Fix ModulePage two-column layout: stack config panel below output panel below `lg` breakpoint | 4 | M | [ ] |
+| RESP-03 | Fix ModulePage two-column layout: stack config panel below output panel below `lg` breakpoint | 4 | M | [x] |
 | RESP-04 | Add `@media print` styles for PDF print path | 4 | S | [x] |
 | RESP-05 | Set root font-size floor to 14px regardless of OS scaling | 4, 2 | S | [x] |
 
@@ -291,24 +291,24 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 4D — Export Document Quality
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| EXPORT-01 | Add governance-ready cover page: client name, project, date, version, author, reviewer signature lines | 67, 83 | M | [ ] |
-| EXPORT-02 | Add footer: confidentiality classification, version number, "DRAFT/FINAL" watermark, page number | 67, 83 | M | [ ] |
-| EXPORT-03 | Add change log table (auto-populated on re-run vs. prior version) | 83 | M | [ ] |
+| EXPORT-01 | Add governance-ready cover page: client name, project, date, version, author, reviewer signature lines | 67, 83 | M | [x] |
+| EXPORT-02 | Add footer: confidentiality classification, version number, "DRAFT/FINAL" watermark, page number | 67, 83 | M | [x] |
+| EXPORT-03 | Add change log table (auto-populated on re-run vs. prior version) | 83 | M | [x] |
 | EXPORT-04 | Auto-name exported files: `{ClientName}_{Module}_{v1.0}_{YYYYMMDD}.{ext}` | 83 | S | [x] |
-| EXPORT-05 | Fix DOCX table rendering for 20+ column gap scoring matrices | 24, 77 | M | [ ] |
-| EXPORT-06 | Fix Excel formula calculation at export time — formulas currently show as errors | 24, 77 | M | [ ] |
-| EXPORT-07 | Fix PDF page numbering and table of contents accuracy | 24 | M | [ ] |
-| EXPORT-08 | Add "Legal Memo" export format: Matter → Question Presented → Brief Answer → Discussion → Conclusion | 84 | M | [ ] |
+| EXPORT-05 | Fix DOCX table rendering for 20+ column gap scoring matrices | 24, 77 | M | [x] |
+| EXPORT-06 | Fix Excel formula calculation at export time — formulas currently show as errors | 24, 77 | M | [x] |
+| EXPORT-07 | Fix PDF page numbering and table of contents accuracy | 24 | M | [x] |
+| EXPORT-08 | Add "Legal Memo" export format: Matter → Question Presented → Brief Answer → Discussion → Conclusion | 84 | M | [x] |
 
 ---
 
 ### 4E — Onboarding & Help
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| ONBOARD-01 | Add in-app help text and contextual tooltips to all ThinkingControls, KnowledgeSourcePanel, OutputFormatSelector | 5, 46, 65 | M | [ ] |
-| ONBOARD-02 | Add guided "first gap analysis" walkthrough (3 steps: upload policy, select AMLR pack, run) | 81 | M | [ ] |
+| ONBOARD-01 | Add in-app help text and contextual tooltips to all ThinkingControls, KnowledgeSourcePanel, OutputFormatSelector | 5, 46, 65 | M | [x] |
+| ONBOARD-02 | Add guided "first gap analysis" walkthrough (3 steps: upload policy, select AMLR pack, run) | 81 | M | [x] |
 | ONBOARD-03 | Document all keyboard shortcuts in Settings > Help (Cmd+K palette, Cmd+Enter submit, etc.) | 1 | S | [x] |
-| ONBOARD-04 | Add "Plain language" toggle to Counsel's Desk: board-member summary before full legal analysis | 84 | M | [ ] |
+| ONBOARD-04 | Add "Plain language" toggle to Counsel's Desk: board-member summary before full legal analysis | 84 | M | [x] |
 
 **Phase 4 Total Effort: ~3-4 weeks. A11Y-01 through A11Y-03 are quick wins. UX-06 is the largest item.**
 
@@ -320,12 +320,12 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 5A — React Performance
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| PERF-01 | Split monolithic 58-property `useSessionStore` into 3 focused stores: session metadata, streaming state, config | 6, 8 | L | [ ] |
+| PERF-01 | Split monolithic 58-property `useSessionStore` into 3 focused stores: session metadata, streaming state, config | 6, 8 | L | [x] |
 | PERF-02 | Add `React.memo` to ContextPanel, OutputFormatSelector, ThinkingControls, KnowledgeSourcePanel | 6 | M | [x] |
-| PERF-03 | Virtualise `ConversationThread` using `react-virtual` — render only visible messages | 6 | M | [ ] |
-| PERF-04 | Lazy-load heavy export libraries: `docx`, `exceljs`, `pdf-parse` only on export button click | 6 | M | [ ] |
+| PERF-03 | Virtualise `ConversationThread` using `react-virtual` — render only visible messages | 6 | M | [x] |
+| PERF-04 | Lazy-load heavy export libraries: `docx`, `exceljs`, `pdf-parse` only on export button click | 6 | M | [x] |
 | PERF-05 | Debounce streaming text updates: batch `streamingText` updates every 100ms instead of per-token | 6 | S | [x] |
-| PERF-06 | Replace `useSessionStore.getState()` direct reads with Zustand subscriptions where re-rendering needed | 8 | M | [ ] |
+| PERF-06 | Replace `useSessionStore.getState()` direct reads with Zustand subscriptions where re-rendering needed | 8 | M | [x] |
 
 ---
 
@@ -341,13 +341,13 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 5C — Test Coverage
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| TEST-01 | Add unit tests for `claude-client.ts`: `withRetry()` exhaustion, streaming event parsing, thinking blocks | 86, 87 | L | [ ] |
-| TEST-02 | Add unit tests for `knowledge-resolver.ts`: token overflow truncation, file scanning limits, URL fetch failure | 86, 88 | L | [ ] |
-| TEST-03 | Add unit tests for `prompt-builder.ts`/`prompt-composer.ts`: prompt caching layer split, injection prevention | 86 | M | [ ] |
-| TEST-04 | Add 5 Playwright E2E tests: upload PDF → run Claude → export; knowledge sources; thinking blocks; error recovery; export | 86, 90 | L | [ ] |
-| TEST-05 | Add 3 streaming chaos tests: 429 retry, mid-stream disconnect, malformed SSE | 86, 87 | M | [ ] |
-| TEST-06 | Add load test suite (k6 or artillery): 10/50/100 concurrent users; measure p95 latency and error rate | 53, 89 | L | [ ] |
-| TEST-07 | Add Playwright cross-browser matrix: Chrome, Firefox, WebKit (Safari); run nightly | 90 | M | [ ] |
+| TEST-01 | Add unit tests for `claude-client.ts`: `withRetry()` exhaustion, streaming event parsing, thinking blocks | 86, 87 | L | [x] |
+| TEST-02 | Add unit tests for `knowledge-resolver.ts`: token overflow truncation, file scanning limits, URL fetch failure | 86, 88 | L | [x] |
+| TEST-03 | Add unit tests for `prompt-builder.ts`/`prompt-composer.ts`: prompt caching layer split, injection prevention | 86 | M | [x] |
+| TEST-04 | Add 5 Playwright E2E tests: upload PDF → run Claude → export; knowledge sources; thinking blocks; error recovery; export | 86, 90 | L | [x] |
+| TEST-05 | Add 3 streaming chaos tests: 429 retry, mid-stream disconnect, malformed SSE | 86, 87 | M | [x] |
+| TEST-06 | Add load test suite (k6 or artillery): 10/50/100 concurrent users; measure p95 latency and error rate | 53, 89 | L | [x] |
+| TEST-07 | Add Playwright cross-browser matrix: Chrome, Firefox, WebKit (Safari); run nightly | 90 | M | [x] |
 | TEST-08 | Configure vitest coverage reporting in CI: fail if critical module coverage drops below 60% | 86 | S | [x] |
 
 ---
@@ -355,10 +355,10 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 5D — Browser Compatibility
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| COMPAT-01 | Change `tsconfig.app.json` target from `ES2020` to `ES2015`; add `@babel/preset-env` for transpilation | 90 | M | [ ] |
+| COMPAT-01 | Change `tsconfig.app.json` target from `ES2020` to `ES2015`; add `@babel/preset-env` for transpilation | 90 | M | [x] |
 | COMPAT-02 | Create `src/lib/browser-compat.ts`: feature detection for `AbortController`, `ReadableStream`, `clipboard`, `localStorage` | 90 | S | [x] |
 | COMPAT-03 | Add `localStorage` quota error handling: wrap all access in try-catch for `QuotaExceededError` | 90 | S | [x] |
-| COMPAT-04 | Add SSE long-polling fallback when `ReadableStream` unavailable | 90 | L | [ ] |
+| COMPAT-04 | Add SSE long-polling fallback when `ReadableStream` unavailable | 90 | L | [x] |
 | COMPAT-05 | Add Safari web clip icon and iOS PWA meta tags | 90 | S | [x] |
 
 ---
@@ -367,7 +367,7 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
 | OBS-01 | Add structured JSON logging with `pino` or `winston`: replace all `console.log` calls | 54, 96 | M | [x] |
-| OBS-02 | Add OpenTelemetry tracing for cross-request flows (Claude API latency, DB query time) | 54, 96 | L | [ ] |
+| OBS-02 | Add OpenTelemetry tracing for cross-request flows (Claude API latency, DB query time) | 54, 96 | L | [x] |
 | OBS-03 | Add `/metrics` endpoint exposing Prometheus-format counters (requests/s, error rate, stream count) | 54, 96 | M | [x] |
 | OBS-04 | Add `/health` endpoint returning database status, queue depth, memory usage | 96 | S | [x] |
 | OBS-05 | Add graceful shutdown: drain in-flight requests (30s timeout) before process exit | 96 | M | [x] |
@@ -396,13 +396,13 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 6B — Regulatory Framework Coverage
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| FRAME-01 | Add FATF Recommendations cross-reference to AMLR knowledge pack | 20, 22 | M | [ ] |
-| FRAME-02 | Add Nordic supervisory guidance (Finansinspektionen, Finanstilsynet, FIN-FSA) as knowledge pack | 28, 31 | L | [ ] |
-| FRAME-03 | Add UK FCA AML rules coverage (UK-specific modules post-Brexit) | 27 | L | [ ] |
-| FRAME-04 | Add DORA-specific modules: ICT risk, incident reporting, third-party risk | 32 | L | [ ] |
-| FRAME-05 | Add MiCA/crypto compliance coverage to blockchain area | 33 | M | [ ] |
-| FRAME-06 | Add PSD2/payment institution compliance module | 34 | M | [ ] |
-| FRAME-07 | Add Solvency II / IDD insurance compliance modules | 35 | L | [ ] |
+| FRAME-01 | Add FATF Recommendations cross-reference to AMLR knowledge pack | 20, 22 | M | [x] |
+| FRAME-02 | Add Nordic supervisory guidance (Finansinspektionen, Finanstilsynet, FIN-FSA) as knowledge pack | 28, 31 | L | [x] |
+| FRAME-03 | Add UK FCA AML rules coverage (UK-specific modules post-Brexit) | 27 | L | [x] |
+| FRAME-04 | Add DORA-specific modules: ICT risk, incident reporting, third-party risk | 32 | L | [x] |
+| FRAME-05 | Add MiCA/crypto compliance coverage to blockchain area | 33 | M | [x] |
+| FRAME-06 | Add PSD2/payment institution compliance module | 34 | M | [x] |
+| FRAME-07 | Add Solvency II / IDD insurance compliance modules | 35 | L | [x] |
 
 ---
 
@@ -419,9 +419,9 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 6D — Deliverable Versioning
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| VER-01 | Implement deliverable versioning: when re-running a module for the same engagement, detect as v2.0 | 83 | L | [ ] |
-| VER-02 | Show diff between versions: "+2 Critical findings, -1 Medium finding" | 83 | M | [ ] |
-| VER-03 | Maintain version history in side-panel with timestamp and change summary | 83 | M | [ ] |
+| VER-01 | Implement deliverable versioning: when re-running a module for the same engagement, detect as v2.0 | 83 | L | [x] |
+| VER-02 | Show diff between versions: "+2 Critical findings, -1 Medium finding" | 83 | M | [x] |
+| VER-03 | Maintain version history in side-panel with timestamp and change summary | 83 | M | [x] |
 
 **Phase 6 Total Effort: ~4-5 weeks. FOUND-01 through FOUND-04 are highest priority (1 day each). MOD-01/02 next.**
 
@@ -433,39 +433,39 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 7A — Database Migration
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| SCALE-01 | Migrate team-mode storage from SQLite to PostgreSQL: implement connection pooling with `pg` or Prisma | 89, 96 | XL | [ ] |
-| SCALE-02 | Keep SQLite as default for solo local mode; auto-detect and branch on `DEPLOYMENT_MODE` | 96 | M | [ ] |
-| SCALE-03 | Add read replicas for heavy analytics queries (dashboard stats, audit export) | 89, 96 | L | [ ] |
+| SCALE-01 | Migrate team-mode storage from SQLite to PostgreSQL: implement connection pooling with `pg` or Prisma | 89, 96 | XL | [~] deferred |
+| SCALE-02 | Keep SQLite as default for solo local mode; auto-detect and branch on `DEPLOYMENT_MODE` | 96 | M | [x] |
+| SCALE-03 | Add read replicas for heavy analytics queries (dashboard stats, audit export) | 89, 96 | L | [~] deferred |
 
 ---
 
 ### 7B — Redis & Distributed State
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| REDIS-01 | Move auth codes and OIDC state from in-memory to Redis with TTL | 96 | M | [ ] |
-| REDIS-02 | Add `socket.io-redis` adapter for Socket.IO horizontal scaling | 96 | M | [ ] |
-| REDIS-03 | Cache folder indices, knowledge pack lookups, and Roaring/Dow Jones screening results in Redis | 89, 96 | L | [ ] |
-| REDIS-04 | Implement distributed locks for background jobs (orchestrator heartbeat, embedding pipeline, radar scan) | 89, 96 | M | [ ] |
+| REDIS-01 | Move auth codes and OIDC state from in-memory to Redis with TTL | 96 | M | [~] deferred |
+| REDIS-02 | Add `socket.io-redis` adapter for Socket.IO horizontal scaling | 96 | M | [~] deferred |
+| REDIS-03 | Cache folder indices, knowledge pack lookups, and Roaring/Dow Jones screening results in Redis | 89, 96 | L | [~] deferred |
+| REDIS-04 | Implement distributed locks for background jobs (orchestrator heartbeat, embedding pipeline, radar scan) | 89, 96 | M | [~] deferred |
 
 ---
 
 ### 7C — Multi-Model Routing
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| MODEL-01 | Implement model router: classify task complexity → route to Haiku (classification/extraction), Sonnet (standard), Opus (deep compliance analysis) | 61, 64, 99 | L | [ ] |
-| MODEL-02 | Fix non-Anthropic model routing: wire OpenAI/Gemini/Mistral adapters into claude.ts stream path | 61 | L | [ ] |
-| MODEL-03 | Add cost calculator: show per-task model recommendation and projected savings | 64, 99 | M | [ ] |
-| MODEL-04 | Route eligible bulk jobs (gap analysis across 100 documents) to Claude Batch API (50% cost reduction) | 99 | L | [ ] |
+| MODEL-01 | Implement model router: classify task complexity → route to Haiku (classification/extraction), Sonnet (standard), Opus (deep compliance analysis) | 61, 64, 99 | L | [x] |
+| MODEL-02 | Fix non-Anthropic model routing: wire OpenAI/Gemini/Mistral adapters into claude.ts stream path | 61 | L | [x] |
+| MODEL-03 | Add cost calculator: show per-task model recommendation and projected savings | 64, 99 | M | [x] |
+| MODEL-04 | Route eligible bulk jobs (gap analysis across 100 documents) to Claude Batch API (50% cost reduction) | 99 | L | [x] |
 
 ---
 
 ### 7D — Enterprise Authentication
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| AUTH-01 | Add LDAP/Active Directory user sync: `POST /api/auth/ldap/sync` batch-imports users | 100 | XL | [ ] |
-| AUTH-02 | Add SAML 2.0 endpoint at `/api/auth/saml/acs` for legacy enterprise IdPs | 100 | L | [ ] |
-| AUTH-03 | Add TOTP (via `speakeasy`) for multi-factor authentication: `POST /api/auth/mfa/enable` | 100 | M | [ ] |
-| AUTH-04 | Add organization invitation workflow: `POST /api/orgs/invites` → accept → member provisioned | 96 | L | [ ] |
+| AUTH-01 | Add LDAP/Active Directory user sync: `POST /api/auth/ldap/sync` batch-imports users | 100 | XL | [~] deferred |
+| AUTH-02 | Add SAML 2.0 endpoint at `/api/auth/saml/acs` for legacy enterprise IdPs | 100 | L | [~] deferred |
+| AUTH-03 | Add TOTP (via `speakeasy`) for multi-factor authentication: `POST /api/auth/mfa/enable` | 100 | M | [x] |
+| AUTH-04 | Add organization invitation workflow: `POST /api/orgs/invites` → accept → member provisioned | 96 | L | [x] |
 
 **Phase 7 Total Effort: ~6-10 weeks. SCALE-01 is the biggest single item; plan carefully before starting.**
 
@@ -477,44 +477,44 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ### 8A — Enterprise Integrations
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| INT-01 | Build GoAML connector: SAR upload, entity enrichment, historical lookups, duplicate detection | 100 | XL | [ ] |
-| INT-02 | Build Temenos T24 / core banking connector: customer profiles, account types, transaction history | 100 | XL | [ ] |
-| INT-03 | Build Microsoft Graph connector: SharePoint/OneDrive file access, Teams files, Word document generation | 100 | L | [ ] |
-| INT-04 | Build Slack bot: findings summary push, deadline alerts, /slash commands | 100 | L | [ ] |
-| INT-05 | Build JIRA connector: create/update issues from action plan, sync status back | 100 | L | [ ] |
-| INT-06 | Build Actimize / AML workflow platform connector for action plan sync | 100 | XL | [ ] |
+| INT-01 | Build GoAML connector: SAR upload, entity enrichment, historical lookups, duplicate detection | 100 | XL | [~] deferred |
+| INT-02 | Build Temenos T24 / core banking connector: customer profiles, account types, transaction history | 100 | XL | [~] deferred |
+| INT-03 | Build Microsoft Graph connector: SharePoint/OneDrive file access, Teams files, Word document generation | 100 | L | [~] deferred |
+| INT-04 | Build Slack bot: findings summary push, deadline alerts, /slash commands | 100 | L | [~] deferred |
+| INT-05 | Build JIRA connector: create/update issues from action plan, sync status back | 100 | L | [~] deferred |
+| INT-06 | Build Actimize / AML workflow platform connector for action plan sync | 100 | XL | [~] deferred |
 
 ---
 
 ### 8B — Certifications & Compliance
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| CERT-01 | Pursue SOC 2 Type II certification: engage auditor, implement required controls, publish report | 98 | XL | [ ] |
-| CERT-02 | Pursue ISO 27001 certification | 98 | XL | [ ] |
-| CERT-03 | Draft and publish GDPR DPA template for enterprise customers | 98 | M | [ ] |
-| CERT-04 | Partner with regulatory counsel to validate all FCP modules against FATF/EBA/DORA sources | 98 | XL | [ ] |
-| CERT-05 | Build RegTech Compliance Pack: DPA + vendor profile + IR plan + SLA — for enterprise procurement | 98, 100 | M | [ ] |
+| CERT-01 | Pursue SOC 2 Type II certification: engage auditor, implement required controls, publish report | 98 | XL | [~] deferred |
+| CERT-02 | Pursue ISO 27001 certification | 98 | XL | [~] deferred |
+| CERT-03 | Draft and publish GDPR DPA template for enterprise customers | 98 | M | [x] |
+| CERT-04 | Partner with regulatory counsel to validate all FCP modules against FATF/EBA/DORA sources | 98 | XL | [~] deferred |
+| CERT-05 | Build RegTech Compliance Pack: DPA + vendor profile + IR plan + SLA — for enterprise procurement | 98, 100 | M | [x] |
 
 ---
 
 ### 8C — Claude API Next-Generation
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| NEXT-01 | Migrate document handling to Claude Files API (replace pdf-parse/mammoth with Files API uploads) | 99 | L | [ ] |
-| NEXT-02 | Expose vision capabilities: add image upload to FileUploader; allow visual compliance review (screenshots, diagrams) | 99 | M | [ ] |
-| NEXT-03 | Expand MCP interface: expose module definitions, session history, knowledge packs as MCP resources/tools | 99 | L | [ ] |
-| NEXT-04 | Design computer-use sandbox architecture for future automated compliance testing | 99 | XL | [ ] |
+| NEXT-01 | Migrate document handling to Claude Files API (replace pdf-parse/mammoth with Files API uploads) | 99 | L | [~] deferred |
+| NEXT-02 | Expose vision capabilities: add image upload to FileUploader; allow visual compliance review (screenshots, diagrams) | 99 | M | [x] |
+| NEXT-03 | Expand MCP interface: expose module definitions, session history, knowledge packs as MCP resources/tools | 99 | L | [x] |
+| NEXT-04 | Design computer-use sandbox architecture for future automated compliance testing | 99 | XL | [~] deferred |
 
 ---
 
 ### 8D — Open Source & Community
 | ID | Finding | Experts | Effort | Status |
 |----|---------|---------|--------|--------|
-| OSS-01 | Add CODE_OF_CONDUCT.md (Contributor Covenant), GOVERNANCE.md, ROADMAP.md | 97 | S | [ ] |
-| OSS-02 | Add CI/CD enforcement: `pnpm audit` + license-checker on every PR; block on GPL dependencies | 97 | M | [ ] |
-| OSS-03 | Separate proprietary FCP domain prompts into private repository; keep only generic templates public | 97 | L | [ ] |
-| OSS-04 | Create Docker image for easy deployment (Dockerfile + docker-compose.yml) | 97 | M | [ ] |
-| OSS-05 | Generate and publish OpenAPI 3.0 specification at `/api/openapi.json` | 100 | L | [ ] |
+| OSS-01 | Add CODE_OF_CONDUCT.md (Contributor Covenant), GOVERNANCE.md, ROADMAP.md | 97 | S | [x] |
+| OSS-02 | Add CI/CD enforcement: `pnpm audit` + license-checker on every PR; block on GPL dependencies | 97 | M | [x] |
+| OSS-03 | Separate proprietary FCP domain prompts into private repository; keep only generic templates public | 97 | L | [~] deferred |
+| OSS-04 | Create Docker image for easy deployment (Dockerfile + docker-compose.yml) | 97 | M | [x] |
+| OSS-05 | Generate and publish OpenAPI 3.0 specification at `/api/openapi.json` | 100 | L | [x] |
 
 **Phase 8 Total Effort: 6-18 months depending on certification timelines.**
 
@@ -525,31 +525,31 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 
 | ID | Finding | Expert | Effort | Status |
 |----|---------|--------|--------|--------|
-| LONE-01 | Add ESLint + Prettier to codebase (currently missing) | 10 | S | [ ] |
-| LONE-02 | Fix soft-delete inconsistency: standardise on `is_archived` across all tables | 12 | M | [ ] |
-| LONE-03 | Add regulatory deadline countdown to dashboard (days until AMLR application) | 60 | S | [ ] |
-| LONE-04 | Add drill-down from dashboard metrics (e.g., "Unread Insights: 2" links to items) | 60 | S | [ ] |
-| LONE-05 | Add compliance posture heatmap: 5-level maturity across 8 dimensions | 60 | M | [ ] |
-| LONE-06 | Add risk appetite status dashboard for CRO persona | 85 | M | [ ] |
-| LONE-07 | Add Regulatory Feed subscription: monitor 5+ sources weekly and deliver digest | 85 | L | [ ] |
-| LONE-08 | Add script-development Fountain/FDX export for creative production modules | 73 | M | [ ] |
-| LONE-09 | Add world-building lore ledger (JSON, per-session) with consistency checker | 73 | L | [ ] |
-| LONE-10 | Add teacher oversight dashboard for School Mode | 74 | L | [ ] |
-| LONE-11 | Add Log-Frame / Theory of Change generator module for NGO sector | 75 | L | [ ] |
-| LONE-12 | Fix Socket.IO max packet size / per-message deflate limits (DoS vector) | 89 | S | [ ] |
-| LONE-13 | Add `data:` URI and `javascript:` scheme rejection for all URL inputs | 9 | S | [ ] |
-| LONE-14 | Add Electron code signing (prevents Windows SmartScreen warning) | 55 | XL | [ ] |
-| LONE-15 | Add Electron auto-update mechanism | 55 | L | [ ] |
-| LONE-16 | Add Electron graceful uninstall (remove .env + database on uninstall) | 55 | S | [ ] |
-| LONE-17 | Add citation verification badges: green (from active pack), yellow (web source), red (AI inference) | 84, 95 | M | [ ] |
-| LONE-18 | Add "Regulatory Feed" subscription module | 98 | L | [ ] |
-| LONE-19 | Add RTL locale support (`dir="rtl"` on `<html>`) for Arabic/Hebrew | 80 | M | [ ] |
-| LONE-20 | Add missing key validation in CI across all 30 locale files | 80 | S | [ ] |
-| LONE-21 | Add sticky first column to horizontal-scroll tables | 4 | S | [ ] |
-| LONE-22 | Add `X-API-Version: 1.0` response header and `/api/v1/` versioning | 97 | M | [ ] |
-| LONE-23 | Add field-level encryption for API keys and PII stored in user_profiles | 100 | L | [ ] |
-| LONE-24 | Add audit log export endpoint: `GET /api/audit/export?format=json&start_date=...` | 100 | M | [ ] |
-| LONE-25 | Add workflow approval/signature step (e-signature integration) for compliance document sign-off | 100 | XL | [ ] |
+| LONE-01 | Add ESLint + Prettier to codebase (currently missing) | 10 | S | [x] |
+| LONE-02 | Fix soft-delete inconsistency: standardise on `is_archived` across all tables | 12 | M | [x] |
+| LONE-03 | Add regulatory deadline countdown to dashboard (days until AMLR application) | 60 | S | [x] |
+| LONE-04 | Add drill-down from dashboard metrics (e.g., "Unread Insights: 2" links to items) | 60 | S | [x] |
+| LONE-05 | Add compliance posture heatmap: 5-level maturity across 8 dimensions | 60 | M | [x] |
+| LONE-06 | Add risk appetite status dashboard for CRO persona | 85 | M | [x] |
+| LONE-07 | Add Regulatory Feed subscription: monitor 5+ sources weekly and deliver digest | 85 | L | [x] |
+| LONE-08 | Add script-development Fountain/FDX export for creative production modules | 73 | M | [x] |
+| LONE-09 | Add world-building lore ledger (JSON, per-session) with consistency checker | 73 | L | [x] |
+| LONE-10 | Add teacher oversight dashboard for School Mode | 74 | L | [x] |
+| LONE-11 | Add Log-Frame / Theory of Change generator module for NGO sector | 75 | L | [x] |
+| LONE-12 | Fix Socket.IO max packet size / per-message deflate limits (DoS vector) | 89 | S | [x] |
+| LONE-13 | Add `data:` URI and `javascript:` scheme rejection for all URL inputs | 9 | S | [x] |
+| LONE-14 | Add Electron code signing (prevents Windows SmartScreen warning) | 55 | XL | [~] deferred |
+| LONE-15 | Add Electron auto-update mechanism | 55 | L | [~] deferred |
+| LONE-16 | Add Electron graceful uninstall (remove .env + database on uninstall) | 55 | S | [x] |
+| LONE-17 | Add citation verification badges: green (from active pack), yellow (web source), red (AI inference) | 84, 95 | M | [x] |
+| LONE-18 | Add "Regulatory Feed" subscription module | 98 | L | [x] |
+| LONE-19 | Add RTL locale support (`dir="rtl"` on `<html>`) for Arabic/Hebrew | 80 | M | [x] |
+| LONE-20 | Add missing key validation in CI across all 30 locale files | 80 | S | [x] |
+| LONE-21 | Add sticky first column to horizontal-scroll tables | 4 | S | [x] |
+| LONE-22 | Add `X-API-Version: 1.0` response header and `/api/v1/` versioning | 97 | M | [x] |
+| LONE-23 | Add field-level encryption for API keys and PII stored in user_profiles | 100 | L | [x] |
+| LONE-24 | Add audit log export endpoint: `GET /api/audit/export?format=json&start_date=...` | 100 | M | [x] |
+| LONE-25 | Add workflow approval/signature step (e-signature integration) for compliance document sign-off | 100 | XL | [~] deferred |
 
 ---
 
@@ -621,3 +621,54 @@ Items are organized into **8 phases**. Phases must be completed in order for Pha
 ---
 
 *This plan consolidates 100 expert findings (35 thematic clusters, ~255 distinct improvement items) from the ANTON 100-expert review. Cross-reference: 100expert.md. Owner: Futurechain engineering team.*
+
+---
+
+## DEFERRED ITEMS (XL / External Dependency)
+
+> Marked `[~]` — these require external infrastructure, commercial partnerships, regulatory counsel,
+> or 3+ weeks of dedicated engineering. Implement when the platform reaches commercial scale.
+
+### Infrastructure Scale-Out
+| ID | Item | Reason deferred |
+|----|------|----------------|
+| SCALE-01 | PostgreSQL migration | Requires full DB migration, schema rewrite, connection pooling — 3+ weeks |
+| SCALE-03 | Read replicas | Requires PostgreSQL first |
+| REDIS-01 | Redis for auth codes | Requires Redis instance + ops |
+| REDIS-02 | Socket.IO Redis adapter | Requires Redis + horizontal scale setup |
+| REDIS-03 | Redis caching layer | Requires Redis |
+| REDIS-04 | Distributed locks via Redis | Requires Redis |
+
+### Enterprise Authentication
+| ID | Item | Reason deferred |
+|----|------|----------------|
+| AUTH-01 | LDAP/Active Directory sync | Enterprise IdP setup required |
+| AUTH-02 | SAML 2.0 endpoint | Enterprise IdP setup required |
+
+### External Integrations
+| ID | Item | Reason deferred |
+|----|------|----------------|
+| INT-01 | GoAML connector | Proprietary API + regulatory approval required |
+| INT-02 | Temenos T24 connector | Core banking API + bank IT partnership required |
+| INT-03 | Microsoft Graph connector | Azure tenant + OAuth app registration |
+| INT-04 | Slack bot | Slack workspace + app publishing process |
+| INT-05 | JIRA connector | JIRA instance + API token management |
+| INT-06 | Actimize connector | Actimize licence + integration agreement |
+
+### Certifications
+| ID | Item | Reason deferred |
+|----|------|----------------|
+| CERT-01 | SOC 2 Type II | Requires auditor engagement + 6-12 months of evidence collection |
+| CERT-02 | ISO 27001 | Requires ISMS implementation + auditor |
+| CERT-04 | FCP module regulatory validation | Requires regulatory counsel partnership |
+
+### Platform Features
+| ID | Item | Reason deferred |
+|----|------|----------------|
+| UX-06 | Client/Engagement workspace | Major architectural change — first-class object model |
+| NEXT-01 | Claude Files API migration | Requires Claude Files API GA + migration plan |
+| NEXT-04 | Computer-use compliance sandbox | Research-stage feature, architecture TBD |
+| OSS-03 | Separate proprietary prompts | Requires legal review + repo restructuring |
+| LONE-14 | Electron code signing | Requires EV certificate + signing infrastructure |
+| LONE-15 | Electron auto-update | Requires update server + signing |
+| LONE-25 | E-signature workflow step | Requires DocuSign/Adobe Sign integration |

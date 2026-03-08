@@ -443,6 +443,26 @@ export function createKnowledgePackService(db: Database.Database) {
 
     importTx();
 
+    // KG-01: Background-embed all entity nodes for semantic search (fire-and-forget).
+    // Requires OPENAI_API_KEY — skips silently when not configured.
+    setImmediate(async () => {
+      try {
+        const { embedAndStore } = await import('./hybrid-search.js');
+        for (const e of entities) {
+          const text = [e.canonical_name, e.description].filter(Boolean).join(' — ');
+          if (!text.trim()) continue;
+          await embedAndStore(db, {
+            contentType: 'knowledge_pack_entity',
+            contentId: `${packId}::${e.ref_id}`,
+            contentText: text,
+            metadata: { packId, refId: e.ref_id, entityType: e.entity_type, packName: manifest.display_name ?? manifest.name },
+          });
+        }
+      } catch {
+        // Non-fatal — semantic search simply won't include pack entities if embedding fails
+      }
+    });
+
     return getPack(packId)!;
   }
 

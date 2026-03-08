@@ -9,7 +9,7 @@ export const colors = {
   'adv-white': '#FFFFFF',
   'adv-off-white': '#E0E0E0',
   'adv-gray': '#B0B0B0',
-  'adv-gray-med': '#707070',
+  'adv-gray-med': '#9A9A9A', // A11Y-07: raised from #707070 for WCAG AA compliance
   'adv-gold': '#F5A623',
   'adv-red': '#E74C3C',
   'adv-green': '#27AE60',

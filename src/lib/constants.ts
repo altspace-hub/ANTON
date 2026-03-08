@@ -10,6 +10,8 @@ import { PHASE4_BOP_MODULES } from './area-patches/phase4-bop-patch';
 import { CODING_MODULES } from './area-patches/coding-patch';
 import { PE_VC_MODULES } from './area-patches/pe-vc-patch';
 import { BLOCKCHAIN_MODULES } from './area-patches/blockchain-patch';
+import { PAYMENTS_DORA_MODULES } from './area-patches/payments-dora-patch';
+import { INSURANCE_MODULES } from './area-patches/insurance-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -2356,6 +2358,77 @@ export const MODULES: ModuleDefinition[] = [
     },
   },
 
+  // ── Humanitarian & NGO Programme Design (LONE-11) ────────────
+  {
+    id: 'log-frame-generator',
+    label: 'Log Frame Generator',
+    shortLabel: 'Log Frame',
+    icon: 'LayoutGrid',
+    description: 'Generate a complete Logical Framework Analysis (LFA / Log Frame Matrix) with Goal, Purpose, Outputs, Activities, verifiable indicators, means of verification, and key assumptions for a development or humanitarian programme.',
+    color: 'adv-green',
+    defaults: {
+      thinking: 'think_hard',
+      creativity: 'balanced',
+      outputFormats: ['gap-scoring-matrix', 'action-plan'],
+      transparencyLevel: 1,
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Logical Framework Analysis, results-based management, OECD DAC evaluation criteria' },
+      },
+    },
+  },
+  {
+    id: 'theory-of-change',
+    label: 'Theory of Change Builder',
+    shortLabel: 'Theory of Change',
+    icon: 'GitBranch',
+    description: 'Build a rigorous Theory of Change (ToC) narrative mapping inputs → activities → outputs → outcomes → impact, with causal assumptions, evidence base, and pathway validation for NGO programmes.',
+    color: 'adv-teal',
+    defaults: {
+      thinking: 'investigate',
+      creativity: 'balanced',
+      outputFormats: ['detailed-findings', 'executive-summary'],
+      transparencyLevel: 1,
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'Theory of Change methodology, impact evaluation, programme design' },
+      },
+    },
+  },
+  {
+    id: 'monitoring-evaluation-framework',
+    label: 'M&E Framework Designer',
+    shortLabel: 'M&E Framework',
+    icon: 'BarChart2',
+    description: 'Design a Monitoring & Evaluation framework: results framework, indicator selection (process/output/outcome/impact), data collection methods, baseline design, and reporting schedule.',
+    color: 'adv-blue',
+    defaults: {
+      thinking: 'think_hard',
+      creativity: 'balanced',
+      outputFormats: ['project-plan', 'action-plan'],
+      transparencyLevel: 1,
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'OECD DAC evaluation criteria, SMART indicators, results-based management' },
+      },
+    },
+  },
+  {
+    id: 'donor-reporting',
+    label: 'Donor Report Writer',
+    shortLabel: 'Donor Reports',
+    icon: 'FileText',
+    description: 'Draft narrative donor reports and impact updates: progress vs targets, activities delivered, outcomes achieved, lessons learned, and financial narrative.',
+    color: 'adv-gold',
+    defaults: {
+      thinking: 'think_hard',
+      creativity: 'balanced',
+      outputFormats: ['detailed-findings', 'executive-summary'],
+      transparencyLevel: 1,
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: false },
+      },
+    },
+  },
+
   // ── Consumer Legal ───────────────────────────────────────────
   {
     id: 'tenancy-disputes',
@@ -2529,7 +2602,7 @@ export const MODULES: ModuleDefinition[] = [
   { id: 'campaign-design', label: 'Campaign Design Planner', shortLabel: 'Campaign Design', icon: 'Send', description: 'Plan integrated marketing campaigns with objectives, target segments, channel strategy, and measurement framework.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'creative', outputFormats: ['project-plan'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
 
   // ── Creative & Entertainment Production ─────────────────────
-  { id: 'script-development', label: 'Script & Screenplay Development', shortLabel: 'Script Dev', icon: 'Film', description: 'Develop screenplays, stage plays, teleplays, and game narratives with proper craft structure — beat sheets, character arcs, genre conventions, and professional formatting.', color: 'adv-teal', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Screenwriting craft, dramatic structure, genre conventions' } } } },
+  { id: 'script-development', label: 'Script & Screenplay Development', shortLabel: 'Script Dev', icon: 'Film', description: 'Develop screenplays, stage plays, teleplays, and game narratives with proper craft structure — beat sheets, character arcs, genre conventions, and professional formatting.', color: 'adv-teal', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['screenplay'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Screenwriting craft, dramatic structure, genre conventions' } } } },
   { id: 'literary-translation', label: 'Literary & Dramatic Translation', shortLabel: 'Translation', icon: 'Languages', description: 'Translate creative works with cultural adaptation, register matching, and idiomatic equivalence — novels, plays, screenplays, song lyrics, and game dialogue.', color: 'adv-blue', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Literary translation theory, cultural adaptation, register matching' } } } },
   { id: 'world-building', label: 'World-Building & Setting Engine', shortLabel: 'World-Building', icon: 'Globe', description: 'Create and maintain consistent fictional universes — geography, history, culture, politics, magic/technology systems, and timelines — with built-in consistency checking.', color: 'adv-teal', defaults: { thinking: 'investigate', creativity: 'creative', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'World-building methodology, fantasy and sci-fi conventions, cultural anthropology' } } } },
   { id: 'editorial-review', label: 'Editorial & Proofreading Suite', shortLabel: 'Editorial', icon: 'PenLine', description: 'Professional multi-pass editorial review — developmental editing, line editing, copy editing, proofreading, and sensitivity reading.', color: 'adv-teal', defaults: { thinking: 'think_hard', creativity: 'strict', outputFormats: ['detailed-findings'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Editorial standards, publishing conventions, style guides' } } } },
@@ -2899,6 +2972,17 @@ export const AREAS = [
     ],
   },
   {
+    id: 'humanitarian',
+    label: 'Humanitarian & NGO Programme Design',
+    shortLabel: 'Humanitarian',
+    icon: 'Globe',
+    color: 'adv-green',
+    moduleIds: [
+      'log-frame-generator', 'theory-of-change', 'monitoring-evaluation-framework',
+      'donor-reporting', 'grant-writing',
+    ],
+  },
+  {
     id: 'consumer-legal',
     label: 'Consumer Legal',
     shortLabel: 'Consumer Legal',
@@ -3242,6 +3326,31 @@ export const AREAS = [
       'defi-regulatory',
     ],
   },
+
+  // ── Area 36: Payments & Operational Resilience ──────────────────────────────
+  // FRAME-04: DORA modules | FRAME-06: PSD2/payment institution
+  {
+    id: 'payments-dora',
+    label: 'Payments & Operational Resilience',
+    shortLabel: 'Payments & DORA',
+    icon: 'CreditCard',
+    color: 'adv-blue',
+    moduleIds: [
+      'psd2-compliance',
+      'dora-ict-risk', 'dora-incident-reporting', 'dora-third-party-risk',
+    ],
+  },
+
+  // ── Area 37: Insurance & Reinsurance Compliance ──────────────────────────────
+  // FRAME-07: Solvency II / IDD insurance compliance modules
+  {
+    id: 'insurance',
+    label: 'Insurance & Reinsurance Compliance',
+    shortLabel: 'Insurance',
+    icon: 'ShieldCheck',
+    color: 'adv-gold',
+    moduleIds: ['solvency-ii-compliance', 'idd-distribution'],
+  },
 ] as const;
 
 export const MODELS: ModelInfo[] = [
@@ -3465,6 +3574,8 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...CODING_MODULES,
     ...PE_VC_MODULES,
     ...BLOCKCHAIN_MODULES,
+    ...PAYMENTS_DORA_MODULES,
+    ...INSURANCE_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {

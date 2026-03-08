@@ -1,4 +1,4 @@
-import { Coins, Zap } from 'lucide-react';
+import { Coins, Zap, TrendingDown } from 'lucide-react';
 
 interface StatusIndicatorProps {
   inputTokens: number;
@@ -35,6 +35,26 @@ function estimateCost(
   return total < 0.01 ? '<$0.01' : `$${total.toFixed(2)}`;
 }
 
+// MODEL-03: compute what the same tokens would cost on a cheaper model
+function modelSavingsComparison(input: number, output: number, currentModel: string): { label: string; saving: string } | null {
+  const modelCosts: Record<string, { i: number; o: number; label: string }> = {
+    'claude-opus-4-6': { i: 15, o: 75, label: 'Opus 4.6' },
+    'claude-sonnet-4-6': { i: 3, o: 15, label: 'Sonnet 4.6' },
+    'claude-sonnet-4-5-20250929': { i: 3, o: 15, label: 'Sonnet 4.5' },
+    'claude-haiku-4-5-20251001': { i: 1, o: 5, label: 'Haiku 4.5' },
+  };
+  // Only show if current model is Opus
+  if (!currentModel.includes('opus')) return null;
+  const current = modelCosts[currentModel];
+  const sonnet = modelCosts['claude-sonnet-4-6'];
+  if (!current || !sonnet) return null;
+  const currentCost = (input * current.i + output * current.o) / 1_000_000;
+  const sonnetCost  = (input * sonnet.i  + output * sonnet.o)  / 1_000_000;
+  const saving = currentCost - sonnetCost;
+  if (saving < 0.01) return null;
+  return { label: 'Sonnet 4.6', saving: `$${saving.toFixed(2)}` };
+}
+
 function estimateCacheSavings(cached: number, model: string): string {
   const costs: Record<string, { i: number }> = {
     'claude-opus-4-6': { i: 15 },
@@ -57,6 +77,7 @@ export default function StatusIndicator({
   if (inputTokens === 0 && outputTokens === 0 && !isStreaming) return null;
 
   const hasCacheData = cachedTokens > 0 || cacheCreationTokens > 0;
+  const savingsHint = inputTokens > 0 ? modelSavingsComparison(inputTokens, outputTokens, model) : null;
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-adv-dark-2 px-3 py-2">
@@ -84,6 +105,16 @@ export default function StatusIndicator({
           </>
         )}
       </div>
+
+      {savingsHint && (
+        <div className="flex items-center gap-2 border-t border-border pt-2 text-xs text-adv-gray">
+          <TrendingDown className="h-3 w-3 text-adv-green" />
+          <span>
+            Same result on <span className="text-adv-off-white">{savingsHint.label}</span> would save ~
+            <span className="text-adv-green font-medium"> {savingsHint.saving}</span>
+          </span>
+        </div>
+      )}
 
       {hasCacheData && (
         <div className="flex flex-col gap-1 border-t border-border pt-2">

@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Zap, Plus, Play, Pause, Trash2, RefreshCw, Eye, GitBranch, MessageSquare, Webhook, Cpu, AlertCircle, CheckCircle, Clock, ChevronRight, X } from 'lucide-react';
+import { fetchWithAuth } from '@/lib/api';
 
 type TriggerType = 'webhook' | 'git_push' | 'slack_event' | 'teams_event' | 'mcp_event' | 'internal';
 type TriggerStatus = 'active' | 'paused' | 'error';
@@ -119,7 +120,7 @@ export default function EventTriggersPage() {
 
   async function handleToggleStatus(trigger: Trigger) {
     const newStatus = trigger.status === 'active' ? 'paused' : 'active';
-    await fetch(`/api/triggers/${trigger.id}/status`, {
+    await fetchWithAuth(`/api/triggers/${trigger.id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
@@ -132,7 +133,7 @@ export default function EventTriggersPage() {
 
   async function handleDelete(triggerId: string) {
     if (!confirm('Delete this trigger? All event history will also be deleted.')) return;
-    await fetch(`/api/triggers/${triggerId}`, { method: 'DELETE' });
+    await fetchWithAuth(`/api/triggers/${triggerId}`, { method: 'DELETE' });
     if (selectedTrigger?.id === triggerId) {
       setSelectedTrigger(null);
       setEventLog([]);
@@ -142,7 +143,7 @@ export default function EventTriggersPage() {
 
   async function handleReplay(eventId: string) {
     if (!selectedTrigger) return;
-    await fetch(`/api/triggers/${selectedTrigger.id}/events/${eventId}/replay`, { method: 'POST' });
+    await fetchWithAuth(`/api/triggers/${selectedTrigger.id}/events/${eventId}/replay`, { method: 'POST' });
     await loadEventLog(selectedTrigger.id);
   }
 
@@ -419,7 +420,7 @@ function CreateTriggerModal({ onClose, onCreated }: { onClose: () => void; onCre
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/triggers', {
+      const res = await fetchWithAuth('/api/triggers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

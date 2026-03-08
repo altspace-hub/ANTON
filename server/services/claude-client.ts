@@ -4,7 +4,7 @@ import type { Response } from 'express';
 // ── Types ──────────────────────────────────────────────────
 
 type ModelId = 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
-type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first';
+type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
 // Models that support prompt caching via cache_control: { type: "ephemeral" }
 const CACHE_SUPPORTED_MODELS: ReadonlySet<ModelId> = new Set([
@@ -44,6 +44,8 @@ interface StreamConfig {
   useLongContext?: boolean;
   /** Optional abort signal — wire to req.on('close') to cancel the stream when the client disconnects. */
   signal?: AbortSignal;
+  /** ATTR-05: Source manifest — injected into stream_end so the client can show "Sources used". */
+  sourceManifest?: string[];
 }
 
 export interface StreamCompletionData {
@@ -121,22 +123,16 @@ function getOutputCeiling(model: string): number {
 }
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
-  if (model === 'claude-opus-4-6') {
-    // Opus 4.6: use adaptive thinking. The model self-selects reasoning depth.
-    // Note: 'effort' is NOT a valid top-level API parameter — omit it entirely.
-    if (level === 'quick') return {};
-    return {
-      thinking: { type: 'adaptive' as const },
-    };
-  }
-
-  // Sonnet 4.6 / Sonnet 4.5 / Haiku: explicit budget_tokens.
+  // Extended thinking budget by level — used for all models.
+  // Opus 4.6 supports larger budgets; Sonnet/Haiku use smaller ones.
+  // 'adaptive' is NOT a valid ThinkingConfigParam in SDK 0.39.0 — use 'enabled' + budget_tokens.
   const budgetMap: Record<ThinkingLevel, number | null> = {
     quick: null,
-    think: 4096,
-    think_hard: 10000,
-    investigate: 16000,
-    plan_first: 16000,
+    think: model === 'claude-opus-4-6' ? 8192  : 4096,
+    think_hard: model === 'claude-opus-4-6' ? 16000 : 10000,
+    investigate: model === 'claude-opus-4-6' ? 32000 : 16000,
+    plan_first:  model === 'claude-opus-4-6' ? 32000 : 16000,
+    deep_investigate: model === 'claude-opus-4-6' ? 40000 : 20000,
   };
   const budget = budgetMap[level];
   if (budget === null) return {};
@@ -145,22 +141,9 @@ function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
 
 function getMaxTokens(model: ModelId, thinkingLevel: ThinkingLevel): number {
   const ceiling = getOutputCeiling(model);
-  // Opus 4.6 uses adaptive thinking — max_tokens sets the total output ceiling.
-  if (model === 'claude-opus-4-6') return ceiling;
-  // Sonnet 4.6 also supports adaptive thinking; honour its 64k ceiling.
-  if (model === 'claude-sonnet-4-6') return ceiling;
-  // Other models: thinking budget + text output, capped at model ceiling.
-  const thinkingBudgets: Record<ThinkingLevel, number> = {
-    quick: 0,
-    think: 4096,
-    think_hard: 10000,
-    investigate: 16000,
-    plan_first: 16000,
-  };
-  const budget = thinkingBudgets[thinkingLevel];
-  const textOutput = 8192;
-  const total = budget > 0 ? budget + textOutput : textOutput;
-  return Math.min(total, ceiling);
+  // max_tokens must be >= budget_tokens + reasonable text headroom.
+  // Use a flat ceiling per model — simpler and avoids under-allocating.
+  return ceiling;
 }
 
 // ── Client ─────────────────────────────────────────────────
@@ -197,13 +180,16 @@ export async function streamToResponse(
   let currentThinking = '';
   let currentToolInput = ''; // accumulates input_json_delta for server_tool_use blocks
 
-  // Set SSE headers BEFORE the retry loop — only stream creation is retried
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
+  // Set SSE headers BEFORE the retry loop — only stream creation is retried.
+  // Skip if headers were already sent (e.g. TOKEN-03 early-progress path in claude.ts).
+  if (!res.headersSent) {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+  }
 
   // Inactivity timeout: close stream if no events for 5 minutes (STREAM-04)
   const INACTIVITY_MS = 5 * 60 * 1000;
@@ -287,12 +273,26 @@ export async function streamToResponse(
     }
 
     sendEvent({ type: 'stream_start', messageId: crypto.randomUUID() });
+    console.log(`[claude-client] API call → model=${config.model} thinking=${config.thinking} max_tokens=${getMaxTokens(config.model, config.thinking)}`);
 
-    // Build per-request options (beta header for 1M context if requested; abort signal for disconnect cleanup).
+    // Build per-request options (beta headers + abort signal).
     const requestOptions: Record<string, unknown> = {};
-    if (config.useLongContext) {
-      requestOptions.headers = { 'anthropic-beta': 'context-1m-2025-08-07' };
+
+    // Collect beta headers — extended thinking requires interleaved-thinking-2025-05-14;
+    // the 1M-context beta is added when the caller requests long-context mode.
+    const betaHeaders: string[] = [];
+    // thinking is enabled if getThinkingConfig returned a non-empty object (budget_tokens set)
+    const isThinkingEnabled = Object.keys(thinkingConfig).length > 0;
+    if (isThinkingEnabled) {
+      betaHeaders.push('interleaved-thinking-2025-05-14');
     }
+    if (config.useLongContext) {
+      betaHeaders.push('context-1m-2025-08-07');
+    }
+    if (betaHeaders.length > 0) {
+      requestOptions.headers = { 'anthropic-beta': betaHeaders.join(',') };
+    }
+
     if (config.signal) {
       requestOptions.signal = config.signal;
     }
@@ -391,7 +391,10 @@ export async function streamToResponse(
       cacheReadTokens: finalUsage.cache_read_input_tokens || 0,
     });
 
-    sendEvent({ type: 'stream_end', contentBlocks });
+    const textBlockCount = contentBlocks.filter(b => b.type === 'text').length;
+    const textLength = contentBlocks.filter(b => b.type === 'text').reduce((acc, b) => acc + b.content.length, 0);
+    console.log(`[claude-client] stream_end → blocks=${contentBlocks.length} textBlocks=${textBlockCount} textLen=${textLength}`);
+    sendEvent({ type: 'stream_end', contentBlocks, sourceManifest: config.sourceManifest ?? [] });
 
     // Call completion callback if provided (used for DB persistence)
     if (onComplete) {
@@ -416,6 +419,7 @@ export async function streamToResponse(
   } catch (error) {
     if (inactivityTimer) clearTimeout(inactivityTimer);
     const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`[claude-client] stream error: ${message}`);
     // Don't emit error event if the stream was intentionally aborted (client disconnect)
     if (message !== 'This operation was aborted') {
       sendEvent({ type: 'error', message });

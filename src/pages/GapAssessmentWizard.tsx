@@ -14,7 +14,7 @@ import {
   RefreshCw, AlertTriangle, CheckCircle2, Circle,
   ChevronDown, Loader2, Trash2, ExternalLink,
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -247,9 +247,9 @@ export default function GapAssessmentWizard() {
     if (!id) return;
     // Only advance to step 4 if we haven't already passed it
     const nextStep = Math.max(currentStep, 4);
-    await fetch(`/api/gap-assessments/${id}`, {
+    await fetchWithAuth(`/api/gap-assessments/${id}`, {
       method: 'PATCH',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ context_config: contextConfig, scope_config: scopeConfig, current_step: nextStep }),
     });
     setCurrentStep(nextStep);
@@ -262,9 +262,9 @@ export default function GapAssessmentWizard() {
     setProgressEvents([]);
 
     try {
-      const response = await fetch(`/api/gap-assessments/${id}/run`, {
+      const response = await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok || !response.body) throw new Error('Stream failed');
@@ -313,7 +313,7 @@ export default function GapAssessmentWizard() {
   // ── Delete assessment ──────────────────────────────────────────────────────
   const deleteAssessment = async () => {
     if (!id) return;
-    await fetch(`/api/gap-assessments/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    await fetchWithAuth(`/api/gap-assessments/${id}`, { method: 'DELETE' });
     navigate('/gap-assessment');
   };
 
@@ -323,9 +323,9 @@ export default function GapAssessmentWizard() {
     setActionLoading('synthesise');
     setActionError('');
     try {
-      const r = await fetch(`/api/gap-assessments/${id}/synthesise`, {
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/synthesise`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) { setActionError('Synthesis failed — please retry.'); return; }
       const { capabilities: caps } = await r.json();
@@ -344,9 +344,9 @@ export default function GapAssessmentWizard() {
     setActionLoading('board');
     setActionError('');
     try {
-      const r = await fetch(`/api/gap-assessments/${id}/board-summary`, {
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/board-summary`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) { setActionError('Board summary failed — please retry.'); return; }
       const { boardSummary: bs } = await r.json();
@@ -365,9 +365,9 @@ export default function GapAssessmentWizard() {
     setActionLoading('roadmap');
     setActionError('');
     try {
-      const r = await fetch(`/api/gap-assessments/${id}/roadmap`, {
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/roadmap`, {
         method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) { setActionError('Roadmap generation failed — please retry.'); return; }
       const { roadmap: rm } = await r.json();

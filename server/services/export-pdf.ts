@@ -152,7 +152,7 @@ const DEF_COLOR = {
   card:      [21, 34, 56]    as [number, number, number],
   offWhite:  [224, 224, 224] as [number, number, number],
   gray:      [176, 176, 176] as [number, number, number],
-  grayMed:   [112, 112, 112] as [number, number, number],
+  grayMed:   [154, 154, 154] as [number, number, number], // A11Y-07: raised from #707070
   white:     [255, 255, 255] as [number, number, number],
 };
 
@@ -244,12 +244,16 @@ export function generatePdf(
     const doc = new PDFDocument({
       size: 'A4',
       margins: { top: PAGE.margin, bottom: PAGE.margin, left: PAGE.margin, right: PAGE.margin },
+      bufferPages: true, // EXPORT-07: required for bufferedPageRange() to work correctly
       info: {
         Title:   metadata.title  || 'ANTON Output',
         Author:  metadata.author || 'ANTON by openEXPERT',
         Creator: 'ANTON by openEXPERT',
       },
     });
+
+    // EXPORT-07: Track headings + page numbers for ToC
+    const tocEntries: Array<{ text: string; level: 1 | 2; page: number }> = [];
 
     const chunks: Buffer[] = [];
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -325,8 +329,10 @@ export function generatePdf(
       if (line.startsWith('# ')) {
         ensureSpace(80);
         doc.moveDown(0.8);
+        const h1Text = line.slice(2).trim();
+        tocEntries.push({ text: h1Text, level: 1, page: (doc as any)._pageBuffer?.length ?? 1 });
         doc.fillColor(ps.h1Color).font(FONT.bold).fontSize(ps.h1Size)
-          .text(line.slice(2).trim(), PAGE.margin, doc.y, { lineGap: 4, width: bodyWidth });
+          .text(h1Text, PAGE.margin, doc.y, { lineGap: 4, width: bodyWidth });
         doc.moveTo(PAGE.margin, doc.y + 2)
           .lineTo(PAGE.margin + bodyWidth, doc.y + 2)
           .strokeColor(ps.accent).lineWidth(1).stroke();
@@ -338,8 +344,10 @@ export function generatePdf(
       if (line.startsWith('## ')) {
         ensureSpace(60);
         doc.moveDown(0.6);
+        const h2Text = line.slice(3).trim();
+        tocEntries.push({ text: h2Text, level: 2, page: (doc as any)._pageBuffer?.length ?? 1 });
         doc.fillColor(ps.h2Color).font(FONT.bold).fontSize(ps.h2Size)
-          .text(line.slice(3).trim(), PAGE.margin, doc.y, { lineGap: 3, width: bodyWidth });
+          .text(h2Text, PAGE.margin, doc.y, { lineGap: 3, width: bodyWidth });
         doc.moveDown(0.4);
         i++; continue;
       }
@@ -465,7 +473,30 @@ export function generatePdf(
       i++;
     }
 
-    // ── Footer bar ───────────────────────────────────────────
+    // ── EXPORT-07: Table of Contents (appended after body) ───
+    if (tocEntries.length > 2) {
+      doc.addPage();
+      doc.rect(0, 0, PAGE.width, 40).fill(DEF_COLOR.dark2);
+      doc.moveDown(3);
+      doc.fillColor(ps.accent).font(FONT.bold).fontSize(14)
+        .text('Table of Contents', PAGE.margin, doc.y, { width: bodyWidth });
+      doc.moveTo(PAGE.margin, doc.y + 4)
+        .lineTo(PAGE.margin + bodyWidth, doc.y + 4)
+        .strokeColor(ps.accent).lineWidth(1).stroke();
+      doc.moveDown(1);
+      for (const entry of tocEntries) {
+        const indent = entry.level === 2 ? PAGE.margin + 16 : PAGE.margin;
+        const fontSize = entry.level === 1 ? 10 : 9;
+        const color = entry.level === 1 ? ps.h2Color : DEF_COLOR.gray;
+        doc.fillColor(color).font(entry.level === 1 ? FONT.bold : FONT.regular).fontSize(fontSize)
+          .text(`${entry.text}`, indent, doc.y, { continued: true, width: bodyWidth - 40 });
+        doc.fillColor(DEF_COLOR.grayMed).font(FONT.regular).fontSize(fontSize)
+          .text(`${entry.page}`, { align: 'right', width: bodyWidth - (indent - PAGE.margin) });
+        doc.moveDown(0.3);
+      }
+    }
+
+    // ── Footer bar (EXPORT-07: bufferPages:true ensures all pages are accessible) ──
     const pages = doc.bufferedPageRange();
     for (let p = 0; p < pages.count; p++) {
       doc.switchToPage(pages.start + p);

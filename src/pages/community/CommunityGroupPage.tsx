@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, Copy, Check, Trash2, UserMinus, ChevronRight,
   MessageCircle,
 } from 'lucide-react';
-import { getAuthHeader } from '../../lib/api';
+import { getAuthHeader, fetchWithAuth } from '../../lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -125,8 +125,8 @@ export default function CommunityGroupPage() {
 
   async function handleRemoveMember(contactHash: string) {
     if (!id) return;
-    await fetch(`/api/community/groups/${id}/members/${contactHash}`, {
-      method: 'DELETE', headers: getAuthHeader(),
+    await fetchWithAuth(`/api/community/groups/${id}/members/${contactHash}`, {
+      method: 'DELETE',
     });
     void loadGroup();
   }
@@ -134,7 +134,7 @@ export default function CommunityGroupPage() {
   async function handleDeleteGroup() {
     if (!id) return;
     setDeleting(true);
-    await fetch(`/api/community/groups/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+    await fetchWithAuth(`/api/community/groups/${id}`, { method: 'DELETE' });
     navigate('/community/groups');
   }
 
