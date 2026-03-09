@@ -27,7 +27,7 @@ import {
   LineChart, PieChart, FolderKanban, Users,
   // UI icons
   ArrowRight, ChevronRight, Clock, LayoutGrid, MessageSquare, Zap, Trash2, Pencil, Check, X, X as XIcon,
-  Star, Puzzle,
+  Star, Puzzle, Plus,
 } from 'lucide-react';
 import { MODULES, MODELS, AREAS } from '@/lib/constants';
 import MorningBrief from '@/features/time-intelligence/MorningBrief';
@@ -41,6 +41,32 @@ import type { Session } from '@/lib/types';
 
 const FAVORITES_KEY = 'openexpert-favorite-modules';
 const STARTER_PACKS_HIDDEN_KEY = 'openexpert-starter-packs-hidden';
+const DEADLINES_KEY = 'openexpert-regulatory-deadlines';
+
+interface RegulatoryDeadline {
+  id: string;
+  label: string;
+  date: string; // ISO date string YYYY-MM-DD
+  link: string;
+}
+
+const DEFAULT_DEADLINES: RegulatoryDeadline[] = [
+  { id: 'dora-2025',  label: 'DORA applies',        date: '2025-01-17', link: '/module/gap-analysis' },
+  { id: 'amld6-2026', label: 'AMLD6 transposition', date: '2026-07-10', link: '/module/gap-analysis' },
+  { id: 'amlr-2027',  label: 'AMLR applies',        date: '2027-07-10', link: '/module/gap-analysis' },
+];
+
+function loadDeadlines(): RegulatoryDeadline[] {
+  try {
+    const stored = localStorage.getItem(DEADLINES_KEY);
+    if (stored) return JSON.parse(stored) as RegulatoryDeadline[];
+  } catch { /* ignore */ }
+  return DEFAULT_DEADLINES;
+}
+
+function saveDeadlines(deadlines: RegulatoryDeadline[]) {
+  localStorage.setItem(DEADLINES_KEY, JSON.stringify(deadlines));
+}
 
 function loadFavorites(): Set<string> {
   try {
@@ -159,6 +185,10 @@ export default function Dashboard() {
     }
   });
   const navigate = useNavigate();
+  const [deadlines, setDeadlines] = useState<RegulatoryDeadline[]>(loadDeadlines);
+  const [addingDeadline, setAddingDeadline] = useState(false);
+  const [editingDeadlineId, setEditingDeadlineId] = useState<string | null>(null);
+  const [dlForm, setDlForm] = useState({ label: '', date: '', link: '' });
   const [scheduledNotifications, setScheduledNotifications] = useState<Array<{
     id: string; title: string; message?: string; link?: string; created_at: string;
   }>>([]);
@@ -395,30 +425,140 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* LONE-03: Regulatory deadline countdown */}
+      {/* LONE-03: Regulatory deadline countdown — user-customisable */}
       {(() => {
-        const AMLR_DATE   = new Date('2027-07-10');
-        const AMLD6_DATE  = new Date('2026-07-10');
-        const DORA_DATE   = new Date('2025-01-17');
         const today = new Date();
-        const daysUntil = (d: Date) => Math.max(0, Math.ceil((d.getTime() - today.getTime()) / 86_400_000));
-        const deadlines = [
-          { label: 'DORA applies',        date: DORA_DATE,  color: daysUntil(DORA_DATE)  === 0 ? 'text-adv-red'   : 'text-adv-gold', link: '/module/gap-analysis' },
-          { label: 'AMLD6 transposition', date: AMLD6_DATE, color: daysUntil(AMLD6_DATE) < 180 ? 'text-adv-gold'  : 'text-adv-teal', link: '/module/gap-analysis' },
-          { label: 'AMLR applies',        date: AMLR_DATE,  color: daysUntil(AMLR_DATE)  < 365 ? 'text-adv-gold'  : 'text-adv-teal', link: '/module/gap-analysis' },
-        ].filter(d => daysUntil(d.date) > 0);
-        if (deadlines.length === 0) return null;
+        const daysUntil = (iso: string) => Math.max(0, Math.ceil((new Date(iso).getTime() - today.getTime()) / 86_400_000));
+        const activeDeadlines = deadlines.filter(d => daysUntil(d.date) > 0);
+        const getColor = (days: number) => days === 0 ? 'text-adv-red' : days < 180 ? 'text-adv-gold' : 'text-adv-teal';
+
+        function handleSaveDeadline() {
+          if (!dlForm.label.trim() || !dlForm.date) return;
+          const updated = editingDeadlineId
+            ? deadlines.map(d => d.id === editingDeadlineId ? { ...d, label: dlForm.label.trim(), date: dlForm.date, link: dlForm.link.trim() || '/module/gap-analysis' } : d)
+            : [...deadlines, { id: `custom-${Date.now()}`, label: dlForm.label.trim(), date: dlForm.date, link: dlForm.link.trim() || '/module/gap-analysis' }];
+          setDeadlines(updated);
+          saveDeadlines(updated);
+          setAddingDeadline(false);
+          setEditingDeadlineId(null);
+          setDlForm({ label: '', date: '', link: '' });
+        }
+
+        function handleDeleteDeadline(id: string) {
+          const updated = deadlines.filter(d => d.id !== id);
+          setDeadlines(updated);
+          saveDeadlines(updated);
+        }
+
+        function handleEditDeadline(d: RegulatoryDeadline) {
+          setEditingDeadlineId(d.id);
+          setDlForm({ label: d.label, date: d.date, link: d.link });
+          setAddingDeadline(true);
+        }
+
+        function handleResetDefaults() {
+          setDeadlines(DEFAULT_DEADLINES);
+          saveDeadlines(DEFAULT_DEADLINES);
+        }
+
         return (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {deadlines.map(d => (
-              <Link key={d.label} to={d.link}
-                className="flex items-center gap-2 rounded-lg border border-adv-card bg-adv-card px-3 py-1.5 text-xs transition-colors hover:border-adv-teal/40"
-              >
-                <Clock className="h-3 w-3 text-adv-gray" />
-                <span className="text-adv-gray">{d.label}:</span>
-                <span className={`font-semibold ${d.color}`}>{daysUntil(d.date).toLocaleString()} days</span>
-              </Link>
-            ))}
+          <div className="mb-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {activeDeadlines.map(d => {
+                const days = daysUntil(d.date);
+                return (
+                  <div key={d.id} className="group relative flex items-center gap-2 rounded-lg border border-adv-card bg-adv-card px-3 py-1.5 text-xs transition-colors hover:border-adv-teal/40">
+                    <Link to={d.link} className="flex items-center gap-2">
+                      <Clock className="h-3 w-3 text-adv-gray" />
+                      <span className="text-adv-gray">{d.label}:</span>
+                      <span className={`font-semibold ${getColor(days)}`}>{days.toLocaleString()} days</span>
+                    </Link>
+                    <div className="hidden group-hover:flex items-center gap-0.5 ml-1">
+                      <button onClick={() => handleEditDeadline(d)} className="rounded p-0.5 text-adv-gray hover:text-adv-teal transition-colors" title="Edit">
+                        <Pencil className="h-2.5 w-2.5" />
+                      </button>
+                      <button onClick={() => handleDeleteDeadline(d.id)} className="rounded p-0.5 text-adv-gray hover:text-adv-red transition-colors" title="Remove">
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add your own button */}
+              {!addingDeadline && (
+                <button
+                  onClick={() => { setAddingDeadline(true); setEditingDeadlineId(null); setDlForm({ label: '', date: '', link: '' }); }}
+                  className="flex items-center gap-1.5 rounded-lg border border-dashed border-adv-gray/30 bg-transparent px-3 py-1.5 text-xs text-adv-gray transition-colors hover:border-adv-teal/50 hover:text-adv-teal"
+                >
+                  <Plus className="h-3 w-3" />
+                  Add deadline
+                </button>
+              )}
+
+              {/* Reset to defaults (only show if custom deadlines differ) */}
+              {JSON.stringify(deadlines.map(d => d.id)) !== JSON.stringify(DEFAULT_DEADLINES.map(d => d.id)) && !addingDeadline && (
+                <button
+                  onClick={handleResetDefaults}
+                  className="text-[10px] text-adv-gray/50 hover:text-adv-gray transition-colors"
+                  title="Reset to default FCP deadlines"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+
+            {/* Inline add/edit form */}
+            {addingDeadline && (
+              <div className="mt-2 flex flex-wrap items-end gap-2 rounded-lg border border-adv-teal/30 bg-adv-card p-3">
+                <div>
+                  <label className="mb-1 block text-[10px] font-medium text-adv-gray">Name</label>
+                  <input
+                    type="text"
+                    value={dlForm.label}
+                    onChange={e => setDlForm(f => ({ ...f, label: e.target.value }))}
+                    placeholder="e.g. MiCA applies"
+                    className="h-8 w-44 rounded border border-border bg-adv-dark px-2 text-xs text-adv-off-white placeholder:text-adv-gray/50 focus:border-adv-teal focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-medium text-adv-gray">Date</label>
+                  <input
+                    type="date"
+                    value={dlForm.date}
+                    onChange={e => setDlForm(f => ({ ...f, date: e.target.value }))}
+                    className="h-8 w-36 rounded border border-border bg-adv-dark px-2 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-medium text-adv-gray">Link (optional)</label>
+                  <input
+                    type="text"
+                    value={dlForm.link}
+                    onChange={e => setDlForm(f => ({ ...f, link: e.target.value }))}
+                    placeholder="/module/gap-analysis"
+                    className="h-8 w-44 rounded border border-border bg-adv-dark px-2 text-xs text-adv-off-white placeholder:text-adv-gray/50 focus:border-adv-teal focus:outline-none"
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleSaveDeadline}
+                    disabled={!dlForm.label.trim() || !dlForm.date}
+                    className="flex h-8 items-center gap-1 rounded bg-adv-teal px-3 text-xs font-semibold text-adv-dark hover:bg-adv-teal-dark disabled:opacity-40"
+                  >
+                    <Check className="h-3 w-3" />
+                    {editingDeadlineId ? 'Save' : 'Add'}
+                  </button>
+                  <button
+                    onClick={() => { setAddingDeadline(false); setEditingDeadlineId(null); }}
+                    className="flex h-8 items-center rounded px-2 text-xs text-adv-gray hover:text-adv-off-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}

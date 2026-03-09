@@ -20,6 +20,13 @@ import {
   type FrameworkArticle,
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
+import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename_local = fileURLToPath(import.meta.url);
+const __routeDir = dirname(__filename_local);
+const FRAMEWORKS_DIR = join(__routeDir, '..', '..', 'data', 'frameworks');
 
 function getUserId(req: Request): string {
   return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
@@ -50,6 +57,131 @@ export function createGapAssessmentsRoutes(db: Database.Database, sharedAnthropi
     } catch (err) {
       console.error('[gap-assessments] framework detail error:', err);
       res.status(500).json({ error: 'Failed to get framework' });
+    }
+  });
+
+  // ── Generate custom framework via AI ────────────────────────────────────────
+  router.post('/gap-assessments/frameworks/generate', async (req: Request, res: Response) => {
+    if (!anthropic) return res.status(503).json({ error: 'AI not available' });
+
+    const { name, description, regulationUrl, documentText, articleHints } = req.body as {
+      name?: string;
+      description?: string;
+      regulationUrl?: string;
+      documentText?: string;
+      articleHints?: string;
+    };
+
+    if (!description?.trim()) return res.status(400).json({ error: 'Description is required' });
+    if ((description?.length ?? 0) > 5000) return res.status(400).json({ error: 'Description too long (max 5000 chars)' });
+    if ((documentText?.length ?? 0) > 50000) return res.status(400).json({ error: 'Document text too long (max 50000 chars)' });
+
+    // SSE stream
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+      const contextParts: string[] = [];
+      if (regulationUrl) contextParts.push(`Regulation/standard URL for reference: ${regulationUrl}`);
+      if (documentText) contextParts.push(`--- DOCUMENT TEXT (extract articles/requirements from this) ---\n${documentText.slice(0, 50000)}`);
+      if (articleHints) contextParts.push(`User's hints about what to include:\n${articleHints}`);
+
+      const systemPrompt = `You are a regulatory compliance framework architect. Your job is to generate a structured gap assessment framework from a user's description.
+
+OUTPUT: A valid JSON object (and NOTHING else — no markdown, no explanation, no code fences) with this exact schema:
+{
+  "id": "lowercase-kebab-case-id",
+  "name": "Full Official Name of the Framework",
+  "shortName": "ABBR",
+  "reference": "Official reference (regulation number, standard ID, etc.)",
+  "applicationDate": "YYYY-MM-DD",
+  "articleCount": <number of articles>,
+  "themes": ["Theme 1", "Theme 2", ...],
+  "articles": [
+    {"id": "Art.1", "title": "Short title", "theme": "Theme 1", "requirement": "1-2 sentence requirement summary"}
+  ]
+}
+
+RULES:
+- Generate 20-100 articles depending on the framework's complexity
+- Use REAL article/section/control IDs if the framework is a known regulation (e.g., Art.1, Section 5.1, Req.1)
+- If the user provides document text, extract ACTUAL articles/requirements from it
+- Group articles into 4-8 logical themes
+- Each requirement should be a concise, assessable statement (1-2 sentences)
+- The id field should be a unique kebab-case identifier
+- applicationDate should be the regulation's effective/application date, or today if custom
+- Output ONLY the JSON — no markdown, no code blocks, no explanation`;
+
+      const userMsg = `Create a gap assessment framework for:
+
+**Name:** ${name || 'Custom Framework'}
+**Description:** ${description}
+
+${contextParts.length > 0 ? contextParts.join('\n\n') : ''}
+
+Generate the complete framework JSON now.`;
+
+      res.write(`data: ${JSON.stringify({ type: 'status', message: 'Generating framework structure...' })}\n\n`);
+
+      let fullText = '';
+      const stream = anthropic.messages.stream({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 16384,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }],
+      });
+
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          fullText += event.delta.text;
+          res.write(`data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`);
+        }
+      }
+
+      // Parse the generated JSON
+      // Strip markdown code fences if present
+      let jsonText = fullText.trim();
+      if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+      }
+
+      let framework: Record<string, unknown>;
+      try {
+        framework = JSON.parse(jsonText);
+      } catch {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: 'Failed to parse generated framework JSON. Please try again.' })}\n\n`);
+        res.end();
+        return;
+      }
+
+      // Validate essential fields
+      const fw = framework as { id?: string; name?: string; shortName?: string; articles?: unknown[] };
+      if (!fw.id || !fw.name || !fw.articles || !Array.isArray(fw.articles) || fw.articles.length === 0) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: 'Generated framework is incomplete. Please try again with more detail.' })}\n\n`);
+        res.end();
+        return;
+      }
+
+      // Ensure unique id by prefixing "custom-"
+      const safeId = `custom-${(fw.id as string).replace(/[^a-z0-9-]/g, '-').slice(0, 50)}`;
+      (framework as Record<string, unknown>).id = safeId;
+      (framework as Record<string, unknown>).articleCount = (fw.articles as unknown[]).length;
+
+      // Save to data/frameworks/
+      if (!existsSync(FRAMEWORKS_DIR)) mkdirSync(FRAMEWORKS_DIR, { recursive: true });
+      const filePath = join(FRAMEWORKS_DIR, `${safeId}.json`);
+      writeFileSync(filePath, JSON.stringify(framework, null, 2), 'utf-8');
+
+      res.write(`data: ${JSON.stringify({
+        type: 'done',
+        framework: { id: safeId, name: fw.name, shortName: fw.shortName, articleCount: (fw.articles as unknown[]).length },
+      })}\n\n`);
+      res.end();
+    } catch (err) {
+      console.error('[gap-assessments] framework generate error:', err);
+      res.write(`data: ${JSON.stringify({ type: 'error', error: String(err) })}\n\n`);
+      res.end();
     }
   });
 

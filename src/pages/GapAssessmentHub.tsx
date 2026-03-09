@@ -9,8 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   ClipboardCheck, Plus, ChevronRight, FileSearch, Shield,
   Lock, Globe, CheckSquare, RefreshCw, BarChart3,
+  Wand2, Loader2, Sparkles, ExternalLink, FileUp, Trash2,
 } from 'lucide-react';
-import { getAuthHeader } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
 interface Framework {
   id: string;
@@ -51,6 +52,18 @@ const FRAMEWORK_ICONS: Record<string, React.ComponentType<{ className?: string }
   'dora-2022': Lock,
   'iso27001-2022': CheckSquare,
   'wolfsberg-cbddq': Globe,
+  'gdpr-2016': Lock,
+  'eu-ai-act-2024': Sparkles,
+  'fatf-40': Globe,
+  'mica-2023': Globe,
+  'amld6-2024': Shield,
+  'mifid2-2014': BarChart3,
+  'solvency2-2009': Shield,
+  'pci-dss-4': Lock,
+  'soc2-tsc': CheckSquare,
+  'csrd-esrs': Globe,
+  'iso42001-2023': Sparkles,
+  'iso22301-2019': RefreshCw,
 };
 
 // Knowledge packs that complement each framework — shown as a suggestion when framework is selected
@@ -61,6 +74,18 @@ const FRAMEWORK_PACK_SUGGESTIONS: Record<string, Array<{ id: string; label: stri
   'iso37001-2016':   [{ id: 'abc-anti-bribery', label: 'ABC Pack' }],
   'wolfsberg-cbddq': [{ id: 'wolfsberg-principles', label: 'Wolfsberg Principles' }],
   'nist-csf-2':      [],
+  'gdpr-2016':       [],
+  'eu-ai-act-2024':  [],
+  'fatf-40':         [{ id: 'amlr-2024', label: 'AMLR 2024' }],
+  'amld6-2024':      [{ id: 'amla-amld6', label: 'AMLA / AMLD6' }],
+  'mica-2023':       [],
+  'mifid2-2014':     [],
+  'solvency2-2009':  [],
+  'pci-dss-4':       [],
+  'soc2-tsc':        [],
+  'csrd-esrs':       [],
+  'iso42001-2023':   [],
+  'iso22301-2019':   [],
 };
 
 export default function GapAssessmentHub() {
@@ -72,6 +97,14 @@ export default function GapAssessmentHub() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([]);
   const [newTitle, setNewTitle] = useState('');
+  // Custom framework wizard state
+  const [buildingCustom, setBuildingCustom] = useState(false);
+  const [customForm, setCustomForm] = useState({ name: '', description: '', regulationUrl: '', articleHints: '' });
+  const [customDocText, setCustomDocText] = useState('');
+  const [customGenerating, setCustomGenerating] = useState(false);
+  const [customStreamText, setCustomStreamText] = useState('');
+  const [customResult, setCustomResult] = useState<{ id: string; name: string; shortName: string; articleCount: number } | null>(null);
+  const [customError, setCustomError] = useState('');
 
   useEffect(() => {
     loadData();
@@ -111,6 +144,77 @@ export default function GapAssessmentHub() {
     } catch { setSubmitting(false); }
   };
 
+  async function generateCustomFramework() {
+    if (!customForm.description.trim() || customGenerating) return;
+    setCustomGenerating(true);
+    setCustomStreamText('');
+    setCustomError('');
+    setCustomResult(null);
+
+    try {
+      const res = await fetchWithAuth('/api/gap-assessments/frameworks/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: customForm.name.trim() || undefined,
+          description: customForm.description.trim(),
+          regulationUrl: customForm.regulationUrl.trim() || undefined,
+          documentText: customDocText.trim() || undefined,
+          articleHints: customForm.articleHints.trim() || undefined,
+        }),
+      });
+
+      if (!res.ok || !res.body) {
+        const err = await res.json().catch(() => ({ error: 'Failed to generate' }));
+        setCustomError((err as { error?: string }).error ?? 'Generation failed');
+        setCustomGenerating(false);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value, { stream: true }).split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+          try {
+            const parsed = JSON.parse(raw) as { type: string; text?: string; framework?: { id: string; name: string; shortName: string; articleCount: number }; error?: string; message?: string };
+            if (parsed.type === 'text' && parsed.text) {
+              accumulated += parsed.text;
+              setCustomStreamText(accumulated);
+            } else if (parsed.type === 'done' && parsed.framework) {
+              setCustomResult(parsed.framework);
+              // Refresh framework list
+              await loadData();
+            } else if (parsed.type === 'error') {
+              setCustomError(parsed.error ?? 'Generation failed');
+            }
+          } catch { /* skip */ }
+        }
+      }
+    } catch (err) {
+      setCustomError('Failed to connect. Please try again.');
+      console.error('[custom-framework]', err);
+    } finally {
+      setCustomGenerating(false);
+    }
+  }
+
+  function handleDocumentPaste(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const text = e.target.value;
+    if (text.length > 50000) {
+      setCustomDocText(text.slice(0, 50000));
+    } else {
+      setCustomDocText(text);
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-adv-dark overflow-auto">
       {/* Header */}
@@ -125,13 +229,22 @@ export default function GapAssessmentHub() {
               <p className="text-xs text-adv-gray">Wizard-driven, framework-by-framework structured assessment</p>
             </div>
           </div>
-          <button
-            onClick={() => setCreating(!creating)}
-            className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Assessment
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setBuildingCustom(!buildingCustom); setCreating(false); }}
+              className="flex items-center gap-2 rounded-lg border border-adv-teal/40 bg-transparent px-4 py-2 text-sm font-medium text-adv-teal hover:bg-adv-teal-dim transition-colors"
+            >
+              <Wand2 className="h-4 w-4" />
+              Build Custom
+            </button>
+            <button
+              onClick={() => { setCreating(!creating); setBuildingCustom(false); }}
+              className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Assessment
+            </button>
+          </div>
         </div>
       </div>
 
@@ -222,6 +335,167 @@ export default function GapAssessmentHub() {
           </div>
         )}
 
+        {/* Build Custom Framework wizard */}
+        {buildingCustom && (
+          <div className="rounded-xl border border-adv-teal/40 bg-adv-card p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-adv-teal" />
+              <div>
+                <h2 className="text-sm font-semibold text-adv-off-white">Build Custom Framework</h2>
+                <p className="text-xs text-adv-gray">Describe what you want to assess against, and AI will generate the article structure for scoring.</p>
+              </div>
+            </div>
+
+            {customResult ? (
+              /* Success state */
+              <div className="rounded-lg border border-adv-green/30 bg-adv-green/5 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckSquare className="h-5 w-5 text-adv-green" />
+                  <span className="text-sm font-semibold text-adv-green">Framework created successfully!</span>
+                </div>
+                <p className="text-sm text-adv-off-white mb-1">
+                  <strong>{customResult.name}</strong> ({customResult.shortName})
+                </p>
+                <p className="text-xs text-adv-gray mb-4">{customResult.articleCount} articles/controls generated. Ready to use in assessments.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setBuildingCustom(false); setCreating(true); setSelectedFrameworks([customResult.id]); setCustomResult(null); setCustomForm({ name: '', description: '', regulationUrl: '', articleHints: '' }); setCustomDocText(''); setCustomStreamText(''); }}
+                    className="rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark"
+                  >
+                    Start Assessment with this Framework
+                  </button>
+                  <button
+                    onClick={() => { setCustomResult(null); setCustomForm({ name: '', description: '', regulationUrl: '', articleHints: '' }); setCustomDocText(''); setCustomStreamText(''); }}
+                    className="rounded-lg border border-border px-4 py-2 text-sm text-adv-gray hover:text-adv-off-white"
+                  >
+                    Build Another
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Form / generating state */
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-adv-gray">Framework name (optional)</label>
+                    <input
+                      type="text"
+                      value={customForm.name}
+                      onChange={e => setCustomForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. MiCA Compliance, Internal AML Policy v3"
+                      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none"
+                      disabled={customGenerating}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-adv-gray">Regulation URL (optional)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={customForm.regulationUrl}
+                        onChange={e => setCustomForm(f => ({ ...f, regulationUrl: e.target.value }))}
+                        placeholder="https://eur-lex.europa.eu/eli/reg/..."
+                        className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none"
+                        disabled={customGenerating}
+                      />
+                      {customForm.regulationUrl && (
+                        <a href={customForm.regulationUrl} target="_blank" rel="noopener noreferrer" className="flex items-center px-2 text-adv-gray hover:text-adv-teal">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-adv-gray">
+                    What do you want to assess against? <span className="text-adv-red">*</span>
+                  </label>
+                  <textarea
+                    value={customForm.description}
+                    onChange={e => setCustomForm(f => ({ ...f, description: e.target.value.slice(0, 5000) }))}
+                    placeholder={"Describe the regulation, standard, or internal policy you want to create a gap assessment for.\n\nExamples:\n• \"GDPR — I need to assess our data processing activities against all key GDPR requirements\"\n• \"Our internal AML policy — assess whether it covers all FATF recommendations\"\n• \"Swedish Gambling Authority's AML requirements for licensed operators\""}
+                    rows={4}
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none resize-none"
+                    disabled={customGenerating}
+                  />
+                  <p className="mt-1 text-right text-[10px] text-adv-gray">{customForm.description.length}/5000</p>
+                </div>
+
+                <details className="group">
+                  <summary className="cursor-pointer text-xs font-medium text-adv-gray hover:text-adv-teal transition-colors">
+                    Advanced: paste regulation text or add hints ▸
+                  </summary>
+                  <div className="mt-3 space-y-3">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-adv-gray">
+                        <FileUp className="inline h-3 w-3 mr-1" />
+                        Paste regulation/document text (AI extracts articles from this)
+                      </label>
+                      <textarea
+                        value={customDocText}
+                        onChange={handleDocumentPaste}
+                        placeholder="Paste the full text of the regulation, standard, or policy document here. AI will extract the actual articles/requirements from it."
+                        rows={5}
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-xs text-adv-off-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none resize-none font-mono"
+                        disabled={customGenerating}
+                      />
+                      <p className="mt-1 text-right text-[10px] text-adv-gray">{customDocText.length}/50000</p>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-adv-gray">Specific articles or topics to include</label>
+                      <input
+                        type="text"
+                        value={customForm.articleHints}
+                        onChange={e => setCustomForm(f => ({ ...f, articleHints: e.target.value }))}
+                        placeholder="e.g. Focus on Chapter III (Customer Due Diligence) and Chapter V (Reporting)"
+                        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray/50 focus:border-adv-teal focus:outline-none"
+                        disabled={customGenerating}
+                      />
+                    </div>
+                  </div>
+                </details>
+
+                {customError && (
+                  <div className="rounded-lg border border-adv-red/30 bg-adv-red/5 px-4 py-2 text-xs text-adv-red">
+                    {customError}
+                  </div>
+                )}
+
+                {customGenerating && (
+                  <div className="rounded-lg border border-adv-teal/20 bg-adv-dark-2 p-3">
+                    <div className="flex items-center gap-2 mb-2 text-xs text-adv-teal">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Generating framework structure...</span>
+                    </div>
+                    <pre className="max-h-32 overflow-y-auto whitespace-pre-wrap text-[10px] leading-relaxed text-adv-gray/60 font-mono">
+                      {customStreamText.slice(-1000) || 'Starting...'}
+                    </pre>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={generateCustomFramework}
+                    disabled={!customForm.description.trim() || customGenerating}
+                    className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50 transition-colors"
+                  >
+                    {customGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                    {customGenerating ? 'Generating...' : 'Generate Framework'}
+                  </button>
+                  <button
+                    onClick={() => setBuildingCustom(false)}
+                    disabled={customGenerating}
+                    className="rounded-lg border border-border px-4 py-2 text-sm text-adv-gray hover:text-adv-off-white disabled:opacity-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Available frameworks */}
         <div>
           <h2 className="mb-3 text-sm font-semibold text-adv-off-white">Supported Frameworks</h2>
@@ -300,7 +574,7 @@ export default function GapAssessmentHub() {
             <ClipboardCheck className="mb-4 h-12 w-12 text-adv-gray" />
             <h3 className="mb-2 text-base font-semibold text-adv-off-white">No assessments yet</h3>
             <p className="mb-6 max-w-sm text-sm text-adv-gray">
-              Run a structured gap assessment across AMLR, DORA, ISO 27001, and Wolfsberg CBDDQ.
+              Run a structured gap assessment across 18+ frameworks — AML, GDPR, AI Act, DORA, ISO standards, and more.
               Produces article-level scoring, capability view, board summary, and project roadmap.
             </p>
             <button
