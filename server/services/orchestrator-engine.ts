@@ -29,7 +29,8 @@ import AnthropicSDK from '@anthropic-ai/sdk';
 
 export type SignalSource =
   | 'radar' | 'deadline' | 'quality' | 'pattern' | 'workflow'
-  | 'assignment' | 'compliance' | 'apprentice' | 'knowledge_graph' | 'proactive';
+  | 'assignment' | 'compliance' | 'apprentice' | 'knowledge_graph' | 'proactive'
+  | 'task_agent';
 
 export type ActionType =
   | 'workflow_trigger' | 'workflow_chain' | 'quality_intervention'
@@ -416,6 +417,39 @@ function readProactiveSignals(db: Database.Database): PlatformSignal[] {
   }));
 }
 
+/** Read recently completed ANTON Task Agent tasks with outputs */
+function readTaskAgentSignals(db: Database.Database, since: Date): PlatformSignal[] {
+  try {
+    const rows = db.prepare(`
+      SELECT t.id, t.user_id, t.title, t.status, t.chosen_approach_id,
+             t.execution_summary, t.completed_at,
+             a.name AS approach_name
+      FROM anton_tasks t
+      LEFT JOIN anton_approaches a ON a.id = t.chosen_approach_id
+      WHERE t.status = 'completed'
+        AND t.completed_at >= ?
+      ORDER BY t.completed_at DESC
+      LIMIT 10
+    `).all(since.toISOString()) as Array<{
+      id: string; user_id: string; title: string; status: string;
+      chosen_approach_id: string | null; execution_summary: string | null;
+      completed_at: string; approach_name: string | null;
+    }>;
+
+    return rows.map(r => ({
+      source: 'task_agent' as const,
+      signal_id: r.id,
+      summary: `ANTON Task completed: "${r.title}"${r.approach_name ? ` (approach: ${r.approach_name})` : ''}${r.execution_summary ? ` — ${r.execution_summary.substring(0, 150)}` : ''}`,
+      urgency: 0.5,
+      relevance: 0.65,
+      detected_at: r.completed_at,
+      raw_data: { user_id: r.user_id, task_id: r.id, approach: r.approach_name, execution_summary: r.execution_summary?.substring(0, 300) },
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // ── Signal Aggregation ────────────────────────────────────────────────────────
 
 export async function aggregateSignals(
@@ -435,6 +469,7 @@ export async function aggregateSignals(
     ...readApprenticeSignals(db, since),
     ...readProactiveSignals(db),
     ...readKnowledgeGraphSignals(db),
+    ...readTaskAgentSignals(db, since),
   ];
 
   // Sort by urgency × relevance descending

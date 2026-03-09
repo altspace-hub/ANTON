@@ -196,6 +196,31 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
     }
   });
 
+  // ── Knowledge atoms (recent, from all sources) ──────────────────────────
+  router.get('/orchestrator/atoms', requireAuth, (req: Request, res: Response) => {
+    try {
+      const limit = Math.min(parseInt(String(req.query.limit ?? '30'), 10) || 30, 100);
+      const days = Math.min(parseInt(String(req.query.days ?? '14'), 10) || 14, 90);
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+      const atoms = db.prepare(`
+        SELECT ka.id, ka.content, ka.atom_type, ka.category, ka.confidence,
+               ka.subcategory, ka.sentiment, ka.source_workflow_id,
+               ka.source_area_id, ka.source_module_id, ka.created_at,
+               wo.workflow_name, wo.step_name
+        FROM knowledge_atoms ka
+        LEFT JOIN workflow_outputs wo ON wo.id = ka.source_output_id
+        WHERE ka.is_active = 1 AND ka.created_at >= ?
+        ORDER BY ka.created_at DESC
+        LIMIT ?
+      `).all(since, limit);
+
+      res.json({ atoms, total: atoms.length, limit, days });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
   // ── Heartbeat log ─────────────────────────────────────────────────────────
   router.get('/orchestrator/heartbeats', requireAuth, (req: Request, res: Response) => {
     try {

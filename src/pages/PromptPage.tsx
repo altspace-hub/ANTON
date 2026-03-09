@@ -19,7 +19,7 @@ import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { Send, Square, Trash2, ChevronDown, ChevronRight, Copy, Check, Sparkles, Loader2, X, ArrowRight, Coins, Zap, Users, Mic, MicOff, Plus, MessageSquare, Clock } from 'lucide-react';
+import { Send, Square, Trash2, ChevronDown, ChevronRight, Copy, Check, Sparkles, Loader2, X, ArrowRight, Coins, Zap, Users, Mic, MicOff, Plus, MessageSquare, Clock, Paperclip, File as FileIcon } from 'lucide-react';
 import { MODELS } from '@/lib/constants';
 import { EXPERT_ROLES } from '@/lib/expert-roles';
 import type { Message } from '@/lib/types';
@@ -93,6 +93,8 @@ export default function PromptPage() {
   const [userInput, setUserInput] = useState('');
   const [showConfig, setShowConfig] = useState(false);
   const [copied, setCopied] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
   // Prompt improvement state
   const [improveState, setImproveState] = useState<ImproveState>('idle');
@@ -801,14 +803,67 @@ export default function PromptPage() {
         </div>
       )}
 
+      {/* Attached file chips */}
+      {files.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {files.map((f) => (
+            <span
+              key={f.id}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs ${
+                f.status === 'uploading'
+                  ? 'bg-adv-teal/10 text-adv-teal animate-pulse'
+                  : f.status === 'error'
+                  ? 'bg-adv-red/10 text-adv-red'
+                  : 'bg-adv-card text-adv-off-white border border-border'
+              }`}
+            >
+              <FileIcon className="h-3 w-3 shrink-0" />
+              <span className="max-w-[150px] truncate">{f.name}</span>
+              {f.status === 'uploading' && <Loader2 className="h-3 w-3 animate-spin" />}
+              <button
+                onClick={() => remove(f.id)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-white/10 transition-colors"
+                title="Remove file"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Input area */}
-      <div className="mt-3 flex gap-2">
+      <div className={`${files.length > 0 ? 'mt-1.5' : 'mt-3'} flex gap-2`}>
+        {/* Hidden file input */}
+        <input
+          ref={attachInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.html,.png,.jpg,.jpeg,.gif,.webp"
+          className="hidden"
+          onChange={(e) => {
+            Array.from(e.target.files || []).forEach(upload);
+            e.target.value = '';
+          }}
+        />
         <textarea
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask a question, paste a document, or describe what you need..."
-          className="flex-1 resize-y rounded-xl border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
+          onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+          onDragLeave={() => setIsDraggingFile(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDraggingFile(false);
+            const droppedFiles = Array.from(e.dataTransfer.files);
+            droppedFiles.forEach(upload);
+          }}
+          placeholder={isDraggingFile ? 'Drop files here...' : files.length > 0 ? 'Ask about the attached document(s)...' : 'Ask a question, paste a document, or describe what you need...'}
+          className={`flex-1 resize-y rounded-xl border p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal transition-colors ${
+            isDraggingFile
+              ? 'border-adv-teal bg-adv-teal/5 border-dashed'
+              : 'border-border bg-adv-dark focus:border-adv-teal'
+          }`}
           rows={4}
           style={{ minHeight: '80px', maxHeight: '400px' }}
           disabled={isStreaming || isImproving}
@@ -830,6 +885,18 @@ export default function PromptPage() {
                 title="Send message (Ctrl+Enter)"
               >
                 <Send className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => attachInputRef.current?.click()}
+                disabled={isImproving}
+                className={`flex items-center justify-center rounded-xl border px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  files.length > 0
+                    ? 'border-adv-teal text-adv-teal bg-adv-teal/5'
+                    : 'border-border text-adv-gray hover:border-adv-teal hover:text-adv-teal'
+                }`}
+                title="Attach documents"
+              >
+                <Paperclip className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={handleImprovePrompt}
@@ -860,7 +927,7 @@ export default function PromptPage() {
       </div>
       <div className="mt-1.5 flex items-center justify-between">
         <p className="text-xs text-adv-gray">
-          Ctrl+Enter to send · Click ✦ to improve your prompt with AI
+          Ctrl+Enter to send · <Paperclip className="inline h-3 w-3" /> to attach documents · ✦ to improve prompt
         </p>
         {!isStreaming && userInput.trim() && (
           <div className="flex items-center gap-1 text-[11px] text-adv-gray">

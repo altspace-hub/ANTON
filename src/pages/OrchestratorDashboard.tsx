@@ -18,7 +18,7 @@ import {
   Clock, AlertTriangle, TrendingDown, ChevronRight,
   Play, Pause, RotateCcw, Settings, RefreshCw, ChevronDown,
   ShieldAlert, Radar, Calendar, BarChart2, Layers,
-  ThumbsUp, ThumbsDown, ListTree, Pencil,
+  ThumbsUp, ThumbsDown, ListTree, Pencil, Atom,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -126,6 +126,20 @@ interface ReasoningEntry {
   content: string;
   confidence: number | null;
   duration_ms: number | null;
+}
+
+interface KnowledgeAtom {
+  id: string;
+  content: string;
+  atom_type: string;
+  category: string;
+  confidence: number;
+  subcategory: string | null;
+  sentiment: string | null;
+  source_workflow_id: string | null;
+  workflow_name: string | null;
+  step_name: string | null;
+  created_at: string;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -338,6 +352,8 @@ export default function OrchestratorDashboard() {
   const [statusMsg, setStatusMsg] = useState('');
   const [demoMode, setDemoMode] = useState<'off' | 'demo' | 'simulation' | 'accelerated'>('off');
   const [demoSignals, setDemoSignals] = useState(0);
+  const [atoms, setAtoms] = useState<KnowledgeAtom[]>([]);
+  const [showAtoms, setShowAtoms] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -390,6 +406,15 @@ export default function OrchestratorDashboard() {
     } catch { /* ignore */ }
   }, []);
 
+  const fetchAtoms = useCallback(async () => {
+    try {
+      const r = await fetch('/api/orchestrator/atoms?limit=30&days=14', { headers: getAuthHeader() });
+      if (!r.ok) return;
+      const data = await r.json();
+      setAtoms(data.atoms ?? []);
+    } catch { /* ignore */ }
+  }, []);
+
   const loadTrail = useCallback(async (id: string) => {
     try {
       const r = await fetch(`/api/orchestrator/trails/${id}`, { headers: getAuthHeader() });
@@ -406,9 +431,10 @@ export default function OrchestratorDashboard() {
       await fetchBriefings();
       await fetchExecutions();
       await fetchTrails();
+      await fetchAtoms();
       setLoading(false);
     })();
-  }, [fetchStatus, fetchBriefings, fetchExecutions, fetchTrails]);
+  }, [fetchStatus, fetchBriefings, fetchExecutions, fetchTrails, fetchAtoms]);
 
   // Auto-load latest briefing
   useEffect(() => {
@@ -1017,6 +1043,68 @@ export default function OrchestratorDashboard() {
           )}
         </div>
       )}
+
+      {/* ── Knowledge Atoms ──────────────────────────────────────────────── */}
+      <div className="mt-6 bg-adv-card border border-white/5 rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowAtoms(v => !v)}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/2 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Atom className="w-4 h-4 text-adv-teal" />
+            <span className="text-sm font-medium text-adv-off-white">Knowledge Atoms</span>
+            {atoms.length > 0 && (
+              <span className="bg-adv-teal/20 text-adv-teal text-xs px-1.5 py-0.5 rounded-full">{atoms.length}</span>
+            )}
+          </div>
+          <ChevronDown className={`w-4 h-4 text-adv-gray transition-transform ${showAtoms ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showAtoms && (
+          <div className="border-t border-white/5">
+            {atoms.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <Atom className="w-8 h-8 mx-auto text-adv-gray/40 mb-2" />
+                <p className="text-sm text-adv-gray">No knowledge atoms extracted yet</p>
+                <p className="text-xs text-adv-gray/70 mt-1">Complete tasks in the Task Agent to generate atoms automatically</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
+                {atoms.map(atom => (
+                  <div key={atom.id} className="px-4 py-3">
+                    <div className="flex items-start gap-2">
+                      <span className={`mt-0.5 text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                        atom.category === 'risk' || atom.sentiment === 'critical' ? 'bg-adv-red/20 text-red-400' :
+                        atom.category === 'recommendation' ? 'bg-adv-teal/20 text-adv-teal' :
+                        atom.category === 'decision' ? 'bg-adv-gold/20 text-adv-gold' :
+                        atom.category === 'action' ? 'bg-blue-500/20 text-blue-400' :
+                        atom.sentiment === 'warning' ? 'bg-adv-gold/20 text-adv-gold' :
+                        'bg-white/5 text-adv-gray'
+                      }`}>
+                        {atom.atom_type?.replace(/_/g, ' ') ?? atom.category}
+                      </span>
+                      <p className="text-sm text-adv-off-white flex-1">{atom.content}</p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5 ml-0 text-[11px] text-adv-gray">
+                      {atom.workflow_name && (
+                        <span className="truncate max-w-[200px]">{atom.workflow_name}</span>
+                      )}
+                      {atom.confidence != null && (
+                        <>
+                          <span>·</span>
+                          <span>{Math.round(atom.confidence * 100)}% conf</span>
+                        </>
+                      )}
+                      <span>·</span>
+                      <span>{formatTime(atom.created_at)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ── Reasoning Trails ───────────────────────────────────────────────── */}
       {trails.length > 0 && (

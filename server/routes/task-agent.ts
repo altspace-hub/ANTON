@@ -20,6 +20,7 @@ import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
 import multer from 'multer';
 import { extractTextFromFile } from '../services/text-extractor.js';
+import { createAtomExtractor } from '../services/atom-extractor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __routeDir = dirname(__filename);
@@ -273,6 +274,47 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   const router = Router();
   const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
+  // Lazy atom extractor — creates workflow_output + extracts knowledge atoms on task completion
+  let _atomExtractor: ReturnType<typeof createAtomExtractor> | null = null;
+  function getAtomExtractor() {
+    if (!_atomExtractor) _atomExtractor = createAtomExtractor(db, ai);
+    return _atomExtractor;
+  }
+
+  /** Create a workflow_output row and fire-and-forget atom extraction */
+  function emitTaskAtoms(task: TaskRow, output: string, stepName: string, stepIndex: number) {
+    try {
+      const outputId = `wo_task_${task.id}_${Date.now()}`;
+      const outputData = JSON.stringify({
+        title: task.title,
+        description: task.description,
+        output: output.length > 5000 ? output.slice(0, 5000) + '...(truncated)' : output,
+      });
+      db.prepare(`
+        INSERT INTO workflow_outputs
+          (id, execution_id, workflow_id, step_index, step_type,
+           output_data, output_summary, created_by, workflow_name, step_name)
+        VALUES (?, ?, ?, ?, 'task_completion', ?, ?, ?, ?, ?)
+      `).run(
+        outputId,
+        task.id,
+        `task-${task.id}`,
+        stepIndex,
+        outputData,
+        `Task "${task.title}" — ${stepName}`,
+        task.user_id,
+        `ANTON Task: ${task.title}`,
+        stepName,
+      );
+      // Fire-and-forget atom extraction (non-blocking)
+      getAtomExtractor().extractAtoms(outputId).catch((err) => {
+        console.warn('[task-agent] atom extraction failed (non-fatal):', err instanceof Error ? err.message : err);
+      });
+    } catch (err) {
+      console.warn('[task-agent] emitTaskAtoms failed (non-fatal):', err instanceof Error ? err.message : err);
+    }
+  }
 
   // ── GET /api/task-agent/capabilities — list self-knowledge ──────────────
   router.get('/capabilities', (_req: Request, res: Response) => {
@@ -856,6 +898,12 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
             db.prepare('UPDATE anton_approaches SET avg_quality_score=? WHERE id=?').run(newAvg, approach.id);
           }
         }
+
+        // Emit workflow output + extract knowledge atoms from all step results
+        const allOutputText = existingResults.map((r, i) =>
+          `## Step ${i + 1}: ${r.step_name ?? `Step ${r.step}`}\n${r.output ?? ''}`
+        ).join('\n\n');
+        emitTaskAtoms(task, allOutputText, `All ${existingResults.length} steps completed`, nextStepIdx);
       } else {
         // Auto-advance: set intake_ready=1 so the user can immediately run the next step.
         // Context carries forward from previous steps — no additional intake needed by default.
@@ -902,6 +950,11 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
       SET status='completed', execution_summary=?, execution_run_ids=?, completed_at=datetime('now'), updated_at=datetime('now')
       WHERE id=?
     `).run(summary ?? null, JSON.stringify(run_ids), task.id);
+
+    // Emit atoms from the summary/results
+    if (summary) {
+      emitTaskAtoms(task, summary, 'Task marked complete', 0);
+    }
 
     // Update approach quality score if provided
     if (task.chosen_approach_id && quality_score != null) {
