@@ -50,7 +50,7 @@ function parseEntry(row: LoreEntry): LoreEntryOut {
   };
 }
 
-export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic) {
+export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null | undefined) {
   const router = Router();
 
   // GET /api/lore-ledger/entries
@@ -244,6 +244,7 @@ ${text}
 
 Please analyse the text for consistency with the lore ledger above.`;
 
+      if (!anthropic) { res.status(503).json({ error: 'Anthropic API not configured' }); return; }
       const stream = anthropic.messages.stream({
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,

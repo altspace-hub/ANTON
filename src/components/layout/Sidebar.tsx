@@ -1576,7 +1576,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <div className="mb-2">
               {matched.map((mod) => {
                 const Icon = iconMap[mod.icon] || Search;
-                const area = AREAS.find((a) => a.moduleIds.includes(mod.id as string));
+                const area = AREAS.find((a) => (a.moduleIds as readonly string[]).includes(mod.id as string));
                 return (
                   <NavLink
                     key={mod.id}

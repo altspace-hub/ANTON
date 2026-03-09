@@ -270,7 +270,7 @@ ${intakeSection}
 ${selfKnowledge}`;
 }
 
-export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropic | null): Router {
+export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropic | null | undefined): Router {
   const router = Router();
   const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -849,7 +849,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
       // Save result + advance step
       const existingResults = parseJson<Array<{
-        step: number; name: string; output: string; at: string;
+        step: number; name: string; step_name?: string; output: string; at: string;
         quality_score?: number | null; retry_count?: number; thinking_level?: string;
         thinking?: string; description?: string;
       }>>(task.execution_results ?? '[]', []);

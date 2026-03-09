@@ -38,7 +38,7 @@ export default function DJScreeningPage() {
   const [tab, setTab] = useState<'screen' | 'batch' | 'monitoring' | 'history'>('screen');
   const [batchInput, setBatchInput] = useState('');
   const [batchLoading, setBatchLoading] = useState(false);
-  const [batchResult, setBatchResult] = useState<unknown | null>(null);
+  const [batchResult, setBatchResult] = useState<Array<{ entity: string; risk: string; hits: number; details?: string }> | null>(null);
   const [availableLists, setAvailableLists] = useState<Array<{ id: string; name: string; type: string; entityCount: number }>>([]);
 
   useEffect(() => {

@@ -47,7 +47,7 @@ export const REGULATORY_SOURCES = [
 
 // ── Route factory ────────────────────────────────────────────────────────────
 
-export function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic) {
+export function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | null | undefined) {
   const router = Router();
 
   // GET /api/regulatory-feed/sources
@@ -175,6 +175,7 @@ Structure the digest clearly so a compliance officer can immediately identify wh
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
+      if (!anthropic) { res.status(503).json({ error: 'Anthropic API not configured' }); return; }
       const stream = anthropic.messages.stream({
         model: 'claude-sonnet-4-6',
         max_tokens: 4096,

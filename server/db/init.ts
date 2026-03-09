@@ -57,6 +57,14 @@ export function initDatabase(): Database.Database {
     `);
   }
 
+  // Add numeric_score column to gap_findings if missing
+  const numScoreCol = db.prepare(
+    "SELECT COUNT(*) as c FROM pragma_table_info('gap_findings') WHERE name='numeric_score'"
+  ).get() as { c: number };
+  if (numScoreCol.c === 0) {
+    try { db.exec('ALTER TABLE gap_findings ADD COLUMN numeric_score INTEGER DEFAULT 0'); } catch { /* already exists or table missing */ }
+  }
+
   // Seed pre-built event-driven workflow definitions (from event-triggers spec)
   try {
     const eventWfCount = db.prepare(
@@ -3038,7 +3046,7 @@ export function initDatabase(): Database.Database {
         if (!antonFile) continue;
         try {
           const buffer = fs.readFileSync(path.join(dirPath, antonFile));
-          kpService.importFromBundle(buffer, 'system');
+          kpService.importBundle(buffer, 'system');
           console.log(`[db] Knowledge pack auto-seeded: ${manifest.name}`);
         } catch (e) {
           // Non-fatal: pack already imported or version conflict

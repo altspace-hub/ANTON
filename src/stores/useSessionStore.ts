@@ -24,8 +24,7 @@ import { getStoredDefaultModel, getStoredDefaultThinking, getStoredDefaultCreati
 import { useStreamStore } from './useStreamStore';
 import { useConfigStore } from './useConfigStore';
 
-// Re-export types consumed by other modules
-export type { StructureReference } from './useSessionStore';
+// StructureReference interface used by other modules
 export interface StructureReference {
   mode: 'none' | 'upload' | 'describe';
   description: string;

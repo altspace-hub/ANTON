@@ -27,7 +27,7 @@ export default function RoaringSearchPage() {
   const [recent, setRecent] = useState<RecentScreen[]>([]);
   const [batchInput, setBatchInput] = useState('');
   const [batchLoading, setBatchLoading] = useState(false);
-  const [batchResult, setBatchResult] = useState<unknown | null>(null);
+  const [batchResult, setBatchResult] = useState<Array<{ entity: string; orgNumber: string; risk: string; hits: number; details?: string }> | null>(null);
   const [tab, setTab] = useState<'search' | 'batch' | 'history'>('search');
 
   useEffect(() => {

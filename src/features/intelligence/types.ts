@@ -38,6 +38,7 @@ export interface DetectedPattern {
   resolved_at?: string;
   resolved_by?: string;
   resolution_notes?: string;
+  evidence_count?: number;
 }
 
 export interface TemporalDataPoint {
