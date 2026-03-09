@@ -44,7 +44,7 @@ jobs:
       - name: Start server and run E2E tests
         run: |
           # Start the production server in background (tsx runs TypeScript directly)
-          ANTHROPIC_API_KEY=sk-ant-placeholder PORT=5173 pnpm tsx server/index.ts &
+          ANTHROPIC_API_KEY=sk-ant-placeholder PORT=5173 DEPLOYMENT_MODE=solo JWT_SECRET=ci-test-secret-not-real pnpm tsx server/index.ts &
           SERVER_PID=$!
           # Wait for server to be ready
           npx wait-on http://localhost:5173 --timeout 30000
