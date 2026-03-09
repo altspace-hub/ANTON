@@ -1,6 +1,6 @@
 {
   "name": "openexpert",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "main": "dist/electron/main.js",
   "type": "module",
@@ -59,8 +59,10 @@
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.71.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.213.0",
+    "@opentelemetry/resources": "^2.6.0",
     "@opentelemetry/sdk-node": "^0.213.0",
     "@opentelemetry/sdk-trace-node": "^2.6.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
     "@tanstack/react-virtual": "^3.13.21",
     "@types/jszip": "^3.4.1",
     "adm-zip": "^0.5.16",
