@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -43,9 +43,9 @@ jobs:
       # OSS-02: License check — block GPL and other copyleft licenses
       - name: License check
         run: |
-          pnpm dlx license-checker --onlyAllow "MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;CC-BY-3.0;CC-BY-4.0;0BSD;Unlicense;Python-2.0;BlueOak-1.0.0" \
+          pnpm dlx license-checker --onlyAllow "MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;Apache*;CC0-1.0;CC-BY-3.0;CC-BY-4.0;0BSD;Unlicense;Python-2.0;BlueOak-1.0.0" \
             --excludePrivatePackages \
-            --excludePackages "openexpert@0.2.0" \
+            --excludePackages "openexpert@0.6.0" \
             || (echo "LICENSE CHECK FAILED — GPL or unknown license detected. Review output above." && exit 1)
 
   build:
@@ -56,7 +56,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
