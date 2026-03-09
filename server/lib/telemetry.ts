@@ -35,7 +35,7 @@ if (OTEL_ENABLED) {
     { NodeSDK },
     { getNodeAutoInstrumentations },
     { OTLPTraceExporter },
-    { Resource },
+    { resourceFromAttributes },
     { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION },
     { diag, DiagConsoleLogger, DiagLogLevel },
   ]) => {
@@ -50,7 +50,7 @@ if (OTEL_ENABLED) {
     diag.setLogger(new DiagConsoleLogger(), logLevel);
 
     const sdk = new NodeSDK({
-      resource: new Resource({
+      resource: resourceFromAttributes({
         [ATTR_SERVICE_NAME]: SERVICE_NAME,
         [ATTR_SERVICE_VERSION]: SERVICE_VERSION,
       }),

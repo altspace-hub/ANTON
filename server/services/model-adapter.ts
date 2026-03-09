@@ -84,6 +84,7 @@ abstract class BaseAdapter {
       think_hard: 16384,
       investigate: 32768,
       plan_first: 32768,
+      deep_investigate: 65536,
     };
     return budgets[thinking];
   }

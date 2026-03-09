@@ -29,7 +29,7 @@ function minutesToCron(minutes: number): string {
   return `0 */${Math.max(1, hours)} * * *`;
 }
 
-export function initOrchestratorHeartbeat(db: Database.Database, anthropic: AnthropicSDK | null): void {
+export function initOrchestratorHeartbeat(db: Database.Database, anthropic: AnthropicSDK | null | undefined): void {
   if (!anthropic) {
     console.log('[orchestrator-heartbeat] Skipping — Anthropic API not configured');
     return;

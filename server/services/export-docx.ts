@@ -436,8 +436,8 @@ function buildCoverPage(meta: ExportMetadata, s: ReturnType<typeof resolveStyle>
       bottom: { style: BorderStyle.SINGLE, size: 1, color: '2DD4A8' },
       left:   { style: BorderStyle.NONE },
       right:  { style: BorderStyle.NONE },
-      insideH:{ style: BorderStyle.SINGLE, size: 1, color: '152238' },
-      insideV:{ style: BorderStyle.NONE },
+      insideHorizontal:{ style: BorderStyle.SINGLE, size: 1, color: '152238' },
+      insideVertical:{ style: BorderStyle.NONE },
     },
   }));
 

@@ -34,7 +34,7 @@ import {
   getMeridianPersonaContext,
 } from '../services/orchestrator-demo.js';
 
-export function createOrchestratorRoutes(db: Database.Database, anthropic: AnthropicSDK | null): Router {
+export function createOrchestratorRoutes(db: Database.Database, anthropic: AnthropicSDK | null | undefined): Router {
   const router = Router();
 
   // ── Status ─────────────────────────────────────────────────────────────────
@@ -520,7 +520,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         WHERE id = 'default'
       `).run();
 
-      const trailId = createReasoningTrail(db, 'modification');
+      const trailId = createReasoningTrail(db, 'approval');
       addTrailEntry(db, trailId, {
         entry_type: 'execution_decision',
         title: `Proposal modified by ${user}`,

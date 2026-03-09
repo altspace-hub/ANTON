@@ -81,6 +81,10 @@ interface OrchestratorConfig {
   fully_disabled: number;
   /** When 1, enables extended thinking on briefing + workflow plan generation */
   briefing_thinking_enabled?: number;
+  /** Time for daily/weekly briefing (HH:MM format) */
+  briefing_time?: string;
+  /** ISO timestamp of when the orchestrator was paused */
+  paused_at?: string | null;
 }
 
 // ── Hard limits (safety ceiling — cannot be overridden via config) ────────────
@@ -1386,13 +1390,13 @@ export async function runHeartbeatCycle(
   }
 
   // Pattern detection (non-blocking, runs after briefing)
-  if (action === 'briefing_generated' || action === 'no_action') {
+  if (action === 'briefing_generated' || action === 'none') {
     try {
       const { detectPatterns, recordPatternDetection, shouldAutoPause } = await import('./orchestrator-pattern-engine.js');
       const patterns = detectPatterns(db);
       if (patterns.length > 0) {
         for (const pat of patterns.slice(0, 3)) { // max 3 pattern proposals per cycle
-          recordPatternDetection(db, pat, briefingId);
+          recordPatternDetection(db, pat, briefingId ?? null);
         }
         console.log(`[orchestrator] Pattern engine: ${patterns.length} patterns detected, ${Math.min(patterns.length, 3)} recorded`);
       }

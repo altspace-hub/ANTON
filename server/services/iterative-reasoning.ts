@@ -432,6 +432,7 @@ export async function runIterativeReasoning(
           totalOutputTokens,
           totalDurationMs: Date.now() - totalStart,
           synthesisQualityScore: null,
+          synthesisText: '',
         };
       }
     } else {

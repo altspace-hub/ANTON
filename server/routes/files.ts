@@ -146,7 +146,7 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
 
 // GET /api/files/:id
 router.get('/files/:id', validateParams(FileIdParamSchema), (req, res) => {
-  const filePath = path.join(UPLOAD_DIR, req.params.id);
+  const filePath = path.join(UPLOAD_DIR, req.params.id as string);
   // Existence check before realpath (realpath throws on missing file)
   if (!fs.existsSync(filePath)) {
     res.status(404).json({ error: 'File not found' });
