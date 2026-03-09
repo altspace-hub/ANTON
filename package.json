@@ -66,7 +66,7 @@
     "adm-zip": "^0.5.16",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^11.7.0",
-    "chromadb": "^1.8.1",
+    "chromadb": "^3.3.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csv-parse": "^6.1.0",
