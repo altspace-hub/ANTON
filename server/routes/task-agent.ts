@@ -999,6 +999,50 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
     res.json({ task: updated });
   });
 
+  // ── POST /api/task-agent/backfill-atoms — extract atoms from all existing completed tasks ──
+  router.post('/backfill-atoms', async (req: Request, res: Response) => {
+    try {
+      const completedTasks = db.prepare(`
+        SELECT * FROM anton_tasks WHERE status='completed' AND execution_results IS NOT NULL
+        ORDER BY completed_at DESC LIMIT 50
+      `).all() as TaskRow[];
+
+      let created = 0;
+      let skipped = 0;
+
+      for (const task of completedTasks) {
+        // Check if we already have a workflow_output for this task
+        const existing = db.prepare(
+          "SELECT id FROM workflow_outputs WHERE workflow_id = ?"
+        ).get(`task-${task.id}`) as { id: string } | undefined;
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        const results = parseJson<Array<{ step: number; step_name?: string; output?: string }>>(
+          task.execution_results ?? '[]', []
+        );
+        if (results.length === 0) {
+          skipped++;
+          continue;
+        }
+
+        const allOutputText = results.map((r, i) =>
+          `## Step ${i + 1}: ${r.step_name ?? `Step ${r.step}`}\n${r.output ?? ''}`
+        ).join('\n\n');
+
+        emitTaskAtoms(task, allOutputText, `Backfill: ${results.length} steps`, results.length);
+        created++;
+      }
+
+      res.json({ success: true, tasks_processed: created, tasks_skipped: skipped });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
   // ── DELETE /api/task-agent/tasks/:id ───────────────────────────────────
   router.delete('/tasks/:id', (req: Request, res: Response) => {
     const userId = getUserId(req);
