@@ -150,6 +150,8 @@ export interface PromptComposerConfig {
   roaringEntityPrompt?: string;
   /** Layer 2d: Dow Jones screening data (sanctions, PEP, adverse media) */
   djScreeningPrompt?: string;
+  /** Layer 2e: Knowledge atoms — recent insights from completed work — built by buildAtomLayer() */
+  atomLayerPrompt?: string;
   /** Layer 4a: Session resume context (snapshot summary, decisions, next steps) — built by buildResumeContextLayer() */
   resumeContextPrompt?: string;
 }
@@ -349,6 +351,9 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   // Layer 2d: Dow Jones screening data (global sanctions, PEP, adverse media)
   if (config.djScreeningPrompt?.trim()) parts.push(config.djScreeningPrompt.trim());
 
+  // Layer 2e: Knowledge Atoms — recent insights from completed work
+  if (config.atomLayerPrompt?.trim()) parts.push(config.atomLayerPrompt.trim());
+
   // Layer 3: Area Context — domain landscape, regulatory framework, terminology
   const areaId = config.areaId;
   if (areaId) {
@@ -476,6 +481,9 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
 
   // Layer 2d: Dow Jones screening data
   if (config.djScreeningPrompt?.trim()) staticParts.push(config.djScreeningPrompt.trim());
+
+  // Layer 2e: Knowledge Atoms (prior work insights)
+  if (config.atomLayerPrompt?.trim()) staticParts.push(config.atomLayerPrompt.trim());
 
   // Layer 3: Area Context
   if (config.areaId) {

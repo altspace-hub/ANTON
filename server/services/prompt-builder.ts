@@ -367,6 +367,49 @@ export function buildKnowledgePackLayer(
   }
 }
 
+/**
+ * Build a knowledge atom layer — injects recent high-confidence atoms
+ * from the same area/module as prior-work context for Claude.
+ */
+export function buildAtomLayer(
+  db: import('better-sqlite3').Database,
+  areaId?: string | null,
+  moduleId?: string | null,
+): string {
+  try {
+    const conditions = ['ka.is_active = 1', "ka.created_at >= datetime('now', '-30 days')", 'ka.confidence >= 0.7'];
+    const params: unknown[] = [];
+
+    // If area is known, prefer atoms from the same area but also include general ones
+    if (areaId) {
+      conditions.push('(ka.source_area_id = ? OR ka.source_area_id IS NULL)');
+      params.push(areaId);
+    }
+
+    const atoms = db.prepare(`
+      SELECT ka.content, ka.atom_type, ka.category, ka.confidence
+      FROM knowledge_atoms ka
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY ka.confidence DESC, ka.created_at DESC
+      LIMIT 15
+    `).all(...params) as Array<{
+      content: string; atom_type: string; category: string; confidence: number;
+    }>;
+
+    if (atoms.length === 0) return '';
+
+    const lines = ['## PRIOR KNOWLEDGE ATOMS',
+      'The following insights were extracted from recent completed work. Reference them as supporting evidence when relevant:',
+      ''];
+    for (const a of atoms) {
+      lines.push(`- [${a.category}/${a.atom_type}] ${a.content} (${Math.round(a.confidence * 100)}% confidence)`);
+    }
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
+
 export function getStructureReferenceInstruction(structureRef: { mode: string; description: string; fileName?: string }): string {
   if (!structureRef || structureRef.mode === 'none') return '';
 

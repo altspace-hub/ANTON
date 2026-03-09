@@ -515,7 +515,7 @@ Do these signals collectively warrant generating a situational briefing for the 
 
 const BRIEFING_SYSTEM_PROMPT = `You are ANTON's AI Orchestrator — an intelligent operations management layer for Financial Crime Prevention compliance teams.
 
-Your role is to read platform signals and produce a clear, actionable situational briefing that helps the compliance team prioritise their work.
+Your role is to read platform signals and knowledge atoms (insights from completed work) and produce a clear, actionable situational briefing that helps the compliance team prioritise their work.
 
 GUIDELINES:
 - Be specific: reference actual signal data (names, scores, dates, counts)
@@ -537,7 +537,7 @@ OUTPUT FORMAT: Return a JSON object with this exact structure:
   "briefing_markdown": "# ANTON Orchestrator Briefing\\n\\n...full markdown content...",
   "proposals": [
     {
-      "signal_source": "radar|deadline|quality|pattern|workflow|assignment|compliance|apprentice|proactive",
+      "signal_source": "radar|deadline|quality|pattern|workflow|assignment|compliance|apprentice|proactive|task_agent",
       "signal_id": "id from signal or null",
       "signal_summary": "what was detected",
       "action_type": "workflow_trigger|workflow_chain|quality_intervention|deadline_action|pattern_suggestion|maintenance",
@@ -557,17 +557,51 @@ export async function generateBriefing(
   anthropic: AnthropicSDK,
   model: string,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'daily',
-  thinkingEnabled = false
+  thinkingEnabled = false,
+  db?: Database.Database
 ): Promise<{ content: string; proposals: OrchestratorProposal[] }> {
   const signalSummary = signals
     .slice(0, 20)
     .map(s => `[${s.source.toUpperCase()}] urgency=${s.urgency.toFixed(2)} relevance=${s.relevance.toFixed(2)}\nID: ${s.signal_id}\n${s.summary}`)
     .join('\n\n');
 
-  const userMessage = `Generate a ${period} compliance operations briefing based on these platform signals.
+  // Query recent knowledge atoms to enrich briefing context
+  let atomSection = '';
+  if (db) {
+    try {
+      const recentAtoms = db.prepare(`
+        SELECT ka.content, ka.atom_type, ka.category, ka.confidence, ka.sentiment,
+               wo.workflow_name
+        FROM knowledge_atoms ka
+        LEFT JOIN workflow_outputs wo ON wo.id = ka.source_output_id
+        WHERE ka.is_active = 1
+          AND ka.created_at >= datetime('now', '-14 days')
+          AND ka.confidence >= 0.6
+        ORDER BY ka.confidence DESC, ka.created_at DESC
+        LIMIT 25
+      `).all() as Array<{
+        content: string; atom_type: string; category: string;
+        confidence: number; sentiment: string | null; workflow_name: string | null;
+      }>;
+
+      if (recentAtoms.length > 0) {
+        const grouped: Record<string, string[]> = {};
+        for (const a of recentAtoms) {
+          const key = a.category || 'observation';
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(`- ${a.content} (${a.atom_type}, ${Math.round(a.confidence * 100)}% conf${a.workflow_name ? `, from: ${a.workflow_name}` : ''})`);
+        }
+        atomSection = `\n\nKNOWLEDGE ATOMS (${recentAtoms.length} recent insights from completed work):\n` +
+          Object.entries(grouped).map(([cat, items]) => `### ${cat.toUpperCase()}\n${items.join('\n')}`).join('\n\n');
+      }
+    } catch { /* atoms are optional enrichment */ }
+  }
+
+  const userMessage = `Generate a ${period} compliance operations briefing based on these platform signals and recent knowledge atoms.
 
 PLATFORM SIGNALS (${signals.length} total):
 ${signalSummary || 'No significant signals detected.'}
+${atomSection}
 
 Current date: ${new Date().toISOString().substring(0, 10)}`;
 
@@ -1283,7 +1317,7 @@ export async function runHeartbeatCycle(
       });
 
       const briefingThinking = !!(config as OrchestratorConfig).briefing_thinking_enabled;
-      const { content, proposals } = await generateBriefing(signals, anthropic, config.briefing_model, period, briefingThinking);
+      const { content, proposals } = await generateBriefing(signals, anthropic, config.briefing_model, period, briefingThinking, db);
 
       addTrailEntry(db, trailId, {
         entry_type: 'completion_summary',

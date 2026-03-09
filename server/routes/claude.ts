@@ -7,7 +7,7 @@ import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-eng
 import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
-import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
+import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import { runMultiAgent } from '../services/multi-agent-orchestrator.js';
 import { writeAuditEntry } from '../services/auditLogger.js';
@@ -521,6 +521,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const orgContextPrompt = buildOrgContextLayer(db, (req as any).user?.id || 'default');
       const resumeContextPrompt = sessionId ? buildResumeContextLayer(db, String(sessionId)) : '';
       const knowledgePackPrompt = buildKnowledgePackLayer(db);
+      const atomLayerPrompt = buildAtomLayer(db, areaId, moduleId);
 
       const promptComposerConfig = {
         moduleId,
@@ -548,6 +549,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         businessContext: businessContext || null,
         orgContextPrompt: orgContextPrompt || undefined,
         knowledgePackPrompt: knowledgePackPrompt || undefined,
+        atomLayerPrompt: atomLayerPrompt || undefined,
         resumeContextPrompt: resumeContextPrompt || undefined,
       } as const;
 
