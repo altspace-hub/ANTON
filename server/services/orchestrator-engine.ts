@@ -458,18 +458,23 @@ export async function aggregateSignals(
 ): Promise<PlatformSignal[]> {
   const config = getOrchestratorConfig(db);
 
+  // Each reader is wrapped in try/catch — tables may not exist yet
+  const safeRead = (fn: () => PlatformSignal[]): PlatformSignal[] => {
+    try { return fn(); } catch { return []; }
+  };
+
   const allSignals: PlatformSignal[] = [
-    ...readRadarSignals(db, config.radar_urgency_threshold, since),
-    ...readDeadlineSignals(db, config.deadline_alert_days),
-    ...readQualitySignals(db, config.quality_decline_threshold),
-    ...readPatternSignals(db, since),
-    ...readComplianceSignals(db),
-    ...readAssignmentSignals(db),
-    ...readWorkflowSignals(db, since),
-    ...readApprenticeSignals(db, since),
-    ...readProactiveSignals(db),
-    ...readKnowledgeGraphSignals(db),
-    ...readTaskAgentSignals(db, since),
+    ...safeRead(() => readRadarSignals(db, config.radar_urgency_threshold, since)),
+    ...safeRead(() => readDeadlineSignals(db, config.deadline_alert_days)),
+    ...safeRead(() => readQualitySignals(db, config.quality_decline_threshold)),
+    ...safeRead(() => readPatternSignals(db, since)),
+    ...safeRead(() => readComplianceSignals(db)),
+    ...safeRead(() => readAssignmentSignals(db)),
+    ...safeRead(() => readWorkflowSignals(db, since)),
+    ...safeRead(() => readApprenticeSignals(db, since)),
+    ...safeRead(() => readProactiveSignals(db)),
+    ...safeRead(() => readKnowledgeGraphSignals(db)),
+    ...safeRead(() => readTaskAgentSignals(db, since)),
   ];
 
   // Sort by urgency × relevance descending
@@ -1262,7 +1267,9 @@ export async function runHeartbeatCycle(
   }
 
   const start = Date.now();
-  const since = new Date(Date.now() - (period === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000);
+  // on_demand gets a wider lookback (7 days) to capture more context
+  const lookbackDays = period === 'weekly' ? 14 : period === 'on_demand' ? 7 : 1;
+  const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
 
   // Start reasoning trail
   const triggerType = period === 'on_demand' ? 'on_demand' : 'heartbeat';
