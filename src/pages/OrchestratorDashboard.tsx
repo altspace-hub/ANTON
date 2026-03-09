@@ -354,6 +354,8 @@ export default function OrchestratorDashboard() {
   const [demoSignals, setDemoSignals] = useState(0);
   const [atoms, setAtoms] = useState<KnowledgeAtom[]>([]);
   const [showAtoms, setShowAtoms] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -414,6 +416,22 @@ export default function OrchestratorDashboard() {
       setAtoms(data.atoms ?? []);
     } catch { /* ignore */ }
   }, []);
+
+  const runBackfill = async () => {
+    setBackfilling(true);
+    setBackfillResult(null);
+    try {
+      const r = await fetchWithAuth('/api/task-agent/backfill-atoms', { method: 'POST' });
+      const data = await r.json();
+      setBackfillResult(`Extracted atoms from ${data.tasks_processed} task(s)${data.tasks_skipped ? `, ${data.tasks_skipped} already synced` : ''}`);
+      // Refresh atoms after a short delay (extraction is async)
+      setTimeout(() => fetchAtoms(), 3000);
+    } catch (err) {
+      setBackfillResult('Sync failed — check API key');
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const loadTrail = useCallback(async (id: string) => {
     try {
@@ -1057,8 +1075,25 @@ export default function OrchestratorDashboard() {
               <span className="bg-adv-teal/20 text-adv-teal text-xs px-1.5 py-0.5 rounded-full">{atoms.length}</span>
             )}
           </div>
-          <ChevronDown className={`w-4 h-4 text-adv-gray transition-transform ${showAtoms ? 'rotate-180' : ''}`} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); runBackfill(); }}
+              disabled={backfilling}
+              className="flex items-center gap-1.5 rounded-lg border border-adv-teal/30 px-2.5 py-1 text-xs text-adv-teal hover:bg-adv-teal/10 transition-colors disabled:opacity-50"
+              title="Extract knowledge atoms from all completed tasks"
+            >
+              <RefreshCw className={`w-3 h-3 ${backfilling ? 'animate-spin' : ''}`} />
+              {backfilling ? 'Syncing...' : 'Sync from Tasks'}
+            </button>
+            <ChevronDown className={`w-4 h-4 text-adv-gray transition-transform ${showAtoms ? 'rotate-180' : ''}`} />
+          </div>
         </button>
+
+        {backfillResult && (
+          <div className="px-4 py-2 border-t border-white/5 bg-adv-teal/5 text-xs text-adv-teal">
+            {backfillResult}
+          </div>
+        )}
 
         {showAtoms && (
           <div className="border-t border-white/5">
@@ -1066,7 +1101,7 @@ export default function OrchestratorDashboard() {
               <div className="px-4 py-6 text-center">
                 <Atom className="w-8 h-8 mx-auto text-adv-gray/40 mb-2" />
                 <p className="text-sm text-adv-gray">No knowledge atoms extracted yet</p>
-                <p className="text-xs text-adv-gray/70 mt-1">Complete tasks in the Task Agent to generate atoms automatically</p>
+                <p className="text-xs text-adv-gray/70 mt-1">Complete tasks or click "Sync from Tasks" to extract knowledge from past work</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto">
