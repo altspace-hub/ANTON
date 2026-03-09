@@ -263,7 +263,7 @@ initAuditQueue(db);
 await ensureWorkspacesRoot();
 
 // Initialize Anthropic client for quality scoring
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : undefined;
+const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 20 * 60 * 1000 }) : undefined;
 
 // Initialize workflow scheduler
 initScheduler(db);

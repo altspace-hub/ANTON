@@ -20,8 +20,10 @@ import {
   type FrameworkArticle,
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
+import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
+import { compareIterations } from '../services/gap-comparison.js';
 import { fileURLToPath } from 'url';
 
 const __filename_local = fileURLToPath(import.meta.url);
@@ -35,7 +37,7 @@ function getUserId(req: Request): string {
 export function createGapAssessmentsRoutes(db: Database.Database, sharedAnthropic?: Anthropic | undefined): Router {
   const router = Router();
   const engine = createGapAssessmentEngine(db);
-  const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY }) : null);
+  const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 20 * 60 * 1000 }) : null);
 
   // ── List available frameworks ───────────────────────────────────────────────
   router.get('/gap-assessments/frameworks', (_req: Request, res: Response) => {
@@ -241,7 +243,15 @@ Generate the complete framework JSON now.`;
       const assessment = db.prepare('SELECT * FROM gap_assessments WHERE id = ? AND user_id = ?').get(req.params.id as string, uid);
       if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
       const findings = db.prepare('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id').all(req.params.id as string);
-      res.json({ assessment, findings });
+      // Map snake_case DB columns to camelCase for frontend
+      const mappedFindings = (findings as Record<string, unknown>[]).map(f => ({
+        ...f,
+        articleId: f.article_id,
+        articleTitle: f.article_title,
+        currentState: f.current_state,
+        numericScore: f.numeric_score ?? 0,
+      }));
+      res.json({ assessment, findings: mappedFindings });
     } catch (err) {
       console.error('[gap-assessments] get error:', err);
       res.status(500).json({ error: 'Failed to get assessment' });
@@ -303,7 +313,28 @@ Generate the complete framework JSON now.`;
       // Build org context + knowledge pack layers to enrich every Claude batch call
       const orgContextLayer = buildOrgContextLayer(db, uid);
       const knowledgePackLayer = buildKnowledgePackLayer(db);
-      const extraSystemContext = [orgContextLayer, knowledgePackLayer].filter(Boolean).join('\n\n');
+
+      // Resolve knowledge sources (RAG, folders, web search, URLs) if configured
+      let knowledgeContext = '';
+      if (contextConfig.knowledgeSources && typeof contextConfig.knowledgeSources === 'object') {
+        try {
+          sendEvent({ type: 'status', status: 'resolving', message: 'Resolving knowledge sources (folders, RAG, web)...' });
+          const resolved = await resolveKnowledgeSources(
+            contextConfig.knowledgeSources as Parameters<typeof resolveKnowledgeSources>[0],
+            [],
+            { db, userQuery: String(contextConfig.concerns || 'AML compliance gap assessment'), contextBudget: 100_000 }
+          );
+          knowledgeContext = [resolved.systemPromptAdditions, resolved.contextDocuments].filter(Boolean).join('\n\n');
+          if (resolved.sourceManifest?.length) {
+            sendEvent({ type: 'info', message: `Knowledge sources loaded: ${resolved.sourceManifest.join(', ')} (~${resolved.tokenEstimate.toLocaleString()} tokens)` });
+          }
+        } catch (err) {
+          console.error('[gap-assessments] knowledge source resolution error:', err);
+          sendEvent({ type: 'warning', message: 'Could not resolve some knowledge sources — continuing with available context' });
+        }
+      }
+
+      const extraSystemContext = [orgContextLayer, knowledgePackLayer, knowledgeContext].filter(Boolean).join('\n\n');
 
       sendEvent({ type: 'status', status: 'assessing', message: 'Starting assessment...' });
 
@@ -413,15 +444,22 @@ Generate the complete framework JSON now.`;
       db.prepare("UPDATE gap_assessments SET status = 'synthesising', current_step = 6, updated_at = ? WHERE id = ?")
         .run(new Date().toISOString(), req.params.id as string);
 
-      const capabilityJson = await synthesiseCapabilityView(anthropic, allFindings, contextConfig);
+      const findingsCount = Object.values(allFindings).flat().length;
+      console.log(`[gap-assessments] synthesise: starting — ${findingsCount} findings, anthropic timeout: ${(anthropic as unknown as { timeout?: number }).timeout ?? 'default'}`);
+
+      const result = await synthesiseCapabilityView(anthropic, allFindings, contextConfig);
+      console.log(`[gap-assessments] synthesise: Claude returned ${result.json.length} chars JSON, ${result.reasoning.length} chars reasoning`);
 
       db.prepare('UPDATE gap_assessments SET capability_view = ?, current_step = 6, status = ?, updated_at = ? WHERE id = ?')
-        .run(capabilityJson, 'scoring', new Date().toISOString(), req.params.id as string);
+        .run(result.json, 'scoring', new Date().toISOString(), req.params.id as string);
 
-      const capabilities = JSON.parse(capabilityJson);
-      res.json({ capabilities });
+      const capabilities = JSON.parse(result.json);
+      res.json({ capabilities, reasoning: result.reasoning });
     } catch (err) {
       console.error('[gap-assessments] synthesise error:', err);
+      console.error('[gap-assessments] synthesise error name:', (err as Error)?.name);
+      console.error('[gap-assessments] synthesise error message:', (err as Error)?.message);
+      if ((err as { status?: number }).status) console.error('[gap-assessments] synthesise error status:', (err as { status?: number }).status);
       res.status(500).json({ error: String(err) });
     }
   });
@@ -439,12 +477,12 @@ Generate the complete framework JSON now.`;
       const allFindings = JSON.parse(assessment.article_scores || '{}') as Record<string, import('../services/gap-assessment-engine.js').ArticleFinding[]>;
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      const boardSummary = await generateBoardSummary(anthropic, assessment.capability_view, allFindings, contextConfig);
+      const result = await generateBoardSummary(anthropic, assessment.capability_view, allFindings, contextConfig);
 
       db.prepare('UPDATE gap_assessments SET board_summary = ?, current_step = 7, updated_at = ? WHERE id = ?')
-        .run(boardSummary, new Date().toISOString(), req.params.id as string);
+        .run(result.summary, new Date().toISOString(), req.params.id as string);
 
-      res.json({ boardSummary });
+      res.json({ boardSummary: result.summary, reasoning: result.reasoning });
     } catch (err) {
       console.error('[gap-assessments] board-summary error:', err);
       res.status(500).json({ error: String(err) });
@@ -464,15 +502,166 @@ Generate the complete framework JSON now.`;
       const allFindings = JSON.parse(assessment.article_scores || '{}') as Record<string, import('../services/gap-assessment-engine.js').ArticleFinding[]>;
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      const roadmapJson = await generateRoadmap(anthropic, assessment.capability_view, allFindings, contextConfig);
+      const result = await generateRoadmap(anthropic, assessment.capability_view, allFindings, contextConfig);
 
       db.prepare('UPDATE gap_assessments SET roadmap = ?, current_step = 8, status = ?, updated_at = ? WHERE id = ?')
-        .run(roadmapJson, 'complete', new Date().toISOString(), req.params.id as string);
+        .run(result.json, 'complete', new Date().toISOString(), req.params.id as string);
 
-      const roadmap = JSON.parse(roadmapJson);
-      res.json({ roadmap });
+      const roadmap = JSON.parse(result.json);
+      res.json({ roadmap, reasoning: result.reasoning });
     } catch (err) {
       console.error('[gap-assessments] roadmap error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Snapshot current iteration ──────────────────────────────────────────────
+  router.post('/gap-assessments/:id/snapshot', (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const assessment = db.prepare('SELECT * FROM gap_assessments WHERE id = ? AND user_id = ?').get(req.params.id as string, uid) as Record<string, unknown> | undefined;
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      const findings = db.prepare('SELECT * FROM gap_findings WHERE assessment_id = ? ORDER BY framework, article_id')
+        .all(req.params.id as string) as Record<string, unknown>[];
+
+      // Build score summary
+      const mapped = findings.map(f => ({
+        articleId: f.article_id as string,
+        articleTitle: f.article_title as string,
+        framework: f.framework as string,
+        score: f.score as string,
+        numericScore: (f.numeric_score as number) || 0,
+        priority: f.priority as string,
+        notes: f.notes as string,
+        currentState: f.current_state as string,
+        requirement: f.requirement as string,
+      }));
+      const avg = mapped.length > 0 ? Math.round(mapped.reduce((s, f) => s + f.numericScore, 0) / mapped.length) : 0;
+      const scoreSummary = {
+        red: mapped.filter(f => f.score === 'red').length,
+        amber: mapped.filter(f => f.score === 'amber').length,
+        yellow: mapped.filter(f => f.score === 'yellow').length,
+        green: mapped.filter(f => f.score === 'green').length,
+        avg,
+        total: mapped.length,
+      };
+
+      // Determine iteration number
+      const lastIter = db.prepare('SELECT MAX(iteration_number) as n FROM gap_iterations WHERE assessment_id = ?')
+        .get(req.params.id as string) as { n: number | null };
+      const iterNum = (lastIter?.n ?? 0) + 1;
+
+      const iterationId = randomUUID();
+      const { notes, evidenceSummary } = req.body as { notes?: string; evidenceSummary?: string };
+
+      db.prepare(`INSERT INTO gap_iterations (id, assessment_id, iteration_number, status, context_snapshot, evidence_summary, findings_snapshot, capability_snapshot, board_snapshot, roadmap_snapshot, score_summary, notes, created_by) VALUES (?, ?, ?, 'complete', ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(
+          iterationId,
+          req.params.id as string,
+          iterNum,
+          String(assessment.context_config || '{}'),
+          evidenceSummary || null,
+          JSON.stringify(mapped),
+          String(assessment.capability_view || ''),
+          String(assessment.board_summary || ''),
+          String(assessment.roadmap || ''),
+          JSON.stringify(scoreSummary),
+          notes || null,
+          uid,
+        );
+
+      res.json({ iterationId, iterationNumber: iterNum, scoreSummary });
+    } catch (err) {
+      console.error('[gap-assessments] snapshot error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── List iterations ────────────────────────────────────────────────────────
+  router.get('/gap-assessments/:id/iterations', (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const assessment = db.prepare('SELECT id FROM gap_assessments WHERE id = ? AND user_id = ?').get(req.params.id as string, uid);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      const iterations = db.prepare(
+        'SELECT id, iteration_number, status, evidence_summary, score_summary, notes, created_at FROM gap_iterations WHERE assessment_id = ? ORDER BY iteration_number ASC'
+      ).all(req.params.id as string) as Record<string, unknown>[];
+
+      const mapped = iterations.map(i => ({
+        id: i.id,
+        iterationNumber: i.iteration_number,
+        status: i.status,
+        evidenceSummary: i.evidence_summary,
+        scoreSummary: typeof i.score_summary === 'string' ? JSON.parse(i.score_summary as string) : i.score_summary,
+        notes: i.notes,
+        createdAt: i.created_at,
+      }));
+
+      res.json({ iterations: mapped });
+    } catch (err) {
+      console.error('[gap-assessments] list iterations error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Get single iteration ──────────────────────────────────────────────────
+  router.get('/gap-assessments/:id/iterations/:iterationId', (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const assessment = db.prepare('SELECT id FROM gap_assessments WHERE id = ? AND user_id = ?').get(req.params.id as string, uid);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      const iteration = db.prepare('SELECT * FROM gap_iterations WHERE id = ? AND assessment_id = ?')
+        .get(req.params.iterationId as string, req.params.id as string) as Record<string, unknown> | undefined;
+      if (!iteration) return res.status(404).json({ error: 'Iteration not found' });
+
+      res.json({
+        id: iteration.id,
+        iterationNumber: iteration.iteration_number,
+        status: iteration.status,
+        contextSnapshot: typeof iteration.context_snapshot === 'string' ? JSON.parse(iteration.context_snapshot as string) : iteration.context_snapshot,
+        evidenceSummary: iteration.evidence_summary,
+        findingsSnapshot: typeof iteration.findings_snapshot === 'string' ? JSON.parse(iteration.findings_snapshot as string) : iteration.findings_snapshot,
+        capabilitySnapshot: iteration.capability_snapshot,
+        boardSnapshot: iteration.board_snapshot,
+        roadmapSnapshot: iteration.roadmap_snapshot,
+        scoreSummary: typeof iteration.score_summary === 'string' ? JSON.parse(iteration.score_summary as string) : iteration.score_summary,
+        notes: iteration.notes,
+        createdAt: iteration.created_at,
+      });
+    } catch (err) {
+      console.error('[gap-assessments] get iteration error:', err);
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
+  // ── Compare two iterations ─────────────────────────────────────────────────
+  router.post('/gap-assessments/:id/compare', (req: Request, res: Response) => {
+    try {
+      const uid = getUserId(req);
+      const assessment = db.prepare('SELECT id FROM gap_assessments WHERE id = ? AND user_id = ?').get(req.params.id as string, uid);
+      if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+      const { iterationA, iterationB } = req.body as { iterationA: string; iterationB: string };
+      if (!iterationA || !iterationB) return res.status(400).json({ error: 'Both iterationA and iterationB are required' });
+
+      const a = db.prepare('SELECT findings_snapshot, capability_snapshot FROM gap_iterations WHERE id = ? AND assessment_id = ?')
+        .get(iterationA, req.params.id as string) as Record<string, unknown> | undefined;
+      const b = db.prepare('SELECT findings_snapshot, capability_snapshot FROM gap_iterations WHERE id = ? AND assessment_id = ?')
+        .get(iterationB, req.params.id as string) as Record<string, unknown> | undefined;
+      if (!a || !b) return res.status(404).json({ error: 'One or both iterations not found' });
+
+      const findingsA = typeof a.findings_snapshot === 'string' ? JSON.parse(a.findings_snapshot as string) : a.findings_snapshot;
+      const findingsB = typeof b.findings_snapshot === 'string' ? JSON.parse(b.findings_snapshot as string) : b.findings_snapshot;
+      const capsA = a.capability_snapshot ? (typeof a.capability_snapshot === 'string' ? JSON.parse(a.capability_snapshot as string) : a.capability_snapshot) : undefined;
+      const capsB = b.capability_snapshot ? (typeof b.capability_snapshot === 'string' ? JSON.parse(b.capability_snapshot as string) : b.capability_snapshot) : undefined;
+
+      const comparison = compareIterations(findingsA, findingsB, capsA, capsB);
+      res.json(comparison);
+    } catch (err) {
+      console.error('[gap-assessments] compare error:', err);
       res.status(500).json({ error: String(err) });
     }
   });

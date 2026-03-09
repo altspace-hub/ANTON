@@ -4,7 +4,7 @@
  * Steps: Framework → Scope → Context → Run → Scoring → Capability → Board → Roadmap
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Component, type ReactNode } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -13,8 +13,13 @@ import {
   Play, BarChart3, Layers, FileText, Map, Download,
   RefreshCw, AlertTriangle, CheckCircle2, Circle,
   ChevronDown, Loader2, Trash2, ExternalLink,
+  Paperclip, Upload, X, FolderOpen, MessageSquare,
+  RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock,
 } from 'lucide-react';
-import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
+import type { KnowledgeSourceConfig } from '@/lib/types';
+import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
+import { useExport } from '@/hooks/useExport';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -24,6 +29,7 @@ interface ArticleFinding {
   requirement: string;
   currentState: string;
   score: 'red' | 'amber' | 'yellow' | 'green';
+  numericScore: number; // 0-100, 100 = fully compliant
   priority: 'critical' | 'high' | 'medium' | 'low';
   notes: string;
 }
@@ -75,6 +81,16 @@ interface CapabilityTheme {
   keyGaps: string[];
   quickWins: string[];
   crossRegImpact?: string;
+  // Extended fields for detailed text view
+  regulatoryRequirement?: string;
+  gapAnalysis?: string;
+  importanceToClose?: string;
+  strengths?: string;
+  areasToImprove?: string;
+  goodOutcome?: string;
+  designActions?: string;
+  implementationActions?: string;
+  testingVerification?: string;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -106,6 +122,114 @@ const PRIORITY_COLORS = {
 
 const MATURITY_LABELS = ['', 'Initial', 'Developing', 'Defined', 'Managed', 'Optimising'];
 const MATURITY_COLORS = ['', 'text-red-400', 'text-orange-400', 'text-yellow-400', 'text-adv-teal', 'text-adv-green'];
+
+interface EvidenceDocument {
+  id: string;
+  name: string;
+  size: number;
+  status: 'uploading' | 'done' | 'error';
+  text?: string;
+}
+
+interface InterviewNote {
+  id: string;
+  role: string;
+  notes: string;
+}
+
+const INTERVIEW_ROLE_SUGGESTIONS = [
+  'MLRO / Compliance Officer',
+  'Head of AML Operations',
+  'KYC Team Lead',
+  'Transaction Monitoring Analyst',
+  'Head of Risk',
+  'Internal Audit',
+  'Board Member / NECD',
+  'Front-line Relationship Manager',
+  'IT / Data Team',
+  'Legal Counsel',
+];
+
+interface IterationSummary {
+  id: string;
+  iterationNumber: number;
+  scoreSummary: { red: number; amber: number; yellow: number; green: number; avg: number; total: number };
+  notes: string | null;
+  evidenceSummary: string | null;
+  createdAt: string;
+}
+
+interface IterationComparison {
+  overallDelta: { before: number; after: number; change: number };
+  improved: Array<{ articleId: string; articleTitle?: string; framework: string; beforeScore: number; afterScore: number; delta: number }>;
+  worsened: Array<{ articleId: string; articleTitle?: string; framework: string; beforeScore: number; afterScore: number; delta: number }>;
+  capabilityDeltas: Array<{ id: string; name: string; beforeMaturity: number; afterMaturity: number; delta: number }>;
+  totalImproved: number;
+  totalWorsened: number;
+  totalUnchanged: number;
+}
+
+// ── Multi-format export dropdown ─────────────────────────────────────────────
+function ExportDropdown({ label, buildContent, filename, isExporting, doExport }: {
+  label: string;
+  buildContent: () => string;
+  filename: string;
+  isExporting: boolean;
+  doExport: (format: string, content: string, metadata?: Record<string, unknown>) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handle = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  const handleExport = async (format: string) => {
+    setOpen(false);
+    const content = buildContent();
+    if (format === 'md') {
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      await doExport(format, content, { filename, title: label, moduleId: 'gap-analysis' });
+    }
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={isExporting}
+        className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors disabled:opacity-50"
+      >
+        {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+        {label}
+        <ChevronDown className="h-3 w-3" />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-48 rounded-lg border border-border bg-adv-card shadow-lg py-1">
+          {[
+            { fmt: 'md', label: 'Markdown (.md)', icon: '📝' },
+            { fmt: 'docx', label: 'Word (.docx)', icon: '📄' },
+            { fmt: 'xlsx', label: 'Excel (.xlsx)', icon: '📊' },
+            { fmt: 'pdf', label: 'PDF (.pdf)', icon: '📕' },
+          ].map(o => (
+            <button key={o.fmt} onClick={() => handleExport(o.fmt)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-adv-off-white hover:bg-white/5 text-left">
+              <span>{o.icon}</span> {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -140,9 +264,39 @@ function StepIndicator({ step, current }: { step: typeof STEPS[0]; current: numb
   );
 }
 
+// ── Error Boundary ───────────────────────────────────────────────────────────
+
+class WizardErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-4 bg-adv-dark text-adv-off-white">
+          <ClipboardCheck className="h-12 w-12 text-adv-red" />
+          <p className="text-lg font-medium">Something went wrong</p>
+          <p className="max-w-md text-center text-sm text-adv-gray">{this.state.error.message}</p>
+          <button onClick={() => window.location.href = '/gap-assessment'} className="rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-white hover:bg-adv-teal-dark transition-colors">
+            Back to Gap Assessment
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function GapAssessmentWizard() {
+  return (
+    <WizardErrorBoundary>
+      <GapAssessmentWizardInner />
+    </WizardErrorBoundary>
+  );
+}
+
+function GapAssessmentWizardInner() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [assessment, setAssessment] = useState<Assessment | null>(null);
@@ -162,14 +316,40 @@ export default function GapAssessmentWizard() {
   const [isRunning, setIsRunning] = useState(false);
   const [capabilities, setCapabilities] = useState<CapabilityTheme[]>([]);
   const [boardSummary, setBoardSummary] = useState('');
-  const [roadmap, setRoadmap] = useState<{ phases?: Array<{ id: string; name: string; timeframe: string; objective: string; items: Array<{ id: string; title: string; owner: string; effort: string; priority: string; description: string }> }> } | null>(null);
+  const [roadmap, setRoadmap] = useState<{ phases?: Array<{ id: string; name: string; timeframe: string; objective: string; items: Array<{ id: string; title: string; owner: string; effort: string; priority: string; description: string; rationale?: string; regulatoryDeadline?: string; riskIfDelayed?: string; resourceRequirements?: string; successMetrics?: string }> }>; estimatedFTE?: string; estimatedBudget?: string; keyRisks?: string[]; governanceModel?: string; reportingCadence?: string; criticalPath?: string[]; totalItems?: number } | null>(null);
+  const [synthesisReasoning, setSynthesisReasoning] = useState('');
+  const [boardReasoning, setBoardReasoning] = useState('');
+  const [roadmapReasoning, setRoadmapReasoning] = useState('');
   const [filterScore, setFilterScore] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'priority' | 'score' | 'framework'>('priority');
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [actionLoading, setActionLoading] = useState('');
+  const [evidenceDocs, setEvidenceDocs] = useState<EvidenceDocument[]>([]);
+  const [interviews, setInterviews] = useState<InterviewNote[]>([]);
+  const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSourceConfig>({
+    modes: {
+      claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+      onlineReference: { enabled: false, urls: [], fetchDepth: 'full' },
+      localFolder: { enabled: false, folderPaths: [], recursive: true },
+      combinedMode: { enabled: false, priority: 'merged' },
+    },
+    ragMode: { enabled: false, folderPaths: [], topK: 10, minScore: 0.1 },
+    ragSearch: { enabled: false, collections: [], topK: 10, rerank: true, showRelevance: true },
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [expandedCap, setExpandedCap] = useState<string | null>(null);
+  const [capViewMode, setCapViewMode] = useState<'cards' | 'text'>('text');
+  const [iterations, setIterations] = useState<IterationSummary[]>([]);
+  const [comparison, setComparison] = useState<IterationComparison | null>(null);
+  const [showIterationPanel, setShowIterationPanel] = useState(false);
+  const [iterationNotes, setIterationNotes] = useState('');
+  const [comparingIters, setComparingIters] = useState<{ a: string; b: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+  const { doExport, isExporting } = useExport();
 
   // ── Load assessment ────────────────────────────────────────────────────────
   const loadAssessment = useCallback(async () => {
@@ -182,10 +362,21 @@ export default function GapAssessmentWizard() {
       setAssessment(a);
       setCurrentStep(a.current_step || 1);
       if (a.context_config) {
-        try { setContextConfig(prev => ({ ...prev, ...JSON.parse(a.context_config) })); } catch { /* ignore */ }
+        try {
+          const parsed = JSON.parse(a.context_config);
+          setContextConfig(prev => ({ ...prev, ...parsed }));
+          // Restore evidence doc metadata (text not re-loaded — already saved in context_config.documents)
+          if (Array.isArray(parsed.documentFileIds)) {
+            setEvidenceDocs(parsed.documentFileIds.map((fid: string) => ({ id: fid, name: fid, size: 0, status: 'done' as const })));
+          }
+          // Restore knowledge sources config
+          if (parsed.knowledgeSources) {
+            setKnowledgeSources(parsed.knowledgeSources);
+          }
+        } catch { /* ignore */ }
       }
       if (a.scope_config) {
-        try { setScopeConfig(JSON.parse(a.scope_config)); } catch { /* ignore */ }
+        try { const parsed = JSON.parse(a.scope_config); setScopeConfig({ selectedThemes: Array.isArray(parsed.selectedThemes) ? parsed.selectedThemes : [] }); } catch { /* ignore */ }
       }
       if (f) setFindings(f);
       if (a.capability_view) {
@@ -242,15 +433,59 @@ export default function GapAssessmentWizard() {
     }
   }, [progressEvents]);
 
+  // ── Evidence document upload ─────────────────────────────────────────────────
+  const handleEvidenceUpload = useCallback(async (fileList: FileList | File[]) => {
+    for (const file of Array.from(fileList)) {
+      const tempId = crypto.randomUUID();
+      setEvidenceDocs(prev => [...prev, { id: tempId, name: file.name, size: file.size, status: 'uploading' }]);
+      try {
+        const result = await uploadFile(file);
+        setEvidenceDocs(prev => prev.map(d => d.id === tempId ? { ...d, id: result.id, status: 'done' as const, text: result.text || '' } : d));
+      } catch {
+        setEvidenceDocs(prev => prev.map(d => d.id === tempId ? { ...d, status: 'error' as const } : d));
+      }
+    }
+  }, []);
+
+  const removeEvidenceDoc = useCallback((docId: string) => {
+    setEvidenceDocs(prev => prev.filter(d => d.id !== docId));
+  }, []);
+
+  const addInterview = useCallback(() => {
+    setInterviews(prev => [...prev, { id: crypto.randomUUID(), role: '', notes: '' }]);
+  }, []);
+
+  const updateInterview = useCallback((intId: string, field: 'role' | 'notes', value: string) => {
+    setInterviews(prev => prev.map(i => i.id === intId ? { ...i, [field]: value } : i));
+  }, []);
+
+  const removeInterview = useCallback((intId: string) => {
+    setInterviews(prev => prev.filter(i => i.id !== intId));
+  }, []);
+
   // ── Save context ───────────────────────────────────────────────────────────
   const saveContext = async () => {
     if (!id) return;
+    // Build enriched context with document text + interview notes
+    const docTexts = evidenceDocs
+      .filter(d => d.status === 'done' && d.text)
+      .map(d => `### DOCUMENT: ${d.name}\n${d.text}`);
+    const interviewTexts = interviews
+      .filter(i => i.notes.trim())
+      .map(i => `### INTERVIEW: ${i.role || 'Unknown role'}\n${i.notes}`);
+    const enrichedContext = {
+      ...contextConfig,
+      documents: [...docTexts, ...interviewTexts].join('\n\n---\n\n'),
+      documentFileIds: evidenceDocs.filter(d => d.status === 'done').map(d => d.id),
+      interviewCount: interviews.filter(i => i.notes.trim()).length,
+      knowledgeSources,
+    };
     // Only advance to step 4 if we haven't already passed it
     const nextStep = Math.max(currentStep, 4);
     await fetchWithAuth(`/api/gap-assessments/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ context_config: contextConfig, scope_config: scopeConfig, current_step: nextStep }),
+      body: JSON.stringify({ context_config: enrichedContext, scope_config: scopeConfig, current_step: nextStep }),
     });
     setCurrentStep(nextStep);
   };
@@ -328,8 +563,9 @@ export default function GapAssessmentWizard() {
         headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) { setActionError('Synthesis failed — please retry.'); return; }
-      const { capabilities: caps } = await r.json();
+      const { capabilities: caps, reasoning } = await r.json();
       setCapabilities(caps);
+      if (reasoning) setSynthesisReasoning(reasoning);
       setCurrentStep(6);
     } catch (err) {
       setActionError(`Synthesis error: ${String(err)}`);
@@ -349,8 +585,9 @@ export default function GapAssessmentWizard() {
         headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) { setActionError('Board summary failed — please retry.'); return; }
-      const { boardSummary: bs } = await r.json();
+      const { boardSummary: bs, reasoning } = await r.json();
       setBoardSummary(bs);
+      if (reasoning) setBoardReasoning(reasoning);
       setCurrentStep(7);
     } catch (err) {
       setActionError(`Board summary error: ${String(err)}`);
@@ -370,8 +607,9 @@ export default function GapAssessmentWizard() {
         headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) { setActionError('Roadmap generation failed — please retry.'); return; }
-      const { roadmap: rm } = await r.json();
+      const { roadmap: rm, reasoning } = await r.json();
       setRoadmap(rm);
+      if (reasoning) setRoadmapReasoning(reasoning);
       setCurrentStep(8);
     } catch (err) {
       setActionError(`Roadmap error: ${String(err)}`);
@@ -379,6 +617,143 @@ export default function GapAssessmentWizard() {
       setActionLoading('');
     }
   };
+
+  // ── Markdown builders (reused for multi-format export) ─────────────────────
+  const buildFindingsMarkdown = useCallback(() => {
+    const title = assessment?.title || 'Gap Assessment';
+    const date = new Date().toISOString().slice(0, 10);
+    let md = `# Gap Assessment Findings — ${title}\n\n**Date:** ${date}\n\n`;
+    md += `## Score Summary\n\n`;
+    md += `| Score | Count |\n|---|---|\n`;
+    md += `| Red | ${findings.filter(f => f.score === 'red').length} |\n`;
+    md += `| Amber | ${findings.filter(f => f.score === 'amber').length} |\n`;
+    md += `| Yellow | ${findings.filter(f => f.score === 'yellow').length} |\n`;
+    md += `| Green | ${findings.filter(f => f.score === 'green').length} |\n\n`;
+    const avg = findings.length > 0 ? Math.round(findings.reduce((s, f) => s + (f.numericScore || 0), 0) / findings.length) : 0;
+    md += `**Overall Compliance Score:** ${avg}%\n\n`;
+    md += `## Detailed Findings\n\n`;
+    md += `| Framework | Article | Title | Current State | Score | % | Priority | Notes |\n`;
+    md += `|---|---|---|---|---|---|---|---|\n`;
+    for (const f of findings) {
+      md += `| ${f.framework} | ${f.articleId} | ${f.articleTitle || ''} | ${(f.currentState || '').replace(/\n/g, ' ').slice(0, 120)} | ${f.score} | ${f.numericScore || 0}% | ${f.priority} | ${(f.notes || '').replace(/\n/g, ' ').slice(0, 200)} |\n`;
+    }
+    return md;
+  }, [findings, assessment]);
+
+  const buildCapabilityMarkdown = useCallback(() => {
+    let md = `# Capability Assessment Report — ${assessment?.title || 'Gap Assessment'}\n\n`;
+    md += `**Date:** ${new Date().toISOString().slice(0, 10)}\n\n---\n\n`;
+    for (const cap of capabilities) {
+      const sevLabel = cap.gapSeverity.charAt(0).toUpperCase() + cap.gapSeverity.slice(1);
+      md += `## ${cap.name}\n\n`;
+      md += `**Maturity Score:** ${cap.maturityScore}/5 | **Gap Severity:** ${sevLabel} | **Affected Articles:** ${cap.affectedArticles.join(', ')}\n\n`;
+      md += `${cap.description}\n\n`;
+      if (cap.regulatoryRequirement) md += `### What the Regulation Requires\n\n${cap.regulatoryRequirement}\n\n`;
+      if (cap.gapAnalysis) md += `### Gap Analysis\n\n${cap.gapAnalysis}\n\n`;
+      if (cap.importanceToClose) md += `### Why Closing This Gap Matters\n\n${cap.importanceToClose}\n\n`;
+      if (cap.strengths) md += `### What We Do Well\n\n${cap.strengths}\n\n`;
+      if (cap.areasToImprove) md += `### Areas to Improve\n\n${cap.areasToImprove}\n\n`;
+      if (cap.goodOutcome) md += `### What Good Looks Like\n\n${cap.goodOutcome}\n\n`;
+      if (cap.designActions) md += `### Design Phase Actions\n\n${cap.designActions}\n\n`;
+      if (cap.implementationActions) md += `### Implementation Phase Actions\n\n${cap.implementationActions}\n\n`;
+      if (cap.testingVerification) md += `### Testing & Verification\n\n${cap.testingVerification}\n\n`;
+      if (cap.keyGaps.length > 0) md += `### Key Gaps\n\n${cap.keyGaps.map(g => `- ${g}`).join('\n')}\n\n`;
+      if (cap.quickWins.length > 0) md += `### Quick Wins\n\n${cap.quickWins.map(w => `- ${w}`).join('\n')}\n\n`;
+      if (cap.crossRegImpact) md += `### Cross-Regulatory Impact\n\n${cap.crossRegImpact}\n\n`;
+      md += `---\n\n`;
+    }
+    return md;
+  }, [capabilities, assessment]);
+
+  const buildBoardMarkdown = useCallback(() => {
+    return `# Board / ExCo Summary — ${assessment?.title || 'Gap Assessment'}\n\n**Date:** ${new Date().toISOString().slice(0, 10)}\n\n---\n\n${boardSummary}`;
+  }, [boardSummary, assessment]);
+
+  const buildRoadmapMarkdown = useCallback(() => {
+    let md = `# Remediation Roadmap — ${assessment?.title || 'Gap Assessment'}\n\n`;
+    if (roadmap?.phases) {
+      for (const phase of roadmap.phases) {
+        md += `## ${phase.name} (${phase.timeframe})\n${phase.objective}\n\n`;
+        for (const item of phase.items) {
+          md += `### ${item.title}\n- **Owner:** ${item.owner}\n- **Effort:** ${item.effort}\n- **Priority:** ${item.priority}\n- ${item.description}\n`;
+          if (item.rationale) md += `- **Rationale:** ${item.rationale}\n`;
+          if (item.regulatoryDeadline) md += `- **Regulatory Deadline:** ${item.regulatoryDeadline}\n`;
+          if (item.riskIfDelayed) md += `- **Risk If Delayed:** ${item.riskIfDelayed}\n`;
+          if (item.resourceRequirements) md += `- **Resources:** ${item.resourceRequirements}\n`;
+          if (item.successMetrics) md += `- **Success Metrics:** ${item.successMetrics}\n`;
+          md += '\n';
+        }
+      }
+    }
+    if (roadmap?.estimatedFTE) md += `## Estimated FTE\n${roadmap.estimatedFTE}\n\n`;
+    if (roadmap?.estimatedBudget) md += `## Estimated Budget\n${roadmap.estimatedBudget}\n\n`;
+    if (roadmap?.keyRisks?.length) md += `## Key Risks\n${roadmap.keyRisks.map(r => `- ${r}`).join('\n')}\n\n`;
+    if (roadmap?.governanceModel) md += `## Governance Model\n${roadmap.governanceModel}\n\n`;
+    return md;
+  }, [roadmap, assessment]);
+
+  const buildFullAssessmentMarkdown = useCallback(() => {
+    let md = `# Complete Gap Assessment Report — ${assessment?.title || 'Gap Assessment'}\n\n`;
+    md += `**Date:** ${new Date().toISOString().slice(0, 10)}\n\n`;
+    if (iterations.length > 0) md += `**Iteration:** ${iterations.length + 1}\n\n`;
+    md += `---\n\n`;
+    if (findings.length > 0) { md += buildFindingsMarkdown() + '\n\n---\n\n'; }
+    if (capabilities.length > 0) { md += buildCapabilityMarkdown() + '\n\n---\n\n'; }
+    if (boardSummary) { md += buildBoardMarkdown() + '\n\n---\n\n'; }
+    if (roadmap) { md += buildRoadmapMarkdown(); }
+    return md;
+  }, [findings, capabilities, boardSummary, roadmap, iterations, assessment, buildFindingsMarkdown, buildCapabilityMarkdown, buildBoardMarkdown, buildRoadmapMarkdown]);
+
+  // ── Iteration management ──────────────────────────────────────────────────
+  const loadIterations = useCallback(async () => {
+    if (!id) return;
+    try {
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/iterations`);
+      if (r.ok) {
+        const data = await r.json();
+        setIterations(data.iterations || []);
+      }
+    } catch { /* ignore */ }
+  }, [id]);
+
+  const createSnapshot = async () => {
+    if (!id) return;
+    try {
+      const evidenceNames = evidenceDocs.filter(d => d.status === 'done').map(d => d.name).join(', ');
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/snapshot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: iterationNotes, evidenceSummary: evidenceNames || undefined }),
+      });
+      if (r.ok) {
+        await loadIterations();
+        setIterationNotes('');
+        setShowIterationPanel(false);
+      }
+    } catch (err) {
+      setActionError(`Snapshot error: ${String(err)}`);
+    }
+  };
+
+  const compareIterationPair = async (a: string, b: string) => {
+    if (!id) return;
+    setComparingIters({ a, b });
+    try {
+      const r = await fetchWithAuth(`/api/gap-assessments/${id}/compare`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ iterationA: a, iterationB: b }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setComparison(data);
+      }
+    } catch { /* ignore */ }
+    setComparingIters(null);
+  };
+
+  // Load iterations when assessment loads
+  useEffect(() => { loadIterations(); }, [loadIterations]);
 
   // ── Score summary ──────────────────────────────────────────────────────────
   const scoreSummary = {
@@ -413,7 +788,16 @@ export default function GapAssessmentWizard() {
     );
   }
 
-  if (!assessment) return null;
+  if (!assessment) return (
+    <div className="flex h-full flex-col items-center justify-center gap-4 bg-adv-dark text-adv-off-white">
+      <ClipboardCheck className="h-12 w-12 text-adv-gray" />
+      <p className="text-lg font-medium">Assessment not found</p>
+      <p className="text-sm text-adv-gray">It may have been deleted or could not be loaded.</p>
+      <button onClick={() => navigate('/gap-assessment')} className="rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-white hover:bg-adv-teal-dark transition-colors">
+        Back to Gap Assessment
+      </button>
+    </div>
+  );
 
   let fwIds: string[] = [];
   try { fwIds = JSON.parse(assessment.frameworks || '[]'); } catch { /* ignore */ }
@@ -495,7 +879,7 @@ export default function GapAssessmentWizard() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setCurrentStep(2)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+            <button type="button" onClick={() => setCurrentStep(2)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
               Next: Select Scope <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -521,7 +905,7 @@ export default function GapAssessmentWizard() {
                     />
                     <span className="text-xs text-adv-off-white font-medium">All {fw.articleCount} articles</span>
                   </label>
-                  {fw.themes.map(theme => (
+                  {(fw.themes || []).map(theme => (
                     <label key={theme} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -534,7 +918,7 @@ export default function GapAssessmentWizard() {
                         }))}
                       />
                       <span className="text-xs text-adv-gray">
-                        {theme} — {fw.articles.filter(a => a.theme === theme).length} articles
+                        {theme} — {(fw.articles || []).filter(a => a.theme === theme).length} articles
                       </span>
                     </label>
                   ))}
@@ -623,11 +1007,161 @@ export default function GapAssessmentWizard() {
                 onChange={e => setContextConfig(c => ({ ...c, concerns: e.target.value }))}
               />
             </div>
+
+            {/* ── Evidence Documents ─────────────────────────────────────── */}
+            <div className="rounded-xl border border-border bg-adv-card p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Paperclip className="h-4 w-4 text-adv-teal" />
+                <h3 className="text-sm font-semibold text-adv-off-white">Evidence Documents</h3>
+                <span className="text-xs text-adv-gray">(optional)</span>
+              </div>
+              <p className="mb-3 text-xs text-adv-gray">
+                Upload policies, procedures, audit reports, screening configs, or any documents Claude should assess against the regulation.
+              </p>
+
+              {/* Drop zone */}
+              <div
+                onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={e => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length) handleEvidenceUpload(e.dataTransfer.files); }}
+                className={`rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors cursor-pointer ${isDragging ? 'border-adv-teal bg-adv-teal/5' : 'border-border hover:border-adv-teal/40'}`}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
+                <p className="text-xs text-adv-gray">
+                  Drag & drop files here, or <span className="text-adv-teal font-medium">click to browse</span>
+                </p>
+                <p className="mt-1 text-[11px] text-adv-gray">PDF, DOCX, XLSX, TXT, CSV, HTML — up to 50 MB each</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.docx,.doc,.xlsx,.csv,.txt,.md,.html"
+                className="hidden"
+                onChange={e => { if (e.target.files?.length) { handleEvidenceUpload(e.target.files); e.target.value = ''; } }}
+              />
+
+              {/* Uploaded files */}
+              {evidenceDocs.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {evidenceDocs.map(doc => (
+                    <div key={doc.id} className="flex items-center gap-2 rounded-lg bg-adv-dark px-3 py-2">
+                      {doc.status === 'uploading' ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-teal shrink-0" />
+                      ) : doc.status === 'error' ? (
+                        <AlertTriangle className="h-3.5 w-3.5 text-adv-red shrink-0" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5 text-adv-teal shrink-0" />
+                      )}
+                      <span className="flex-1 truncate text-xs text-adv-off-white">{doc.name}</span>
+                      {doc.status === 'done' && doc.text && (
+                        <span className="shrink-0 text-[11px] text-adv-gray">{Math.round(doc.text.length / 4).toLocaleString()} tok</span>
+                      )}
+                      {doc.status === 'error' && <span className="shrink-0 text-[11px] text-adv-red">Failed</span>}
+                      <button type="button" onClick={() => removeEvidenceDoc(doc.id)} className="shrink-0 text-adv-gray hover:text-adv-red transition-colors">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-adv-gray">
+                    {evidenceDocs.filter(d => d.status === 'done').length} document{evidenceDocs.filter(d => d.status === 'done').length !== 1 ? 's' : ''} ready
+                    {evidenceDocs.some(d => d.text) && (
+                      <> — ~{Math.round(evidenceDocs.reduce((sum, d) => sum + (d.text?.length || 0), 0) / 4).toLocaleString()} tokens</>
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* ── Interview Notes ────────────────────────────────────────── */}
+            <div className="rounded-xl border border-border bg-adv-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-adv-teal" />
+                  <h3 className="text-sm font-semibold text-adv-off-white">Interview Notes</h3>
+                  <span className="text-xs text-adv-gray">(optional)</span>
+                </div>
+                <button type="button" onClick={addInterview} className="flex items-center gap-1 rounded-lg bg-adv-teal/10 px-2.5 py-1 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors">
+                  <Paperclip className="h-3 w-3" /> Add Interview
+                </button>
+              </div>
+              <p className="mb-3 text-xs text-adv-gray">
+                Add notes from stakeholder interviews — Claude will use these as evidence when scoring each article.
+              </p>
+
+              {interviews.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border px-4 py-4 text-center">
+                  <p className="text-xs text-adv-gray">No interview notes yet. Click &ldquo;Add Interview&rdquo; to record stakeholder observations.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {interviews.map((interview, idx) => (
+                    <div key={interview.id} className="rounded-lg border border-border bg-adv-dark p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[11px] font-medium text-adv-gray">Interview {idx + 1}</span>
+                        <div className="flex-1">
+                          <input
+                            list={`role-list-${interview.id}`}
+                            className="w-full rounded border border-border bg-adv-card px-2 py-1 text-xs text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                            placeholder="Role / title (e.g. MLRO, Head of AML Operations)"
+                            value={interview.role}
+                            onChange={e => updateInterview(interview.id, 'role', e.target.value)}
+                          />
+                          <datalist id={`role-list-${interview.id}`}>
+                            {INTERVIEW_ROLE_SUGGESTIONS.map(r => <option key={r} value={r} />)}
+                          </datalist>
+                        </div>
+                        <button type="button" onClick={() => removeInterview(interview.id)} className="text-adv-gray hover:text-adv-red transition-colors" title="Remove interview">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <textarea
+                        rows={4}
+                        className="w-full resize-y rounded border border-border bg-adv-card px-2 py-1.5 text-xs text-adv-off-white placeholder-adv-gray focus:border-adv-teal focus:outline-none"
+                        placeholder={"Key observations, quotes, or findings from this interview...\n\ne.g. \"CDD refresh cycle is 3 years for all customers — no risk-based differentiation. TM rules last reviewed 2022. No dedicated sanctions screening for crypto counterparties.\""}
+                        value={interview.notes}
+                        onChange={e => updateInterview(interview.id, 'notes', e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Knowledge Sources (RAG, Folders, Web Search) ───────── */}
+            <div className="rounded-xl border border-border bg-adv-card p-4">
+              <KnowledgeSourcePanel config={knowledgeSources} onChange={setKnowledgeSources} />
+            </div>
+
+            {/* Evidence summary */}
+            {(evidenceDocs.some(d => d.status === 'done') || interviews.some(i => i.notes.trim()) || knowledgeSources.modes.localFolder.enabled || knowledgeSources.ragMode?.enabled || knowledgeSources.ragSearch?.enabled) && (
+              <div className="rounded-lg bg-adv-teal/5 border border-adv-teal/20 px-4 py-2.5 flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-adv-teal mt-0.5 shrink-0" />
+                <div className="text-xs text-adv-off-white">
+                  <span className="font-medium text-adv-teal">Evidence loaded: </span>
+                  {evidenceDocs.filter(d => d.status === 'done').length > 0 && (
+                    <>{evidenceDocs.filter(d => d.status === 'done').length} document{evidenceDocs.filter(d => d.status === 'done').length !== 1 ? 's' : ''}</>
+                  )}
+                  {evidenceDocs.filter(d => d.status === 'done').length > 0 && interviews.some(i => i.notes.trim()) && ' + '}
+                  {interviews.filter(i => i.notes.trim()).length > 0 && (
+                    <>{interviews.filter(i => i.notes.trim()).length} interview{interviews.filter(i => i.notes.trim()).length !== 1 ? 's' : ''}</>
+                  )}
+                  {(evidenceDocs.some(d => d.status === 'done') || interviews.some(i => i.notes.trim())) && (knowledgeSources.modes.localFolder.enabled || knowledgeSources.ragMode?.enabled || knowledgeSources.ragSearch?.enabled) && ' + '}
+                  {knowledgeSources.modes.localFolder.enabled && <>{knowledgeSources.modes.localFolder.folderPaths.length} folder{knowledgeSources.modes.localFolder.folderPaths.length !== 1 ? 's' : ''}</>}
+                  {knowledgeSources.ragMode?.enabled && <> + RAG search</>}
+                  {knowledgeSources.ragSearch?.enabled && <> + Collections</>}
+                  {knowledgeSources.modes.claudeKnowledge.webSearchEnabled && <> + Web search</>}
+                  <span className="text-adv-gray"> — Claude will use all sources to produce specific, evidence-based gap findings.</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2">
-              <button onClick={() => setCurrentStep(2)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
+              <button type="button" onClick={() => setCurrentStep(2)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                 <ChevronLeft className="h-4 w-4" /> Back
               </button>
-              <button onClick={saveContext} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+              <button type="button" onClick={saveContext} disabled={evidenceDocs.some(d => d.status === 'uploading')} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50 transition-colors">
                 Run Assessment <Play className="h-4 w-4" />
               </button>
             </div>
@@ -736,6 +1270,29 @@ export default function GapAssessmentWizard() {
               </div>
             </div>
 
+            {/* Average compliance score */}
+            {findings.length > 0 && (
+              <div className="rounded-xl border border-border bg-adv-card p-4 flex items-center gap-4">
+                <div className="text-center">
+                  <div className={`text-3xl font-bold ${(() => { const avg = Math.round(findings.reduce((s, f) => s + (f.numericScore ?? 0), 0) / findings.length); return avg >= 75 ? 'text-adv-green' : avg >= 50 ? 'text-yellow-400' : avg >= 25 ? 'text-orange-400' : 'text-red-400'; })()}`}>
+                    {Math.round(findings.reduce((s, f) => s + (f.numericScore ?? 0), 0) / findings.length)}
+                  </div>
+                  <div className="text-[11px] text-adv-gray">Avg. Score</div>
+                </div>
+                <div className="flex-1">
+                  <div className="h-3 w-full rounded-full bg-adv-dark overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${(() => { const avg = Math.round(findings.reduce((s, f) => s + (f.numericScore ?? 0), 0) / findings.length); return avg >= 75 ? 'bg-adv-green' : avg >= 50 ? 'bg-yellow-400' : avg >= 25 ? 'bg-orange-400' : 'bg-red-400'; })()}`}
+                      style={{ width: `${Math.round(findings.reduce((s, f) => s + (f.numericScore ?? 0), 0) / findings.length)}%` }}
+                    />
+                  </div>
+                  <div className="mt-1 flex justify-between text-[11px] text-adv-gray">
+                    <span>0 — Non-compliant</span><span>50 — Partial</span><span>100 — Fully compliant</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Findings table */}
             <div className="overflow-auto rounded-xl border border-border">
               <table className="w-full text-xs">
@@ -745,35 +1302,84 @@ export default function GapAssessmentWizard() {
                     <th className="px-3 py-2 text-left font-medium">Title</th>
                     <th className="px-3 py-2 text-left font-medium">Current State</th>
                     <th className="px-3 py-2 text-left font-medium">Score</th>
+                    <th className="px-3 py-2 text-left font-medium w-14">%</th>
                     <th className="px-3 py-2 text-left font-medium">Priority</th>
                     <th className="px-3 py-2 text-left font-medium">Notes</th>
                     <th className="px-3 py-2 text-left font-medium w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {displayFindings.map((f, i) => (
-                    <tr key={`${f.framework}-${f.articleId}-${i}`} className="border-t border-border hover:bg-adv-card transition-colors">
-                      <td className="px-3 py-2 font-mono font-medium text-adv-teal whitespace-nowrap">{f.articleId}</td>
-                      <td className="px-3 py-2 text-adv-off-white max-w-[120px] truncate" title={f.articleTitle}>{f.articleTitle}</td>
-                      <td className="px-3 py-2 text-adv-gray max-w-[200px]">
-                        <span className="line-clamp-2">{f.currentState}</span>
-                      </td>
-                      <td className="px-3 py-2"><ScoreBadge score={f.score} /></td>
-                      <td className="px-3 py-2"><PriorityBadge priority={f.priority} /></td>
-                      <td className="px-3 py-2 text-adv-gray max-w-[200px]">
-                        <span className="line-clamp-2">{f.notes}</span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <Link
-                          to={`/counsels-desk?prefill=${encodeURIComponent(`Research ${f.framework} ${f.articleId}: ${f.articleTitle}`)}`}
-                          title="Research in Counsel's Desk"
-                          className="flex h-6 w-6 items-center justify-center rounded text-adv-gray hover:text-adv-teal hover:bg-adv-teal-dim transition-colors"
+                  {displayFindings.map((f, i) => {
+                    const rowKey = `${f.framework}-${f.articleId}-${i}`;
+                    const isExpanded = expandedRow === rowKey;
+                    const numScore = f.numericScore ?? 0;
+                    const scoreColor = numScore >= 75 ? 'text-adv-green' : numScore >= 50 ? 'text-yellow-400' : numScore >= 25 ? 'text-orange-400' : 'text-red-400';
+                    return (
+                      <>
+                        <tr
+                          key={rowKey}
+                          onClick={() => setExpandedRow(isExpanded ? null : rowKey)}
+                          className={`border-t border-border cursor-pointer transition-colors ${isExpanded ? 'bg-adv-card' : 'hover:bg-adv-card/50'}`}
                         >
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                          <td className="px-3 py-2 font-mono font-medium text-adv-teal whitespace-nowrap">{f.articleId}</td>
+                          <td className="px-3 py-2 text-adv-off-white max-w-[120px] truncate" title={f.articleTitle}>{f.articleTitle}</td>
+                          <td className="px-3 py-2 text-adv-gray max-w-[200px]">
+                            <span className={isExpanded ? '' : 'line-clamp-2'}>{f.currentState}</span>
+                          </td>
+                          <td className="px-3 py-2"><ScoreBadge score={f.score} /></td>
+                          <td className="px-3 py-2">
+                            <span className={`font-bold ${scoreColor}`}>{numScore}</span>
+                          </td>
+                          <td className="px-3 py-2"><PriorityBadge priority={f.priority} /></td>
+                          <td className="px-3 py-2 text-adv-gray max-w-[200px]">
+                            <span className={isExpanded ? '' : 'line-clamp-2'}>{f.notes}</span>
+                          </td>
+                          <td className="px-3 py-2">
+                            <Link
+                              to={`/counsels-desk?prefill=${encodeURIComponent(`Research ${f.framework} ${f.articleId}: ${f.articleTitle}`)}`}
+                              title="Research in Counsel's Desk"
+                              onClick={e => e.stopPropagation()}
+                              className="flex h-6 w-6 items-center justify-center rounded text-adv-gray hover:text-adv-teal hover:bg-adv-teal-dim transition-colors"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr key={`${rowKey}-detail`} className="bg-adv-card border-t border-adv-teal/20">
+                            <td colSpan={8} className="px-4 py-4">
+                              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                  <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Requirement</h4>
+                                  <p className="text-xs text-adv-off-white leading-relaxed">{f.requirement}</p>
+                                </div>
+                                <div>
+                                  <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Compliance Score</h4>
+                                  <div className="flex items-center gap-3">
+                                    <div className={`text-2xl font-bold ${scoreColor}`}>{numScore}<span className="text-sm text-adv-gray">/100</span></div>
+                                    <div className="flex-1">
+                                      <div className="h-2.5 w-full rounded-full bg-adv-dark overflow-hidden">
+                                        <div className={`h-full rounded-full ${numScore >= 75 ? 'bg-adv-green' : numScore >= 50 ? 'bg-yellow-400' : numScore >= 25 ? 'bg-orange-400' : 'bg-red-400'}`} style={{ width: `${numScore}%` }} />
+                                      </div>
+                                    </div>
+                                    <ScoreBadge score={f.score} />
+                                  </div>
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Current State</h4>
+                                  <p className="text-xs text-adv-off-white leading-relaxed">{f.currentState}</p>
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <h4 className="text-xs font-semibold text-adv-teal mb-1.5">Gaps & Recommendations</h4>
+                                  <p className="text-xs text-adv-off-white leading-relaxed">{f.notes}</p>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
               {displayFindings.length === 0 && (
@@ -781,13 +1387,16 @@ export default function GapAssessmentWizard() {
               )}
             </div>
 
-            <button
-              onClick={runSynthesis}
-              disabled={actionLoading === 'synthesise'}
-              className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-60 transition-colors"
-            >
-              {actionLoading === 'synthesise' ? <><Loader2 className="h-4 w-4 animate-spin" /> Synthesising…</> : <><Layers className="h-4 w-4" /> Synthesise Capability View</>}
-            </button>
+            <div className="flex items-center gap-2">
+              <ExportDropdown label="Export Findings" buildContent={buildFindingsMarkdown} filename={`findings-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+              <button
+                onClick={runSynthesis}
+                disabled={actionLoading === 'synthesise'}
+                className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-60 transition-colors"
+              >
+                {actionLoading === 'synthesise' ? <><Loader2 className="h-4 w-4 animate-spin" /> Synthesising…</> : <><Layers className="h-4 w-4" /> Synthesise Capability View</>}
+              </button>
+            </div>
           </div>
         )}
 
@@ -796,12 +1405,27 @@ export default function GapAssessmentWizard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-adv-off-white">Capability View</h2>
-                <p className="text-xs text-adv-gray">Article scores synthesised into cross-cutting organisational capabilities</p>
+                <h2 className="text-base font-semibold text-adv-off-white">Capability Assessment Report</h2>
+                <p className="text-xs text-adv-gray">Article scores synthesised into cross-cutting organisational capabilities with detailed analysis</p>
               </div>
-              <button onClick={runSynthesis} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors">
-                <RefreshCw className="h-3.5 w-3.5" /> Re-run
-              </button>
+              <div className="flex items-center gap-2">
+                {capabilities.length > 0 && (
+                  <>
+                    <div className="flex rounded-lg border border-border overflow-hidden">
+                      <button onClick={() => setCapViewMode('text')} className={`px-3 py-1.5 text-xs ${capViewMode === 'text' ? 'bg-adv-teal text-adv-dark font-medium' : 'text-adv-gray hover:text-adv-off-white'}`}>
+                        Detailed
+                      </button>
+                      <button onClick={() => setCapViewMode('cards')} className={`px-3 py-1.5 text-xs ${capViewMode === 'cards' ? 'bg-adv-teal text-adv-dark font-medium' : 'text-adv-gray hover:text-adv-off-white'}`}>
+                        Cards
+                      </button>
+                    </div>
+                    <ExportDropdown label="Export" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  </>
+                )}
+                <button onClick={runSynthesis} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors">
+                  <RefreshCw className="h-3.5 w-3.5" /> Re-run
+                </button>
+              </div>
             </div>
 
             {capabilities.length === 0 ? (
@@ -812,11 +1436,11 @@ export default function GapAssessmentWizard() {
                   <Layers className="h-4 w-4" /> Synthesise Capabilities
                 </button>
               </div>
-            ) : (
+            ) : capViewMode === 'cards' ? (
               <>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {capabilities.map(cap => (
-                    <div key={cap.id} className={`rounded-xl border p-4 ${cap.gapSeverity === 'critical' ? 'border-red-500/30 bg-red-500/5' : cap.gapSeverity === 'high' ? 'border-orange-500/30 bg-orange-500/5' : 'border-border bg-adv-card'}`}>
+                    <div key={cap.id} onClick={() => { setExpandedCap(cap.id); setCapViewMode('text'); }} className={`rounded-xl border p-4 cursor-pointer hover:border-adv-teal/50 transition-colors ${cap.gapSeverity === 'critical' ? 'border-red-500/30 bg-red-500/5' : cap.gapSeverity === 'high' ? 'border-orange-500/30 bg-orange-500/5' : 'border-border bg-adv-card'}`}>
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <h3 className="text-sm font-semibold text-adv-off-white">{cap.name}</h3>
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -830,7 +1454,7 @@ export default function GapAssessmentWizard() {
                           <p className="text-xs font-semibold text-adv-gray mb-1">Key Gaps</p>
                           <ul className="space-y-0.5">
                             {cap.keyGaps.slice(0, 2).map((g, i) => (
-                              <li key={i} className="text-[11px] text-adv-off-white flex gap-1"><span className="text-red-400">•</span>{g}</li>
+                              <li key={i} className="text-[11px] text-adv-off-white flex gap-1"><span className="text-red-400">&bull;</span>{g}</li>
                             ))}
                           </ul>
                         </div>
@@ -840,7 +1464,7 @@ export default function GapAssessmentWizard() {
                           <p className="text-xs font-semibold text-adv-gray mb-1">Quick Wins</p>
                           <ul className="space-y-0.5">
                             {cap.quickWins.slice(0, 1).map((w, i) => (
-                              <li key={i} className="text-[11px] text-adv-teal flex gap-1"><span>⚡</span>{w}</li>
+                              <li key={i} className="text-[11px] text-adv-teal flex gap-1">*{w}</li>
                             ))}
                           </ul>
                         </div>
@@ -848,9 +1472,193 @@ export default function GapAssessmentWizard() {
                     </div>
                   ))}
                 </div>
-                <button onClick={runBoardSummary} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
-                  <FileText className="h-4 w-4" /> Generate Board Summary
-                </button>
+              </>
+            ) : (
+              <>
+                {/* Detailed text view — each capability as expandable section */}
+                <div className="space-y-3">
+                  {capabilities.map(cap => {
+                    const isExpanded = expandedCap === cap.id;
+                    const sevBorder = cap.gapSeverity === 'critical' ? 'border-l-red-500' : cap.gapSeverity === 'high' ? 'border-l-orange-500' : cap.gapSeverity === 'medium' ? 'border-l-yellow-500' : 'border-l-green-500';
+                    const hasDetail = cap.regulatoryRequirement || cap.gapAnalysis || cap.goodOutcome;
+                    return (
+                      <div key={cap.id} className={`rounded-xl border border-border bg-adv-card border-l-4 ${sevBorder} overflow-hidden`}>
+                        {/* Header — always visible */}
+                        <button
+                          onClick={() => setExpandedCap(isExpanded ? null : cap.id)}
+                          className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-white/[0.02] transition-colors"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-sm font-semibold text-adv-off-white">{cap.name}</h3>
+                              <span className={`text-xs font-bold ${MATURITY_COLORS[Math.min(5, Math.max(1, cap.maturityScore))]}`}>{cap.maturityScore}/5</span>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${cap.gapSeverity === 'critical' ? 'bg-red-500/20 text-red-400' : cap.gapSeverity === 'high' ? 'bg-orange-500/20 text-orange-400' : cap.gapSeverity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>{cap.gapSeverity}</span>
+                            </div>
+                            <p className="text-xs text-adv-gray leading-relaxed">{cap.description}</p>
+                            {!isExpanded && cap.keyGaps.length > 0 && (
+                              <p className="mt-1 text-[11px] text-red-400 truncate">Gap: {cap.keyGaps[0]}</p>
+                            )}
+                          </div>
+                          <ChevronDown className={`h-4 w-4 text-adv-gray shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {/* Expanded detail */}
+                        {isExpanded && (
+                          <div className="border-t border-border px-5 py-4 space-y-5">
+                            {/* Regulatory Requirement */}
+                            {cap.regulatoryRequirement && (
+                              <div>
+                                <h4 className="text-xs font-bold text-adv-teal uppercase tracking-wider mb-2">What the Regulation Requires</h4>
+                                <p className="text-sm text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.regulatoryRequirement}</p>
+                              </div>
+                            )}
+
+                            {/* Gap Analysis */}
+                            {cap.gapAnalysis && (
+                              <div>
+                                <h4 className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Gap Analysis</h4>
+                                <p className="text-sm text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.gapAnalysis}</p>
+                              </div>
+                            )}
+
+                            {/* Importance */}
+                            {cap.importanceToClose && (
+                              <div>
+                                <h4 className="text-xs font-bold text-adv-gold uppercase tracking-wider mb-2">Why Closing This Gap Matters</h4>
+                                <p className="text-sm text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.importanceToClose}</p>
+                              </div>
+                            )}
+
+                            {/* Strengths + Areas to Improve — side by side on wider screens */}
+                            {(cap.strengths || cap.areasToImprove) && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {cap.strengths && (
+                                  <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-3">
+                                    <h4 className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2">What We Do Well</h4>
+                                    <p className="text-sm text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.strengths}</p>
+                                  </div>
+                                )}
+                                {cap.areasToImprove && (
+                                  <div className="rounded-lg bg-red-500/5 border border-red-500/20 p-3">
+                                    <h4 className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2">Areas to Improve</h4>
+                                    <p className="text-sm text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.areasToImprove}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Good Outcome */}
+                            {cap.goodOutcome && (
+                              <div className="rounded-lg bg-adv-teal-soft border border-adv-teal/20 p-3">
+                                <h4 className="text-xs font-bold text-adv-teal uppercase tracking-wider mb-2">What Good Looks Like</h4>
+                                <p className="text-sm text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.goodOutcome}</p>
+                              </div>
+                            )}
+
+                            {/* Design / Implementation / Testing — three-phase view */}
+                            {(cap.designActions || cap.implementationActions || cap.testingVerification) && (
+                              <div>
+                                <h4 className="text-xs font-bold text-adv-off-white uppercase tracking-wider mb-3">Remediation Phases</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                  {cap.designActions && (
+                                    <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
+                                      <div className="flex items-center gap-1.5 mb-2">
+                                        <div className="h-2 w-2 rounded-full bg-blue-400" />
+                                        <h5 className="text-xs font-bold text-blue-400 uppercase tracking-wider">Design</h5>
+                                      </div>
+                                      <p className="text-[13px] text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.designActions}</p>
+                                    </div>
+                                  )}
+                                  {cap.implementationActions && (
+                                    <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3">
+                                      <div className="flex items-center gap-1.5 mb-2">
+                                        <div className="h-2 w-2 rounded-full bg-purple-400" />
+                                        <h5 className="text-xs font-bold text-purple-400 uppercase tracking-wider">Implementation</h5>
+                                      </div>
+                                      <p className="text-[13px] text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.implementationActions}</p>
+                                    </div>
+                                  )}
+                                  {cap.testingVerification && (
+                                    <div className="rounded-lg border border-teal-500/20 bg-teal-500/5 p-3">
+                                      <div className="flex items-center gap-1.5 mb-2">
+                                        <div className="h-2 w-2 rounded-full bg-teal-400" />
+                                        <h5 className="text-xs font-bold text-teal-400 uppercase tracking-wider">Testing & Verification</h5>
+                                      </div>
+                                      <p className="text-[13px] text-adv-off-white leading-relaxed whitespace-pre-wrap">{cap.testingVerification}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Key Gaps + Quick Wins */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {cap.keyGaps.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-bold text-adv-gray uppercase tracking-wider mb-2">Key Gaps</h4>
+                                  <ul className="space-y-1">
+                                    {cap.keyGaps.map((g, i) => (
+                                      <li key={i} className="text-sm text-adv-off-white flex gap-2"><span className="text-red-400 shrink-0">&bull;</span><span>{g}</span></li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {cap.quickWins.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-bold text-adv-teal uppercase tracking-wider mb-2">Quick Wins (&lt;3 months)</h4>
+                                  <ul className="space-y-1">
+                                    {cap.quickWins.map((w, i) => (
+                                      <li key={i} className="text-sm text-adv-teal flex gap-2"><span className="shrink-0">*</span><span>{w}</span></li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Cross-regulatory impact */}
+                            {cap.crossRegImpact && (
+                              <div className="rounded-lg bg-adv-gold/5 border border-adv-gold/20 p-3">
+                                <h4 className="text-xs font-bold text-adv-gold uppercase tracking-wider mb-2">Cross-Regulatory Impact</h4>
+                                <p className="text-sm text-adv-off-white leading-relaxed">{cap.crossRegImpact}</p>
+                              </div>
+                            )}
+
+                            {/* Affected articles */}
+                            {cap.affectedArticles.length > 0 && (
+                              <p className="text-[11px] text-adv-gray">Affected articles: {cap.affectedArticles.join(', ')}</p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Collapsed fallback for capabilities without extended data */}
+                        {!isExpanded && !hasDetail && (
+                          <div className="px-5 pb-3 space-y-1">
+                            {cap.keyGaps.slice(0, 2).map((g, i) => (
+                              <p key={i} className="text-[11px] text-adv-off-white flex gap-1"><span className="text-red-400">&bull;</span>{g}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {capabilities.length > 0 && (
+              <>
+                {synthesisReasoning && (
+                  <details className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-adv-teal select-none">AI Reasoning &mdash; How Claude synthesised capabilities</summary>
+                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{synthesisReasoning}</div>
+                  </details>
+                )}
+                <div className="flex items-center gap-2">
+                  <ExportDropdown label="Export Capability Report" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <button onClick={runBoardSummary} disabled={actionLoading === 'board'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
+                    {actionLoading === 'board' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Board Summary…</> : <><FileText className="h-4 w-4" /> Generate Board Summary</>}
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -865,8 +1673,8 @@ export default function GapAssessmentWizard() {
                 <p className="text-xs text-adv-gray">One-page board-ready summary in plain language</p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={runBoardSummary} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors">
-                  <RefreshCw className="h-3.5 w-3.5" /> Re-generate
+                <button onClick={runBoardSummary} disabled={actionLoading === 'board'} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors disabled:opacity-60">
+                  {actionLoading === 'board' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Regenerating…</> : <><RefreshCw className="h-3.5 w-3.5" /> Re-generate</>}
                 </button>
               </div>
             </div>
@@ -875,8 +1683,8 @@ export default function GapAssessmentWizard() {
               <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-border bg-adv-card text-center">
                 <FileText className="mb-3 h-10 w-10 text-adv-teal" />
                 <p className="mb-4 text-sm text-adv-gray">Generate board-ready one-page summary</p>
-                <button onClick={runBoardSummary} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
-                  <FileText className="h-4 w-4" /> Generate Board Summary
+                <button onClick={runBoardSummary} disabled={actionLoading === 'board'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
+                  {actionLoading === 'board' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Board Summary…</> : <><FileText className="h-4 w-4" /> Generate Board Summary</>}
                 </button>
               </div>
             ) : (
@@ -886,9 +1694,18 @@ export default function GapAssessmentWizard() {
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{boardSummary}</ReactMarkdown>
                   </div>
                 </div>
-                <button onClick={runRoadmap} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
-                  <Map className="h-4 w-4" /> Generate Roadmap
-                </button>
+                {boardReasoning && (
+                  <details className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-adv-teal select-none">AI Reasoning &mdash; How Claude arrived at this summary</summary>
+                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{boardReasoning}</div>
+                  </details>
+                )}
+                <div className="flex items-center gap-2">
+                  <ExportDropdown label="Export Board Summary" buildContent={buildBoardMarkdown} filename={`board-summary-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <button onClick={runRoadmap} disabled={actionLoading === 'roadmap'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
+                    {actionLoading === 'roadmap' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Roadmap…</> : <><Map className="h-4 w-4" /> Generate Roadmap</>}
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -902,8 +1719,8 @@ export default function GapAssessmentWizard() {
                 <h2 className="text-base font-semibold text-adv-off-white">Remediation Roadmap</h2>
                 <p className="text-xs text-adv-gray">Phased implementation plan with owners, effort, and dependencies</p>
               </div>
-              <button onClick={runRoadmap} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors">
-                <RefreshCw className="h-3.5 w-3.5" /> Re-generate
+              <button onClick={runRoadmap} disabled={actionLoading === 'roadmap'} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors disabled:opacity-60">
+                {actionLoading === 'roadmap' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Regenerating…</> : <><RefreshCw className="h-3.5 w-3.5" /> Re-generate</>}
               </button>
             </div>
 
@@ -911,8 +1728,8 @@ export default function GapAssessmentWizard() {
               <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-border bg-adv-card text-center">
                 <Map className="mb-3 h-10 w-10 text-adv-teal" />
                 <p className="mb-4 text-sm text-adv-gray">Generate phased remediation roadmap</p>
-                <button onClick={runRoadmap} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
-                  <Map className="h-4 w-4" /> Generate Roadmap
+                <button onClick={runRoadmap} disabled={actionLoading === 'roadmap'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
+                  {actionLoading === 'roadmap' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Roadmap…</> : <><Map className="h-4 w-4" /> Generate Roadmap</>}
                 </button>
               </div>
             ) : (
@@ -946,15 +1763,26 @@ export default function GapAssessmentWizard() {
                   </div>
                 ))}
 
-                {roadmap && (roadmap as { estimatedFTE?: string; keyRisks?: string[] }).estimatedFTE && (
+                {roadmap && (roadmap.estimatedFTE || roadmap.keyRisks?.length) && (
                   <div className="rounded-xl border border-border bg-adv-card p-4">
                     <h3 className="mb-2 text-sm font-semibold text-adv-off-white">Programme Overview</h3>
-                    <p className="text-xs text-adv-gray">Estimated FTE: <span className="text-adv-off-white">{(roadmap as { estimatedFTE?: string }).estimatedFTE}</span></p>
-                    {(roadmap as { keyRisks?: string[] }).keyRisks && (
+                    {roadmap.estimatedFTE && (
+                      <p className="text-xs text-adv-gray">Estimated FTE: <span className="text-adv-off-white">{roadmap.estimatedFTE}</span></p>
+                    )}
+                    {roadmap.estimatedBudget && (
+                      <p className="mt-1 text-xs text-adv-gray">Estimated Budget: <span className="text-adv-off-white">{roadmap.estimatedBudget}</span></p>
+                    )}
+                    {roadmap.governanceModel && (
+                      <p className="mt-1 text-xs text-adv-gray">Governance: <span className="text-adv-off-white">{roadmap.governanceModel}</span></p>
+                    )}
+                    {roadmap.reportingCadence && (
+                      <p className="mt-1 text-xs text-adv-gray">Reporting: <span className="text-adv-off-white">{roadmap.reportingCadence}</span></p>
+                    )}
+                    {roadmap.keyRisks && roadmap.keyRisks.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs font-medium text-adv-gray mb-1">Key risks if delayed:</p>
                         <ul className="space-y-1">
-                          {(roadmap as { keyRisks?: string[] }).keyRisks!.map((r, i) => (
+                          {roadmap.keyRisks.map((r, i) => (
                             <li key={i} className="text-xs text-adv-off-white flex gap-1.5"><AlertTriangle className="h-3 w-3 text-adv-gold shrink-0 mt-0.5" />{r}</li>
                           ))}
                         </ul>
@@ -962,6 +1790,167 @@ export default function GapAssessmentWizard() {
                     )}
                   </div>
                 )}
+                {roadmapReasoning && (
+                  <details className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-adv-teal select-none">AI Reasoning &mdash; How Claude built this roadmap</summary>
+                    <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{roadmapReasoning}</div>
+                  </details>
+                )}
+                <ExportDropdown label="Export Roadmap" buildContent={buildRoadmapMarkdown} filename={`roadmap-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Full Export + Iteration Panel (visible from step 5+) ─────────── */}
+        {currentStep >= 5 && findings.length > 0 && (
+          <div className="mt-6 space-y-4 border-t border-border pt-6">
+            {/* Full assessment export */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <ExportDropdown
+                label="Export Complete Assessment"
+                buildContent={buildFullAssessmentMarkdown}
+                filename={`full-assessment-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`}
+                isExporting={isExporting}
+                doExport={doExport}
+              />
+              <button
+                onClick={() => setShowIterationPanel(!showIterationPanel)}
+                className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal-soft px-4 py-2.5 text-sm text-adv-teal hover:bg-adv-teal/10 transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" /> {showIterationPanel ? 'Hide Iteration Panel' : `New Iteration${iterations.length > 0 ? ` (${iterations.length} previous)` : ''}`}
+              </button>
+            </div>
+
+            {/* Iteration history */}
+            {iterations.length > 0 && (
+              <div className="rounded-xl border border-border bg-adv-card p-4">
+                <h3 className="text-sm font-semibold text-adv-off-white mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-adv-teal" /> Assessment History
+                </h3>
+                <div className="space-y-2">
+                  {iterations.map((iter, idx) => (
+                    <div key={iter.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-adv-dark-2 px-3 py-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-adv-teal">Iteration {iter.iterationNumber}</span>
+                          <span className="text-[10px] text-adv-gray">{new Date(iter.createdAt).toLocaleDateString()}</span>
+                          <span className={`text-xs font-bold ${iter.scoreSummary.avg >= 75 ? 'text-adv-green' : iter.scoreSummary.avg >= 50 ? 'text-yellow-400' : iter.scoreSummary.avg >= 25 ? 'text-orange-400' : 'text-red-400'}`}>
+                            {iter.scoreSummary.avg}%
+                          </span>
+                        </div>
+                        {iter.notes && <p className="text-[11px] text-adv-gray truncate mt-0.5">{iter.notes}</p>}
+                        <div className="flex gap-2 mt-0.5">
+                          <span className="text-[10px] text-red-400">{iter.scoreSummary.red} red</span>
+                          <span className="text-[10px] text-orange-400">{iter.scoreSummary.amber} amber</span>
+                          <span className="text-[10px] text-yellow-400">{iter.scoreSummary.yellow} yellow</span>
+                          <span className="text-[10px] text-adv-green">{iter.scoreSummary.green} green</span>
+                        </div>
+                      </div>
+                      {idx > 0 && (
+                        <button
+                          onClick={() => compareIterationPair(iterations[idx - 1].id, iter.id)}
+                          disabled={!!comparingIters}
+                          className="flex items-center gap-1 text-xs text-adv-gray hover:text-adv-teal transition-colors shrink-0"
+                        >
+                          <GitCompare className="h-3.5 w-3.5" /> Compare
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Comparison result */}
+                {comparison && (
+                  <div className="mt-4 rounded-xl border border-adv-teal/20 bg-adv-teal-soft p-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-adv-teal">Iteration Comparison</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-lg bg-adv-card border border-border p-3 text-center">
+                        <p className="text-2xl font-bold text-adv-off-white">{comparison.overallDelta.before}% → {comparison.overallDelta.after}%</p>
+                        <p className={`text-sm font-medium ${comparison.overallDelta.change >= 0 ? 'text-adv-green' : 'text-red-400'}`}>
+                          {comparison.overallDelta.change >= 0 ? '+' : ''}{comparison.overallDelta.change}% overall
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-3 text-center">
+                        <p className="text-2xl font-bold text-adv-green flex items-center justify-center gap-1"><TrendingUp className="h-5 w-5" /> {comparison.totalImproved}</p>
+                        <p className="text-xs text-adv-gray">Articles improved</p>
+                      </div>
+                      <div className="rounded-lg bg-red-500/5 border border-red-500/20 p-3 text-center">
+                        <p className="text-2xl font-bold text-red-400 flex items-center justify-center gap-1"><TrendingDown className="h-5 w-5" /> {comparison.totalWorsened}</p>
+                        <p className="text-xs text-adv-gray">Articles worsened</p>
+                      </div>
+                    </div>
+                    {comparison.improved.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-adv-green mb-1">Top Improvements</p>
+                        {comparison.improved.slice(0, 5).map(a => (
+                          <p key={a.articleId} className="text-xs text-adv-off-white">
+                            {a.articleId} {a.articleTitle ? `— ${a.articleTitle}` : ''}: {a.beforeScore}% → {a.afterScore}% <span className="text-adv-green">(+{a.delta})</span>
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {comparison.worsened.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-red-400 mb-1">Regressions</p>
+                        {comparison.worsened.slice(0, 5).map(a => (
+                          <p key={a.articleId} className="text-xs text-adv-off-white">
+                            {a.articleId} {a.articleTitle ? `— ${a.articleTitle}` : ''}: {a.beforeScore}% → {a.afterScore}% <span className="text-red-400">({a.delta})</span>
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {comparison.capabilityDeltas.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-adv-teal mb-1">Capability Maturity Changes</p>
+                        {comparison.capabilityDeltas.filter(c => c.delta !== 0).map(c => (
+                          <p key={c.id} className="text-xs text-adv-off-white">
+                            {c.name}: {c.beforeMaturity}/5 → {c.afterMaturity}/5 <span className={c.delta > 0 ? 'text-adv-green' : 'text-red-400'}>({c.delta > 0 ? '+' : ''}{c.delta})</span>
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={() => setComparison(null)} className="text-xs text-adv-gray hover:text-adv-off-white">Close comparison</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* New iteration panel */}
+            {showIterationPanel && (
+              <div className="rounded-xl border border-adv-teal/30 bg-adv-teal-soft p-5 space-y-4">
+                <h3 className="text-sm font-semibold text-adv-teal">Start New Iteration</h3>
+                <p className="text-xs text-adv-gray">
+                  Save the current results as a snapshot, then add new evidence and re-run the assessment to measure progress.
+                </p>
+                <div>
+                  <label className="text-xs font-medium text-adv-off-white block mb-1">What has changed since the last assessment?</label>
+                  <textarea
+                    value={iterationNotes}
+                    onChange={e => setIterationNotes(e.target.value)}
+                    placeholder="e.g., Implemented new TM rules, updated CDD policy, added PEP screening..."
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray-med focus:border-adv-teal focus:outline-none resize-none"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      await createSnapshot();
+                      // Reset to Context step so user can add new docs
+                      setCurrentStep(3);
+                    }}
+                    className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                  >
+                    <RotateCcw className="h-4 w-4" /> Save Snapshot & Start Iteration {iterations.length + 2}
+                  </button>
+                  <button
+                    onClick={() => setShowIterationPanel(false)}
+                    className="text-sm text-adv-gray hover:text-adv-off-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             )}
           </div>

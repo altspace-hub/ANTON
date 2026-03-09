@@ -1492,7 +1492,7 @@ Style: Precise, authoritative, neutral. Use passive voice for legal propositions
     icon: 'Film',
     description: 'Formatted screenplay or script: scene headings, action, character cues, dialogue — exports to .fountain and .fdx',
     category: 'communication',
-    exportFormats: ['fountain', 'fdx', 'md'],
+    exportFormats: ['md'],
     estimatedLength: '1-120 pages',
     audience: 'Writers, directors, producers',
     promptInstruction: `## OUTPUT FORMAT: SCREENPLAY / SCRIPT
