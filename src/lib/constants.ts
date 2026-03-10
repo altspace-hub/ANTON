@@ -2916,6 +2916,7 @@ export const AREAS = [
     color: 'adv-blue',
     moduleIds: [
       'solvency-ii', 'claims-analysis', 'product-governance', 'idd-compliance', 'actuarial-comms',
+      'solvency-ii-compliance', 'idd-distribution',
     ],
   },
   {
@@ -3341,16 +3342,7 @@ export const AREAS = [
     ],
   },
 
-  // ── Area 37: Insurance & Reinsurance Compliance ──────────────────────────────
-  // FRAME-07: Solvency II / IDD insurance compliance modules
-  {
-    id: 'insurance',
-    label: 'Insurance & Reinsurance Compliance',
-    shortLabel: 'Insurance',
-    icon: 'ShieldCheck',
-    color: 'adv-gold',
-    moduleIds: ['solvency-ii-compliance', 'idd-distribution'],
-  },
+  // Area 37 (Insurance & Reinsurance Compliance) merged into 'insurance' area above
 ] as const;
 
 export const MODELS: ModelInfo[] = [
