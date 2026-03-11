@@ -47,6 +47,8 @@ interface ConfigState {
   emojiEnabled: boolean;
   nativeReasoningEnabled: boolean;
   iterativeReasoningEnabled: boolean;
+  atomInjectionEnabled: boolean;
+  atomCollectionEnabled: boolean;
   audience: string;
   channel: string;
   outputLanguage: string;
@@ -78,6 +80,8 @@ interface ConfigState {
   setEmojiEnabled: (enabled: boolean) => void;
   setNativeReasoningEnabled: (enabled: boolean) => void;
   setIterativeReasoningEnabled: (enabled: boolean) => void;
+  setAtomInjectionEnabled: (enabled: boolean) => void;
+  setAtomCollectionEnabled: (enabled: boolean) => void;
   setAudience: (v: string) => void;
   setChannel: (v: string) => void;
   setOutputLanguage: (v: string) => void;
@@ -111,6 +115,8 @@ const configDefaults = {
   emojiEnabled: false,
   nativeReasoningEnabled: false,
   iterativeReasoningEnabled: false,
+  atomInjectionEnabled: true,
+  atomCollectionEnabled: true,
   audience: '',
   channel: '',
   outputLanguage: 'en',
@@ -145,6 +151,8 @@ export const useConfigStore = create<ConfigState>((set) => ({
   setEmojiEnabled: (enabled) => set({ emojiEnabled: enabled }),
   setNativeReasoningEnabled: (enabled) => set({ nativeReasoningEnabled: enabled }),
   setIterativeReasoningEnabled: (enabled) => set({ iterativeReasoningEnabled: enabled }),
+  setAtomInjectionEnabled: (enabled) => set({ atomInjectionEnabled: enabled }),
+  setAtomCollectionEnabled: (enabled) => set({ atomCollectionEnabled: enabled }),
   setAudience: (v) => set({ audience: v }),
   setChannel: (v) => set({ channel: v }),
   setOutputLanguage: (v) => set({ outputLanguage: v }),

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Pen, Smile, BrainCog, Eye, EyeOff, AlertTriangle, Zap } from 'lucide-react';
+import { Pen, Smile, BrainCog, Eye, EyeOff, AlertTriangle, Zap, Database } from 'lucide-react';
 
 type WritingTone = 'formal' | 'professional' | 'casual' | 'conversational';
 
@@ -9,12 +9,16 @@ interface SessionTogglesPanelProps {
   metaCognitiveEnabled: boolean;
   transparencyLevel: 0 | 1 | 2;
   nativeReasoningEnabled: boolean;
+  atomInjectionEnabled: boolean;
+  atomCollectionEnabled: boolean;
   currentModel: string;
   onWritingToneChange: (tone: WritingTone) => void;
   onEmojiChange: (enabled: boolean) => void;
   onMetaCognitiveChange: (enabled: boolean) => void;
   onTransparencyChange: (level: 0 | 1 | 2) => void;
   onNativeReasoningChange: (enabled: boolean) => void;
+  onAtomInjectionChange: (enabled: boolean) => void;
+  onAtomCollectionChange: (enabled: boolean) => void;
 }
 
 const TONE_OPTIONS: { value: WritingTone; label: string }[] = [
@@ -59,12 +63,16 @@ export default function SessionTogglesPanel({
   metaCognitiveEnabled,
   transparencyLevel,
   nativeReasoningEnabled,
+  atomInjectionEnabled,
+  atomCollectionEnabled,
   currentModel,
   onWritingToneChange,
   onEmojiChange,
   onMetaCognitiveChange,
   onTransparencyChange,
   onNativeReasoningChange,
+  onAtomInjectionChange,
+  onAtomCollectionChange,
 }: SessionTogglesPanelProps) {
   const isOpusOrSonnet =
     currentModel === 'claude-opus-4-6' || currentModel === 'claude-sonnet-4-5-20250929';
@@ -196,6 +204,50 @@ export default function SessionTogglesPanel({
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="border-t border-border" />
+
+      {/* ── Knowledge Memory ── */}
+      <div>
+        <div className="mb-3 flex items-center gap-1.5">
+          <Database className="h-3.5 w-3.5 text-adv-blue" />
+          <span className="text-xs font-medium text-adv-off-white">Knowledge Memory</span>
+        </div>
+
+        <div className="mb-3">
+          <ToggleSwitch
+            checked={atomInjectionEnabled}
+            onChange={onAtomInjectionChange}
+            label={
+              <div>
+                <div className="text-xs text-adv-off-white">Use prior insights</div>
+                <p className="mt-0.5 text-xs text-adv-gray">
+                  {atomInjectionEnabled
+                    ? 'Recent findings injected as context'
+                    : 'Clean slate — no prior knowledge used'}
+                </p>
+              </div>
+            }
+          />
+        </div>
+
+        <div>
+          <ToggleSwitch
+            checked={atomCollectionEnabled}
+            onChange={onAtomCollectionChange}
+            label={
+              <div>
+                <div className="text-xs text-adv-off-white">Collect insights</div>
+                <p className="mt-0.5 text-xs text-adv-gray">
+                  {atomCollectionEnabled
+                    ? 'Responses contribute to knowledge base'
+                    : 'Playground mode — nothing saved'}
+                </p>
+              </div>
+            }
+          />
         </div>
       </div>
 

@@ -89,6 +89,8 @@ interface SessionState extends SessionMetaState {
   emojiEnabled: boolean;
   nativeReasoningEnabled: boolean;
   iterativeReasoningEnabled: boolean;
+  atomInjectionEnabled: boolean;
+  atomCollectionEnabled: boolean;
   audience: string;
   channel: string;
   outputLanguage: string;
@@ -118,6 +120,8 @@ interface SessionState extends SessionMetaState {
   setEmojiEnabled: (enabled: boolean) => void;
   setNativeReasoningEnabled: (enabled: boolean) => void;
   setIterativeReasoningEnabled: (enabled: boolean) => void;
+  setAtomInjectionEnabled: (enabled: boolean) => void;
+  setAtomCollectionEnabled: (enabled: boolean) => void;
   setAudience: (v: string) => void;
   setChannel: (v: string) => void;
   setOutputLanguage: (v: string) => void;
@@ -221,6 +225,8 @@ export function useSessionStore(): SessionState {
     emojiEnabled: config.emojiEnabled,
     nativeReasoningEnabled: config.nativeReasoningEnabled,
     iterativeReasoningEnabled: config.iterativeReasoningEnabled,
+    atomInjectionEnabled: config.atomInjectionEnabled,
+    atomCollectionEnabled: config.atomCollectionEnabled,
     audience: config.audience,
     channel: config.channel,
     outputLanguage: config.outputLanguage,
@@ -250,6 +256,8 @@ export function useSessionStore(): SessionState {
     setEmojiEnabled: config.setEmojiEnabled,
     setNativeReasoningEnabled: config.setNativeReasoningEnabled,
     setIterativeReasoningEnabled: config.setIterativeReasoningEnabled,
+    setAtomInjectionEnabled: config.setAtomInjectionEnabled,
+    setAtomCollectionEnabled: config.setAtomCollectionEnabled,
     setAudience: config.setAudience,
     setChannel: config.setChannel,
     setOutputLanguage: config.setOutputLanguage,

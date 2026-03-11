@@ -330,6 +330,8 @@ export interface ClaudeRunConfig {
   uploadedFileIds?: string[];
   seed?: number;
   iterativeReasoningEnabled?: boolean;
+  atomInjectionEnabled?: boolean;
+  atomCollectionEnabled?: boolean;
 }
 
 // ── Multi-Model Deliberation ────────────────────────────────

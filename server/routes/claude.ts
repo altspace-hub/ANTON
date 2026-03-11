@@ -86,6 +86,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         seed,
         moduleInputs,
         iterativeReasoningEnabled,
+        atomInjectionEnabled,
+        atomCollectionEnabled,
       } = req.body;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
@@ -521,7 +523,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const orgContextPrompt = buildOrgContextLayer(db, (req as any).user?.id || 'default');
       const resumeContextPrompt = sessionId ? buildResumeContextLayer(db, String(sessionId)) : '';
       const knowledgePackPrompt = buildKnowledgePackLayer(db);
-      const atomLayerPrompt = buildAtomLayer(db, areaId, moduleId);
+      const atomLayerPrompt = atomInjectionEnabled !== false ? buildAtomLayer(db, areaId, moduleId) : '';
 
       const promptComposerConfig = {
         moduleId,
@@ -741,7 +743,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             }
             // Auto-extract knowledge atoms from this session output (non-blocking fire-and-forget)
             // This populates Knowledge Graph, Intelligence Dashboard, and Pattern Detection
-            if (data.text && data.text.length > 200) {
+            // Skipped when user disables atom collection (playground / clean-slate mode)
+            if (atomCollectionEnabled !== false && data.text && data.text.length > 200) {
               try {
                 const workflowId = `module:${moduleId || 'general'}`;
                 const outputId = getSessionOutputStore().storeOutput({

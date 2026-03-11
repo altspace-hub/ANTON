@@ -68,12 +68,12 @@ export default function PromptPage() {
     selectedPersonas, selectedSkills, multiPerspective, metaCognitiveEnabled,
     sessionId, systemPrompt: currentSystemPrompt,
     plainTextMode, structureReference, transparencyLevel, writingTone, emojiEnabled,
-    nativeReasoningEnabled,
+    nativeReasoningEnabled, atomInjectionEnabled, atomCollectionEnabled,
     audience, channel, outputLanguage, uploadedFileIds, lastSourcesUsed,
     setThinking, setCreativity, setModel, setSystemPrompt,
     setKnowledgeSources, setSelectedOutputFormats,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, clearSession,
-    setTransparencyLevel, setWritingTone, setEmojiEnabled, setNativeReasoningEnabled,
+    setTransparencyLevel, setWritingTone, setEmojiEnabled, setNativeReasoningEnabled, setAtomInjectionEnabled, setAtomCollectionEnabled,
     truncateMessagesAt,
     setModule, setAreaId, restoreSession,
     setAudience, setChannel, setOutputLanguage, setMultiAgentEnabled,
@@ -499,12 +499,16 @@ export default function PromptPage() {
               metaCognitiveEnabled={metaCognitiveEnabled}
               transparencyLevel={transparencyLevel}
               nativeReasoningEnabled={nativeReasoningEnabled}
+              atomInjectionEnabled={atomInjectionEnabled}
+              atomCollectionEnabled={atomCollectionEnabled}
               currentModel={model}
               onWritingToneChange={setWritingTone}
               onEmojiChange={setEmojiEnabled}
               onMetaCognitiveChange={setMetaCognitiveEnabled}
               onTransparencyChange={setTransparencyLevel}
               onNativeReasoningChange={setNativeReasoningEnabled}
+              onAtomInjectionChange={setAtomInjectionEnabled}
+              onAtomCollectionChange={setAtomCollectionEnabled}
             />
             <FileUploader files={files} onUpload={upload} onRemove={remove} />
           </div>

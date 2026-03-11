@@ -95,14 +95,14 @@ export default function ModulePage() {
     thinking, creativity, precision, model, systemPrompt, selectedOutputFormats, knowledgeSources, moduleInputs,
     selectedPersonas, selectedSkills, multiPerspective, metaCognitiveEnabled, structureReference,
     referenceOutput,
-    guidedInputFields, transparencyLevel, writingTone, emojiEnabled, nativeReasoningEnabled,
+    guidedInputFields, transparencyLevel, writingTone, emojiEnabled, nativeReasoningEnabled, atomInjectionEnabled, atomCollectionEnabled,
     lastCachedTokens, lastCacheCreationTokens, seed,
     setModule, setThinking, setCreativity, setPrecision, setModel, setSystemPrompt,
     setSelectedOutputFormats, setKnowledgeSources, setModuleInputs, clearSession,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, setStructureReference,
     setReferenceOutput,
     areaId, uploadedFileIds, setUploadedFileIds, setAreaId, setGuidedInputFields, setTransparencyLevel,
-    setWritingTone, setEmojiEnabled, setNativeReasoningEnabled, restoreSession,
+    setWritingTone, setEmojiEnabled, setNativeReasoningEnabled, setAtomInjectionEnabled, setAtomCollectionEnabled, restoreSession,
     truncateMessagesAt,
     audience, channel, outputLanguage,
     setAudience, setChannel, setOutputLanguage, setSeed,
@@ -723,12 +723,16 @@ export default function ModulePage() {
             metaCognitiveEnabled={metaCognitiveEnabled}
             transparencyLevel={transparencyLevel}
             nativeReasoningEnabled={nativeReasoningEnabled}
+            atomInjectionEnabled={atomInjectionEnabled}
+            atomCollectionEnabled={atomCollectionEnabled}
             currentModel={model}
             onWritingToneChange={setWritingTone}
             onEmojiChange={setEmojiEnabled}
             onMetaCognitiveChange={setMetaCognitiveEnabled}
             onTransparencyChange={setTransparencyLevel}
             onNativeReasoningChange={setNativeReasoningEnabled}
+            onAtomInjectionChange={setAtomInjectionEnabled}
+            onAtomCollectionChange={setAtomCollectionEnabled}
           />
 
           {/* Skills */}

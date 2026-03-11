@@ -152,6 +152,10 @@ export const ClaudeMessageSchema = z.object({
   // Iterative Reasoning Engine
   iterativeReasoningEnabled: z.boolean().optional(),
 
+  // Knowledge Atoms
+  atomInjectionEnabled: z.boolean().optional(),
+  atomCollectionEnabled: z.boolean().optional(),
+
   // File uploads
   uploadedFileIds: z.array(z.string().max(500)).max(50).optional(),
 });
