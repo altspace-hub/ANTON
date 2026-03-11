@@ -23,7 +23,7 @@ export interface AgentConfig {
   name: string;
   persona: string; // Expert role instruction
   focus: string; // What to analyze
-  model: 'claude-haiku-4-5-20251001'; // Always Haiku for parallel agents
+  model: string; // Model ID — typically Haiku for parallel agents
 }
 
 export interface MultiAgentRequest {

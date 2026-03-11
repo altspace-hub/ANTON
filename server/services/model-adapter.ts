@@ -125,8 +125,8 @@ class AnthropicAdapter extends BaseAdapter {
       };
       const effort = effortMap[thinking] ?? 'medium';
       if (effort !== 'low' || thinking !== 'quick') {
-        (params as Record<string, unknown>).thinking = { type: 'adaptive' };
-        (params as Record<string, unknown>).output_config = { effort };
+        (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
+        (params as unknown as Record<string, unknown>).output_config = { effort };
       }
     } else if (req.model.includes('sonnet-4-6')) {
       const budget = this.mapThinkingBudget(thinking);
@@ -184,8 +184,8 @@ class AnthropicAdapter extends BaseAdapter {
       };
       const effort = effortMap[thinking] ?? 'medium';
       if (effort !== 'low' || thinking !== 'quick') {
-        (params as Record<string, unknown>).thinking = { type: 'adaptive' };
-        (params as Record<string, unknown>).output_config = { effort };
+        (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
+        (params as unknown as Record<string, unknown>).output_config = { effort };
       }
     } else if (req.model.includes('sonnet-4-6')) {
       const budget = this.mapThinkingBudget(thinking);

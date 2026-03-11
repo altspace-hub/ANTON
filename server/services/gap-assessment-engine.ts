@@ -348,7 +348,8 @@ export async function runAssessmentBatch(
     ...mc.thinkingConfig,
   } as Parameters<typeof anthropic.messages.create>[0]);
 
-  const text = response.content.filter(b => b.type === 'text').map(b => (b as { text: string }).text).join('');
+  const msg = response as Anthropic.Message;
+  const text = msg.content.filter((b: Anthropic.ContentBlock) => b.type === 'text').map((b: Anthropic.ContentBlock) => (b as Anthropic.TextBlock).text).join('');
 
   const findings = JSON.parse(extractJson(text, 'array')) as ArticleFinding[];
 
