@@ -354,8 +354,11 @@ function GapAssessmentWizardInner() {
   const [comparison, setComparison] = useState<IterationComparison | null>(null);
   const [showIterationPanel, setShowIterationPanel] = useState(false);
   const [iterationNotes, setIterationNotes] = useState('');
+  const [iterationDocs, setIterationDocs] = useState<EvidenceDocument[]>([]);
+  const [iterDragging, setIterDragging] = useState(false);
   const [comparingIters, setComparingIters] = useState<{ a: string; b: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const iterFileInputRef = useRef<HTMLInputElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const { doExport, isExporting } = useExport();
 
@@ -459,6 +462,20 @@ function GapAssessmentWizardInner() {
 
   const removeEvidenceDoc = useCallback((docId: string) => {
     setEvidenceDocs(prev => prev.filter(d => d.id !== docId));
+  }, []);
+
+  // ── Iteration document upload ──────────────────────────────────────────────
+  const handleIterationDocUpload = useCallback(async (fileList: FileList | File[]) => {
+    for (const file of Array.from(fileList)) {
+      const tempId = crypto.randomUUID();
+      setIterationDocs(prev => [...prev, { id: tempId, name: file.name, size: file.size, status: 'uploading' }]);
+      try {
+        const result = await uploadFile(file);
+        setIterationDocs(prev => prev.map(d => d.id === tempId ? { ...d, id: result.id, status: 'done' as const, text: result.text || '' } : d));
+      } catch {
+        setIterationDocs(prev => prev.map(d => d.id === tempId ? { ...d, status: 'error' as const } : d));
+      }
+    }
   }, []);
 
   const addInterview = useCallback(() => {
@@ -745,15 +762,26 @@ function GapAssessmentWizardInner() {
   const createSnapshot = async () => {
     if (!id) return;
     try {
-      const evidenceNames = evidenceDocs.filter(d => d.status === 'done').map(d => d.name).join(', ');
+      // Merge any new iteration docs into the main evidence pool
+      const newDocs = iterationDocs.filter(d => d.status === 'done');
+      if (newDocs.length > 0) {
+        setEvidenceDocs(prev => [...prev, ...newDocs]);
+      }
+      const allDocNames = [...evidenceDocs, ...newDocs].filter(d => d.status === 'done').map(d => d.name).join(', ');
+      const iterDocNames = newDocs.map(d => d.name).join(', ');
       const r = await fetchWithAuth(`/api/gap-assessments/${id}/snapshot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: iterationNotes, evidenceSummary: evidenceNames || undefined }),
+        body: JSON.stringify({
+          notes: iterationNotes,
+          evidenceSummary: allDocNames || undefined,
+          newDocuments: iterDocNames || undefined,
+        }),
       });
       if (r.ok) {
         await loadIterations();
         setIterationNotes('');
+        setIterationDocs([]);
         setShowIterationPanel(false);
       }
     } catch (err) {
@@ -2042,19 +2070,79 @@ function GapAssessmentWizardInner() {
                     rows={3}
                   />
                 </div>
+
+                {/* ── Iteration Document Upload ─────────────────────── */}
+                <div>
+                  <label className="text-xs font-medium text-adv-off-white flex items-center gap-1.5 mb-1">
+                    <Paperclip className="h-3.5 w-3.5 text-adv-teal" />
+                    Attach updated documents <span className="text-adv-gray font-normal">(optional)</span>
+                  </label>
+                  <p className="text-[11px] text-adv-gray mb-2">
+                    Upload revised policies, new procedures, or remediation evidence. These will be included in the re-assessment.
+                  </p>
+                  <div
+                    onDragOver={e => { e.preventDefault(); setIterDragging(true); }}
+                    onDragLeave={() => setIterDragging(false)}
+                    onDrop={e => { e.preventDefault(); setIterDragging(false); if (e.dataTransfer.files.length) handleIterationDocUpload(e.dataTransfer.files); }}
+                    className={`rounded-lg border-2 border-dashed px-3 py-4 text-center transition-colors cursor-pointer ${iterDragging ? 'border-adv-teal bg-adv-teal/5' : 'border-border hover:border-adv-teal/40'}`}
+                    onClick={() => iterFileInputRef.current?.click()}
+                  >
+                    <Upload className="mx-auto mb-1 h-5 w-5 text-adv-gray" />
+                    <p className="text-xs text-adv-gray">
+                      Drop files here or <span className="text-adv-teal font-medium">browse</span>
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-adv-gray">PDF, DOCX, XLSX, TXT, CSV, HTML</p>
+                  </div>
+                  <input
+                    ref={iterFileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.docx,.doc,.xlsx,.csv,.txt,.md,.html"
+                    className="hidden"
+                    onChange={e => { if (e.target.files?.length) { handleIterationDocUpload(e.target.files); e.target.value = ''; } }}
+                  />
+                  {iterationDocs.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {iterationDocs.map(doc => (
+                        <div key={doc.id} className="flex items-center gap-2 rounded-lg bg-adv-dark px-3 py-1.5">
+                          {doc.status === 'uploading' ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-teal shrink-0" />
+                          ) : doc.status === 'error' ? (
+                            <AlertTriangle className="h-3.5 w-3.5 text-adv-red shrink-0" />
+                          ) : (
+                            <FileText className="h-3.5 w-3.5 text-adv-teal shrink-0" />
+                          )}
+                          <span className="flex-1 truncate text-xs text-adv-off-white">{doc.name}</span>
+                          {doc.status === 'done' && doc.text && (
+                            <span className="shrink-0 text-[10px] text-adv-gray">{Math.round(doc.text.length / 4).toLocaleString()} tok</span>
+                          )}
+                          {doc.status === 'error' && <span className="shrink-0 text-[10px] text-adv-red">Failed</span>}
+                          <button type="button" onClick={() => setIterationDocs(prev => prev.filter(d => d.id !== doc.id))} className="shrink-0 text-adv-gray hover:text-adv-red transition-colors">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <p className="text-[10px] text-adv-gray">
+                        {iterationDocs.filter(d => d.status === 'done').length} new document{iterationDocs.filter(d => d.status === 'done').length !== 1 ? 's' : ''} for this iteration
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-3">
                   <button
                     onClick={async () => {
                       await createSnapshot();
-                      // Reset to Context step so user can add new docs
+                      // Reset to Context step so user can review docs
                       setCurrentStep(3);
                     }}
-                    className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                    disabled={iterationDocs.some(d => d.status === 'uploading')}
+                    className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50 transition-colors"
                   >
                     <RotateCcw className="h-4 w-4" /> Save Snapshot & Start Iteration {iterations.length + 2}
                   </button>
                   <button
-                    onClick={() => setShowIterationPanel(false)}
+                    onClick={() => { setShowIterationPanel(false); setIterationDocs([]); }}
                     className="text-sm text-adv-gray hover:text-adv-off-white"
                   >
                     Cancel
