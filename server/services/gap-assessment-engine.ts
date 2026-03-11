@@ -12,13 +12,36 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// ── Model tier config ────────────────────────────────────────────────────────
+// Two tiers: 'sonnet' (fast, cheaper) or 'opus' (deep reasoning, higher quality)
+export type GapModelTier = 'sonnet' | 'opus';
+
+function getModelConfig(tier: GapModelTier) {
+  if (tier === 'opus') {
+    return {
+      model: 'claude-opus-4-6' as const,
+      thinkingConfig: { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } },
+      maxTokensBatch: 16000,      // adaptive thinking has no budget_tokens constraint
+      maxTokensSynthesis: 32000,
+    };
+  }
+  // Sonnet: deep budget_tokens thinking
+  // max_tokens must be > budget_tokens — use generous ceilings
+  return {
+    model: 'claude-sonnet-4-6' as const,
+    thinkingConfig: { thinking: { type: 'enabled' as const, budget_tokens: 32768 } },
+    maxTokensBatch: 40000,       // budget 32768 + 7232 output headroom
+    maxTokensSynthesis: 60000,   // budget 32768 + 27232 output headroom (Sonnet ceiling: 64K)
+  };
+}
+
 // Streaming helper — avoids Anthropic SDK 10-minute non-streaming timeout.
 // Uses messages.create with stream:true and iterates the raw SSE stream.
 async function streamCollect(
   anthropic: Anthropic,
-  params: { model: string; max_tokens: number; thinking: { type: 'enabled'; budget_tokens: number }; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }> },
+  params: { model: string; max_tokens: number; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }> } & Record<string, unknown>,
 ): Promise<{ text: string; thinking: string }> {
-  console.log(`[gap-engine] streamCollect: model=${params.model}, max_tokens=${params.max_tokens}, budget=${params.thinking.budget_tokens}, system_len=${params.system.length}`);
+  console.log(`[gap-engine] streamCollect: model=${params.model}, max_tokens=${params.max_tokens}, system_len=${params.system.length}`);
 
   const response = await anthropic.messages.create({
     ...params,
@@ -287,7 +310,8 @@ export async function runAssessmentBatch(
   contextConfig: Record<string, unknown>,
   batchIndex: number,
   totalBatches: number,
-  extraSystemContext?: string
+  extraSystemContext?: string,
+  modelTier: GapModelTier = 'sonnet'
 ): Promise<AssessmentBatchResult> {
   const framework = loadFramework(frameworkId);
   if (!framework) throw new Error(`Framework ${frameworkId} not found`);
@@ -315,12 +339,14 @@ export async function runAssessmentBatch(
     : '';
   const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
 
+  const mc = getModelConfig(modelTier);
   const response = await anthropic.messages.create({
-    model: 'claude-opus-4-6',
-    max_tokens: 8000,
+    model: mc.model,
+    max_tokens: mc.maxTokensBatch,
     system: systemPrompt,
     messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework) }],
-  });
+    ...mc.thinkingConfig,
+  } as Parameters<typeof anthropic.messages.create>[0]);
 
   const text = response.content.filter(b => b.type === 'text').map(b => (b as { text: string }).text).join('');
 
@@ -332,7 +358,8 @@ export async function runAssessmentBatch(
 export async function synthesiseCapabilityView(
   anthropic: Anthropic,
   allFindings: Record<string, ArticleFinding[]>,
-  contextConfig: Record<string, unknown>
+  contextConfig: Record<string, unknown>,
+  modelTier: GapModelTier = 'sonnet'
 ): Promise<{ json: string; reasoning: string }> {
   const findingsSummary = Object.entries(allFindings).map(([fw, findings]) => {
     const summary = findings.map(f => `${f.articleId}: ${f.score} (${f.priority}) — ${f.notes}`).join('\n');
@@ -343,10 +370,11 @@ export async function synthesiseCapabilityView(
   const redCount = Object.values(allFindings).flat().filter(f => f.score === 'red').length;
   const criticalCount = Object.values(allFindings).flat().filter(f => f.priority === 'critical').length;
 
+  const mc = getModelConfig(modelTier);
   const { text, thinking } = await streamCollect(anthropic, {
-    model: 'claude-sonnet-4-6',
-    max_tokens: 32000,
-    thinking: { type: 'enabled', budget_tokens: 8000 },
+    model: mc.model,
+    max_tokens: mc.maxTokensSynthesis,
+    ...mc.thinkingConfig,
     system: `You are a senior compliance transformation advisor with 20+ years of experience in AML/CFT regulatory implementation across Nordic and European financial institutions.
 
 Synthesise the article-level gap findings below into 8-12 cross-cutting capability themes. Each theme spans one or more regulatory articles and reflects a real organisational capability (not just a regulation grouping).
@@ -407,7 +435,8 @@ export async function generateBoardSummary(
   anthropic: Anthropic,
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
-  contextConfig: Record<string, unknown>
+  contextConfig: Record<string, unknown>,
+  modelTier: GapModelTier = 'sonnet'
 ): Promise<{ summary: string; reasoning: string }> {
   const allFlat = Object.values(allFindings).flat();
   const redCount = allFlat.filter(f => f.score === 'red').length;
@@ -429,10 +458,11 @@ export async function generateBoardSummary(
 
   const frameworkNames = Object.keys(allFindings).join(', ');
 
+  const mcBoard = getModelConfig(modelTier);
   const { text, thinking } = await streamCollect(anthropic, {
-    model: 'claude-sonnet-4-6',
-    max_tokens: 32000,
-    thinking: { type: 'enabled', budget_tokens: 8000 },
+    model: mcBoard.model,
+    max_tokens: mcBoard.maxTokensSynthesis,
+    ...mcBoard.thinkingConfig,
     system: `You are a senior compliance advisor with deep experience presenting to boards of Nordic and European financial institutions. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
 
 Structure:
@@ -503,7 +533,8 @@ export async function generateRoadmap(
   anthropic: Anthropic,
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
-  contextConfig: Record<string, unknown>
+  contextConfig: Record<string, unknown>,
+  modelTier: GapModelTier = 'sonnet'
 ): Promise<{ json: string; reasoning: string }> {
   const criticalFindings = Object.entries(allFindings).flatMap(([fw, findings]) =>
     findings.filter(f => f.priority === 'critical' || f.priority === 'high')
@@ -514,10 +545,11 @@ export async function generateRoadmap(
     `- ${f.framework} ${f.articleId} (${f.articleTitle}) [${f.score}/${f.priority}]: ${f.currentState} — ${f.notes}`
   ).join('\n');
 
+  const mcRoad = getModelConfig(modelTier);
   const { text, thinking } = await streamCollect(anthropic, {
-    model: 'claude-sonnet-4-6',
-    max_tokens: 32000,
-    thinking: { type: 'enabled', budget_tokens: 8000 },
+    model: mcRoad.model,
+    max_tokens: mcRoad.maxTokensSynthesis,
+    ...mcRoad.thinkingConfig,
     system: `You are a compliance transformation programme manager with extensive experience delivering AML/CFT remediation programmes for Nordic and European financial institutions. Build a detailed, phased remediation roadmap.
 
 Return a JSON object:

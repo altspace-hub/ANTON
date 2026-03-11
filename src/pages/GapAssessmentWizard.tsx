@@ -250,9 +250,9 @@ function PriorityBadge({ priority }: { priority: 'critical' | 'high' | 'medium' 
   );
 }
 
-function StepIndicator({ step, current }: { step: typeof STEPS[0]; current: number }) {
+function StepIndicator({ step, current, maxReached }: { step: typeof STEPS[0]; current: number; maxReached: number }) {
   const Icon = step.icon;
-  const done = current > step.id;
+  const done = maxReached > step.id && current !== step.id;
   const active = current === step.id;
   return (
     <div className={`flex flex-col items-center gap-1 ${active ? 'text-adv-teal' : done ? 'text-adv-green' : 'text-adv-gray'}`}>
@@ -310,6 +310,7 @@ function GapAssessmentWizardInner() {
     maturity: 3,
     concerns: '',
     documents: '',
+    modelTier: 'sonnet' as 'sonnet' | 'opus',
   });
   const [scopeConfig, setScopeConfig] = useState<{ selectedThemes: string[] }>({ selectedThemes: [] });
   const [progressEvents, setProgressEvents] = useState<ProgressEvent[]>([]);
@@ -342,6 +343,13 @@ function GapAssessmentWizardInner() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedCap, setExpandedCap] = useState<string | null>(null);
   const [capViewMode, setCapViewMode] = useState<'cards' | 'text'>('text');
+  const [maxStepReached, setMaxStepReached] = useState(1);
+
+  // Advance maxStepReached whenever currentStep increases
+  const goToStep = useCallback((step: number) => {
+    setCurrentStep(step);
+    setMaxStepReached(prev => Math.max(prev, step));
+  }, []);
   const [iterations, setIterations] = useState<IterationSummary[]>([]);
   const [comparison, setComparison] = useState<IterationComparison | null>(null);
   const [showIterationPanel, setShowIterationPanel] = useState(false);
@@ -360,7 +368,9 @@ function GapAssessmentWizardInner() {
       if (!r.ok) { navigate('/gap-assessment'); return; }
       const { assessment: a, findings: f } = await r.json();
       setAssessment(a);
-      setCurrentStep(a.current_step || 1);
+      const loadedStep = a.current_step || 1;
+      setCurrentStep(loadedStep);
+      setMaxStepReached(loadedStep);
       if (a.context_config) {
         try {
           const parsed = JSON.parse(a.context_config);
@@ -487,7 +497,7 @@ function GapAssessmentWizardInner() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ context_config: enrichedContext, scope_config: scopeConfig, current_step: nextStep }),
     });
-    setCurrentStep(nextStep);
+    goToStep(nextStep);
   };
 
   // ── Run assessment (SSE) ───────────────────────────────────────────────────
@@ -531,7 +541,7 @@ function GapAssessmentWizardInner() {
               });
             }
             if (event.type === 'complete') {
-              setCurrentStep(5);
+              goToStep(5);
               await loadAssessment();
             }
           } catch { /* ignore parse errors */ }
@@ -566,7 +576,7 @@ function GapAssessmentWizardInner() {
       const { capabilities: caps, reasoning } = await r.json();
       setCapabilities(caps);
       if (reasoning) setSynthesisReasoning(reasoning);
-      setCurrentStep(6);
+      goToStep(6);
     } catch (err) {
       setActionError(`Synthesis error: ${String(err)}`);
     } finally {
@@ -588,7 +598,7 @@ function GapAssessmentWizardInner() {
       const { boardSummary: bs, reasoning } = await r.json();
       setBoardSummary(bs);
       if (reasoning) setBoardReasoning(reasoning);
-      setCurrentStep(7);
+      goToStep(7);
     } catch (err) {
       setActionError(`Board summary error: ${String(err)}`);
     } finally {
@@ -610,7 +620,7 @@ function GapAssessmentWizardInner() {
       const { roadmap: rm, reasoning } = await r.json();
       setRoadmap(rm);
       if (reasoning) setRoadmapReasoning(reasoning);
-      setCurrentStep(8);
+      goToStep(8);
     } catch (err) {
       setActionError(`Roadmap error: ${String(err)}`);
     } finally {
@@ -631,11 +641,27 @@ function GapAssessmentWizardInner() {
     md += `| Green | ${findings.filter(f => f.score === 'green').length} |\n\n`;
     const avg = findings.length > 0 ? Math.round(findings.reduce((s, f) => s + (f.numericScore || 0), 0) / findings.length) : 0;
     md += `**Overall Compliance Score:** ${avg}%\n\n`;
-    md += `## Detailed Findings\n\n`;
-    md += `| Framework | Article | Title | Current State | Score | % | Priority | Notes |\n`;
-    md += `|---|---|---|---|---|---|---|---|\n`;
+    md += `## Findings Overview\n\n`;
+    md += `| Framework | Article | Title | Score | % | Priority |\n`;
+    md += `|---|---|---|---|---|---|\n`;
     for (const f of findings) {
-      md += `| ${f.framework} | ${f.articleId} | ${f.articleTitle || ''} | ${(f.currentState || '').replace(/\n/g, ' ').slice(0, 120)} | ${f.score} | ${f.numericScore || 0}% | ${f.priority} | ${(f.notes || '').replace(/\n/g, ' ').slice(0, 200)} |\n`;
+      md += `| ${f.framework} | ${f.articleId} | ${f.articleTitle || ''} | ${f.score} | ${f.numericScore || 0}% | ${f.priority} |\n`;
+    }
+
+    md += `\n\n## Detailed Findings\n\n`;
+    for (const f of findings) {
+      md += `### ${f.articleId} — ${f.articleTitle || 'Untitled'}\n\n`;
+      md += `**Framework:** ${f.framework} | **Score:** ${f.score} (${f.numericScore || 0}%) | **Priority:** ${f.priority}\n\n`;
+      if (f.requirement) {
+        md += `#### Requirement\n\n${f.requirement}\n\n`;
+      }
+      if (f.currentState) {
+        md += `#### Current State\n\n${f.currentState}\n\n`;
+      }
+      if (f.notes) {
+        md += `#### Gaps & Recommendations\n\n${f.notes}\n\n`;
+      }
+      md += `---\n\n`;
     }
     return md;
   }, [findings, assessment]);
@@ -834,14 +860,14 @@ function GapAssessmentWizardInner() {
           {STEPS.map((step, i) => (
             <div key={step.id} className="flex items-center shrink-0">
               <button
-                onClick={() => currentStep >= step.id && setCurrentStep(step.id)}
-                disabled={currentStep < step.id}
+                onClick={() => maxStepReached >= step.id && setCurrentStep(step.id)}
+                disabled={maxStepReached < step.id}
                 className="disabled:cursor-not-allowed"
               >
-                <StepIndicator step={step} current={currentStep} />
+                <StepIndicator step={step} current={currentStep} maxReached={maxStepReached} />
               </button>
               {i < STEPS.length - 1 && (
-                <div className={`mx-1 h-0.5 w-6 rounded-full ${currentStep > step.id ? 'bg-adv-green' : 'bg-border'}`} />
+                <div className={`mx-1 h-0.5 w-6 rounded-full ${maxStepReached > step.id ? 'bg-adv-green' : 'bg-border'}`} />
               )}
             </div>
           ))}
@@ -879,7 +905,7 @@ function GapAssessmentWizardInner() {
                 </div>
               ))}
             </div>
-            <button type="button" onClick={() => setCurrentStep(2)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+            <button type="button" onClick={() => goToStep(2)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
               Next: Select Scope <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -929,7 +955,7 @@ function GapAssessmentWizardInner() {
               <button onClick={() => setCurrentStep(1)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                 <ChevronLeft className="h-4 w-4" /> Back
               </button>
-              <button onClick={() => setCurrentStep(3)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+              <button onClick={() => goToStep(3)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                 Next: Context <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -1006,6 +1032,37 @@ function GapAssessmentWizardInner() {
                 value={contextConfig.concerns}
                 onChange={e => setContextConfig(c => ({ ...c, concerns: e.target.value }))}
               />
+            </div>
+
+            {/* ── AI Model Tier ─────────────────────────────────────────── */}
+            <div className="rounded-xl border border-border bg-adv-card p-4">
+              <label className="mb-2 block text-xs font-medium text-adv-gray">AI Analysis Depth</label>
+              <p className="text-[11px] text-adv-gray mb-3">Choose the AI model for all assessment stages. Opus provides deeper reasoning but costs more and takes longer.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setContextConfig(c => ({ ...c, modelTier: 'sonnet' }))}
+                  className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === 'sonnet' ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === 'sonnet' ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
+                    <span className="text-sm font-medium text-adv-off-white">Sonnet 4.6</span>
+                  </div>
+                  <p className="text-[11px] text-adv-gray leading-snug">Fast &amp; thorough. Deep thinking (32K budget) on every stage. Good for standard assessments.</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContextConfig(c => ({ ...c, modelTier: 'opus' }))}
+                  className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === 'opus' ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === 'opus' ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
+                    <span className="text-sm font-medium text-adv-off-white">Opus 4.6</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-adv-gold/20 text-adv-gold font-medium">Deep</span>
+                  </div>
+                  <p className="text-[11px] text-adv-gray leading-snug">Maximum reasoning depth. Adaptive thinking at full effort. Best for critical, company-shaping assessments.</p>
+                </button>
+              </div>
             </div>
 
             {/* ── Evidence Documents ─────────────────────────────────────── */}
@@ -1183,7 +1240,8 @@ function GapAssessmentWizardInner() {
                 <p className="mb-5 max-w-sm text-xs text-adv-gray">
                   Entity: {contextConfig.entityType} — {contextConfig.jurisdiction}<br />
                   Frameworks: {fwIds.join(', ')}<br />
-                  Maturity: {MATURITY_LABELS[contextConfig.maturity]} ({contextConfig.maturity}/5)
+                  Maturity: {MATURITY_LABELS[contextConfig.maturity]} ({contextConfig.maturity}/5)<br />
+                  Model: {contextConfig.modelTier === 'opus' ? 'Opus 4.6 (deep reasoning)' : 'Sonnet 4.6 (standard)'}
                 </p>
                 <button onClick={runAssessment} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                   <Play className="h-4 w-4" /> Start Assessment
@@ -1212,7 +1270,7 @@ function GapAssessmentWizardInner() {
                 </div>
                 {!isRunning && findings.length > 0 && (
                   <div className="border-t border-border p-4">
-                    <button onClick={() => setCurrentStep(5)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                    <button onClick={() => goToStep(5)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                       View Scoring ({findings.length} findings) <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -1387,15 +1445,33 @@ function GapAssessmentWizardInner() {
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <ExportDropdown label="Export Findings" buildContent={buildFindingsMarkdown} filename={`findings-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
-              <button
-                onClick={runSynthesis}
-                disabled={actionLoading === 'synthesise'}
-                className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-60 transition-colors"
-              >
-                {actionLoading === 'synthesise' ? <><Loader2 className="h-4 w-4 animate-spin" /> Synthesising…</> : <><Layers className="h-4 w-4" /> Synthesise Capability View</>}
-              </button>
+              {capabilities.length > 0 ? (
+                <>
+                  <button
+                    onClick={() => setCurrentStep(6)}
+                    className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                  >
+                    <Layers className="h-4 w-4" /> View Capability Report <ChevronRight className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={runSynthesis}
+                    disabled={actionLoading === 'synthesise'}
+                    className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors disabled:opacity-60"
+                  >
+                    {actionLoading === 'synthesise' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Re-synthesising…</> : <><RefreshCw className="h-3.5 w-3.5" /> Re-synthesise</>}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={runSynthesis}
+                  disabled={actionLoading === 'synthesise'}
+                  className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-60 transition-colors"
+                >
+                  {actionLoading === 'synthesise' ? <><Loader2 className="h-4 w-4 animate-spin" /> Synthesising…</> : <><Layers className="h-4 w-4" /> Synthesise Capability View</>}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1653,11 +1729,25 @@ function GapAssessmentWizardInner() {
                     <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{synthesisReasoning}</div>
                   </details>
                 )}
-                <div className="flex items-center gap-2">
-                  <ExportDropdown label="Export Capability Report" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
-                  <button onClick={runBoardSummary} disabled={actionLoading === 'board'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
-                    {actionLoading === 'board' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Board Summary…</> : <><FileText className="h-4 w-4" /> Generate Board Summary</>}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button onClick={() => setCurrentStep(5)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
+                    <ChevronLeft className="h-4 w-4" /> Scoring
                   </button>
+                  <ExportDropdown label="Export Capability Report" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  {boardSummary ? (
+                    <>
+                      <button onClick={() => setCurrentStep(7)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                        <FileText className="h-4 w-4" /> View Board Summary <ChevronRight className="h-4 w-4" />
+                      </button>
+                      <button onClick={runBoardSummary} disabled={actionLoading === 'board'} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors disabled:opacity-60">
+                        {actionLoading === 'board' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Regenerating…</> : <><RefreshCw className="h-3.5 w-3.5" /> Re-generate</>}
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={runBoardSummary} disabled={actionLoading === 'board'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
+                      {actionLoading === 'board' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Board Summary…</> : <><FileText className="h-4 w-4" /> Generate Board Summary</>}
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -1700,11 +1790,25 @@ function GapAssessmentWizardInner() {
                     <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{boardReasoning}</div>
                   </details>
                 )}
-                <div className="flex items-center gap-2">
-                  <ExportDropdown label="Export Board Summary" buildContent={buildBoardMarkdown} filename={`board-summary-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
-                  <button onClick={runRoadmap} disabled={actionLoading === 'roadmap'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
-                    {actionLoading === 'roadmap' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Roadmap…</> : <><Map className="h-4 w-4" /> Generate Roadmap</>}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button onClick={() => setCurrentStep(6)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
+                    <ChevronLeft className="h-4 w-4" /> Capabilities
                   </button>
+                  <ExportDropdown label="Export Board Summary" buildContent={buildBoardMarkdown} filename={`board-summary-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  {roadmap ? (
+                    <>
+                      <button onClick={() => setCurrentStep(8)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                        <Map className="h-4 w-4" /> View Roadmap <ChevronRight className="h-4 w-4" />
+                      </button>
+                      <button onClick={runRoadmap} disabled={actionLoading === 'roadmap'} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors disabled:opacity-60">
+                        {actionLoading === 'roadmap' ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Regenerating…</> : <><RefreshCw className="h-3.5 w-3.5" /> Re-generate</>}
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={runRoadmap} disabled={actionLoading === 'roadmap'} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-60">
+                      {actionLoading === 'roadmap' ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating Roadmap…</> : <><Map className="h-4 w-4" /> Generate Roadmap</>}
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -1796,7 +1900,12 @@ function GapAssessmentWizardInner() {
                     <div className="border-t border-adv-teal/20 px-4 py-3 text-xs text-adv-gray leading-relaxed whitespace-pre-wrap">{roadmapReasoning}</div>
                   </details>
                 )}
-                <ExportDropdown label="Export Roadmap" buildContent={buildRoadmapMarkdown} filename={`roadmap-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setCurrentStep(7)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
+                    <ChevronLeft className="h-4 w-4" /> Board Summary
+                  </button>
+                  <ExportDropdown label="Export Roadmap" buildContent={buildRoadmapMarkdown} filename={`roadmap-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                </div>
               </div>
             )}
           </div>

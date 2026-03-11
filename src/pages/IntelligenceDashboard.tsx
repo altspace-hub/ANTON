@@ -48,42 +48,53 @@ export default function IntelligenceDashboard() {
   }, []);
 
   async function loadDashboardData() {
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      // Load summary
+    // Load each section independently so one failure doesn't block others
+    try {
       const summaryRes = await fetch('/api/intelligence/summary');
       const summaryData = await summaryRes.json();
       setSummary(summaryData);
 
-      // Load patterns
-      const patternsRes = await fetch('/api/patterns?status=active&limit=50');
-      const patternsData = await patternsRes.json();
-      const patternsArray = patternsData.patterns || [];
-      setPatterns(patternsArray);
+      // Build timeline from summary + patterns
+      try {
+        const patternsRes = await fetch('/api/patterns?status=active&limit=50');
+        const patternsData = await patternsRes.json();
+        const patternsArray = Array.isArray(patternsData.patterns) ? patternsData.patterns : [];
+        setPatterns(patternsArray);
 
-      // Build timeline entries
-      const entries: TimelineEntry[] = [
-        ...patternsArray.map((p: DetectedPattern) => ({
-          type: 'pattern' as const,
-          data: p,
-          timestamp: p.detected_at,
-        })),
-        ...summaryData.recentAtoms.map((a: any) => ({
-          type: 'atom' as const,
-          data: a,
-          timestamp: a.created_at,
-        })),
-      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const recentAtoms = Array.isArray(summaryData.recentAtoms) ? summaryData.recentAtoms : [];
+        const entries: TimelineEntry[] = [
+          ...patternsArray.map((p: DetectedPattern) => ({
+            type: 'pattern' as const,
+            data: p,
+            timestamp: p.detected_at,
+          })),
+          ...recentAtoms.map((a: any) => ({
+            type: 'atom' as const,
+            data: a,
+            timestamp: a.created_at,
+          })),
+        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        setTimelineEntries(entries);
+      } catch (err) {
+        console.error('Failed to load timeline data:', err);
+      }
+    } catch (error) {
+      console.error('Failed to load summary:', error);
+    }
 
-      setTimelineEntries(entries);
-
-      // Load entities
+    // Load entities independently
+    try {
       const entitiesRes = await fetch('/api/knowledge-graph/entities?limit=50');
       const entitiesData = await entitiesRes.json();
-      setEntities(entitiesData);
+      setEntities(Array.isArray(entitiesData) ? entitiesData : []);
+    } catch (err) {
+      console.error('Failed to load entities:', err);
+    }
 
-      // Load temporal data
+    // Load temporal data independently
+    try {
       const [atomsRes, patternsRes2, activityRes, qualityRes] = await Promise.all([
         fetch('/api/intelligence/temporal/atoms-per-day?days=30'),
         fetch('/api/intelligence/temporal/patterns-per-week?weeks=12'),
@@ -95,11 +106,11 @@ export default function IntelligenceDashboard() {
       setPatternsPerWeek(await patternsRes2.json());
       setEntityActivity(await activityRes.json());
       setQualityTrend(await qualityRes.json());
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Failed to load temporal data:', err);
     }
+
+    setLoading(false);
   }
 
   async function handleResolvePattern(pattern: DetectedPattern) {
@@ -140,47 +151,47 @@ export default function IntelligenceDashboard() {
   }
 
   return (
-    <div className="h-full bg-adv-dark text-adv-off-white overflow-auto">
+    <div className="space-y-0">
       {/* Header */}
-      <div className="border-b border-adv-gray-med/20 bg-adv-dark-2">
+      <div className="border-b border-border bg-secondary rounded-t-lg">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center gap-3 mb-4">
             <Brain className="w-6 h-6 text-adv-teal" />
-            <h1 className="text-2xl font-bold text-adv-white">Cross-Workflow Intelligence</h1>
+            <h1 className="text-2xl font-bold text-adv-off-white">Cross-Workflow Intelligence</h1>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-4 gap-4 mb-4">
-            <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Atom className="w-4 h-4 text-adv-teal" />
                 <span className="text-sm text-adv-gray">Knowledge Atoms</span>
               </div>
-              <div className="text-2xl font-bold text-adv-white">{summary?.totalAtoms || 0}</div>
+              <div className="text-2xl font-bold text-adv-off-white">{summary?.totalAtoms || 0}</div>
             </div>
 
-            <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Users className="w-4 h-4 text-adv-teal" />
                 <span className="text-sm text-adv-gray">Entities Tracked</span>
               </div>
-              <div className="text-2xl font-bold text-adv-white">{summary?.totalEntities || 0}</div>
+              <div className="text-2xl font-bold text-adv-off-white">{summary?.totalEntities || 0}</div>
             </div>
 
-            <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="w-4 h-4 text-adv-teal" />
                 <span className="text-sm text-adv-gray">Active Patterns</span>
               </div>
-              <div className="text-2xl font-bold text-adv-white">{summary?.totalPatterns || 0}</div>
+              <div className="text-2xl font-bold text-adv-off-white">{summary?.totalPatterns || 0}</div>
             </div>
 
-            <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle className={`w-4 h-4 ${(summary?.criticalPatterns || 0) > 0 ? 'text-red-500' : 'text-adv-gray'}`} />
                 <span className="text-sm text-adv-gray">Critical Alerts</span>
               </div>
-              <div className={`text-2xl font-bold ${(summary?.criticalPatterns || 0) > 0 ? 'text-red-400' : 'text-adv-white'}`}>
+              <div className={`text-2xl font-bold ${(summary?.criticalPatterns || 0) > 0 ? 'text-red-400' : 'text-adv-off-white'}`}>
                 {summary?.criticalPatterns || 0}
               </div>
             </div>
@@ -192,7 +203,7 @@ export default function IntelligenceDashboard() {
               onClick={() => setActiveView('insights')}
               className={`px-4 py-2 rounded-t-lg transition-colors ${
                 activeView === 'insights'
-                  ? 'bg-adv-card text-adv-teal border-t border-l border-r border-adv-gray-med/20'
+                  ? 'bg-card text-adv-teal border-t border-l border-r border-border'
                   : 'text-adv-gray hover:text-adv-off-white'
               }`}
             >
@@ -202,7 +213,7 @@ export default function IntelligenceDashboard() {
               onClick={() => setActiveView('timeline')}
               className={`px-4 py-2 rounded-t-lg transition-colors ${
                 activeView === 'timeline'
-                  ? 'bg-adv-card text-adv-teal border-t border-l border-r border-adv-gray-med/20'
+                  ? 'bg-card text-adv-teal border-t border-l border-r border-border'
                   : 'text-adv-gray hover:text-adv-off-white'
               }`}
             >
@@ -212,7 +223,7 @@ export default function IntelligenceDashboard() {
               onClick={() => setActiveView('memory')}
               className={`px-4 py-2 rounded-t-lg transition-colors ${
                 activeView === 'memory'
-                  ? 'bg-adv-card text-adv-teal border-t border-l border-r border-adv-gray-med/20'
+                  ? 'bg-card text-adv-teal border-t border-l border-r border-border'
                   : 'text-adv-gray hover:text-adv-off-white'
               }`}
             >
@@ -222,7 +233,7 @@ export default function IntelligenceDashboard() {
               onClick={() => setActiveView('heatmap')}
               className={`px-4 py-2 rounded-t-lg transition-colors ${
                 activeView === 'heatmap'
-                  ? 'bg-adv-card text-adv-teal border-t border-l border-r border-adv-gray-med/20'
+                  ? 'bg-card text-adv-teal border-t border-l border-r border-border'
                   : 'text-adv-gray hover:text-adv-off-white'
               }`}
             >
@@ -232,7 +243,7 @@ export default function IntelligenceDashboard() {
               onClick={() => setActiveView('temporal')}
               className={`px-4 py-2 rounded-t-lg transition-colors ${
                 activeView === 'temporal'
-                  ? 'bg-adv-card text-adv-teal border-t border-l border-r border-adv-gray-med/20'
+                  ? 'bg-card text-adv-teal border-t border-l border-r border-border'
                   : 'text-adv-gray hover:text-adv-off-white'
               }`}
             >
@@ -251,7 +262,7 @@ export default function IntelligenceDashboard() {
         {activeView === 'timeline' && (
           <div className="space-y-4">
             {/* Filters */}
-            <div className="flex items-center gap-4 bg-adv-card border border-adv-gray-med/20 rounded-lg p-3">
+            <div className="flex items-center gap-4 bg-card border border-border rounded-lg p-3">
               <Filter className="w-4 h-4 text-adv-gray" />
               <div className="flex gap-2">
                 <button
@@ -259,7 +270,7 @@ export default function IntelligenceDashboard() {
                   className={`px-3 py-1 text-sm rounded ${
                     timelineFilter === 'all'
                       ? 'bg-adv-teal text-white'
-                      : 'bg-adv-dark-2 text-adv-gray hover:text-adv-off-white'
+                      : 'bg-secondary text-adv-gray hover:text-adv-off-white'
                   }`}
                 >
                   All
@@ -269,7 +280,7 @@ export default function IntelligenceDashboard() {
                   className={`px-3 py-1 text-sm rounded ${
                     timelineFilter === 'patterns'
                       ? 'bg-adv-teal text-white'
-                      : 'bg-adv-dark-2 text-adv-gray hover:text-adv-off-white'
+                      : 'bg-secondary text-adv-gray hover:text-adv-off-white'
                   }`}
                 >
                   Patterns Only
@@ -279,14 +290,14 @@ export default function IntelligenceDashboard() {
                   className={`px-3 py-1 text-sm rounded ${
                     timelineFilter === 'atoms'
                       ? 'bg-adv-teal text-white'
-                      : 'bg-adv-dark-2 text-adv-gray hover:text-adv-off-white'
+                      : 'bg-secondary text-adv-gray hover:text-adv-off-white'
                   }`}
                 >
                   Atoms Only
                 </button>
               </div>
 
-              <div className="border-l border-adv-gray-med/20 pl-4 flex gap-2 items-center">
+              <div className="border-l border-border pl-4 flex gap-2 items-center">
                 <span className="text-sm text-adv-gray">Severity:</span>
                 {['critical', 'warning', 'info', 'positive'].map(sev => (
                   <button
@@ -295,7 +306,7 @@ export default function IntelligenceDashboard() {
                     className={`px-2 py-1 text-xs rounded capitalize ${
                       severityFilter === sev
                         ? 'bg-adv-teal text-white'
-                        : 'bg-adv-dark-2 text-adv-gray hover:text-adv-off-white'
+                        : 'bg-secondary text-adv-gray hover:text-adv-off-white'
                     }`}
                   >
                     {sev}
@@ -321,7 +332,7 @@ export default function IntelligenceDashboard() {
                       onResolve={() => handleResolvePattern(entry.data)}
                     />
                   ) : (
-                    <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+                    <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-start gap-3">
                         <Atom className="w-4 h-4 text-adv-teal mt-1" />
                         <div className="flex-1">

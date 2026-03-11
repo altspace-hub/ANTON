@@ -25,6 +25,10 @@ import {
   TrendingUp, Compass, MapPin, Crosshair,
   // Wave 2 icons — Investment & Project Mgmt
   LineChart, PieChart, FolderKanban, Users,
+  // Wave 3 icons — Healthcare, NGO, Creative, Blockchain, PE/VC, etc.
+  Activity, Stethoscope, Heart, HeartPulse, Hospital, Baby,
+  Globe, Blocks, Clapperboard, BookOpen, Landmark, Sprout,
+  Pen, Wheat, Droplets, Bug, Scissors, Pill, Syringe, Brain,
   // UI icons
   ArrowRight, ChevronRight, Clock, LayoutGrid, MessageSquare, Zap, Trash2, Pencil, Check, X, X as XIcon,
   Star, Puzzle, Plus,
@@ -96,6 +100,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   CircleDot, Thermometer, Leaf,
   TrendingUp, Compass, MapPin, Crosshair,
   LineChart, PieChart, FolderKanban, Users,
+  // Wave 3
+  Activity, Stethoscope, Heart, HeartPulse, Hospital, Baby,
+  Globe, Blocks, Clapperboard, BookOpen, Landmark, Sprout,
+  Pen, Wheat, Droplets, Bug, Scissors, Pill, Syringe, Brain,
 };
 
 const colorMap: Record<string, string> = {
@@ -119,6 +127,15 @@ const areaHeaderColor: Record<string, string> = {
   investment:     'text-adv-teal',
   'project-mgmt': 'text-adv-green',
   strategy:       'text-adv-gold',
+  blockchain:     'text-adv-teal',
+  healthcare:     'text-adv-blue',
+  'creative-production': 'text-adv-gold',
+  humanitarian:   'text-adv-green',
+  'pe-vc':        'text-adv-teal',
+  insurance:      'text-adv-blue',
+  'payments-dora': 'text-adv-teal',
+  'community-health': 'text-adv-green',
+  'smallholder-farming': 'text-adv-green',
 };
 
 function formatSessionCost(session: Session): string | null {

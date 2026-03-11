@@ -11,8 +11,7 @@
     "Conduct of Business",
     "Best Execution",
     "Transparency",
-    "Product Governance",
-    "Investor Protection",
+        "Investor Protection",
     "Reporting"
   ],
   "articles": [
@@ -42,7 +41,7 @@
     {"id":"Art.48","title":"Resilience, circuit breakers, and electronic trading","theme":"Governance","requirement":"Regulated markets must have effective systems, procedures, and arrangements to ensure orderly trading, including resilience of trading systems and circuit breaker mechanisms."},
     {"id":"Art.50","title":"Admission of financial instruments to trading","theme":"Authorization","requirement":"Regulated markets must have clear, transparent, and non-discriminatory rules for the admission of financial instruments to trading."},
     {"id":"Art.56","title":"Suspension and removal of instruments from trading","theme":"Transparency","requirement":"Competent authorities may require suspension or removal of a financial instrument from trading where the instrument no longer complies with rules or there is a threat to investor protection or market integrity."},
-    {"id":"Art.58","title":"Position limits and position management","theme":"Reporting","requirement":"Competent authorities must establish and apply position limits on the size of net positions in commodity derivatives, including agricultural derivatives, to prevent market abuse and support orderly pricing."},
+    {"id":"Art.58","title":"Position reporting by categories of position holders","theme":"Reporting","requirement":"Member States shall ensure that investment firms and market operators operating a trading venue which trade commodity derivatives report to the competent authority a breakdown of positions held by all persons."},
     {"id":"Art.59","title":"Position reporting by categories of position holders","theme":"Reporting","requirement":"Investment firms trading in commodity derivatives must report to the competent authority daily details of their own and their clients' positions, classified by category of position holder."},
     {"id":"Art.65","title":"Transaction reporting","theme":"Reporting","requirement":"Investment firms must report to the competent authority complete and accurate details of executed transactions as quickly as possible and no later than the close of the following working day."},
     {"id":"Art.66","title":"Data reporting services","theme":"Reporting","requirement":"Data reporting services providers (ARMs, APAs, CTPs) must be authorised and must comply with organisational requirements ensuring accurate, complete, and timely data publication."},

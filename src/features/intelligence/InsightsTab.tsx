@@ -189,7 +189,7 @@ export function InsightsTab() {
               className={`px-3 py-1 text-sm rounded ${
                 timeRange === range
                   ? 'bg-adv-teal text-white'
-                  : 'bg-adv-card text-adv-gray hover:text-adv-off-white'
+                  : 'bg-card text-adv-gray hover:text-adv-off-white'
               }`}
             >
               {range === 'all' ? 'All Time' : `Last ${range.charAt(0).toUpperCase() + range.slice(1)}`}
@@ -200,7 +200,7 @@ export function InsightsTab() {
         <div className="flex gap-2">
           <button
             onClick={() => exportAtoms('json')}
-            className="flex items-center gap-2 px-3 py-1 text-sm rounded bg-adv-card text-adv-gray hover:text-adv-off-white border border-adv-gray-med/20"
+            className="flex items-center gap-2 px-3 py-1 text-sm rounded bg-card text-adv-gray hover:text-adv-off-white border border-border"
             title="Export as JSON"
           >
             <Download className="w-4 h-4" />
@@ -208,7 +208,7 @@ export function InsightsTab() {
           </button>
           <button
             onClick={() => exportAtoms('csv')}
-            className="flex items-center gap-2 px-3 py-1 text-sm rounded bg-adv-card text-adv-gray hover:text-adv-off-white border border-adv-gray-med/20"
+            className="flex items-center gap-2 px-3 py-1 text-sm rounded bg-card text-adv-gray hover:text-adv-off-white border border-border"
             title="Export as CSV"
           >
             <Download className="w-4 h-4" />
@@ -219,32 +219,32 @@ export function InsightsTab() {
 
       {/* Stats Summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-sm text-adv-gray mb-1">Total Atoms</div>
-          <div className="text-2xl font-bold text-adv-white">{totalAtoms}</div>
+          <div className="text-2xl font-bold text-adv-off-white">{totalAtoms}</div>
         </div>
 
-        <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-sm text-adv-gray mb-1">Top Category</div>
-          <div className="text-2xl font-bold text-adv-white capitalize">
+          <div className="text-2xl font-bold text-adv-off-white capitalize">
             {Object.entries(distribution).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'}
           </div>
         </div>
 
-        <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="text-sm text-adv-gray mb-1">Entities Tracked</div>
-          <div className="text-2xl font-bold text-adv-white">{topEntities.length}</div>
+          <div className="text-2xl font-bold text-adv-off-white">{topEntities.length}</div>
         </div>
       </div>
 
       {/* Category Distribution */}
-      <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-adv-white mb-3">Atom Distribution</h3>
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="text-sm font-medium text-adv-off-white mb-3">Atom Distribution</h3>
         <div className="space-y-2">
           {Object.entries(distribution).map(([category, count]) => (
             <div key={category} className="flex items-center gap-3">
               <div className="w-24 text-xs text-adv-gray capitalize">{category}</div>
-              <div className="flex-1 bg-adv-dark-2 rounded-full h-2">
+              <div className="flex-1 bg-secondary rounded-full h-2">
                 <div
                   className="bg-adv-teal rounded-full h-2 transition-all"
                   style={{ width: `${(count / totalAtoms) * 100}%` }}
@@ -257,9 +257,9 @@ export function InsightsTab() {
       </div>
 
       {/* AI Narrative Brief */}
-      <div className="bg-adv-card border border-adv-teal/20 rounded-lg p-4">
+      <div className="bg-card border border-adv-teal/20 rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-adv-white flex items-center gap-2">
+          <h3 className="text-sm font-medium text-adv-off-white flex items-center gap-2">
             <Brain className="w-4 h-4 text-adv-teal" />
             Intelligence Brief
           </h3>
@@ -277,16 +277,16 @@ export function InsightsTab() {
           </p>
         )}
         {brief && (
-          <div className="prose prose-invert prose-sm max-w-none text-adv-off-white">
+          <div className="prose prose-output prose-sm max-w-none text-adv-off-white">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief}</ReactMarkdown>
           </div>
         )}
       </div>
 
       {/* AI Insights */}
-      <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+      <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-adv-white flex items-center gap-2">
+          <h3 className="text-sm font-medium text-adv-off-white flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-adv-teal" />
             AI-Generated Insights
           </h3>
@@ -326,8 +326,8 @@ export function InsightsTab() {
                   {getInsightIcon(insight.type)}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-medium text-adv-white">{insight.title}</h4>
-                      <span className="text-xs px-2 py-0.5 rounded bg-adv-dark-2 text-adv-gray capitalize">
+                      <h4 className="text-sm font-medium text-adv-off-white">{insight.title}</h4>
+                      <span className="text-xs px-2 py-0.5 rounded bg-secondary text-adv-gray capitalize">
                         {insight.type}
                       </span>
                       <span className={`text-xs font-medium ${getConfidenceColor(insight.confidence)}`}>
@@ -349,8 +349,8 @@ export function InsightsTab() {
       </div>
 
       {/* Top Entities */}
-      <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-adv-white mb-3">Most Referenced Entities</h3>
+      <div className="bg-card border border-border rounded-lg p-4">
+        <h3 className="text-sm font-medium text-adv-off-white mb-3">Most Referenced Entities</h3>
         <div className="space-y-2">
           {(!topEntities || topEntities.length === 0) && (
             <div className="text-center py-4 text-adv-gray text-sm">

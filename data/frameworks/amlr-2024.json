@@ -3,104 +3,752 @@
   "name": "AMLR 2024 — Anti-Money Laundering Regulation",
   "shortName": "AMLR",
   "reference": "Regulation (EU) 2024/1624",
+  "eurLex": "CELEX:32024R1624",
   "applicationDate": "2027-07-10",
-  "articleCount": 86,
+  "footballApplicationDate": "2029-07-10",
+  "articleCount": 90,
+  "chapters": [
+    {"number": "I", "title": "General Provisions", "articles": "1-8"},
+    {"number": "II", "title": "Internal Policies, Procedures and Controls", "articles": "9-18"},
+    {"number": "III", "title": "Customer Due Diligence", "articles": "19-50"},
+    {"number": "IV", "title": "Beneficial Ownership Transparency", "articles": "51-68"},
+    {"number": "V", "title": "Reporting Obligations", "articles": "69-74"},
+    {"number": "VI", "title": "Information Sharing", "articles": "75"},
+    {"number": "VII", "title": "Data Protection and Record Retention", "articles": "76-78"},
+    {"number": "VIII", "title": "Measures to Mitigate Risks from Anonymous Instruments", "articles": "79-80"},
+    {"number": "IX", "title": "Final Provisions", "articles": "81-90"}
+  ],
   "themes": [
-    "Risk-Based Approach",
+    "General Provisions & Scope",
+    "Internal Policies & Governance",
     "Customer Due Diligence",
-    "PEP & Enhanced DD",
-    "Transaction Monitoring",
-    "Reporting & FIU",
-    "Sanctions & Freezing",
-    "Governance & Controls",
-    "Record Keeping"
+    "Enhanced Due Diligence & PEPs",
+    "Beneficial Ownership Transparency",
+    "Reporting Obligations & Information Sharing",
+    "Data Protection & Record Retention",
+    "Anonymous Instruments & Cash Limits",
+    "Final Provisions"
   ],
   "articles": [
-    {"id":"Art.1","title":"Subject matter","theme":"Governance & Controls","requirement":"Establishes scope — rules on AML/CFT for obliged entities"},
-    {"id":"Art.2","title":"Obliged entities","theme":"Governance & Controls","requirement":"Defines which entities are in scope (credit institutions, payment institutions, CASPs, etc.)"},
-    {"id":"Art.3","title":"Definitions","theme":"Governance & Controls","requirement":"Defines beneficial owner, PEP, business relationship, occasional transaction, etc."},
-    {"id":"Art.4","title":"Risk-based approach","theme":"Risk-Based Approach","requirement":"Obliged entities must apply risk-based approach to AML/CFT measures — proportionate to identified risks"},
-    {"id":"Art.5","title":"ML/TF risk assessment","theme":"Risk-Based Approach","requirement":"Identify and assess ML/TF risks at business-wide level; document, keep current, review on trigger events"},
-    {"id":"Art.6","title":"Risk factors","theme":"Risk-Based Approach","requirement":"Consider customer, product, geographic, channel, and transaction risk factors; refer to Annex I-III"},
-    {"id":"Art.7","title":"Group-wide risk assessment","theme":"Risk-Based Approach","requirement":"Group-level ML/TF risk assessment covering all subsidiaries and branches"},
-    {"id":"Art.8","title":"Group-wide policies and controls","theme":"Governance & Controls","requirement":"Group-wide AML/CFT policies, procedures, controls; share information within group"},
-    {"id":"Art.9","title":"Policies and procedures","theme":"Governance & Controls","requirement":"Internal AML/CFT policies and procedures; documented, proportionate, regularly reviewed"},
-    {"id":"Art.10","title":"Customer due diligence","theme":"Customer Due Diligence","requirement":"Apply CDD measures for new business relationships, occasional transactions ≥€10k, and on suspicion"},
-    {"id":"Art.11","title":"Application of CDD measures","theme":"Customer Due Diligence","requirement":"Timing and manner of CDD application; verification before/at start of business relationship"},
-    {"id":"Art.12","title":"Enhanced due diligence","theme":"PEP & Enhanced DD","requirement":"EDD triggers: high-risk third countries, PEPs, complex/unusual transactions, high-risk factors"},
-    {"id":"Art.13","title":"Simplified due diligence","theme":"Customer Due Diligence","requirement":"SDD permitted for lower-risk relationships; conditions and limits; not a blanket exemption"},
-    {"id":"Art.14","title":"Identification of customer","theme":"Customer Due Diligence","requirement":"Collect identifying information: name, DOB, nationality, address, ID document"},
-    {"id":"Art.15","title":"Verification of customer identity","theme":"Customer Due Diligence","requirement":"Verify identity through reliable, independent sources; document basis for verification"},
-    {"id":"Art.16","title":"Beneficial ownership","theme":"Customer Due Diligence","requirement":"Identify and verify beneficial owner (>25% threshold); understand ownership/control structure"},
-    {"id":"Art.17","title":"Understanding business relationship","theme":"Customer Due Diligence","requirement":"Understand purpose and intended nature of business relationship; obtain relevant information"},
-    {"id":"Art.18","title":"Ongoing monitoring","theme":"Transaction Monitoring","requirement":"Ongoing monitoring of business relationship; scrutiny of transactions throughout; keep CDD current"},
-    {"id":"Art.19","title":"Timing of verification","theme":"Customer Due Diligence","requirement":"Verification must be completed before/at start of relationship; exceptions for low-risk in limited cases"},
-    {"id":"Art.20","title":"Inability to apply CDD","theme":"Customer Due Diligence","requirement":"Exit relationship if CDD cannot be completed; file STR if appropriate; do not establish relationship"},
-    {"id":"Art.21","title":"Reliance on third parties","theme":"Customer Due Diligence","requirement":"May rely on third parties for CDD; responsibility remains with obliged entity; specific conditions apply"},
-    {"id":"Art.22","title":"Outsourcing","theme":"Customer Due Diligence","requirement":"May outsource CDD activities; liability remains; must monitor and audit outsourced providers"},
-    {"id":"Art.23","title":"Politically exposed persons","theme":"PEP & Enhanced DD","requirement":"PEP definition: domestic/foreign PEPs, international organisations; identify at onboarding and ongoing"},
-    {"id":"Art.24","title":"Family members and close associates of PEPs","theme":"PEP & Enhanced DD","requirement":"Extend PEP measures to immediate family and known close associates"},
-    {"id":"Art.25","title":"EDD for PEPs","theme":"PEP & Enhanced DD","requirement":"Senior management approval; enhanced ongoing monitoring; source of wealth and funds; no default termination"},
-    {"id":"Art.26","title":"De-risking of PEPs","theme":"PEP & Enhanced DD","requirement":"Cannot terminate solely on PEP status; must conduct individual risk assessment; document rationale"},
-    {"id":"Art.27","title":"Former PEPs","theme":"PEP & Enhanced DD","requirement":"Apply risk-based approach to former PEPs; minimum 12 months after leaving office for full de-listing"},
-    {"id":"Art.28","title":"High-risk third countries","theme":"PEP & Enhanced DD","requirement":"Apply EDD to transactions/relationships involving FATF high-risk or equivalent countries; enhanced measures"},
-    {"id":"Art.29","title":"Measures for high-risk third countries","theme":"PEP & Enhanced DD","requirement":"Specific EDD measures: senior management approval; source of funds; enhanced ongoing monitoring"},
-    {"id":"Art.30","title":"Correspondent banking","theme":"PEP & Enhanced DD","requirement":"Specific requirements for cross-border correspondent relationships; assess respondent's AML controls"},
-    {"id":"Art.31","title":"Payable-through accounts","theme":"PEP & Enhanced DD","requirement":"Additional requirements for payable-through accounts in correspondent banking context"},
-    {"id":"Art.32","title":"Anonymous accounts","theme":"Customer Due Diligence","requirement":"Prohibition on anonymous accounts/passbooks; existing ones must be subject to CDD before use"},
-    {"id":"Art.33","title":"Shell banks","theme":"Customer Due Diligence","requirement":"Prohibition on correspondent relationships with shell banks"},
-    {"id":"Art.34","title":"Private banking","theme":"PEP & Enhanced DD","requirement":"Enhanced measures for private banking; senior management sign-off; source of wealth"},
-    {"id":"Art.35","title":"Nominee shareholders","theme":"Customer Due Diligence","requirement":"Where nominee shareholders/directors used, obtain information on beneficial owner behind nominee"},
-    {"id":"Art.36","title":"Life insurance and investments","theme":"Customer Due Diligence","requirement":"CDD on beneficiaries and beneficial owners of life insurance/investment products at pay-out"},
-    {"id":"Art.37","title":"Currency exchange","theme":"Customer Due Diligence","requirement":"CDD requirements for currency exchange at €1,000 threshold"},
-    {"id":"Art.38","title":"Crypto-asset service providers","theme":"Customer Due Diligence","requirement":"Specific CDD requirements for CASPs; Travel Rule compliance; wallet address screening"},
-    {"id":"Art.39","title":"Suspicious transaction reporting — internal","theme":"Reporting & FIU","requirement":"Employees must report suspicions to compliance officer (MLRO) promptly; no tipping-off"},
-    {"id":"Art.40","title":"Reporting to FIU","theme":"Reporting & FIU","requirement":"File STR with national FIU when suspicion arises; do so without delay; no tipping-off"},
-    {"id":"Art.41","title":"Content of STR","theme":"Reporting & FIU","requirement":"STR must include all relevant information; cooperate with FIU requests; provide supplementary info"},
-    {"id":"Art.42","title":"Tipping-off prohibition","theme":"Reporting & FIU","requirement":"Prohibition on disclosing that STR filed or investigation ongoing; exceptions for group/professional contexts"},
-    {"id":"Art.43","title":"Non-execution of transactions","theme":"Reporting & FIU","requirement":"May proceed with transaction if deferral would compromise investigation; report to FIU and document"},
-    {"id":"Art.44","title":"Liability exemption","theme":"Reporting & FIU","requirement":"Good-faith STR filers exempt from liability; protection for employees who report internally"},
-    {"id":"Art.45","title":"Annual reporting","theme":"Reporting & FIU","requirement":"Annual submission to FIU of statistical data on STRs, dissemination decisions, freezings"},
-    {"id":"Art.46","title":"FIU cooperation","theme":"Reporting & FIU","requirement":"Obliged entities must cooperate with FIU requests; respond within defined timeframes"},
-    {"id":"Art.47","title":"Sanctions screening","theme":"Sanctions & Freezing","requirement":"Screen customers and counterparties against EU, UN, and national sanctions lists"},
-    {"id":"Art.48","title":"Asset freezing","theme":"Sanctions & Freezing","requirement":"Immediately freeze assets of designated persons; report to competent authority; no delay permitted"},
-    {"id":"Art.49","title":"Reporting of freezing","theme":"Sanctions & Freezing","requirement":"Report frozen assets and freeze actions to competent authority within defined timeframe"},
-    {"id":"Art.50","title":"Sanctions evasion","theme":"Sanctions & Freezing","requirement":"Identify and report suspected sanctions evasion; implement evasion-detection typologies"},
-    {"id":"Art.51","title":"Internal controls","theme":"Governance & Controls","requirement":"Effective internal AML/CFT controls; compliance function; independent audit; MLRO appointment"},
-    {"id":"Art.52","title":"Compliance officer","theme":"Governance & Controls","requirement":"Designate compliance officer (MLRO) at management level; sufficient authority and resources"},
-    {"id":"Art.53","title":"Employee vetting","theme":"Governance & Controls","requirement":"Fit and proper requirements for employees in AML-relevant roles; criminal record checks"},
-    {"id":"Art.54","title":"Training","theme":"Governance & Controls","requirement":"Regular AML/CFT training for all relevant staff; role-specific training; document attendance"},
-    {"id":"Art.55","title":"Whistleblower protection","theme":"Governance & Controls","requirement":"Confidential channel for reporting breaches; protection from retaliation; anonymous reporting option"},
-    {"id":"Art.56","title":"Management body responsibility","theme":"Governance & Controls","requirement":"Management body responsible for AML/CFT strategy; annual review; senior manager accountability"},
-    {"id":"Art.57","title":"AML/CFT strategy","theme":"Governance & Controls","requirement":"Board-approved AML/CFT strategy; cascaded to business units; reviewed annually or on trigger"},
-    {"id":"Art.58","title":"Risk appetite","theme":"Governance & Controls","requirement":"Defined AML/CFT risk appetite; approved by board; aligned to business model and risk profile"},
-    {"id":"Art.59","title":"Business-wide risk assessment — update","theme":"Risk-Based Approach","requirement":"BWRA updated at least every 2 years and on material change; benchmarked against sectoral/national assessment"},
-    {"id":"Art.60","title":"Record keeping — CDD","theme":"Record Keeping","requirement":"Retain CDD records for at least 5 years from end of business relationship (max 10); accessible to authorities"},
-    {"id":"Art.61","title":"Record keeping — transactions","theme":"Record Keeping","requirement":"Retain transaction records for at least 5 years from completion; accessible to authorities"},
-    {"id":"Art.62","title":"Record keeping — STRs","theme":"Record Keeping","requirement":"Retain STR filings and supporting documentation; restricted access; data protection compliance"},
-    {"id":"Art.63","title":"Data protection","theme":"Record Keeping","requirement":"AML data processing must comply with GDPR; limited purpose; no dual use for commercial purposes"},
-    {"id":"Art.64","title":"Beneficial ownership registers","theme":"Record Keeping","requirement":"Entities must maintain accurate BO information; update within defined timeframes; cooperate with registry"},
-    {"id":"Art.65","title":"Transaction monitoring systems","theme":"Transaction Monitoring","requirement":"Effective TM systems proportionate to risk profile; detect unusual patterns; tune alerts regularly"},
-    {"id":"Art.66","title":"TM alert handling","theme":"Transaction Monitoring","requirement":"Procedures for handling TM alerts; escalation to MLRO; document decision and rationale"},
-    {"id":"Art.67","title":"TM parameters","theme":"Transaction Monitoring","requirement":"Defined TM scenarios and thresholds; regular review; benchmarked against typologies"},
-    {"id":"Art.68","title":"Cash transactions","theme":"Transaction Monitoring","requirement":"CDD and reporting for cash transactions ≥€10k (or lower national threshold)"},
-    {"id":"Art.69","title":"Real estate","theme":"Transaction Monitoring","requirement":"CDD and enhanced scrutiny for high-value real estate transactions; check for complex ownership structures"},
-    {"id":"Art.70","title":"Crypto-assets monitoring","theme":"Transaction Monitoring","requirement":"Transaction monitoring for crypto-asset transfers; Travel Rule compliance; unhosted wallet screening"},
-    {"id":"Art.71","title":"Trade finance","theme":"Transaction Monitoring","requirement":"AML/CFT measures for trade finance; over/under-invoicing detection; beneficial ownership of counterparties"},
-    {"id":"Art.72","title":"FIU feedback","theme":"Reporting & FIU","requirement":"FIUs provide feedback to obliged entities on quality of STRs; entities use feedback to improve"},
-    {"id":"Art.73","title":"National risk assessment alignment","theme":"Risk-Based Approach","requirement":"Obliged entities have regard to national risk assessment in their own risk assessment"},
-    {"id":"Art.74","title":"Sector risk assessment","theme":"Risk-Based Approach","requirement":"Supervisors publish sector-specific risk assessments; obliged entities apply findings"},
-    {"id":"Art.75","title":"AMLA joint guidelines","theme":"Governance & Controls","requirement":"AMLA issues guidelines on RBA; entities must have regard to AMLA guidance"},
-    {"id":"Art.76","title":"Cooperation with authorities","theme":"Governance & Controls","requirement":"Respond to competent authority requests promptly; provide records and information"},
-    {"id":"Art.77","title":"Supervisory access","theme":"Governance & Controls","requirement":"Supervisors have right of access to premises, systems, and records; entities must cooperate"},
-    {"id":"Art.78","title":"Sanctions — administrative","theme":"Governance & Controls","requirement":"Administrative sanctions regime; pecuniary penalties; public statement; withdrawal of authorisation"},
-    {"id":"Art.79","title":"Penalties","theme":"Governance & Controls","requirement":"Minimum penalty levels for serious, systematic, or repeated AML breaches; up to €10M or 10% of turnover"},
-    {"id":"Art.80","title":"Publication of decisions","theme":"Governance & Controls","requirement":"Supervisors publish enforcement decisions; 'name and shame' regime; specified retention period"},
-    {"id":"Art.81","title":"Reporting breaches — internal","theme":"Governance & Controls","requirement":"Internal breach reporting channels; protection for reporters; management body notification"},
-    {"id":"Art.82","title":"Cross-border cooperation","theme":"Governance & Controls","requirement":"Cooperation between home/host supervisors; AMLA colleges; information exchange protocols"},
-    {"id":"Art.83","title":"Entry into force","theme":"Governance & Controls","requirement":"Entry into force 20 days after publication; applies from 10 July 2027"},
-    {"id":"Art.84","title":"Transitional provisions","theme":"Governance & Controls","requirement":"Transitional arrangements for existing relationships and systems; review within 12 months"},
-    {"id":"Art.85","title":"Review clause","theme":"Governance & Controls","requirement":"Commission to review and report on application by 2030; consider extension to new sectors"},
-    {"id":"Art.86","title":"Repeal","theme":"Governance & Controls","requirement":"AMLD4 and AMLD5 repealed; references to repealed directives to be read as references to AMLR"}
+    {
+      "id": "Art.1",
+      "title": "Subject matter",
+      "chapter": "I",
+      "section": "Subject Matter and Definitions",
+      "theme": "General Provisions & Scope",
+      "requirement": "Establishes rules on prevention of the use of the financial system for money laundering or terrorist financing"
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "I",
+      "section": "Subject Matter and Definitions",
+      "theme": "General Provisions & Scope",
+      "requirement": "Defines key terms: beneficial owner, PEP, business relationship, occasional transaction, shell institution, correspondent relationship, virtual IBAN, crypto-asset, etc."
+    },
+    {
+      "id": "Art.3",
+      "title": "Obliged entities",
+      "chapter": "I",
+      "section": "Scope",
+      "theme": "General Provisions & Scope",
+      "requirement": "Defines which entities are in scope: credit institutions, financial institutions, auditors, notaries, lawyers, tax advisors, estate agents, high-value goods dealers, CASPs, football clubs, etc."
+    },
+    {
+      "id": "Art.4",
+      "title": "Exemptions for certain providers of gambling services",
+      "chapter": "I",
+      "section": "Scope",
+      "theme": "General Provisions & Scope",
+      "requirement": "Member States may exempt certain gambling service providers from AMLR obligations based on proven low risk; must notify Commission; subject to conditions"
+    },
+    {
+      "id": "Art.5",
+      "title": "Exemptions for certain professional football clubs",
+      "chapter": "I",
+      "section": "Scope",
+      "theme": "General Provisions & Scope",
+      "requirement": "Member States may exempt professional football clubs not meeting high-value transaction thresholds; subject to risk assessment and Commission notification"
+    },
+    {
+      "id": "Art.6",
+      "title": "Exemptions for certain financial activities",
+      "chapter": "I",
+      "section": "Scope",
+      "theme": "General Provisions & Scope",
+      "requirement": "Member States may exempt persons conducting financial activity on occasional/limited basis where ML/TF risk is low; strict quantitative thresholds apply"
+    },
+    {
+      "id": "Art.7",
+      "title": "Prior notification of exemptions",
+      "chapter": "I",
+      "section": "Scope",
+      "theme": "General Provisions & Scope",
+      "requirement": "Member States must notify Commission and AMLA before granting exemptions under Art.4-6; AMLA may issue opinion within 2 months"
+    },
+    {
+      "id": "Art.8",
+      "title": "Notification of cross-border operations and application of national law",
+      "chapter": "I",
+      "section": "Cross-border Operations",
+      "theme": "General Provisions & Scope",
+      "requirement": "Obliged entities operating cross-border must notify home and host supervisors; host Member State law applies to branches/agents operating in its territory"
+    },
+    {
+      "id": "Art.9",
+      "title": "Scope of internal policies, procedures and controls",
+      "chapter": "II",
+      "section": "Internal Policies, Procedures and Controls",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Obliged entities must establish and maintain proportionate internal AML/CFT policies, procedures and controls; approved by senior management; regularly reviewed"
+    },
+    {
+      "id": "Art.10",
+      "title": "Business-wide risk assessment",
+      "chapter": "II",
+      "section": "Internal Policies, Procedures and Controls",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Identify and assess ML/TF risks at entity level considering customers, countries, products, services, transactions and delivery channels; document and keep current"
+    },
+    {
+      "id": "Art.11",
+      "title": "Compliance functions",
+      "chapter": "II",
+      "section": "Internal Policies, Procedures and Controls",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Appoint compliance officer at management level with sufficient authority and resources; independent compliance function; direct reporting to management body"
+    },
+    {
+      "id": "Art.12",
+      "title": "Awareness of requirements",
+      "chapter": "II",
+      "section": "Internal Policies, Procedures and Controls",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Ensure all relevant employees are aware of AML/CFT requirements including data protection; regular training programme proportionate to role and risk"
+    },
+    {
+      "id": "Art.13",
+      "title": "Integrity of employees",
+      "chapter": "II",
+      "section": "Internal Policies, Procedures and Controls",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Screen employees in AML-relevant roles; fit and proper requirements; criminal record checks where permitted by national law"
+    },
+    {
+      "id": "Art.14",
+      "title": "Reporting of breaches and protection of reporting persons",
+      "chapter": "II",
+      "section": "Internal Policies, Procedures and Controls",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Establish confidential internal channel for reporting AML/CFT breaches; protect reporting persons from retaliation; anonymous reporting option"
+    },
+    {
+      "id": "Art.15",
+      "title": "Situation of specific employees",
+      "chapter": "II",
+      "section": "Internal Policies, Procedures and Controls",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Address specific risks posed by employees in sensitive positions; enhanced screening and monitoring where appropriate"
+    },
+    {
+      "id": "Art.16",
+      "title": "Group-wide requirements",
+      "chapter": "II",
+      "section": "Provisions Applying to Groups",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Group-wide AML/CFT policies, procedures and controls; information sharing within group; group-level risk assessment covering all subsidiaries and branches"
+    },
+    {
+      "id": "Art.17",
+      "title": "Branches and subsidiaries in third countries",
+      "chapter": "II",
+      "section": "Provisions Applying to Groups",
+      "theme": "Internal Policies & Governance",
+      "requirement": "Apply EU-equivalent AML/CFT measures in third-country branches/subsidiaries; where local law prevents compliance, apply additional measures to manage risk; notify supervisors"
+    },
+    {
+      "id": "Art.18",
+      "title": "Outsourcing",
+      "chapter": "II",
+      "section": "Outsourcing",
+      "theme": "Internal Policies & Governance",
+      "requirement": "May outsource AML/CFT tasks; liability remains with obliged entity; must monitor and audit outsourced providers; specific conditions for third-country outsourcing"
+    },
+    {
+      "id": "Art.19",
+      "title": "Application of customer due diligence measures",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Apply CDD when establishing business relationship, carrying out occasional transactions >=EUR 10,000, suspecting ML/TF, or doubting previously obtained identification data"
+    },
+    {
+      "id": "Art.20",
+      "title": "Customer due diligence measures",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "CDD measures comprise: identifying and verifying customer identity, identifying beneficial owner, assessing and obtaining information on purpose and nature of business relationship, conducting ongoing monitoring"
+    },
+    {
+      "id": "Art.21",
+      "title": "Inability to comply with customer due diligence requirements",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Where CDD cannot be completed: do not establish relationship or carry out transaction; terminate existing relationship; consider filing STR with FIU"
+    },
+    {
+      "id": "Art.22",
+      "title": "Identification and verification of customer and beneficial owner identity",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Collect identifying information (name, DOB, nationality, address, ID document); verify through reliable independent sources; identify beneficial owners (>25% ownership/control threshold)"
+    },
+    {
+      "id": "Art.23",
+      "title": "Timing of verification",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Verification must be completed before or during establishment of business relationship; deferred verification only in limited low-risk cases with specific safeguards"
+    },
+    {
+      "id": "Art.24",
+      "title": "Reporting discrepancies with beneficial ownership registers",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Report discrepancies between BO information obtained through CDD and information held in central beneficial ownership registers to the entity maintaining the register"
+    },
+    {
+      "id": "Art.25",
+      "title": "Identification of purpose and intended nature of business relationship",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Obtain information on the purpose and intended nature of the business relationship; level of information proportionate to risk profile of customer"
+    },
+    {
+      "id": "Art.26",
+      "title": "Ongoing monitoring of business relationship and transactions",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Conduct ongoing monitoring including scrutiny of transactions throughout the relationship to ensure consistency with knowledge of customer, business and risk profile; keep CDD information up to date"
+    },
+    {
+      "id": "Art.27",
+      "title": "Temporary measures for customers subject to UN financial sanctions",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "Apply temporary measures where customer becomes subject to UN financial sanctions; immediate screening; restrict account activity pending further assessment"
+    },
+    {
+      "id": "Art.28",
+      "title": "Regulatory technical standards on customer due diligence information",
+      "chapter": "III",
+      "section": "General Provisions",
+      "theme": "Customer Due Diligence",
+      "requirement": "AMLA to develop RTS specifying minimum CDD information to be collected for different categories of obliged entities, customers and risk levels"
+    },
+    {
+      "id": "Art.29",
+      "title": "Identification of third countries with significant strategic deficiencies",
+      "chapter": "III",
+      "section": "Third-Country Policy and ML/TF Threats",
+      "theme": "Customer Due Diligence",
+      "requirement": "Commission identifies third countries with significant strategic deficiencies in AML/CFT regimes (FATF black list equivalent); triggers countermeasures under Art.35"
+    },
+    {
+      "id": "Art.30",
+      "title": "Identification of third countries with compliance weaknesses",
+      "chapter": "III",
+      "section": "Third-Country Policy and ML/TF Threats",
+      "theme": "Customer Due Diligence",
+      "requirement": "Commission identifies third countries with compliance weaknesses (FATF grey list equivalent); triggers enhanced due diligence measures"
+    },
+    {
+      "id": "Art.31",
+      "title": "Identification of third countries posing specific threats to the Union's financial system",
+      "chapter": "III",
+      "section": "Third-Country Policy and ML/TF Threats",
+      "theme": "Customer Due Diligence",
+      "requirement": "Commission may identify third countries posing specific ML/TF threats to the Union's financial system based on AMLA analysis; triggers specific countermeasures"
+    },
+    {
+      "id": "Art.32",
+      "title": "Guidelines on ML/TF risks, trends and methods",
+      "chapter": "III",
+      "section": "Third-Country Policy and ML/TF Threats",
+      "theme": "Customer Due Diligence",
+      "requirement": "AMLA issues guidelines on ML/TF risks, trends and methods to assist obliged entities in identifying suspicious activity; updated periodically"
+    },
+    {
+      "id": "Art.33",
+      "title": "Simplified due diligence measures",
+      "chapter": "III",
+      "section": "Simplified Due Diligence",
+      "theme": "Customer Due Diligence",
+      "requirement": "SDD permitted where lower risk is identified through risk assessment; not a blanket exemption; must still identify customer and BO; reduced frequency/intensity of monitoring"
+    },
+    {
+      "id": "Art.34",
+      "title": "Scope of application of enhanced due diligence measures",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "EDD required for: high-risk third countries, PEPs, complex/unusual transactions, and other situations presenting higher ML/TF risk; additional measures beyond standard CDD"
+    },
+    {
+      "id": "Art.35",
+      "title": "Countermeasures to mitigate ML/TF threats from outside the Union",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Specific countermeasures for high-risk third countries identified under Art.29: enhanced reporting, limiting business relationships, requiring senior management approval"
+    },
+    {
+      "id": "Art.36",
+      "title": "Enhanced due diligence for cross-border correspondent relationships",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Specific EDD for correspondent banking: assess respondent's AML controls, obtain senior management approval, understand responsibilities, ensure respondent has verified identity of customers with direct access"
+    },
+    {
+      "id": "Art.37",
+      "title": "Enhanced due diligence for crypto-asset service providers",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Specific EDD for CASPs in cross-border correspondent relationships; assess counterpart's AML controls; Travel Rule compliance; wallet address risk screening"
+    },
+    {
+      "id": "Art.38",
+      "title": "Specific measures for individual third-country respondent institutions",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Obliged entities may apply specific measures to individual respondent institutions in third countries based on their own risk assessment, beyond country-level measures"
+    },
+    {
+      "id": "Art.39",
+      "title": "Prohibition of correspondent relationships with shell institutions",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Prohibition on entering into or maintaining correspondent relationships with shell banks or institutions that allow shell banks to use their accounts"
+    },
+    {
+      "id": "Art.40",
+      "title": "Measures to mitigate risks from self-hosted addresses",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "CASPs must apply specific measures for crypto-asset transfers involving self-hosted (unhosted) wallet addresses; verify ownership; apply EDD above certain thresholds"
+    },
+    {
+      "id": "Art.41",
+      "title": "Specific provisions for residence by investment scheme applicants",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "EDD for applicants under residence/citizenship by investment schemes (golden visas/passports); enhanced source of wealth verification; senior management approval"
+    },
+    {
+      "id": "Art.42",
+      "title": "Specific provisions regarding politically exposed persons",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Determine whether customer or BO is PEP; apply EDD: senior management approval, source of wealth/funds, enhanced ongoing monitoring; applies to domestic and foreign PEPs equally"
+    },
+    {
+      "id": "Art.43",
+      "title": "List of prominent public functions",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Each Member State publishes and maintains list of prominent public functions qualifying as PEP; Commission consolidates EU-wide list; updated annually"
+    },
+    {
+      "id": "Art.44",
+      "title": "PEPs as beneficiaries of insurance policies",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Life insurance/investment: determine if beneficiary or BO of beneficiary is PEP; notify senior management before payout; apply enhanced scrutiny to relationship"
+    },
+    {
+      "id": "Art.45",
+      "title": "Measures for persons ceasing to be PEPs",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Apply risk-based measures for minimum 12 months after person ceases to hold PEP function; consider continuing influence, seniority, and role"
+    },
+    {
+      "id": "Art.46",
+      "title": "Family members and close associates of PEPs",
+      "chapter": "III",
+      "section": "Enhanced Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Extend PEP EDD measures to immediate family members (spouse, children, parents) and known close associates; apply risk-based approach"
+    },
+    {
+      "id": "Art.47",
+      "title": "Specifications for life and investment-related insurance sector",
+      "chapter": "III",
+      "section": "Specific Customer Due Diligence Provisions",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Specific CDD provisions for life insurance and investment-related insurance; identify beneficiary and BO at time of payout; risk-based approach to verification"
+    },
+    {
+      "id": "Art.48",
+      "title": "General provisions on reliance",
+      "chapter": "III",
+      "section": "Reliance on Customer Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "May rely on third-party obliged entities for CDD; ultimate responsibility remains with relying entity; immediate access to CDD information on request"
+    },
+    {
+      "id": "Art.49",
+      "title": "Process of reliance on another obliged entity",
+      "chapter": "III",
+      "section": "Reliance on Customer Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "Specific process requirements for third-party reliance: written agreement, immediate data transfer, ensure third party is supervised and compliant; restrictions for high-risk third countries"
+    },
+    {
+      "id": "Art.50",
+      "title": "Guidelines on reliance",
+      "chapter": "III",
+      "section": "Reliance on Customer Due Diligence",
+      "theme": "Enhanced Due Diligence & PEPs",
+      "requirement": "AMLA to issue guidelines on conditions and processes for reliance on third parties; clarify scope and limitations; consider digital identity solutions"
+    },
+    {
+      "id": "Art.51",
+      "title": "Identification of beneficial owners for legal entities",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Legal entities must identify their beneficial owners; BO is any natural person who ultimately owns or controls the entity through direct/indirect ownership or other means"
+    },
+    {
+      "id": "Art.52",
+      "title": "Beneficial ownership through ownership interest",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "BO through ownership: >25% shareholding or ownership interest held directly or indirectly; calculation rules for indirect ownership through chain of ownership"
+    },
+    {
+      "id": "Art.53",
+      "title": "Beneficial ownership through control",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "BO through control: person exercising control through voting rights, right to appoint/remove board, shareholder agreements, or other means including de facto control"
+    },
+    {
+      "id": "Art.54",
+      "title": "Coexistence of ownership interest and control in the ownership structure",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Where both ownership interest and control exist in the ownership structure, all natural persons qualifying as BO through either criterion must be identified"
+    },
+    {
+      "id": "Art.55",
+      "title": "Ownership structures involving legal arrangements or similar legal entities",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "BO identification must look through legal arrangements (trusts, foundations) and similar entities in the ownership chain; identify natural persons with ultimate control"
+    },
+    {
+      "id": "Art.56",
+      "title": "Notifications",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Beneficial owners must notify the legal entity of their BO status; legal entities must request and obtain BO information from their shareholders/members"
+    },
+    {
+      "id": "Art.57",
+      "title": "Identification of beneficial owners for legal entities similar to express trust",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "For foundations, Anstalt, and similar entities: identify persons holding equivalent positions to settlor, trustee, protector, beneficiary, and any other person exercising ultimate control"
+    },
+    {
+      "id": "Art.58",
+      "title": "Identification of beneficial owners for express trusts and similar legal arrangements",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "For express trusts: identify settlor, trustee(s), protector, beneficiaries (or class of beneficiaries), and any other person exercising ultimate effective control"
+    },
+    {
+      "id": "Art.59",
+      "title": "Identification of a class of beneficiaries",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Where beneficiaries of trusts/legal arrangements are designated by characteristics or class, identify the class with sufficient precision to establish identity when entitlement crystallises"
+    },
+    {
+      "id": "Art.60",
+      "title": "Identification of objects of a power and default takers in discretionary trusts",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "For discretionary trusts: identify objects of a power of appointment and default takers; distinguish from fixed-interest beneficiaries"
+    },
+    {
+      "id": "Art.61",
+      "title": "Identification of beneficial owners of collective investment undertakings",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Specific rules for identifying BO of collective investment undertakings (funds); consider management company, fund manager, and material investors"
+    },
+    {
+      "id": "Art.62",
+      "title": "Beneficial ownership information",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Specify minimum BO information to be held: name, date of birth, nationality, country of residence, nature and extent of interest/control, date of becoming BO"
+    },
+    {
+      "id": "Art.63",
+      "title": "Obligations of legal entities",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Legal entities must obtain, hold, and keep up-to-date adequate, accurate and current BO information; submit to central register; update within defined timeframes"
+    },
+    {
+      "id": "Art.64",
+      "title": "Trustee obligations",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Trustees of express trusts and similar arrangements must obtain, hold and register BO information; disclose trustee status to obliged entities when entering business relationship"
+    },
+    {
+      "id": "Art.65",
+      "title": "Exceptions to obligations of legal entities and legal arrangements",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Limited exceptions to BO obligations: listed companies subject to equivalent disclosure requirements; certain regulated entities; conditions and safeguards apply"
+    },
+    {
+      "id": "Art.66",
+      "title": "Nominee obligations",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Nominees (acting on behalf of another person) must disclose nominee status and identity of nominator to the legal entity and to obliged entities"
+    },
+    {
+      "id": "Art.67",
+      "title": "Foreign legal entities and foreign legal arrangements",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Foreign entities/arrangements entering business relationship or acquiring real estate in EU must provide BO information equivalent to that required of EU entities"
+    },
+    {
+      "id": "Art.68",
+      "title": "Penalties",
+      "chapter": "IV",
+      "section": null,
+      "theme": "Beneficial Ownership Transparency",
+      "requirement": "Member States must lay down effective, proportionate and dissuasive penalties for breaches of BO transparency obligations by legal entities and arrangements"
+    },
+    {
+      "id": "Art.69",
+      "title": "Reporting of suspicions",
+      "chapter": "V",
+      "section": null,
+      "theme": "Reporting Obligations & Information Sharing",
+      "requirement": "Obliged entities must promptly report suspicions of ML/TF to the FIU; report based on knowledge, suspicion, or reasonable grounds to suspect; no de minimis threshold"
+    },
+    {
+      "id": "Art.70",
+      "title": "Specific provisions for certain obliged entity categories",
+      "chapter": "V",
+      "section": null,
+      "theme": "Reporting Obligations & Information Sharing",
+      "requirement": "Specific reporting provisions for lawyers, notaries, auditors and tax advisors: legal professional privilege considerations; may report through self-regulatory body in certain cases"
+    },
+    {
+      "id": "Art.71",
+      "title": "Refraining from carrying out transactions",
+      "chapter": "V",
+      "section": null,
+      "theme": "Reporting Obligations & Information Sharing",
+      "requirement": "Obliged entities must refrain from carrying out suspicious transactions until they have reported to FIU; FIU may instruct to proceed or suspend; limited exceptions to avoid tipping off"
+    },
+    {
+      "id": "Art.72",
+      "title": "Disclosure to FIU",
+      "chapter": "V",
+      "section": null,
+      "theme": "Reporting Obligations & Information Sharing",
+      "requirement": "Obliged entities must cooperate fully with FIU and respond promptly to FIU requests for information; provide all necessary documents and information"
+    },
+    {
+      "id": "Art.73",
+      "title": "Prohibition of disclosure",
+      "chapter": "V",
+      "section": null,
+      "theme": "Reporting Obligations & Information Sharing",
+      "requirement": "Prohibition on disclosing (tipping off) that an STR has been filed or that ML/TF analysis is ongoing; exceptions for disclosure between group entities and between professionals involved in same transaction"
+    },
+    {
+      "id": "Art.74",
+      "title": "Threshold-based reports of transactions in high-value goods",
+      "chapter": "V",
+      "section": null,
+      "theme": "Reporting Obligations & Information Sharing",
+      "requirement": "High-value goods dealers must report cash transactions >=EUR 10,000 to FIU regardless of suspicion; applies to goods listed in Annex IV"
+    },
+    {
+      "id": "Art.75",
+      "title": "Exchange of information in partnerships",
+      "chapter": "VI",
+      "section": null,
+      "theme": "Reporting Obligations & Information Sharing",
+      "requirement": "Obliged entities may share information on ML/TF risks and suspicious activities within AML/CFT partnerships; subject to data protection safeguards; does not replace STR obligation"
+    },
+    {
+      "id": "Art.76",
+      "title": "Processing of personal data",
+      "chapter": "VII",
+      "section": null,
+      "theme": "Data Protection & Record Retention",
+      "requirement": "Processing of personal data for AML/CFT purposes is a matter of public interest under GDPR; must comply with data minimisation; no use for commercial purposes beyond AML/CFT"
+    },
+    {
+      "id": "Art.77",
+      "title": "Record retention",
+      "chapter": "VII",
+      "section": null,
+      "theme": "Data Protection & Record Retention",
+      "requirement": "Retain CDD records and transaction records for 5 years from end of business relationship or date of occasional transaction; maximum 10 years if justified; accessible to competent authorities"
+    },
+    {
+      "id": "Art.78",
+      "title": "Provision of records to competent authorities",
+      "chapter": "VII",
+      "section": null,
+      "theme": "Data Protection & Record Retention",
+      "requirement": "Records must be available and provided promptly to competent authorities and FIUs upon request; applies to both CDD records and transaction records"
+    },
+    {
+      "id": "Art.79",
+      "title": "Anonymous accounts and bearer shares",
+      "chapter": "VIII",
+      "section": null,
+      "theme": "Anonymous Instruments & Cash Limits",
+      "requirement": "Prohibition on maintaining anonymous accounts, anonymous passbooks, anonymous safe-deposit boxes; existing anonymous bearer shares must be converted to registered form"
+    },
+    {
+      "id": "Art.80",
+      "title": "Limits to large cash payments",
+      "chapter": "VIII",
+      "section": null,
+      "theme": "Anonymous Instruments & Cash Limits",
+      "requirement": "EU-wide limit of EUR 10,000 on cash payments; applies to all persons trading in goods; Member States may set lower limits; identification required for cash transactions >=EUR 3,000"
+    },
+    {
+      "id": "Art.81",
+      "title": "Cooperation between FIUs and European Public Prosecutor's Office",
+      "chapter": "IX",
+      "section": "Cooperation between FIUs and EPPO",
+      "theme": "Final Provisions",
+      "requirement": "FIUs cooperate with EPPO on financial crimes affecting the Union's financial interests; spontaneous and upon-request information exchange"
+    },
+    {
+      "id": "Art.82",
+      "title": "Requests for information to EPPO",
+      "chapter": "IX",
+      "section": "Cooperation between FIUs and EPPO",
+      "theme": "Final Provisions",
+      "requirement": "FIUs may request information from EPPO relevant to ML/TF analysis; EPPO responds through established cooperation channels"
+    },
+    {
+      "id": "Art.83",
+      "title": "Cooperation between FIUs and OLAF",
+      "chapter": "IX",
+      "section": "Cooperation between FIUs and OLAF",
+      "theme": "Final Provisions",
+      "requirement": "FIUs cooperate with OLAF on fraud, corruption, and other illegal activities affecting the Union's financial interests; information exchange protocols"
+    },
+    {
+      "id": "Art.84",
+      "title": "Requests for information to OLAF",
+      "chapter": "IX",
+      "section": "Cooperation between FIUs and OLAF",
+      "theme": "Final Provisions",
+      "requirement": "FIUs may request information from OLAF relevant to ML/TF investigations; reciprocal cooperation arrangements"
+    },
+    {
+      "id": "Art.85",
+      "title": "Exercise of delegation",
+      "chapter": "IX",
+      "section": "Other Provisions",
+      "theme": "Final Provisions",
+      "requirement": "Conditions for Commission delegated acts under this Regulation; 4-year delegation period; Parliament and Council may revoke; scrutiny period"
+    },
+    {
+      "id": "Art.86",
+      "title": "Committee procedure",
+      "chapter": "IX",
+      "section": "Other Provisions",
+      "theme": "Final Provisions",
+      "requirement": "Commission assisted by Committee on Prevention of Money Laundering and Terrorist Financing; examination procedure for implementing acts"
+    },
+    {
+      "id": "Art.87",
+      "title": "Review",
+      "chapter": "IX",
+      "section": "Other Provisions",
+      "theme": "Final Provisions",
+      "requirement": "Commission to review and report on application of this Regulation by 10 July 2032; consider effectiveness, scope extension, new risks; consult AMLA"
+    },
+    {
+      "id": "Art.88",
+      "title": "Reports",
+      "chapter": "IX",
+      "section": "Other Provisions",
+      "theme": "Final Provisions",
+      "requirement": "AMLA and Commission publish periodic reports on ML/TF trends, typologies, and effectiveness of national frameworks"
+    },
+    {
+      "id": "Art.89",
+      "title": "Relation to Directive (EU) 2015/849",
+      "chapter": "IX",
+      "section": "Other Provisions",
+      "theme": "Final Provisions",
+      "requirement": "References in other instruments to AMLD4/AMLD5 to be read as references to this Regulation where applicable; correlation table in Annex VI"
+    },
+    {
+      "id": "Art.90",
+      "title": "Entry into force and application",
+      "chapter": "IX",
+      "section": "Other Provisions",
+      "theme": "Final Provisions",
+      "requirement": "Enters into force 20 days after publication in OJ; applies from 10 July 2027; Art.5 (football clubs) applies from 10 July 2029"
+    }
   ]
 }

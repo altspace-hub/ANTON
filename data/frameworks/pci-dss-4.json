@@ -4,7 +4,7 @@
   "shortName": "PCI DSS 4.0",
   "reference": "PCI DSS v4.0.1 (PCI SSC, June 2024)",
   "applicationDate": "2024-03-31",
-  "articleCount": 42,
+  "articleCount": 43,
   "themes": [
     "Network Security",
     "Account Data Protection",

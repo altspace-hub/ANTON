@@ -237,6 +237,7 @@ CREATE TABLE IF NOT EXISTS gap_findings (
   requirement TEXT,
   current_state TEXT,
   score TEXT CHECK(score IN ('red','amber','yellow','green')),
+  numeric_score INTEGER DEFAULT 0,
   priority TEXT CHECK(priority IN ('critical','high','medium','low')),
   notes TEXT,
   created_at TEXT DEFAULT (datetime('now'))

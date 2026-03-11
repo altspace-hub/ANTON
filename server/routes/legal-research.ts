@@ -237,14 +237,22 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
       res.setHeader('X-Accel-Buffering', 'no');
 
       // Thinking and tools (web search) are mutually exclusive in the Claude API
-      const thinkingBudget = tools.length === 0 ? (THINKING_BUDGETS[session.mode] ?? 10000) : null;
+      const useThinking = tools.length === 0;
+      // Map budget tiers to effort levels for Opus adaptive thinking
+      const EFFORT_MAP: Record<string, 'medium' | 'high' | 'max'> = {
+        'deep-dive': 'max',
+        'hypothetical': 'max',
+        'comparison': 'high',
+        'opinion': 'max',
+      };
+      const effort = EFFORT_MAP[session.mode] ?? 'high';
       const apiParams: Anthropic.MessageStreamParams = {
         model: 'claude-opus-4-6',
         max_tokens: 16000,
         system: systemPrompt,
         messages: messages as Anthropic.MessageParam[],
-        ...(thinkingBudget !== null
-          ? { thinking: { type: 'enabled', budget_tokens: thinkingBudget } }
+        ...(useThinking
+          ? { thinking: { type: 'adaptive' as const }, output_config: { effort } }
           : { tools }),
       } as unknown as Anthropic.MessageStreamParams;
 

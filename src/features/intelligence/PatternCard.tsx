@@ -22,7 +22,7 @@ interface PatternCardProps {
   onResolve?: () => void;
 }
 
-const PATTERN_ICONS = {
+const PATTERN_ICONS: Record<string, typeof TrendingUp> = {
   temporal_correlation: TrendingUp,
   entity_convergence: Users,
   cascade: Zap,
@@ -51,7 +51,7 @@ interface AiAnalysis {
 }
 
 export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardProps) {
-  const Icon = PATTERN_ICONS[pattern.pattern_type];
+  const Icon = PATTERN_ICONS[pattern.pattern_type] ?? Info;
   const affectedEntities = pattern.affected_entities ? JSON.parse(pattern.affected_entities) : [];
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
@@ -92,7 +92,7 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-adv-white">{pattern.title}</h3>
+              <h3 className="font-semibold text-adv-off-white">{pattern.title}</h3>
               <span
                 className={`text-xs px-2 py-0.5 rounded border ${SEVERITY_BADGE_STYLES[pattern.severity]}`}
               >
@@ -108,7 +108,7 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
                 {affectedEntities.map((entity: any, idx: number) => (
                   <span
                     key={idx}
-                    className="text-xs px-2 py-1 rounded bg-adv-dark-2 text-adv-gray border border-adv-gray-med/20"
+                    className="text-xs px-2 py-1 rounded bg-secondary text-adv-gray border border-border"
                   >
                     {entity.entity_type}: {entity.entity_id}
                   </span>
@@ -171,7 +171,7 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
         </div>
       )}
       {pattern.status !== 'active' && (
-        <div className="mt-3 pt-3 border-t border-adv-gray-med/20">
+        <div className="mt-3 pt-3 border-t border-border">
           <p className="text-xs text-adv-gray">
             Status: <span className="text-adv-off-white">{pattern.status}</span>
             {pattern.resolved_by && <> • Resolved by {pattern.resolved_by}</>}

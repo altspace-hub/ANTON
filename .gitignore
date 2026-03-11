@@ -69,3 +69,6 @@ tsconfig.node.tsbuildinfo
 
 # Workspace data (user-specific runtime state)
 workspaces/
+
+# ANTON orchestrator runtime trails (generated at runtime)
+.anton/

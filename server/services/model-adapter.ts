@@ -78,13 +78,14 @@ abstract class BaseAdapter {
    * Claude: budget_tokens, GPT: model variant, Gemini: mode toggle, etc.
    */
   protected mapThinkingBudget(thinking: ThinkingLevel): number {
+    // Sonnet 4.6 max output ceiling: 64 000. budget_tokens must be < max_tokens.
     const budgets: Record<ThinkingLevel, number> = {
       quick: 0,
       think: 4096,
       think_hard: 16384,
       investigate: 32768,
       plan_first: 32768,
-      deep_investigate: 65536,
+      deep_investigate: 32768,  // capped — Sonnet ceiling is 64K
     };
     return budgets[thinking];
   }
@@ -104,16 +105,30 @@ class AnthropicAdapter extends BaseAdapter {
     const thinking = req.thinking || 'think';
     const creativity = req.creativity || 'balanced';
 
+    // Sonnet needs max_tokens > budget_tokens; default to model ceiling when thinking is active
+    const isSonnet = req.model.includes('sonnet-4-6');
+    const defaultMax = isSonnet ? 64000 : (req.model.includes('opus') ? 128000 : 8192);
     const params: Anthropic.MessageCreateParamsNonStreaming = {
       model: req.model,
-      max_tokens: req.maxTokens || 8192,
+      max_tokens: req.maxTokens || defaultMax,
       system: req.systemPrompt,
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
       temperature: this.mapTemperature(creativity, 1.0),
     };
 
     // Claude 4.6 models support extended thinking
-    if (req.model.includes('opus') || req.model.includes('sonnet-4-6')) {
+    if (req.model.includes('opus')) {
+      // Opus: adaptive thinking with effort levels (no budget_tokens cap)
+      const effortMap: Record<string, string> = {
+        quick: 'low', think: 'medium', think_hard: 'high',
+        investigate: 'max', plan_first: 'max', deep_investigate: 'max',
+      };
+      const effort = effortMap[thinking] ?? 'medium';
+      if (effort !== 'low' || thinking !== 'quick') {
+        (params as Record<string, unknown>).thinking = { type: 'adaptive' };
+        (params as Record<string, unknown>).output_config = { effort };
+      }
+    } else if (req.model.includes('sonnet-4-6')) {
       const budget = this.mapThinkingBudget(thinking);
       if (budget > 0) {
         params.thinking = { type: 'enabled', budget_tokens: budget };
@@ -150,9 +165,11 @@ class AnthropicAdapter extends BaseAdapter {
     const thinking = req.thinking || 'think';
     const creativity = req.creativity || 'balanced';
 
+    const isSonnetStream = req.model.includes('sonnet-4-6');
+    const defaultMaxStream = isSonnetStream ? 64000 : (req.model.includes('opus') ? 128000 : 8192);
     const params: Anthropic.MessageStreamParams = {
       model: req.model,
-      max_tokens: req.maxTokens || 8192,
+      max_tokens: req.maxTokens || defaultMaxStream,
       system: req.systemPrompt,
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
       temperature: this.mapTemperature(creativity, 1.0),
@@ -160,7 +177,17 @@ class AnthropicAdapter extends BaseAdapter {
     };
 
     // Extended thinking for Claude 4.6 models
-    if (req.model.includes('opus') || req.model.includes('sonnet-4-6')) {
+    if (req.model.includes('opus')) {
+      const effortMap: Record<string, string> = {
+        quick: 'low', think: 'medium', think_hard: 'high',
+        investigate: 'max', plan_first: 'max', deep_investigate: 'max',
+      };
+      const effort = effortMap[thinking] ?? 'medium';
+      if (effort !== 'low' || thinking !== 'quick') {
+        (params as Record<string, unknown>).thinking = { type: 'adaptive' };
+        (params as Record<string, unknown>).output_config = { effort };
+      }
+    } else if (req.model.includes('sonnet-4-6')) {
       const budget = this.mapThinkingBudget(thinking);
       if (budget > 0) {
         params.thinking = { type: 'enabled', budget_tokens: budget };

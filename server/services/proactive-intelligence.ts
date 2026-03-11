@@ -131,7 +131,7 @@ export function createProactiveIntelligenceService(db: Database) {
       params.push(options.areaId);
     }
     // Filter expired insights
-    conditions.push('(expires_at IS NULL OR expires_at > datetime("now"))');
+    conditions.push("(expires_at IS NULL OR expires_at > datetime('now'))");
 
     const where = conditions.join(' AND ');
     const limit = options.limit ?? 50;

@@ -28,7 +28,7 @@ export function EntityHeatMapCell({ entity, size, onClick }: EntityHeatMapCellPr
         backgroundColor: `rgba(45, 212, 168, ${intensity * 0.15})`,
       }}
     >
-      <div className="text-sm font-semibold text-adv-white truncate max-w-full px-1">
+      <div className="text-sm font-semibold text-adv-off-white truncate max-w-full px-1">
         {entity.entity_id}
       </div>
       <div className="text-xs text-adv-gray mt-1">

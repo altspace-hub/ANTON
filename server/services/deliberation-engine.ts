@@ -181,6 +181,7 @@ Field definitions:
     messages: [{ role: 'user', content: userMessage }],
     stream: true,
     thinking: { type: 'adaptive' },
+    output_config: { effort: 'max' },
   };
 
   let fullSynthesis = '';

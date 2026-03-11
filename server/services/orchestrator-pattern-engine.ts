@@ -77,10 +77,10 @@ function detectWorkflowRecurrencePatterns(db: Database.Database): DetectedPatter
   try {
     const rows = db.prepare(`
       SELECT workflow_id, COUNT(*) as run_count,
-             MIN(created_at) as first_run, MAX(created_at) as last_run,
+             MIN(started_at) as first_run, MAX(started_at) as last_run,
              AVG(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as success_rate
       FROM workflow_runs
-      WHERE created_at >= datetime('now', '-30 days')
+      WHERE started_at >= datetime('now', '-30 days')
       GROUP BY workflow_id
       HAVING run_count >= 3
       ORDER BY run_count DESC
@@ -116,7 +116,7 @@ function detectSignalClusterPatterns(db: Database.Database): DetectedPattern[] {
     const radarClusters = db.prepare(`
       SELECT item_type, COUNT(*) as count, AVG(urgency_score) as avg_urgency
       FROM radar_items
-      WHERE created_at >= datetime('now', '-3 days')
+      WHERE fetched_at >= datetime('now', '-3 days')
         AND urgency_score >= 0.6
       GROUP BY item_type
       HAVING count >= 3

@@ -32,9 +32,9 @@ export function TemporalChart({ title, data, color = '#2DD4A8', valueKey = 'coun
   const trendColor = trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-adv-gray';
 
   return (
-    <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+    <div className="bg-card border border-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-adv-white">{title}</h3>
+        <h3 className="text-sm font-semibold text-adv-off-white">{title}</h3>
         <div className={`flex items-center gap-1 ${trendColor}`}>
           <TrendIcon className="w-4 h-4" />
           <span className="text-xs font-medium capitalize">{trend}</span>

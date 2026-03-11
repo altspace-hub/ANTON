@@ -123,16 +123,33 @@ function getOutputCeiling(model: string): number {
 }
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
-  // Extended thinking budget by level — used for all models.
-  // Opus 4.6 supports larger budgets; Sonnet/Haiku use smaller ones.
-  // 'adaptive' is NOT a valid ThinkingConfigParam in SDK 0.39.0 — use 'enabled' + budget_tokens.
+  // Opus 4.6: use adaptive thinking with effort levels (no budget_tokens cap).
+  // Sonnet/Haiku: use enabled + budget_tokens.
+  if (model === 'claude-opus-4-6') {
+    const effortMap: Record<ThinkingLevel, string | null> = {
+      quick: 'low',
+      think: 'medium',
+      think_hard: 'high',
+      investigate: 'max',
+      plan_first: 'max',
+      deep_investigate: 'max',
+    };
+    const effort = effortMap[level];
+    if (effort === null) return {};
+    return {
+      thinking: { type: 'adaptive' as const },
+      output_config: { effort: effort as 'low' | 'medium' | 'high' | 'max' },
+    };
+  }
+
+  // Sonnet / Haiku: budget_tokens approach
   const budgetMap: Record<ThinkingLevel, number | null> = {
     quick: null,
-    think: model === 'claude-opus-4-6' ? 8192  : 4096,
-    think_hard: model === 'claude-opus-4-6' ? 16000 : 10000,
-    investigate: model === 'claude-opus-4-6' ? 32000 : 16000,
-    plan_first:  model === 'claude-opus-4-6' ? 32000 : 16000,
-    deep_investigate: model === 'claude-opus-4-6' ? 40000 : 20000,
+    think: 4096,
+    think_hard: 10000,
+    investigate: 32768,
+    plan_first: 32768,
+    deep_investigate: 32768,
   };
   const budget = budgetMap[level];
   if (budget === null) return {};
@@ -172,7 +189,9 @@ export async function streamToResponse(
 ): Promise<void> {
   const anthropic = getClient();
   const thinkingConfig = config.nativeReasoningEnabled
-    ? { thinking: { type: 'enabled' as const, budget_tokens: 32768 } }
+    ? (config.model === 'claude-opus-4-6'
+        ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
+        : { thinking: { type: 'enabled' as const, budget_tokens: 32768 } })
     : getThinkingConfig(config.thinking, config.model);
 
   const contentBlocks: ContentBlock[] = [];

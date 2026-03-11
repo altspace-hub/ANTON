@@ -28,6 +28,6 @@
     {"id":"S11","title":"Sanctions","theme":"Sanctions","requirement":"Sanctions screening programme; list sources (OFAC, EU, UN, OFSI); real-time screening; match resolution"},
     {"id":"S12","title":"Training","theme":"AML Programme","requirement":"AML/CFT training programme; role-specific training; frequency; tracking and attestation"},
     {"id":"S13","title":"Correspondent banking — specific controls","theme":"Correspondent Banking Controls","requirement":"SWIFT/payments controls; nested account controls; payable-through account controls; de-risking policy"},
-    {"id":"S14","title":"Audit and testing","theme":"AML Programme","requirement":"Independent AML/CFT programme testing; audit findings remediation; regulat exam experience"}
+    {"id":"S14","title":"Audit and testing","theme":"AML Programme","requirement":"Independent AML/CFT programme testing; audit findings remediation; regulatory exam experience"}
   ]
 }

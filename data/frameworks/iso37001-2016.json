@@ -4,7 +4,7 @@
   "shortName": "ISO 37001",
   "reference": "ISO 37001:2016 + ISO 37001:2016/AMD 1:2024",
   "applicationDate": "2016-10-15",
-  "articleCount": 46,
+  "articleCount": 47,
   "themes": ["Context & Leadership", "Policy & Resources", "Risk Assessment", "Due Diligence", "Controls & Commitments", "Reporting & Investigation", "Monitoring & Audit", "Review & Improvement"],
   "articles": [
     { "id": "Cl.4.1", "title": "Understanding the organisation", "theme": "Context & Leadership", "requirement": "Determine internal and external issues relevant to purpose and that affect ability to achieve intended outcomes of the ABMS." },

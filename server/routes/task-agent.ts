@@ -731,9 +731,10 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     const MAX_RETRIES = 2;
 
     // Thinking level progression for retries: default → think_hard → investigate
-    const RETRY_THINKING: Array<{ budget_tokens: number; label: string }> = [
-      { budget_tokens: 10000, label: 'think_hard' },
-      { budget_tokens: 20000, label: 'investigate' },
+    // Opus uses adaptive effort (no budget_tokens cap)
+    const RETRY_THINKING: Array<{ effort: string; label: string }> = [
+      { effort: 'high', label: 'think_hard' },
+      { effort: 'max', label: 'investigate' },
     ];
 
     /** Score the output using Haiku (fast, cheap). Returns 0–10 or null on error. */
@@ -772,17 +773,18 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
     /** Run one execution attempt (streaming to res). Returns { output, thinking }. */
     let lastThinkingContent = '';
-    async function runExecution(thinkingBudget?: number): Promise<{ output: string; thinking: string }> {
+    async function runExecution(effort?: string): Promise<{ output: string; thinking: string }> {
       let output = '';
       let thinking = '';
-      // Always enable thinking for transparency — adaptive for default, explicit budget for retries
-      const thinkingConfig = thinkingBudget
-        ? { thinking: { type: 'enabled' as const, budget_tokens: thinkingBudget } }
-        : { thinking: { type: 'enabled' as const, budget_tokens: 5000 } };
+      // Opus: adaptive thinking with effort levels (no budget_tokens cap)
+      const thinkingConfig = {
+        thinking: { type: 'adaptive' as const },
+        output_config: { effort: (effort ?? 'high') as 'low' | 'medium' | 'high' | 'max' },
+      };
 
       const stream = ai.messages.stream({
         model: 'claude-opus-4-6',
-        max_tokens: thinkingBudget ? thinkingBudget + 8192 : 5000 + 8192,
+        max_tokens: 16000,
         system: fullSystemPrompt,
         messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.` }],
         ...thinkingConfig,
@@ -832,7 +834,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
         })}\n\n`);
 
         // Clear previous output from stream (client replaces on retry event)
-        const retryResult = await runExecution(retryConfig.budget_tokens);
+        const retryResult = await runExecution(retryConfig.effort);
         fullOutput = retryResult.output;
         qualityScore = await scoreOutput(fullOutput, task.title, step.name);
       }

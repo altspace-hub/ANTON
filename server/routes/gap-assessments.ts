@@ -18,6 +18,7 @@ import {
   generateBoardSummary,
   generateRoadmap,
   type FrameworkArticle,
+  type GapModelTier,
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
@@ -336,7 +337,10 @@ Generate the complete framework JSON now.`;
 
       const extraSystemContext = [orgContextLayer, knowledgePackLayer, knowledgeContext].filter(Boolean).join('\n\n');
 
-      sendEvent({ type: 'status', status: 'assessing', message: 'Starting assessment...' });
+      // Model tier: 'opus' for deep reasoning, 'sonnet' for standard (default)
+      const modelTier: GapModelTier = contextConfig.modelTier === 'opus' ? 'opus' : 'sonnet';
+      const tierLabel = modelTier === 'opus' ? 'Opus 4.6 (deep reasoning)' : 'Sonnet 4.6 (standard)';
+      sendEvent({ type: 'status', status: 'assessing', message: `Starting assessment with ${tierLabel}...` });
 
       for (const frameworkId of frameworks) {
         const fw = getFramework(frameworkId);
@@ -387,7 +391,8 @@ Generate the complete framework JSON now.`;
               contextConfig,
               batchIdx,
               batches.length,
-              extraSystemContext || undefined
+              extraSystemContext || undefined,
+              modelTier
             );
 
             // Save findings to DB
@@ -403,12 +408,14 @@ Generate the complete framework JSON now.`;
               message: `Batch ${batchIdx + 1}/${batches.length} complete`,
             });
           } catch (batchErr) {
+            const errMsg = batchErr instanceof Error ? batchErr.message : String(batchErr);
+            console.error(`[gap-assessments] batch ${batchIdx + 1} error:`, errMsg);
             sendEvent({
               type: 'batch_error',
               framework: frameworkId,
               batchIndex: batchIdx,
-              error: String(batchErr),
-              message: `Batch ${batchIdx + 1} failed — continuing`,
+              error: errMsg,
+              message: `Batch ${batchIdx + 1} failed: ${errMsg.slice(0, 200)}`,
             });
           }
         }
@@ -447,7 +454,8 @@ Generate the complete framework JSON now.`;
       const findingsCount = Object.values(allFindings).flat().length;
       console.log(`[gap-assessments] synthesise: starting — ${findingsCount} findings, anthropic timeout: ${(anthropic as unknown as { timeout?: number }).timeout ?? 'default'}`);
 
-      const result = await synthesiseCapabilityView(anthropic, allFindings, contextConfig);
+      const modelTier: GapModelTier = contextConfig.modelTier === 'opus' ? 'opus' : 'sonnet';
+      const result = await synthesiseCapabilityView(anthropic, allFindings, contextConfig, modelTier);
       console.log(`[gap-assessments] synthesise: Claude returned ${result.json.length} chars JSON, ${result.reasoning.length} chars reasoning`);
 
       db.prepare('UPDATE gap_assessments SET capability_view = ?, current_step = 6, status = ?, updated_at = ? WHERE id = ?')
@@ -477,7 +485,8 @@ Generate the complete framework JSON now.`;
       const allFindings = JSON.parse(assessment.article_scores || '{}') as Record<string, import('../services/gap-assessment-engine.js').ArticleFinding[]>;
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      const result = await generateBoardSummary(anthropic, assessment.capability_view, allFindings, contextConfig);
+      const modelTier: GapModelTier = contextConfig.modelTier === 'opus' ? 'opus' : 'sonnet';
+      const result = await generateBoardSummary(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier);
 
       db.prepare('UPDATE gap_assessments SET board_summary = ?, current_step = 7, updated_at = ? WHERE id = ?')
         .run(result.summary, new Date().toISOString(), req.params.id as string);
@@ -502,7 +511,8 @@ Generate the complete framework JSON now.`;
       const allFindings = JSON.parse(assessment.article_scores || '{}') as Record<string, import('../services/gap-assessment-engine.js').ArticleFinding[]>;
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      const result = await generateRoadmap(anthropic, assessment.capability_view, allFindings, contextConfig);
+      const modelTier: GapModelTier = contextConfig.modelTier === 'opus' ? 'opus' : 'sonnet';
+      const result = await generateRoadmap(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier);
 
       db.prepare('UPDATE gap_assessments SET roadmap = ?, current_step = 8, status = ?, updated_at = ? WHERE id = ?')
         .run(result.json, 'complete', new Date().toISOString(), req.params.id as string);

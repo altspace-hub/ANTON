@@ -111,17 +111,17 @@ function EntryModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#152238] rounded-xl border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 className="font-semibold text-white">{isNew ? 'New Entry' : 'Edit Entry'}</h2>
-          <button onClick={onClose} className="text-[#707070] hover:text-white transition-colors">
+      <div className="bg-card rounded-xl border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="font-semibold text-adv-white">{isNew ? 'New Entry' : 'Edit Entry'}</h2>
+          <button onClick={onClose} className="text-adv-gray-med hover:text-adv-off-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="p-4 space-y-4">
           {/* Type */}
           <div>
-            <label className="block text-xs font-medium text-[#B0B0B0] mb-1.5">Type</label>
+            <label className="block text-xs font-medium text-adv-gray mb-1.5">Type</label>
             <div className="flex flex-wrap gap-1.5">
               {ENTRY_TYPES.map(et => (
                 <button
@@ -129,8 +129,8 @@ function EntryModal({
                   onClick={() => setForm(f => ({ ...f, entry_type: et.value }))}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors border ${
                     form.entry_type === et.value
-                      ? 'border-[#2DD4A8] bg-[#2DD4A8]/20 text-[#2DD4A8]'
-                      : 'border-white/10 text-[#B0B0B0] hover:text-white'
+                      ? 'border-primary bg-adv-teal-dim text-adv-teal'
+                      : 'border-border text-adv-gray hover:text-adv-off-white'
                   }`}
                 >
                   {et.icon}{et.label}
@@ -140,33 +140,33 @@ function EntryModal({
           </div>
           {/* Name */}
           <div>
-            <label className="block text-xs font-medium text-[#B0B0B0] mb-1.5">Name *</label>
+            <label className="block text-xs font-medium text-adv-gray mb-1.5">Name *</label>
             <input
               value={form.name ?? ''}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="e.g. Erevan Duskwood"
-              className="w-full bg-[#0F1B2D] border border-white/10 text-white placeholder-[#707070] rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-secondary border border-border text-adv-off-white placeholder-adv-gray-med rounded-lg px-3 py-2 text-sm"
             />
           </div>
           {/* Summary */}
           <div>
-            <label className="block text-xs font-medium text-[#B0B0B0] mb-1.5">Summary</label>
+            <label className="block text-xs font-medium text-adv-gray mb-1.5">Summary</label>
             <textarea
               value={form.summary ?? ''}
               onChange={e => setForm(f => ({ ...f, summary: e.target.value }))}
               placeholder="Brief description (1-3 sentences)…"
               rows={3}
-              className="w-full bg-[#0F1B2D] border border-white/10 text-white placeholder-[#707070] rounded-lg px-3 py-2 text-sm resize-none"
+              className="w-full bg-secondary border border-border text-adv-off-white placeholder-adv-gray-med rounded-lg px-3 py-2 text-sm resize-none"
             />
           </div>
           {/* Properties */}
           <div>
-            <label className="block text-xs font-medium text-[#B0B0B0] mb-1.5">Properties</label>
+            <label className="block text-xs font-medium text-adv-gray mb-1.5">Properties</label>
             {Object.entries(form.properties ?? {}).map(([k, v]) => (
               <div key={k} className="flex items-center gap-2 mb-1.5">
-                <span className="text-xs text-[#2DD4A8] font-mono w-28 shrink-0">{k}</span>
-                <span className="text-xs text-white flex-1">{v as string}</span>
-                <button onClick={() => removeProperty(k)} className="text-[#707070] hover:text-red-400 transition-colors">
+                <span className="text-xs text-adv-teal font-mono w-28 shrink-0">{k}</span>
+                <span className="text-xs text-adv-off-white flex-1">{v as string}</span>
+                <button onClick={() => removeProperty(k)} className="text-adv-gray-med hover:text-red-400 transition-colors">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -176,18 +176,18 @@ function EntryModal({
                 value={propKey}
                 onChange={e => setPropKey(e.target.value)}
                 placeholder="Key"
-                className="w-28 bg-[#0F1B2D] border border-white/10 text-white placeholder-[#707070] rounded px-2 py-1 text-xs"
+                className="w-28 bg-secondary border border-border text-adv-off-white placeholder-adv-gray-med rounded px-2 py-1 text-xs"
               />
               <input
                 value={propVal}
                 onChange={e => setPropVal(e.target.value)}
                 placeholder="Value"
-                className="flex-1 bg-[#0F1B2D] border border-white/10 text-white placeholder-[#707070] rounded px-2 py-1 text-xs"
+                className="flex-1 bg-secondary border border-border text-adv-off-white placeholder-adv-gray-med rounded px-2 py-1 text-xs"
                 onKeyDown={e => e.key === 'Enter' && addProperty()}
               />
               <button
                 onClick={addProperty}
-                className="px-2 py-1 bg-[#2DD4A8]/20 hover:bg-[#2DD4A8]/30 text-[#2DD4A8] rounded text-xs transition-colors"
+                className="px-2 py-1 bg-primary/20 hover:bg-primary/30 text-adv-teal rounded text-xs transition-colors"
               >
                 <Plus className="h-3 w-3" />
               </button>
@@ -195,21 +195,21 @@ function EntryModal({
           </div>
           {/* Tags */}
           <div>
-            <label className="block text-xs font-medium text-[#B0B0B0] mb-1.5">Tags (comma-separated)</label>
+            <label className="block text-xs font-medium text-adv-gray mb-1.5">Tags (comma-separated)</label>
             <input
               value={(form.tags ?? []).join(', ')}
               onChange={e => setForm(f => ({ ...f, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) }))}
               placeholder="e.g. protagonist, mage, guild-member"
-              className="w-full bg-[#0F1B2D] border border-white/10 text-white placeholder-[#707070] rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-secondary border border-border text-adv-off-white placeholder-adv-gray-med rounded-lg px-3 py-2 text-sm"
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2 p-4 border-t border-white/10">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#B0B0B0] hover:text-white transition-colors">Cancel</button>
+        <div className="flex justify-end gap-2 p-4 border-t border-border">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-adv-gray hover:text-adv-off-white transition-colors">Cancel</button>
           <button
             onClick={handleSave}
             disabled={!form.name?.trim() || saving}
-            className="px-4 py-2 bg-[#2DD4A8] hover:bg-[#1BA882] text-[#0B1426] rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
+            className="px-4 py-2 bg-primary hover:bg-adv-teal-dark text-primary-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
           >
             {saving ? 'Saving…' : isNew ? 'Add Entry' : 'Save Changes'}
           </button>
@@ -347,7 +347,7 @@ export default function LoreLedgerPage() {
   }, {} as Record<EntryType, LoreEntry[]>);
 
   return (
-    <div className="min-h-screen bg-[#0B1426] text-white p-6">
+    <div className="space-y-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -356,21 +356,21 @@ export default function LoreLedgerPage() {
               <BookOpen className="h-5 w-5 text-purple-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Lore Ledger</h1>
-              <p className="text-sm text-[#B0B0B0]">World-building database · Consistency checker</p>
+              <h1 className="text-2xl font-bold text-adv-off-white">Lore Ledger</h1>
+              <p className="text-sm text-adv-gray">World-building database · Consistency checker</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={exportLedger} className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-[#B0B0B0] hover:text-white transition-colors">
+            <button onClick={exportLedger} className="flex items-center gap-1.5 px-3 py-2 bg-muted hover:bg-accent rounded-lg text-sm text-adv-gray hover:text-adv-off-white transition-colors">
               <Download className="h-3.5 w-3.5" /> Export
             </button>
-            <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm text-[#B0B0B0] hover:text-white transition-colors">
+            <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 bg-muted hover:bg-accent rounded-lg text-sm text-adv-gray hover:text-adv-off-white transition-colors">
               <Upload className="h-3.5 w-3.5" /> Import
             </button>
             <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={e => { if (e.target.files?.[0]) importLedger(e.target.files[0]); }} />
             <button
               onClick={() => setModal({ open: true, entry: null })}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#2DD4A8] hover:bg-[#1BA882] text-[#0B1426] rounded-lg text-sm font-semibold transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-adv-teal-dark text-primary-foreground rounded-lg text-sm font-semibold transition-colors"
             >
               <Plus className="h-4 w-4" /> Add Entry
             </button>
@@ -385,36 +385,36 @@ export default function LoreLedgerPage() {
         )}
 
         {/* Project bar */}
-        <div className="flex items-center gap-3 mb-4 p-3 bg-[#152238] border border-white/10 rounded-lg">
-          <span className="text-xs text-[#B0B0B0] shrink-0">Project:</span>
+        <div className="flex items-center gap-3 mb-4 p-3 bg-card border border-border rounded-lg">
+          <span className="text-xs text-adv-gray shrink-0">Project:</span>
           <input
             value={projectInput}
             onChange={e => setProjectInput(e.target.value)}
             onBlur={() => setProjectId(projectInput.trim() || 'default')}
             onKeyDown={e => e.key === 'Enter' && setProjectId(projectInput.trim() || 'default')}
             placeholder="default"
-            className="bg-[#0F1B2D] border border-white/10 text-white text-sm rounded px-2 py-1 w-40"
+            className="bg-secondary border border-border text-adv-off-white text-sm rounded px-2 py-1 w-40"
           />
-          <span className="text-xs text-[#707070]">· {entries.length} entries</span>
+          <span className="text-xs text-adv-gray-med">· {entries.length} entries</span>
           <div className="ml-auto flex items-center gap-2">
-            <Search className="h-3.5 w-3.5 text-[#707070]" />
+            <Search className="h-3.5 w-3.5 text-adv-gray-med" />
             <input
               value={searchQ}
               onChange={e => setSearchQ(e.target.value)}
               placeholder="Search entries…"
-              className="bg-[#0F1B2D] border border-white/10 text-white text-xs rounded px-2 py-1 w-44"
+              className="bg-secondary border border-border text-adv-off-white text-xs rounded px-2 py-1 w-44"
             />
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-[#152238] p-1 rounded-lg w-fit">
+        <div className="flex gap-1 mb-6 bg-card p-1 rounded-lg w-fit">
           {(['ledger', 'check'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab ? 'bg-[#2DD4A8] text-[#0B1426]' : 'text-[#B0B0B0] hover:text-white'
+                activeTab === tab ? 'bg-primary text-primary-foreground' : 'text-adv-gray hover:text-adv-off-white'
               }`}
             >
               {tab === 'ledger' ? 'Ledger' : 'Consistency Check'}
@@ -427,11 +427,11 @@ export default function LoreLedgerPage() {
           <div>
             {/* Type filter */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <Filter className="h-3.5 w-3.5 text-[#707070]" />
+              <Filter className="h-3.5 w-3.5 text-adv-gray-med" />
               <button
                 onClick={() => setTypeFilter('all')}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                  typeFilter === 'all' ? 'bg-[#2DD4A8] text-[#0B1426]' : 'bg-white/10 text-[#B0B0B0] hover:text-white'
+                  typeFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-adv-gray hover:text-adv-off-white'
                 }`}
               >
                 All ({entries.length})
@@ -441,7 +441,7 @@ export default function LoreLedgerPage() {
                   key={et.value}
                   onClick={() => setTypeFilter(et.value)}
                   className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    typeFilter === et.value ? 'bg-[#2DD4A8] text-[#0B1426]' : 'bg-white/10 text-[#B0B0B0] hover:text-white'
+                    typeFilter === et.value ? 'bg-primary text-primary-foreground' : 'bg-muted text-adv-gray hover:text-adv-off-white'
                   }`}
                 >
                   {et.icon}{et.label} ({grouped[et.value].length})
@@ -450,9 +450,9 @@ export default function LoreLedgerPage() {
             </div>
 
             {entries.length === 0 ? (
-              <div className="text-center py-16 text-[#707070]">
+              <div className="text-center py-16 text-adv-gray-med">
                 <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                <p className="font-medium text-white mb-1">Your ledger is empty</p>
+                <p className="font-medium text-adv-off-white mb-1">Your ledger is empty</p>
                 <p className="text-sm">Add characters, locations, factions, and world rules to get started.</p>
               </div>
             ) : (
@@ -467,30 +467,30 @@ export default function LoreLedgerPage() {
                       </h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                         {group.map(entry => (
-                          <div key={entry.id} className="p-4 bg-[#152238] border border-white/10 hover:border-white/20 rounded-xl transition-colors group">
+                          <div key={entry.id} className="p-4 bg-card border border-border hover:border-adv-teal/30 rounded-xl transition-colors group">
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <div className="flex items-center gap-2">
                                 <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${typeConfig(entry.entry_type).color}`}>
                                   {typeConfig(entry.entry_type).icon}
                                 </span>
-                                <span className="font-semibold text-white text-sm">{entry.name}</span>
+                                <span className="font-semibold text-adv-off-white text-sm">{entry.name}</span>
                               </div>
                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => setModal({ open: true, entry })} className="p-1 text-[#707070] hover:text-white transition-colors">
+                                <button onClick={() => setModal({ open: true, entry })} className="p-1 text-adv-gray-med hover:text-adv-off-white transition-colors">
                                   <Edit3 className="h-3.5 w-3.5" />
                                 </button>
-                                <button onClick={() => deleteEntry(entry.id)} className="p-1 text-[#707070] hover:text-red-400 transition-colors">
+                                <button onClick={() => deleteEntry(entry.id)} className="p-1 text-adv-gray-med hover:text-red-400 transition-colors">
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
                             </div>
-                            {entry.summary && <p className="text-xs text-[#B0B0B0] leading-relaxed mb-2">{entry.summary}</p>}
+                            {entry.summary && <p className="text-xs text-adv-gray leading-relaxed mb-2">{entry.summary}</p>}
                             {Object.keys(entry.properties).length > 0 && (
                               <div className="space-y-0.5">
                                 {Object.entries(entry.properties).slice(0, 4).map(([k, v]) => (
                                   <div key={k} className="flex gap-2 text-xs">
-                                    <span className="text-[#2DD4A8] font-mono w-20 shrink-0 truncate">{k}</span>
-                                    <span className="text-[#B0B0B0] truncate">{v as string}</span>
+                                    <span className="text-adv-teal font-mono w-20 shrink-0 truncate">{k}</span>
+                                    <span className="text-adv-gray truncate">{v as string}</span>
                                   </div>
                                 ))}
                               </div>
@@ -498,7 +498,7 @@ export default function LoreLedgerPage() {
                             {entry.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
                                 {entry.tags.map(tag => (
-                                  <span key={tag} className="px-1.5 py-0.5 bg-white/5 text-[#707070] text-xs rounded">{tag}</span>
+                                  <span key={tag} className="px-1.5 py-0.5 bg-muted/50 text-adv-gray-med text-xs rounded">{tag}</span>
                                 ))}
                               </div>
                             )}
@@ -516,8 +516,8 @@ export default function LoreLedgerPage() {
         {/* Consistency Check Tab */}
         {activeTab === 'check' && (
           <div className="space-y-4">
-            <div className="p-4 bg-[#0D2E3A] border border-[#2DD4A8]/20 rounded-xl text-sm text-[#B0B0B0]">
-              <strong className="text-[#2DD4A8]">How it works:</strong> Paste a passage of your writing. Claude will compare it against your ledger and flag any contradictions, continuity errors, or undefined entities.
+            <div className="p-4 bg-adv-teal-soft border border-adv-teal/20 rounded-xl text-sm text-adv-gray">
+              <strong className="text-adv-teal">How it works:</strong> Paste a passage of your writing. Claude will compare it against your ledger and flag any contradictions, continuity errors, or undefined entities.
               {entries.length === 0 && (
                 <span className="block mt-1 text-yellow-400"> Add entries to your ledger first.</span>
               )}
@@ -527,10 +527,10 @@ export default function LoreLedgerPage() {
               onChange={e => setCheckText(e.target.value)}
               placeholder="Paste your text here (up to 10,000 characters)…"
               rows={8}
-              className="w-full bg-[#152238] border border-white/10 text-white placeholder-[#707070] rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-[#2DD4A8]/50"
+              className="w-full bg-card border border-border text-adv-off-white placeholder-adv-gray-med rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-adv-teal/50"
             />
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[#707070]">{checkText.length.toLocaleString()} / 10,000 characters</span>
+              <span className="text-xs text-adv-gray-med">{checkText.length.toLocaleString()} / 10,000 characters</span>
               {isChecking ? (
                 <button onClick={() => abortRef.current?.abort()} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
                   <AlertCircle className="h-4 w-4" /> Stop
@@ -539,22 +539,22 @@ export default function LoreLedgerPage() {
                 <button
                   onClick={runConsistencyCheck}
                   disabled={!checkText.trim() || entries.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#2DD4A8] hover:bg-[#1BA882] text-[#0B1426] rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-adv-teal-dark text-primary-foreground rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
                 >
                   <Wand2 className="h-4 w-4" /> Check Consistency
                 </button>
               )}
             </div>
             {(checkResult || isChecking) && (
-              <div className="p-6 bg-[#152238] border border-white/10 rounded-xl">
+              <div className="p-6 bg-card border border-border rounded-xl">
                 {isChecking && !checkResult && (
-                  <div className="flex items-center gap-2 text-[#2DD4A8] text-sm animate-pulse">
+                  <div className="flex items-center gap-2 text-adv-teal text-sm animate-pulse">
                     <CheckCircle2 className="h-4 w-4" /> Checking against {entries.length} ledger entries…
                   </div>
                 )}
-                <div className="prose prose-invert prose-sm max-w-none">
+                <div className="prose-output prose-sm max-w-none">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{checkResult}</ReactMarkdown>
-                  {isChecking && <span className="inline-block w-2 h-4 bg-[#2DD4A8] animate-pulse ml-0.5" />}
+                  {isChecking && <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-0.5" />}
                 </div>
               </div>
             )}

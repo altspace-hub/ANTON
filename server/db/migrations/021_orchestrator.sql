@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS orchestrator_proposals (
   signal_source TEXT NOT NULL
     CHECK(signal_source IN (
       'radar','deadline','quality','pattern','workflow','assignment',
-      'compliance','apprentice','knowledge_graph','proactive'
+      'compliance','apprentice','knowledge_graph','proactive','task_agent'
     )),
   signal_id TEXT,          -- ID in the source table (e.g. radar_items.id)
   signal_summary TEXT NOT NULL,

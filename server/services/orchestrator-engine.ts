@@ -97,13 +97,13 @@ export const ORCHESTRATOR_HARD_LIMITS = {
   /** Maximum auto-executions per day (Stage 3+) */
   MAX_AUTO_EXECUTIONS_PER_DAY: 20,
   /** Maximum chained workflow depth */
-  MAX_CHAIN_DEPTH: 5,
+  MAX_CHAIN_DEPTH: 10,
   /** Minimum interval between heartbeats in minutes */
   MIN_HEARTBEAT_INTERVAL_MINUTES: 10,
   /** Maximum reasoning trail entries per trail */
   MAX_TRAIL_ENTRIES: 100,
-  /** Maximum cost per heartbeat cycle in USD */
-  MAX_COST_PER_CYCLE_USD: 2.0,
+  /** Maximum cost per heartbeat cycle in USD (raised for Opus deep thinking) */
+  MAX_COST_PER_CYCLE_USD: 5.0,
 } as const;
 
 // ── Config loader ─────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ export function getOrchestratorConfig(db: Database.Database): OrchestratorConfig
     quality_decline_threshold: 1.5,
     deadline_alert_days: 14,
     heartbeat_model: 'claude-haiku-4-5-20251001',
-    briefing_model: 'claude-sonnet-4-6',
+    briefing_model: 'claude-opus-4-6',
     orchestrator_paused: 0,
     fully_disabled: 0,
   };
@@ -559,7 +559,8 @@ OUTPUT FORMAT: Return a JSON object with this exact structure:
   ]
 }
 
-Omit proposals for signals where the right action is unclear or confidence is below 0.6.`;
+Omit proposals for signals where the right action is unclear or confidence is below 0.8.
+Only include proposals where you are highly confident (≥0.8) that the action is correct and actionable.`;
 
 export async function generateBriefing(
   signals: PlatformSignal[],
@@ -614,12 +615,14 @@ ${atomSection}
 
 Current date: ${new Date().toISOString().substring(0, 10)}`;
 
-  // Enable thinking for complex briefings (many high-urgency signals)
-  const shouldThink = thinkingEnabled || signals.filter(s => s.urgency >= 0.7).length >= 3;
-  const thinkingConfig = shouldThink && (model === 'claude-opus-4-6' || model === 'claude-sonnet-4-6')
-    ? { thinking: { type: 'enabled' as const, budget_tokens: 8000 } }
-    : {};
-  const maxTokens = shouldThink && thinkingConfig.thinking ? 12000 : 4000;
+  // Always use deep thinking for orchestrator briefings — higher quality, better reasoning
+  const isOpus = model === 'claude-opus-4-6';
+  const thinkingConfig = isOpus
+    ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
+    : (model === 'claude-sonnet-4-6')
+      ? { thinking: { type: 'enabled' as const, budget_tokens: 32768 } }
+      : {};
+  const maxTokens = isOpus ? 16000 : (model === 'claude-sonnet-4-6') ? 48000 : 4000;
 
   let raw = '';
   try {
@@ -729,6 +732,13 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
     proposals_rated: number;
     proposals_good_or_relevant: number;
     proposals_irrelevant_or_wrong: number;
+    plans_approved: number;
+    plans_rejected: number;
+    executions_completed: number;
+    executions_failed: number;
+    avg_quality_score: number | null;
+    auto_executions: number;
+    auto_overrides: number;
     stage_history: string;
   } | undefined;
 
@@ -738,7 +748,32 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
     (Date.now() - new Date(stage.stage_entered_at).getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // Stage 1 → 2 criteria
+  function advanceToStage(newStage: number, reason: string) {
+    const now = new Date().toISOString();
+    const history = JSON.parse(stage!.stage_history || '[]') as unknown[];
+    history.push({
+      stage: stage!.current_stage,
+      entered_at: stage!.stage_entered_at,
+      exited_at: now,
+      reason,
+    });
+    // Reset per-stage rating counters so demotion evaluates fresh data
+    db.prepare(`
+      UPDATE orchestrator_stage SET
+        current_stage = ?,
+        stage_entered_at = ?,
+        stage_history = ?,
+        proposals_rated = 0,
+        proposals_good_or_relevant = 0,
+        proposals_irrelevant_or_wrong = 0,
+        updated_at = ?
+      WHERE id = 'default'
+    `).run(newStage, now, JSON.stringify(history), now);
+    console.log(`[orchestrator] STAGE ADVANCEMENT: ${stage!.current_stage} → ${newStage}. ${reason}`);
+    return { advanced: true, newStage, reason };
+  }
+
+  // ── Stage 1 → 2 criteria ──────────────────────────────────────────────────
   if (stage.current_stage === 1) {
     const minDays = 14;
     const minBriefings = 20;
@@ -756,20 +791,52 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
     const badRate = stage.proposals_irrelevant_or_wrong / stage.proposals_rated;
 
     if (goodRate >= minGoodRate && badRate <= maxBadRate) {
-      const now = new Date().toISOString();
-      const history = JSON.parse(stage.stage_history || '[]') as unknown[];
-      history.push({ stage: 1, entered_at: stage.stage_entered_at, exited_at: now, reason: `Criteria met: ${Math.round(goodRate * 100)}% good/relevant, ${Math.round(badRate * 100)}% irrelevant/wrong` });
+      return advanceToStage(2, `Stage 1 criteria met after ${daysSinceEntry} days: ${Math.round(goodRate * 100)}% good/relevant, ${Math.round(badRate * 100)}% bad`);
+    }
+  }
 
-      db.prepare(`
-        UPDATE orchestrator_stage SET
-          current_stage = 2,
-          stage_entered_at = ?,
-          stage_history = ?,
-          updated_at = ?
-        WHERE id = 'default'
-      `).run(now, JSON.stringify(history), now);
+  // ── Stage 2 → 3 criteria ──────────────────────────────────────────────────
+  // Must have approved enough plans with high success rate before earning auto-execute
+  if (stage.current_stage === 2) {
+    const minDays = 7;                // At least 7 days at Stage 2
+    const minApproved = 10;           // At least 10 plans approved by human
+    const minCompleted = 5;           // At least 5 executions completed
+    const maxFailureRate = 0.2;       // Less than 20% failure rate
+    const minQuality = 0.8;           // Average quality score ≥ 0.8
 
-      return { advanced: true, newStage: 2, reason: `Stage 1 criteria met after ${daysSinceEntry} days` };
+    if (daysSinceEntry < minDays) return { advanced: false };
+    if (stage.plans_approved < minApproved) return { advanced: false };
+    if (stage.executions_completed < minCompleted) return { advanced: false };
+
+    const totalExecutions = stage.executions_completed + stage.executions_failed;
+    if (totalExecutions < minCompleted) return { advanced: false };
+
+    const failureRate = stage.executions_failed / totalExecutions;
+    const quality = stage.avg_quality_score ?? 0;
+
+    if (failureRate <= maxFailureRate && quality >= minQuality) {
+      return advanceToStage(3, `Stage 2 criteria met after ${daysSinceEntry} days: ${stage.plans_approved} approved, ${Math.round((1 - failureRate) * 100)}% success, ${(quality * 100).toFixed(0)}% quality`);
+    }
+  }
+
+  // ── Stage 3 → 4 criteria ──────────────────────────────────────────────────
+  // Must demonstrate reliable auto-execution before earning chaining capability
+  if (stage.current_stage === 3) {
+    const minDays = 14;               // At least 14 days at Stage 3
+    const minAutoExecutions = 20;     // At least 20 auto-executions completed
+    const maxOverrideRate = 0.1;      // Human overrides less than 10%
+    const minQuality = 0.85;          // Higher quality bar for full autonomy
+
+    if (daysSinceEntry < minDays) return { advanced: false };
+    if (stage.auto_executions < minAutoExecutions) return { advanced: false };
+
+    const overrideRate = stage.auto_executions > 0
+      ? stage.auto_overrides / stage.auto_executions
+      : 1;
+    const quality = stage.avg_quality_score ?? 0;
+
+    if (overrideRate <= maxOverrideRate && quality >= minQuality) {
+      return advanceToStage(4, `Stage 3 criteria met after ${daysSinceEntry} days: ${stage.auto_executions} auto-executions, ${Math.round(overrideRate * 100)}% override rate, ${(quality * 100).toFixed(0)}% quality`);
     }
   }
 
@@ -972,10 +1039,14 @@ Estimated effort: ${proposal.estimated_effort ?? 'unknown'}
 
 Produce a concrete, executable workflow plan using ANTON's existing step types.`;
 
-  const planThinkingConfig = thinkingEnabled && (model === 'claude-opus-4-6' || model === 'claude-sonnet-4-6')
-    ? { thinking: { type: 'enabled' as const, budget_tokens: 10000 } }
-    : {};
-  const planMaxTokens = planThinkingConfig.thinking ? 14000 : 2000;
+  // Always use deep thinking for workflow plans — critical for execution quality
+  const isOpusPlan = model === 'claude-opus-4-6';
+  const planThinkingConfig = isOpusPlan
+    ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
+    : (model === 'claude-sonnet-4-6')
+      ? { thinking: { type: 'enabled' as const, budget_tokens: 32768 } }
+      : {};
+  const planMaxTokens = isOpusPlan ? 16000 : 48000;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1389,10 +1460,10 @@ export async function runHeartbeatCycle(
     });
   }
 
-  // Pattern detection (non-blocking, runs after briefing)
+  // Pattern detection + auto-execution (non-blocking, runs after briefing)
   if (action === 'briefing_generated' || action === 'none') {
     try {
-      const { detectPatterns, recordPatternDetection, shouldAutoPause } = await import('./orchestrator-pattern-engine.js');
+      const { detectPatterns, recordPatternDetection, shouldAutoPause, isAutoExecutionAllowed } = await import('./orchestrator-pattern-engine.js');
       const patterns = detectPatterns(db);
       if (patterns.length > 0) {
         for (const pat of patterns.slice(0, 3)) { // max 3 pattern proposals per cycle
@@ -1400,6 +1471,50 @@ export async function runHeartbeatCycle(
         }
         console.log(`[orchestrator] Pattern engine: ${patterns.length} patterns detected, ${Math.min(patterns.length, 3)} recorded`);
       }
+
+      // Stage 3+ auto-execution: run patterns with auto_execute=1
+      const currentStage = (db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as { current_stage: number } | undefined)?.current_stage ?? 1;
+      if (currentStage >= 3 && isAutoExecutionAllowed(db)) {
+        const autoPatterns = db.prepare(`
+          SELECT id, pattern_type, name, suggested_action FROM orchestrator_patterns
+          WHERE auto_execute = 1
+            AND last_detected_at >= datetime('now', '-1 day')
+        `).all() as Array<{ id: string; pattern_type: string; name: string; suggested_action: string }>;
+
+        for (const ap of autoPatterns) {
+          if (!isAutoExecutionAllowed(db)) break; // re-check limit each iteration
+
+          const execId = randomUUID();
+          try {
+            // Create execution record for audit trail
+            db.prepare(`
+              INSERT INTO orchestrator_executions
+                (id, proposal_id, status, outcome, started_at)
+              VALUES (?, ?, 'completed', 'auto_executed', datetime('now'))
+            `).run(execId, ap.id);
+
+            // Mark detection as auto-executed
+            db.prepare(`
+              UPDATE orchestrator_pattern_detections SET auto_executed = 1
+              WHERE pattern_id = ? AND auto_executed = 0
+                AND detected_at >= datetime('now', '-1 day')
+            `).run(ap.id);
+
+            // Increment auto_executions counter
+            db.prepare(`
+              UPDATE orchestrator_stage SET
+                auto_executions = auto_executions + 1,
+                updated_at = datetime('now')
+              WHERE id = 'default'
+            `).run();
+
+            console.log(`[orchestrator] Auto-executed pattern: ${ap.name} (${ap.pattern_type})`);
+          } catch (autoErr) {
+            console.warn(`[orchestrator] Auto-execution failed for ${ap.name}:`, autoErr);
+          }
+        }
+      }
+
       // Auto-pause check
       const { pause, reason } = shouldAutoPause(db);
       if (pause) {
@@ -1416,12 +1531,14 @@ export async function runHeartbeatCycle(
     }
   }
 
-  // Check stage progression + demotion daily
-  if (period === 'daily' || period === 'on_demand') {
+  // Check stage progression + demotion on every heartbeat cycle
+  try {
     const demotion = checkStageDemotion(db);
     if (!demotion.demoted) {
       checkStageProgression(db);
     }
+  } catch (e) {
+    console.error('[orchestrator] Stage check error (non-fatal):', String(e));
   }
 
   return { action, briefingId, signalCount: signals.length, trailId };

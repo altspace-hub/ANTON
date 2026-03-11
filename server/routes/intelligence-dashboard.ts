@@ -53,9 +53,9 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
       const results = db.prepare(`
-        SELECT strftime('%Y-W%W', detected_at) as week, COUNT(*) as count
+        SELECT strftime('%Y-W%W', first_detected) as week, COUNT(*) as count
         FROM detected_patterns
-        WHERE detected_at >= datetime('now', '-' || ? || ' weeks')
+        WHERE first_detected >= datetime('now', '-' || ? || ' weeks')
         GROUP BY week
         ORDER BY week ASC
       `).all(weeks);
@@ -89,10 +89,12 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   router.get('/intelligence/temporal/quality-trend', (req, res) => {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
+      // knowledge_atoms has no quality_score column — use confidence as proxy
       const results = db.prepare(`
-        SELECT strftime('%Y-W%W', created_at) as week, AVG(quality_score) as avg_quality
+        SELECT strftime('%Y-W%W', created_at) as week, AVG(confidence) as avg_quality
         FROM knowledge_atoms
-        WHERE quality_score IS NOT NULL
+        WHERE confidence IS NOT NULL
+          AND is_active = 1
           AND created_at >= datetime('now', '-' || ? || ' weeks')
         GROUP BY week
         ORDER BY week ASC

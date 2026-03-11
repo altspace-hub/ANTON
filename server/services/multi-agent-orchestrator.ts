@@ -249,12 +249,16 @@ Structure your response with clear headings.
 Flag any critical issues or recommendations specific to your domain.`;
 
   try {
+    const isOpus = config.model === 'claude-opus-4-6';
+    const thinkingParam = isOpus
+      ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'medium' as const } }
+      : { thinking: { type: 'enabled' as const, budget_tokens: 2048 } };
     const response = await anthropic.messages.create({
       model: config.model,
       max_tokens: 4096,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
-      thinking: { type: 'enabled', budget_tokens: 2048 },
+      ...thinkingParam,
     });
 
     const outputText =
@@ -369,7 +373,8 @@ export async function runMultiAgent(
       max_tokens: 24192,
       system: synthesizerPrompt,
       messages: [{ role: 'user', content: request.userMessage }],
-      thinking: { type: 'enabled', budget_tokens: 16384 },
+      thinking: { type: 'adaptive' as const },
+      output_config: { effort: 'max' as const },
     });
 
     const synthesisText =

@@ -149,15 +149,15 @@ export function InstitutionalMemoryTab() {
     <div className="space-y-6">
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <Brain className="w-4 h-4 text-adv-teal" />
             <span className="text-sm text-adv-gray">Total Decisions</span>
           </div>
-          <div className="text-2xl font-bold text-adv-white">{insights.totalDecisions}</div>
+          <div className="text-2xl font-bold text-adv-off-white">{insights.totalDecisions}</div>
         </div>
 
-        <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <ThumbsUp className="w-4 h-4 text-green-400" />
             <span className="text-sm text-adv-gray">Positive Feedback</span>
@@ -165,7 +165,7 @@ export function InstitutionalMemoryTab() {
           <div className="text-2xl font-bold text-green-400">{insights.positiveFeedback}</div>
         </div>
 
-        <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <ThumbsDown className="w-4 h-4 text-red-400" />
             <span className="text-sm text-adv-gray">Negative Feedback</span>
@@ -173,7 +173,7 @@ export function InstitutionalMemoryTab() {
           <div className="text-2xl font-bold text-red-400">{insights.negativeFeedback}</div>
         </div>
 
-        <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+        <div className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             {insights.feedbackScore > 0 ? (
               <TrendingUp className="w-4 h-4 text-green-400" />
@@ -194,18 +194,18 @@ export function InstitutionalMemoryTab() {
       </div>
 
       {/* Insight Summary */}
-      <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4">
+      <div className="bg-card border border-border rounded-lg p-4">
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-adv-teal mt-0.5" />
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-adv-white mb-1">Insights</h3>
+            <h3 className="text-sm font-medium text-adv-off-white mb-1">Insights</h3>
             <p className="text-sm text-adv-gray">{insights.insight}</p>
           </div>
         </div>
       </div>
 
       {/* Info Banner */}
-      <div className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-3">
+      <div className="bg-card border border-border rounded-lg p-3">
         <div className="flex items-start gap-3 text-sm text-adv-gray">
           <Filter className="w-4 h-4 mt-0.5" />
           <div>
@@ -218,7 +218,7 @@ export function InstitutionalMemoryTab() {
       </div>
 
       {/* View Tabs */}
-      <div className="flex gap-2 border-b border-adv-gray-med/20">
+      <div className="flex gap-2 border-b border-border">
         <button
           onClick={() => setActiveView('clusters')}
           className={`px-4 py-2 border-b-2 transition-colors ${
@@ -259,12 +259,12 @@ export function InstitutionalMemoryTab() {
           {clusters.map((cluster) => (
             <div
               key={cluster.id}
-              className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4"
+              className="bg-card border border-border rounded-lg p-4"
             >
               <div className="flex items-start gap-3 mb-3">
                 <GitBranch className="w-5 h-5 text-adv-teal mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-adv-white mb-1">
+                  <h3 className="text-sm font-medium text-adv-off-white mb-1">
                     {cluster.clusterName}
                   </h3>
                   <p className="text-xs text-adv-gray">
@@ -312,7 +312,7 @@ export function InstitutionalMemoryTab() {
           {history.map((decision) => (
             <div
               key={decision.id}
-              className="bg-adv-card border border-adv-gray-med/20 rounded-lg p-4"
+              className="bg-card border border-border rounded-lg p-4"
             >
               <div className="flex items-start gap-3 mb-2">
                 <Brain className="w-4 h-4 text-adv-teal mt-1" />
@@ -354,14 +354,14 @@ export function InstitutionalMemoryTab() {
                       <div className="ml-auto flex gap-2">
                         <button
                           onClick={() => handleFeedback(decision.id, 1)}
-                          className="flex items-center gap-1 px-2 py-1 rounded hover:bg-adv-dark-2 text-adv-gray hover:text-green-400 transition-colors"
+                          className="flex items-center gap-1 px-2 py-1 rounded hover:bg-secondary text-adv-gray hover:text-green-400 transition-colors"
                           title="Thumbs up — this was a good decision"
                         >
                           <ThumbsUp className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => handleFeedback(decision.id, -1)}
-                          className="flex items-center gap-1 px-2 py-1 rounded hover:bg-adv-dark-2 text-adv-gray hover:text-red-400 transition-colors"
+                          className="flex items-center gap-1 px-2 py-1 rounded hover:bg-secondary text-adv-gray hover:text-red-400 transition-colors"
                           title="Thumbs down — this was a poor decision"
                         >
                           <ThumbsDown className="w-3 h-3" />

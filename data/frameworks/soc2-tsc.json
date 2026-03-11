@@ -4,7 +4,7 @@
   "shortName": "SOC 2 TSC",
   "reference": "AICPA 2017 Trust Services Criteria (updated 2022)",
   "applicationDate": "2022-01-01",
-  "articleCount": 35,
+  "articleCount": 51,
   "themes": [
     "Security (Common Criteria)",
     "Availability",
@@ -33,6 +33,8 @@
     {"id":"CC6.1","title":"Logical and physical access security","theme":"Security (Common Criteria)","requirement":"The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events."},
     {"id":"CC6.2","title":"User registration and authorisation","theme":"Security (Common Criteria)","requirement":"Prior to issuing system credentials and granting system access, the entity registers and authorises new internal and external users based on an authorisation process."},
     {"id":"CC6.3","title":"Role-based access and least privilege","theme":"Security (Common Criteria)","requirement":"The entity authorises, modifies, or removes access to data, software, functions, and other protected assets based on roles, responsibilities, or the system design and its vulnerabilities."},
+    {"id":"CC6.4","title":"Restriction and review of physical access","theme":"Security (Common Criteria)","requirement":"The entity restricts physical access to facilities and protected information assets to authorised personnel and reviews access periodically."},
+    {"id":"CC6.5","title":"Discontinuation of logical and physical protections over assets","theme":"Security (Common Criteria)","requirement":"The entity discontinues logical and physical protections over physical assets only after the ability to read or recover data has been diminished to an acceptable level."},
     {"id":"CC6.6","title":"Security controls outside system boundaries","theme":"Security (Common Criteria)","requirement":"The entity implements controls to restrict access to data and systems located outside the defined system boundaries, including data transmitted to third parties."},
     {"id":"CC6.7","title":"Restriction and management of data transmission","theme":"Security (Common Criteria)","requirement":"The entity restricts the transmission, movement, and removal of information to authorised internal and external users and processes."},
     {"id":"CC6.8","title":"Prevention and detection of unauthorised software","theme":"Security (Common Criteria)","requirement":"The entity implements controls to prevent or detect and act upon the introduction of unauthorised or malicious software."},

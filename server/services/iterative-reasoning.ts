@@ -27,7 +27,8 @@ interface PhaseConfig {
   name: string;
   systemSuffix: string;   // Extra instruction appended to system prompt for this phase
   streaming: boolean;      // true only for the final synthesis phase
-  budgetTokens: number;    // thinking budget for this phase
+  budgetTokens: number;    // kept for max_tokens safety margin calculation
+  effort: 'high' | 'max'; // Opus adaptive thinking effort level
   maxTokens: number;       // max output tokens for this phase
 }
 
@@ -38,6 +39,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: ANALYSE\nYou are in the analysis phase. Produce a structured, thorough analysis. Be explicit about your reasoning. Do NOT synthesise yet — focus on understanding the problem deeply and identifying key dimensions, evidence, and uncertainty.',
       streaming: false,
       budgetTokens: 8000,
+      effort: 'high',
       maxTokens: 16000,
     },
     {
@@ -45,6 +47,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: SYNTHESISE\nBased on the analysis, produce the final response for the user. Be clear, precise, and comprehensive. Cite your analysis. This is the final user-facing output.',
       streaming: true,
       budgetTokens: 10000,
+      effort: 'max',
       maxTokens: 24000,
     },
   ],
@@ -54,6 +57,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: ANALYSE\nYou are in the analysis phase. Produce a deep, multi-angle analysis. Do NOT synthesise. Identify the core problem, sub-problems, evidence, gaps, and risk factors.',
       streaming: false,
       budgetTokens: 10000,
+      effort: 'high',
       maxTokens: 20000,
     },
     {
@@ -61,6 +65,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: REFLECT\nYou are in the reflection phase. Review the analysis from the previous phase. Challenge assumptions, identify logical gaps, and surface counter-arguments or alternative interpretations. Conclude with a confidence score (0.0–1.0) and whether a revision of the analysis is needed.',
       streaming: false,
       budgetTokens: 8000,
+      effort: 'high',
       maxTokens: 16000,
     },
     {
@@ -68,6 +73,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: DEEPEN\nYou are in the deepening phase. Take the most uncertain or contested areas from the reflection phase and explore them more rigorously. Resolve the key uncertainties and strengthen the analysis.',
       streaming: false,
       budgetTokens: 10000,
+      effort: 'max',
       maxTokens: 20000,
     },
     {
@@ -75,6 +81,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: SYNTHESISE\nYou have completed the multi-phase investigation. Now produce the final, definitive response for the user. Integrate all phase outputs. Be comprehensive, precise, and well-structured. This is the final user-facing output.',
       streaming: true,
       budgetTokens: 16000,
+      effort: 'max',
       maxTokens: 32000,
     },
   ],
@@ -84,6 +91,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: ANALYSE\nBegin by analysing the task in full. Map the scope, constraints, dependencies, and risks. Identify what a complete, high-quality response requires.',
       streaming: false,
       budgetTokens: 10000,
+      effort: 'high',
       maxTokens: 20000,
     },
     {
@@ -91,6 +99,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: PLAN\nCreate an explicit execution plan: sections, order, depth, key assumptions, and any gaps that need addressing. Present the plan as a structured outline.',
       streaming: false,
       budgetTokens: 8000,
+      effort: 'high',
       maxTokens: 16000,
     },
     {
@@ -98,6 +107,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: DEEPEN\nReview your plan critically. Identify any missing elements, weak sections, or areas that require deeper treatment. Refine the plan and expand key reasoning.',
       streaming: false,
       budgetTokens: 10000,
+      effort: 'max',
       maxTokens: 20000,
     },
     {
@@ -105,6 +115,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: SYNTHESISE\nExecute the plan. Produce the complete, final response based on the plan and analysis phases. This is the final user-facing output.',
       streaming: true,
       budgetTokens: 16000,
+      effort: 'max',
       maxTokens: 32000,
     },
   ],
@@ -114,6 +125,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: ANALYSE\nYou are in the deep investigation analysis phase. Produce an exhaustive, multi-angle analysis. Identify the core problem, all sub-problems, evidence quality, gaps, and risk factors. Do NOT synthesise.',
       streaming: false,
       budgetTokens: 12000,
+      effort: 'high',
       maxTokens: 24000,
     },
     {
@@ -121,6 +133,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: REFLECT\nChallenge the analysis. Identify assumptions, logical gaps, alternative interpretations, and counter-arguments. Assign a confidence score (0.0–1.0) and flag specific areas needing deeper investigation.',
       streaming: false,
       budgetTokens: 10000,
+      effort: 'high',
       maxTokens: 20000,
     },
     {
@@ -128,6 +141,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: DEEPEN\nAddress all flagged uncertainties from the reflection phase. Explore edge cases. Produce a refined, consolidated understanding of the problem.',
       streaming: false,
       budgetTokens: 12000,
+      effort: 'max',
       maxTokens: 24000,
     },
     {
@@ -135,6 +149,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: EXPLORE\nUsing your deepened understanding, explore the most important implications, dependencies, and second-order effects. What is most likely to be missed? What are the key risks?',
       streaming: false,
       budgetTokens: 10000,
+      effort: 'max',
       maxTokens: 20000,
     },
     {
@@ -142,6 +157,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: VALIDATE\nValidate your conclusions from all prior phases. Cross-check the logic, ensure completeness, and identify any remaining gaps or caveats that must be disclosed in the final output.',
       streaming: false,
       budgetTokens: 8000,
+      effort: 'high',
       maxTokens: 16000,
     },
     {
@@ -149,6 +165,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       systemSuffix: 'PHASE: SYNTHESISE\nProduce the final, definitive response. Integrate all phase outputs. Be comprehensive, authoritative, and precisely structured. Disclose remaining uncertainties. This is the final user-facing output.',
       streaming: true,
       budgetTokens: 20000,
+      effort: 'max',
       maxTokens: 40000,
     },
   ],
@@ -232,18 +249,16 @@ async function runInternalPhase(
     { type: 'text' as const, text: dynamicWithPhase },
   ];
 
-  const thinkingConfig = phase.budgetTokens > 0
-    ? { thinking: { type: 'enabled' as const, budget_tokens: phase.budgetTokens } }
+  const thinkingConfig = phase.effort
+    ? { thinking: { type: 'adaptive' as const }, output_config: { effort: phase.effort } }
     : {};
 
   // Include think tool for reflection and deepen phases
   const useThinkTool = ['reflect', 'deepen', 'explore', 'validate'].includes(phase.name);
   const tools = useThinkTool ? [THINK_TOOL] : undefined;
 
-  // API constraint: max_tokens must be > budget_tokens
-  const safeMaxTokens = phase.budgetTokens > 0
-    ? Math.max(phase.maxTokens, phase.budgetTokens + 4096)
-    : phase.maxTokens;
+  // With adaptive thinking, max_tokens only governs output tokens
+  const safeMaxTokens = phase.maxTokens;
 
   const requestParams: Record<string, unknown> = {
     model: 'claude-opus-4-6', // IRE always uses Opus for quality
@@ -448,14 +463,12 @@ export async function runIterativeReasoning(
         { type: 'text' as const, text: dynamicWithPhase },
       ];
 
-      const thinkingConfig = phase.budgetTokens > 0
-        ? { thinking: { type: 'enabled' as const, budget_tokens: phase.budgetTokens } }
+      const thinkingConfig = phase.effort
+        ? { thinking: { type: 'adaptive' as const }, output_config: { effort: phase.effort } }
         : {};
 
-      // API constraint: max_tokens must be > budget_tokens
-      const safeMaxTokens = phase.budgetTokens > 0
-        ? Math.max(phase.maxTokens, phase.budgetTokens + 4096)
-        : phase.maxTokens;
+      // With adaptive thinking, max_tokens only governs output tokens
+      const safeMaxTokens = phase.maxTokens;
 
       const requestParams: Record<string, unknown> = {
         model: 'claude-opus-4-6',

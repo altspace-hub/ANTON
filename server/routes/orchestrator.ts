@@ -821,5 +821,25 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
     }
   });
 
+  // ── Stage: manual progression check ─────────────────────────────────────
+  router.post('/orchestrator/check-progression', requireAuth, (_req: Request, res: Response) => {
+    try {
+      const { checkStageDemotion, checkStageProgression } = require('../services/orchestrator-engine.js');
+      const demotion = checkStageDemotion(db);
+      if (demotion.demoted) {
+        return res.json({ action: 'demoted', ...demotion });
+      }
+      const progression = checkStageProgression(db);
+      if (progression.advanced) {
+        return res.json({ action: 'advanced', ...progression });
+      }
+      // Return current stage + criteria status for UI
+      const stage = db.prepare('SELECT * FROM orchestrator_stage WHERE id = ?').get('default') as Record<string, unknown> | undefined;
+      res.json({ action: 'no_change', stage });
+    } catch (err) {
+      res.status(500).json({ error: String(err) });
+    }
+  });
+
   return router;
 }

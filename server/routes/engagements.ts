@@ -893,17 +893,18 @@ Format your output as professional consulting deliverables. Use clear headings, 
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      // Map thinking level to model + budget
+      // Map thinking level to model + thinking config
       const thinkingLevel = String(engagement.thinking_level || 'think_hard');
       const isQuick = thinkingLevel === 'quick';
       const execModel = isQuick ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-6';
-      const budgetMap: Record<string, number> = {
-        think: 8000, think_hard: 16000, investigate: 32000,
-        plan_first: 16000, deep_investigate: 32000,
+      // Opus: adaptive thinking with effort (no budget_tokens cap)
+      const effortMap: Record<string, string> = {
+        think: 'medium', think_hard: 'high', investigate: 'max',
+        plan_first: 'max', deep_investigate: 'max',
       };
-      const budget = budgetMap[thinkingLevel] ?? 16000;
+      const effort = effortMap[thinkingLevel] ?? 'high';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const thinkingParam: any = isQuick ? {} : { thinking: { type: 'enabled', budget_tokens: budget } };
+      const thinkingParam: any = isQuick ? {} : { thinking: { type: 'adaptive' }, output_config: { effort } };
 
       // Plan First mode: prepend planning instructions
       const planFirstInstr = thinkingLevel === 'plan_first'

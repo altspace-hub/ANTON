@@ -34,6 +34,16 @@ interface OrchestratorStage {
   proposals_rated: number;
   proposals_good_or_relevant: number;
   proposals_irrelevant_or_wrong: number;
+  // Stage 2+ metrics
+  plans_approved: number;
+  plans_modified: number;
+  plans_rejected: number;
+  executions_completed: number;
+  executions_failed: number;
+  avg_quality_score: number | null;
+  // Stage 3+ metrics
+  auto_executions: number;
+  auto_overrides: number;
 }
 
 interface OrchestratorConfig {
@@ -324,6 +334,33 @@ function stage1ProgressPercent(stage: OrchestratorStage): number {
     stage.proposals_rated > 0
       ? Math.min(stage.proposals_good_or_relevant / stage.proposals_rated / 0.6, 1)
       : 0,
+  ];
+  return Math.round((checks.reduce((a, b) => a + b, 0) / checks.length) * 100);
+}
+
+function stage2ProgressPercent(stage: OrchestratorStage): number {
+  if (stage.current_stage > 2) return 100;
+  if (stage.current_stage < 2) return 0;
+  const checks = [
+    Math.min((stage.plans_approved || 0) / 10, 1),          // 10 plans approved
+    Math.min((stage.executions_completed || 0) / 5, 1),     // 5 executions completed
+    (stage.executions_completed || 0) + (stage.executions_failed || 0) > 0
+      ? Math.min((1 - (stage.executions_failed || 0) / ((stage.executions_completed || 0) + (stage.executions_failed || 0))) / 0.8, 1)
+      : 0,
+    Math.min((stage.avg_quality_score || 0) / 0.8, 1),      // quality ≥ 0.8
+  ];
+  return Math.round((checks.reduce((a, b) => a + b, 0) / checks.length) * 100);
+}
+
+function stage3ProgressPercent(stage: OrchestratorStage): number {
+  if (stage.current_stage > 3) return 100;
+  if (stage.current_stage < 3) return 0;
+  const checks = [
+    Math.min((stage.auto_executions || 0) / 20, 1),         // 20 auto-executions
+    (stage.auto_executions || 0) > 0
+      ? Math.min((1 - (stage.auto_overrides || 0) / (stage.auto_executions || 1)) / 0.9, 1)
+      : 0,
+    Math.min((stage.avg_quality_score || 0) / 0.85, 1),      // quality ≥ 0.85
   ];
   return Math.round((checks.reduce((a, b) => a + b, 0) / checks.length) * 100);
 }
@@ -752,14 +789,98 @@ export default function OrchestratorDashboard() {
             </div>
           )}
 
-          {(stage?.current_stage ?? 1) > 1 && (
-            <div className="text-sm text-adv-gray">
-              Stage {stage!.current_stage} since {formatTime(stage!.stage_entered_at)}.
-              Briefings: {stage!.total_briefings} | Proposals: {stage!.total_proposals} | Approval rate: {
-                stage!.proposals_rated > 0
-                  ? `${Math.round(stage!.proposals_good_or_relevant / stage!.proposals_rated * 100)}%`
-                  : 'n/a'
-              }
+          {stage?.current_stage === 2 && (
+            <div>
+              <div className="flex justify-between text-xs text-adv-gray mb-1">
+                <span>Progress to Stage 3: Supervised Orchestrator</span>
+                <span>{stage2ProgressPercent(stage)}%</span>
+              </div>
+              <div className="w-full bg-adv-dark-2 rounded-full h-2 mb-3">
+                <div
+                  className="bg-adv-teal h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${stage2ProgressPercent(stage)}%` }}
+                />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                {[
+                  { label: 'Plans approved', current: stage.plans_approved || 0, target: 10 },
+                  { label: 'Executions done', current: stage.executions_completed || 0, target: 5 },
+                  {
+                    label: 'Success rate',
+                    current: (stage.executions_completed || 0) + (stage.executions_failed || 0) > 0
+                      ? Math.round((stage.executions_completed || 0) / ((stage.executions_completed || 0) + (stage.executions_failed || 0)) * 100)
+                      : 0,
+                    target: 80,
+                    suffix: '%',
+                  },
+                  {
+                    label: 'Quality score',
+                    current: Math.round((stage.avg_quality_score || 0) * 100),
+                    target: 80,
+                    suffix: '%',
+                  },
+                ].map(item => (
+                  <div key={item.label} className="bg-adv-dark-2 rounded-lg p-2">
+                    <div className="text-adv-gray mb-0.5">{item.label}</div>
+                    <div className={`font-medium ${item.current >= item.target ? 'text-adv-teal' : 'text-adv-off-white'}`}>
+                      {item.current}{item.suffix ?? ''} / {item.target}{item.suffix ?? ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {stage?.current_stage === 3 && (
+            <div>
+              <div className="flex justify-between text-xs text-adv-gray mb-1">
+                <span>Progress to Stage 4: Autonomous Orchestrator</span>
+                <span>{stage3ProgressPercent(stage)}%</span>
+              </div>
+              <div className="w-full bg-adv-dark-2 rounded-full h-2 mb-3">
+                <div
+                  className="bg-adv-teal h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${stage3ProgressPercent(stage)}%` }}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                {[
+                  { label: 'Auto-executions', current: stage.auto_executions || 0, target: 20 },
+                  {
+                    label: 'Override rate',
+                    current: (stage.auto_executions || 0) > 0
+                      ? Math.round((stage.auto_overrides || 0) / (stage.auto_executions || 1) * 100)
+                      : 0,
+                    target: 10,
+                    suffix: '%',
+                    inverted: true,
+                  },
+                  {
+                    label: 'Quality score',
+                    current: Math.round((stage.avg_quality_score || 0) * 100),
+                    target: 85,
+                    suffix: '%',
+                  },
+                ].map(item => (
+                  <div key={item.label} className="bg-adv-dark-2 rounded-lg p-2">
+                    <div className="text-adv-gray mb-0.5">{item.label}</div>
+                    <div className={`font-medium ${
+                      (item as { inverted?: boolean }).inverted
+                        ? item.current <= item.target ? 'text-adv-teal' : 'text-adv-off-white'
+                        : item.current >= item.target ? 'text-adv-teal' : 'text-adv-off-white'
+                    }`}>
+                      {item.current}{item.suffix ?? ''} {(item as { inverted?: boolean }).inverted ? '≤' : '/'} {item.target}{item.suffix ?? ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {stage?.current_stage === 4 && (
+            <div className="text-sm text-adv-teal font-medium">
+              Full autonomous mode — workflow chaining active (max depth: 10).
+              Auto-executions: {stage.auto_executions || 0} | Quality: {Math.round((stage.avg_quality_score || 0) * 100)}%
             </div>
           )}
         </div>
@@ -1288,14 +1409,25 @@ export default function OrchestratorDashboard() {
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-adv-teal mt-0.5 shrink-0" />
           <div className="text-xs text-adv-gray">
-            {(stage?.current_stage ?? 1) >= 2 ? (
-              <><strong className="text-adv-teal">Phase 2: Proposal Manager</strong> — Proposals can now be
-              approved for execution. Each approval creates an execution record. Approve or reject proposals using the
-              buttons on each card. All decisions are captured in the Reasoning Trail for full auditability.</>
-            ) : (
-              <><strong className="text-adv-teal">Phase 1: Observer Stage</strong> — The Orchestrator reads all platform signals
+            {(stage?.current_stage ?? 1) === 1 && (
+              <><strong className="text-adv-teal">Stage 1: Observer</strong> — The Orchestrator reads all platform signals
               and generates situational briefings. Rate proposals to help it learn and progress to Stage 2 (Proposal Manager),
-              where proposals can be approved for execution.</>
+              where proposals can be approved for execution. Using Opus with deep thinking for high-quality analysis.</>
+            )}
+            {stage?.current_stage === 2 && (
+              <><strong className="text-adv-teal">Stage 2: Proposal Manager</strong> — Proposals can now be
+              approved for execution. Each approval creates an execution record. Approve or reject proposals using the
+              buttons on each card. Reach 10 approvals + 80% success rate + 0.8 quality to advance to Stage 3.</>
+            )}
+            {stage?.current_stage === 3 && (
+              <><strong className="text-adv-teal">Stage 3: Supervised Orchestrator</strong> — Validated recurring patterns
+              can now auto-execute. Enable auto-execute on individual patterns via the Patterns panel.
+              Complete 20 auto-executions with &lt;10% override rate to advance to Stage 4.</>
+            )}
+            {stage?.current_stage === 4 && (
+              <><strong className="text-adv-teal">Stage 4: Autonomous Orchestrator</strong> — Full autonomous mode with
+              intelligent workflow chaining (max depth: 10). ANTON proactively manages workflows and escalates to human
+              review only when confidence drops below threshold.</>
             )}
           </div>
         </div>

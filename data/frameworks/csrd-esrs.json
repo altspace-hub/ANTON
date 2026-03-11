@@ -4,7 +4,7 @@
   "shortName": "CSRD/ESRS",
   "reference": "Directive (EU) 2022/2464 + Delegated Regulation (EU) 2023/2772 (ESRS Set 1)",
   "applicationDate": "2024-01-01",
-  "articleCount": 32,
+  "articleCount": 35,
   "themes": [
     "General Disclosures",
     "Strategy",
@@ -49,9 +49,9 @@
     {"id":"ESRS S2-1","title":"Policies related to value chain workers","theme":"Communities","requirement":"Disclose policies to manage material impacts on workers in the value chain, including due diligence, human rights, and remediation mechanisms."},
     {"id":"ESRS S3-1","title":"Policies related to affected communities","theme":"Communities","requirement":"Disclose policies to manage material impacts on affected communities, including land rights, indigenous peoples, environmental justice, and community engagement."},
     {"id":"ESRS S4-1","title":"Policies related to consumers and end-users","theme":"Consumers","requirement":"Disclose policies to manage material impacts on consumers and end-users, covering product safety, information, personal data protection, and accessibility."},
-    {"id":"ESRS G1-1","title":"Business conduct policies and corporate culture","theme":"Business Conduct","requirement":"Disclose policies on business conduct including anti-corruption and anti-bribery, protection of whistleblowers, and how corporate culture is promoted."},
-    {"id":"ESRS G1-3","title":"Prevention and detection of corruption and bribery","theme":"Business Conduct","requirement":"Disclose procedures for prevention and detection of corruption and bribery, including training, risk assessments, and confirmed incidents during the reporting period."},
-    {"id":"ESRS G1-4","title":"Confirmed incidents of corruption or bribery","theme":"Business Conduct","requirement":"Disclose the number of confirmed incidents of corruption or bribery, related proceedings, and fines, as well as any breaches of anti-corruption policies."},
+    {"id":"ESRS G1-1","title":"Policies related to business conduct","theme":"Business Conduct","requirement":"Disclose policies on business conduct including anti-corruption and anti-bribery, protection of whistleblowers, and how corporate culture is promoted."},
+    {"id":"ESRS G1-3","title":"Targets related to business conduct","theme":"Business Conduct","requirement":"Disclose procedures for prevention and detection of corruption and bribery, including training, risk assessments, and confirmed incidents during the reporting period."},
+    {"id":"ESRS G1-4","title":"Metrics related to incidents of corruption or bribery","theme":"Business Conduct","requirement":"Disclose the number of confirmed incidents of corruption or bribery, related proceedings, and fines, as well as any breaches of anti-corruption policies."},
     {"id":"ESRS G1-5","title":"Political influence and lobbying activities","theme":"Business Conduct","requirement":"Disclose information about political contributions, lobbying activities, and membership of trade associations, including amounts spent and the topics addressed."},
     {"id":"ESRS G1-6","title":"Payment practices","theme":"Business Conduct","requirement":"Disclose the entity's payment practices, including average payment terms, percentage of payments made on time, and late payment practices toward SMEs and suppliers."}
   ]

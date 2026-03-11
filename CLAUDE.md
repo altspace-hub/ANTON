@@ -157,7 +157,7 @@ Set the API key in `.env` to enable each provider. Users switch models in the UI
 | `investigate` | Maximum reasoning | `effort: 'max'` | `budget_tokens: 32768` |
 | `plan_first` | Plan then execute | `effort: 'max'` | `budget_tokens: 32768` |
 
-For `claude-opus-4-6`, always use `thinking: { type: 'adaptive' }` with `effort`. Never set `budget_tokens` for Opus.
+For `claude-opus-4-6`, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for Opus.
 
 ### Export Pipeline
 
