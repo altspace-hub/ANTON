@@ -93,6 +93,10 @@ export default function WorkflowBuilder() {
   const [saved, setSaved] = useState(false);
   const [showStepTypePicker, setShowStepTypePicker] = useState(false);
 
+  // Connections + Knowledge Library entries (for step configuration)
+  const [connections, setConnections] = useState<{ id: string; label: string; type: string }[]>([]);
+  const [approvedScripts, setApprovedScripts] = useState<{ id: string; label: string; parameters?: { name: string; description: string }[] }[]>([]);
+
   // Run All state
   const [isRunningAll, setIsRunningAll] = useState(false);
   const [runningStepIdx, setRunningStepIdx] = useState<number | null>(null);
@@ -110,6 +114,35 @@ export default function WorkflowBuilder() {
       }
     }
   }, [id]);
+
+  // Fetch connections + knowledge library entries for step dropdowns
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [connRes, klRes, scriptRes] = await Promise.all([
+          fetch('/api/connections').then(r => r.ok ? r.json() : []),
+          fetch('/api/knowledge-library').then(r => r.ok ? r.json() : []),
+          fetch('/api/connections/scripts').then(r => r.ok ? r.json() : []),
+        ]);
+        const conns = (connRes as { id: string; display_name: string; type: string; status: string }[])
+          .filter(c => c.status === 'active')
+          .map(c => ({ id: c.id, label: c.display_name, type: c.type }));
+        const klEntries = (klRes as { id: string; label: string; path: string; file_count?: number }[])
+          .map(e => ({
+            id: `kl:${e.id}`,
+            label: `📚 ${e.label} (${e.file_count ?? 0} files)`,
+            type: 'filesystem',
+          }));
+        setConnections([...conns, ...klEntries]);
+        const scripts = (scriptRes as { id: string; display_name: string; parameters?: { name: string; description: string }[] }[])
+          .map(s => ({ id: s.id, label: s.display_name, parameters: s.parameters }));
+        setApprovedScripts(scripts);
+      } catch {
+        // Silently degrade — steps just show empty dropdowns
+      }
+    };
+    load();
+  }, []);
 
   const updateWorkflow = (updates: Partial<WorkflowDefinition>) => {
     setWorkflow((prev) => ({ ...prev, ...updates }));
@@ -764,6 +797,7 @@ export default function WorkflowBuilder() {
                     <ApiCallStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
                     />
                   )}
 
@@ -771,6 +805,7 @@ export default function WorkflowBuilder() {
                     <DatabaseStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
                     />
                   )}
 
@@ -778,6 +813,7 @@ export default function WorkflowBuilder() {
                     <FileReadStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
                     />
                   )}
 
@@ -785,6 +821,7 @@ export default function WorkflowBuilder() {
                     <FileWriteStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
                       availableOutputs={workflow.steps.slice(0, idx).map((s, i) => ({
                         stepId: s.id,
                         label: `Step ${i + 1}: ${s.label}`,
@@ -797,6 +834,8 @@ export default function WorkflowBuilder() {
                     <ScriptStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
+                      scripts={approvedScripts}
                     />
                   )}
 
@@ -856,6 +895,7 @@ export default function WorkflowBuilder() {
                     <NotificationStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
                     />
                   )}
 
@@ -874,6 +914,7 @@ export default function WorkflowBuilder() {
                     <DataImportStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
                     />
                   )}
 
@@ -895,6 +936,7 @@ export default function WorkflowBuilder() {
                     <DataExportStep
                       step={step}
                       onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      connections={connections}
                     />
                   )}
                 </div>

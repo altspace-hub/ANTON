@@ -1,11 +1,18 @@
 import { WorkflowStep } from '@/lib/workflow-definitions';
 
+interface Connection {
+  id: string;
+  label: string;
+  type: string;
+}
+
 interface DataImportStepProps {
   step: WorkflowStep;
   onUpdate: (updates: Partial<WorkflowStep['config']>) => void;
+  connections?: Connection[];
 }
 
-export default function DataImportStep({ step, onUpdate }: DataImportStepProps) {
+export default function DataImportStep({ step, onUpdate, connections = [] }: DataImportStepProps) {
   const config = step.config;
 
   return (
@@ -122,10 +129,13 @@ export default function DataImportStep({ step, onUpdate }: DataImportStepProps) 
               onChange={(e) => onUpdate({ dataConnectionId: e.target.value })}
               className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
-              <option value="">Select connection...</option>
-              {/* TODO: Load from ConnectionManager */}
-              <option value="conn-1">Production DB</option>
-              <option value="conn-2">Analytics DB</option>
+              <option value="">— Select connection —</option>
+              {connections.filter(c => c.type === 'database').map(c => (
+                <option key={c.id} value={c.id}>{c.label}</option>
+              ))}
+              {connections.filter(c => c.type === 'database').length === 0 && (
+                <option disabled value="">No database connections configured</option>
+              )}
             </select>
           </div>
 

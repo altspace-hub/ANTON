@@ -7,6 +7,8 @@
 
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'crypto';
+import path from 'path';
+import fs from 'fs';
 import type { WorkflowDefinition, WorkflowStep } from '../../src/lib/workflow-definitions.js';
 import { resolveTemplate } from '../routes/workflows.js';
 import { createConnectionManager } from './connection-manager.js';
@@ -19,6 +21,7 @@ import sql from 'mssql';
 const HEADLESS_STEP_TYPES = new Set([
   'api_call',
   'database_query',
+  'file_read',
   'transform',
   'wait',
   'decision_gate',
@@ -237,6 +240,68 @@ async function executeHeadlessStep(
         await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
       }
       return { output: { waitedSeconds: seconds, completedAt: new Date().toISOString() } };
+    }
+
+    case 'file_read': {
+      const connId = step.config?.connectionId as string | undefined;
+      if (!connId) throw new Error('file_read step requires a connectionId');
+
+      let basePath: string;
+
+      if (connId.startsWith('kl:')) {
+        // Knowledge Library entry — resolve path from knowledge_library table
+        const klId = connId.slice(3);
+        const klEntry = db.prepare('SELECT path FROM knowledge_library WHERE id = ?').get(klId) as { path: string } | undefined;
+        if (!klEntry) throw new Error(`Knowledge Library entry not found: ${klId}`);
+        basePath = klEntry.path;
+      } else {
+        // Regular filesystem connection
+        const manager = createConnectionManager(db);
+        const conn = manager.get(connId);
+        if (!conn) throw new Error(`Connection not found: ${connId}`);
+        if (conn.type !== 'filesystem') throw new Error('Connection is not a filesystem connection');
+        const cfg = conn.config as Record<string, unknown>;
+        basePath = cfg.base_path as string || cfg.path as string || '';
+      }
+
+      if (!basePath || !fs.existsSync(basePath)) {
+        throw new Error(`Filesystem path does not exist: ${basePath}`);
+      }
+
+      // Validate path against ALLOWED_FOLDER_PATHS
+      const allowedBases = (process.env.ALLOWED_FOLDER_PATHS ?? '').split(',').filter(Boolean);
+      const resolved = path.resolve(basePath);
+      if (allowedBases.length > 0 && !allowedBases.some(base => resolved.startsWith(path.resolve(base)))) {
+        throw new Error('Folder access not permitted by ALLOWED_FOLDER_PATHS');
+      }
+
+      // Read files matching filter
+      const filterStr = (step.config?.fileFilter as string || '').trim();
+      const extensions = filterStr ? filterStr.split(',').map(e => e.trim().toLowerCase()) : [];
+      const maxFiles = 50;
+
+      const entries = fs.readdirSync(basePath, { withFileTypes: true });
+      const files: { name: string; content: string; size: number }[] = [];
+
+      for (const entry of entries) {
+        if (!entry.isFile()) continue;
+        if (extensions.length > 0 && !extensions.some(ext => entry.name.toLowerCase().endsWith(ext))) continue;
+        if (files.length >= maxFiles) break;
+
+        const filePath = path.join(basePath, entry.name);
+        const stat = fs.statSync(filePath);
+        if (stat.size > 2 * 1024 * 1024) continue; // Skip files > 2MB
+
+        try {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          files.push({ name: entry.name, content, size: stat.size });
+        } catch {
+          // Skip unreadable files
+        }
+      }
+
+      const outputVar = (step.config?.outputVariable as string) || 'file_content';
+      return { output: { [outputVar]: { files, count: files.length, basePath } } };
     }
 
     case 'api_call': {

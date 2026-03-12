@@ -8,13 +8,20 @@ interface Script {
   parameters?: Array<{ name: string; description: string }>;
 }
 
+interface Connection {
+  id: string;
+  label: string;
+  type: string;
+}
+
 interface ScriptStepProps {
   step: WorkflowStep;
   onUpdate: (updates: Partial<WorkflowStep['config']>) => void;
   scripts?: Script[];
+  connections?: Connection[];
 }
 
-export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
+export function ScriptStep({ step, onUpdate, scripts = [], connections = [] }: ScriptStepProps) {
   const [newParamKey, setNewParamKey] = useState('');
   const [newParamValue, setNewParamValue] = useState('');
 
@@ -38,6 +45,23 @@ export function ScriptStep({ step, onUpdate, scripts = [] }: ScriptStepProps) {
     <div className="space-y-3">
       <div className="flex items-center gap-2 rounded-md border border-adv-blue/30 bg-adv-blue/10 px-3 py-1.5">
         <span className="text-xs font-medium text-adv-blue">Connection required: Script Library</span>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-[11px] font-medium text-adv-gray">Script Library Connection</label>
+        <select
+          value={step.config.connectionId || ''}
+          onChange={(e) => onUpdate({ connectionId: e.target.value || undefined })}
+          className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+        >
+          <option value="">— Select connection —</option>
+          {connections.filter(c => c.type === 'script_library').map(c => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))}
+          {connections.filter(c => c.type === 'script_library').length === 0 && (
+            <option disabled value="">No script library connections configured</option>
+          )}
+        </select>
       </div>
 
       <div>
