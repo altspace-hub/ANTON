@@ -17,6 +17,7 @@ function est(text: string): number {
 // Context windows per model
 const CONTEXT_WINDOWS: Record<string, number> = {
   'claude-opus-4-6': 200_000,
+  'claude-sonnet-4-6': 200_000,
   'claude-sonnet-4-5-20250929': 200_000,
   'claude-haiku-4-5-20251001': 200_000,
   'gpt-4o': 128_000,
