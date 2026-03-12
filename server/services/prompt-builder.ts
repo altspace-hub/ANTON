@@ -1,3 +1,6 @@
+import { applyAntonBoosts, applyTokenBudget } from './atom-boost.js';
+import { hybridSearch } from './hybrid-search.js';
+
 type CreativityLevel = 'strict' | 'balanced' | 'creative';
 
 const CREATIVITY_INSTRUCTIONS: Record<CreativityLevel, string> = {
@@ -368,19 +371,137 @@ export function buildKnowledgePackLayer(
 }
 
 /**
- * Build a knowledge atom layer — injects recent high-confidence atoms
+ * Build a knowledge atom layer — injects relevant high-confidence atoms
  * from the same area/module as prior-work context for Claude.
+ *
+ * Uses full hybrid search (vector similarity + BM25 keyword + RRF fusion)
+ * with ANTON-specific boosts (confidence, recency, area/module, superseded).
+ * Falls back to the original SQL query when hybrid search is unavailable.
  */
-export function buildAtomLayer(
+export async function buildAtomLayer(
   db: import('better-sqlite3').Database,
   areaId?: string | null,
   moduleId?: string | null,
+  userMessage?: string | null,
+  sessionId?: string | null,
+): Promise<string> {
+  try {
+    // ── Try full hybrid search if we have a user message ─────────────────
+    if (userMessage && userMessage.trim().length > 5) {
+      try {
+        // Full vector + BM25 + RRF fusion via hybridSearch
+        const results = await hybridSearch(db, {
+          query: userMessage.trim(),
+          contentTypes: ['knowledge_atom'],
+          topK: 25,
+          minSimilarity: 0.25,
+        });
+
+        if (results.length === 0) return buildAtomLayerFallback(db, areaId);
+
+        // Enrich results with metadata from knowledge_atoms table.
+        // Hybrid search metadata may be sparse (old embeddings), so we
+        // always fetch the authoritative atom data from the DB.
+        const atomIds = results.map(r => r.content_id);
+        const placeholders = atomIds.map(() => '?').join(',');
+        const atomRows = db.prepare(`
+          SELECT id, content, atom_type, category, confidence,
+                 source_area_id, source_module_id, created_at, superseded_by
+          FROM knowledge_atoms
+          WHERE id IN (${placeholders}) AND is_active = 1
+        `).all(...atomIds) as Array<{
+          id: string; content: string; atom_type: string; category: string;
+          confidence: number; source_area_id: string | null; source_module_id: string | null;
+          created_at: string; superseded_by: string | null;
+        }>;
+
+        const atomMap = new Map(atomRows.map(a => [a.id, a]));
+
+        // Merge hybrid search scores with authoritative atom metadata
+        const enriched = results
+          .filter(r => atomMap.has(r.content_id))
+          .map(r => {
+            const atom = atomMap.get(r.content_id)!;
+            return {
+              ...r,
+              content_text: atom.content, // Use DB content (authoritative)
+              metadata: {
+                ...r.metadata,
+                category: atom.category,
+                atom_type: atom.atom_type,
+                confidence: atom.confidence,
+                source_area_id: atom.source_area_id,
+                source_module_id: atom.source_module_id,
+                created_at: atom.created_at,
+                is_superseded: atom.superseded_by ? 1 : 0,
+              } as Record<string, unknown>,
+            };
+          });
+
+        if (enriched.length === 0) return buildAtomLayerFallback(db, areaId);
+
+        // Apply ANTON boosts (confidence, recency, area/module relevance, superseded)
+        const boosted = applyAntonBoosts(enriched, { areaId, moduleId }, db);
+
+        // Apply token budget cap
+        const capped = applyTokenBudget(boosted, 4000);
+
+        if (capped.length === 0) return buildAtomLayerFallback(db, areaId);
+
+        // ── Log retrieval feedback (non-blocking) ──────────────────────────
+        if (sessionId) {
+          try {
+            const insertFeedback = db.prepare(
+              `INSERT INTO retrieval_feedback (session_id, atom_id, retrieval_method, retrieval_score)
+               VALUES (?, ?, ?, ?)`
+            );
+            const logMany = db.transaction((items: Array<{ id: string; score: number }>) => {
+              for (const item of items) {
+                insertFeedback.run(sessionId, item.id, 'hybrid', item.score);
+              }
+            });
+            logMany(capped.map(r => ({ id: r.content_id, score: r.score })));
+          } catch {
+            // Non-fatal — retrieval_feedback table may not exist yet
+          }
+        }
+
+        const lines = [
+          '## PRIOR KNOWLEDGE ATOMS',
+          'The following insights were retrieved by relevance to your query from recent completed work. Reference them as supporting evidence when relevant:',
+          '',
+        ];
+        for (const r of capped) {
+          const meta = r.metadata;
+          const cat = meta.category || 'general';
+          const type = meta.atom_type || 'insight';
+          const conf = typeof meta.confidence === 'number' ? Math.round(meta.confidence * 100) : 80;
+          lines.push(`- [${cat}/${type}] ${r.content_text} (${conf}% confidence)`);
+        }
+        return lines.join('\n');
+
+      } catch (hybridErr) {
+        // Hybrid search failed — fall through to SQL fallback
+        console.warn('[buildAtomLayer] Hybrid search unavailable, using SQL fallback:', hybridErr instanceof Error ? hybridErr.message : hybridErr);
+      }
+    }
+
+    // ── SQL fallback (original behaviour) ────────────────────────────────
+    return buildAtomLayerFallback(db, areaId);
+  } catch {
+    return '';
+  }
+}
+
+/** Original SQL-only atom retrieval — used as fallback when hybrid search is unavailable. */
+function buildAtomLayerFallback(
+  db: import('better-sqlite3').Database,
+  areaId?: string | null,
 ): string {
   try {
     const conditions = ['ka.is_active = 1', "ka.created_at >= datetime('now', '-30 days')", 'ka.confidence >= 0.7'];
     const params: unknown[] = [];
 
-    // If area is known, prefer atoms from the same area but also include general ones
     if (areaId) {
       conditions.push('(ka.source_area_id = ? OR ka.source_area_id IS NULL)');
       params.push(areaId);

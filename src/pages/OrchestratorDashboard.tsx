@@ -883,6 +883,31 @@ export default function OrchestratorDashboard() {
               Auto-executions: {stage.auto_executions || 0} | Quality: {Math.round((stage.avg_quality_score || 0) * 100)}%
             </div>
           )}
+
+          {/* Trust level explanation */}
+          <div className="mt-4 rounded-lg bg-adv-dark-2 p-3 text-xs text-adv-gray space-y-1.5">
+            <div className="font-semibold text-adv-off-white mb-1">Why is the Orchestrator at this level?</div>
+            <div className="flex items-start gap-2">
+              <span className="text-adv-teal font-bold shrink-0">1→2:</span>
+              <span>20+ briefings, 50+ proposals, 10+ ratings, and 60%+ positive rating rate</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-adv-teal font-bold shrink-0">2→3:</span>
+              <span>10+ approved plans, 5+ successful executions, 80%+ success rate, and 80%+ quality score</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-adv-teal font-bold shrink-0">3→4:</span>
+              <span>20+ auto-executions, override rate &le;10%, and 85%+ quality score</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-adv-red font-bold shrink-0">Demotion:</span>
+              <span>65%+ bad ratings triggers auto-pause and stage demotion for safety</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-adv-gold font-bold shrink-0">Hard limits:</span>
+              <span>Max 10 proposals/briefing, 6 heartbeats/hour, 20 auto-executions/day, 10-deep chain max</span>
+            </div>
+          </div>
         </div>
 
         {/* Quick stats */}

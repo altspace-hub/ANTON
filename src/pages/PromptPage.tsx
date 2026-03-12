@@ -16,6 +16,7 @@ import ExportBar from '@/components/shared/ExportBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
 import SkillAttacher from '@/components/platform/SkillAttacher';
 import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
+import InjectedAtomsPanel from '@/components/shared/InjectedAtomsPanel';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -510,6 +511,7 @@ export default function PromptPage() {
               onAtomInjectionChange={setAtomInjectionEnabled}
               onAtomCollectionChange={setAtomCollectionEnabled}
             />
+            <InjectedAtomsPanel sessionId={sessionId} />
             <FileUploader files={files} onUpload={upload} onRemove={remove} />
           </div>
         </div>

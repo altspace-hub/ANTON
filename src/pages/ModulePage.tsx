@@ -31,6 +31,7 @@ import ExportBar from '@/components/shared/ExportBar';
 import HumanOversightGate from '@/components/shared/HumanOversightGate';
 import ContextBudgetBar from '@/components/shared/ContextBudgetBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
+import InjectedAtomsPanel from '@/components/shared/InjectedAtomsPanel';
 import SkillAttacher from '@/components/platform/SkillAttacher';
 import { SeedControl } from '@/components/shared/SeedControl';
 import GapAnalysis from '@/components/modules/GapAnalysis';
@@ -734,6 +735,9 @@ export default function ModulePage() {
             onAtomInjectionChange={setAtomInjectionEnabled}
             onAtomCollectionChange={setAtomCollectionEnabled}
           />
+
+          {/* Injected Knowledge Atoms */}
+          <InjectedAtomsPanel sessionId={sessionId} />
 
           {/* Skills */}
           {moduleId && !suggestedSkillsDismissed && (MODULE_DEFAULT_SKILLS[moduleId]?.length ?? 0) > 0 && (!selectedSkills || selectedSkills.length === 0) && (

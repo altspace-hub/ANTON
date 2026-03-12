@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 
-const STAGE_THRESHOLDS = {
+export const STAGE_THRESHOLDS = {
   guided: { sessions: 3, qualityAvg: 0 },       // After 3 sessions: guided
   supervised: { sessions: 8, qualityAvg: 7.0 },  // After 8 sessions + quality 7+: supervised
   autonomous: { sessions: 20, qualityAvg: 8.0 }, // After 20 sessions + quality 8+: autonomous
@@ -97,5 +97,19 @@ export function createApprentice(db: Database.Database) {
     return suggestions[stage] ?? [];
   }
 
-  return { getProfile, getAllProfiles, recordSession, checkAndPromote, getStageSuggestions };
+  function getProgressionHistory(userId: string, moduleId: string) {
+    const profile = getProfile(userId, moduleId);
+    if (!profile) return null;
+
+    const timeline: Array<{ stage: string; promoted_at: string | null }> = [
+      { stage: 'observer', promoted_at: profile.created_at ?? null },
+    ];
+    if (profile.promoted_to_guided) timeline.push({ stage: 'guided', promoted_at: profile.promoted_to_guided });
+    if (profile.promoted_to_supervised) timeline.push({ stage: 'supervised', promoted_at: profile.promoted_to_supervised });
+    if (profile.promoted_to_autonomous) timeline.push({ stage: 'autonomous', promoted_at: profile.promoted_to_autonomous });
+
+    return { profile, timeline, thresholds: STAGE_THRESHOLDS };
+  }
+
+  return { getProfile, getAllProfiles, recordSession, checkAndPromote, getStageSuggestions, getProgressionHistory };
 }

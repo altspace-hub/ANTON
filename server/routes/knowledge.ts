@@ -64,6 +64,32 @@ export function createKnowledgeRoutes(db: Database.Database) {
     }
   });
 
+  // ── GET /api/knowledge/atoms/:id/relationships ─────────────────────────
+  router.get('/knowledge/atoms/:id/relationships', (req, res) => {
+    try {
+      const atomId = req.params.id;
+      const rows = db.prepare(`
+        SELECT ar.relationship_type, ar.strength, ar.created_at,
+               CASE WHEN ar.from_atom_id = ? THEN ar.to_atom_id ELSE ar.from_atom_id END as related_atom_id,
+               CASE WHEN ar.from_atom_id = ? THEN 'outgoing' ELSE 'incoming' END as direction,
+               ka.content, ka.atom_type, ka.category, ka.confidence
+        FROM atom_relationships ar
+        JOIN knowledge_atoms ka ON ka.id = CASE WHEN ar.from_atom_id = ? THEN ar.to_atom_id ELSE ar.from_atom_id END
+        WHERE (ar.from_atom_id = ? OR ar.to_atom_id = ?) AND ka.is_active = 1
+        ORDER BY ar.strength DESC
+      `).all(atomId, atomId, atomId, atomId, atomId) as Array<{
+        relationship_type: string; strength: number; created_at: string;
+        related_atom_id: string; direction: string;
+        content: string; atom_type: string; category: string; confidence: number;
+      }>;
+
+      res.json({ atomId, relationships: rows, total: rows.length });
+    } catch (err) {
+      console.error('[knowledge/atoms/:id/relationships GET]', err);
+      res.status(500).json({ error: 'Failed to fetch atom relationships' });
+    }
+  });
+
   // ── GET /api/knowledge/entities/:type/:id ────────────────────────────────
   // Returns all atoms for an entity + its graph connections
   router.get('/knowledge/entities/:type/:id', (req, res) => {

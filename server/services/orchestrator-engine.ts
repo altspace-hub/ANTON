@@ -117,8 +117,8 @@ export function getOrchestratorConfig(db: Database.Database): OrchestratorConfig
     radar_urgency_threshold: 0.7,
     quality_decline_threshold: 1.5,
     deadline_alert_days: 14,
-    heartbeat_model: 'claude-haiku-4-5-20251001',
-    briefing_model: 'claude-opus-4-6',
+    heartbeat_model: process.env.ORCHESTRATOR_HEARTBEAT_MODEL || 'claude-haiku-4-5-20251001',
+    briefing_model: process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-6',
     orchestrator_paused: 0,
     fully_disabled: 0,
   };
@@ -508,7 +508,7 @@ ${signals.slice(0, 5).map(s => `- [${s.source}] urgency=${s.urgency.toFixed(2)}:
 Do these signals collectively warrant generating a situational briefing for the compliance team?`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: process.env.ORCHESTRATOR_HEARTBEAT_MODEL || 'claude-haiku-4-5-20251001',
       max_tokens: 10,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -1026,7 +1026,7 @@ Keep plans specific and executable. Reference real ANTON modules and step patter
 export async function generateWorkflowPlan(
   proposal: OrchestratorProposal,
   anthropic: AnthropicSDK,
-  model: string = 'claude-opus-4-6',
+  model: string = process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-6',
   thinkingEnabled = false
 ): Promise<string | null> {
   const userMsg = `Generate a complete workflow execution plan for this proposal:

@@ -67,7 +67,8 @@ export async function backfillKnowledgeAtoms(db: Database.Database, batchSize = 
 
     // Find atoms without embeddings in the unified table
     const atoms = db.prepare(`
-      SELECT id, content, category, atom_type, source_area_id, source_workflow_id
+      SELECT id, content, category, atom_type, source_area_id, source_module_id,
+             source_workflow_id, confidence, created_at, superseded_by
       FROM knowledge_atoms
       WHERE is_active = 1
         AND id NOT IN (
@@ -77,7 +78,9 @@ export async function backfillKnowledgeAtoms(db: Database.Database, batchSize = 
       LIMIT ?
     `).all(adapter.model, batchSize) as Array<{
       id: string; content: string; category: string; atom_type: string;
-      source_area_id: string | null; source_workflow_id: string;
+      source_area_id: string | null; source_module_id: string | null;
+      source_workflow_id: string; confidence: number;
+      created_at: string; superseded_by: string | null;
     }>;
 
     if (atoms.length === 0) return;
@@ -93,7 +96,11 @@ export async function backfillKnowledgeAtoms(db: Database.Database, batchSize = 
           category: atom.category,
           atom_type: atom.atom_type,
           source_area_id: atom.source_area_id,
+          source_module_id: atom.source_module_id,
           source_workflow_id: atom.source_workflow_id,
+          confidence: atom.confidence,
+          created_at: atom.created_at,
+          is_superseded: atom.superseded_by ? 1 : 0,
         },
       }).catch(err => {
         console.warn('[embedding-pipeline] Atom backfill failed for', atom.id, err instanceof Error ? err.message : err);

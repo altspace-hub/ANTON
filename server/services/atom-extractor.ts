@@ -257,13 +257,132 @@ Rules:
               category: atom.category,
               atom_type: atom.atom_type,
               source_area_id: atom.source_area_id,
+              source_module_id: atom.source_module_id,
               source_workflow_id: atom.source_workflow_id,
+              confidence: atom.confidence,
+              created_at: atom.created_at,
+              is_superseded: atom.superseded_by ? 1 : 0,
             },
           }).catch(err => {
             console.warn('[atom-extractor] embed failed for atom', atomId, err instanceof Error ? err.message : err);
           });
         }
       })();
+    }
+
+    // Fire-and-forget: detect relationships between new atoms and recent atoms
+    if (insertedAtomIds.length > 0) {
+      detectRelationships(insertedAtomIds, output.area_id, output.module_id).catch(err => {
+        console.warn('[atom-extractor] relationship detection failed (non-fatal):', err instanceof Error ? err.message : err);
+      });
+    }
+  }
+
+  // ── Detect relationships between atoms ─────────────────────────────────
+  async function detectRelationships(
+    newAtomIds: string[],
+    areaId: string | null | undefined,
+    moduleId: string | null | undefined,
+  ): Promise<void> {
+    // Fetch new atoms
+    const newAtoms = newAtomIds
+      .map(id => selectAtomById.get(id))
+      .filter((a): a is KnowledgeAtomRow => a !== undefined);
+    if (newAtoms.length === 0) return;
+
+    // Fetch recent existing atoms from same area/module (excluding new ones)
+    const conditions = ['a.is_active = 1'];
+    const params: (string | number)[] = [];
+    if (areaId) { conditions.push('a.source_area_id = ?'); params.push(areaId); }
+    if (moduleId) { conditions.push('a.source_module_id = ?'); params.push(moduleId); }
+    const newIdSet = new Set(newAtomIds);
+    const existingAtoms = (db.prepare(`
+      SELECT * FROM knowledge_atoms a
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY a.created_at DESC LIMIT 50
+    `).all(...params) as KnowledgeAtomRow[]).filter(a => !newIdSet.has(a.id));
+
+    if (existingAtoms.length === 0) return;
+
+    const prompt = `You are analyzing relationships between knowledge atoms.
+
+NEW ATOMS:
+${newAtoms.map((a, i) => `[N${i}] (${a.atom_type}) ${a.content}`).join('\n')}
+
+EXISTING ATOMS:
+${existingAtoms.slice(0, 20).map((a, i) => `[E${i}] (${a.atom_type}) ${a.content}`).join('\n')}
+
+For each meaningful relationship between a new atom and an existing atom, output a JSON array of objects:
+- from: "N0" or "N1" etc (new atom index)
+- to: "E0" or "E1" etc (existing atom index)
+- type: one of "supports", "contradicts", "extends", "requires", "caused_by", "related_to"
+- strength: 0.4-1.0
+
+Rules:
+- Only include relationships with strength >= 0.4
+- Maximum 10 relationships total
+- Return ONLY a valid JSON array — no markdown, no explanation
+- If no meaningful relationships exist, return []`;
+
+    try {
+      const message = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      let responseText = '';
+      for (const block of message.content) {
+        if (block.type === 'text') responseText += block.text;
+      }
+
+      const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      let rels: Array<{ from: string; to: string; type: string; strength: number }> = [];
+      try {
+        rels = JSON.parse(cleaned);
+      } catch {
+        return; // unparseable — skip
+      }
+      if (!Array.isArray(rels)) return;
+
+      const validTypes = new Set(['supports', 'contradicts', 'extends', 'requires', 'caused_by', 'related_to']);
+      const insertRel = db.prepare(
+        `INSERT INTO atom_relationships (from_atom_id, to_atom_id, relationship_type, strength)
+         VALUES (?, ?, ?, ?)`
+      );
+
+      const insertMany = db.transaction((items: Array<{ fromId: string; toId: string; type: string; strength: number }>) => {
+        for (const item of items) {
+          insertRel.run(item.fromId, item.toId, item.type, item.strength);
+        }
+      });
+
+      const toInsert: Array<{ fromId: string; toId: string; type: string; strength: number }> = [];
+      for (const rel of rels.slice(0, 10)) {
+        if (!rel.from || !rel.to || !rel.type || typeof rel.strength !== 'number') continue;
+        if (!validTypes.has(rel.type) || rel.strength < 0.4) continue;
+
+        const fromMatch = rel.from.match(/^N(\d+)$/);
+        const toMatch = rel.to.match(/^E(\d+)$/);
+        if (!fromMatch || !toMatch) continue;
+
+        const fromAtom = newAtoms[parseInt(fromMatch[1], 10)];
+        const toAtom = existingAtoms[parseInt(toMatch[1], 10)];
+        if (!fromAtom || !toAtom) continue;
+
+        toInsert.push({
+          fromId: fromAtom.id,
+          toId: toAtom.id,
+          type: rel.type,
+          strength: Math.min(1, Math.max(0.4, rel.strength)),
+        });
+      }
+
+      if (toInsert.length > 0) {
+        insertMany(toInsert);
+      }
+    } catch (err) {
+      console.warn('[atom-extractor] relationship Claude call failed:', err instanceof Error ? err.message : err);
     }
   }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GraduationCap, Eye, UserCheck, Crown, ArrowRight, Brain, Loader2, ChevronDown } from 'lucide-react';
+import { GraduationCap, Eye, UserCheck, Crown, ArrowRight, Brain, Loader2, ChevronDown, HelpCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MODULES } from '@/lib/constants';
 
@@ -32,10 +32,22 @@ interface NextStepsData {
   encouragement: string;
 }
 
+interface ProgressionData {
+  profile: ApprenticeProfile | null;
+  timeline: Array<{ stage: string; promoted_at: string | null }>;
+  thresholds: {
+    guided: { sessions: number; qualityAvg: number };
+    supervised: { sessions: number; qualityAvg: number };
+    autonomous: { sessions: number; qualityAvg: number };
+  };
+  nextStageRequirements: { sessionsNeeded: number; qualityNeeded: number | null } | null;
+}
+
 export default function ApprenticePage() {
   const [profiles, setProfiles] = useState<ApprenticeProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [nextStepsMap, setNextStepsMap] = useState<Record<string, { data: NextStepsData | null; loading: boolean; open: boolean }>>({});
+  const [progressionMap, setProgressionMap] = useState<Record<string, { data: ProgressionData | null; loading: boolean; open: boolean }>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +84,29 @@ export default function ApprenticePage() {
       }
     } catch {
       setNextStepsMap((prev) => ({ ...prev, [key]: { data: null, loading: false, open: false } }));
+    }
+  }
+
+  async function fetchProgression(profile: ApprenticeProfile) {
+    const key = profile.id;
+    setProgressionMap((prev) => {
+      const existing = prev[key];
+      if (existing?.data) return { ...prev, [key]: { ...existing, open: !existing.open } };
+      return { ...prev, [key]: { data: null, loading: true, open: true } };
+    });
+    if (progressionMap[key]?.data) return;
+    try {
+      const r = await fetch(`/api/apprentice/progression/${profile.module_id}`, {
+        headers: getAuthHeader(),
+      });
+      if (r.ok) {
+        const data = await r.json() as ProgressionData;
+        setProgressionMap((prev) => ({ ...prev, [key]: { data, loading: false, open: true } }));
+      } else {
+        setProgressionMap((prev) => ({ ...prev, [key]: { data: null, loading: false, open: false } }));
+      }
+    } catch {
+      setProgressionMap((prev) => ({ ...prev, [key]: { data: null, loading: false, open: false } }));
     }
   }
 
@@ -246,6 +281,17 @@ export default function ApprenticePage() {
                       : <Brain className="h-3.5 w-3.5" />}
                     What&apos;s next?
                   </button>
+                  <button
+                    onClick={() => void fetchProgression(profile)}
+                    disabled={progressionMap[profile.id]?.loading}
+                    className="flex items-center gap-1.5 rounded-lg border border-adv-blue/40 bg-adv-blue/10 px-3 py-2 text-xs text-adv-blue hover:bg-adv-blue/20 disabled:opacity-40 transition-colors"
+                    title="Why is ANTON at this autonomy level?"
+                  >
+                    {progressionMap[profile.id]?.loading
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <HelpCircle className="h-3.5 w-3.5" />}
+                    Why this stage?
+                  </button>
                 </div>
 
                 {/* AI next steps panel */}
@@ -271,6 +317,81 @@ export default function ApprenticePage() {
                     <p className="text-xs text-adv-gray italic">{nextStepsMap[profile.id].data!.encouragement}</p>
                   </div>
                 )}
+
+                {/* Why this stage? panel */}
+                {progressionMap[profile.id]?.open && progressionMap[profile.id]?.data && (() => {
+                  const prog = progressionMap[profile.id].data!;
+                  const p = prog.profile;
+                  const reqs = prog.nextStageRequirements;
+                  const th = prog.thresholds;
+                  const nextStage = p?.stage === 'observer' ? 'guided' : p?.stage === 'guided' ? 'supervised' : p?.stage === 'supervised' ? 'autonomous' : null;
+                  const nextThreshold = nextStage ? th[nextStage as keyof typeof th] : null;
+                  return (
+                    <div className="mt-3 rounded-lg border border-adv-blue/20 bg-adv-blue/5 p-3 space-y-3">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <HelpCircle className="h-3.5 w-3.5 text-adv-blue" />
+                        <span className="text-xs font-semibold text-adv-blue">Why This Stage?</span>
+                        <button onClick={() => setProgressionMap((prev) => ({ ...prev, [profile.id]: { ...prev[profile.id], open: false } }))} className="ml-auto text-adv-gray hover:text-adv-off-white">
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Requirements table */}
+                      {nextThreshold && p && (
+                        <div className="space-y-1.5">
+                          <div className="text-xs font-medium text-adv-off-white">Requirements for {nextStage}</div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div className="flex items-center gap-1.5 rounded bg-adv-dark-2 px-2 py-1.5 text-xs">
+                              {(p.sessions_completed ?? 0) >= nextThreshold.sessions
+                                ? <CheckCircle className="h-3 w-3 text-adv-green shrink-0" />
+                                : <XCircle className="h-3 w-3 text-adv-red shrink-0" />}
+                              <span className="text-adv-gray">Sessions:</span>
+                              <span className="font-medium text-adv-off-white">{p.sessions_completed ?? 0}/{nextThreshold.sessions}</span>
+                            </div>
+                            {nextThreshold.qualityAvg > 0 && (
+                              <div className="flex items-center gap-1.5 rounded bg-adv-dark-2 px-2 py-1.5 text-xs">
+                                {(p.quality_avg ?? 0) >= nextThreshold.qualityAvg
+                                  ? <CheckCircle className="h-3 w-3 text-adv-green shrink-0" />
+                                  : <XCircle className="h-3 w-3 text-adv-red shrink-0" />}
+                                <span className="text-adv-gray">Quality:</span>
+                                <span className="font-medium text-adv-off-white">{(p.quality_avg ?? 0).toFixed(1)}/{nextThreshold.qualityAvg}</span>
+                              </div>
+                            )}
+                          </div>
+                          {reqs && reqs.sessionsNeeded > 0 && (
+                            <p className="text-xs text-adv-gray">{reqs.sessionsNeeded} more session{reqs.sessionsNeeded !== 1 ? 's' : ''} needed{reqs.qualityNeeded && (p.quality_avg ?? 0) < reqs.qualityNeeded ? ` and quality must reach ${reqs.qualityNeeded}` : ''}</p>
+                          )}
+                        </div>
+                      )}
+                      {p?.stage === 'autonomous' && (
+                        <p className="text-xs text-adv-gold font-medium">Maximum autonomy level reached.</p>
+                      )}
+
+                      {/* Timeline */}
+                      {prog.timeline.length > 0 && (
+                        <div>
+                          <div className="text-xs font-medium text-adv-off-white mb-1.5">Promotion Timeline</div>
+                          <div className="space-y-1">
+                            {prog.timeline.map((t, i) => {
+                              const info = stageInfo[t.stage as keyof typeof stageInfo];
+                              return (
+                                <div key={i} className="flex items-center gap-2 text-xs">
+                                  <Clock className={`h-3 w-3 shrink-0 ${info?.color ?? 'text-adv-gray'}`} />
+                                  <span className={`font-medium ${info?.color ?? 'text-adv-gray'}`}>{info?.label ?? t.stage}</span>
+                                  {t.promoted_at && (
+                                    <span className="text-adv-gray">
+                                      {new Date(t.promoted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

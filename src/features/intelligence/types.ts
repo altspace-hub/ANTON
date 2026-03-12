@@ -28,9 +28,9 @@ export interface EntityNode {
 
 export interface DetectedPattern {
   id: string;
-  pattern_type: 'temporal_correlation' | 'entity_convergence' | 'cascade' | 'trend_divergence' | 'gap';
-  severity: 'critical' | 'warning' | 'info' | 'positive';
-  status: 'active' | 'investigating' | 'resolved' | 'dismissed';
+  pattern_type: 'temporal_correlation' | 'entity_convergence' | 'cascade' | 'trend_divergence' | 'gap' | 'gap_detection';
+  severity: 'critical' | 'high' | 'warning' | 'medium' | 'info' | 'low' | 'positive';
+  status: 'active' | 'new' | 'investigating' | 'resolved' | 'dismissed';
   title: string;
   description: string;
   affected_entities: string;

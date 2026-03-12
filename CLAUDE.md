@@ -23,18 +23,22 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 git clone <repo> && cd openexpert
 pnpm install
 
-# 2. Configure environment
+# 2. Install Ollama (required for knowledge memory)
+# Download from https://ollama.com and install, then pull the embedding model:
+ollama pull nomic-embed-text
+
+# 3. Configure environment
 cp .env.example .env
 # Edit .env — add at minimum: ANTHROPIC_API_KEY=sk-ant-...
 # Optional: add OPENAI_API_KEY, GOOGLE_API_KEY, MISTRAL_API_KEY for multi-LLM
 
-# 3. Initialize database
+# 4. Initialize database
 pnpm run db:init
 
-# 4. Start development
+# 5. Start development
 pnpm run dev          # Frontend (Vite :5173) + Backend (Express :3001)
 
-# 5. Production build
+# 6. Production build
 pnpm run build && pnpm run start   # Serves at http://localhost:3001
 ```
 

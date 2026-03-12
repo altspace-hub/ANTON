@@ -4,7 +4,7 @@ import { fetchWithAuth } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight, Shield } from 'lucide-react';
+import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight, Shield, Database, Brain } from 'lucide-react';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import { IdentityPanel } from '@/components/platform/IdentityPanel';
 import ProfileSettingsTab from './ProfileSettingsTab';
@@ -265,6 +265,17 @@ export default function Settings() {
   const [spendingData, setSpendingData] = useState<{ spent: number; cap: number; month: string } | null>(null);
   const [budgetSaving, setBudgetSaving] = useState(false);
 
+  // Embedding & Memory
+  const [embeddingStats, setEmbeddingStats] = useState<{
+    provider: string; model: string; dimensions: number;
+    atoms: { total: number; embedded: number; coverage: number };
+    checkpoints: { total: number; embedded: number; coverage: number };
+    modules: { embedded: number };
+    feedback: { total: number; relevant: number };
+  } | null>(null);
+  const [reindexing, setReindexing] = useState(false);
+  const [reindexResult, setReindexResult] = useState<string | null>(null);
+
   const getToken = () => localStorage.getItem('openexpert-token') || '';
 
   async function loadSpending() {
@@ -523,6 +534,12 @@ export default function Settings() {
     loadCustomModels();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkHealth, fetchDeploymentConfig]);
+
+  useEffect(() => {
+    if (activeTab === 'general') {
+      fetchWithAuth('/api/embeddings/stats').then(r => r.json()).then(setEmbeddingStats).catch(() => {});
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === 'team' && isAdmin) {
@@ -1678,6 +1695,111 @@ export default function Settings() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Embedding & Memory (APCI) */}
+      <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
+        <div className="flex items-center gap-2">
+          <Brain className="h-4 w-4 text-adv-blue" />
+          <h2 className="text-sm font-semibold text-adv-white">Embedding & Memory</h2>
+          <span className="ml-auto rounded-full bg-adv-blue/10 border border-adv-blue/30 px-2 py-0.5 text-[10px] font-medium text-adv-blue">APCI</span>
+        </div>
+        <p className="mt-1 text-xs text-adv-gray">
+          ANTON uses hybrid semantic retrieval to inject relevant prior knowledge into every session. Knowledge atoms are embedded and searched by meaning, not just keywords.
+        </p>
+
+        {embeddingStats ? (
+          <div className="mt-4 space-y-4">
+            {/* Provider info */}
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div>
+                <span className="text-[11px] text-adv-gray">Provider</span>
+                <p className="text-xs font-medium text-adv-off-white capitalize">{embeddingStats.provider}</p>
+              </div>
+              <div>
+                <span className="text-[11px] text-adv-gray">Model</span>
+                <p className="text-xs font-medium text-adv-off-white">{embeddingStats.model}</p>
+              </div>
+              <div>
+                <span className="text-[11px] text-adv-gray">Dimensions</span>
+                <p className="text-xs font-medium text-adv-off-white">{embeddingStats.dimensions}</p>
+              </div>
+            </div>
+
+            {/* Coverage bars */}
+            <div className="space-y-3">
+              {/* Atoms */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-adv-gray">Knowledge Atoms</span>
+                  <span className="text-xs text-adv-off-white">{embeddingStats.atoms.embedded} / {embeddingStats.atoms.total} ({embeddingStats.atoms.coverage}%)</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-adv-dark-2 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${embeddingStats.atoms.coverage >= 90 ? 'bg-adv-green' : embeddingStats.atoms.coverage >= 50 ? 'bg-adv-gold' : 'bg-adv-red'}`} style={{ width: `${embeddingStats.atoms.coverage}%` }} />
+                </div>
+              </div>
+
+              {/* Checkpoints */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-adv-gray">Checkpoint Decisions</span>
+                  <span className="text-xs text-adv-off-white">{embeddingStats.checkpoints.embedded} / {embeddingStats.checkpoints.total} ({embeddingStats.checkpoints.coverage}%)</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-adv-dark-2 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${embeddingStats.checkpoints.coverage >= 90 ? 'bg-adv-green' : embeddingStats.checkpoints.coverage >= 50 ? 'bg-adv-gold' : 'bg-adv-red'}`} style={{ width: `${embeddingStats.checkpoints.coverage}%` }} />
+                </div>
+              </div>
+
+              {/* Modules */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-adv-gray">Module Descriptions</span>
+                <span className="text-xs text-adv-off-white">{embeddingStats.modules.embedded} embedded</span>
+              </div>
+            </div>
+
+            {/* Feedback stats */}
+            {embeddingStats.feedback.total > 0 && (
+              <div className="rounded-lg bg-adv-dark/50 border border-border p-3">
+                <div className="flex items-center gap-2">
+                  <Database className="h-3 w-3 text-adv-gray" />
+                  <span className="text-xs text-adv-gray">Retrieval Feedback</span>
+                </div>
+                <p className="mt-1 text-xs text-adv-off-white">
+                  {embeddingStats.feedback.total} atoms injected across sessions
+                  {embeddingStats.feedback.relevant > 0 && `, ${embeddingStats.feedback.relevant} marked relevant`}
+                </p>
+              </div>
+            )}
+
+            {/* Re-index button */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={async () => {
+                  setReindexing(true);
+                  setReindexResult(null);
+                  try {
+                    const r = await fetchWithAuth('/api/embeddings/reindex', { method: 'POST' });
+                    const data = await r.json();
+                    setReindexResult(`Embedded ${data.atomsEmbedded} atoms. ${data.atomsRemaining} remaining.`);
+                    fetchWithAuth('/api/embeddings/stats').then(r2 => r2.json()).then(setEmbeddingStats).catch(() => {});
+                  } catch {
+                    setReindexResult('Re-index failed. Check server logs.');
+                  } finally {
+                    setReindexing(false);
+                  }
+                }}
+                disabled={reindexing}
+                className="flex items-center gap-2 rounded-lg bg-adv-dark px-3 py-1.5 text-xs text-adv-gray border border-border hover:border-adv-blue hover:text-adv-blue transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3 w-3 ${reindexing ? 'animate-spin' : ''}`} />
+                {reindexing ? 'Re-indexing...' : 'Re-index Embeddings'}
+              </button>
+              {reindexResult && <span className="text-xs text-adv-green">{reindexResult}</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 text-xs text-adv-gray animate-pulse">Loading embedding stats...</div>
+        )}
       </div>
 
       {/* Notifications */}

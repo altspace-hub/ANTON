@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Plus, Trash2, FileText, Database as DatabaseIcon, AlertCircle, RefreshCw,
   Package, Upload, CheckCircle, XCircle, Globe, ToggleLeft, ToggleRight, Eye,
-  ChevronDown, ChevronUp, Download, ArrowRight, BookOpen, Link2, X,
+  ChevronDown, ChevronUp, Download, ArrowRight, BookOpen, Link2, X, Search, Brain,
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { CreateCollectionModal } from '../components/knowledge/CreateCollectionModal';
@@ -899,9 +899,240 @@ function RegulatoryPacksTab() {
   );
 }
 
+// ── Semantic Search Tab ───────────────────────────────────────────────────────
+
+interface SemanticResult {
+  id: string;
+  content: string;
+  score: number;
+  similarity: number | null;
+  source: 'bm25' | 'vector' | 'both';
+  atom_type: string;
+  category: string;
+  confidence: number;
+  source_area_id: string | null;
+  source_module_id: string | null;
+  created_at: string;
+  is_superseded: number;
+}
+
+function SemanticSearchTab() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SemanticResult[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [minConfidence, setMinConfidence] = useState(0);
+  const [selectedArea, setSelectedArea] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [similarAtoms, setSimilarAtoms] = useState<Record<string, SemanticResult[]>>({});
+
+  async function doSearch() {
+    if (!query.trim()) return;
+    setLoading(true);
+    setSearched(true);
+    try {
+      const body: Record<string, unknown> = {
+        query: query.trim(),
+        topK: 30,
+        minConfidence,
+      };
+      if (selectedArea) body.areaId = selectedArea;
+      if (selectedType) body.atomTypes = [selectedType];
+
+      const r = await fetchWithAuth('/api/embeddings/search/atoms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json();
+      setResults(data.results || []);
+      setTotal(data.total || 0);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadSimilar(atomId: string) {
+    if (similarAtoms[atomId]) {
+      setSimilarAtoms(prev => { const next = { ...prev }; delete next[atomId]; return next; });
+      return;
+    }
+    try {
+      const r = await fetchWithAuth('/api/embeddings/similar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentType: 'knowledge_atom', contentId: atomId, topK: 5 }),
+      });
+      const data = await r.json();
+      setSimilarAtoms(prev => ({ ...prev, [atomId]: data.results || [] }));
+    } catch {
+      // ignore
+    }
+  }
+
+  const ATOM_TYPES = ['observation.finding', 'observation.anomaly', 'decision.approval', 'decision.override', 'recommendation.human_suggestion', 'risk.identified', 'risk.assessed', 'status.compliance_state'];
+
+  return (
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Search header */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Brain className="h-5 w-5 text-adv-blue" />
+            <h2 className="text-lg font-semibold text-adv-off-white">Semantic Search</h2>
+            <span className="rounded-full bg-adv-blue/10 border border-adv-blue/30 px-2 py-0.5 text-[10px] font-medium text-adv-blue">APCI</span>
+          </div>
+          <p className="text-xs text-adv-gray">
+            Search knowledge atoms by meaning — finds relevant insights even when wording differs. Uses hybrid retrieval (vector similarity + BM25 keyword + ANTON boosts).
+          </p>
+        </div>
+
+        {/* Search box */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-adv-gray" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && doSearch()}
+              placeholder="e.g. 'beneficial ownership transparency requirements'"
+              className="w-full rounded-lg border border-border bg-adv-dark pl-10 pr-4 py-2.5 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-blue focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={doSearch}
+            disabled={loading || !query.trim()}
+            className="rounded-lg bg-adv-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-adv-blue/80 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3">
+          <div>
+            <label className="mb-1 block text-[11px] text-adv-gray">Min Confidence</label>
+            <select
+              value={minConfidence}
+              onChange={(e) => setMinConfidence(Number(e.target.value))}
+              className="rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white"
+            >
+              <option value={0}>Any</option>
+              <option value={0.5}>50%+</option>
+              <option value={0.7}>70%+</option>
+              <option value={0.85}>85%+</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] text-adv-gray">Atom Type</label>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white"
+            >
+              <option value="">All types</option>
+              {ATOM_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] text-adv-gray">Area</label>
+            <input
+              type="text"
+              value={selectedArea}
+              onChange={(e) => setSelectedArea(e.target.value)}
+              placeholder="e.g. fcp"
+              className="w-24 rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white placeholder:text-adv-gray"
+            />
+          </div>
+        </div>
+
+        {/* Results */}
+        {searched && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-adv-gray">{total} result{total !== 1 ? 's' : ''} found</span>
+            </div>
+            <div className="space-y-3">
+              {results.map((r) => (
+                <div key={r.id} className="rounded-lg border border-border bg-adv-card p-4 hover:border-adv-blue/30 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className="rounded bg-adv-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-blue">{r.category}/{r.atom_type}</span>
+                        <span className="text-[10px] text-adv-gray">{Math.round(r.confidence * 100)}% confidence</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                          r.source === 'both' ? 'bg-adv-green/10 text-adv-green' :
+                          r.source === 'vector' ? 'bg-adv-teal/10 text-adv-teal' :
+                          'bg-adv-gold/10 text-adv-gold'
+                        }`}>
+                          {r.source === 'both' ? 'Vector + Keyword' : r.source === 'vector' ? 'Vector' : 'Keyword'}
+                        </span>
+                        {r.source_area_id && <span className="text-[10px] text-adv-gray">Area: {r.source_area_id}</span>}
+                        {r.is_superseded === 1 && <span className="text-[10px] text-adv-red">Superseded</span>}
+                      </div>
+                      <p className="text-sm text-adv-off-white leading-relaxed">{r.content}</p>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="text-[10px] text-adv-gray">Score: {r.score.toFixed(4)}</span>
+                        {r.similarity != null && <span className="text-[10px] text-adv-gray">Similarity: {r.similarity.toFixed(3)}</span>}
+                        <span className="text-[10px] text-adv-gray">{new Date(r.created_at).toLocaleDateString()}</span>
+                        <button
+                          onClick={() => loadSimilar(r.id)}
+                          className="text-[10px] text-adv-blue hover:text-adv-blue/80 transition-colors"
+                        >
+                          {similarAtoms[r.id] ? 'Hide similar' : 'Find similar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Similar atoms expandable */}
+                  {similarAtoms[r.id] && (
+                    <div className="mt-3 border-t border-border pt-3 space-y-2">
+                      <span className="text-[10px] font-medium text-adv-gray">Similar atoms:</span>
+                      {similarAtoms[r.id].length === 0 ? (
+                        <p className="text-[10px] text-adv-gray">No similar atoms found</p>
+                      ) : (
+                        similarAtoms[r.id].map((s: { id: string; content: string; score: number; content_type?: string }) => (
+                          <div key={s.id} className="rounded bg-adv-dark/50 p-2">
+                            <p className="text-xs text-adv-gray leading-relaxed">{s.content?.slice(0, 200)}{(s.content?.length ?? 0) > 200 ? '...' : ''}</p>
+                            <span className="text-[10px] text-adv-gray">Similarity: {s.score?.toFixed(3)}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {results.length === 0 && !loading && (
+                <div className="text-center py-12">
+                  <Search className="mx-auto h-8 w-8 text-adv-gray mb-3" />
+                  <p className="text-sm text-adv-gray">No matching atoms found. Try different search terms.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!searched && (
+          <div className="text-center py-16">
+            <Brain className="mx-auto h-12 w-12 text-adv-gray/30 mb-4" />
+            <p className="text-sm text-adv-gray">Enter a query to search across your knowledge atoms by meaning.</p>
+            <p className="mt-1 text-xs text-adv-gray">Try: "regulatory requirements for customer due diligence" or "data governance maturity assessment"</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main page component ───────────────────────────────────────────────────────
 
-type Tab = 'collections' | 'regulatory-packs';
+type Tab = 'collections' | 'regulatory-packs' | 'semantic-search';
 
 export default function KnowledgeBasePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -911,6 +1142,7 @@ export default function KnowledgeBasePage() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'collections', label: 'Collections', icon: <DatabaseIcon className="h-4 w-4" /> },
     { id: 'regulatory-packs', label: 'Regulatory Packs', icon: <Package className="h-4 w-4" /> },
+    { id: 'semantic-search', label: 'Semantic Search', icon: <Brain className="h-4 w-4" /> },
   ];
 
   return (
@@ -939,6 +1171,7 @@ export default function KnowledgeBasePage() {
       <div className="flex flex-1 overflow-hidden">
         {activeTab === 'collections' && <CollectionsTab />}
         {activeTab === 'regulatory-packs' && <RegulatoryPacksTab />}
+        {activeTab === 'semantic-search' && <SemanticSearchTab />}
       </div>
     </div>
   );

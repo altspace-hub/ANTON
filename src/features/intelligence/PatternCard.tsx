@@ -30,17 +30,23 @@ const PATTERN_ICONS: Record<string, typeof TrendingUp> = {
   gap: Info,
 };
 
-const SEVERITY_STYLES = {
+const SEVERITY_STYLES: Record<string, string> = {
   critical: 'border-red-500 bg-red-950/30',
+  high: 'border-red-500 bg-red-950/30',
   warning: 'border-amber-500 bg-amber-950/30',
+  medium: 'border-amber-500 bg-amber-950/30',
   info: 'border-blue-500 bg-blue-950/30',
+  low: 'border-blue-500 bg-blue-950/30',
   positive: 'border-emerald-500 bg-emerald-950/30',
 };
 
-const SEVERITY_BADGE_STYLES = {
+const SEVERITY_BADGE_STYLES: Record<string, string> = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
+  high: 'bg-red-500/20 text-red-400 border-red-500/30',
   warning: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  medium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   info: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  low: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   positive: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
 };
 
@@ -52,7 +58,13 @@ interface AiAnalysis {
 
 export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardProps) {
   const Icon = PATTERN_ICONS[pattern.pattern_type] ?? Info;
-  const affectedEntities = pattern.affected_entities ? JSON.parse(pattern.affected_entities) : [];
+  let affectedEntities: unknown[] = [];
+  try {
+    affectedEntities = pattern.affected_entities ? JSON.parse(pattern.affected_entities) : [];
+    if (!Array.isArray(affectedEntities)) affectedEntities = [];
+  } catch { affectedEntities = []; }
+  const severity = pattern.severity ?? 'info';
+  const isActive = pattern.status === 'active' || pattern.status === 'new';
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisOpen, setAnalysisOpen] = useState(false);
@@ -79,11 +91,15 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
 
   const urgencyColor = { low: 'text-adv-gray', medium: 'text-adv-gold', high: 'text-adv-red' };
 
-  const relativeTime = formatDistanceToNow(new Date(pattern.detected_at), { addSuffix: true });
+  let relativeTime = '';
+  try {
+    const d = new Date(pattern.detected_at);
+    relativeTime = isNaN(d.getTime()) ? pattern.detected_at ?? '' : formatDistanceToNow(d, { addSuffix: true });
+  } catch { relativeTime = pattern.detected_at ?? ''; }
 
   return (
     <div
-      className={`border-l-4 rounded-lg p-4 ${SEVERITY_STYLES[pattern.severity]}`}
+      className={`border-l-4 rounded-lg p-4 ${SEVERITY_STYLES[severity] ?? 'border-blue-500 bg-blue-950/30'}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 flex-1">
@@ -94,9 +110,9 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-adv-off-white">{pattern.title}</h3>
               <span
-                className={`text-xs px-2 py-0.5 rounded border ${SEVERITY_BADGE_STYLES[pattern.severity]}`}
+                className={`text-xs px-2 py-0.5 rounded border ${SEVERITY_BADGE_STYLES[severity] ?? 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}
               >
-                {pattern.severity.toUpperCase()}
+                {severity.toUpperCase()}
               </span>
               <span className="text-xs text-adv-gray">{relativeTime}</span>
             </div>
@@ -128,7 +144,7 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
             {analysisLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
             {analysisLoading ? 'Analysing…' : aiAnalysis ? (analysisOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />) : 'Analyse'}
           </button>
-          {onInvestigate && pattern.status === 'active' && (
+          {onInvestigate && isActive && (
             <button
               onClick={onInvestigate}
               className="px-3 py-1.5 text-sm rounded bg-adv-teal hover:bg-adv-teal-dark text-white transition-colors"
@@ -136,7 +152,7 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
               Investigate
             </button>
           )}
-          {onResolve && pattern.status === 'active' && (
+          {onResolve && isActive && (
             <button
               onClick={onResolve}
               className="px-3 py-1.5 text-sm rounded border border-adv-gray-med/30 hover:bg-adv-card text-adv-off-white transition-colors flex items-center gap-1"
@@ -170,7 +186,7 @@ export function PatternCard({ pattern, onInvestigate, onResolve }: PatternCardPr
           )}
         </div>
       )}
-      {pattern.status !== 'active' && (
+      {!isActive && (
         <div className="mt-3 pt-3 border-t border-border">
           <p className="text-xs text-adv-gray">
             Status: <span className="text-adv-off-white">{pattern.status}</span>

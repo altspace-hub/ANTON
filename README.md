@@ -32,11 +32,25 @@ Node.js is the engine that runs ANTON. Download and install **Node.js 22 LTS** f
 
 Run the installer with all default options.
 
-#### Step 3 — Restart your computer
+#### Step 3 — Install Ollama (knowledge memory)
 
-**This step is important.** After installing both Git and Node.js, restart your computer before continuing. The installers register themselves with Windows during restart — skipping this is the most common reason setup fails and things aren't recognised.
+Ollama runs a local embedding model that powers ANTON's knowledge memory — the system that remembers insights from your previous work and uses them to improve future results. Download and install from:
 
-#### Step 4 — Clone and set up ANTON
+> **[https://ollama.com](https://ollama.com)**
+
+After installing, open a terminal and run:
+
+```bash
+ollama pull nomic-embed-text
+```
+
+This downloads the embedding model (~270 MB). Ollama runs in the background automatically after installation.
+
+#### Step 4 — Restart your computer
+
+**This step is important.** After installing Git, Node.js, and Ollama, restart your computer before continuing. The installers register themselves with Windows during restart — skipping this is the most common reason setup fails and things aren't recognised.
+
+#### Step 5 — Clone and set up ANTON
 
 Open a terminal (search for **"Command Prompt"** or **"PowerShell"** in the Start menu), then run:
 
@@ -55,7 +69,7 @@ The script handles everything automatically:
 
 Get your API key at [console.anthropic.com](https://console.anthropic.com).
 
-#### Step 5 — Run ANTON
+#### Step 6 — Run ANTON
 
 Double-click **`start-anton.bat`** every time you want to use ANTON.
 
@@ -122,7 +136,7 @@ Data (sessions, uploads) persists in named Docker volumes across restarts.
 
 ### Option C — Native (pnpm)
 
-**Requirements:** Node.js 22+, pnpm
+**Requirements:** Node.js 22+, pnpm, Ollama
 
 ```bash
 # 1. Clone and install
@@ -130,14 +144,17 @@ git clone https://github.com/altspace-hub/ANTON.git
 cd ANTON
 pnpm install
 
-# 2. Configure environment
+# 2. Install Ollama for knowledge memory (https://ollama.com)
+ollama pull nomic-embed-text
+
+# 3. Configure environment
 cp .env.example .env
 # Edit .env and add your ANTHROPIC_API_KEY
 
-# 3. Initialise database
+# 4. Initialise database
 pnpm run db:init
 
-# 4. Start development server
+# 5. Start development server
 pnpm run dev
 # Client: http://localhost:5173  |  API: http://localhost:3001
 

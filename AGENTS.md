@@ -46,10 +46,13 @@ knowledge required.
 ```bash
 git clone <repo> && cd openexpert
 pnpm install
+ollama pull nomic-embed-text  # Install embedding model for knowledge memory
 cp .env.example .env          # Add your API keys (see below)
 pnpm run db:init              # Initialize SQLite database
 pnpm run dev                  # http://localhost:5173 (frontend) + :3001 (API)
 ```
+
+**Prerequisite:** Install [Ollama](https://ollama.com) before running the above — it provides the local embedding model for ANTON's knowledge memory system.
 
 ### Required Environment Variables
 

@@ -86,6 +86,19 @@ function AtomCard({ atom, onEntityClick }: {
   onEntityClick: (type: string, id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [relationships, setRelationships] = useState<Array<{
+    relationship_type: string; strength: number; related_atom_id: string;
+    direction: string; content: string; atom_type: string; category: string; confidence: number;
+  }>>([]);
+  const [relsLoaded, setRelsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded || relsLoaded) return;
+    fetch(`/api/knowledge/atoms/${atom.id}/relationships`, { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : { relationships: [] })
+      .then(d => { setRelationships(d.relationships ?? []); setRelsLoaded(true); })
+      .catch(() => setRelsLoaded(true));
+  }, [expanded, relsLoaded, atom.id]);
 
   return (
     <div className="rounded-xl border border-border bg-adv-card p-4 shadow-sm hover:border-adv-teal/30 transition-colors">
@@ -126,16 +139,14 @@ function AtomCard({ atom, onEntityClick }: {
       </div>
 
       {/* Expand toggle */}
-      {atom.entity_refs.length > 0 && (
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-3 flex items-center gap-1 text-xs text-adv-teal hover:text-adv-teal-dark transition-colors"
-          aria-expanded={expanded}
-        >
-          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          {atom.entity_refs.length} entit{atom.entity_refs.length === 1 ? 'y' : 'ies'}
-        </button>
-      )}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="mt-3 flex items-center gap-1 text-xs text-adv-teal hover:text-adv-teal-dark transition-colors"
+        aria-expanded={expanded}
+      >
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        Details{atom.entity_refs.length > 0 ? ` (${atom.entity_refs.length} entit${atom.entity_refs.length === 1 ? 'y' : 'ies'})` : ''}
+      </button>
 
       {/* Entities (expanded) */}
       {expanded && atom.entity_refs.length > 0 && (
@@ -152,6 +163,35 @@ function AtomCard({ atom, onEntityClick }: {
               <ExternalLink className="h-2.5 w-2.5 opacity-50" />
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Relationships (expanded) */}
+      {expanded && relationships.length > 0 && (
+        <div className="mt-3 border-t border-border pt-3">
+          <div className="mb-2 text-xs font-semibold text-adv-gray">Relationships</div>
+          <div className="flex flex-wrap gap-1.5">
+            {relationships.map((rel, i) => {
+              const colors: Record<string, string> = {
+                supports: 'bg-adv-green/20 text-adv-green border-adv-green/30',
+                contradicts: 'bg-adv-red/20 text-adv-red border-adv-red/30',
+                extends: 'bg-adv-blue/20 text-adv-blue border-adv-blue/30',
+                requires: 'bg-adv-teal/20 text-adv-teal border-adv-teal/30',
+                caused_by: 'bg-adv-gold/20 text-adv-gold border-adv-gold/30',
+                related_to: 'bg-adv-gray/20 text-adv-gray border-adv-gray/30',
+              };
+              return (
+                <span
+                  key={i}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${colors[rel.relationship_type] ?? colors.related_to}`}
+                  title={`${rel.relationship_type} (${Math.round(rel.strength * 100)}%): ${rel.content}`}
+                >
+                  {rel.relationship_type}
+                  <span className="opacity-60">{Math.round(rel.strength * 100)}%</span>
+                </span>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

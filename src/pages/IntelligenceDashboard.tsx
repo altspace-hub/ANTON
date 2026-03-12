@@ -135,10 +135,24 @@ export default function IntelligenceDashboard() {
     navigate(`/knowledge`);
   }
 
+  // Map DB severity values to filter groups for consistent matching
+  const severityGroup = (sev: string | undefined): string => {
+    switch (sev) {
+      case 'critical': case 'high': return 'critical';
+      case 'warning': case 'medium': return 'warning';
+      case 'info': case 'low': return 'info';
+      case 'positive': return 'positive';
+      default: return sev ?? 'info';
+    }
+  };
+
   const filteredTimeline = timelineEntries.filter(entry => {
     if (timelineFilter === 'patterns' && entry.type !== 'pattern') return false;
     if (timelineFilter === 'atoms' && entry.type !== 'atom') return false;
-    if (severityFilter && entry.type === 'pattern' && entry.data.severity !== severityFilter) return false;
+    if (severityFilter && entry.type === 'pattern') {
+      const sev = (entry.data as DetectedPattern).severity;
+      if (severityGroup(sev) !== severityFilter) return false;
+    }
     return true;
   });
 

@@ -523,7 +523,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const orgContextPrompt = buildOrgContextLayer(db, (req as any).user?.id || 'default');
       const resumeContextPrompt = sessionId ? buildResumeContextLayer(db, String(sessionId)) : '';
       const knowledgePackPrompt = buildKnowledgePackLayer(db);
-      const atomLayerPrompt = atomInjectionEnabled !== false ? buildAtomLayer(db, areaId, moduleId) : '';
+      const atomLayerPrompt = atomInjectionEnabled !== false ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null) : '';
 
       const promptComposerConfig = {
         moduleId,

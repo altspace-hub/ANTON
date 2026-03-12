@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import Database from 'better-sqlite3';
-import { createApprentice, STAGE_LABELS } from '../services/apprentice.js';
+import { createApprentice, STAGE_LABELS, STAGE_THRESHOLDS } from '../services/apprentice.js';
 
 function getNextStageRequirements(profile: any) {
   if (!profile || profile.stage === 'observer') {
@@ -42,6 +42,31 @@ export function createApprenticeRoutes(db: Database.Database) {
     } catch (error) {
       console.error('Apprentice module info error:', error);
       res.status(500).json({ error: 'Failed to fetch apprentice module info' });
+    }
+  });
+
+  // ── GET /apprentice/progression/:moduleId — Why this stage? ──────────
+  router.get('/apprentice/progression/:moduleId', (req, res) => {
+    try {
+      const result = apprentice.getProgressionHistory(DEFAULT_USER, req.params.moduleId);
+      if (!result) {
+        return res.json({
+          profile: null,
+          timeline: [],
+          thresholds: STAGE_THRESHOLDS,
+          nextStageRequirements: getNextStageRequirements(null),
+        });
+      }
+      const { profile, timeline, thresholds } = result;
+      res.json({
+        profile,
+        timeline,
+        thresholds,
+        nextStageRequirements: getNextStageRequirements(profile),
+      });
+    } catch (error) {
+      console.error('Apprentice progression error:', error);
+      res.status(500).json({ error: 'Failed to fetch progression history' });
     }
   });
 
