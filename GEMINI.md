@@ -1,4 +1,4 @@
-# GEMINI.md — ANTON by openEXPERT v0.6.0
+# GEMINI.md — ANTON by openEXPERT v0.6.5
 
 Context file for Google Gemini Code Assist, Vertex AI Code Assist, and AI Studio.
 This file provides architecture, style, and security context for AI-assisted development.

@@ -1,4 +1,4 @@
-# CLAUDE.md — ANTON by openEXPERT v0.6.0
+# CLAUDE.md — ANTON by openEXPERT v0.6.5
 
 Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that reads `CLAUDE.md`.
 
@@ -7,7 +7,7 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 ## Project Identity
 
 **Name:** ANTON by openEXPERT
-**Package:** `openexpert` v0.6.0
+**Package:** `openexpert` v0.6.5
 **Purpose:** AI-powered expert workspace for 55+ professional domains. Local-first web application that enables consultants, lawyers, compliance officers, analysts, and domain experts to leverage frontier LLMs through a structured, guided interface — no command-line knowledge required.
 **Primary users:** Domain professionals aged 35-65 who need reliable, structured AI output.
 **Deployment:** Local-first. Runs on `localhost`. Documents stay on the machine. Only LLM API calls leave the network.

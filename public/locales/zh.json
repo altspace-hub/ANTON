@@ -79,7 +79,7 @@
   "dashboard": {
     "title": "Anton",
     "byLine": "by openEXPERT",
-    "subtitle": "AI-powered expert analysis. Select a module to begin, or resume a recent session.",
+    "subtitle": "Powered by APCI — Artificial Professional Context Intelligence. Every session builds on what came before, so your AI gets genuinely better at the work you need it to do.",
     "sessions": "Sessions",
     "aiResponses": "AI Responses",
     "outputTokens": "Output Tokens",

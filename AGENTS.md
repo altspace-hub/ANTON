@@ -1,4 +1,4 @@
-# AGENTS.md — ANTON by openEXPERT v0.6.0
+# AGENTS.md — ANTON by openEXPERT v0.6.5
 
 Universal AI assistant context file. Read by GitHub Copilot, Cursor, Windsurf, Claude Code,
 and any tool that reads `AGENTS.md`. This is the authoritative reference for AI coding

@@ -346,7 +346,7 @@ export default function WorkflowsPage() {
           <div>
             <h1 className="text-2xl font-bold text-adv-white">Workflows</h1>
             <p className="mt-1 text-sm text-adv-gray">
-              Automated multi-step processes for FCP consultants. Select a workflow to configure and run it.
+              Automated multi-step processes. Select a workflow to configure and run it.
             </p>
           </div>
           <div className="flex items-center gap-2">
