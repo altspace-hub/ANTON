@@ -20,6 +20,7 @@ import { Router } from 'express';
 import type { Database } from 'better-sqlite3';
 import type Anthropic from '@anthropic-ai/sdk';
 import crypto from 'crypto';
+import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 
 export type EntryType = 'character' | 'location' | 'faction' | 'event' | 'item' | 'world_rule';
 
@@ -244,19 +245,16 @@ ${text}
 
 Please analyse the text for consistency with the lore ledger above.`;
 
-      if (!anthropic) { res.status(503).json({ error: 'Anthropic API not configured' }); return; }
-      const stream = anthropic.messages.stream({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+      const hasProvider = !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || process.env.MISTRAL_API_KEY || process.env.OLLAMA_BASE_URL);
+      if (!hasProvider) { res.status(503).json({ error: 'No AI provider configured' }); return; }
+
+      const result = await streamChat({
+        model: mapModelToProvider('claude-sonnet-4-6'),
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
-      });
+        maxTokens: 2048,
+      }, res);
 
-      for await (const chunk of stream) {
-        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-          res.write(`data: ${JSON.stringify({ type: 'text', content: chunk.delta.text })}\n\n`);
-        }
-      }
       res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
       res.end();
     } catch (err) {

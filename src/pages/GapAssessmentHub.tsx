@@ -185,8 +185,9 @@ export default function GapAssessmentHub() {
           if (!raw) continue;
           try {
             const parsed = JSON.parse(raw) as { type: string; text?: string; framework?: { id: string; name: string; shortName: string; articleCount: number }; error?: string; message?: string };
-            if (parsed.type === 'text' && parsed.text) {
-              accumulated += parsed.text;
+            if ((parsed.type === 'text' && parsed.text) || (parsed.type === 'text_delta' && (parsed as Record<string, unknown>).content)) {
+              const chunk = parsed.type === 'text' ? parsed.text! : String((parsed as Record<string, unknown>).content);
+              accumulated += chunk;
               setCustomStreamText(accumulated);
             } else if (parsed.type === 'done' && parsed.framework) {
               setCustomResult(parsed.framework);

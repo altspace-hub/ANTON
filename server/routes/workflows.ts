@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '../../src/lib/workflow-definitions.js';
 import { createConnectionManager } from '../services/connection-manager.js';
 import pkg from 'pg';
@@ -1235,17 +1236,13 @@ export function createWorkflowRoutes(db: Database.Database, anthropic?: Anthropi
     if (!userMessage?.trim()) return res.status(400).json({ error: 'userMessage is required' });
     try {
       const allMessages = [...messages, { role: 'user' as const, content: userMessage.trim() }];
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
+      const result = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 512,
         system: WORKFLOW_GUIDE_SYSTEM_PROMPT,
         messages: allMessages,
       });
-      const text = response.content
-        .filter((b) => b.type === 'text')
-        .map((b) => (b as { type: 'text'; text: string }).text)
-        .join('');
-      res.json({ response: text });
+      res.json({ response: result.text });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'AI request failed';
       res.status(500).json({ error: msg });
@@ -1261,20 +1258,16 @@ export function createWorkflowRoutes(db: Database.Database, anthropic?: Anthropi
       const conversationSummary = messages
         .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
         .join('\n\n');
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+      const result = await callChat({
+        model: mapModelToProvider('claude-sonnet-4-6'),
+        maxTokens: 2048,
         system: WORKFLOW_GENERATE_SYSTEM_PROMPT,
         messages: [{
           role: 'user',
           content: `Here is the discovery conversation:\n\n${conversationSummary}\n\nGenerate the workflow configuration JSON now.`,
         }],
       });
-      const text = response.content
-        .filter((b) => b.type === 'text')
-        .map((b) => (b as { type: 'text'; text: string }).text)
-        .join('')
-        .trim();
+      const text = result.text.trim();
       const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
       const workflowDefinition = JSON.parse(cleaned) as WorkflowDefinition;
       // Ensure isCustom flag + unique id

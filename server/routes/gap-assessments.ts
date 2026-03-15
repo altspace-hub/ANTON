@@ -25,6 +25,7 @@ import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { compareIterations } from '../services/gap-comparison.js';
+import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { fileURLToPath } from 'url';
 
 const __filename_local = fileURLToPath(import.meta.url);
@@ -127,20 +128,13 @@ Generate the complete framework JSON now.`;
 
       res.write(`data: ${JSON.stringify({ type: 'status', message: 'Generating framework structure...' })}\n\n`);
 
-      let fullText = '';
-      const stream = anthropic.messages.stream({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 16384,
+      const result = await streamChat({
+        model: mapModelToProvider('claude-sonnet-4-6'),
         system: systemPrompt,
         messages: [{ role: 'user', content: userMsg }],
-      });
-
-      for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          fullText += event.delta.text;
-          res.write(`data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`);
-        }
-      }
+        maxTokens: 16384,
+      }, res);
+      const fullText = result.text;
 
       // Parse the generated JSON
       // Strip markdown code fences if present

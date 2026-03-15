@@ -24,6 +24,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import type Database from 'better-sqlite3';
 import AnthropicSDK from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider } from './provider-router.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -507,13 +508,13 @@ ${signals.slice(0, 5).map(s => `- [${s.source}] urgency=${s.urgency.toFixed(2)}:
 
 Do these signals collectively warrant generating a situational briefing for the compliance team?`;
 
-    const response = await anthropic.messages.create({
-      model: process.env.ORCHESTRATOR_HEARTBEAT_MODEL || 'claude-haiku-4-5-20251001',
-      max_tokens: 10,
+    const result = await callChat({
+      model: mapModelToProvider(process.env.ORCHESTRATOR_HEARTBEAT_MODEL || 'claude-haiku-4-5-20251001'),
+      system: 'You are a compliance operations AI.',
       messages: [{ role: 'user', content: prompt }],
+      maxTokens: 10,
     });
-    const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : 'NO';
-    return text.toUpperCase().startsWith('YES');
+    return result.text.trim().toUpperCase().startsWith('YES');
   } catch {
     // On LLM error, use rule-based fallback
     return signals.filter(s => s.urgency >= 0.5).length >= 2;
@@ -617,27 +618,18 @@ Current date: ${new Date().toISOString().substring(0, 10)}`;
 
   // Always use deep thinking for orchestrator briefings — higher quality, better reasoning
   const isOpus = model === 'claude-opus-4-6';
-  const is46Model = isOpus || model === 'claude-sonnet-4-6';
-  const thinkingConfig = is46Model
-    ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
-    : {};
   const maxTokens = isOpus ? 16000 : (model === 'claude-sonnet-4-6') ? 48000 : 4000;
 
   let raw = '';
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await (anthropic.messages as any).create({
-      model,
-      max_tokens: maxTokens,
+    const result = await callChat({
+      model: mapModelToProvider(model),
       system: BRIEFING_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
-      ...thinkingConfig,
+      maxTokens,
+      thinkingLevel: 'investigate',
     });
-    // Extract text from content blocks (skip thinking blocks)
-    const textBlock = Array.isArray(response.content)
-      ? response.content.find((b: { type: string }) => b.type === 'text')
-      : response.content[0];
-    raw = textBlock?.type === 'text' ? (textBlock.text as string) : '';
+    raw = result.text;
   } catch (err) {
     // Fallback: generate minimal briefing without LLM
     const fallbackContent = `# ANTON Orchestrator — ${period} Briefing\n\n*${signals.length} platform signals detected. LLM briefing generation temporarily unavailable.*\n\n${signals.slice(0, 5).map(s => `- **${s.source}**: ${s.summary}`).join('\n')}`;
@@ -975,13 +967,13 @@ Report format:
 Keep it concise (300–500 words). Professional tone. Include concrete numbers.`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
+    const result = await callChat({
+      model: mapModelToProvider('claude-sonnet-4-6'),
+      system: 'You are a management report writer for the ANTON Prime AI Orchestrator.',
       messages: [{ role: 'user', content: prompt }],
+      maxTokens: 1024,
     });
-    const content = response.content[0];
-    return content.type === 'text' ? content.text : 'Report generation failed';
+    return result.text || 'Report generation failed';
   } catch (e) {
     // Fallback: data-only report
     return `# ANTON Prime — ${period === 'week' ? 'Weekly' : 'Monthly'} Management Report\n\n` +
@@ -1040,26 +1032,17 @@ Produce a concrete, executable workflow plan using ANTON's existing step types.`
 
   // Always use deep thinking for workflow plans — critical for execution quality
   const isOpusPlan = model === 'claude-opus-4-6';
-  const is46Plan = isOpusPlan || model === 'claude-sonnet-4-6';
-  const planThinkingConfig = is46Plan
-    ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
-    : {};
   const planMaxTokens = isOpusPlan ? 16000 : 48000;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await (anthropic.messages as any).create({
-      model,
-      max_tokens: planMaxTokens,
+    const result = await callChat({
+      model: mapModelToProvider(model),
       system: PLAN_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMsg }],
-      ...planThinkingConfig,
+      maxTokens: planMaxTokens,
+      thinkingLevel: 'investigate',
     });
-    // Extract text block (skip thinking blocks)
-    const textBlock = Array.isArray(response.content)
-      ? response.content.find((b: { type: string }) => b.type === 'text')
-      : response.content[0];
-    const raw = textBlock?.type === 'text' ? (textBlock.text as string) : '';
+    const raw = result.text;
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return raw;
     JSON.parse(jsonMatch[0]); // Validate JSON
@@ -1096,12 +1079,13 @@ ${entrySummary}
 Write the narrative summary:`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 200,
+    const result = await callChat({
+      model: mapModelToProvider('claude-sonnet-4-6'),
+      system: 'You are ANTON\'s AI Orchestrator summarising reasoning trails.',
       messages: [{ role: 'user', content: prompt }],
+      maxTokens: 200,
     });
-    return response.content[0]?.type === 'text' ? response.content[0].text.trim() : '';
+    return result.text.trim();
   } catch {
     return '';
   }

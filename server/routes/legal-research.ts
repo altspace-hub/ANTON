@@ -14,6 +14,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import AnthropicSDK from '@anthropic-ai/sdk';
 import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
 import { buildOrgContextLayer } from '../services/prompt-builder.js';
+import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -227,8 +228,8 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
 
       const systemPrompt = basePrompt + modeInstruction + roleInstruction + orgContextSection + knowledgePackSection + plainLanguageInstruction;
 
-      const tools: Anthropic.Tool[] = webSearchEnabled
-        ? [{ type: 'web_search_20250305' as const, name: 'web_search' } as unknown as Anthropic.Tool]
+      const tools = webSearchEnabled
+        ? [{ type: 'web_search_20250305', name: 'web_search' }]
         : [];
 
       res.setHeader('Content-Type', 'text/event-stream');
@@ -238,30 +239,26 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
 
       // Thinking and tools (web search) are mutually exclusive in the Claude API
       const useThinking = tools.length === 0;
-      // Map budget tiers to effort levels for Opus adaptive thinking
-      const EFFORT_MAP: Record<string, 'medium' | 'high' | 'max'> = {
-        'deep-dive': 'max',
-        'hypothetical': 'max',
-        'comparison': 'high',
-        'opinion': 'max',
+      // Map budget tiers to effort levels for provider-router thinking
+      const EFFORT_MAP: Record<string, string> = {
+        'deep-dive': 'investigate',
+        'hypothetical': 'investigate',
+        'comparison': 'think_hard',
+        'opinion': 'investigate',
+        'gap-spotter': 'investigate',
+        'comparative-jurisdiction': 'think_hard',
+        'rapid-risk': 'think',
       };
-      const effort = EFFORT_MAP[session.mode] ?? 'high';
-      const apiParams: Anthropic.MessageStreamParams = {
-        model: 'claude-opus-4-6',
-        max_tokens: 16000,
+      const thinkingLevel = EFFORT_MAP[session.mode] ?? 'think_hard';
+
+      await streamChat({
+        model: mapModelToProvider('claude-opus-4-6'),
         system: systemPrompt,
-        messages: messages as Anthropic.MessageParam[],
-        ...(useThinking
-          ? { thinking: { type: 'adaptive' as const }, output_config: { effort } }
-          : { tools }),
-      } as unknown as Anthropic.MessageStreamParams;
-
-      const stream = anthropic.messages.stream(apiParams);
-
-      for await (const event of stream) {
-        const data = JSON.stringify(event);
-        res.write(`data: ${data}\n\n`);
-      }
+        messages: messages as Array<{ role: string; content: string }>,
+        maxTokens: 16000,
+        thinkingLevel: useThinking ? thinkingLevel : undefined,
+        tools: useThinking ? undefined : tools,
+      }, res);
 
       res.write('data: [DONE]\n\n');
       res.end();

@@ -21,6 +21,7 @@ import { tmpdir } from 'os';
 import multer from 'multer';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
+import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __routeDir = dirname(__filename);
@@ -476,19 +477,13 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     let assistantText = '';
 
     try {
-      const stream = ai.messages.stream({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+      const streamResult = await streamChat({
+        model: mapModelToProvider('claude-sonnet-4-6'),
         system: systemPrompt,
         messages: history.map((m) => ({ role: m.role, content: m.content })),
-      });
-
-      for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          assistantText += event.delta.text;
-          res.write(`data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`);
-        }
-      }
+        maxTokens: 4096,
+      }, res);
+      assistantText = streamResult.text;
 
       // Persist updated conversation
       history.push({ role: 'assistant', content: assistantText });
@@ -758,12 +753,13 @@ ${output.slice(0, 2000)}
 
 Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
-        const response = await ai.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 10,
+        const response = await callChat({
+          model: mapModelToProvider('claude-haiku-4-5-20251001'),
+          system: '',
           messages: [{ role: 'user', content: scorePrompt }],
+          maxTokens: 10,
         });
-        const raw = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '';
+        const raw = response.text.trim();
         const score = parseFloat(raw);
         return isNaN(score) ? null : Math.min(10, Math.max(0, score));
       } catch {
@@ -774,35 +770,15 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
     /** Run one execution attempt (streaming to res). Returns { output, thinking }. */
     let lastThinkingContent = '';
     async function runExecution(effort?: string): Promise<{ output: string; thinking: string }> {
-      let output = '';
-      let thinking = '';
-      // Opus: adaptive thinking with effort levels (no budget_tokens cap)
-      const thinkingConfig = {
-        thinking: { type: 'adaptive' as const },
-        output_config: { effort: (effort ?? 'high') as 'low' | 'medium' | 'high' | 'max' },
-      };
-
-      const stream = ai.messages.stream({
-        model: 'claude-opus-4-6',
-        max_tokens: 16000,
+      const result = await streamChat({
+        model: mapModelToProvider('claude-opus-4-6'),
         system: fullSystemPrompt,
         messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.` }],
-        ...thinkingConfig,
-      });
-
-      for await (const event of stream) {
-        if (event.type === 'content_block_delta') {
-          if (event.delta.type === 'text_delta') {
-            output += event.delta.text;
-            res.write(`data: ${JSON.stringify({ type: 'text', text: event.delta.text })}\n\n`);
-          } else if (event.delta.type === 'thinking_delta') {
-            thinking += event.delta.thinking;
-            res.write(`data: ${JSON.stringify({ type: 'thinking', text: event.delta.thinking })}\n\n`);
-          }
-        }
-      }
-      lastThinkingContent = thinking;
-      return { output, thinking };
+        maxTokens: 16000,
+        thinkingLevel: effort ?? 'high',
+      }, res);
+      lastThinkingContent = result.thinking;
+      return { output: result.text, thinking: result.thinking };
     }
 
     try {

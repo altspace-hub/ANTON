@@ -112,7 +112,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     _textBuf = '';
     _thinkBuf = '';
     if (_flushTimer) { clearTimeout(_flushTimer); _flushTimer = null; }
-    set({ streamingText: '', streamingThinking: '' });
+    set({ streamingText: '', streamingThinking: '', ireChainId: null, ireCurrentPhase: 0, ireTotalPhases: 0, ireCurrentPhaseName: '' });
   },
 
   setLastSourcesUsed: (sources) => set({ lastSourcesUsed: sources }),

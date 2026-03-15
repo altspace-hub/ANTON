@@ -4,6 +4,7 @@ import { useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { MODULES, MODULE_DEFAULT_SKILLS, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
 import type { KnowledgeSourceConfig, KnowledgeLibraryEntry } from '@/lib/types';
 import { useSessionStore } from '@/stores/useSessionStore';
+import { useStreamStore } from '@/stores/useStreamStore';
 import { useClaude } from '@/hooks/useClaude';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
@@ -325,6 +326,7 @@ export default function ModulePage() {
     if ((!module && isDynamicModule !== true) || !moduleId) return;
 
     clearSession();
+    useStreamStore.getState().resetStreamOutput(); // Clear stale IRE trail from previous module
     setModule(moduleId);
     setSystemPrompt('');
     setSelectedPersonas(['general-assistant']);
@@ -671,6 +673,7 @@ export default function ModulePage() {
 
           {/* AI Controls */}
           <ThinkingControls value={thinking} onChange={setThinking} />
+          <ModelSelector value={model} onChange={setModel} />
 
           {/* Precision (temperature control across providers) */}
           <PrecisionSelector value={precision} onChange={setPrecision} />
@@ -874,8 +877,6 @@ export default function ModulePage() {
             </button>
             {showAdvanced && (
               <div className="mt-3 space-y-4">
-                <ModelSelector value={model} onChange={setModel} />
-
                 <SeedControl
                   seed={seed}
                   onChange={setSeed}

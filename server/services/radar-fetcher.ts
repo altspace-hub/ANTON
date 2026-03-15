@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import type Anthropic from '@anthropic-ai/sdk';
 import Parser from 'rss-parser';
+import { callChat, mapModelToProvider } from './provider-router.js';
 import { SUBCATEGORY_KEYWORDS, CATEGORY_SCORE_PROMPTS, type RadarCategory } from './radar-constants.js';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -319,16 +320,14 @@ Summary: ${item.summary || 'No summary'}
 Return ONLY valid JSON (no markdown):
 {"relevance_score": <0-1>, "urgency_score": <0-1>, "ai_summary": "<2 sentence summary>", "impact_areas": ["<area1>", "<area2>"]}`;
 
-        const message = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 512,
+        const chatResult = await callChat({
+          model: mapModelToProvider('claude-haiku-4-5-20251001'),
+          maxTokens: 512,
+          system: 'Score the following radar item. Return only valid JSON, no markdown.',
           messages: [{ role: 'user', content: prompt }],
         });
 
-        const responseText = message.content
-          .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-          .map((block) => block.text)
-          .join('');
+        const responseText = chatResult.text;
 
         const result = JSON.parse(responseText) as {
           relevance_score: number;

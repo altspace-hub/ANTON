@@ -13,6 +13,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
+import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
@@ -385,14 +386,13 @@ Return ONLY valid JSON, no explanation.`;
 
       // Call Claude for extraction
       try {
-        const Anthropic = (await import('@anthropic-ai/sdk')).default;
-        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-        const response = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 4096,
+        const result = await callChat({
+          model: mapModelToProvider('claude-haiku-4-5-20251001'),
+          system: 'You are a document extraction assistant. Return only valid JSON.',
           messages: [{ role: 'user', content: extractionPrompt }],
+          maxTokens: 4096,
         });
-        const rawText = response.content[0].type === 'text' ? response.content[0].text : '';
+        const rawText = result.text;
         let extracted: unknown = {};
         try {
           const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -885,9 +885,6 @@ EXECUTION INSTRUCTIONS:
 
 Format your output as professional consulting deliverables. Use clear headings, structured findings, and actionable recommendations.${knowledgeContext}`;
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
       // Stream the response
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
@@ -896,59 +893,24 @@ Format your output as professional consulting deliverables. Use clear headings, 
       // Map thinking level to model + thinking config
       const thinkingLevel = String(engagement.thinking_level || 'think_hard');
       const isQuick = thinkingLevel === 'quick';
-      const execModel = isQuick ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-6';
-      // Opus: adaptive thinking with effort (no budget_tokens cap)
-      const effortMap: Record<string, string> = {
-        think: 'medium', think_hard: 'high', investigate: 'max',
-        plan_first: 'max', deep_investigate: 'max',
-      };
-      const effort = effortMap[thinkingLevel] ?? 'high';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const thinkingParam: any = isQuick ? {} : { thinking: { type: 'adaptive' }, output_config: { effort } };
+      const execModel = mapModelToProvider(isQuick ? 'claude-haiku-4-5-20251001' : 'claude-opus-4-6');
 
       // Plan First mode: prepend planning instructions
       const planFirstInstr = thinkingLevel === 'plan_first'
         ? '\n\nBEFORE WRITING: Create an explicit plan (sections, order, depth, assumptions, gaps). Present your plan first as a brief outline, then execute it systematically.\n'
         : '';
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const requestOptions: any = {};
-      // Opus 4.6 has 1M context at GA — no beta header needed.
-      // Only add 1M beta header for Sonnet 4.5 if explicitly enabled.
-      if (!isQuick && execModel !== 'claude-opus-4-6' && process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true') {
-        requestOptions.headers = { 'anthropic-beta': 'context-1m-2025-08-07' };
-      }
-
-      let fullContent = '';
-      let fullThinking = '';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const stream = anthropic.messages.stream({
+      const streamResult = await streamChat({
         model: execModel,
-        max_tokens: isQuick ? 32_000 : 128_000, // Haiku: 32k, Opus: 128k ceiling
+        maxTokens: isQuick ? 32_000 : 128_000,
         system: systemPrompt + planFirstInstr,
         messages: [{ role: 'user', content: `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}` }],
-        ...thinkingParam,
-        ...(tools.length > 0 ? { tools } : {}),
-      }, Object.keys(requestOptions).length ? requestOptions : undefined);
+        thinkingLevel: isQuick ? undefined : thinkingLevel,
+        tools: tools.length > 0 ? tools : undefined,
+      }, res);
 
-      // Use for-await pattern (proven in claude-client.ts) instead of .on('event')
-      for await (const event of stream) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const evt = event as any;
-        if (evt.type === 'content_block_delta') {
-          if (evt.delta?.type === 'thinking_delta') {
-            const chunk = (evt.delta.thinking as string) || '';
-            fullThinking += chunk;
-            res.write(`data: ${JSON.stringify({ type: 'thinking_delta', content: chunk })}\n\n`);
-          } else if (evt.delta?.type === 'text_delta') {
-            const text = (evt.delta.text as string) || '';
-            fullContent += text;
-            res.write(`data: ${JSON.stringify({ type: 'text', text })}\n\n`);
-          }
-        }
-      }
-
-      await stream.finalMessage();
+      const fullContent = streamResult.text;
+      const fullThinking = streamResult.thinking;
 
       // Save iteration
       const iterationNumber = (db.prepare('SELECT MAX(iteration_number) as max FROM engagement_iterations WHERE engagement_id = ?').get(String(req.params.id)) as { max: number | null })?.max ?? 0;
@@ -1050,9 +1012,6 @@ Format your output as professional consulting deliverables. Use clear headings, 
         lensInstruction = 'Analyse the draft output and identify what additional information, documents, or conversations would most improve it.';
       }
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
       const gapPrompt = `You are a senior FCP consulting reviewer. ${lensInstruction}
 
 ENGAGEMENT SCOPE:
@@ -1082,13 +1041,14 @@ Return a JSON object with this exact structure:
 
 Return ONLY valid JSON, no markdown fences, no explanation.`;
 
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 3000,
+      const gapResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        system: 'You are a senior FCP consulting reviewer. Return only valid JSON.',
         messages: [{ role: 'user', content: gapPrompt }],
+        maxTokens: 3000,
       });
 
-      const rawText = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const rawText = gapResult.text || '{}';
       let result: { gaps: unknown[]; overall_assessment: string; confidence: string; lens_used: string } = {
         gaps: [], overall_assessment: '', confidence: 'medium', lens_used: lens,
       };
@@ -1193,11 +1153,9 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
         fileContent = String(doc.extracted_content || '');
       }
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+      const teamResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        system: 'You are a document extraction assistant. Return only valid JSON.',
         messages: [{
           role: 'user',
           content: `Analyse this engagement document and extract all people involved.
@@ -1226,8 +1184,9 @@ ${fileContent.slice(0, 30000)}
 
 Return ONLY valid JSON.`,
         }],
+        maxTokens: 2048,
       });
-      const rawText = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const rawText = teamResult.text || '{}';
       let extracted: { delivery_team?: Array<Record<string, unknown>>; client_contacts?: Array<Record<string, unknown>>; suggested_expertise?: Array<Record<string, unknown>> } = {};
       try {
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -1250,18 +1209,12 @@ Return ONLY valid JSON.`,
       const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' } as any],
+      const benchmarkResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        system: 'You are a financial crime compliance analyst conducting peer benchmarking research. Return only valid JSON.',
         messages: [{
           role: 'user',
-          content: `You are a financial crime compliance analyst conducting peer benchmarking research.
-
-Search for: ${query}
+          content: `Search for: ${query}
 
 Context: This is for an engagement on "${engagement.title}" with client domain areas: ${String(engagement.domain_areas || '[]')}.
 
@@ -1282,10 +1235,11 @@ After searching, extract and return a JSON object with these fields:
 
 Return ONLY valid JSON.`,
         }],
+        maxTokens: 2048,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       });
 
-      const textBlock = response.content.find(b => b.type === 'text');
-      const rawText = textBlock?.type === 'text' ? textBlock.text : '{}';
+      const rawText = benchmarkResult.text || '{}';
       let extracted: Record<string, unknown> = {};
       try {
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -1409,19 +1363,19 @@ Return ONLY valid JSON.`,
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const qgModel = mapModelToProvider('claude-haiku-4-5-20251001');
 
       const results: Record<string, unknown> = {};
 
       async function runCheck(checkId: string, label: string, prompt: string): Promise<Record<string, unknown>> {
         res.write(`data: ${JSON.stringify({ type: 'check_start', check: checkId, label })}\n\n`);
-        const r = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
+        const r = await callChat({
+          model: qgModel,
+          system: 'You are a quality assessment assistant. Return only valid JSON.',
           messages: [{ role: 'user', content: prompt }],
+          maxTokens: 1024,
         });
-        const raw = r.content[0].type === 'text' ? r.content[0].text : '{}';
+        const raw = r.text || '{}';
         let parsed: Record<string, unknown> = {};
         try { const m = raw.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { raw }; } catch { parsed = { raw }; }
         res.write(`data: ${JSON.stringify({ type: 'check_done', check: checkId, label, result: parsed })}\n\n`);
@@ -1462,9 +1416,9 @@ Return JSON: { "score": 0-100, "severity_consistent": true/false, "terminology_c
 
       // 8E: Executive Summary
       res.write(`data: ${JSON.stringify({ type: 'check_start', check: '8E', label: 'Executive Summary' })}\n\n`);
-      const execSummaryResp = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1500,
+      const execSummaryResult = await callChat({
+        model: qgModel,
+        system: 'You are a senior consulting analyst. Write professional executive summaries.',
         messages: [{ role: 'user', content: `Generate a concise executive summary for this consulting deliverable. Use a professional tone suitable for senior management.
 
 Deliverable:\n${outputContent.slice(0, 10000)}
@@ -1472,8 +1426,9 @@ Deliverables expected:\n${deliverables.map(d => d.title).join(', ')}
 ${peer_benchmarks.length > 0 ? `\nPeer context available: ${peersStr.slice(0, 1000)}` : ''}
 
 Write 3-4 paragraphs: context, key findings, main recommendations, and next steps. Start with the most important message.` }],
+        maxTokens: 1500,
       });
-      results['executive_summary'] = execSummaryResp.content[0].type === 'text' ? execSummaryResp.content[0].text : '';
+      results['executive_summary'] = execSummaryResult.text;
       res.write(`data: ${JSON.stringify({ type: 'check_done', check: '8E', label: 'Executive Summary', result: { generated: true, length: String(results['executive_summary']).length } })}\n\n`);
 
       // 8F: Expert Panel Review (4 lenses)
@@ -1486,12 +1441,13 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const expertResults: Record<string, unknown> = {};
       for (const lens of expertLenses) {
         res.write(`data: ${JSON.stringify({ type: 'check_start', check: `8F-${lens.id}`, label: `Expert: ${lens.name}` })}\n\n`);
-        const r = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 600,
-          messages: [{ role: 'user', content: `You are reviewing this consulting deliverable from the perspective of a ${lens.name}.\n${lens.instruction}\n\nDeliverable:\n${outputContent.slice(0, 5000)}\n\nReturn JSON: { "verdict": "positive|neutral|concerns", "key_points": ["point 1", "point 2"], "top_concern": "" }` }],
+        const r = await callChat({
+          model: qgModel,
+          system: `You are reviewing a consulting deliverable from the perspective of a ${lens.name}. Return only valid JSON.`,
+          messages: [{ role: 'user', content: `${lens.instruction}\n\nDeliverable:\n${outputContent.slice(0, 5000)}\n\nReturn JSON: { "verdict": "positive|neutral|concerns", "key_points": ["point 1", "point 2"], "top_concern": "" }` }],
+          maxTokens: 600,
         });
-        const raw = r.content[0].type === 'text' ? r.content[0].text : '{}';
+        const raw = r.text || '{}';
         try { const m = raw.match(/\{[\s\S]*\}/); expertResults[lens.id] = m ? JSON.parse(m[0]) : { raw }; } catch { expertResults[lens.id] = { raw }; }
         res.write(`data: ${JSON.stringify({ type: 'check_done', check: `8F-${lens.id}`, label: `Expert: ${lens.name}`, result: expertResults[lens.id] })}\n\n`);
       }

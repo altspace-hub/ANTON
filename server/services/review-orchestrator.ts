@@ -16,6 +16,7 @@
 
 import type { Database } from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider } from './provider-router.js';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -158,9 +159,9 @@ Output JSON:
 
   if (anthropic) {
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001', // Fast, cheap model for reviews
-        max_tokens: 2048,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 2048,
         system: systemPrompt,
         messages: [
           {
@@ -184,7 +185,7 @@ Provide your quality review as JSON.`,
         ],
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const text = chatResult.text;
       const parsed = extractJSON(text);
       if (parsed) {
         score = parsed.score || 8.0;
@@ -262,9 +263,9 @@ Output JSON with findings and score.`;
 
   if (anthropic) {
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 2048,
         system: systemPrompt,
         messages: [
           {
@@ -282,7 +283,7 @@ Provide regulatory review as JSON.`,
         ],
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const text = chatResult.text;
       const parsed = extractJSON(text);
       if (parsed) {
         score = parsed.score || 8.5;
@@ -345,9 +346,9 @@ Output JSON with findings and score.`;
 
   if (anthropic) {
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 2048,
         system: systemPrompt,
         messages: [
           {
@@ -357,7 +358,7 @@ Output JSON with findings and score.`;
         ],
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const text = chatResult.text;
       const parsed = extractJSON(text);
       if (parsed) {
         score = parsed.score || 8.0;
@@ -410,9 +411,9 @@ Output JSON with findings and score.`;
 
   if (anthropic) {
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 2048,
         system: systemPrompt,
         messages: [
           {
@@ -422,7 +423,7 @@ Output JSON with findings and score.`;
         ],
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const text = chatResult.text;
       const parsed = extractJSON(text);
       if (parsed) {
         score = parsed.score || 7.5;
@@ -475,9 +476,9 @@ Output JSON with findings (focus on CRITICAL and HIGH severity issues).`;
 
   if (anthropic) {
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 2048,
         system: systemPrompt,
         messages: [
           {
@@ -487,7 +488,7 @@ Output JSON with findings (focus on CRITICAL and HIGH severity issues).`;
         ],
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const text = chatResult.text;
       const parsed = extractJSON(text);
       if (parsed) {
         score = parsed.score || 7.0;

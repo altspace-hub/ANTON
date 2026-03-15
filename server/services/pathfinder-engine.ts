@@ -13,6 +13,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import type Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider, type ChatResult } from './provider-router.js';
 import { estimateTokens, estimateCost } from './token-estimator.js';
 import { hybridSearch, type HybridSearchResult } from './hybrid-search.js';
 
@@ -168,8 +169,8 @@ export function getAvailableSearchModels(): Array<{ modelId: string; provider: s
   const hasKey = !!process.env.ANTHROPIC_API_KEY;
   return [
     { modelId: 'claude-haiku-4-5-20251001', provider: 'anthropic', role: 'Web Search', available: hasKey },
-    { modelId: 'claude-haiku-4-5-20251001', provider: 'anthropic', role: 'Analysis (Quick/Thorough)', available: hasKey },
-    { modelId: 'claude-sonnet-4-6', provider: 'anthropic', role: 'Chairman Synthesis', available: hasKey },
+    { modelId: mapModelToProvider('claude-haiku-4-5-20251001'), provider: 'anthropic', role: 'Analysis (Quick/Thorough)', available: hasKey },
+    { modelId: mapModelToProvider('claude-sonnet-4-6'), provider: 'anthropic', role: 'Chairman Synthesis', available: hasKey },
   ];
 }
 
@@ -374,6 +375,7 @@ async function dispatchSingleModel(
     const locationContext = userLocation ? `\n\n## User Location\nThe user is located in ${userLocation}. Use this for proximity-based results, local availability, and regional relevance.` : '';
     if (model.provider === 'anthropic' && anthropic) {
       // Use Claude with web_search tool — NO thinking (mutually exclusive)
+      // Direct Anthropic SDK required: web_search_20250305 is Claude-specific
       const systemPrompt = [
         SEARCH_PROMPT,
         modeInstruction ? `\n\n## Search Mode: ${searchMode}\n${modeInstruction}` : '',
@@ -484,61 +486,33 @@ async function streamSynthesis(
     sourceSummary ? `## Web Sources Found\n${sourceSummary}` : '',
   ].filter(Boolean).join('\n\n');
 
-  // Choose synthesis model + thinking config based on depth
-  // Quick: Haiku think_hard | Thorough/Deep: Sonnet with higher budget
+  // Choose synthesis model + thinking level based on depth
+  // Quick: Haiku think_hard | Thorough/Deep: Sonnet with think_hard
   let synthModel: string;
-  let thinkingConfig: Record<string, unknown>;
+  let thinkingLevel: string;
 
   if (depth === 'quick') {
-    synthModel = 'claude-haiku-4-5-20251001';
-    thinkingConfig = { thinking: { type: 'enabled', budget_tokens: 10000 } };
+    synthModel = mapModelToProvider('claude-haiku-4-5-20251001');
+    thinkingLevel = 'think_hard';
   } else {
-    // Thorough and Deep both use Sonnet 4.6 with adaptive thinking
-    synthModel = 'claude-sonnet-4-6';
-    thinkingConfig = { thinking: { type: 'adaptive' }, output_config: { effort: 'high' } };
+    // Thorough and Deep both use Sonnet 4.6 equivalent with think_hard
+    synthModel = mapModelToProvider('claude-sonnet-4-6');
+    thinkingLevel = 'think_hard';
   }
 
-  const params: Record<string, unknown> = {
+  const result: ChatResult = await callChat({
     model: synthModel,
-    max_tokens: 32768,
     system: SYNTHESIS_PROMPT,
     messages: [{ role: 'user', content: userMessage }],
-    stream: true,
-    ...thinkingConfig,
-  };
+    maxTokens: 32768,
+    thinkingLevel,
+  });
 
-  let text = '';
-  let thinking = '';
-  let inputTokens = 0;
-  let outputTokens = 0;
+  // Deliver accumulated text via callbacks
+  if (result.text) callbacks.onTextDelta(result.text);
+  if (result.thinking) callbacks.onThinkingDelta(result.thinking);
 
-  const stream = anthropic.messages.stream(params as Parameters<typeof anthropic.messages.stream>[0]);
-
-  if (signal) {
-    signal.addEventListener('abort', () => stream.abort(), { once: true });
-  }
-
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta') {
-      const delta = event.delta as unknown as Record<string, unknown>;
-      if (delta.type === 'text_delta' && typeof delta.text === 'string') {
-        text += delta.text;
-        callbacks.onTextDelta(delta.text);
-      } else if (delta.type === 'thinking_delta' && typeof delta.thinking === 'string') {
-        thinking += delta.thinking;
-        callbacks.onThinkingDelta(delta.thinking);
-      }
-    } else if (event.type === 'message_delta') {
-      const usage = (event as unknown as Record<string, unknown>).usage as Record<string, number> | undefined;
-      if (usage) outputTokens = usage.output_tokens || 0;
-    } else if (event.type === 'message_start') {
-      const msg = (event as unknown as Record<string, unknown>).message as Record<string, unknown> | undefined;
-      const usage = msg?.usage as Record<string, number> | undefined;
-      if (usage) inputTokens = usage.input_tokens || 0;
-    }
-  }
-
-  return { text, thinking, inputTokens, outputTokens };
+  return { text: result.text, thinking: result.thinking, inputTokens: result.inputTokens, outputTokens: result.outputTokens };
 }
 
 // ── Internal Phase Call (for Thorough analysis + Deep IRE) ──────────────────
@@ -551,58 +525,80 @@ async function runInternalPhaseCall(
     budgetTokens?: number;
     maxTokens?: number;
     tools?: Array<Record<string, unknown>>;
+    thinkingLevel?: string;
   } = {},
 ): Promise<InternalPhaseResult> {
   const start = Date.now();
-  const model = options.model || 'claude-sonnet-4-6';
+  const model = mapModelToProvider(options.model || 'claude-sonnet-4-6');
   const maxTokens = options.maxTokens || 16384;
+  const thinkingLevel = options.thinkingLevel || 'think_hard';
 
-  // Use adaptive thinking for 4.6 models, budget_tokens for older/Haiku
-  const is46Model = model.includes('opus') || model.includes('sonnet-4-6');
-  const thinkingConfig = is46Model
-    ? { thinking: { type: 'adaptive' }, output_config: { effort: 'high' } }
-    : { thinking: { type: 'enabled', budget_tokens: options.budgetTokens || 10000 } };
+  // If tools are needed (e.g. confidence assessment), use direct Anthropic SDK
+  // because callChat doesn't support tool_use response parsing
+  if (options.tools && options.tools.length > 0) {
+    const is46Model = model.includes('opus') || model.includes('sonnet-4-6');
+    const thinkingConfig = is46Model
+      ? { thinking: { type: 'adaptive' }, output_config: { effort: 'high' } }
+      : { thinking: { type: 'enabled', budget_tokens: options.budgetTokens || 10000 } };
 
-  const params: Record<string, unknown> = {
-    model,
-    max_tokens: maxTokens,
-    ...thinkingConfig,
-    system: SYNTHESIS_PROMPT,
-    messages: [{ role: 'user', content: prompt }],
-  };
-  if (options.tools) params.tools = options.tools;
+    const params: Record<string, unknown> = {
+      model,
+      max_tokens: maxTokens,
+      ...thinkingConfig,
+      system: SYNTHESIS_PROMPT,
+      messages: [{ role: 'user', content: prompt }],
+      tools: options.tools,
+    };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response = await anthropic.messages.create(params as any) as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await anthropic.messages.create(params as any) as any;
 
-  let text = '';
-  let thinking = '';
-  let confidenceScore: number | undefined;
-  let revisionNeeded: boolean | undefined;
-  let gaps: string | undefined;
+    let text = '';
+    let thinking = '';
+    let confidenceScore: number | undefined;
+    let revisionNeeded: boolean | undefined;
+    let gaps: string | undefined;
 
-  for (const block of (response.content || []) as Array<Record<string, unknown>>) {
-    if (block.type === 'text' && typeof block.text === 'string') {
-      text += block.text;
-    } else if (block.type === 'thinking' && typeof block.thinking === 'string') {
-      thinking += block.thinking;
-    } else if (block.type === 'tool_use' && block.name === 'assess_confidence') {
-      const input = block.input as Record<string, unknown>;
-      if (typeof input.confidence === 'number') confidenceScore = input.confidence;
-      if (typeof input.revision_needed === 'boolean') revisionNeeded = input.revision_needed;
-      if (typeof input.gaps === 'string') gaps = input.gaps;
+    for (const block of (response.content || []) as Array<Record<string, unknown>>) {
+      if (block.type === 'text' && typeof block.text === 'string') {
+        text += block.text;
+      } else if (block.type === 'thinking' && typeof block.thinking === 'string') {
+        thinking += block.thinking;
+      } else if (block.type === 'tool_use' && block.name === 'assess_confidence') {
+        const input = block.input as Record<string, unknown>;
+        if (typeof input.confidence === 'number') confidenceScore = input.confidence;
+        if (typeof input.revision_needed === 'boolean') revisionNeeded = input.revision_needed;
+        if (typeof input.gaps === 'string') gaps = input.gaps;
+      }
     }
+
+    return {
+      text,
+      thinking,
+      inputTokens: response.usage?.input_tokens || 0,
+      outputTokens: response.usage?.output_tokens || 0,
+      durationMs: Date.now() - start,
+      confidenceScore,
+      revisionNeeded,
+      gaps,
+    };
   }
 
+  // No tools — use provider-router callChat
+  const result: ChatResult = await callChat({
+    model,
+    system: SYNTHESIS_PROMPT,
+    messages: [{ role: 'user', content: prompt }],
+    maxTokens,
+    thinkingLevel,
+  });
+
   return {
-    text,
-    thinking,
-    inputTokens: response.usage?.input_tokens || 0,
-    outputTokens: response.usage?.output_tokens || 0,
+    text: result.text,
+    thinking: result.thinking,
+    inputTokens: result.inputTokens,
+    outputTokens: result.outputTokens,
     durationMs: Date.now() - start,
-    confidenceScore,
-    revisionNeeded,
-    gaps,
   };
 }
 
@@ -705,7 +701,7 @@ export async function dispatchQuickSearch(
   const totalInput = searchResult.inputTokens + synth.inputTokens;
   const totalOutput = searchResult.outputTokens + synth.outputTokens;
   const costUsd = estimateCost(searchResult.inputTokens, searchResult.outputTokens, SEARCH_MODEL.modelId)
-    + estimateCost(synth.inputTokens, synth.outputTokens, 'claude-haiku-4-5-20251001');
+    + estimateCost(synth.inputTokens, synth.outputTokens, mapModelToProvider('claude-haiku-4-5-20251001'));
 
   const result: SearchResult = {
     id: searchId,
@@ -772,15 +768,16 @@ export async function dispatchThoroughSearch(
     : '';
 
   // Step 2: Haiku investigation analysis (non-streaming)
-  callbacks.onModelStart('claude-haiku-4-5-20251001', 'Investigation');
+  const analysisModelId = mapModelToProvider('claude-haiku-4-5-20251001');
+  callbacks.onModelStart(analysisModelId, 'Investigation');
   const analysisPrompt = buildAnalysisPrompt(query, searchResult, searchMode, context?.userLocation, localContext);
   const analysis = await runInternalPhaseCall(analysisPrompt, anthropic, {
     model: 'claude-haiku-4-5-20251001',
-    budgetTokens: 10000,
+    thinkingLevel: 'think_hard',
     maxTokens: 16384,
   });
   const analysisResult: ModelResult = {
-    modelId: 'claude-haiku-4-5-20251001',
+    modelId: analysisModelId,
     provider: 'anthropic',
     role: 'Investigation',
     response: analysis.text,
@@ -803,11 +800,12 @@ export async function dispatchThoroughSearch(
   );
 
   // Assemble results
+  const synthModelId = mapModelToProvider('claude-sonnet-4-6');
   const totalInput = searchResult.inputTokens + analysis.inputTokens + synth.inputTokens;
   const totalOutput = searchResult.outputTokens + analysis.outputTokens + synth.outputTokens;
   const costUsd = estimateCost(searchResult.inputTokens, searchResult.outputTokens, SEARCH_MODEL.modelId)
-    + estimateCost(analysis.inputTokens, analysis.outputTokens, 'claude-haiku-4-5-20251001')
-    + estimateCost(synth.inputTokens, synth.outputTokens, 'claude-sonnet-4-6');
+    + estimateCost(analysis.inputTokens, analysis.outputTokens, analysisModelId)
+    + estimateCost(synth.inputTokens, synth.outputTokens, synthModelId);
 
   const result: SearchResult = {
     id: searchId,
@@ -874,18 +872,19 @@ export async function dispatchDeepSearch(
 
   const allModelResults: ModelResult[] = [searchResult];
   const phaseOutputs: string[] = [];
+  const deepSonnetId = mapModelToProvider('claude-sonnet-4-6');
 
   // Phase 1: Analyse (Sonnet, non-streaming)
-  callbacks.onModelStart('claude-sonnet-4-6', 'Analysis');
+  callbacks.onModelStart(deepSonnetId, 'Analysis');
   const analysisPrompt = buildAnalysisPrompt(query, searchResult, searchMode, context?.userLocation, localContext);
   const analysis = await runInternalPhaseCall(analysisPrompt, anthropic, {
     model: 'claude-sonnet-4-6',
-    budgetTokens: 10000,
+    thinkingLevel: 'think_hard',
     maxTokens: 16384,
   });
   phaseOutputs.push(`### ANALYSIS\n${analysis.text}`);
   allModelResults.push({
-    modelId: 'claude-sonnet-4-6',
+    modelId: deepSonnetId,
     provider: 'anthropic',
     role: 'Analysis',
     response: analysis.text,
@@ -898,17 +897,17 @@ export async function dispatchDeepSearch(
   callbacks.onModelComplete(allModelResults[allModelResults.length - 1]);
 
   // Phase 2: Reflect (Sonnet, non-streaming, with confidence tool)
-  callbacks.onModelStart('claude-sonnet-4-6', 'Reflection');
+  callbacks.onModelStart(deepSonnetId, 'Reflection');
   const reflectPrompt = buildReflectionPrompt(query, phaseOutputs.join('\n\n'));
   const reflection = await runInternalPhaseCall(reflectPrompt, anthropic, {
     model: 'claude-sonnet-4-6',
-    budgetTokens: 10000,
+    thinkingLevel: 'think_hard',
     maxTokens: 16384,
     tools: [CONFIDENCE_TOOL],
   });
   phaseOutputs.push(`### REFLECTION\n${reflection.text}\nConfidence: ${reflection.confidenceScore ?? 'N/A'}`);
   allModelResults.push({
-    modelId: 'claude-sonnet-4-6',
+    modelId: deepSonnetId,
     provider: 'anthropic',
     role: 'Reflection',
     response: reflection.text,
@@ -924,16 +923,16 @@ export async function dispatchDeepSearch(
   // Phase 3: Deepen (only if confidence < 0.8)
   const confidence = reflection.confidenceScore ?? 0.5;
   if (confidence < 0.8) {
-    callbacks.onModelStart('claude-sonnet-4-6', 'Deepening');
+    callbacks.onModelStart(deepSonnetId, 'Deepening');
     const deepenPrompt = buildDeepenPrompt(query, phaseOutputs.join('\n\n'), reflection.gaps || '');
     const deepened = await runInternalPhaseCall(deepenPrompt, anthropic, {
       model: 'claude-sonnet-4-6',
-      budgetTokens: 10000,
+      thinkingLevel: 'think_hard',
       maxTokens: 16384,
     });
     phaseOutputs.push(`### DEEPENED ANALYSIS\n${deepened.text}`);
     allModelResults.push({
-      modelId: 'claude-sonnet-4-6',
+      modelId: deepSonnetId,
       provider: 'anthropic',
       role: 'Deepening',
       response: deepened.text,
@@ -966,7 +965,7 @@ export async function dispatchDeepSearch(
   const totalInput = allModelResults.reduce((a, r) => a + r.inputTokens, 0) + synth.inputTokens;
   const totalOutput = allModelResults.reduce((a, r) => a + r.outputTokens, 0) + synth.outputTokens;
   const costUsd = allModelResults.reduce((a, r) => a + estimateCost(r.inputTokens, r.outputTokens, r.modelId), 0)
-    + estimateCost(synth.inputTokens, synth.outputTokens, 'claude-sonnet-4-6');
+    + estimateCost(synth.inputTokens, synth.outputTokens, deepSonnetId);
 
   const result: SearchResult = {
     id: searchId,
@@ -1006,53 +1005,29 @@ export async function handleFollowUp(
   if (!search) throw new Error('Search not found');
 
   const followUpId = randomUUID();
-  const context = [
+  const ctx = [
     `## Original Query\n${search.query}`,
     `## Previous Synthesis\n${search.synthesis}`,
     `## Follow-up Question\n${question}`,
   ].join('\n\n');
 
-  let text = '';
-  let thinking = '';
-  let inputTokens = 0;
-  let outputTokens = 0;
-
-  const stream = anthropic.messages.stream({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 16384,
+  const result: ChatResult = await callChat({
+    model: mapModelToProvider('claude-sonnet-4-6'),
     system: SYNTHESIS_PROMPT,
-    thinking: { type: 'adaptive' },
-    output_config: { effort: 'medium' },
-    messages: [{ role: 'user', content: context }],
+    messages: [{ role: 'user', content: ctx }],
+    maxTokens: 16384,
+    thinkingLevel: 'think',
   });
 
-  if (signal) signal.addEventListener('abort', () => stream.abort(), { once: true });
-
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta') {
-      const delta = event.delta as unknown as Record<string, unknown>;
-      if (delta.type === 'text_delta' && typeof delta.text === 'string') {
-        text += delta.text;
-        callbacks.onTextDelta(delta.text);
-      } else if (delta.type === 'thinking_delta' && typeof delta.thinking === 'string') {
-        thinking += delta.thinking;
-        callbacks.onThinkingDelta(delta.thinking);
-      }
-    } else if (event.type === 'message_delta') {
-      const usage = (event as unknown as Record<string, unknown>).usage as Record<string, number> | undefined;
-      if (usage) outputTokens = usage.output_tokens || 0;
-    } else if (event.type === 'message_start') {
-      const msg = (event as unknown as Record<string, unknown>).message as Record<string, unknown> | undefined;
-      const usage = msg?.usage as Record<string, number> | undefined;
-      if (usage) inputTokens = usage.input_tokens || 0;
-    }
-  }
+  // Deliver accumulated text via callbacks
+  if (result.text) callbacks.onTextDelta(result.text);
+  if (result.thinking) callbacks.onThinkingDelta(result.thinking);
 
   db.prepare(
     'INSERT INTO pathfinder_followups (id, search_id, question, answer, thinking, input_tokens, output_tokens) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(followUpId, searchId, question, text, thinking, inputTokens, outputTokens);
+  ).run(followUpId, searchId, question, result.text, result.thinking, result.inputTokens, result.outputTokens);
 
-  return { id: followUpId, answer: text, thinking };
+  return { id: followUpId, answer: result.text, thinking: result.thinking };
 }
 
 // ── Document context builder ───────────────────────────────────────────────
@@ -1107,14 +1082,14 @@ export async function generateSuggestions(
   ].filter(Boolean).join('\n');
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
+    const result: ChatResult = await callChat({
+      model: mapModelToProvider('claude-haiku-4-5-20251001'),
       system: 'You are a proactive research assistant. Based on the user\'s recent activity, suggest 3-5 search queries they might find valuable. Return JSON array: [{"query": "...", "context": "brief reason"}]. Only return the JSON, nothing else.',
       messages: [{ role: 'user', content: contextText }],
+      maxTokens: 1024,
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const text = result.text;
     const parsed = JSON.parse(text) as Array<{ query: string; context: string }>;
 
     // Store in DB

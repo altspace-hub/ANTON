@@ -602,7 +602,7 @@ export function getProviderFromModelId(modelId: string, db?: Database.Database):
   if (modelId.startsWith('claude-')) return 'anthropic';
   if (modelId.startsWith('gpt-')) return 'openai';
   if (modelId.startsWith('gemini-')) return 'google';
-  if (modelId.startsWith('mistral-')) return 'mistral';
+  if (modelId.startsWith('mistral-') || modelId.startsWith('magistral-')) return 'mistral';
   if (modelId.startsWith('ollama:')) return 'ollama';
 
   // Fallback: check custom model slots in the database

@@ -16,6 +16,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider } from './provider-router.js';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -249,27 +250,17 @@ Structure your response with clear headings.
 Flag any critical issues or recommendations specific to your domain.`;
 
   try {
-    const is46Model = config.model === 'claude-opus-4-6' || config.model === 'claude-sonnet-4-6';
-    const thinkingParam = is46Model
-      ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'medium' as const } }
-      : { thinking: { type: 'enabled' as const, budget_tokens: 2048 } };
-    const response = await anthropic.messages.create({
-      model: config.model,
-      max_tokens: 4096,
+    const result = await callChat({
+      model: mapModelToProvider(config.model),
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
-      ...thinkingParam,
+      maxTokens: 4096,
+      thinkingLevel: 'think',
     });
-
-    const outputText =
-      response.content
-        .filter((block) => block.type === 'text')
-        .map((block) => ('text' in block ? block.text : ''))
-        .join('\n') || '';
 
     return {
       name: config.name,
-      output: outputText,
+      output: result.text,
       executionTimeMs: Date.now() - startTime,
     };
   } catch (error) {
@@ -368,20 +359,15 @@ export async function runMultiAgent(
   );
 
   try {
-    const synthesisResponse = await request.anthropic.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 24192,
+    const synthesisResult = await callChat({
+      model: mapModelToProvider('claude-opus-4-6'),
       system: synthesizerPrompt,
       messages: [{ role: 'user', content: request.userMessage }],
-      thinking: { type: 'adaptive' as const },
-      output_config: { effort: 'max' as const },
+      maxTokens: 24192,
+      thinkingLevel: 'investigate',
     });
 
-    const synthesisText =
-      synthesisResponse.content
-        .filter((block) => block.type === 'text')
-        .map((block) => ('text' in block ? block.text : ''))
-        .join('\n') || '';
+    const synthesisText = synthesisResult.text;
 
     return {
       synthesis: synthesisText,

@@ -9,6 +9,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider } from './provider-router.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -20,51 +21,21 @@ function getModelConfig(tier: GapModelTier) {
   if (tier === 'opus') {
     return {
       model: 'claude-opus-4-6' as const,
-      thinkingConfig: { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } },
-      maxTokensBatch: 16000,      // adaptive thinking has no budget_tokens constraint
-      maxTokensSynthesis: 128_000, // Opus 4.6 max output ceiling
+      thinkingLevel: 'investigate' as const,
+      maxTokensBatch: 16000,
+      maxTokensSynthesis: 128_000,
     };
   }
-  // Sonnet 4.6: adaptive thinking with effort levels (no budget_tokens needed)
   return {
     model: 'claude-sonnet-4-6' as const,
-    thinkingConfig: { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } },
+    thinkingLevel: 'investigate' as const,
     maxTokensBatch: 40000,
-    maxTokensSynthesis: 64000,   // Sonnet 4.6 max output ceiling
+    maxTokensSynthesis: 64000,
   };
 }
 
-// Streaming helper — avoids Anthropic SDK 10-minute non-streaming timeout.
-// Uses messages.create with stream:true and iterates the raw SSE stream.
-async function streamCollect(
-  anthropic: Anthropic,
-  params: { model: string; max_tokens: number; system: string; messages: Array<{ role: 'user' | 'assistant'; content: string }> } & Record<string, unknown>,
-): Promise<{ text: string; thinking: string }> {
-  console.log(`[gap-engine] streamCollect: model=${params.model}, max_tokens=${params.max_tokens}, system_len=${params.system.length}`);
-
-  const response = await anthropic.messages.create({
-    ...params,
-    stream: true,
-  } as Parameters<typeof anthropic.messages.create>[0]);
-
-  console.log('[gap-engine] streamCollect: stream opened, iterating events...');
-
-  let text = '';
-  let thinking = '';
-  let eventCount = 0;
-
-  // response is an async iterable of SSE events when stream: true
-  for await (const event of response as AsyncIterable<{ type: string; delta?: { type: string; text?: string; thinking?: string } }>) {
-    eventCount++;
-    if (event.type === 'content_block_delta' && event.delta) {
-      if (event.delta.type === 'text_delta' && event.delta.text) text += event.delta.text;
-      if (event.delta.type === 'thinking_delta' && event.delta.thinking) thinking += event.delta.thinking;
-    }
-  }
-
-  console.log(`[gap-engine] streamCollect: done — ${eventCount} events, ${text.length} chars text, ${thinking.length} chars thinking`);
-  return { text, thinking };
-}
+// callChat from provider-router replaces the old streamCollect helper.
+// It handles Anthropic, Mistral, OpenAI, Gemini, and Ollama in a single call.
 
 export interface FrameworkArticle {
   id: string;         // e.g. "Art.12"
@@ -339,18 +310,15 @@ export async function runAssessmentBatch(
   const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
 
   const mc = getModelConfig(modelTier);
-  const response = await anthropic.messages.create({
-    model: mc.model,
-    max_tokens: mc.maxTokensBatch,
+  const result = await callChat({
+    model: mapModelToProvider(mc.model),
     system: systemPrompt,
     messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework) }],
-    ...mc.thinkingConfig,
-  } as Parameters<typeof anthropic.messages.create>[0]);
+    maxTokens: mc.maxTokensBatch,
+    thinkingLevel: mc.thinkingLevel,
+  });
 
-  const msg = response as Anthropic.Message;
-  const text = msg.content.filter((b: Anthropic.ContentBlock) => b.type === 'text').map((b: Anthropic.ContentBlock) => (b as Anthropic.TextBlock).text).join('');
-
-  const findings = JSON.parse(extractJson(text, 'array')) as ArticleFinding[];
+  const findings = JSON.parse(extractJson(result.text, 'array')) as ArticleFinding[];
 
   return { framework: frameworkId, findings, batchIndex, totalBatches };
 }
@@ -371,10 +339,10 @@ export async function synthesiseCapabilityView(
   const criticalCount = Object.values(allFindings).flat().filter(f => f.priority === 'critical').length;
 
   const mc = getModelConfig(modelTier);
-  const { text, thinking } = await streamCollect(anthropic, {
-    model: mc.model,
-    max_tokens: mc.maxTokensSynthesis,
-    ...mc.thinkingConfig,
+  const result = await callChat({
+    model: mapModelToProvider(mc.model),
+    maxTokens: mc.maxTokensSynthesis,
+    thinkingLevel: mc.thinkingLevel,
     system: `You are a senior compliance transformation advisor with 20+ years of experience in AML/CFT regulatory implementation across Nordic and European financial institutions.
 
 Synthesise the article-level gap findings below into 8-12 cross-cutting capability themes. Each theme spans one or more regulatory articles and reflects a real organisational capability (not just a regulation grouping).
@@ -428,7 +396,7 @@ Return a JSON array of capability themes:
     messages: [{ role: 'user', content: `Article-level findings to synthesise:\n\n${findingsSummary}` }],
   });
 
-  return { json: extractJson(text, 'array'), reasoning: thinking };
+  return { json: extractJson(result.text, 'array'), reasoning: result.thinking };
 }
 
 export async function generateBoardSummary(
@@ -459,10 +427,10 @@ export async function generateBoardSummary(
   const frameworkNames = Object.keys(allFindings).join(', ');
 
   const mcBoard = getModelConfig(modelTier);
-  const { text, thinking } = await streamCollect(anthropic, {
-    model: mcBoard.model,
-    max_tokens: mcBoard.maxTokensSynthesis,
-    ...mcBoard.thinkingConfig,
+  const result = await callChat({
+    model: mapModelToProvider(mcBoard.model),
+    maxTokens: mcBoard.maxTokensSynthesis,
+    thinkingLevel: mcBoard.thinkingLevel,
     system: `You are a senior compliance advisor with deep experience presenting to boards of Nordic and European financial institutions. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
 
 Structure:
@@ -526,7 +494,7 @@ ${capabilityView}`,
     }],
   });
 
-  return { summary: text, reasoning: thinking };
+  return { summary: result.text, reasoning: result.thinking };
 }
 
 export async function generateRoadmap(
@@ -546,10 +514,10 @@ export async function generateRoadmap(
   ).join('\n');
 
   const mcRoad = getModelConfig(modelTier);
-  const { text, thinking } = await streamCollect(anthropic, {
-    model: mcRoad.model,
-    max_tokens: mcRoad.maxTokensSynthesis,
-    ...mcRoad.thinkingConfig,
+  const result = await callChat({
+    model: mapModelToProvider(mcRoad.model),
+    maxTokens: mcRoad.maxTokensSynthesis,
+    thinkingLevel: mcRoad.thinkingLevel,
     system: `You are a compliance transformation programme manager with extensive experience delivering AML/CFT remediation programmes for Nordic and European financial institutions. Build a detailed, phased remediation roadmap.
 
 Return a JSON object:
@@ -627,7 +595,7 @@ ${capabilityView}`,
     }],
   });
 
-  return { json: extractJson(text, 'object'), reasoning: thinking };
+  return { json: extractJson(result.text, 'object'), reasoning: result.thinking };
 }
 
 type AssessmentRow = { id: string; frameworks: string; scope_config: string; context_config: string; article_scores: string; capability_view: string | null; status: string };

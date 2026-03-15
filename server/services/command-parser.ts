@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import Database from 'better-sqlite3';
+import { callChat, mapModelToProvider } from './provider-router.js';
 
 const COMMAND_PARSING_PROMPT = `You are a command parser for the openEXPERT platform.
 
@@ -61,16 +62,17 @@ export interface ExecutionResult {
 
 export async function parseCommand(userInput: string, anthropic: Anthropic): Promise<ParsedCommand> {
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 400,
+    const result = await callChat({
+      model: mapModelToProvider('claude-haiku-4-5-20251001'),
+      maxTokens: 400,
+      system: COMMAND_PARSING_PROMPT,
       messages: [{
         role: 'user',
-        content: `${COMMAND_PARSING_PROMPT}\n\nUser command: "${userInput}"\n\nJSON response:`,
+        content: `User command: "${userInput}"\n\nJSON response:`,
       }],
     });
 
-    const text = response.content[0]?.type === 'text' ? response.content[0].text : '{}';
+    const text = result.text || '{}';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return {

@@ -696,7 +696,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           if (!raw) continue;
           try {
             const parsed = JSON.parse(raw);
-            if (parsed.type === 'text') { accumulated += parsed.text; setStreamText(accumulated); }
+            if (parsed.type === 'text' || parsed.type === 'text_delta') { accumulated += (parsed.text ?? parsed.content ?? ''); setStreamText(accumulated); }
             else if (parsed.type === 'done') { await loadTask(); onStatusChange(); }
           } catch { /* skip */ }
         }
@@ -748,8 +748,8 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           if (!raw) continue;
           try {
             const parsed = JSON.parse(raw);
-            if (parsed.type === 'text') {
-              accumulated += parsed.text;
+            if (parsed.type === 'text' || parsed.type === 'text_delta') {
+              accumulated += (parsed.text ?? parsed.content ?? '');
               setStreamText(accumulated);
             } else if (parsed.type === 'done') {
               await loadTask();
@@ -817,8 +817,8 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
                 if (!raw) continue;
                 try {
                   const parsed = JSON.parse(raw);
-                  if (parsed.type === 'text') {
-                    accumulated += parsed.text;
+                  if (parsed.type === 'text' || parsed.type === 'text_delta') {
+                    accumulated += (parsed.text ?? parsed.content ?? '');
                     setStreamText(accumulated);
                   } else if (parsed.type === 'done') {
                     await loadTask();
@@ -872,12 +872,12 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           const raw = line.slice(6).trim();
           if (!raw) continue;
           try {
-            const parsed = JSON.parse(raw) as { type: string; text?: string; hasMoreSteps?: boolean };
-            if (parsed.type === 'text' && parsed.text) {
-              accumulated += parsed.text;
+            const parsed = JSON.parse(raw) as { type: string; text?: string; content?: string; hasMoreSteps?: boolean };
+            if ((parsed.type === 'text' || parsed.type === 'text_delta') && (parsed.text || parsed.content)) {
+              accumulated += (parsed.text ?? parsed.content ?? '');
               setExecutingStepText(accumulated);
-            } else if (parsed.type === 'thinking' && parsed.text) {
-              accThinking += parsed.text;
+            } else if ((parsed.type === 'thinking' || parsed.type === 'thinking_delta') && (parsed.text || parsed.content)) {
+              accThinking += (parsed.text ?? parsed.content ?? '');
               setExecutingStepThinking(accThinking);
             } else if (parsed.type === 'quality_retry') {
               // Reset text on retry — new attempt starts fresh

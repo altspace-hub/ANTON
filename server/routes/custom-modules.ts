@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
 const GUIDE_SYSTEM_PROMPT = `You are a friendly AI module designer helping users create custom Claude modules tailored to their specific tasks.
 
@@ -228,14 +229,13 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
         ...messages,
         { role: 'user' as const, content: userMessage.trim() },
       ];
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 512,
+      const result = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 512,
         system: GUIDE_SYSTEM_PROMPT,
         messages: allMessages,
       });
-      const text = response.content.filter((b) => b.type === 'text').map((b) => (b as { type: 'text'; text: string }).text).join('');
-      res.json({ response: text });
+      res.json({ response: result.text });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'AI request failed';
       res.status(500).json({ error: msg });
@@ -257,9 +257,9 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
       const conversationSummary = messages
         .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
         .join('\n\n');
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+      const result = await callChat({
+        model: mapModelToProvider('claude-sonnet-4-6'),
+        maxTokens: 2048,
         system: GENERATE_SYSTEM_PROMPT,
         messages: [
           {
@@ -268,7 +268,7 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
           },
         ],
       });
-      const text = response.content.filter((b) => b.type === 'text').map((b) => (b as { type: 'text'; text: string }).text).join('').trim();
+      const text = result.text.trim();
       // Strip any accidental markdown fences
       const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
       const moduleConfig = JSON.parse(cleaned);
@@ -308,22 +308,18 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
         fullSystem += `\n\n## REFERENCE OUTPUT EXAMPLE\nMatch the structure, depth, and formatting of this example:\n<reference>\n${referenceOutput.trim()}\n</reference>`;
       }
 
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+      const resolvedModel = mapModelToProvider('claude-haiku-4-5-20251001');
+      const result = await callChat({
+        model: resolvedModel,
+        maxTokens: 2048,
         system: fullSystem,
         messages: [{ role: 'user', content: testQuery.trim() }],
       });
 
-      const text = response.content
-        .filter((b) => b.type === 'text')
-        .map((b) => (b as { type: 'text'; text: string }).text)
-        .join('');
-
       res.json({
-        response: text,
-        tokens_used: response.usage.input_tokens + response.usage.output_tokens,
-        model: 'claude-haiku-4-5-20251001',
+        response: result.text,
+        tokens_used: result.inputTokens + result.outputTokens,
+        model: resolvedModel,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Test run failed';

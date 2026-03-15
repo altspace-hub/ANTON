@@ -2,6 +2,7 @@ import { Router } from 'express';
 import https from 'https';
 import type Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 
 // Known regulation shortcuts
 const REGULATION_LOOKUP: Record<string, { title: string; celexNumber: string }> = {
@@ -208,20 +209,14 @@ ${entitySummary}
 
 ${eurLexText ? `OFFICIAL EUR-LEX TEXT (first 40,000 chars):\n${eurLexText.slice(0, 40000)}` : 'No EUR-Lex text available — validate using your knowledge of the regulation.'}`;
 
-      const stream = anthropic.messages.stream({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 8192,
+      const result = await streamChat({
+        model: mapModelToProvider('claude-sonnet-4-5-20250929'),
+        maxTokens: 8192,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
-      });
+      }, res);
 
-      let fullText = '';
-      for await (const event of stream) {
-        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          fullText += event.delta.text;
-          send({ type: 'text', delta: event.delta.text });
-        }
-      }
+      const fullText = result.text;
 
       // Parse findings summary
       const criticalCount = (fullText.match(/CRITICAL:/g) || []).length;

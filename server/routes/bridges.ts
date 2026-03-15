@@ -22,6 +22,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { requireAdminOrSolo } from '../middleware/auth.js';
 import { encryptConfig, decryptConfig } from '../services/credential-vault.js';
 import { getClient } from '../services/claude-client.js';
+import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -198,25 +199,17 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
         .filter(Boolean)
         .join('\n');
 
-      // 7. Call Claude (non-streaming — bridge clients expect a complete response)
-      const claudeClient = getClient();
-
+      // 7. Call AI (non-streaming — bridge clients expect a complete response)
       const startTime = Date.now();
-      const claudeResponse = await claudeClient.messages.create({
-        model: 'claude-opus-4-6',
-        max_tokens: 1024,
+      const result = await callChat({
+        model: mapModelToProvider('claude-opus-4-6'),
         system: systemPrompt,
         messages: [{ role: 'user', content: message.trim() }],
+        maxTokens: 1024,
       });
       const durationMs = Date.now() - startTime;
 
-      // Extract text from response blocks
-      let responseText = '';
-      for (const block of claudeResponse.content) {
-        if (block.type === 'text') {
-          responseText += block.text;
-        }
-      }
+      let responseText = result.text;
 
       // Hard-truncate to max_response_length
       if (responseText.length > maxLength) {
@@ -224,7 +217,7 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
       }
 
       const tokensUsed =
-        (claudeResponse.usage.input_tokens ?? 0) + (claudeResponse.usage.output_tokens ?? 0);
+        (result.inputTokens ?? 0) + (result.outputTokens ?? 0);
 
       // 8. Increment call count in config (best-effort, non-blocking)
       try {

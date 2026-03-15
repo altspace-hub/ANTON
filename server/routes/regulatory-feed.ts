@@ -15,6 +15,7 @@ import { Router } from 'express';
 import type { Database } from 'better-sqlite3';
 import type Anthropic from '@anthropic-ai/sdk';
 import crypto from 'crypto';
+import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 
 // ── Hardcoded source catalogue ──────────────────────────────────────────────
 
@@ -175,30 +176,19 @@ Structure the digest clearly so a compliance officer can immediately identify wh
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      if (!anthropic) { res.status(503).json({ error: 'Anthropic API not configured' }); return; }
-      const stream = anthropic.messages.stream({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+      const hasProvider = !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || process.env.MISTRAL_API_KEY || process.env.OLLAMA_BASE_URL);
+      if (!hasProvider) { res.status(503).json({ error: 'No AI provider configured' }); return; }
+
+      const result = await streamChat({
+        model: mapModelToProvider('claude-sonnet-4-6'),
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
-      });
+        maxTokens: 4096,
+      }, res);
 
-      let fullText = '';
-      let inputTokens = 0;
-      let outputTokens = 0;
-
-      for await (const chunk of stream) {
-        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-          fullText += chunk.delta.text;
-          res.write(`data: ${JSON.stringify({ type: 'text', content: chunk.delta.text })}\n\n`);
-        }
-        if (chunk.type === 'message_start') {
-          inputTokens = chunk.message.usage?.input_tokens ?? 0;
-        }
-        if (chunk.type === 'message_delta') {
-          outputTokens = chunk.usage?.output_tokens ?? 0;
-        }
-      }
+      const fullText = result.text;
+      const inputTokens = result.inputTokens;
+      const outputTokens = result.outputTokens;
 
       // Persist digest
       try {

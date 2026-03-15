@@ -1422,9 +1422,11 @@ export default function Settings() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {([
-                  { value: 'mistral-large-latest',   label: 'Mistral Large' },
-                  { value: 'mistral-medium-latest',  label: 'Mistral Medium' },
-                  { value: 'mistral-small-latest',   label: 'Mistral Small' },
+                  { value: 'mistral-large-latest',     label: 'Mistral Large 3' },
+                  { value: 'mistral-medium-latest',    label: 'Mistral Medium 3.1' },
+                  { value: 'mistral-small-latest',     label: 'Mistral Small 3.2' },
+                  { value: 'magistral-medium-latest',  label: 'Magistral Medium' },
+                  { value: 'magistral-small-latest',   label: 'Magistral Small' },
                 ] as { value: ModelId; label: string }[]).map(({ value: modelValue, label }) => {
                   const disabled = !providerStatus.MISTRAL_API_KEY;
                   return (

@@ -478,6 +478,7 @@ export default function PromptPage() {
         <div className="mb-4 grid grid-cols-2 gap-4 rounded-xl border border-border bg-adv-card p-4">
           <div className="space-y-4">
             <ThinkingControls value={thinking} onChange={setThinking} />
+            <ModelSelector value={model} onChange={setModel} />
             <WritingStylePanel
               creativity={creativity}
               onCreativityChange={setCreativity}
@@ -488,7 +489,6 @@ export default function PromptPage() {
               metaCognitiveEnabled={metaCognitiveEnabled}
               onMetaCognitiveChange={setMetaCognitiveEnabled}
             />
-            <ModelSelector value={model} onChange={setModel} />
           </div>
           <div className="space-y-4">
             <KnowledgeSourcePanel config={knowledgeSources} onChange={setKnowledgeSources} />

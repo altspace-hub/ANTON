@@ -1,16 +1,15 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
-import Anthropic from '@anthropic-ai/sdk';
 import * as cron from 'node-cron';
 import { createRegulatoryRadar } from '../services/regulatory-radar.js';
 import type { createRadarFetcher } from '../services/radar-fetcher.js';
+import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
 type RadarFetcher = ReturnType<typeof createRadarFetcher>;
 
 export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher) {
   const router = Router();
   const radar = createRegulatoryRadar(db);
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   // GET /api/radar/summary — dashboard summary
   router.get('/radar/summary', (_req, res) => {
@@ -153,16 +152,14 @@ Return ONLY valid JSON (no markdown, no extra text):
   "impact_areas": ["<area1>", "<area2>"]
 }`;
 
-      const message = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        system: 'You are a regulatory relevance scorer. Return ONLY valid JSON.',
         messages: [{ role: 'user', content: prompt }],
+        maxTokens: 1024,
       });
 
-      const responseText = message.content
-        .filter((block) => block.type === 'text')
-        .map((block) => (block as { text: string }).text)
-        .join('');
+      const responseText = chatResult.text;
 
       const result = JSON.parse(responseText) as {
         relevance_score: number;

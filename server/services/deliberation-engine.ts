@@ -17,6 +17,7 @@
  */
 
 import { getClient, callSync } from './claude-client.js';
+import { callChat, mapModelToProvider } from './provider-router.js';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -101,11 +102,15 @@ export async function runDeliberation(
 You are the **${panelist.role}** in a multi-model deliberation panel. Analyse this request independently. Do not attempt to guess what other models might conclude. Provide your most complete and accurate assessment.`;
 
     try {
-      const result = await callSync({
-        model: panelist.model,
-        thinking: panelist.thinking,
+      // Use provider-router so the deliberation works with any configured provider
+      const resolvedModel = mapModelToProvider(panelist.model);
+      const thinkingLevel = panelist.thinking === 'quick' ? undefined : panelist.thinking;
+
+      const result = await callChat({
+        model: resolvedModel,
         system: systemPrompt + roleAddition,
         messages: [{ role: 'user', content: userMessage }],
+        thinkingLevel,
       });
 
       const opinion: ModelOpinion = {
@@ -172,31 +177,22 @@ Field definitions:
 - redFlags: array of safety-critical or urgent concerns; empty [] if none
 - confidence: "high" (unanimous/strong), "medium" (majority), "low" (significant disagreement or red flags)`;
 
-  // Stream synthesis from Opus
-  const anthropic = getClient();
-  const synthesisParams = {
-    model: 'claude-opus-4-6',
-    max_tokens: 128_000,
-    system: [{ type: 'text', text: synthesisSystem }],
-    messages: [{ role: 'user', content: userMessage }],
-    stream: true,
-    thinking: { type: 'adaptive' },
-    output_config: { effort: 'max' },
-  };
+  // Synthesis via provider-router (uses 'large' tier model with max reasoning)
+  const synthesisModel = mapModelToProvider('claude-opus-4-6');
 
   let fullSynthesis = '';
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await anthropic.messages.stream(synthesisParams as any);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for await (const event of stream as AsyncIterable<any>) {
-      if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-        const chunk = event.delta.text as string;
-        fullSynthesis += chunk;
-        onSynthesisChunk(chunk);
-      }
-    }
+    const synthesisResult = await callChat({
+      model: synthesisModel,
+      system: synthesisSystem,
+      messages: [{ role: 'user', content: userMessage }],
+      maxTokens: 128_000,
+      thinkingLevel: 'investigate',
+    });
+
+    fullSynthesis = synthesisResult.text;
+    onSynthesisChunk(fullSynthesis);
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     const fallback = `\n\n[Synthesis error: ${errMsg}]`;

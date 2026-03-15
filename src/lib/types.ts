@@ -22,6 +22,9 @@ export type ModelId =
   | 'mistral-large-latest'
   | 'mistral-medium-latest'
   | 'mistral-small-latest'
+  // Magistral (Mistral reasoning)
+  | 'magistral-medium-latest'
+  | 'magistral-small-latest'
   // Ollama (local)
   | `ollama:${string}`
   | (string & {}); // allows additional model IDs without breaking type narrowing

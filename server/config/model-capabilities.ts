@@ -245,18 +245,96 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     provider: 'google',
   },
 
-  // ─── Mistral ───────────────────────────────────────────────────
+  // ─── Mistral (verified from docs.mistral.ai 2026-03-15) ────────
+
+  // Mistral Large 3 (Dec 2025) — 675B total / 41B active (MoE)
   'mistral-large-latest': {
-    maxContextWindow: 128_000,
-    maxOutputTokens: 4_096,
+    maxContextWindow: 256_000,
+    maxOutputTokens: 128_000,          // Match Opus tier — API accepts user-set maxTokens
     requires1MBetaHeader: false,
     supportsCompaction: false,
     supportsAdaptiveThinking: false,
     supportsExtendedThinking: false,
     pricing: {
-      inputPerMillion: 4,
-      outputPerMillion: 12,
-      cachedInputPerMillion: 4,
+      inputPerMillion: 0.50,
+      outputPerMillion: 1.50,
+      cachedInputPerMillion: 0.50,     // No cache discount (Mistral doesn't support caching)
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'mistral',
+  },
+
+  // Mistral Medium 3.1 (Aug 2025) — Premier frontier multimodal
+  'mistral-medium-latest': {
+    maxContextWindow: 128_000,
+    maxOutputTokens: 64_000,           // Match Sonnet tier
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 0.40,
+      outputPerMillion: 2.00,
+      cachedInputPerMillion: 0.40,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'mistral',
+  },
+
+  // Mistral Small 3.2 (Jun 2025) — Open lightweight generalist
+  'mistral-small-latest': {
+    maxContextWindow: 128_000,
+    maxOutputTokens: 8_192,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 0.10,
+      outputPerMillion: 0.30,
+      cachedInputPerMillion: 0.10,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'mistral',
+  },
+
+  // Magistral Medium 1.2 (Sep 2025) — Premier reasoning model
+  'magistral-medium-latest': {
+    maxContextWindow: 128_000,
+    maxOutputTokens: 64_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,   // Uses prompt_mode: "reasoning" instead
+    pricing: {
+      inputPerMillion: 2.00,
+      outputPerMillion: 5.00,
+      cachedInputPerMillion: 2.00,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'mistral',
+  },
+
+  // Magistral Small 1.2 (Sep 2025) — Open reasoning model
+  'magistral-small-latest': {
+    maxContextWindow: 128_000,
+    maxOutputTokens: 16_384,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 0.50,
+      outputPerMillion: 1.50,
+      cachedInputPerMillion: 0.50,
       premiumThreshold: null,
       premiumInputMultiplier: 1,
       premiumOutputMultiplier: 1,

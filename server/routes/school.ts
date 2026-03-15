@@ -43,6 +43,7 @@ import crypto from 'crypto';
 import type Database from 'better-sqlite3';
 import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
+import { streamChat, callChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
 import { buildSchoolPrompt, inferMathsModule, inferSubjectModule, type SchoolPromptConfig } from '../services/school-prompt-builder.js';
 import { safeError } from '../lib/error-response.js';
 import multer from 'multer';
@@ -2173,16 +2174,16 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     if (cached && cached.expiresAt > Date.now()) return res.json({ items: cached.items, personaId });
 
     try {
-      const { default: Anthropic } = await import('@anthropic-ai/sdk');
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
+      const result = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        system: 'You are a helpful assistant that generates current real-world events connected to school subjects. Return ONLY valid JSON.',
         messages: [{
           role: 'user',
           content: `Generate exactly 4 current real-world events/stories (sports, gaming, technology, science, culture, world events) that connect to the school subject "${subjectId}" (Swedish Lgr22, Year 7-9).\n\nReturn ONLY valid JSON, no markdown:\n{"items":[{"headline":"short headline max 12 words","category":"Sports|Gaming|Technology|Science|Culture|World","curriculumLink":"one sentence how this connects to ${subjectId}","discussionQuestion":"engaging open question max 20 words","chatPrompt":"I saw that [brief summary]. How does this connect to ${subjectId}?"}]}`,
         }],
+        maxTokens: 1024,
       });
-      const text = (response.content[0] as { type: string; text: string }).text ?? '';
+      const text = result.text ?? '';
       const match = text.match(/\{[\s\S]*\}/);
       const parsed = match ? JSON.parse(match[0]) : { items: [] };
       const items = Array.isArray(parsed.items) ? parsed.items : [];
@@ -2825,25 +2826,15 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
 
       const model = 'claude-sonnet-4-5-20250929';
 
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const anthropic = new Anthropic();
+      setSSEHeaders(res);
 
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-
-      const stream = await anthropic.messages.stream({
-        model,
-        max_tokens: 2048,
+      const result = await streamChat({
+        model: mapModelToProvider(model),
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
-      });
+        maxTokens: 2048,
+      }, res);
 
-      for await (const chunk of stream) {
-        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-          res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`);
-        }
-      }
       res.write('data: [DONE]\n\n');
       res.end();
     } catch (err) {
@@ -3284,16 +3275,11 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       if (!isApiKeyConfigured()) return res.status(503).json({ error: 'Anthropic client not available' });
       const { subject_id, topic, tier, learning_objectives } = req.body as { subject_id: string; topic: string; tier?: string; learning_objectives?: string[] };
 
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
+      setSSEHeaders(res);
 
-      const { default: Anthropic } = await import('@anthropic-ai/sdk');
-      const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-      const stream = await anthropicClient.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
-        stream: true,
+      const chatResult = await streamChat({
+        model: mapModelToProvider('claude-sonnet-4-6'),
+        system: 'You are a helpful lesson generator. Return ONLY valid JSON.',
         messages: [{
           role: 'user',
           content: `Generate a structured lesson on "${topic}" for ${subject_id} (tier: ${tier || 'T2'}).
@@ -3307,16 +3293,11 @@ Return a JSON lesson structure with content_blocks array. Each block has type an
 - type "key_concepts": {concepts: [{term: "...", definition: "..."}]}
 
 Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief description", "estimated_minutes": 30, "bloom_level": "understand|apply|analyze", "content_blocks": [...]}`
-        }]
-      });
+        }],
+        maxTokens: 2000,
+      }, res);
 
-      let fullText = '';
-      for await (const chunk of stream) {
-        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-          fullText += chunk.delta.text;
-          res.write(`data: ${JSON.stringify({ type: 'text_delta', content: chunk.delta.text })}\n\n`);
-        }
-      }
+      const fullText = chatResult.text;
 
       // Try to save the generated lesson
       try {

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import type Database from 'better-sqlite3';
+import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
 export function createBatchRoutes(anthropic?: Anthropic, db?: Database.Database) {
   const router = Router();
@@ -87,30 +88,23 @@ export function createBatchRoutes(anthropic?: Anthropic, db?: Database.Database)
       });
 
       try {
-        const response = await anthropic.messages.create({
-          model,
-          max_tokens: maxTokens,
+        const result = await callChat({
+          model: mapModelToProvider(model),
+          maxTokens,
           system: resolvedSysPrompt,
           messages: [{ role: 'user', content: message }],
         });
 
-        const outputText = response.content
-          .filter((b) => b.type === 'text')
-          .map((b) => (b as { type: 'text'; text: string }).text)
-          .join('');
-
-        const inputTokens = response.usage.input_tokens;
-        const outputTokens = response.usage.output_tokens;
-        totalInputTokens += inputTokens;
-        totalOutputTokens += outputTokens;
+        totalInputTokens += result.inputTokens;
+        totalOutputTokens += result.outputTokens;
         successCount++;
 
         send({
           type: 'result',
           rowIndex: i,
-          output: outputText,
-          inputTokens,
-          outputTokens,
+          output: result.text,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
         });
       } catch (err) {
         errorCount++;

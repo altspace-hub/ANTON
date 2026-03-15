@@ -923,6 +923,17 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           db,
         );
         recordSuccess();
+
+        // Save IRE output to session (was previously skipped — IRE work didn't appear in My Work)
+        if (onComplete && ireSummary.synthesisText) {
+          onComplete({
+            text: ireSummary.synthesisText,
+            thinking: '',
+            inputTokens: ireSummary.totalInputTokens || 0,
+            outputTokens: ireSummary.totalOutputTokens || 0,
+          });
+        }
+
         // Quality auto-scoring for IRE outputs (fire-and-forget)
         if (ireSummary.synthesisText && ireSummary.synthesisText.length > 200) {
           ratchet.scoreOutput({
@@ -978,6 +989,15 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         const temperature = getTemperature(selectedModel, precisionLevel);
         const maxTokens = modelConfig?.maxOutputTokens || 8192;
 
+        // Abort controller for non-Anthropic providers (timeout + client disconnect)
+        const adapterAbort = new AbortController();
+        req.on('close', () => adapterAbort.abort());
+        const adapterTimeouts: Record<string, number> = { quick: 90_000, think: 180_000, think_hard: 300_000, investigate: 420_000, plan_first: 420_000, deep_investigate: 600_000 };
+        const adapterTimeoutMs = adapterTimeouts[thinking as string] || 300_000;
+        const adapterTimeoutId = setTimeout(() => adapterAbort.abort(), adapterTimeoutMs);
+        res.on('close', () => clearTimeout(adapterTimeoutId));
+        res.on('finish', () => clearTimeout(adapterTimeoutId));
+
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
@@ -1027,7 +1047,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
               temperature,
               maxTokens,
               nativeReasoningEnabled: !!nativeReasoningEnabled,
+              thinkingLevel: thinking,
               seed: seed !== undefined ? seed : undefined,
+              signal: adapterAbort.signal,
             }, res);
           } else if (provider === 'ollama') {
             // Strip the 'ollama:' prefix to get the bare Ollama model name
@@ -1051,7 +1073,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           });
 
           if (onComplete) {
-            onComplete({ text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens, cacheReadTokens: 0, cacheCreationTokens: 0 });
+            onComplete({ text: result.text, thinking: (result as { thinking?: string }).thinking || '', inputTokens: result.inputTokens, outputTokens: result.outputTokens, cacheReadTokens: 0, cacheCreationTokens: 0 });
           }
         } catch (adapterError) {
           const errMsg = adapterError instanceof Error ? adapterError.message : 'Unknown adapter error';
@@ -1160,8 +1182,15 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         label: 'Claude Opus 4.6',
         description: 'Most capable. Best for complex analysis, large documents, nuanced reasoning.',
         recommended: true,
-        costPerMInputTokens: 15,
-        costPerMOutputTokens: 75,
+        costPerMInputTokens: 5,
+        costPerMOutputTokens: 25,
+      },
+      {
+        id: 'claude-sonnet-4-6',
+        label: 'Claude Sonnet 4.6',
+        description: 'Fast and highly capable. Excellent for drafting, coding, and structured analysis.',
+        costPerMInputTokens: 3,
+        costPerMOutputTokens: 15,
       },
       {
         id: 'claude-sonnet-4-5-20250929',
@@ -1174,8 +1203,22 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         id: 'claude-haiku-4-5-20251001',
         label: 'Claude Haiku 4.5',
         description: 'Fastest and most affordable. Best for simple questions and quick lookups.',
-        costPerMInputTokens: 1,
-        costPerMOutputTokens: 5,
+        costPerMInputTokens: 0.80,
+        costPerMOutputTokens: 4,
+      },
+      {
+        id: 'mistral-large-latest',
+        label: 'Mistral Large',
+        description: 'Mistral flagship. Strong multilingual and reasoning capabilities.',
+        costPerMInputTokens: 0.50,
+        costPerMOutputTokens: 1.50,
+      },
+      {
+        id: 'mistral-small-latest',
+        label: 'Mistral Small',
+        description: 'Lightweight Mistral model. Fast and cost-effective for simple tasks.',
+        costPerMInputTokens: 0.10,
+        costPerMOutputTokens: 0.30,
       },
     ]);
   });

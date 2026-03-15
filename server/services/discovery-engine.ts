@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import type Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
+import { callChat, mapModelToProvider } from './provider-router.js';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -1299,24 +1300,19 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
     const conversationText = phaseMessages.map(m => `${m.role}: ${m.content}`).join('\n\n');
 
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 1024,
         system: 'Summarize the following discovery conversation phase. Extract key findings as bullet points. Be concise but comprehensive. Return JSON: {"summary":"...","keyFindings":["..."]}',
         messages: [{ role: 'user', content: `Phase: ${phase}\nTier: ${state.tier}\n\nConversation:\n${conversationText}` }],
       });
 
-      const text = response.content
-        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-        .map(b => b.text)
-        .join('');
-
-      const parsed = JSON.parse(text) as { summary: string; keyFindings: string[] };
+      const parsed = JSON.parse(chatResult.text) as { summary: string; keyFindings: string[] };
       return {
         phase,
         summary: parsed.summary,
         keyFindings: parsed.keyFindings || [],
-        tokenCount: response.usage?.input_tokens || 0,
+        tokenCount: chatResult.inputTokens || 0,
         createdAt: new Date().toISOString(),
       };
     } catch (e) {
@@ -1380,17 +1376,14 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
       }));
     }
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 2048,
+    const chatResult = await callChat({
+      model: mapModelToProvider('claude-sonnet-4-5-20250929'),
+      maxTokens: 2048,
       system: systemPrompt,
       messages,
     });
 
-    const assistantText = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map(b => b.text)
-      .join('');
+    const assistantText = chatResult.text;
 
     // Parse state updates and phase transitions from response
     const phaseCompleteMatch = assistantText.match(/\[PHASE_COMPLETE:(\w+)\]/);
@@ -1413,7 +1406,7 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
 
     // Add assistant response to history
     updatedState.conversationHistory.push({ role: 'assistant', content: cleanResponse });
-    updatedState.totalTokensUsed += (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
+    updatedState.totalTokensUsed += (chatResult.inputTokens || 0) + (chatResult.outputTokens || 0);
 
     // Save
     updateSessionState(sessionId, updatedState);
@@ -1433,19 +1426,14 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
     if (!anthropic) return { topPainTheme: null, earlyModuleMatches: [], estimatedOpportunity: null, quickWinSpotted: null, phaseInsight: null };
 
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+      const chatResult = await callChat({
+        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        maxTokens: 1024,
         system: 'You are an analytical assistant. Return only valid JSON, no markdown.',
         messages: [{ role: 'user', content: getInsightPrompt(session.state) }],
       });
 
-      const text = response.content
-        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-        .map(b => b.text)
-        .join('');
-
-      return JSON.parse(text) as Record<string, unknown>;
+      return JSON.parse(chatResult.text) as Record<string, unknown>;
     } catch (e) {
       console.error('[discovery] Insight generation failed:', e);
       return { topPainTheme: null, earlyModuleMatches: [], estimatedOpportunity: null, quickWinSpotted: null, phaseInsight: null };
@@ -1461,17 +1449,14 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
 
     const outputPrompt = getOutputGenerationPrompt(session.state);
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 8192,
+    const chatResult = await callChat({
+      model: mapModelToProvider('claude-sonnet-4-5-20250929'),
+      maxTokens: 8192,
       system: 'You are ANTON, an expert AI advisor generating a professional discovery report. Be specific, actionable, and honest.',
       messages: [{ role: 'user', content: outputPrompt }],
     });
 
-    const fullText = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map(b => b.text)
-      .join('');
+    const fullText = chatResult.text;
 
     // Parse structured output
     const outputMatch = fullText.match(/\[DISCOVERY_OUTPUT\]:(.+)$/ms);

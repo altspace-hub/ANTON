@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import Anthropic from '@anthropic-ai/sdk';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
+import { streamChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
 import { REVIEW_MODES } from '../services/review-engine.js';
 import { createReviewOrchestrator, type ReviewContext } from '../services/review-orchestrator.js';
 
@@ -16,8 +17,8 @@ export function createReviewRoutes(db: Database.Database, anthropic?: Anthropic)
 
   // POST /api/reviews — run a review on content, streaming SSE
   router.post('/reviews', async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(500).json({ error: 'API key not configured.' });
+    if (!isApiKeyConfigured() && !process.env.MISTRAL_API_KEY && !process.env.OPENAI_API_KEY && !process.env.GOOGLE_API_KEY) {
+      res.status(500).json({ error: 'No AI provider API key configured.' });
       return;
     }
 
@@ -40,31 +41,37 @@ export function createReviewRoutes(db: Database.Database, anthropic?: Anthropic)
     }
 
     try {
-      await streamToResponse(
-        {
-          model: ((model as string) || 'claude-opus-4-6') as 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
-          thinking: 'investigate',
-          system: mode.systemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: `Please review the following document:\n\n---\n\n${content}`,
-            },
-          ],
-        },
-        res,
-        sessionId
-          ? (data) => {
-              try {
-                db.prepare(
-                  `INSERT INTO reviews (id, session_id, review_mode, content, created_at) VALUES (?, ?, ?, ?, ?)`
-                ).run(crypto.randomUUID(), sessionId, modeId, data.text, new Date().toISOString());
-              } catch {
-                // Non-fatal
-              }
-            }
-          : undefined
-      );
+      const resolvedModel = mapModelToProvider((model as string) || 'claude-opus-4-6');
+
+      setSSEHeaders(res);
+
+      const result = await streamChat({
+        model: resolvedModel,
+        system: mode.systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: `Please review the following document:\n\n---\n\n${content}`,
+          },
+        ],
+        maxTokens: 16000,
+        thinkingLevel: 'investigate',
+      }, res);
+
+      // Send completion event
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+
+      // Save review to database
+      if (sessionId) {
+        try {
+          db.prepare(
+            `INSERT INTO reviews (id, session_id, review_mode, content, created_at) VALUES (?, ?, ?, ?, ?)`
+          ).run(crypto.randomUUID(), sessionId, modeId, result.text, new Date().toISOString());
+        } catch {
+          // Non-fatal
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Review failed';
       if (!res.headersSent) res.status(500).json({ error: message });
