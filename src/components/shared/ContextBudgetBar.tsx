@@ -14,10 +14,10 @@ function est(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
 }
 
-// Context windows per model
+// Context windows per model (GA as of 2026-03-13: Opus 4.6 + Sonnet 4.6 = 1M)
 const CONTEXT_WINDOWS: Record<string, number> = {
-  'claude-opus-4-6': 200_000,
-  'claude-sonnet-4-6': 200_000,
+  'claude-opus-4-6': 1_000_000,
+  'claude-sonnet-4-6': 1_000_000,
   'claude-sonnet-4-5-20250929': 200_000,
   'claude-haiku-4-5-20251001': 200_000,
   'gpt-4o': 128_000,
@@ -123,6 +123,12 @@ export default function ContextBudgetBar({ systemPrompt, userInput, history, mod
         <div className="flex items-center gap-1 text-xs text-adv-gray">
           <Info className="h-2.5 w-2.5 shrink-0" />
           {Math.round(breakdown.pct)}% of {fmt(breakdown.maxCtx)} token window used
+        </div>
+      )}
+      {model === 'claude-haiku-4-5-20251001' && breakdown.pct > 60 && breakdown.level !== 'critical' && (
+        <div className="flex items-center gap-1.5 text-[11px] text-adv-blue">
+          <Info className="h-3 w-3 shrink-0" />
+          Haiku has a 200k context window. Switch to Opus or Sonnet 4.6 for 1M context and automatic compaction.
         </div>
       )}
     </div>

@@ -221,6 +221,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isLifeMode = ['/life', '/news', '/finance', '/travel', '/community'].some(r => pathname.startsWith(r));
+  const isPathfinderMode = pathname.startsWith('/pathfinder');
   const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
   // RESP-01: force icon-only at md breakpoint (768-1024px) regardless of user toggle
   const [isForcedMini, setIsForcedMini] = useState(() => window.innerWidth >= 768 && window.innerWidth < 1024);
@@ -382,6 +383,51 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-auto px-2 py-4">
+        {/* ── Pathfinder sidebar ───────────────────────────────────────── */}
+        {isPathfinderMode && (
+          <>
+            {!sidebarCollapsed ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Pathfinder</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            <NavLink
+              to="/pathfinder"
+              end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Search' : undefined}
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Search'}
+            </NavLink>
+
+            <NavLink
+              to="/pathfinder/history"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'History' : undefined}
+            >
+              <Clock className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'History'}
+            </NavLink>
+          </>
+        )}
+
         {/* ── Life Platform sidebar ─────────────────────────────────────── */}
         {isLifeMode && (
           <>
@@ -541,7 +587,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         )}
 
         {/* ── Work sidebar (hidden while on Life Platform routes) ─────── */}
-        {!isLifeMode && (<>
+        {!isLifeMode && !isPathfinderMode && (<>
         {/* Favorites section — only show if there are favorited items and sidebar is expanded */}
         {!sidebarCollapsed && favoriteNavItems.size > 0 && (
           <>
@@ -614,6 +660,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'governance': { to: '/governance', icon: Shield, label: t('nav.governance') },
                 'compare': { to: '/compare', icon: GitCompare, label: t('nav.compare') },
                 'marketplace': { to: '/marketplace', icon: Rocket, label: t('nav.marketplace') },
+                'pathfinder': { to: '/pathfinder', icon: Compass, label: 'Pathfinder' },
+                'pathfinder-history': { to: '/pathfinder/history', icon: Search, label: 'Search History' },
                 'task-agent': { to: '/task-agent', icon: Bot, label: 'ANTON Task Agent' },
                 'orchestrator': { to: '/orchestrator', icon: Brain, label: 'ANTON Orchestrator' },
                 'counsels-desk': { to: '/counsels-desk', icon: Scale, label: "Counsel's Desk" },
@@ -803,6 +851,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <TrendingUp className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.peVc', 'PE/VC')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/pathfinder"
+          navId="pathfinder"
+          title={sidebarCollapsed ? 'Pathfinder' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('pathfinder')}
+          isHidden={hiddenNavItems.has('pathfinder')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Compass className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Pathfinder'}
         </NavLinkWithStar>
 
         <NavLinkWithStar

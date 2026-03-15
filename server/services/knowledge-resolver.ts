@@ -27,8 +27,10 @@ const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '
 const MAX_FILES_PER_FOLDER = 1_000;
 const MAX_FILES_TOTAL = 5_000;
 
-// Token budget: leave room for the system prompt + response
-const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 160_000;
+// Token budget: leave room for the system prompt + response.
+// Default 900k for Opus/Sonnet 4.6 (1M context - 100k reserved for output + system prompt).
+// Callers can override via options.contextBudget (e.g. for Haiku at 200k).
+const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 900_000;
 const ESTIMATED_SYSTEM_PROMPT_TOKENS = 8_000;
 const AVAILABLE_CONTEXT_TOKENS = MAX_CONTEXT_TOKENS - ESTIMATED_SYSTEM_PROMPT_TOKENS;
 

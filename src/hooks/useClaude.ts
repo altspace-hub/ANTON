@@ -2,6 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useStreamStore } from '@/stores/useStreamStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { streamMessage, createSession, updateSessionTitle } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
 import type { Message, ModelId, StreamEvent } from '@/lib/types';
@@ -106,6 +107,7 @@ export function useClaude() {
 
   const { ireChainId, ireCurrentPhase, ireTotalPhases, ireCurrentPhaseName } = useStreamStore();
 
+  const compactionEnabled = useSettingsStore((s) => s.compactionEnabled);
   const { isTeamMode, user } = useAuthStore();
   const [budgetWarning, setBudgetWarning] = useState<string | null>(null);
 
@@ -140,7 +142,7 @@ export function useClaude() {
   }, [isTeamMode, user, messages.length]);
 
   const runMessage = useCallback(
-    async (userMessage: string) => {
+    async (userMessage: string, thinkingOverride?: 'think_hard' | 'investigate' | 'plan_first') => {
       if (!userMessage.trim() || isStreaming) return;
 
       // Budget pre-check (frontend warning only - backend enforces hard limit)
@@ -207,7 +209,7 @@ export function useClaude() {
         const stream = streamMessage(
           {
             model,
-            thinking,
+            thinking: thinkingOverride ?? thinking,
             creativity,
             precision,
             moduleId: moduleId || undefined,
@@ -242,6 +244,7 @@ export function useClaude() {
             outputLanguage: outputLanguage || undefined,
             seed: seed !== undefined ? seed : undefined,
             sessionId: activeSessionId || undefined,
+            compactionEnabled,
           },
           controller.signal
         );

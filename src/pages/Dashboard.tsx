@@ -37,6 +37,7 @@ import { MODULES, MODELS, AREAS } from '@/lib/constants';
 import MorningBrief from '@/features/time-intelligence/MorningBrief';
 import TeamWorkloadView from '@/features/workflows/TeamWorkloadView';
 import RadarWidget from '@/features/radar/RadarWidget';
+import PathfinderBar from '@/components/pathfinder/PathfinderBar';
 import SmartModuleSearch from '@/components/shared/SmartModuleSearch';
 import { STARTER_PACKS } from '@/lib/starter-packs';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -758,6 +759,9 @@ export default function Dashboard() {
       <div className="mb-8">
         <RadarWidget />
       </div>
+
+      {/* Pathfinder — Homepage Search Bar */}
+      <PathfinderBar />
 
       {/* My Workflow Tasks */}
       <details className="mb-8 rounded-xl border border-border bg-adv-card">

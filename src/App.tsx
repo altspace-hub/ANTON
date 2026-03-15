@@ -107,6 +107,10 @@ const GapAssessmentWizard = lazy(() => import('./pages/GapAssessmentWizard'));
 const AntonTaskAgentPage = lazy(() => import('./pages/AntonTaskAgentPage'));
 const SystemCardsPage = lazy(() => import('./pages/SystemCardsPage'));
 
+// Pathfinder — AI-Powered Multi-Model Search
+const PathfinderPage = lazy(() => import('./pages/PathfinderPage'));
+const PathfinderHistoryPage = lazy(() => import('./pages/PathfinderHistoryPage'));
+
 // Data Partnerships — Roaring + Dow Jones
 const RoaringSearchPage = lazy(() => import('./pages/RoaringSearchPage'));
 const DJScreeningPage = lazy(() => import('./pages/DJScreeningPage'));
@@ -420,6 +424,9 @@ export default function App() {
           <Route path="/demo/data-partnerships" element={<PartnershipDemo />} />
           <Route path="/regulatory-feed" element={<RegulatoryFeedPage />} />
           <Route path="/lore-ledger" element={<LoreLedgerPage />} />
+          {/* Pathfinder — AI-Powered Multi-Model Search */}
+          <Route path="/pathfinder" element={<PathfinderPage />} />
+          <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/org-context" element={<Navigate to="/settings?tab=org-context" replace />} />
         </Route>

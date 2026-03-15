@@ -29,6 +29,7 @@ import { ClaudeMessageSchema } from '../lib/schemas.js';
 import { acquireStream, releaseStream } from '../services/stream-limiter.js';
 import { isCircuitOpen, recordSuccess, recordFailure } from '../services/circuit-breaker.js';
 import { enqueueAudit } from '../services/audit-queue.js';
+import { buildCompactionConfig, buildContextManagementParam } from '../services/compaction-manager.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -88,6 +89,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         iterativeReasoningEnabled,
         atomInjectionEnabled,
         atomCollectionEnabled,
+        compactionEnabled,
       } = req.body;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
@@ -292,10 +294,11 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           return ok;
         });
 
-      // When the 1M context beta is enabled, give the knowledge resolver an 800k budget
-      // so large document sets aren't truncated. The beta header is added to the actual
-      // API call later (after we know the final token estimate).
-      const longContextBetaEnabled = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
+      // 1M context: Opus 4.6 and Sonnet 4.6 have 1M at GA pricing (no beta header needed).
+      // For these models, always use the full 800k knowledge budget.
+      // For Sonnet 4.5 with beta, or when ANTHROPIC_LONG_CONTEXT_BETA is set, also enable.
+      const is1MModel = model === 'claude-opus-4-6' || model === 'claude-sonnet-4-6';
+      const longContextBetaEnabled = is1MModel || process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
       const knowledgeBudget = longContextBetaEnabled ? 800_000 : undefined;
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
@@ -558,7 +561,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       // Use the split composer for Anthropic models (supports caching); plain for others.
       const isCachingModel =
         provider === 'anthropic' &&
-        (selectedModel === 'claude-opus-4-6' || selectedModel === 'claude-sonnet-4-5-20250929');
+        (selectedModel === 'claude-opus-4-6' || selectedModel === 'claude-sonnet-4-6' || selectedModel === 'claude-sonnet-4-5-20250929');
 
       let composedPrompt: string;
       let staticSystemPrompt: string | undefined;
@@ -830,7 +833,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       }
 
       // TOKEN-02: pre-flight token validation — reject before calling Claude API
-      const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 180_000;
+      // Dynamic limit: Opus/Sonnet 4.6 = 900k (1M - 100k output reserve), Haiku = 180k, others = 128k
+      const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 900_000;
       if (resolved.tokenEstimate > MAX_CONTEXT_TOKENS) {
         res.status(400).json({
           error: `Context too large: estimated ${resolved.tokenEstimate.toLocaleString()} tokens exceeds the ${MAX_CONTEXT_TOKENS.toLocaleString()} token limit. ` +
@@ -869,11 +873,11 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         // Use existing Anthropic streaming.
         // staticSystemPrompt is populated only for caching-capable models (Opus/Sonnet);
         // for Haiku it is undefined and claude-client will send a plain single block.
-        // Enable 1M token context beta when context is large and env flag is set.
-      // The header is safe to include only when ANTHROPIC_LONG_CONTEXT_BETA=true
-      // because it requires beta API access and incurs long-context pricing.
-      const longContextBeta = process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
-      const useLongContext = longContextBeta && resolved.tokenEstimate > 200_000;
+        // 1M context: Opus 4.6 / Sonnet 4.6 = GA (no beta header needed at all).
+      // Sonnet 4.5 needs beta header only when context > 200k.
+      // The useLongContext flag tells claude-client to add the beta header for Sonnet 4.5.
+      const needsBetaForLongContext = !is1MModel && process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true';
+      const useLongContext = needsBetaForLongContext && resolved.tokenEstimate > 200_000;
 
       // Abort the Anthropic stream if the client disconnects to free API quota and server memory
       const abortController = new AbortController();
@@ -932,6 +936,15 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         return;
       }
 
+      // Build compaction config for supported models (Opus 4.6 / Sonnet 4.6)
+      // Respect the user's preference from Settings — compactionEnabled defaults to true
+      const compactionConfig = compactionEnabled !== false
+        ? buildCompactionConfig(selectedModel, 'interactive')
+        : null;
+      const compactionParam = compactionConfig?.enabled
+        ? { enabled: true, triggerThreshold: compactionConfig.triggerThreshold, pauseAfterCompaction: compactionConfig.pauseAfterCompaction }
+        : undefined;
+
       await streamToResponse(
           {
             model: selectedModel as 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
@@ -944,6 +957,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             useLongContext,
             signal: abortController.signal,
             sourceManifest: resolved.sourceManifest,  // ATTR-05
+            compaction: compactionParam,
           },
           res,
           onComplete

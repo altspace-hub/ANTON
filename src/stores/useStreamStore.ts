@@ -38,6 +38,10 @@ interface StreamState {
   ireTotalPhases: number;
   ireCurrentPhaseName: string;
 
+  // Compaction state
+  compactionOccurred: boolean;
+  compactionMessage: string;
+
   // Actions
   startStreaming: () => AbortController;
   stopStreaming: () => void;
@@ -71,6 +75,9 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   ireTotalPhases: 0,
   ireCurrentPhaseName: '',
 
+  compactionOccurred: false,
+  compactionMessage: '',
+
   startStreaming: () => {
     const controller = new AbortController();
     _textBuf = '';
@@ -85,6 +92,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       ireCurrentPhase: 0,
       ireTotalPhases: 0,
       ireCurrentPhaseName: '',
+      compactionOccurred: false,
+      compactionMessage: '',
       // Reset accumulated tokens at start of each stream
       lastInputTokens: 0,
       lastOutputTokens: 0,
@@ -162,6 +171,10 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         break;
       case 'phase_end':
         // No state change needed — phase_start of next phase will update
+        break;
+
+      case 'compaction':
+        set({ compactionOccurred: true, compactionMessage: event.message });
         break;
 
       case 'error':

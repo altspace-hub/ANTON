@@ -46,6 +46,13 @@ interface StreamConfig {
   signal?: AbortSignal;
   /** ATTR-05: Source manifest — injected into stream_end so the client can show "Sources used". */
   sourceManifest?: string[];
+  /** Context compaction: when enabled, adds compact-2026-01-12 beta header and
+   *  context_management parameter. Only works with Opus 4.6 and Sonnet 4.6. */
+  compaction?: {
+    enabled: boolean;
+    triggerThreshold: number;
+    pauseAfterCompaction: boolean;
+  };
 }
 
 export interface StreamCompletionData {
@@ -123,10 +130,10 @@ function getOutputCeiling(model: string): number {
 }
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
-  // Opus 4.6: use adaptive thinking with effort levels (no budget_tokens cap).
-  // Sonnet/Haiku: use enabled + budget_tokens.
-  if (model === 'claude-opus-4-6') {
-    const effortMap: Record<ThinkingLevel, string | null> = {
+  // Opus 4.6 + Sonnet 4.6: adaptive thinking with effort levels (no budget_tokens).
+  // budget_tokens is DEPRECATED on Opus 4.6 and unnecessary on Sonnet 4.6 when using adaptive.
+  if (model === 'claude-opus-4-6' || model === 'claude-sonnet-4-6') {
+    const effortMap: Record<ThinkingLevel, string> = {
       quick: 'low',
       think: 'medium',
       think_hard: 'high',
@@ -135,14 +142,13 @@ function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
       deep_investigate: 'max',
     };
     const effort = effortMap[level];
-    if (effort === null) return {};
     return {
       thinking: { type: 'adaptive' as const },
       output_config: { effort: effort as 'low' | 'medium' | 'high' | 'max' },
     };
   }
 
-  // Sonnet / Haiku: budget_tokens approach
+  // Sonnet 4.5 / Haiku: budget_tokens approach
   const budgetMap: Record<ThinkingLevel, number | null> = {
     quick: null,
     think: 4096,
@@ -153,7 +159,11 @@ function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
   };
   const budget = budgetMap[level];
   if (budget === null) return {};
-  return { thinking: { type: 'enabled' as const, budget_tokens: budget } };
+  // Safety: budget_tokens must be < max_tokens.  Cap to leave 4096 headroom for text output.
+  const ceiling = getOutputCeiling(model);
+  const cappedBudget = Math.min(budget, ceiling - 4096);
+  if (cappedBudget < 1024) return {}; // Not enough room for meaningful thinking
+  return { thinking: { type: 'enabled' as const, budget_tokens: cappedBudget } };
 }
 
 function getMaxTokens(model: ModelId, thinkingLevel: ThinkingLevel): number {
@@ -189,7 +199,7 @@ export async function streamToResponse(
 ): Promise<void> {
   const anthropic = getClient();
   const thinkingConfig = config.nativeReasoningEnabled
-    ? (config.model === 'claude-opus-4-6'
+    ? ((config.model === 'claude-opus-4-6' || config.model === 'claude-sonnet-4-6')
         ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
         : { thinking: { type: 'enabled' as const, budget_tokens: 32768 } })
     : getThinkingConfig(config.thinking, config.model);
@@ -297,17 +307,33 @@ export async function streamToResponse(
     // Build per-request options (beta headers + abort signal).
     const requestOptions: Record<string, unknown> = {};
 
-    // Collect beta headers — extended thinking requires interleaved-thinking-2025-05-14;
-    // the 1M-context beta is added when the caller requests long-context mode.
+    // Collect beta headers.
+    // Opus 4.6 + Sonnet 4.6: interleaved-thinking is DEPRECATED (ignored if sent).
+    //   Adaptive thinking automatically enables interleaved thinking.
+    // Sonnet 4.5 / Haiku: still need the interleaved-thinking beta header.
+    // The 1M-context beta is only needed for Sonnet 4.5 above 200k tokens.
     const betaHeaders: string[] = [];
-    // thinking is enabled if getThinkingConfig returned a non-empty object (budget_tokens set)
     const isThinkingEnabled = Object.keys(thinkingConfig).length > 0;
-    if (isThinkingEnabled) {
+    const is46Model = config.model === 'claude-opus-4-6' || config.model === 'claude-sonnet-4-6';
+    if (isThinkingEnabled && !is46Model) {
       betaHeaders.push('interleaved-thinking-2025-05-14');
     }
     if (config.useLongContext) {
       betaHeaders.push('context-1m-2025-08-07');
     }
+
+    // Context compaction beta header + context_management param
+    if (config.compaction?.enabled && is46Model) {
+      betaHeaders.push('compact-2026-01-12');
+      requestParams.context_management = {
+        edits: [{
+          type: 'compact_20260112',
+          trigger: { type: 'input_tokens', value: config.compaction.triggerThreshold },
+          pause_after_compaction: config.compaction.pauseAfterCompaction,
+        }],
+      };
+    }
+
     if (betaHeaders.length > 0) {
       requestOptions.headers = { 'anthropic-beta': betaHeaders.join(',') };
     }
@@ -389,17 +415,38 @@ export async function streamToResponse(
               cacheReadTokens: usage.cache_read_input_tokens || 0,
             });
           }
+          // Detect compaction: stop_reason='compaction' means context was auto-summarised
+          if (evt.delta?.stop_reason === 'compaction') {
+            sendEvent({
+              type: 'compaction',
+              message: 'Context compacted — earlier context summarised to stay within window.',
+            });
+          }
           break;
         }
       }
     }
 
-    // Final usage from the stream
+    // Final usage from the stream — handle compaction iterations
     const finalMessage = await stream.finalMessage();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const finalUsage = finalMessage.usage as any;
-    const finalInputTokens: number = finalUsage.input_tokens || 0;
-    const finalOutputTokens: number = finalUsage.output_tokens || 0;
+
+    // When compaction is active, usage.iterations[] contains per-iteration token counts
+    // (the actual billed amounts across compaction boundaries).
+    let finalInputTokens: number;
+    let finalOutputTokens: number;
+    if (finalUsage.iterations && Array.isArray(finalUsage.iterations) && finalUsage.iterations.length > 0) {
+      finalInputTokens = 0;
+      finalOutputTokens = 0;
+      for (const iter of finalUsage.iterations) {
+        finalInputTokens += (iter.input_tokens as number) || 0;
+        finalOutputTokens += (iter.output_tokens as number) || 0;
+      }
+    } else {
+      finalInputTokens = finalUsage.input_tokens || 0;
+      finalOutputTokens = finalUsage.output_tokens || 0;
+    }
 
     sendEvent({
       type: 'usage',

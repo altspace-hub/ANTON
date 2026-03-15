@@ -539,8 +539,7 @@ export default function PromptPage() {
             <div>
               <p className="text-sm font-medium text-adv-off-white">Ask anything</p>
               <p className="mt-1 max-w-md text-xs text-adv-gray">
-                Regulatory questions, document analysis, risk assessments, compliance advice,
-                sanctions screening logic, or any FCP topic. Upload documents for context.
+                Questions, document analysis, assessments, advice, sanctions logic, or any other topic. Upload documents for context.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
@@ -603,7 +602,8 @@ export default function PromptPage() {
             knowledgeSourcesRaw={knowledgeSources as unknown as Record<string, unknown>}
             onApplyReview={(reviewText) => {
               runMessage(
-                `Based on the following review feedback, please rewrite and improve your previous output. Address each point raised:\n\n${reviewText}`
+                `Based on the following review feedback, please rewrite and improve your previous output. Address each point raised:\n\n${reviewText}`,
+                'investigate'
               );
             }}
             onUpgradeThinking={(level) => setThinking(level)}

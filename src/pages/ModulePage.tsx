@@ -1281,7 +1281,8 @@ export default function ModulePage() {
             knowledgeSourcesRaw={knowledgeSources as unknown as Record<string, unknown>}
             onApplyReview={(reviewText) => {
               runMessage(
-                `Based on the following review feedback, please rewrite and improve your previous output. Apply all the suggestions and corrections noted in the review while maintaining the same output format and structure.\n\n--- REVIEW FEEDBACK ---\n${reviewText}`
+                `Based on the following review feedback, please rewrite and improve your previous output. Apply all the suggestions and corrections noted in the review while maintaining the same output format and structure.\n\n--- REVIEW FEEDBACK ---\n${reviewText}`,
+                'investigate'
               );
             }}
             onUpgradeThinking={(level) => setThinking(level)}

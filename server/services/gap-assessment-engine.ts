@@ -22,16 +22,15 @@ function getModelConfig(tier: GapModelTier) {
       model: 'claude-opus-4-6' as const,
       thinkingConfig: { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } },
       maxTokensBatch: 16000,      // adaptive thinking has no budget_tokens constraint
-      maxTokensSynthesis: 32000,
+      maxTokensSynthesis: 128_000, // Opus 4.6 max output ceiling
     };
   }
-  // Sonnet: deep budget_tokens thinking
-  // max_tokens must be > budget_tokens — use generous ceilings
+  // Sonnet 4.6: adaptive thinking with effort levels (no budget_tokens needed)
   return {
     model: 'claude-sonnet-4-6' as const,
-    thinkingConfig: { thinking: { type: 'enabled' as const, budget_tokens: 32768 } },
-    maxTokensBatch: 40000,       // budget 32768 + 7232 output headroom
-    maxTokensSynthesis: 60000,   // budget 32768 + 27232 output headroom (Sonnet ceiling: 64K)
+    thinkingConfig: { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } },
+    maxTokensBatch: 40000,
+    maxTokensSynthesis: 64000,   // Sonnet 4.6 max output ceiling
   };
 }
 

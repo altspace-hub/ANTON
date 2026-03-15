@@ -1,4 +1,4 @@
-# MISTRAL.md — ANTON by openEXPERT v0.6.5
+# MISTRAL.md — ANTON by openEXPERT v0.7.0
 
 Context for Mistral Codestral, Le Chat, and any Mistral-powered coding assistant.
 

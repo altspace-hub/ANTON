@@ -617,11 +617,10 @@ Current date: ${new Date().toISOString().substring(0, 10)}`;
 
   // Always use deep thinking for orchestrator briefings — higher quality, better reasoning
   const isOpus = model === 'claude-opus-4-6';
-  const thinkingConfig = isOpus
+  const is46Model = isOpus || model === 'claude-sonnet-4-6';
+  const thinkingConfig = is46Model
     ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
-    : (model === 'claude-sonnet-4-6')
-      ? { thinking: { type: 'enabled' as const, budget_tokens: 32768 } }
-      : {};
+    : {};
   const maxTokens = isOpus ? 16000 : (model === 'claude-sonnet-4-6') ? 48000 : 4000;
 
   let raw = '';
@@ -1041,11 +1040,10 @@ Produce a concrete, executable workflow plan using ANTON's existing step types.`
 
   // Always use deep thinking for workflow plans — critical for execution quality
   const isOpusPlan = model === 'claude-opus-4-6';
-  const planThinkingConfig = isOpusPlan
+  const is46Plan = isOpusPlan || model === 'claude-sonnet-4-6';
+  const planThinkingConfig = is46Plan
     ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
-    : (model === 'claude-sonnet-4-6')
-      ? { thinking: { type: 'enabled' as const, budget_tokens: 32768 } }
-      : {};
+    : {};
   const planMaxTokens = isOpusPlan ? 16000 : 48000;
 
   try {

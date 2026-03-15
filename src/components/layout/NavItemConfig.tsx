@@ -43,6 +43,10 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'community-mail', label: 'Community Mail', category: 'tools' },
   { id: 'community-calendar', label: 'Community Calendar', category: 'tools' },
 
+  // Pathfinder
+  { id: 'pathfinder', label: 'Pathfinder Search', category: 'intelligence' },
+  { id: 'pathfinder-history', label: 'Search History', category: 'intelligence' },
+
   // Tools
   { id: 'task-agent', label: 'ANTON Task Agent', category: 'intelligence' },
   { id: 'orchestrator', label: 'ANTON Orchestrator', category: 'intelligence' },
@@ -110,7 +114,7 @@ const ROLE_PRESETS: Record<string, { label: string; description: string; show: s
       'deadlines', 'radar', 'innovation-radar',
       'knowledge-base', 'knowledge', 'graph', 'intelligence', 'patterns',
       'compliance', 'governance', 'analytics', 'audit', 'versions', 'quality',
-      'task-agent', 'orchestrator',
+      'task-agent', 'orchestrator', 'pathfinder', 'pathfinder-history',
     ],
   },
   'lawyer-gc': {
@@ -123,6 +127,7 @@ const ROLE_PRESETS: Record<string, { label: string; description: string; show: s
       'deadlines', 'radar',
       'knowledge-base', 'knowledge', 'graph',
       'compliance', 'governance', 'audit',
+      'pathfinder', 'pathfinder-history',
     ],
   },
   'compliance-officer': {
@@ -135,7 +140,7 @@ const ROLE_PRESETS: Record<string, { label: string; description: string; show: s
       'deadlines', 'radar', 'innovation-radar',
       'knowledge-base', 'knowledge', 'graph', 'intelligence', 'patterns',
       'compliance', 'governance', 'analytics', 'audit', 'insights', 'versions', 'quality',
-      'task-agent',
+      'task-agent', 'pathfinder', 'pathfinder-history',
     ],
   },
 };

@@ -108,6 +108,7 @@ import { createRoaringRoutes } from './routes/roaring.js';
 import { createDowJonesRoutes } from './routes/dowjones.js';
 import { createRegulatoryFeedRoutes } from './routes/regulatory-feed.js';
 import { createLoreLedgerRoutes } from './routes/lore-ledger.js';
+import { createPathfinderRoutes } from './routes/pathfinder.js';
 import { createOrchestratorRoutes } from './routes/orchestrator.js';
 import { initOrchestratorHeartbeat } from './services/orchestrator-heartbeat.js';
 import { createContinuityRoutes } from './routes/continuity.js';
@@ -442,6 +443,7 @@ app.use('/api', createRoaringRoutes(db));                   // Roaring — Nordi
 app.use('/api', createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
 app.use('/api', createRegulatoryFeedRoutes(db, anthropic)); // Regulatory Feed — subscribe + AI digest (LONE-07/18)
 app.use('/api', createLoreLedgerRoutes(db, anthropic));    // Lore Ledger — world-building + consistency checker (LONE-09)
+app.use('/api', createPathfinderRoutes(db, anthropic));     // Pathfinder — AI-powered multi-model search
 app.use('/api', createOrchestratorRoutes(db, anthropic));   // ANTON Orchestrator — AI management layer
 app.use('/api', createHumanOversightRoutes(db));            // EUAI-02: Human oversight sign-off for high-risk FCP modules
 app.use('/api', createPostMarketMonitoringRoutes(db));      // EUAI-04: Post-market monitoring log (quality, reversals, complaints)

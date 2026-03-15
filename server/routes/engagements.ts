@@ -913,7 +913,9 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const requestOptions: any = {};
-      if (process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true') {
+      // Opus 4.6 has 1M context at GA — no beta header needed.
+      // Only add 1M beta header for Sonnet 4.5 if explicitly enabled.
+      if (!isQuick && execModel !== 'claude-opus-4-6' && process.env.ANTHROPIC_LONG_CONTEXT_BETA === 'true') {
         requestOptions.headers = { 'anthropic-beta': 'context-1m-2025-08-07' };
       }
 
@@ -922,7 +924,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const stream = anthropic.messages.stream({
         model: execModel,
-        max_tokens: 32000,
+        max_tokens: isQuick ? 32_000 : 128_000, // Haiku: 32k, Opus: 128k ceiling
         system: systemPrompt + planFirstInstr,
         messages: [{ role: 'user', content: `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}` }],
         ...thinkingParam,

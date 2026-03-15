@@ -3,7 +3,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Message } from '@/lib/types';
-import { User, Bot, Brain, Pencil, BookOpen } from 'lucide-react';
+import { User, Bot, Brain, Pencil, BookOpen, Layers } from 'lucide-react';
+import { useStreamStore } from '@/stores/useStreamStore';
 import QualityIndicatorBar from '@/components/shared/QualityIndicatorBar';
 import MessageWithThinking from '@/components/shared/MessageWithThinking';
 
@@ -103,6 +104,21 @@ function StreamingContent({ text }: { text: string }) {
   return (
     <div className="prose-output max-w-none text-adv-off-white">
       <ReactMarkdown remarkPlugins={remarkPlugins}>{text}</ReactMarkdown>
+    </div>
+  );
+}
+
+// ── Compaction indicator — shown when context was auto-compacted ──
+
+function CompactionIndicator() {
+  const compactionOccurred = useStreamStore((s) => s.compactionOccurred);
+  if (!compactionOccurred) return null;
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-adv-blue/30 bg-adv-blue/5 px-3 py-1.5">
+      <Layers className="h-3.5 w-3.5 shrink-0 text-adv-blue" />
+      <span className="text-xs text-adv-blue">
+        Context compacted — earlier context was summarised to stay within the model&apos;s window.
+      </span>
     </div>
   );
 }
@@ -210,6 +226,9 @@ export default function ConversationThread({
           />
         ))
       )}
+
+      {/* Compaction indicator */}
+      <CompactionIndicator />
 
       {/* Streaming indicator */}
       {isStreaming && (

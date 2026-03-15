@@ -4,7 +4,7 @@ import { fetchWithAuth } from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight, Shield, Database, Brain } from 'lucide-react';
+import { Circle, RefreshCw, Check, Globe, Server, Key, Users, Trash2, Plus, Edit2, Bell, DollarSign, Upload, FileText, Building2, Plug, Palette, RotateCcw, Sparkles, ChevronDown, ChevronRight, Shield, Database, Brain, Layers } from 'lucide-react';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import { IdentityPanel } from '@/components/platform/IdentityPanel';
 import ProfileSettingsTab from './ProfileSettingsTab';
@@ -106,6 +106,10 @@ export default function Settings() {
     fetchDeploymentConfig,
     emailNotificationsEnabled,
     setEmailNotificationsEnabled,
+    location: userLocation,
+    setLocation,
+    compactionEnabled,
+    setCompactionEnabled,
   } = useSettingsStore();
 
   const { user: authUser, isTeamMode } = useAuthStore();
@@ -1502,6 +1506,42 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Context Compaction */}
+      <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
+        <div className="flex items-center gap-2">
+          <Layers className="h-4 w-4 text-adv-blue" />
+          <h2 className="text-sm font-semibold text-adv-white">Context Compaction</h2>
+          <span className="rounded bg-adv-blue/10 px-1.5 py-0.5 text-[10px] font-medium text-adv-blue">Beta</span>
+        </div>
+        <p className="mt-1 text-xs text-adv-gray">
+          Automatically summarise earlier context when approaching the token limit, enabling longer sessions.
+          Only works with Claude Opus 4.6 and Sonnet 4.6.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          <label className="flex items-center gap-3">
+            <button
+              role="switch"
+              aria-checked={compactionEnabled}
+              onClick={() => setCompactionEnabled(!compactionEnabled)}
+              className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${
+                compactionEnabled ? 'bg-adv-teal' : 'bg-adv-gray-med/40'
+              }`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                compactionEnabled ? 'translate-x-4' : 'translate-x-0.5'
+              }`} />
+            </button>
+            <div>
+              <span className="text-xs text-adv-off-white">Enable automatic context compaction</span>
+              <p className="text-[11px] text-adv-gray mt-0.5">
+                When enabled, long conversations are automatically compacted rather than hitting the context limit.
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
       {/* Language */}
       <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
         <div className="flex items-center gap-2">
@@ -1799,6 +1839,44 @@ export default function Settings() {
           </div>
         ) : (
           <div className="mt-4 text-xs text-adv-gray animate-pulse">Loading embedding stats...</div>
+        )}
+      </div>
+
+      {/* Location — used by Pathfinder Local mode */}
+      <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
+        <div className="flex items-center gap-2">
+          <Globe className="h-4 w-4 text-adv-teal" />
+          <h2 className="text-sm font-semibold text-adv-white">Location</h2>
+        </div>
+        <p className="mt-1 text-xs text-adv-gray">
+          Used by Pathfinder&apos;s Local, Shopping, Travel, and Food modes to give you relevant nearby results. Your location stays on your machine — it is never sent to third parties.
+        </p>
+        <div className="mt-4 flex items-center gap-3">
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-adv-gray">City</label>
+            <input
+              type="text"
+              placeholder="e.g. Stockholm"
+              value={userLocation.city}
+              onChange={e => setLocation({ ...userLocation, city: e.target.value })}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray/40 focus:border-adv-teal focus:outline-none"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-adv-gray">Country</label>
+            <input
+              type="text"
+              placeholder="e.g. Sweden"
+              value={userLocation.country}
+              onChange={e => setLocation({ ...userLocation, country: e.target.value })}
+              className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray/40 focus:border-adv-teal focus:outline-none"
+            />
+          </div>
+        </div>
+        {userLocation.city && userLocation.country && (
+          <p className="mt-2 text-[10px] text-adv-teal">
+            Pathfinder will include &quot;{userLocation.city}, {userLocation.country}&quot; as context for location-aware searches.
+          </p>
         )}
       </div>
 

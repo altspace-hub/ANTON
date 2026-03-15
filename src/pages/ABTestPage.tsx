@@ -345,7 +345,7 @@ ${config.systemPromptOverride}`;
     try {
       const stream = streamMessage(
         {
-          model: config.model as 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
+          model: config.model as 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
           thinking: config.thinking,
           creativity: config.creativity,
           systemPrompt: buildSystemPrompt(config),

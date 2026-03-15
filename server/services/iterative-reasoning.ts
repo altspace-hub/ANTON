@@ -33,6 +33,8 @@ interface PhaseConfig {
 }
 
 const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
+  // ── think_hard: 2-phase (analyse → synthesise) ──
+  // Users chose deep reasoning — give the final output generous room.
   think_hard: [
     {
       name: 'analyse',
@@ -40,7 +42,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: false,
       budgetTokens: 8000,
       effort: 'high',
-      maxTokens: 16000,
+      maxTokens: 32000,
     },
     {
       name: 'synthesise',
@@ -48,9 +50,11 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: true,
       budgetTokens: 10000,
       effort: 'max',
-      maxTokens: 24000,
+      maxTokens: 64000,
     },
   ],
+  // ── investigate: 4-phase (analyse → reflect → deepen → synthesise) ──
+  // Intermediate phases get meaningful room; synthesise gets Opus ceiling.
   investigate: [
     {
       name: 'analyse',
@@ -58,7 +62,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: false,
       budgetTokens: 10000,
       effort: 'high',
-      maxTokens: 20000,
+      maxTokens: 32000,
     },
     {
       name: 'reflect',
@@ -66,7 +70,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: false,
       budgetTokens: 8000,
       effort: 'high',
-      maxTokens: 16000,
+      maxTokens: 24000,
     },
     {
       name: 'deepen',
@@ -74,7 +78,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: false,
       budgetTokens: 10000,
       effort: 'max',
-      maxTokens: 20000,
+      maxTokens: 32000,
     },
     {
       name: 'synthesise',
@@ -82,9 +86,10 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: true,
       budgetTokens: 16000,
       effort: 'max',
-      maxTokens: 32000,
+      maxTokens: 128_000, // Opus 4.6 ceiling — final user-facing output gets full capacity
     },
   ],
+  // ── plan_first: 4-phase (analyse → plan → deepen → synthesise) ──
   plan_first: [
     {
       name: 'analyse',
@@ -92,7 +97,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: false,
       budgetTokens: 10000,
       effort: 'high',
-      maxTokens: 20000,
+      maxTokens: 32000,
     },
     {
       name: 'plan',
@@ -100,7 +105,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: false,
       budgetTokens: 8000,
       effort: 'high',
-      maxTokens: 16000,
+      maxTokens: 24000,
     },
     {
       name: 'deepen',
@@ -108,7 +113,7 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: false,
       budgetTokens: 10000,
       effort: 'max',
-      maxTokens: 20000,
+      maxTokens: 32000,
     },
     {
       name: 'synthesise',
@@ -116,57 +121,59 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       streaming: true,
       budgetTokens: 16000,
       effort: 'max',
-      maxTokens: 32000,
+      maxTokens: 128_000, // Opus 4.6 ceiling — final user-facing output gets full capacity
     },
   ],
+  // ── deep_investigate: 6-phase (analyse → reflect → deepen → explore → validate → synthesise) ──
+  // Most expensive mode. Intermediate phases get generous room; synthesise gets Opus ceiling.
   deep_investigate: [
     {
       name: 'analyse',
       systemSuffix: 'PHASE: ANALYSE\nYou are in the deep investigation analysis phase. Produce an exhaustive, multi-angle analysis. Identify the core problem, all sub-problems, evidence quality, gaps, and risk factors. Do NOT synthesise.',
       streaming: false,
-      budgetTokens: 12000,
+      budgetTokens: 16000,
       effort: 'high',
-      maxTokens: 24000,
+      maxTokens: 48000,
     },
     {
       name: 'reflect',
       systemSuffix: 'PHASE: REFLECT\nChallenge the analysis. Identify assumptions, logical gaps, alternative interpretations, and counter-arguments. Assign a confidence score (0.0–1.0) and flag specific areas needing deeper investigation.',
       streaming: false,
-      budgetTokens: 10000,
+      budgetTokens: 12000,
       effort: 'high',
-      maxTokens: 20000,
+      maxTokens: 32000,
     },
     {
       name: 'deepen',
       systemSuffix: 'PHASE: DEEPEN\nAddress all flagged uncertainties from the reflection phase. Explore edge cases. Produce a refined, consolidated understanding of the problem.',
       streaming: false,
-      budgetTokens: 12000,
+      budgetTokens: 16000,
       effort: 'max',
-      maxTokens: 24000,
+      maxTokens: 48000,
     },
     {
       name: 'explore',
       systemSuffix: 'PHASE: EXPLORE\nUsing your deepened understanding, explore the most important implications, dependencies, and second-order effects. What is most likely to be missed? What are the key risks?',
       streaming: false,
-      budgetTokens: 10000,
+      budgetTokens: 12000,
       effort: 'max',
-      maxTokens: 20000,
+      maxTokens: 32000,
     },
     {
       name: 'validate',
       systemSuffix: 'PHASE: VALIDATE\nValidate your conclusions from all prior phases. Cross-check the logic, ensure completeness, and identify any remaining gaps or caveats that must be disclosed in the final output.',
       streaming: false,
-      budgetTokens: 8000,
+      budgetTokens: 10000,
       effort: 'high',
-      maxTokens: 16000,
+      maxTokens: 24000,
     },
     {
       name: 'synthesise',
       systemSuffix: 'PHASE: SYNTHESISE\nProduce the final, definitive response. Integrate all phase outputs. Be comprehensive, authoritative, and precisely structured. Disclose remaining uncertainties. This is the final user-facing output.',
       streaming: true,
-      budgetTokens: 20000,
+      budgetTokens: 24000,
       effort: 'max',
-      maxTokens: 40000,
+      maxTokens: 128_000, // Opus 4.6 ceiling — final user-facing output gets full capacity
     },
   ],
 };

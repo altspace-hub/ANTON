@@ -27,6 +27,7 @@ export function getStoredDefaultModel(): ModelId {
     const saved = safeStorage.getItem('openexpert-default-model');
     if (
       saved === 'claude-opus-4-6' ||
+      saved === 'claude-sonnet-4-6' ||
       saved === 'claude-sonnet-4-5-20250929' ||
       saved === 'claude-haiku-4-5-20251001'
     ) {
@@ -74,13 +75,14 @@ function applyThemeToDOM(theme: Theme) {
 }
 
 type DeploymentMode = 'solo' | 'team';
-export type AppMode = 'work' | 'school' | 'life';
+export type AppMode = 'work' | 'school' | 'life' | 'pathfinder';
 
 function getInitialAppMode(): AppMode {
   if (typeof window !== 'undefined') {
     const saved = safeStorage.getItem('openexpert-app-mode');
     if (saved === 'school') return 'school';
     if (saved === 'life') return 'life';
+    if (saved === 'pathfinder') return 'pathfinder';
   }
   return 'work';
 }
@@ -90,6 +92,21 @@ function getInitialEmailNotificationsEnabled(): boolean {
     return safeStorage.getItem('openexpert-email-notifications') === 'true';
   }
   return false;
+}
+
+export interface UserLocation {
+  city: string;
+  country: string;
+}
+
+function getInitialLocation(): UserLocation {
+  if (typeof window !== 'undefined') {
+    const saved = safeStorage.getItem('openexpert-location');
+    if (saved) {
+      try { return JSON.parse(saved) as UserLocation; } catch { /* ignore */ }
+    }
+  }
+  return { city: '', country: '' };
 }
 
 interface SettingsState {
@@ -103,6 +120,7 @@ interface SettingsState {
   defaultCreativity: CreativityLevel;
   deploymentMode: DeploymentMode;
   emailNotificationsEnabled: boolean;
+  location: UserLocation;
   appMode: AppMode;
   checkHealth: () => Promise<void>;
   fetchDeploymentConfig: () => Promise<void>;
@@ -113,7 +131,10 @@ interface SettingsState {
   setDefaultThinking: (thinking: ThinkingLevel) => void;
   setDefaultCreativity: (creativity: CreativityLevel) => void;
   setEmailNotificationsEnabled: (enabled: boolean) => void;
+  setLocation: (location: UserLocation) => void;
   setAppMode: (mode: AppMode) => void;
+  compactionEnabled: boolean;
+  setCompactionEnabled: (enabled: boolean) => void;
 }
 
 // Apply the initial theme immediately so there is no flash
@@ -131,7 +152,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   defaultCreativity: getStoredDefaultCreativity(),
   deploymentMode: 'solo' as DeploymentMode,
   emailNotificationsEnabled: getInitialEmailNotificationsEnabled(),
+  location: getInitialLocation(),
   appMode: getInitialAppMode(),
+  compactionEnabled: safeStorage.getItem('openexpert-compaction-enabled') !== 'false', // default: true
 
   checkHealth: async () => {
     set({ isLoading: true, error: null });
@@ -199,8 +222,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ emailNotificationsEnabled: enabled });
   },
 
+  setLocation: (location: UserLocation) => {
+    safeStorage.setItem('openexpert-location', JSON.stringify(location));
+    set({ location });
+  },
+
   setAppMode: (mode: AppMode) => {
     safeStorage.setItem('openexpert-app-mode', mode);
     set({ appMode: mode });
+  },
+
+  setCompactionEnabled: (enabled: boolean) => {
+    safeStorage.setItem('openexpert-compaction-enabled', String(enabled));
+    set({ compactionEnabled: enabled });
   },
 }));

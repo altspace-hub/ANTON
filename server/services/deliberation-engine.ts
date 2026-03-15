@@ -176,7 +176,7 @@ Field definitions:
   const anthropic = getClient();
   const synthesisParams = {
     model: 'claude-opus-4-6',
-    max_tokens: 32000,
+    max_tokens: 128_000,
     system: [{ type: 'text', text: synthesisSystem }],
     messages: [{ role: 'user', content: userMessage }],
     stream: true,

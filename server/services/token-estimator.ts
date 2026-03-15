@@ -37,16 +37,24 @@ export function estimateCost(
   outputTokens: number,
   model: string
 ): number {
+  // GA pricing as of 2026-03-13 (per million tokens)
   const costs: Record<string, { input: number; output: number }> = {
-    'claude-opus-4-6': { input: 15, output: 75 },
+    'claude-opus-4-6': { input: 5, output: 25 },
+    'claude-sonnet-4-6': { input: 3, output: 15 },
     'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
-    'claude-haiku-4-5-20251001': { input: 1, output: 5 },
+    'claude-haiku-4-5-20251001': { input: 0.80, output: 4 },
+    'gpt-4.1': { input: 2, output: 8 },
+    'gpt-4o': { input: 2.5, output: 10 },
+    'gpt-4o-mini': { input: 0.15, output: 0.6 },
+    'gemini-2.5-pro': { input: 1.25, output: 10 },
+    'gemini-2.5-flash': { input: 0.30, output: 2.5 },
+    'gemini-2.0-flash': { input: 0.10, output: 0.40 },
   };
-  const modelCost = costs[model] || costs['claude-opus-4-6'];
+  const modelCost = costs[model] || costs['claude-sonnet-4-6'];
   return (inputTokens * modelCost.input + outputTokens * modelCost.output) / 1_000_000;
 }
 
-export function getContextUtilization(tokenCount: number, maxTokens: number = 180000): {
+export function getContextUtilization(tokenCount: number, maxTokens: number = 900_000): {
   percentage: number;
   level: 'ok' | 'warning' | 'critical';
   message: string;

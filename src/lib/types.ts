@@ -286,7 +286,8 @@ export type StreamEvent =
   | { type: 'stream_end'; contentBlocks: ContentBlock[]; sourceManifest?: string[] }
   | { type: 'phase_start'; phaseIndex: number; phaseName: string; totalPhases: number }
   | { type: 'phase_end'; phaseIndex: number; phaseName: string; durationMs: number; confidenceScore: number | null }
-  | { type: 'revelation_chain_id'; chainId: string };
+  | { type: 'revelation_chain_id'; chainId: string }
+  | { type: 'compaction'; message: string };
 
 // ── Claude API Request ─────────────────────────────────────
 
@@ -332,6 +333,7 @@ export interface ClaudeRunConfig {
   iterativeReasoningEnabled?: boolean;
   atomInjectionEnabled?: boolean;
   atomCollectionEnabled?: boolean;
+  compactionEnabled?: boolean;
 }
 
 // ── Multi-Model Deliberation ────────────────────────────────
