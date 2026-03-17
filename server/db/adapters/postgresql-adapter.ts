@@ -140,7 +140,8 @@ export function translateSql(sql: string): string {
   // This is handled in schema.postgresql.sql, not here.
 
   // DATETIME type → TIMESTAMPTZ (for inline DDL in routes)
-  out = out.replace(/\bDATETIME\b/gi, 'TIMESTAMPTZ');
+  // Only replace when used as a type (not as a function call like datetime('now'))
+  out = out.replace(/\bDATETIME\b(?!\s*\()/gi, 'TIMESTAMPTZ');
 
   // REAL type → DOUBLE PRECISION
   out = out.replace(/\bREAL\b/gi, 'DOUBLE PRECISION');

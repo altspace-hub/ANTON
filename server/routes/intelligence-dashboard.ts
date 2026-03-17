@@ -34,14 +34,15 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/temporal/atoms-per-day', async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
+      const since = new Date(Date.now() - days * 86400000).toISOString();
       const results = await db.all(`
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM knowledge_atoms
         WHERE is_active = 1
-          AND created_at >= datetime('now', '-' || ? || ' days')
+          AND created_at >= ?
         GROUP BY DATE(created_at)
         ORDER BY date ASC
-      `, days);
+      `, since);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/atoms-per-day]', error);
@@ -53,13 +54,14 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/temporal/patterns-per-week', async (req, res) => {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
+      const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
       const results = await db.all(`
         SELECT strftime('%Y-W%W', first_detected) as week, COUNT(*) as count
         FROM detected_patterns
-        WHERE first_detected >= datetime('now', '-' || ? || ' weeks')
+        WHERE first_detected >= ?
         GROUP BY week
         ORDER BY week ASC
-      `, weeks);
+      `, since);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/patterns-per-week]', error);
@@ -71,14 +73,15 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/temporal/entity-activity', async (req, res) => {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
+      const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
       const results = await db.all(`
         SELECT strftime('%Y-W%W', created_at) as week, COUNT(DISTINCT entity_type || ':' || entity_id) as entity_count
         FROM knowledge_entity_refs
         JOIN knowledge_atoms ON knowledge_entity_refs.atom_id = knowledge_atoms.id
-        WHERE knowledge_atoms.created_at >= datetime('now', '-' || ? || ' weeks')
+        WHERE knowledge_atoms.created_at >= ?
         GROUP BY week
         ORDER BY week ASC
-      `, weeks);
+      `, since);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/entity-activity]', error);
@@ -90,16 +93,17 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/temporal/quality-trend', async (req, res) => {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
+      const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
       // knowledge_atoms has no quality_score column — use confidence as proxy
       const results = await db.all(`
         SELECT strftime('%Y-W%W', created_at) as week, AVG(confidence) as avg_quality
         FROM knowledge_atoms
         WHERE confidence IS NOT NULL
           AND is_active = 1
-          AND created_at >= datetime('now', '-' || ? || ' weeks')
+          AND created_at >= ?
         GROUP BY week
         ORDER BY week ASC
-      `, weeks);
+      `, since);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/quality-trend]', error);

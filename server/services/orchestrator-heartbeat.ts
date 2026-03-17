@@ -36,7 +36,7 @@ export async function initOrchestratorHeartbeat(db: DatabaseAdapter, anthropic: 
     return;
   }
 
-  const config = getOrchestratorConfig(db);
+  const config = await getOrchestratorConfig(db);
 
   if (config.fully_disabled || !config.heartbeat_enabled) {
     console.log('[orchestrator-heartbeat] Skipping — Orchestrator disabled or heartbeat off');
@@ -48,7 +48,7 @@ export async function initOrchestratorHeartbeat(db: DatabaseAdapter, anthropic: 
   if (cron.validate(heartbeatCron)) {
     heartbeatTask = cron.schedule(heartbeatCron, async () => {
       // Re-read config each tick (allows dynamic reconfiguration without restart)
-      const currentConfig = getOrchestratorConfig(db);
+      const currentConfig = await getOrchestratorConfig(db);
       if (currentConfig.fully_disabled || currentConfig.orchestrator_paused || !currentConfig.heartbeat_enabled) return;
 
       console.log('[orchestrator-heartbeat] Running heartbeat cycle...');
@@ -75,7 +75,7 @@ export async function initOrchestratorHeartbeat(db: DatabaseAdapter, anthropic: 
     const dailyCron = `${minute} ${hour} * * *`;
     if (cron.validate(dailyCron)) {
       dailyBriefingTask = cron.schedule(dailyCron, async () => {
-        const currentConfig = getOrchestratorConfig(db);
+        const currentConfig = await getOrchestratorConfig(db);
         if (currentConfig.fully_disabled || currentConfig.orchestrator_paused || !currentConfig.heartbeat_enabled) return;
 
         console.log('[orchestrator-heartbeat] Running daily briefing...');
@@ -98,7 +98,7 @@ export async function initOrchestratorHeartbeat(db: DatabaseAdapter, anthropic: 
     const weeklyCron = `${minute} ${hour} * * 1`; // Monday
     if (cron.validate(weeklyCron)) {
       dailyBriefingTask = cron.schedule(weeklyCron, async () => {
-        const currentConfig = getOrchestratorConfig(db);
+        const currentConfig = await getOrchestratorConfig(db);
         if (currentConfig.fully_disabled || currentConfig.orchestrator_paused || !currentConfig.heartbeat_enabled) return;
         const result = await runHeartbeatCycle(db, anthropic, 'weekly', true);
         console.log(`[orchestrator-heartbeat] Weekly briefing complete — ${result.signalCount} signals`);

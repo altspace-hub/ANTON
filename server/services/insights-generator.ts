@@ -216,6 +216,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
     warning: number;
     critical: number;
   }> {
+    const since = new Date(Date.now() - days * 86400000).toISOString();
     const query = `
       SELECT
         DATE(created_at) as date,
@@ -225,12 +226,12 @@ Return ONLY the JSON array, no markdown, no explanation.`;
         SUM(CASE WHEN sentiment = 'critical' THEN 1 ELSE 0 END) as critical
       FROM knowledge_atoms
       WHERE is_active = 1
-        AND created_at >= datetime('now', '-' || ? || ' days')
+        AND created_at >= ?
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `;
 
-    return await db.all(query, days) as any[];
+    return await db.all(query, since) as any[];
   }
 
   return {

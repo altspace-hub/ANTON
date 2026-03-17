@@ -46,12 +46,13 @@ export function getRecentSecurityEvents(db: Database, limit = 100): SecurityEven
  */
 export async function getSecurityEventStats(db: Database, hoursBack = 24): Record<string, number> {
   try {
+    const since = new Date(Date.now() - hoursBack * 3600000).toISOString();
     const stats = await db.all(`
       SELECT event_type, COUNT(*) as count
       FROM security_events
-      WHERE created_at > datetime('now', '-' || ? || ' hours')
+      WHERE created_at > ?
       GROUP BY event_type
-    `, hoursBack);
+    `, since);
 
     return Object.fromEntries(
       stats.map((s: any) => [s.event_type, s.count])
