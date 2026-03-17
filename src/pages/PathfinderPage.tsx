@@ -84,11 +84,11 @@ export default function PathfinderPage() {
 
   // Load threads + documents
   useEffect(() => {
-    fetchThreads().then(r => setThreads(r.threads)).catch(() => {});
+    fetchThreads().then(r => setThreads(Array.isArray(r?.threads) ? r.threads : [])).catch(() => {});
   }, []);
 
   useEffect(() => {
-    fetchDocuments(activeThreadId || undefined).then(r => setDocuments(r.documents)).catch(() => {});
+    fetchDocuments(activeThreadId || undefined).then(r => setDocuments(Array.isArray(r?.documents) ? r.documents : [])).catch(() => {});
   }, [activeThreadId]);
 
   // Load search from URL param (for "Open in Pathfinder" flow)

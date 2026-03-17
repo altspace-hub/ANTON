@@ -247,7 +247,7 @@ export function createPathfinderRoutes(
   router.get('/pathfinder/threads', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const threads = await db.get(`SELECT t.*, (SELECT COUNT(*) FROM pathfinder_searches WHERE thread_id = t.id) as search_count
+      const threads = await db.all(`SELECT t.*, (SELECT COUNT(*) FROM pathfinder_searches WHERE thread_id = t.id) as search_count
          FROM pathfinder_threads t WHERE t.user_id = ?
          ORDER BY t.pinned DESC, t.updated_at DESC`
       , uid);
@@ -322,7 +322,7 @@ export function createPathfinderRoutes(
       const params: unknown[] = [uid];
       if (threadId) { query += ' AND thread_id = ?'; params.push(threadId); }
       query += ' ORDER BY created_at DESC';
-      const docs = await db.run(query, ...params);
+      const docs = await db.all(query, ...params);
       res.json({ documents: docs });
     } catch (err) {
       res.status(500).json({ error: String(err) });
