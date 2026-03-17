@@ -75,9 +75,9 @@ export async function createRegulatoryRadar(db: DatabaseAdapter) {
 
 
     // Recent high-relevance items (last 7 days)
-    const recent = (await db.get(
-      "SELECT COUNT(*) as n FROM radar_items WHERE relevance_score >= 0.7 AND fetched_at >= datetime('now', '-7 days')"
-    ) as { n: number }).n;
+    const recent = await db.all(
+      "SELECT title, relevance_score, item_type, source_id, published_at FROM radar_items WHERE relevance_score >= 0.7 AND fetched_at >= datetime('now', '-7 days') ORDER BY relevance_score DESC LIMIT 5"
+    ) as Array<{ title: string; relevance_score: number; item_type: string; source_id: string; published_at: string }>;
 
     // Per-category counts
     const categoryCounts = await db.all(`
