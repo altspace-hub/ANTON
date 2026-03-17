@@ -13,7 +13,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   router.post('/knowledge-graph/build', async (req, res) => {
     try {
       const { minAtomCount, sinceDays } = req.body;
-      const result = graphService.buildGraph({ minAtomCount, sinceDays });
+      const result = await graphService.buildGraph({ minAtomCount, sinceDays });
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -24,7 +24,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   router.get('/knowledge-graph/entities', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
-      const entities = graphService.getTopEntities(limit);
+      const entities = await graphService.getTopEntities(limit);
       res.json(entities);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -42,7 +42,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
         return res.status(404).json({ error: 'Entity not found' });
       }
 
-      const neighbors = graphService.getEntityNeighbors(type, id, depth);
+      const neighbors = await graphService.getEntityNeighbors(type, id, depth);
 
       // Get related atoms
       const atoms = await db.all(`
@@ -78,7 +78,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'At least one relationship type required (e.g. ?relationship=requires)' });
       }
 
-      const closure = graphService.getTransitiveClosure(type, id, relationshipTypes, maxDepth, packId);
+      const closure = await graphService.getTransitiveClosure(type, id, relationshipTypes, maxDepth, packId);
 
       res.json({
         start: { entity_type: type, entity_id: id },
@@ -98,7 +98,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
       const { type, id } = req.params;
       const maxDepth = parseInt(req.query.maxDepth as string) || 2;
 
-      const subgraph = graphService.getEntitySubgraph(type, id, maxDepth);
+      const subgraph = await graphService.getEntitySubgraph(type, id, maxDepth);
       res.json(subgraph);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -115,7 +115,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'Missing required parameters' });
       }
 
-      graphService.mergeEntities({ entityType, fromId, intoId, reason, mergedBy });
+      await graphService.mergeEntities({ entityType, fromId, intoId, reason, mergedBy });
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

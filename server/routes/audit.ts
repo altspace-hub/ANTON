@@ -214,7 +214,7 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
         limit: req.query.limit ? (parseInt(req.query.limit as string, 10) || 50) : 50,
         offset: req.query.offset ? (parseInt(req.query.offset as string, 10) || 0) : 0,
       };
-      const events = getAuditLog(db, filters);
+      const events = await getAuditLog(db, filters);
       res.json(events);
     } catch (error) {
       console.error('[Audit] Error in legacy endpoint:', error);
@@ -260,7 +260,7 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
    */
   router.get('/audit/stats', async (_req, res) => {
     try {
-      const stats = getAuditStats(db);
+      const stats = await getAuditStats(db);
       res.json(stats);
     } catch (error) {
       console.error('[Audit] Error fetching stats:', error);
@@ -300,7 +300,7 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
 
       query += ' GROUP BY model ORDER BY calls DESC';
 
-      const modelStats = await db.run(query, ...params);
+      const modelStats = await db.all(query, ...params);
       res.json(modelStats);
     } catch (error) {
       console.error('[Audit] Error fetching model stats:', error);
@@ -616,7 +616,7 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
       query += ' ORDER BY attempted_at DESC LIMIT ?';
       params.push(limit);
 
-      const attempts = await db.run(query, ...params);
+      const attempts = await db.all(query, ...params);
       res.json(attempts);
     } catch (error) {
       console.error('[Audit] Error fetching login attempts:', error);

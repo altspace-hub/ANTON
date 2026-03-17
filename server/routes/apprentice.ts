@@ -22,7 +22,7 @@ export async function createApprenticeRoutes(db: DatabaseAdapter) {
 
   router.get('/apprentice/profiles', async (req, res) => {
     try {
-      res.json(apprentice.getAllProfiles(DEFAULT_USER));
+      res.json(await apprentice.getAllProfiles(DEFAULT_USER));
     } catch (error) {
       console.error('Apprentice profiles error:', error);
       res.status(500).json({ error: 'Failed to fetch apprentice profiles' });
@@ -31,7 +31,7 @@ export async function createApprenticeRoutes(db: DatabaseAdapter) {
 
   router.get('/apprentice/modules/:moduleId', async (req, res) => {
     try {
-      const profile = apprentice.getProfile(DEFAULT_USER, req.params.moduleId);
+      const profile = await apprentice.getProfile(DEFAULT_USER, req.params.moduleId);
       const stage = profile?.stage ?? 'observer';
       res.json({
         profile,
@@ -48,7 +48,7 @@ export async function createApprenticeRoutes(db: DatabaseAdapter) {
   // ── GET /apprentice/progression/:moduleId — Why this stage? ──────────
   router.get('/apprentice/progression/:moduleId', async (req, res) => {
     try {
-      const result = apprentice.getProgressionHistory(DEFAULT_USER, req.params.moduleId);
+      const result = await apprentice.getProgressionHistory(DEFAULT_USER, req.params.moduleId);
       if (!result) {
         return res.json({
           profile: null,
@@ -72,7 +72,7 @@ export async function createApprenticeRoutes(db: DatabaseAdapter) {
 
   router.post('/apprentice/modules/:moduleId/session', async (req, res) => {
     try {
-      const result = apprentice.recordSession({
+      const result = await apprentice.recordSession({
         userId: DEFAULT_USER,
         moduleId: req.params.moduleId,
         areaId: req.body.areaId,

@@ -3025,7 +3025,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
     try {
       const { subject_id, limit = '20' } = req.query as Record<string, string>;
       const now = new Date().toISOString();
-      const rooms = await db.get(`SELECT r.id, r.name, r.subject_id, r.max_participants, r.join_code, r.created_at,
+      const rooms = await db.all(`SELECT r.id, r.name, r.subject_id, r.max_participants, r.join_code, r.created_at,
                 COALESCE(u.display_name, u.username) as host_name
          FROM study_rooms r
          JOIN users u ON u.id = r.host_user_id

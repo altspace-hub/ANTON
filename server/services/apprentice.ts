@@ -34,7 +34,7 @@ export async function createApprentice(db: DatabaseAdapter) {
     areaId?: string;
     qualityScore?: number;
   }) {
-    const existing = getProfile(params.userId, params.moduleId);
+    const existing = await getProfile(params.userId, params.moduleId);
     const now = new Date().toISOString();
 
     if (!existing) {
@@ -59,7 +59,7 @@ export async function createApprentice(db: DatabaseAdapter) {
   }
 
   async function checkAndPromote(userId: string, moduleId: string) {
-    const profile = getProfile(userId, moduleId);
+    const profile = await getProfile(userId, moduleId);
     if (!profile) return null;
 
     const currentStage = profile.stage;
@@ -94,8 +94,8 @@ export async function createApprentice(db: DatabaseAdapter) {
     return suggestions[stage] ?? [];
   }
 
-  function getProgressionHistory(userId: string, moduleId: string) {
-    const profile = getProfile(userId, moduleId);
+  async function getProgressionHistory(userId: string, moduleId: string) {
+    const profile = await getProfile(userId, moduleId);
     if (!profile) return null;
 
     const timeline: Array<{ stage: string; promoted_at: string | null }> = [

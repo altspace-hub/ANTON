@@ -15,7 +15,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   // GET /api/radar/summary — dashboard summary
   router.get('/radar/summary', async (_req, res) => {
     try {
-      const summary = radar.getRadarSummary();
+      const summary = await radar.getRadarSummary();
       res.json(summary);
     } catch (err) {
       console.error('[radar] summary error:', err);
@@ -28,7 +28,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
     try {
       const activeOnly = req.query.activeOnly !== 'false';
       const category = req.query.category as string | undefined;
-      const sources = radar.getSources(activeOnly, category);
+      const sources = await radar.getSources(activeOnly, category);
       res.json(sources);
     } catch (err) {
       console.error('[radar] sources list error:', err);
@@ -43,7 +43,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
       if (!displayName || !url || !sourceType) {
         return res.status(400).json({ error: 'displayName, url, and sourceType are required' });
       }
-      const id = radar.createSource({ displayName, url, sourceType, fetchIntervalHours, areas, keywords, category });
+      const id = await radar.createSource({ displayName, url, sourceType, fetchIntervalHours, areas, keywords, category });
       res.json({ id });
     } catch (err) {
       console.error('[radar] source creation error:', err);
@@ -55,7 +55,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   router.put('/radar/sources/:id', async (req, res) => {
     try {
       const { displayName, url, sourceType, areas, keywords, category, isActive } = req.body;
-      radar.updateSource(req.params.id, { displayName, url, sourceType, areas, keywords, category, isActive });
+      await radar.updateSource(req.params.id, { displayName, url, sourceType, areas, keywords, category, isActive });
       res.json({ ok: true });
     } catch (err) {
       console.error('[radar] source update error:', err);
@@ -66,7 +66,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   // DELETE /api/radar/sources/:id — delete source
   router.delete('/radar/sources/:id', async (req, res) => {
     try {
-      radar.deleteSource(req.params.id);
+      await radar.deleteSource(req.params.id);
       res.json({ ok: true });
     } catch (err) {
       console.error('[radar] source delete error:', err);
@@ -78,7 +78,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   router.get('/radar/items', async (req, res) => {
     try {
       const { status, minRelevance, search, limit, offset, category } = req.query;
-      const items = radar.getItems({
+      const items = await radar.getItems({
         status: status as string | undefined,
         minRelevance: minRelevance ? parseFloat(minRelevance as string) : undefined,
         search: search as string | undefined,
@@ -117,7 +117,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
         return res.status(400).json({ error: 'status is required' });
       }
       const userId = (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
-      radar.updateItemStatus(id, status, userId);
+      await radar.updateItemStatus(id, status, userId);
       res.json({ success: true });
     } catch (err) {
       console.error('[radar] status update error:', err);
@@ -132,7 +132,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
       const { userAreas = [], userKeywords = [] } = req.body;
 
       // Fetch the item
-      const items = radar.getItems({ limit: 1, offset: 0 });
+      const items = await radar.getItems({ limit: 1, offset: 0 });
       const item = (items as unknown as Array<{ id: string; title: string; summary: string; full_text?: string }>)
         .find((i) => i.id === id);
       if (!item) {
@@ -170,7 +170,7 @@ Return ONLY valid JSON (no markdown, no extra text):
       };
 
       // Update item with scores
-      radar.scoreItem(id, result.relevance_score, result.urgency_score, result.ai_summary, result.impact_areas);
+      await radar.scoreItem(id, result.relevance_score, result.urgency_score, result.ai_summary, result.impact_areas);
 
       res.json(result);
     } catch (err) {
