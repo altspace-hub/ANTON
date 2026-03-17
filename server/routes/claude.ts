@@ -122,7 +122,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Ollama models are prefixed with 'ollama:' (e.g. 'ollama:llama3.2').
       // They are not in the MODEL_REGISTRY so we detect them by prefix first.
       const isOllamaModel = selectedModel.startsWith('ollama:');
-      const modelConfig = isOllamaModel ? undefined : getModelConfig(selectedModel);
+      const modelConfig = isOllamaModel ? undefined : await getModelConfig(selectedModel);
       const provider = isOllamaModel ? 'ollama' : (modelConfig?.provider || 'anthropic');
 
       if (provider === 'anthropic') {
