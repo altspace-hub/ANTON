@@ -1,29 +1,29 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { getClient } from '../services/claude-client.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
 
-export function createKnowledgeRoutes(db: Database.Database) {
+export async function createKnowledgeRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // Lazily initialised service instances (shared across requests)
-  let extractor: ReturnType<typeof createAtomExtractor> | null = null;
-  let outputStore: ReturnType<typeof createOutputStore> | null = null;
+  let extractor: Awaited<ReturnType<typeof createAtomExtractor>> | null = null;
+  let outputStore: Awaited<ReturnType<typeof createOutputStore>> | null = null;
 
-  function getExtractor() {
-    if (!extractor) extractor = createAtomExtractor(db, getClient());
+  async function getExtractor() {
+    if (!extractor) extractor = await createAtomExtractor(db, getClient());
     return extractor;
   }
 
-  function getOutputStore() {
-    if (!outputStore) outputStore = createOutputStore(db);
+  async function getOutputStore() {
+    if (!outputStore) outputStore = await createOutputStore(db);
     return outputStore;
   }
 
   // ── GET /api/knowledge/atoms ─────────────────────────────────────────────
   // Query params: q, area, type, entity_type, entity_id, since
-  router.get('/knowledge/atoms', (req, res) => {
+  router.get('/knowledge/atoms', async (req, res) => {
     try {
       const q = typeof req.query.q === 'string' ? req.query.q : '';
       const area = typeof req.query.area === 'string' ? req.query.area : undefined;
@@ -34,7 +34,7 @@ export function createKnowledgeRoutes(db: Database.Database) {
 
       const since = sinceStr ? new Date(sinceStr) : undefined;
 
-      const atoms = getExtractor().searchAtoms(q, {
+      const atoms = (await getExtractor()).searchAtoms(q, {
         areaId: area,
         atomType: type,
         entityType,
@@ -50,9 +50,9 @@ export function createKnowledgeRoutes(db: Database.Database) {
   });
 
   // ── GET /api/knowledge/atoms/:id ─────────────────────────────────────────
-  router.get('/knowledge/atoms/:id', (req, res) => {
+  router.get('/knowledge/atoms/:id', async (req, res) => {
     try {
-      const atom = getExtractor().getAtomDetail(req.params.id);
+      const atom = (await getExtractor()).getAtomDetail(req.params.id);
       if (!atom) {
         res.status(404).json({ error: 'Atom not found' });
         return;
@@ -65,10 +65,10 @@ export function createKnowledgeRoutes(db: Database.Database) {
   });
 
   // ── GET /api/knowledge/atoms/:id/relationships ─────────────────────────
-  router.get('/knowledge/atoms/:id/relationships', (req, res) => {
+  router.get('/knowledge/atoms/:id/relationships', async (req, res) => {
     try {
       const atomId = req.params.id;
-      const rows = db.prepare(`
+      const rows = await db.all(`
         SELECT ar.relationship_type, ar.strength, ar.created_at,
                CASE WHEN ar.from_atom_id = ? THEN ar.to_atom_id ELSE ar.from_atom_id END as related_atom_id,
                CASE WHEN ar.from_atom_id = ? THEN 'outgoing' ELSE 'incoming' END as direction,
@@ -77,7 +77,7 @@ export function createKnowledgeRoutes(db: Database.Database) {
         JOIN knowledge_atoms ka ON ka.id = CASE WHEN ar.from_atom_id = ? THEN ar.to_atom_id ELSE ar.from_atom_id END
         WHERE (ar.from_atom_id = ? OR ar.to_atom_id = ?) AND ka.is_active = 1
         ORDER BY ar.strength DESC
-      `).all(atomId, atomId, atomId, atomId, atomId) as Array<{
+      `, atomId, atomId, atomId, atomId, atomId) as Array<{
         relationship_type: string; strength: number; created_at: string;
         related_atom_id: string; direction: string;
         content: string; atom_type: string; category: string; confidence: number;
@@ -92,11 +92,11 @@ export function createKnowledgeRoutes(db: Database.Database) {
 
   // ── GET /api/knowledge/entities/:type/:id ────────────────────────────────
   // Returns all atoms for an entity + its graph connections
-  router.get('/knowledge/entities/:type/:id', (req, res) => {
+  router.get('/knowledge/entities/:type/:id', async (req, res) => {
     try {
       const { type, id } = req.params;
-      const atoms = getExtractor().getAtomsByEntity(type, id);
-      const connections = getExtractor().getEntityConnections(type, id);
+      const atoms = (await getExtractor()).getAtomsByEntity(type, id);
+      const connections = (await getExtractor()).getEntityConnections(type, id);
       res.json({ entity_type: type, entity_id: id, atoms, connections });
     } catch (err) {
       console.error('[knowledge/entities GET]', err);
@@ -105,13 +105,13 @@ export function createKnowledgeRoutes(db: Database.Database) {
   });
 
   // ── GET /api/knowledge/decisions/:workflowId ─────────────────────────────
-  router.get('/knowledge/decisions/:workflowId', (req, res) => {
+  router.get('/knowledge/decisions/:workflowId', async (req, res) => {
     try {
       const limit = Math.min(
         Math.max(parseInt(String(req.query.limit ?? '100'), 10) || 100, 1),
         500
       );
-      const decisions = getOutputStore().getDecisionsForWorkflow(req.params.workflowId, limit);
+      const decisions = (await getOutputStore()).getDecisionsForWorkflow(req.params.workflowId, limit);
       res.json({ decisions, total: decisions.length });
     } catch (err) {
       console.error('[knowledge/decisions GET]', err);
@@ -120,14 +120,14 @@ export function createKnowledgeRoutes(db: Database.Database) {
   });
 
   // ── GET /api/knowledge/decisions/:workflowId/:stepIndex/distribution ─────
-  router.get('/knowledge/decisions/:workflowId/:stepIndex/distribution', (req, res) => {
+  router.get('/knowledge/decisions/:workflowId/:stepIndex/distribution', async (req, res) => {
     try {
       const stepIndex = parseInt(req.params.stepIndex, 10);
       if (isNaN(stepIndex)) {
         res.status(400).json({ error: 'Invalid stepIndex' });
         return;
       }
-      const distribution = getOutputStore().getDecisionDistribution(req.params.workflowId, stepIndex);
+      const distribution = (await getOutputStore()).getDecisionDistribution(req.params.workflowId, stepIndex);
       res.json({ workflow_id: req.params.workflowId, step_index: stepIndex, distribution });
     } catch (err) {
       console.error('[knowledge/decisions/distribution GET]', err);
@@ -137,7 +137,7 @@ export function createKnowledgeRoutes(db: Database.Database) {
 
   // ── POST /api/knowledge/outputs ──────────────────────────────────────────
   // Store a workflow step output (called by workflow execution engine)
-  router.post('/knowledge/outputs', (req, res) => {
+  router.post('/knowledge/outputs', async (req, res) => {
     try {
       const {
         executionId, workflowId, stepIndex, stepType,
@@ -157,14 +157,14 @@ export function createKnowledgeRoutes(db: Database.Database) {
       // Resolve user ID from auth context (injected by auth middleware) or fallback
       const userId = (req as unknown as { user?: { id?: string } }).user?.id ?? 'system';
 
-      const outputId = getOutputStore().storeOutput({
+      const outputId = (await getOutputStore()).storeOutput({
         executionId, workflowId, stepIndex, stepType,
         areaId, moduleId, connectionId, outputData,
         workflowName, stepName, userId,
       });
 
       // Trigger atom extraction asynchronously — does not block the response
-      getExtractor().extractAtoms(outputId).catch(e =>
+      (await getExtractor()).extractAtoms(outputId).catch(e =>
         console.error('[knowledge/outputs] atom extraction failed (non-fatal):', e)
       );
 
@@ -177,7 +177,7 @@ export function createKnowledgeRoutes(db: Database.Database) {
 
   // ── POST /api/knowledge/decisions ────────────────────────────────────────
   // Store a human checkpoint decision
-  router.post('/knowledge/decisions', (req, res) => {
+  router.post('/knowledge/decisions', async (req, res) => {
     try {
       const {
         executionId, workflowId, stepIndex,
@@ -198,7 +198,7 @@ export function createKnowledgeRoutes(db: Database.Database) {
 
       const userId = (req as unknown as { user?: { id?: string } }).user?.id ?? 'system';
 
-      const decisionId = getOutputStore().storeCheckpointDecision({
+      const decisionId = (await getOutputStore()).storeCheckpointDecision({
         executionId, workflowId, stepIndex,
         aiRecommendation, aiConfidence,
         humanDecision, humanReasoning,

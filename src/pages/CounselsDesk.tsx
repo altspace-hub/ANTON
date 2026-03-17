@@ -199,7 +199,7 @@ export default function CounselsDesk() {
   const loadSessions = useCallback(async () => {
     try {
       const r = await fetch('/api/legal-research', { headers: getAuthHeader() });
-      if (r.ok) setSessions(await r.json().then(d => d.sessions));
+      if (r.ok) setSessions(await r.json().then(d => d?.sessions ?? []));
     } catch { /* ignore */ }
   }, []);
 

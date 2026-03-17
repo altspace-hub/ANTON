@@ -1,4 +1,5 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type Anthropic from '@anthropic-ai/sdk';
 import Parser from 'rss-parser';
 import { callChat, mapModelToProvider } from './provider-router.js';
@@ -101,7 +102,7 @@ function classifySubcategory(title: string, summary: string): { subcategory: str
 
 // ── Fetcher factory ──────────────────────────────────────────────
 
-export function createRadarFetcher(db: Database.Database, anthropic: Anthropic) {
+export async function createRadarFetcher(db: DatabaseAdapter, anthropic: Anthropic) {
   const rssParser = new Parser({
     timeout: 15000,
     headers: { 'User-Agent': 'ANTON-FCP-Workbench/1.0 (Regulatory Monitor)' },
@@ -120,27 +121,23 @@ export function createRadarFetcher(db: Database.Database, anthropic: Anthropic) 
   let autoScanTimer: ReturnType<typeof setInterval> | null = null;
   let autoScanIntervalHours = 0;
 
-  // ── Prepared statements ──────────────────────────────────────
+  // ── SQL templates (inlined at call sites via adapter) ───────
 
-  const insertItemStmt = db.prepare(`
+  const INSERT_ITEM_SQL = `
     INSERT OR IGNORE INTO radar_items
       (id, source_id, external_id, title, summary, url, item_type, published_at, relevance_score, category, subcategory)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.5, ?, ?)
-  `);
+  `;
 
-  const updateSourceStatusStmt = db.prepare(`
+  const UPDATE_SOURCE_STATUS_SQL = `
     UPDATE radar_sources SET last_fetched = ?, last_fetch_status = ? WHERE id = ?
-  `);
+  `;
 
-  const getUnscoredStmt = db.prepare(`
+  const GET_UNSCORED_SQL = `
     SELECT id, title, summary, item_type, url, category FROM radar_items WHERE ai_scored = 0 LIMIT ?
-  `);
+  `;
 
-  const scoreItemStmt = db.prepare(`
-    UPDATE radar_items
-    SET relevance_score = ?, urgency_score = ?, ai_summary = ?, impact_areas = ?, ai_scored = 1
-    WHERE id = ?
-  `);
+
 
   // ── RSS strategy ─────────────────────────────────────────────
 
@@ -264,11 +261,11 @@ If you find nothing relevant, return: []`,
 
   // ── Insert items with dedup ──────────────────────────────────
 
-  function insertItems(sourceId: string, items: RawItem[]): number {
+  async function insertItems(sourceId: string, items: RawItem[]): Promise<number> {
     let inserted = 0;
     for (const item of items) {
       const id = `ri_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const result = insertItemStmt.run(
+      const result = await db.run(INSERT_ITEM_SQL,
         id,
         sourceId,
         item.external_id,
@@ -288,7 +285,7 @@ If you find nothing relevant, return: []`,
   // ── Score unscored items ─────────────────────────────────────
 
   async function scoreUnscoredItems(limit = 20): Promise<number> {
-    const unscoredItems = getUnscoredStmt.all(limit) as Array<{
+    const unscoredItems = await db.all(GET_UNSCORED_SQL, limit) as Array<{
       id: string;
       title: string;
       summary: string | null;
@@ -300,7 +297,7 @@ If you find nothing relevant, return: []`,
     if (unscoredItems.length === 0) return 0;
 
     // Read custom PE/VC scoring criteria once (empty string = use built-in default)
-    const customCriteriaRow = db.prepare("SELECT value FROM radar_settings WHERE key = 'pevc_scoring_criteria'").get() as { value: string } | undefined;
+
     const customPevcCriteria = customCriteriaRow?.value?.trim() || null;
 
     let scored = 0;
@@ -336,13 +333,15 @@ Return ONLY valid JSON (no markdown):
           impact_areas: string[];
         };
 
-        scoreItemStmt.run(
-          result.relevance_score,
+        await db.run(`
+    UPDATE radar_items
+    SET relevance_score = ?, urgency_score = ?, ai_summary = ?, impact_areas = ?, ai_scored = 1
+    WHERE id = ?
+  `, result.relevance_score,
           result.urgency_score,
           result.ai_summary,
           JSON.stringify(result.impact_areas),
-          item.id,
-        );
+          item.id,);
         scored++;
       } catch (err) {
         console.error(`[radar-fetcher] Scoring failed for item ${item.id}:`, err);
@@ -355,9 +354,7 @@ Return ONLY valid JSON (no markdown):
   // ── Scan a single source ─────────────────────────────────────
 
   async function scanSource(sourceId: string): Promise<SourceScanResult> {
-    const source = db
-      .prepare('SELECT * FROM radar_sources WHERE id = ?')
-      .get(sourceId) as RadarSource | undefined;
+    const source = await db.get('SELECT * FROM radar_sources WHERE id = ?', sourceId) as RadarSource | undefined;
 
     if (!source) {
       return { sourceId, sourceName: 'Unknown', newItems: 0, error: 'Source not found' };
@@ -372,13 +369,13 @@ Return ONLY valid JSON (no markdown):
         rawItems = await fetchWebSearchSource(source);
       }
 
-      const newItems = insertItems(source.id, rawItems);
-      updateSourceStatusStmt.run(new Date().toISOString(), 'success', source.id);
+      const newItems = await insertItems(source.id, rawItems);
+      await db.run(UPDATE_SOURCE_STATUS_SQL,new Date().toISOString(), 'success', source.id);
 
       return { sourceId: source.id, sourceName: source.display_name, newItems };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      updateSourceStatusStmt.run(new Date().toISOString(), `error: ${errorMsg.slice(0, 200)}`, source.id);
+      await db.run(UPDATE_SOURCE_STATUS_SQL,new Date().toISOString(), `error: ${errorMsg.slice(0, 200)}`, source.id);
       return { sourceId: source.id, sourceName: source.display_name, newItems: 0, error: errorMsg };
     }
   }
@@ -407,8 +404,8 @@ Return ONLY valid JSON (no markdown):
 
     try {
       const activeSources = category
-        ? db.prepare('SELECT * FROM radar_sources WHERE is_active = 1 AND category = ?').all(category) as RadarSource[]
-        : db.prepare('SELECT * FROM radar_sources WHERE is_active = 1').all() as RadarSource[];
+        ? await db.all('SELECT * FROM radar_sources WHERE is_active = 1 AND category = ?', category) as RadarSource[]
+        : await db.all('SELECT * FROM radar_sources WHERE is_active = 1') as RadarSource[];
 
       sourcesTotal = activeSources.length;
 
@@ -479,7 +476,7 @@ Return ONLY valid JSON (no markdown):
 
   // ── Auto-scan schedule management ──────────────────────────
 
-  function startAutoScan(intervalHours: number) {
+  async function startAutoScan(intervalHours: number) {
     stopAutoScan();
     autoScanIntervalHours = intervalHours;
     const intervalMs = intervalHours * 3600000;

@@ -102,10 +102,14 @@ export default function IntelligenceDashboard() {
         fetch('/api/intelligence/temporal/quality-trend?weeks=12'),
       ]);
 
-      setAtomsPerDay(await atomsRes.json());
-      setPatternsPerWeek(await patternsRes2.json());
-      setEntityActivity(await activityRes.json());
-      setQualityTrend(await qualityRes.json());
+      const atomsData = await atomsRes.json();
+      setAtomsPerDay(Array.isArray(atomsData) ? atomsData : []);
+      const patternsData = await patternsRes2.json();
+      setPatternsPerWeek(Array.isArray(patternsData) ? patternsData : []);
+      const activityData = await activityRes.json();
+      setEntityActivity(Array.isArray(activityData) ? activityData : []);
+      const qualityData = await qualityRes.json();
+      setQualityTrend(Array.isArray(qualityData) ? qualityData : []);
     } catch (err) {
       console.error('Failed to load temporal data:', err);
     }

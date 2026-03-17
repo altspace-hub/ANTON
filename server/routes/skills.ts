@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { getBuiltInSkills } from '../services/skills-manager.js';
 
-export function createSkillsRoutes(db: Database.Database) {
+export async function createSkillsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/skills — list all skills (built-in + custom from DB)
-  router.get('/skills', (_req, res) => {
+  router.get('/skills', async (_req, res) => {
     try {
       const builtIn = getBuiltInSkills();
       res.json(builtIn);
@@ -17,7 +17,7 @@ export function createSkillsRoutes(db: Database.Database) {
   });
 
   // POST /api/skills/community — submit a community skill
-  router.post('/skills/community', (req, res) => {
+  router.post('/skills/community', async (req, res) => {
     try {
       const { name, description, category, promptInstruction, tags } = req.body as {
         name: string;
@@ -33,11 +33,11 @@ export function createSkillsRoutes(db: Database.Database) {
       const id = `community-${randomUUID().slice(0, 8)}`;
       const tagsArray = tags ? JSON.stringify(tags.split(',').map((t: string) => t.trim()).filter(Boolean)) : '[]';
       const now = new Date().toISOString();
-      db.prepare(
+      await db.run(
         `INSERT INTO community_skills (id, name, description, category, prompt_instruction, tags, submitted_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).run(id, name.trim(), description.trim(), category.trim(), promptInstruction.trim(), tagsArray, now);
-      const created = db.prepare('SELECT * FROM community_skills WHERE id = ?').get(id) as Record<string, unknown>;
+      , id, name.trim(), description.trim(), category.trim(), promptInstruction.trim(), tagsArray, now);
+      const created = await db.get('SELECT * FROM community_skills WHERE id = ?', id) as Record<string, unknown>;
       res.status(201).json({
         ...created,
         tags: typeof created.tags === 'string' ? JSON.parse(created.tags as string) : created.tags,
@@ -49,9 +49,9 @@ export function createSkillsRoutes(db: Database.Database) {
 
   // GET /api/skills/community — list all community skills
   // NOTE: Must be registered before /skills/:id to avoid "community" being matched as :id
-  router.get('/skills/community', (_req, res) => {
+  router.get('/skills/community', async (_req, res) => {
     try {
-      const skills = db.prepare('SELECT * FROM community_skills ORDER BY submitted_at DESC').all() as Record<string, unknown>[];
+
       res.json(skills.map((s) => ({
         ...s,
         tags: typeof s.tags === 'string' ? JSON.parse(s.tags as string) : s.tags,
@@ -62,7 +62,7 @@ export function createSkillsRoutes(db: Database.Database) {
   });
 
   // GET /api/skills/:id — get skill with full prompt
-  router.get('/skills/:id', (req, res) => {
+  router.get('/skills/:id', async (req, res) => {
     try {
       const skills = getBuiltInSkills();
       const skill = skills.find((s) => s.id === req.params.id);

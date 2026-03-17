@@ -245,7 +245,8 @@ export default function Dashboard() {
         const res = await fetch('/api/notifications', { headers });
         if (res.ok) {
           const data = await res.json();
-          const scheduled = data.filter((n: any) =>
+          const arr = Array.isArray(data) ? data : [];
+          const scheduled = arr.filter((n: any) =>
             (n.type === 'scheduled_workflow' || n.type === 'radar_scan') && !n.read_at
           );
           setScheduledNotifications(scheduled);

@@ -14,7 +14,8 @@
  */
 
 import * as cron from 'node-cron';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import AnthropicSDK from '@anthropic-ai/sdk';
 import { runHeartbeatCycle, getOrchestratorConfig } from './orchestrator-engine.js';
 import { createNotification } from './notification-service.js';
@@ -29,7 +30,7 @@ function minutesToCron(minutes: number): string {
   return `0 */${Math.max(1, hours)} * * *`;
 }
 
-export function initOrchestratorHeartbeat(db: Database.Database, anthropic: AnthropicSDK | null | undefined): void {
+export async function initOrchestratorHeartbeat(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): void {
   if (!anthropic) {
     console.log('[orchestrator-heartbeat] Skipping — Anthropic API not configured');
     return;

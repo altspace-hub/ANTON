@@ -7,7 +7,7 @@
  * - Path finding (shortest path, all paths)
  */
 
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 interface GraphNode {
   type: string;
@@ -21,18 +21,18 @@ interface GraphEdge {
   weight: number;
 }
 
-export function createGraphAnalytics(db: Database.Database) {
+export async function createGraphAnalytics(db: DatabaseAdapter) {
 
   /**
    * Build in-memory graph representation for analysis
    */
-  function buildGraphRepresentation(): { nodes: Map<string, GraphNode>; edges: GraphEdge[]; adjacency: Map<string, Set<string>> } {
+  async function buildGraphRepresentation(): { nodes: Map<string, GraphNode>; edges: GraphEdge[]; adjacency: Map<string, Set<string>> } {
     const nodes = new Map<string, GraphNode>();
     const edges: GraphEdge[] = [];
     const adjacency = new Map<string, Set<string>>();
 
     // Load all entity nodes
-    const entityNodes = db.prepare('SELECT entity_type, entity_id FROM entity_nodes').all() as Array<{ entity_type: string; entity_id: string }>;
+    const entityNodes = await db.all('SELECT entity_type, entity_id FROM entity_nodes') as Array<{ entity_type: string; entity_id: string }>;
     for (const node of entityNodes) {
       const key = `${node.entity_type}:${node.entity_id}`;
       nodes.set(key, { type: node.entity_type, id: node.entity_id, key });
@@ -40,7 +40,7 @@ export function createGraphAnalytics(db: Database.Database) {
     }
 
     // Load all relationships
-    const relationships = db.prepare('SELECT source_type, source_id, target_type, target_id, strength FROM entity_relationships').all() as any[];
+    const relationships = await db.all('SELECT source_type, source_id, target_type, target_id, strength FROM entity_relationships') as any[];
     for (const rel of relationships) {
       const sourceKey = `${rel.source_type}:${rel.source_id}`;
       const targetKey = `${rel.target_type}:${rel.target_id}`;

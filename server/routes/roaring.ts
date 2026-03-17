@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import {
   lookupCompany,
@@ -11,13 +12,13 @@ import {
   getConnectorStatus,
 } from '../services/roaring-connector.js';
 
-export function createRoaringRoutes(db: Database): Router {
+export async function createRoaringRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // GET /api/roaring/status — connector health, mock/live indicator
-  router.get('/roaring/status', (_req, res) => {
+  router.get('/roaring/status', async (_req, res) => {
     const status = getConnectorStatus();
-    const row = db.prepare("SELECT * FROM data_connectors WHERE connector_type='roaring'").get() as Record<string, unknown> | undefined;
+    const row = await db.get("SELECT * FROM data_connectors WHERE connector_type='roaring'") as Record<string, unknown> | undefined;
     res.json({ ...status, connector: row ?? null });
   });
 
@@ -51,10 +52,10 @@ export function createRoaringRoutes(db: Database): Router {
       // Cache screen result in DB
       const id = randomUUID();
       const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : null;
-      db.prepare(`
+      await db.run(`
         INSERT INTO entity_screens (id, session_id, entity_name, org_number, connector, result, risk_score, hit_count, cached_until)
         VALUES (?, ?, ?, ?, 'roaring', ?, ?, ?, datetime('now', '+24 hours'))
-      `).run(id, sessionId, req.params.orgNumber, req.params.orgNumber, JSON.stringify(result), result.hitCount > 0 ? 'HIGH' : 'CLEAR', result.hitCount);
+      `, id, sessionId, req.params.orgNumber, req.params.orgNumber, JSON.stringify(result), result.hitCount > 0 ? 'HIGH' : 'CLEAR', result.hitCount);
 
       res.json({ result, mode: getConnectorStatus().mode });
     } catch (err) {
@@ -85,11 +86,11 @@ export function createRoaringRoutes(db: Database): Router {
       const { orgNumber } = req.params;
 
       // Check DB cache (24h TTL)
-      const cached = db.prepare(`
+      const cached = await db.all(`
         SELECT result FROM entity_screens
         WHERE org_number=? AND connector='roaring' AND datetime(cached_until) > datetime('now')
         ORDER BY screened_at DESC LIMIT 1
-      `).get(orgNumber) as { result: string } | undefined;
+      `, orgNumber) as { result: string } | undefined;
 
       if (cached) {
         try {
@@ -104,16 +105,16 @@ export function createRoaringRoutes(db: Database): Router {
       // Cache in DB
       const id = randomUUID();
       const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : null;
-      db.prepare(`
+      await db.run(`
         INSERT INTO entity_screens (id, session_id, entity_name, org_number, connector, result, risk_score, hit_count, cached_until)
         VALUES (?, ?, ?, ?, 'roaring', ?, ?, ?, datetime('now', '+24 hours'))
-      `).run(id, sessionId, profile.company.name, orgNumber, JSON.stringify(profile), profile.riskScore >= 70 ? 'HIGH' : profile.riskScore >= 30 ? 'MEDIUM' : 'LOW', profile.sanctions.hitCount);
+      `, id, sessionId, profile.company.name, orgNumber, JSON.stringify(profile), profile.riskScore >= 70 ? 'HIGH' : profile.riskScore >= 30 ? 'MEDIUM' : 'LOW', profile.sanctions.hitCount);
 
       // Update connector stats
-      db.prepare(`
+      await db.run(`
         UPDATE data_connectors SET total_calls=total_calls+1, last_successful_call=datetime('now'),
         status=?, api_key_set=? WHERE connector_type='roaring'
-      `).run(profile.source === 'live' ? 'live' : 'mock', profile.source === 'live' ? 1 : 0);
+      `, profile.source === 'live' ? 'live' : 'mock', profile.source === 'live' ? 1 : 0);
 
       res.json({ profile, mode: getConnectorStatus().mode, cached: false });
     } catch (err) {
@@ -130,7 +131,7 @@ export function createRoaringRoutes(db: Database): Router {
       if (sessionId) {
         // Update session with entity context note
         const note = `[Roaring Entity Data] ${profile.company.name} (${profile.company.orgNumber}) — Risk Score: ${profile.riskScore}/100. ${profile.riskRationale}`;
-        db.prepare("UPDATE sessions SET notes=COALESCE(notes||'\n\n','') || ? WHERE id=?").run(note, sessionId);
+        await db.run("UPDATE sessions SET notes=COALESCE(notes||'\n\n','') || ? WHERE id=?", note, sessionId);
       }
 
       res.json({ profile, enriched: !!sessionId });
@@ -150,13 +151,9 @@ export function createRoaringRoutes(db: Database): Router {
   });
 
   // GET /api/roaring/screens/recent — recent screens from DB
-  router.get('/roaring/screens/recent', (req, res) => {
+  router.get('/roaring/screens/recent', async (req, res) => {
     const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
-    const rows = db.prepare(`
-      SELECT id, entity_name, org_number, risk_score, hit_count, screened_at
-      FROM entity_screens WHERE connector='roaring'
-      ORDER BY screened_at DESC LIMIT ?
-    `).all(limit);
+
     res.json({ screens: rows });
   });
 

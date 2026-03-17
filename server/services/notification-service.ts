@@ -1,4 +1,4 @@
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 
 interface CreateNotificationInput {
@@ -9,39 +9,35 @@ interface CreateNotificationInput {
   link?: string;
 }
 
-export function createNotification(db: Database, input: CreateNotificationInput): void {
+export async function createNotification(db: DatabaseAdapter, input: CreateNotificationInput): Promise<void> {
   try {
-    db.prepare(`
+    await db.run(`
       INSERT INTO notifications (id, user_id, type, title, message, link)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-      randomUUID(),
+    `, randomUUID(),
       input.userId || 'solo',
       input.type,
       input.title,
       input.message || null,
-      input.link || null
-    );
+      input.link || null);
   } catch (err) {
     console.error('[notifications] Failed to create notification:', err);
   }
 }
 
-export function getUnreadCount(db: Database, userId: string = 'solo'): number {
-  const row = db.prepare(
-    'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL'
-  ).get(userId) as { count: number };
+export async function getUnreadCount(db: DatabaseAdapter, userId: string = 'solo'): Promise<number> {
+  const row = await db.get('SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL'
+  , userId) as { count: number };
   return row?.count ?? 0;
 }
 
-export function markRead(db: Database, notificationId: string): void {
-  db.prepare(
-    "UPDATE notifications SET read_at = datetime('now') WHERE id = ?"
-  ).run(notificationId);
+export async function markRead(db: DatabaseAdapter, notificationId: string): Promise<void> {
+  await db.run("UPDATE notifications SET read_at = datetime('now') WHERE id = ?"
+  , notificationId);
 }
 
-export function markAllRead(db: Database, userId: string = 'solo'): void {
-  db.prepare(
+export async function markAllRead(db: DatabaseAdapter, userId: string = 'solo'): Promise<void> {
+  await db.run(
     "UPDATE notifications SET read_at = datetime('now') WHERE user_id = ? AND read_at IS NULL"
-  ).run(userId);
+  , userId);
 }

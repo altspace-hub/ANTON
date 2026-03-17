@@ -5,7 +5,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import fs from 'fs-extra';
 import path from 'path';
@@ -64,19 +65,19 @@ function loadBasePrompt(): string {
   }
 }
 
-export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic?: Anthropic | undefined): Router {
+export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthropic?: Anthropic | undefined): Router {
   const router = Router();
   const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY }) : null);
 
   // ── List all sessions ───────────────────────────────────────────────────────
-  router.get('/legal-research', (req: Request, res: Response) => {
+  router.get('/legal-research', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const sessions = db.prepare(
+      const sessions = await db.all(
         `SELECT id, title, mode, expert_role, created_at, updated_at
          FROM legal_research_sessions WHERE user_id = ?
          ORDER BY updated_at DESC LIMIT 50`
-      ).all(uid);
+      , uid);
       res.json({ sessions });
     } catch (err) {
       console.error('[legal-research] list error:', err);
@@ -85,16 +86,16 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
   });
 
   // ── Create session ──────────────────────────────────────────────────────────
-  router.post('/legal-research', (req: Request, res: Response) => {
+  router.post('/legal-research', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
       const { title, mode, expert_role } = req.body as { title?: string; mode?: string; expert_role?: string };
       const id = randomUUID();
       const now = new Date().toISOString();
-      db.prepare(
+      await db.run(
         `INSERT INTO legal_research_sessions (id, title, mode, expert_role, user_id, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).run(
+      ,
         id,
         title || 'Untitled Legal Research',
         mode || 'deep-dive',
@@ -103,7 +104,7 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
         now,
         now
       );
-      const session = db.prepare('SELECT * FROM legal_research_sessions WHERE id = ?').get(id);
+      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ?', id);
       res.status(201).json({ session });
     } catch (err) {
       console.error('[legal-research] create error:', err);
@@ -112,10 +113,10 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
   });
 
   // ── Get single session ──────────────────────────────────────────────────────
-  router.get('/legal-research/:id', (req: Request, res: Response) => {
+  router.get('/legal-research/:id', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const session = db.prepare('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?').get(req.params.id, uid);
+      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid);
       if (!session) return res.status(404).json({ error: 'Session not found' });
       res.json({ session });
     } catch (err) {
@@ -125,7 +126,7 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
   });
 
   // ── Update session (config, questions, pinned, citations) ───────────────────
-  router.patch('/legal-research/:id', (req: Request, res: Response) => {
+  router.patch('/legal-research/:id', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
       const allowed = ['title', 'mode', 'expert_role', 'research_questions', 'pinned_findings', 'citations', 'active_knowledge_packs'];
@@ -140,8 +141,8 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
       // Keys are guaranteed safe: sourced from the allowed whitelist above
       const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
       const vals = [...Object.values(updates), new Date().toISOString(), req.params.id, uid];
-      db.prepare(`UPDATE legal_research_sessions SET ${sets}, updated_at = ? WHERE id = ? AND user_id = ?`).run(...vals);
-      const session = db.prepare('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?').get(req.params.id, uid);
+      await db.run(`UPDATE legal_research_sessions SET ${sets}, updated_at = ? WHERE id = ? AND user_id = ?`, ...vals);
+      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid);
       res.json({ session });
     } catch (err) {
       console.error('[legal-research] update error:', err);
@@ -150,10 +151,10 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
   });
 
   // ── Delete session ──────────────────────────────────────────────────────────
-  router.delete('/legal-research/:id', (req: Request, res: Response) => {
+  router.delete('/legal-research/:id', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      db.prepare('DELETE FROM legal_research_sessions WHERE id = ? AND user_id = ?').run(req.params.id, uid);
+      await db.run('DELETE FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid);
       res.json({ ok: true });
     } catch (err) {
       console.error('[legal-research] delete error:', err);
@@ -167,8 +168,8 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
 
     try {
       const uid = getUserId(req);
-      const session = db.prepare('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?').get(req.params.id, uid) as
-        | { mode: string; expert_role: string; active_knowledge_packs: string } | undefined;
+      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid) as {
+        mode: string; expert_role: string; active_knowledge_packs: string } | undefined;
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
       const { messages, webSearchEnabled, plainLanguageMode } = req.body as {
@@ -197,15 +198,12 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
       try {
         const activePackNames: string[] = JSON.parse(session.active_knowledge_packs || '[]');
         if (activePackNames.length > 0) {
-          const kpService = createKnowledgePackService(db);
+          const kpService = await createKnowledgePackService(db);
           const allActiveSummary = kpService.getActivePacksSummary();
           if (allActiveSummary) {
             // Filter to only packs named in the session's active list
             const placeholders = activePackNames.map(() => '?').join(',');
-            const packRows = db.prepare(
-              `SELECT display_name, regulatory_area, regulation_ids, entity_count
-               FROM knowledge_packs WHERE name IN (${placeholders}) AND status IN ('active','installed') ORDER BY tier ASC, display_name ASC`
-            ).all(...activePackNames) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
+            const packRows = await db.all(`SELECT display_name, regulatory_area, regulation_ids, entity_count FROM knowledge_packs WHERE display_name IN (${placeholders}) AND status='active'`, ...activePackNames) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
             if (packRows.length > 0) {
               const lines = packRows.map(r => {
                 const regs = ((): string => { try { return (JSON.parse(r.regulation_ids) as string[]).join(', '); } catch { return ''; } })();
@@ -218,7 +216,7 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
       } catch { /* non-fatal — proceed without pack injection */ }
 
       // Inject org-wide context (entity type, jurisdiction, risk appetite, priorities)
-      const orgContextLayer = buildOrgContextLayer(db, uid);
+      const orgContextLayer = await buildOrgContextLayer(db, uid);
       const orgContextSection = orgContextLayer ? `\n\n${orgContextLayer}` : '';
 
       // ONBOARD-04: plain language prefix instruction
@@ -264,8 +262,7 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
       res.end();
 
       // Update session timestamp
-      db.prepare('UPDATE legal_research_sessions SET updated_at = ? WHERE id = ?')
-        .run(new Date().toISOString(), req.params.id);
+      await db.run('UPDATE legal_research_sessions SET updated_at = ? WHERE id = ?', new Date().toISOString(), req.params.id);
 
     } catch (err) {
       console.error('[legal-research] message error:', err);
@@ -279,7 +276,7 @@ export function createLegalResearchRoutes(db: Database.Database, sharedAnthropic
   });
 
   // ── Get available modes and expert roles ────────────────────────────────────
-  router.get('/legal-research-meta/config', (_req: Request, res: Response) => {
+  router.get('/legal-research-meta/config', async (_req: Request, res: Response) => {
     res.json({ modes: LEGAL_MODES, expertRoles: EXPERT_ROLES });
   });
 

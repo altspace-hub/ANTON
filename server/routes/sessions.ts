@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
-export function createSessionRoutes(db: Database.Database) {
+export async function createSessionRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/sessions — list sessions with aggregated token counts
-  router.get('/sessions', (req, res) => {
+  router.get('/sessions', async (req, res) => {
     try {
       const userId = req.user?.id;
       const userRole = req.user?.role;
@@ -56,7 +56,7 @@ export function createSessionRoutes(db: Database.Database) {
 
       params.push(limit, offset);
 
-      const sessions = db.prepare(baseQuery).all(...params);
+      const sessions = await db.all(baseQuery, ...params);
       res.json(sessions);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch sessions' });
@@ -64,18 +64,16 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // POST /api/sessions — create session
-  router.post('/sessions', (req, res) => {
+  router.post('/sessions', async (req, res) => {
     try {
       const { moduleId, title, config } = req.body;
       const userId = req.user?.id;
       const id = crypto.randomUUID();
-      db.prepare('INSERT INTO sessions (id, module_id, title, config, user_id) VALUES (?, ?, ?, ?, ?)').run(
-        id,
+      await db.run('INSERT INTO sessions (id, module_id, title, config, user_id) VALUES (?, ?, ?, ?, ?)', id,
         moduleId,
         title,
         JSON.stringify(config || {}),
-        userId
-      );
+        userId);
       res.json({ id, moduleId, title, config });
     } catch (error) {
       res.status(500).json({ error: 'Failed to create session' });
@@ -83,7 +81,7 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // GET /api/sessions/stats — aggregate stats for dashboard
-  router.get('/sessions/stats', (req, res) => {
+  router.get('/sessions/stats', async (req, res) => {
     try {
       const userId = req.user?.id;
       const userRole = req.user?.role;
@@ -92,40 +90,40 @@ export function createSessionRoutes(db: Database.Database) {
       const userFilter = userRole === 'admin' ? '' : 'WHERE user_id = ?';
       const userParams = userRole === 'admin' ? [] : [userId!];
 
-      const totalSessionsRow = db.prepare(`SELECT COUNT(*) as count FROM sessions ${userFilter}`).get(...userParams) as { count: number };
+      const totalSessionsRow = await db.get(`SELECT COUNT(*) as count FROM sessions ${userFilter}`, ...userParams) as { count: number };
 
-      const totalMessagesRow = db.prepare(`
+      const totalMessagesRow = await db.get(`
         SELECT COUNT(*) as count FROM messages
         WHERE role = 'assistant'
         ${userRole === 'admin' ? '' : 'AND session_id IN (SELECT id FROM sessions WHERE user_id = ?)'}
-      `).get(...userParams) as { count: number };
+      `, ...userParams) as { count: number };
 
-      const totalOutputTokensRow = db.prepare(`
+      const totalOutputTokensRow = await db.get(`
         SELECT SUM(token_count) as total FROM messages
         WHERE role = 'assistant'
         ${userRole === 'admin' ? '' : 'AND session_id IN (SELECT id FROM sessions WHERE user_id = ?)'}
-      `).get(...userParams) as { total: number | null };
+      `, ...userParams) as { total: number | null };
 
-      const topModules = db.prepare(`
+      const topModules = await db.all(`
         SELECT module_id as moduleId, COUNT(*) as count FROM sessions
         ${userFilter}
         GROUP BY module_id ORDER BY count DESC LIMIT 5
-      `).all(...userParams) as Array<{ moduleId: string; count: number }>;
+      `, ...userParams) as Array<{ moduleId: string; count: number }>;
 
       // Sprint 5: Additional stats
-      const thisWeekRow = db.prepare(`
+      const thisWeekRow = await db.get(`
         SELECT COUNT(*) as count FROM sessions
         WHERE created_at >= datetime('now', '-7 days')
         ${userRole === 'admin' ? '' : 'AND user_id = ?'}
-      `).get(...userParams) as { count: number };
+      `, ...userParams) as { count: number } | undefined;
 
-      const thisMonthRow = db.prepare(`
+      const thisMonthRow = await db.get(`
         SELECT COUNT(*) as count FROM sessions
         WHERE created_at >= datetime('now', '-30 days')
         ${userRole === 'admin' ? '' : 'AND user_id = ?'}
-      `).get(...userParams) as { count: number };
+      `, ...userParams) as { count: number } | undefined;
 
-      const recentSessions = db.prepare(`
+      const recentSessions = await db.all(`
         SELECT s.id, s.title, s.module_id, s.created_at,
                COALESCE(SUM(m.token_count), 0) as tokens
         FROM sessions s
@@ -134,15 +132,15 @@ export function createSessionRoutes(db: Database.Database) {
         GROUP BY s.id
         ORDER BY s.created_at DESC
         LIMIT 5
-      `).all(...userParams) as Array<{ id: string; title: string; module_id: string; created_at: string; tokens: number }>;
+      `, ...userParams) as Array<{ id: string; title: string; module_id: string; created_at: string; tokens: number }>;
 
       res.json({
         totalSessions: totalSessionsRow.count,
         totalMessages: totalMessagesRow.count,
         totalOutputTokens: totalOutputTokensRow.total ?? 0,
         topModules,
-        thisWeekSessions: thisWeekRow.count,
-        thisMonthSessions: thisMonthRow.count,
+        thisWeekSessions: thisWeekRow?.count ?? 0,
+        thisMonthSessions: thisMonthRow?.count ?? 0,
         recentSessions,
       });
     } catch (error) {
@@ -151,7 +149,7 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // GET /api/sessions/:id — get session with messages
-  router.get('/sessions/:id', (req, res) => {
+  router.get('/sessions/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       const userRole = req.user?.role;
@@ -160,13 +158,12 @@ export function createSessionRoutes(db: Database.Database) {
       const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
       const params = userRole === 'admin' ? [req.params.id] : [req.params.id, userId!];
 
-      const session = db.prepare(`SELECT * FROM sessions ${whereClause}`).get(...params);
+      const session = await db.get(`SELECT * FROM sessions ${whereClause}`, ...params);
       if (!session) {
         res.status(404).json({ error: 'Session not found or access denied' });
         return;
       }
-      const messages = (db.prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC')
-        .all(req.params.id) as Record<string, unknown>[])
+      const messages = (await db.all('SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC', req.params.id) as Record<string, unknown>[])
         .map((m) => ({
           ...m,
           config_snapshot: m.config_snapshot
@@ -180,7 +177,7 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // PATCH /api/sessions/:id — update title and/or note
-  router.patch('/sessions/:id', (req, res) => {
+  router.patch('/sessions/:id', async (req, res) => {
     try {
       const { title, note } = req.body as { title?: string; note?: string };
       if (!title?.trim() && note === undefined) {
@@ -212,8 +209,7 @@ export function createSessionRoutes(db: Database.Database) {
         ? [...setParams, req.params.id]
         : [...setParams, req.params.id, userId!];
 
-      const result = db.prepare(`UPDATE sessions SET ${setClauses.join(', ')} ${whereClause}`)
-        .run(...params);
+      const result = await db.run(`UPDATE sessions SET ${setClauses.join(', ')} ${whereClause}`, ...params);
 
       if (result.changes === 0) {
         res.status(404).json({ error: 'Session not found or access denied' });
@@ -227,7 +223,7 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // PATCH /api/sessions/:id/review-status — update human review status
-  router.patch('/sessions/:id/review-status', (req, res) => {
+  router.patch('/sessions/:id/review-status', async (req, res) => {
     try {
       const { status, reviewedBy } = req.body as { status: string; reviewedBy?: string };
       if (!['draft', 'reviewed', 'approved'].includes(status)) {
@@ -242,15 +238,14 @@ export function createSessionRoutes(db: Database.Database) {
       const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
       const checkParams = userRole === 'admin' ? [req.params.id] : [req.params.id, userId!];
 
-      const session = db.prepare(`SELECT id FROM sessions ${whereClause}`).get(...checkParams);
+      const session = await db.get(`SELECT * FROM sessions ${whereClause}`, ...checkParams);
       if (!session) {
         res.status(404).json({ error: 'Session not found or access denied' });
         return;
       }
 
-      db.prepare(
-        'UPDATE sessions SET review_status = ?, reviewed_by = ?, reviewed_at = ?, updated_at = ? WHERE id = ?'
-      ).run(
+      await db.run('UPDATE sessions SET review_status = ?, reviewed_by = ?, reviewed_at = ?, updated_at = ? WHERE id = ?'
+      , 
         status,
         status === 'draft' ? null : (reviewedBy || null),
         status === 'draft' ? null : new Date().toISOString(),
@@ -264,7 +259,7 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // DELETE /api/sessions/:id
-  router.delete('/sessions/:id', (req, res) => {
+  router.delete('/sessions/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       const userRole = req.user?.role;
@@ -273,7 +268,7 @@ export function createSessionRoutes(db: Database.Database) {
       const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
       const params = userRole === 'admin' ? [req.params.id] : [req.params.id, userId!];
 
-      const result = db.prepare(`DELETE FROM sessions ${whereClause}`).run(...params);
+      const result = await db.run(`DELETE FROM sessions ${whereClause}`, ...params);
 
       if (result.changes === 0) {
         res.status(404).json({ error: 'Session not found or access denied' });
@@ -287,7 +282,7 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // POST /api/sessions/:id/share — generate a shareable read-only link
-  router.post('/sessions/:id/share', (req, res) => {
+  router.post('/sessions/:id/share', async (req, res) => {
     try {
       const userId = req.user?.id;
       const userRole = req.user?.role;
@@ -296,7 +291,7 @@ export function createSessionRoutes(db: Database.Database) {
       const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
       const params = userRole === 'admin' ? [req.params.id] : [req.params.id, userId!];
 
-      const session = db.prepare(`SELECT * FROM sessions ${whereClause}`).get(...params) as Record<string, unknown> | undefined;
+      const session = await db.get(`SELECT * FROM sessions ${whereClause}`, ...params) as Record<string, unknown> | undefined;
       if (!session) {
         res.status(404).json({ error: 'Session not found or access denied' });
         return;
@@ -305,8 +300,7 @@ export function createSessionRoutes(db: Database.Database) {
       let token = session.share_token as string | null;
       if (!token) {
         token = crypto.randomUUID().replace(/-/g, '');
-        db.prepare('UPDATE sessions SET share_token = ?, shared_at = ? WHERE id = ?')
-          .run(token, new Date().toISOString(), req.params.id);
+        await db.run('UPDATE sessions SET share_token = ?, shared_at = ? WHERE id = ?', token, new Date().toISOString(), req.params.id);
       }
       res.json({ token, url: `/share/${token}` });
     } catch (error) {
@@ -315,17 +309,14 @@ export function createSessionRoutes(db: Database.Database) {
   });
 
   // GET /api/share/:token — public read-only session viewer (no auth required)
-  router.get('/share/:token', (req, res) => {
+  router.get('/share/:token', async (req, res) => {
     try {
-      const session = db.prepare('SELECT * FROM sessions WHERE share_token = ?').get(req.params.token) as Record<string, unknown> | undefined;
+      const session = await db.get('SELECT * FROM sessions WHERE share_token = ?', req.params.token) as Record<string, unknown> | undefined;
       if (!session) {
         res.status(404).json({ error: 'Share link not found or expired' });
         return;
       }
-      // Return last assistant message as the shared output
-      const messages = db.prepare(
-        "SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC"
-      ).all(session.id as string) as Array<Record<string, unknown>>;
+      const messages = await db.all('SELECT * FROM messages WHERE session_id = ? ORDER BY created_at ASC', session.id as string) as Array<Record<string, unknown>>;
       const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
       res.json({
         sessionId: session.id,

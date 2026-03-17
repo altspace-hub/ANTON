@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generateSuggestions } from '../services/suggestion-engine.js';
 
-export function createSuggestionsRoutes(db: Database.Database) {
+export async function createSuggestionsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/suggestions — proactive suggestions for the dashboard

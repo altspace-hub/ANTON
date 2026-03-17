@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createTimeIntelligence } from '../services/time-intelligence.js';
 
-export function createDeadlinesRoutes(db: Database.Database) {
+export async function createDeadlinesRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const ti = createTimeIntelligence(db);
+  const ti = await createTimeIntelligence(db);
 
   // Resolve current user id (solo mode uses 'default', team mode uses JWT user)
   function getUserId(req: Parameters<Parameters<typeof router.get>[1]>[0]): string {
@@ -13,10 +13,10 @@ export function createDeadlinesRoutes(db: Database.Database) {
   }
 
   // GET /api/deadlines/morning-brief — must be before /:id route
-  router.get('/deadlines/morning-brief', (req, res) => {
+  router.get('/deadlines/morning-brief', async (req, res) => {
     try {
       const userId = getUserId(req);
-      const brief = ti.getMorningBrief(userId);
+      const brief = await ti.getMorningBrief(userId);
       res.json(brief);
     } catch (err) {
       console.error('[deadlines] morning-brief error:', err);
@@ -25,10 +25,10 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/deadlines/conflicts
-  router.get('/deadlines/conflicts', (req, res) => {
+  router.get('/deadlines/conflicts', async (req, res) => {
     try {
       const userId = getUserId(req);
-      const conflicts = ti.detectConflicts(userId);
+      const conflicts = await ti.detectConflicts(userId);
       res.json(conflicts);
     } catch (err) {
       console.error('[deadlines] conflicts error:', err);
@@ -37,9 +37,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // DELETE /api/deadlines/reminders/:reminderId
-  router.delete('/deadlines/reminders/:reminderId', (req, res) => {
+  router.delete('/deadlines/reminders/:reminderId', async (req, res) => {
     try {
-      const result = db.prepare('DELETE FROM deadline_reminders WHERE id = ?').run(req.params.reminderId);
+      const result = await db.run('DELETE FROM deadline_reminders WHERE id = ?', req.params.reminderId);
       if (result.changes === 0) {
         res.status(404).json({ error: 'Reminder not found' });
         return;
@@ -52,14 +52,14 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // PUT /api/deadlines/reorder
-  router.put('/deadlines/reorder', (req, res) => {
+  router.put('/deadlines/reorder', async (req, res) => {
     try {
       const updates = req.body as Array<{ id: string; sort_order: number; kanban_column?: string }>;
       if (!Array.isArray(updates)) {
         res.status(400).json({ error: 'Expected array of updates' });
         return;
       }
-      ti.reorderDeadlines(updates);
+      await ti.reorderDeadlines(updates);
       res.json({ ok: true });
     } catch (err) {
       console.error('[deadlines] reorder error:', err);
@@ -68,9 +68,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/deadline-labels
-  router.get('/deadline-labels', (_req, res) => {
+  router.get('/deadline-labels', async (_req, res) => {
     try {
-      const labels = db.prepare('SELECT * FROM deadline_labels ORDER BY name').all();
+      const labels = await db.all('SELECT * FROM deadline_labels ORDER BY name');
       res.json(labels);
     } catch (err) {
       console.error('[deadlines] labels error:', err);
@@ -79,7 +79,7 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // POST /api/deadline-labels
-  router.post('/deadline-labels', (req, res) => {
+  router.post('/deadline-labels', async (req, res) => {
     try {
       const { name, color } = req.body as { name?: string; color?: string };
       if (!name?.trim()) {
@@ -87,8 +87,8 @@ export function createDeadlinesRoutes(db: Database.Database) {
         return;
       }
       const id = 'lbl-' + randomUUID().slice(0, 8);
-      db.prepare('INSERT INTO deadline_labels (id, name, color) VALUES (?, ?, ?)').run(id, name.trim(), color || '#2DD4A8');
-      const label = db.prepare('SELECT * FROM deadline_labels WHERE id = ?').get(id);
+      await db.run('INSERT INTO deadline_labels (id, name, color) VALUES (?, ?, ?)', id, name.trim(), color || '#2DD4A8');
+      const label = await db.get('SELECT * FROM deadline_labels WHERE id = ?', id);
       res.status(201).json(label);
     } catch (err) {
       console.error('[deadlines] create label error:', err);
@@ -97,9 +97,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // DELETE /api/deadline-labels/:id
-  router.delete('/deadline-labels/:id', (req, res) => {
+  router.delete('/deadline-labels/:id', async (req, res) => {
     try {
-      const result = db.prepare('DELETE FROM deadline_labels WHERE id = ?').run(req.params.id);
+      const result = await db.run('DELETE FROM deadline_labels WHERE id = ?', req.params.id);
       if (result.changes === 0) {
         res.status(404).json({ error: 'Label not found' });
         return;
@@ -112,11 +112,11 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/deadlines
-  router.get('/deadlines', (req, res) => {
+  router.get('/deadlines', async (req, res) => {
     try {
       const userId = getUserId(req);
       const { status, priority, from, to, project_id, parent_id, kanban_column } = req.query as Record<string, string | undefined>;
-      const deadlines = ti.getDeadlines(userId, { status, priority, from, to, project_id, parent_id, kanban_column });
+      const deadlines = await ti.getDeadlines(userId, { status, priority, from, to, project_id, parent_id, kanban_column });
       res.json(deadlines);
     } catch (err) {
       console.error('[deadlines] list error:', err);
@@ -125,7 +125,7 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // POST /api/deadlines
-  router.post('/deadlines', (req, res) => {
+  router.post('/deadlines', async (req, res) => {
     try {
       const userId = getUserId(req);
       const {
@@ -161,7 +161,7 @@ export function createDeadlinesRoutes(db: Database.Database) {
         return;
       }
 
-      const deadline = ti.createDeadline(
+      const deadline = await ti.createDeadline(
         {
           title: title.trim(), description, due_date, category, priority,
           preparation_days, review_days, buffer_days, owner_id,
@@ -178,9 +178,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/deadlines/:id/subtasks
-  router.get('/deadlines/:id/subtasks', (req, res) => {
+  router.get('/deadlines/:id/subtasks', async (req, res) => {
     try {
-      const subtasks = ti.getSubtasks(req.params.id);
+      const subtasks = await ti.getSubtasks(req.params.id);
       res.json(subtasks);
     } catch (err) {
       console.error('[deadlines] subtasks error:', err);
@@ -189,9 +189,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/deadlines/:id/reminders
-  router.get('/deadlines/:id/reminders', (req, res) => {
+  router.get('/deadlines/:id/reminders', async (req, res) => {
     try {
-      const reminders = db.prepare('SELECT * FROM deadline_reminders WHERE deadline_id = ? ORDER BY remind_days_before').all(req.params.id);
+
       res.json(reminders);
     } catch (err) {
       console.error('[deadlines] reminders error:', err);
@@ -200,7 +200,7 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // POST /api/deadlines/:id/reminders
-  router.post('/deadlines/:id/reminders', (req, res) => {
+  router.post('/deadlines/:id/reminders', async (req, res) => {
     try {
       const { remind_days_before, remind_via, email_address } = req.body as {
         remind_days_before?: number;
@@ -212,9 +212,8 @@ export function createDeadlinesRoutes(db: Database.Database) {
         return;
       }
       const id = randomUUID();
-      db.prepare('INSERT INTO deadline_reminders (id, deadline_id, remind_days_before, remind_via, email_address) VALUES (?, ?, ?, ?, ?)')
-        .run(id, req.params.id, remind_days_before, remind_via || 'email', email_address || null);
-      const reminder = db.prepare('SELECT * FROM deadline_reminders WHERE id = ?').get(id);
+      await db.run('INSERT INTO deadline_reminders (id, deadline_id, remind_days_before, remind_via, email_address) VALUES (?, ?, ?, ?, ?)', id, req.params.id, remind_days_before, remind_via || 'email', email_address || null);
+
       res.status(201).json(reminder);
     } catch (err) {
       console.error('[deadlines] create reminder error:', err);
@@ -223,9 +222,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/deadlines/:id/comments
-  router.get('/deadlines/:id/comments', (req, res) => {
+  router.get('/deadlines/:id/comments', async (req, res) => {
     try {
-      const comments = db.prepare('SELECT * FROM deadline_comments WHERE deadline_id = ? ORDER BY created_at ASC').all(req.params.id);
+      const comments = await db.all('SELECT * FROM deadline_comments WHERE deadline_id = ? ORDER BY created_at ASC', req.params.id);
       res.json(comments);
     } catch (err) {
       console.error('[deadlines] comments error:', err);
@@ -234,7 +233,7 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // POST /api/deadlines/:id/comments
-  router.post('/deadlines/:id/comments', (req, res) => {
+  router.post('/deadlines/:id/comments', async (req, res) => {
     try {
       const userId = getUserId(req);
       const { content } = req.body as { content?: string };
@@ -243,9 +242,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
         return;
       }
       const id = randomUUID();
-      db.prepare('INSERT INTO deadline_comments (id, deadline_id, user_id, content) VALUES (?, ?, ?, ?)')
-        .run(id, req.params.id, userId, content.trim());
-      const comment = db.prepare('SELECT * FROM deadline_comments WHERE id = ?').get(id);
+      await db.run('INSERT INTO deadline_comments (id, deadline_id, user_id, content) VALUES (?, ?, ?, ?)', id, req.params.id, userId, content.trim());
+
+      const comment = { id, deadline_id: req.params.id, user_id: userId, content: content.trim() };
       res.status(201).json(comment);
     } catch (err) {
       console.error('[deadlines] create comment error:', err);
@@ -254,9 +253,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/deadlines/:id
-  router.get('/deadlines/:id', (req, res) => {
+  router.get('/deadlines/:id', async (req, res) => {
     try {
-      const deadline = ti.getDeadline(req.params.id);
+      const deadline = await ti.getDeadline(req.params.id);
       if (!deadline) {
         res.status(404).json({ error: 'Deadline not found' });
         return;
@@ -269,9 +268,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // PUT /api/deadlines/:id
-  router.put('/deadlines/:id', (req, res) => {
+  router.put('/deadlines/:id', async (req, res) => {
     try {
-      const updated = ti.updateDeadline(req.params.id, req.body as Parameters<typeof ti.updateDeadline>[1]);
+      const updated = await ti.updateDeadline(req.params.id, req.body as Parameters<typeof ti.updateDeadline>[1]);
       if (!updated) {
         res.status(404).json({ error: 'Deadline not found' });
         return;
@@ -284,9 +283,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // DELETE /api/deadlines/:id
-  router.delete('/deadlines/:id', (req, res) => {
+  router.delete('/deadlines/:id', async (req, res) => {
     try {
-      const deleted = ti.deleteDeadline(req.params.id);
+      const deleted = await ti.deleteDeadline(req.params.id);
       if (!deleted) {
         res.status(404).json({ error: 'Deadline not found' });
         return;
@@ -299,9 +298,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // POST /api/deadlines/:id/complete
-  router.post('/deadlines/:id/complete', (req, res) => {
+  router.post('/deadlines/:id/complete', async (req, res) => {
     try {
-      const completed = ti.completeDeadline(req.params.id);
+      const completed = await ti.completeDeadline(req.params.id);
       if (!completed) {
         res.status(404).json({ error: 'Deadline not found' });
         return;
@@ -314,9 +313,9 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // GET /api/rhythms
-  router.get('/rhythms', (_req, res) => {
+  router.get('/rhythms', async (_req, res) => {
     try {
-      const rhythms = ti.getRhythms();
+      const rhythms = await ti.getRhythms();
       res.json(rhythms);
     } catch (err) {
       console.error('[rhythms] list error:', err);
@@ -325,7 +324,7 @@ export function createDeadlinesRoutes(db: Database.Database) {
   });
 
   // POST /api/rhythms
-  router.post('/rhythms', (req, res) => {
+  router.post('/rhythms', async (req, res) => {
     try {
       const { name, description, frequency, anchor_expression, typical_duration_days, typical_effort_hours, source } = req.body as {
         name?: string;
@@ -350,7 +349,7 @@ export function createDeadlinesRoutes(db: Database.Database) {
         return;
       }
 
-      const rhythm = ti.createRhythm({
+      const rhythm = await ti.createRhythm({
         name: name.trim(),
         description,
         frequency: frequency.trim(),

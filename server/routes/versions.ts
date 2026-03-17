@@ -1,18 +1,16 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { computeDiff, computeStats, buildSemanticSummary } from '../services/version-diff.js';
 
-export function createVersionsRoutes(db: Database.Database) {
+export async function createVersionsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/versions/:entityType/:entityId — list versions (newest first, max 20)
-  router.get('/:entityType/:entityId', (req, res) => {
+  router.get('/:entityType/:entityId', async (req, res) => {
     try {
-      const versions = db
-        .prepare(
-          'SELECT id, version_number, label, created_at, length(content) as content_length FROM versions WHERE entity_type = ? AND entity_id = ? ORDER BY version_number DESC LIMIT 20'
-        )
-        .all(req.params.entityType, req.params.entityId);
+      const versions = await db.all(
+        'SELECT id, version_number, label, created_at, length(content) as content_length FROM versions WHERE entity_type = ? AND entity_id = ? ORDER BY version_number DESC LIMIT 20'
+      , req.params.entityType, req.params.entityId);
       res.json(versions);
     } catch {
       res.status(500).json({ error: 'Failed to fetch versions' });
@@ -20,13 +18,11 @@ export function createVersionsRoutes(db: Database.Database) {
   });
 
   // GET /api/versions/:entityType/:entityId/:versionNumber — get specific version content
-  router.get('/:entityType/:entityId/:versionNumber', (req, res) => {
+  router.get('/:entityType/:entityId/:versionNumber', async (req, res) => {
     try {
-      const version = db
-        .prepare(
-          'SELECT * FROM versions WHERE entity_type = ? AND entity_id = ? AND version_number = ?'
-        )
-        .get(req.params.entityType, req.params.entityId, parseInt(req.params.versionNumber, 10));
+      const version = await db.get(
+        'SELECT * FROM versions WHERE entity_type = ? AND entity_id = ? AND version_number = ?'
+      , req.params.entityType, req.params.entityId, parseInt(req.params.versionNumber, 10));
       if (!version) {
         res.status(404).json({ error: 'Version not found' });
         return;
@@ -38,7 +34,7 @@ export function createVersionsRoutes(db: Database.Database) {
   });
 
   // POST /api/versions/:entityType/:entityId — save a new version
-  router.post('/:entityType/:entityId', (req, res) => {
+  router.post('/:entityType/:entityId', async (req, res) => {
     try {
       const { content, label } = req.body as { content: string; label?: string };
       if (!content) {
@@ -46,16 +42,14 @@ export function createVersionsRoutes(db: Database.Database) {
         return;
       }
 
-      const last = db
-        .prepare(
-          'SELECT MAX(version_number) as max_v FROM versions WHERE entity_type = ? AND entity_id = ?'
-        )
-        .get(req.params.entityType, req.params.entityId) as { max_v: number | null };
+      const last = await db.get(
+        'SELECT MAX(version_number) as max_v FROM versions WHERE entity_type = ? AND entity_id = ?'
+      , req.params.entityType, req.params.entityId) as { max_v: number | null } | undefined;
 
       const nextVersion = (last?.max_v ?? 0) + 1;
-      db.prepare(
+      await db.run(
         'INSERT INTO versions (entity_type, entity_id, version_number, label, content) VALUES (?, ?, ?, ?, ?)'
-      ).run(
+      ,
         req.params.entityType,
         req.params.entityId,
         nextVersion,
@@ -70,9 +64,9 @@ export function createVersionsRoutes(db: Database.Database) {
   });
 
   // DELETE /api/versions/:id — delete a specific version record
-  router.delete('/:id', (req, res) => {
+  router.delete('/:id', async (req, res) => {
     try {
-      db.prepare('DELETE FROM versions WHERE id = ?').run(req.params.id);
+      await db.run('DELETE FROM versions WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch {
       res.status(500).json({ error: 'Failed to delete version' });
@@ -80,7 +74,7 @@ export function createVersionsRoutes(db: Database.Database) {
   });
 
   // GET /api/versions/diff?oldId=xxx&newId=xxx — semantic diff between two versions
-  router.get('/diff', (req, res) => {
+  router.get('/diff', async (req, res) => {
     try {
       const { oldId, newId } = req.query as { oldId: string; newId: string };
       if (!oldId || !newId) {
@@ -88,7 +82,7 @@ export function createVersionsRoutes(db: Database.Database) {
         return;
       }
 
-      const oldVer = db.prepare('SELECT * FROM versions WHERE id = ?').get(oldId) as {
+      const oldVer = await db.get('SELECT * FROM versions WHERE id = ?', oldId) as {
         id: number;
         entity_type: string;
         entity_id: string;
@@ -98,7 +92,7 @@ export function createVersionsRoutes(db: Database.Database) {
         created_at: string;
       } | undefined;
 
-      const newVer = db.prepare('SELECT * FROM versions WHERE id = ?').get(newId) as {
+      const newVer = await db.get('SELECT * FROM versions WHERE id = ?', newId) as {
         id: number;
         entity_type: string;
         entity_id: string;

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 export interface Deadline {
   id: string;
@@ -96,9 +96,9 @@ function getStartOfWeek(date: Date): Date {
   return d;
 }
 
-export function createTimeIntelligence(db: Database.Database) {
+export async function createTimeIntelligence(db: DatabaseAdapter) {
   return {
-    createDeadline(
+    async createDeadline(
       data: {
         title: string;
         description?: string;
@@ -128,14 +128,13 @@ export function createTimeIntelligence(db: Database.Database) {
       const earliestStart = calculateEarliestStart(data.due_date, preparationDays, reviewDays, bufferDays);
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO deadlines (id, title, description, due_date, source_type, source_ref, category,
           priority, preparation_days, review_days, buffer_days, earliest_start, owner_id,
           parent_id, project_id, labels, assigned_to, effort_hours, kanban_column, notes,
           status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', ?, ?)
-      `).run(
-        id,
+      `, id,
         data.title,
         data.description ?? null,
         data.due_date,
@@ -156,14 +155,13 @@ export function createTimeIntelligence(db: Database.Database) {
         data.kanban_column ?? 'backlog',
         data.notes ?? null,
         now,
-        now
-      );
+        now);
 
-      return db.prepare('SELECT * FROM deadlines WHERE id = ?').get(id) as Deadline;
+      return await db.get('SELECT * FROM deadlines WHERE id = ?', id) as Deadline;
     },
 
-    updateDeadline(id: string, data: Partial<Deadline>): Deadline | null {
-      const existing = db.prepare('SELECT * FROM deadlines WHERE id = ?').get(id) as Deadline | undefined;
+    async updateDeadline(id: string, data: Partial<Deadline>): Promise<Deadline | null> {
+      const existing = await db.get('SELECT * FROM deadlines WHERE id = ?', id) as Deadline | undefined;
       if (!existing) return null;
 
       const preparationDays = data.preparation_days ?? existing.preparation_days;
@@ -197,20 +195,20 @@ export function createTimeIntelligence(db: Database.Database) {
       values.push(new Date().toISOString());
       values.push(id);
 
-      db.prepare(`UPDATE deadlines SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-      return db.prepare('SELECT * FROM deadlines WHERE id = ?').get(id) as Deadline;
+      await db.run(`UPDATE deadlines SET ${fields.join(', ')} WHERE id = ?`, ...values);
+      return await db.get('SELECT * FROM deadlines WHERE id = ?', id) as Deadline;
     },
 
-    deleteDeadline(id: string): boolean {
-      const result = db.prepare('DELETE FROM deadlines WHERE id = ?').run(id);
+    async deleteDeadline(id: string): Promise<boolean> {
+      const result = await db.run('DELETE FROM deadlines WHERE id = ?', id);
       return result.changes > 0;
     },
 
-    getDeadline(id: string): Deadline | null {
-      return (db.prepare('SELECT * FROM deadlines WHERE id = ?').get(id) as Deadline | undefined) ?? null;
+    async getDeadline(id: string): Promise<Deadline | null> {
+      return (await db.get('SELECT * FROM deadlines WHERE id = ?', id) as Deadline | undefined) ?? null;
     },
 
-    getDeadlines(
+    async getDeadlines(
       _userId: string,
       filters?: {
         status?: string;
@@ -259,11 +257,11 @@ export function createTimeIntelligence(db: Database.Database) {
       }
 
       query += ' ORDER BY due_date ASC';
-      return db.prepare(query).all(...params) as Deadline[];
+      return await db.all(query, ...params) as Deadline[];
     },
 
-    getMorningBrief(_userId: string): MorningBrief {
-      this.refreshStatuses();
+    async getMorningBrief(_userId: string): Promise<MorningBrief> {
+      await this.refreshStatuses();
 
       const now = new Date();
       const todayEnd = new Date(now);
@@ -271,9 +269,9 @@ export function createTimeIntelligence(db: Database.Database) {
       const weekEnd = new Date(now);
       weekEnd.setDate(weekEnd.getDate() + 7);
 
-      const allActive = db.prepare(
-        "SELECT * FROM deadlines WHERE status NOT IN ('completed') ORDER BY due_date ASC"
-      ).all() as Deadline[];
+      const allActive = await db.all(
+        "SELECT * FROM deadlines WHERE status NOT IN ('completed', 'cancelled') ORDER BY due_date ASC"
+      ) as Deadline[];
 
       const overdue = allActive
         .filter((d) => d.status === 'overdue')
@@ -319,12 +317,12 @@ export function createTimeIntelligence(db: Database.Database) {
       };
     },
 
-    detectConflicts(_userId: string): WeekConflict[] {
+    async detectConflicts(_userId: string): Promise<WeekConflict[]> {
       this.refreshStatuses();
 
-      const deadlines = db.prepare(
+      const deadlines = await db.all(
         "SELECT * FROM deadlines WHERE status NOT IN ('completed') ORDER BY due_date ASC"
-      ).all() as Deadline[];
+      ) as Deadline[];
 
       if (deadlines.length === 0) return [];
 
@@ -362,66 +360,62 @@ export function createTimeIntelligence(db: Database.Database) {
       return conflicts;
     },
 
-    completeDeadline(id: string): Deadline | null {
+    async completeDeadline(id: string): Promise<Deadline | null> {
       const now = new Date().toISOString();
-      db.prepare(
-        "UPDATE deadlines SET status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?"
-      ).run(now, now, id);
+      await db.run("UPDATE deadlines SET status = 'completed', completed_at = ?, updated_at = ? WHERE id = ?"
+      , now, now, id);
       return this.getDeadline(id);
     },
 
-    refreshStatuses(): void {
+    async refreshStatuses(): Promise<void> {
       const now = new Date().toISOString();
       // Mark as overdue: past due_date and still upcoming/in_progress/review
-      db.prepare(`
+      await db.run(`
         UPDATE deadlines
         SET status = 'overdue', updated_at = ?
         WHERE due_date < ?
           AND status IN ('upcoming', 'in_progress', 'review')
-      `).run(now, now);
+      `, now, now);
 
       // Mark as at_risk: earliest_start has passed but still upcoming
-      db.prepare(`
+      await db.run(`
         UPDATE deadlines
         SET status = 'at_risk', updated_at = ?
         WHERE earliest_start < ?
           AND due_date >= ?
           AND status = 'upcoming'
-      `).run(now, now, now);
+      `, now, now, now);
     },
 
     // Work rhythms CRUD
-    getRhythms(): WorkRhythm[] {
-      return db.prepare('SELECT * FROM work_rhythms ORDER BY created_at DESC').all() as WorkRhythm[];
+    async getRhythms(): Promise<WorkRhythm[]> {
+      return await db.all('SELECT * FROM work_rhythms ORDER BY created_at DESC') as WorkRhythm[];
     },
 
-    getSubtasks(parentId: string): Deadline[] {
-      return db.prepare('SELECT * FROM deadlines WHERE parent_id = ? ORDER BY sort_order, due_date')
-        .all(parentId) as Deadline[];
+    async getSubtasks(parentId: string): Promise<Deadline[]> {
+      return await db.all('SELECT * FROM deadlines WHERE parent_id = ? ORDER BY sort_order, due_date', parentId) as Deadline[];
     },
 
-    getDeadlinesByProject(projectId: string): Deadline[] {
-      return db.prepare('SELECT * FROM deadlines WHERE project_id = ? ORDER BY due_date ASC')
-        .all(projectId) as Deadline[];
+    async getDeadlinesByProject(projectId: string): Promise<Deadline[]> {
+      return await db.all('SELECT * FROM deadlines WHERE project_id = ? ORDER BY due_date ASC', projectId) as Deadline[];
     },
 
-    getDeadlinesByDateRange(from: string, to: string): Deadline[] {
-      return db.prepare('SELECT * FROM deadlines WHERE due_date >= ? AND due_date <= ? ORDER BY due_date ASC')
-        .all(from, to) as Deadline[];
+    async getDeadlinesByDateRange(from: string, to: string): Promise<Deadline[]> {
+      return await db.all('SELECT * FROM deadlines WHERE due_date >= ? AND due_date <= ? ORDER BY due_date ASC', from, to) as Deadline[];
     },
 
-    reorderDeadlines(updates: Array<{ id: string; sort_order: number; kanban_column?: string }>): void {
-      const stmt = db.prepare('UPDATE deadlines SET sort_order = ?, kanban_column = COALESCE(?, kanban_column), updated_at = ? WHERE id = ?');
+    async reorderDeadlines(updates: Array<{ id: string; sort_order: number; kanban_column?: string }>): Promise<void> {
+
       const now = new Date().toISOString();
-      const txn = db.transaction(() => {
+      const txn = await db.transaction(async (tx) => {
         for (const u of updates) {
-          stmt.run(u.sort_order, u.kanban_column ?? null, now, u.id);
+          await db.run('UPDATE deadlines SET sort_order = ?, kanban_column = COALESCE(?, kanban_column), updated_at = ? WHERE id = ?', u.sort_order, u.kanban_column ?? null, now, u.id);
         }
       });
       txn();
     },
 
-    createRhythm(data: {
+    async createRhythm(data: {
       name: string;
       description?: string;
       frequency: string;
@@ -429,14 +423,14 @@ export function createTimeIntelligence(db: Database.Database) {
       typical_duration_days?: number;
       typical_effort_hours?: number;
       source?: string;
-    }): WorkRhythm {
+    }): Promise<WorkRhythm> {
       const id = randomUUID();
       const now = new Date().toISOString();
-      db.prepare(`
+      await db.run(`
         INSERT INTO work_rhythms (id, name, description, frequency, anchor_expression,
           typical_duration_days, typical_effort_hours, source, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `, 
         id,
         data.name,
         data.description ?? null,
@@ -447,7 +441,7 @@ export function createTimeIntelligence(db: Database.Database) {
         data.source ?? 'manual',
         now
       );
-      return db.prepare('SELECT * FROM work_rhythms WHERE id = ?').get(id) as WorkRhythm;
+      return await db.get('SELECT * FROM work_rhythms WHERE id = ?', id) as WorkRhythm;
     },
   };
 }

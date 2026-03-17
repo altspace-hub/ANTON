@@ -8,7 +8,8 @@
  */
 
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { requireAdminOrSolo } from '../middleware/auth.js';
 import { validate } from '../lib/validate.js';
 import { z } from 'zod';
@@ -25,13 +26,13 @@ const AllowlistAddSchema = z.object({
   modelId: z.string().min(1).max(100),
 });
 
-export function createCompliancePolicyRoutes(db: Database.Database): Router {
+export async function createCompliancePolicyRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // GET /api/compliance-policy — list all module policies (admin)
-  router.get('/compliance-policy', requireAdminOrSolo, (_req, res) => {
+  router.get('/compliance-policy', requireAdminOrSolo, async (_req, res) => {
     try {
-      const rows = db.prepare('SELECT * FROM compliance_policy ORDER BY module_id').all();
+      const rows = await db.all('SELECT * FROM compliance_policy ORDER BY module_id');
       res.json(rows);
     } catch (e) {
       res.status(500).json({ error: 'Failed to fetch compliance policies' });
@@ -39,9 +40,9 @@ export function createCompliancePolicyRoutes(db: Database.Database): Router {
   });
 
   // GET /api/compliance-policy/:moduleId — get active policy for a module (any user — used by client)
-  router.get('/compliance-policy/:moduleId', (req, res) => {
+  router.get('/compliance-policy/:moduleId', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM compliance_policy WHERE module_id = ?').get(req.params.moduleId);
+      const row = await db.get('SELECT * FROM compliance_policy WHERE module_id = ?', req.params.moduleId);
       res.json(row || null);
     } catch {
       res.json(null);
@@ -49,12 +50,12 @@ export function createCompliancePolicyRoutes(db: Database.Database): Router {
   });
 
   // PUT /api/compliance-policy/:moduleId — upsert policy (admin only)
-  router.put('/compliance-policy/:moduleId', requireAdminOrSolo, validate(PolicyUpsertSchema), (req, res) => {
+  router.put('/compliance-policy/:moduleId', requireAdminOrSolo, validate(PolicyUpsertSchema), async (req, res) => {
     const { moduleId } = req.params;
     const { enforce_model, enforce_thinking, enforce_creativity, note } = req.body as z.infer<typeof PolicyUpsertSchema>;
     const createdBy = (req as any).user?.id || 'admin'; // eslint-disable-line @typescript-eslint/no-explicit-any
     try {
-      db.prepare(`
+      await db.run(`
         INSERT INTO compliance_policy (module_id, enforce_model, enforce_thinking, enforce_creativity, note, created_by, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(module_id) DO UPDATE SET
@@ -63,15 +64,13 @@ export function createCompliancePolicyRoutes(db: Database.Database): Router {
           enforce_creativity = excluded.enforce_creativity,
           note               = excluded.note,
           updated_at         = datetime('now')
-      `).run(
-        moduleId,
+      `, moduleId,
         enforce_model ?? null,
         enforce_thinking ?? null,
         enforce_creativity ?? null,
         note ?? null,
-        createdBy,
-      );
-      const row = db.prepare('SELECT * FROM compliance_policy WHERE module_id = ?').get(moduleId);
+        createdBy,);
+      const row = await db.get('SELECT * FROM compliance_policy WHERE module_id = ?', moduleId);
       res.json(row);
     } catch (e) {
       res.status(500).json({ error: 'Failed to save compliance policy' });
@@ -79,9 +78,9 @@ export function createCompliancePolicyRoutes(db: Database.Database): Router {
   });
 
   // DELETE /api/compliance-policy/:moduleId — remove policy (admin only)
-  router.delete('/compliance-policy/:moduleId', requireAdminOrSolo, (req, res) => {
+  router.delete('/compliance-policy/:moduleId', requireAdminOrSolo, async (req, res) => {
     try {
-      db.prepare('DELETE FROM compliance_policy WHERE module_id = ?').run(req.params.moduleId);
+      await db.run('DELETE FROM compliance_policy WHERE module_id = ?', req.params.moduleId);
       res.json({ ok: true });
     } catch {
       res.status(500).json({ error: 'Failed to delete compliance policy' });
@@ -89,9 +88,9 @@ export function createCompliancePolicyRoutes(db: Database.Database): Router {
   });
 
   // GET /api/compliance-policy/allowlist/all — list all model allowlist entries (admin)
-  router.get('/compliance-policy/allowlist/all', requireAdminOrSolo, (_req, res) => {
+  router.get('/compliance-policy/allowlist/all', requireAdminOrSolo, async (_req, res) => {
     try {
-      const rows = db.prepare('SELECT * FROM model_allowed ORDER BY user_id, model_id').all();
+      const rows = await db.get('SELECT * FROM model_allowed ORDER BY user_id, model_id');
       res.json(rows);
     } catch {
       res.status(500).json({ error: 'Failed to fetch allowlist' });
@@ -99,13 +98,12 @@ export function createCompliancePolicyRoutes(db: Database.Database): Router {
   });
 
   // POST /api/compliance-policy/allowlist — add entry (admin only)
-  router.post('/compliance-policy/allowlist', requireAdminOrSolo, validate(AllowlistAddSchema), (req, res) => {
+  router.post('/compliance-policy/allowlist', requireAdminOrSolo, validate(AllowlistAddSchema), async (req, res) => {
     const { userId, modelId } = req.body as z.infer<typeof AllowlistAddSchema>;
     const createdBy = (req as any).user?.id || 'admin'; // eslint-disable-line @typescript-eslint/no-explicit-any
     try {
-      db.prepare(
-        'INSERT OR IGNORE INTO model_allowed (user_id, model_id, created_by) VALUES (?, ?, ?)'
-      ).run(userId ?? null, modelId, createdBy);
+      await db.run('INSERT OR IGNORE INTO model_allowed (user_id, model_id, created_by) VALUES (?, ?, ?)'
+      , userId ?? null, modelId, createdBy);
       res.json({ ok: true });
     } catch {
       res.status(500).json({ error: 'Failed to add allowlist entry' });
@@ -113,9 +111,9 @@ export function createCompliancePolicyRoutes(db: Database.Database): Router {
   });
 
   // DELETE /api/compliance-policy/allowlist/:id — remove entry (admin only)
-  router.delete('/compliance-policy/allowlist/:id', requireAdminOrSolo, (req, res) => {
+  router.delete('/compliance-policy/allowlist/:id', requireAdminOrSolo, async (req, res) => {
     try {
-      db.prepare('DELETE FROM model_allowed WHERE id = ?').run(req.params.id);
+      await db.run('DELETE FROM model_allowed WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch {
       res.status(500).json({ error: 'Failed to delete allowlist entry' });

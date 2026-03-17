@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import * as cron from 'node-cron';
 import { createRegulatoryRadar } from '../services/regulatory-radar.js';
 import type { createRadarFetcher } from '../services/radar-fetcher.js';
@@ -7,12 +8,12 @@ import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
 type RadarFetcher = ReturnType<typeof createRadarFetcher>;
 
-export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher) {
+export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetcher) {
   const router = Router();
-  const radar = createRegulatoryRadar(db);
+  const radar = await createRegulatoryRadar(db);
 
   // GET /api/radar/summary — dashboard summary
-  router.get('/radar/summary', (_req, res) => {
+  router.get('/radar/summary', async (_req, res) => {
     try {
       const summary = radar.getRadarSummary();
       res.json(summary);
@@ -23,7 +24,7 @@ export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher)
   });
 
   // GET /api/radar/sources — list sources
-  router.get('/radar/sources', (req, res) => {
+  router.get('/radar/sources', async (req, res) => {
     try {
       const activeOnly = req.query.activeOnly !== 'false';
       const category = req.query.category as string | undefined;
@@ -36,7 +37,7 @@ export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher)
   });
 
   // POST /api/radar/sources — create source
-  router.post('/radar/sources', (req, res) => {
+  router.post('/radar/sources', async (req, res) => {
     try {
       const { displayName, url, sourceType, fetchIntervalHours, areas, keywords, category } = req.body;
       if (!displayName || !url || !sourceType) {
@@ -51,7 +52,7 @@ export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher)
   });
 
   // PUT /api/radar/sources/:id — update source
-  router.put('/radar/sources/:id', (req, res) => {
+  router.put('/radar/sources/:id', async (req, res) => {
     try {
       const { displayName, url, sourceType, areas, keywords, category, isActive } = req.body;
       radar.updateSource(req.params.id, { displayName, url, sourceType, areas, keywords, category, isActive });
@@ -63,7 +64,7 @@ export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher)
   });
 
   // DELETE /api/radar/sources/:id — delete source
-  router.delete('/radar/sources/:id', (req, res) => {
+  router.delete('/radar/sources/:id', async (req, res) => {
     try {
       radar.deleteSource(req.params.id);
       res.json({ ok: true });
@@ -74,7 +75,7 @@ export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher)
   });
 
   // GET /api/radar/items — list items
-  router.get('/radar/items', (req, res) => {
+  router.get('/radar/items', async (req, res) => {
     try {
       const { status, minRelevance, search, limit, offset, category } = req.query;
       const items = radar.getItems({
@@ -108,7 +109,7 @@ export function createRadarRoutes(db: Database.Database, fetcher?: RadarFetcher)
   });
 
   // PUT /api/radar/items/:id/status — update status
-  router.put('/radar/items/:id/status', (req, res) => {
+  router.put('/radar/items/:id/status', async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -199,7 +200,7 @@ Return ONLY valid JSON (no markdown, no extra text):
   });
 
   // POST /api/radar/stop — stop a running scan
-  router.post('/radar/stop', (_req, res) => {
+  router.post('/radar/stop', async (_req, res) => {
     if (!fetcher) {
       return res.status(503).json({ error: 'Radar fetcher not initialized' });
     }
@@ -222,7 +223,7 @@ Return ONLY valid JSON (no markdown, no extra text):
   });
 
   // GET /api/radar/scan-status — last scan info + live progress
-  router.get('/radar/scan-status', (_req, res) => {
+  router.get('/radar/scan-status', async (_req, res) => {
     if (!fetcher) {
       return res.json({ scanInProgress: false, lastScanTime: null, lastScanResult: null, currentSource: null, sourcesCompleted: 0, sourcesTotal: 0 });
     }
@@ -232,9 +233,9 @@ Return ONLY valid JSON (no markdown, no extra text):
   // ── Settings endpoints ──────────────────────────────────────
 
   // GET /api/radar/settings — read auto-scan settings from DB
-  router.get('/radar/settings', (_req, res) => {
+  router.get('/radar/settings', async (_req, res) => {
     try {
-      const rows = db.prepare('SELECT key, value FROM radar_settings').all() as Array<{ key: string; value: string }>;
+      const rows = await db.all('SELECT key, value FROM radar_settings') as Array<{ key: string; value: string }>;
       const settings: Record<string, string> = {};
       for (const row of rows) settings[row.key] = row.value;
       res.json({
@@ -250,31 +251,31 @@ Return ONLY valid JSON (no markdown, no extra text):
   });
 
   // PUT /api/radar/settings — update auto-scan settings
-  router.put('/radar/settings', (req, res) => {
+  router.put('/radar/settings', async (req, res) => {
     try {
       const { autoScanEnabled, autoScanIntervalHours, autoScanCron, pevcScoringCriteria } = req.body as { autoScanEnabled?: boolean; autoScanIntervalHours?: number; autoScanCron?: string; pevcScoringCriteria?: string };
-      const updateStmt = db.prepare('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))');
+
 
       if (autoScanEnabled !== undefined) {
-        updateStmt.run('auto_scan_enabled', autoScanEnabled ? '1' : '0');
+        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'auto_scan_enabled', autoScanEnabled ? '1' : '0');
       }
       if (autoScanIntervalHours !== undefined) {
-        updateStmt.run('auto_scan_interval_hours', String(autoScanIntervalHours));
+        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'auto_scan_interval_hours', String(autoScanIntervalHours));
       }
       if (autoScanCron !== undefined) {
         if (autoScanCron && !cron.validate(autoScanCron)) {
           return res.status(400).json({ error: 'Invalid cron expression' });
         }
-        updateStmt.run('auto_scan_cron', autoScanCron || '');
+        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'auto_scan_cron', autoScanCron || '');
       }
       if (pevcScoringCriteria !== undefined) {
-        updateStmt.run('pevc_scoring_criteria', pevcScoringCriteria.trim());
+        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'pevc_scoring_criteria', pevcScoringCriteria.trim());
       }
 
       // Apply schedule changes to the fetcher
       if (fetcher) {
-        const enabled = autoScanEnabled ?? (db.prepare("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'").get() as { value: string } | undefined)?.value === '1';
-        const hours = autoScanIntervalHours ?? parseInt((db.prepare("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'").get() as { value: string } | undefined)?.value || '24', 10);
+        const enabled = autoScanEnabled ?? (await db.get("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'") as { value: string } | undefined)?.value === '1';
+        const hours = autoScanIntervalHours ?? parseInt((await db.get("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'") as { value: string } | undefined)?.value || '24', 10);
 
         if (enabled) {
           fetcher.startAutoScan(hours);

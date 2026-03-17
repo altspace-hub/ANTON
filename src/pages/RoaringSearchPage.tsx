@@ -32,7 +32,7 @@ export default function RoaringSearchPage() {
 
   useEffect(() => {
     fetch('/api/roaring/status').then(r => r.json()).then(setStatus).catch(() => {});
-    fetch('/api/roaring/screens/recent').then(r => r.json()).then(d => setRecent(d.screens ?? [])).catch(() => {});
+    fetch('/api/roaring/screens/recent').then(r => r.json()).then(d => setRecent(d?.screens ?? [])).catch(() => {});
   }, []);
 
   async function handleSearch() {

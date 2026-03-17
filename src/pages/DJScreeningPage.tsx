@@ -43,9 +43,9 @@ export default function DJScreeningPage() {
 
   useEffect(() => {
     fetch('/api/dowjones/status').then(r => r.json()).then(setStatus).catch(() => {});
-    fetch('/api/dowjones/screens/recent').then(r => r.json()).then(d => setRecent(d.screens ?? [])).catch(() => {});
-    fetch('/api/dowjones/monitoring').then(r => r.json()).then(d => setMonitoring(d.monitoring ?? [])).catch(() => {});
-    fetch('/api/dowjones/lists').then(r => r.json()).then(d => setAvailableLists(d.lists ?? [])).catch(() => {});
+    fetch('/api/dowjones/screens/recent').then(r => r.json()).then(d => setRecent(d?.screens ?? [])).catch(() => {});
+    fetch('/api/dowjones/monitoring').then(r => r.json()).then(d => setMonitoring(d?.monitoring ?? [])).catch(() => {});
+    fetch('/api/dowjones/lists').then(r => r.json()).then(d => setAvailableLists(d?.lists ?? [])).catch(() => {});
   }, []);
 
   async function handleScreen() {
@@ -108,7 +108,7 @@ export default function DJScreeningPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       // Refresh monitoring list after successful registration
       const monData = await fetch('/api/dowjones/monitoring').then(r => r.json());
-      setMonitoring(monData.monitoring ?? []);
+      setMonitoring(monData?.monitoring ?? []);
       alert(`"${result.entityQueried}" added to monitoring watchlist.`);
     } catch (err) {
       setError(`Monitoring registration failed: ${String(err)}`);

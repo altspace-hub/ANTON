@@ -14,7 +14,8 @@
  */
 
 import express from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 const VALID_EVENT_TYPES = ['quality_rating', 'reversal', 'amendment', 'complaint', 'incident'] as const;
 const VALID_SEVERITIES = ['low', 'medium', 'high', 'critical'] as const;
@@ -26,11 +27,11 @@ function getUserRole(req: unknown): string | undefined {
   return (req as { user?: { role?: string } }).user?.role;
 }
 
-export function createPostMarketMonitoringRoutes(db: Database) {
+export async function createPostMarketMonitoringRoutes(db: DatabaseAdapter) {
   const router = express.Router();
 
   /** POST /pmm/events — record a new event */
-  router.post('/pmm/events', (req, res) => {
+  router.post('/pmm/events', async (req, res) => {
     try {
       const userId = getUserId(req);
       const {
@@ -57,13 +58,12 @@ export function createPostMarketMonitoringRoutes(db: Database) {
         }
       }
 
-      const result = db.prepare(`
+      const result = await db.run(`
         INSERT INTO post_market_events
           (user_id, session_id, module_id, event_type, severity,
            quality_score, description, corrective_action, metadata)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        userId,
+      `, userId,
         (session_id as string | null) ?? null,
         (module_id as string | null) ?? null,
         event_type,
@@ -71,10 +71,9 @@ export function createPostMarketMonitoringRoutes(db: Database) {
         quality_score !== undefined && quality_score !== null ? Number(quality_score) : null,
         (description as string).trim(),
         (corrective_action as string | null)?.trim() ?? null,
-        metadata ? JSON.stringify(metadata) : null,
-      );
+        metadata ? JSON.stringify(metadata) : null,);
 
-      const event = db.prepare('SELECT * FROM post_market_events WHERE id = ?').get(result.lastInsertRowid);
+      const event = await db.get('SELECT * FROM post_market_events WHERE id = ?', result.lastInsertRowid);
       res.status(201).json({ event });
     } catch (err) {
       console.error('[pmm] POST /pmm/events error:', err);
@@ -83,7 +82,7 @@ export function createPostMarketMonitoringRoutes(db: Database) {
   });
 
   /** GET /pmm/events — list events */
-  router.get('/pmm/events', (req, res) => {
+  router.get('/pmm/events', async (req, res) => {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
@@ -106,12 +105,12 @@ export function createPostMarketMonitoringRoutes(db: Database) {
       if (severity)   { sql += ' AND severity = ?';   params.push(severity); }
 
       const countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as total');
-      const { total } = db.prepare(countSql).get(...params) as { total: number };
+      const { total } = await db.get(countSql, ...params) as { total: number };
 
       sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
       params.push(limit, offset);
 
-      const events = db.prepare(sql).all(...params);
+      const events = await db.get(sql, ...params);
       res.json({ events, total, limit, offset });
     } catch (err) {
       console.error('[pmm] GET /pmm/events error:', err);
@@ -120,7 +119,7 @@ export function createPostMarketMonitoringRoutes(db: Database) {
   });
 
   /** GET /pmm/summary — aggregated metrics */
-  router.get('/pmm/summary', (req, res) => {
+  router.get('/pmm/summary', async (req, res) => {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
@@ -129,27 +128,27 @@ export function createPostMarketMonitoringRoutes(db: Database) {
       const userFilter = isAdmin ? '' : 'WHERE user_id = ?';
       const params: unknown[] = isAdmin ? [] : [userId];
 
-      const byType = db.prepare(`
+      const byType = await db.all(`
         SELECT event_type, COUNT(*) as count
         FROM post_market_events ${userFilter}
         GROUP BY event_type
-      `).all(...params);
+      `, ...params);
 
-      const byModule = db.prepare(`
+      const byModule = await db.all(`
         SELECT module_id, event_type, COUNT(*) as count,
                AVG(CASE WHEN quality_score IS NOT NULL THEN quality_score END) as avg_quality
         FROM post_market_events ${userFilter}
         ${userFilter ? 'AND' : 'WHERE'} module_id IS NOT NULL
         GROUP BY module_id, event_type
         ORDER BY module_id, event_type
-      `).all(...(isAdmin ? [] : [userId]));
+      `, ...(isAdmin ? [] : [userId]));
 
-      const recentIncidents = db.prepare(`
+      const recentIncidents = await db.all(`
         SELECT * FROM post_market_events
         ${userFilter}
         ${userFilter ? 'AND' : 'WHERE'} (event_type = 'incident' OR severity IN ('high', 'critical'))
         ORDER BY created_at DESC LIMIT 5
-      `).all(...(isAdmin ? [] : [userId]));
+      `, ...(isAdmin ? [] : [userId]));
 
       res.json({ byType, byModule, recentIncidents });
     } catch (err) {
@@ -159,7 +158,7 @@ export function createPostMarketMonitoringRoutes(db: Database) {
   });
 
   /** GET /pmm/events/:id */
-  router.get('/pmm/events/:id', (req, res) => {
+  router.get('/pmm/events/:id', async (req, res) => {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
@@ -168,8 +167,8 @@ export function createPostMarketMonitoringRoutes(db: Database) {
       if (isNaN(id)) return res.status(400).json({ error: 'Invalid event id' });
 
       const event = isAdmin
-        ? db.prepare('SELECT * FROM post_market_events WHERE id = ?').get(id)
-        : db.prepare('SELECT * FROM post_market_events WHERE id = ? AND user_id = ?').get(id, userId);
+        ? await db.get('SELECT * FROM post_market_events WHERE id = ?', id)
+        : await db.get('SELECT * FROM post_market_events WHERE id = ? AND user_id = ?', id, userId);
 
       if (!event) return res.status(404).json({ error: 'Event not found' });
       res.json({ event });
@@ -180,7 +179,7 @@ export function createPostMarketMonitoringRoutes(db: Database) {
   });
 
   /** PUT /pmm/events/:id/review — admin marks as reviewed */
-  router.put('/pmm/events/:id/review', (req, res) => {
+  router.put('/pmm/events/:id/review', async (req, res) => {
     try {
       const userRole = getUserRole(req);
       if (userRole !== 'admin') {
@@ -192,13 +191,13 @@ export function createPostMarketMonitoringRoutes(db: Database) {
       const { reviewer_name } = req.body as { reviewer_name?: string };
       if (!reviewer_name?.trim()) return res.status(400).json({ error: 'reviewer_name required' });
 
-      db.prepare(`
+      await db.run(`
         UPDATE post_market_events
         SET reviewed_by = ?, reviewed_at = datetime('now')
         WHERE id = ?
-      `).run(reviewer_name.trim(), id);
+      `, reviewer_name.trim(), id);
 
-      const event = db.prepare('SELECT * FROM post_market_events WHERE id = ?').get(id);
+
       res.json({ event });
     } catch (err) {
       console.error('[pmm] PUT review error:', err);

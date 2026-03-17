@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import {
   screenEntity,
@@ -14,13 +15,13 @@ import {
   getConnectorStatus,
 } from '../services/dowjones-connector.js';
 
-export function createDowJonesRoutes(db: Database): Router {
+export async function createDowJonesRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // GET /api/dowjones/status — connector health + mock/live indicator
-  router.get('/dowjones/status', (_req, res) => {
+  router.get('/dowjones/status', async (_req, res) => {
     const status = getConnectorStatus();
-    const row = db.prepare("SELECT * FROM data_connectors WHERE connector_type='dowjones'").get() as Record<string, unknown> | undefined;
+    const row = await db.get("SELECT * FROM data_connectors WHERE connector_type='dowjones'") as Record<string, unknown> | undefined;
     res.json({ ...status, connector: row ?? null });
   });
 
@@ -45,16 +46,16 @@ export function createDowJonesRoutes(db: Database): Router {
       // Cache in DB
       const id = randomUUID();
       const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : null;
-      db.prepare(`
+      await db.run(`
         INSERT INTO entity_screens (id, session_id, entity_name, connector, result, risk_score, hit_count, cached_until)
         VALUES (?, ?, ?, 'dowjones', ?, ?, ?, datetime('now', '+12 hours'))
-      `).run(id, sessionId, params.name, JSON.stringify(result), result.riskScore, result.hits.length);
+      `, id, sessionId, params.name, JSON.stringify(result), result.riskScore, result.hits.length);
 
       // Update connector stats
-      db.prepare(`
+      await db.run(`
         UPDATE data_connectors SET total_calls=total_calls+1, last_successful_call=datetime('now'),
         status=?, api_key_set=? WHERE connector_type='dowjones'
-      `).run(result.source === 'live' ? 'live' : 'mock', result.source === 'live' ? 1 : 0);
+      `, result.source === 'live' ? 'live' : 'mock', result.source === 'live' ? 1 : 0);
 
       res.json({ result, mode: getConnectorStatus().mode });
     } catch (err) {
@@ -131,10 +132,10 @@ export function createDowJonesRoutes(db: Database): Router {
       const registration = await registerForMonitoring(entityId, sessionId ?? '');
 
       // Persist in DB
-      db.prepare(`
+      await db.run(`
         INSERT OR IGNORE INTO entity_monitoring (id, entity_id, entity_name, connector)
         VALUES (?, ?, ?, 'dowjones')
-      `).run(registration.id, entityId, entityName);
+      `, registration.id, entityId, entityName);
 
       res.json({ registration });
     } catch (err) {
@@ -153,13 +154,13 @@ export function createDowJonesRoutes(db: Database): Router {
   });
 
   // PATCH /api/dowjones/monitor/:id — update monitoring status (pause/resume/cancel)
-  router.patch('/dowjones/monitor/:id', (req, res) => {
+  router.patch('/dowjones/monitor/:id', async (req, res) => {
     try {
       const { status } = req.body as { status: string };
       if (!['active', 'paused', 'cancelled'].includes(status)) {
         return res.status(400).json({ error: 'status must be active, paused, or cancelled' });
       }
-      const result = db.prepare(`UPDATE entity_monitoring SET status=? WHERE id=? AND connector='dowjones'`).run(status, req.params.id);
+      const result = await db.run(`UPDATE entity_monitoring SET status=? WHERE id=? AND connector='dowjones'`, status, req.params.id);
       if (result.changes === 0) return res.status(404).json({ error: 'Monitoring registration not found' });
       res.json({ id: req.params.id, status });
     } catch (err) {
@@ -168,9 +169,9 @@ export function createDowJonesRoutes(db: Database): Router {
   });
 
   // DELETE /api/dowjones/monitor/:id — permanently remove monitoring registration
-  router.delete('/dowjones/monitor/:id', (req, res) => {
+  router.delete('/dowjones/monitor/:id', async (req, res) => {
     try {
-      const result = db.prepare(`DELETE FROM entity_monitoring WHERE id=? AND connector='dowjones'`).run(req.params.id);
+      const result = await db.run(`DELETE FROM entity_monitoring WHERE id=? AND connector='dowjones'`, req.params.id);
       if (result.changes === 0) return res.status(404).json({ error: 'Monitoring registration not found' });
       res.json({ deleted: true, id: req.params.id });
     } catch (err) {
@@ -179,27 +180,15 @@ export function createDowJonesRoutes(db: Database): Router {
   });
 
   // GET /api/dowjones/monitoring — active monitoring registrations from DB
-  router.get('/dowjones/monitoring', (req, res) => {
-    const rows = db.prepare(`
-      SELECT em.*, COUNT(ma.id) as alert_count_db
-      FROM entity_monitoring em
-      LEFT JOIN monitoring_alerts ma ON ma.entity_monitoring_id=em.id
-      WHERE em.connector='dowjones' AND em.status='active'
-      GROUP BY em.id
-      ORDER BY em.registered_at DESC
-      LIMIT 50
-    `).all();
+  router.get('/dowjones/monitoring', async (req, res) => {
+
     res.json({ monitoring: rows });
   });
 
   // GET /api/dowjones/screens/recent — recent screens from DB
-  router.get('/dowjones/screens/recent', (req, res) => {
+  router.get('/dowjones/screens/recent', async (req, res) => {
     const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
-    const rows = db.prepare(`
-      SELECT id, entity_name, risk_score, hit_count, screened_at
-      FROM entity_screens WHERE connector='dowjones'
-      ORDER BY screened_at DESC LIMIT ?
-    `).all(limit);
+
     res.json({ screens: rows });
   });
 

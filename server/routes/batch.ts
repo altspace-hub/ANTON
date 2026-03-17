@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
-export function createBatchRoutes(anthropic?: Anthropic, db?: Database.Database) {
+export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdapter) {
   const router = Router();
 
   /**
@@ -61,9 +62,11 @@ export function createBatchRoutes(anthropic?: Anthropic, db?: Database.Database)
 
     let resolvedSysPrompt = sysPrompt;
     if (db && knowledgeLibraryIds && knowledgeLibraryIds.length > 0) {
-      const entries = knowledgeLibraryIds.map(id =>
-        db.prepare('SELECT label, category FROM knowledge_library WHERE id=?').get(id) as { label: string; category: string } | null
-      ).filter((e): e is { label: string; category: string } => e !== null);
+      const entriesRaw: Array<{ label: string; category: string } | null> = [];
+      for (const id of knowledgeLibraryIds) {
+        entriesRaw.push(await db.get('SELECT label, category FROM knowledge_library WHERE id=?', id) as { label: string; category: string } | null);
+      }
+      const entries = entriesRaw.filter((e): e is { label: string; category: string } => e !== null);
       if (entries.length > 0) {
         const libraryContext = `## KNOWLEDGE CONTEXT\nThis analysis should draw on the following registered knowledge corpora:\n${entries.map(e => `- ${e.label} (${e.category})`).join('\n')}\nReference these as authoritative sources when forming your response.\n\n`;
         resolvedSysPrompt = libraryContext + resolvedSysPrompt;

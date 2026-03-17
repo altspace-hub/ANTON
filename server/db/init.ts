@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
+import { SqliteAdapter } from './adapters/sqlite-adapter.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = process.env.DB_PATH || './data/workbench.sqlite';
@@ -3027,7 +3028,7 @@ export function initDatabase(): Database.Database {
   // FRAME-01/02: Auto-seed bundled knowledge packs from data/knowledge-packs/
   // Scans for *.anton bundles, importing any not already registered in the DB.
   try {
-    const kpService = createKnowledgePackService(db);
+    const kpService = createKnowledgePackService(new SqliteAdapter(db));
     const packsDir = path.resolve(__dirname, '../../data/knowledge-packs');
     if (fs.existsSync(packsDir)) {
       const packDirs = fs.readdirSync(packsDir).filter((entry: string) => {
@@ -3046,8 +3047,10 @@ export function initDatabase(): Database.Database {
         if (!antonFile) continue;
         try {
           const buffer = fs.readFileSync(path.join(dirPath, antonFile));
-          kpService.importBundle(buffer, 'system');
-          console.log(`[db] Knowledge pack auto-seeded: ${manifest.name}`);
+          // importBundle is async (DatabaseAdapter), fire-and-forget during sync init
+          kpService.importBundle(buffer, 'system')
+            .then(() => console.log(`[db] Knowledge pack auto-seeded: ${manifest.name}`))
+            .catch((e2: unknown) => console.warn(`[db] Knowledge pack seed deferred (${manifest.name}):`, e2 instanceof Error ? e2.message : e2));
         } catch (e) {
           // Non-fatal: pack already imported or version conflict
           const msg = e instanceof Error ? e.message : String(e);

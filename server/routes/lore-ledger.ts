@@ -17,7 +17,8 @@
  */
 
 import { Router } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type Anthropic from '@anthropic-ai/sdk';
 import crypto from 'crypto';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
@@ -51,11 +52,11 @@ function parseEntry(row: LoreEntry): LoreEntryOut {
   };
 }
 
-export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null | undefined) {
+export async function createLoreLedgerRoutes(db: DatabaseAdapter, anthropic: Anthropic | null | undefined) {
   const router = Router();
 
   // GET /api/lore-ledger/entries
-  router.get('/lore-ledger/entries', (req, res) => {
+  router.get('/lore-ledger/entries', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -69,9 +70,9 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
       if (entry_type) { conditions.push('entry_type = ?'); params.push(entry_type); }
       if (q) { conditions.push("(name LIKE ? OR summary LIKE ?)"); params.push(`%${q}%`, `%${q}%`); }
 
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT * FROM lore_ledger_entries WHERE ${conditions.join(' AND ')} ORDER BY entry_type, name`
-      ).all(...params) as LoreEntry[];
+      , ...params) as LoreEntry[];
 
       return res.json(rows.map(parseEntry));
     } catch (err) {
@@ -81,13 +82,13 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
   });
 
   // GET /api/lore-ledger/entries/:id
-  router.get('/lore-ledger/entries/:id', (req, res) => {
+  router.get('/lore-ledger/entries/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-      const row = db.prepare(
+      const row = await db.get(
         `SELECT * FROM lore_ledger_entries WHERE id = ? AND user_id = ?`
-      ).get(req.params.id, userId) as LoreEntry | undefined;
+      , req.params.id, userId) as LoreEntry | undefined;
       if (!row) return res.status(404).json({ error: 'Entry not found' });
       return res.json(parseEntry(row));
     } catch (err) {
@@ -96,7 +97,7 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
   });
 
   // POST /api/lore-ledger/entries
-  router.post('/lore-ledger/entries', (req, res) => {
+  router.post('/lore-ledger/entries', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -113,10 +114,10 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
 
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
-      db.prepare(
+      await db.run(
         `INSERT INTO lore_ledger_entries (id, user_id, session_id, project_id, entry_type, name, summary, properties, tags, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(id, userId, session_id ?? null, project_id ?? null, entry_type, name.trim(), summary, JSON.stringify(properties), JSON.stringify(tags), now, now);
+      , id, userId, session_id ?? null, project_id ?? null, entry_type, name.trim(), summary, JSON.stringify(properties), JSON.stringify(tags), now, now);
 
       return res.status(201).json({ id, ok: true });
     } catch (err) {
@@ -126,14 +127,14 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
   });
 
   // PUT /api/lore-ledger/entries/:id
-  router.put('/lore-ledger/entries/:id', (req, res) => {
+  router.put('/lore-ledger/entries/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const existing = db.prepare(
+      const existing = await db.get(
         `SELECT id FROM lore_ledger_entries WHERE id = ? AND user_id = ?`
-      ).get(req.params.id, userId);
+      , req.params.id, userId);
       if (!existing) return res.status(404).json({ error: 'Entry not found' });
 
       const { entry_type, name, summary, properties, tags, project_id, session_id } =
@@ -152,9 +153,9 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
       fields.push('updated_at = ?'); params.push(new Date().toISOString());
 
       params.push(req.params.id, userId);
-      db.prepare(
+      await db.run(
         `UPDATE lore_ledger_entries SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`
-      ).run(...params);
+      , ...params);
 
       return res.json({ ok: true });
     } catch (err) {
@@ -164,13 +165,13 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
   });
 
   // DELETE /api/lore-ledger/entries/:id
-  router.delete('/lore-ledger/entries/:id', (req, res) => {
+  router.delete('/lore-ledger/entries/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-      const result = db.prepare(
+      const result = await db.run(
         `DELETE FROM lore_ledger_entries WHERE id = ? AND user_id = ?`
-      ).run(req.params.id, userId);
+      , req.params.id, userId);
       if (result.changes === 0) return res.status(404).json({ error: 'Entry not found' });
       return res.json({ ok: true });
     } catch (err) {
@@ -196,9 +197,9 @@ export function createLoreLedgerRoutes(db: Database, anthropic: Anthropic | null
       if (project_id) { conditions.push('project_id = ?'); params.push(project_id); }
       else if (session_id) { conditions.push('session_id = ?'); params.push(session_id); }
 
-      const entries = db.prepare(
-        `SELECT entry_type, name, summary, properties FROM lore_ledger_entries WHERE ${conditions.join(' AND ')} ORDER BY entry_type, name LIMIT 200`
-      ).all(...params) as { entry_type: string; name: string; summary: string; properties: string }[];
+      const entries = await db.all(
+        `SELECT entry_type, name, summary, properties FROM lore_ledger_entries WHERE ${conditions.join(' AND ')}`
+      , ...params) as Array<{ entry_type: string; name: string; summary: string; properties: string }>;
 
       if (entries.length === 0) {
         return res.status(400).json({ error: 'No ledger entries found. Add characters, locations, and world rules first.' });
@@ -266,7 +267,7 @@ Please analyse the text for consistency with the lore ledger above.`;
   });
 
   // GET /api/lore-ledger/export?project_id=...
-  router.get('/lore-ledger/export', (req, res) => {
+  router.get('/lore-ledger/export', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -276,9 +277,9 @@ Please analyse the text for consistency with the lore ledger above.`;
       const params: unknown[] = [userId];
       if (project_id) { conditions.push('project_id = ?'); params.push(project_id); }
 
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT * FROM lore_ledger_entries WHERE ${conditions.join(' AND ')} ORDER BY entry_type, name`
-      ).all(...params) as LoreEntry[];
+      , ...params) as LoreEntry[];
 
       const output = {
         version: 1,
@@ -296,7 +297,7 @@ Please analyse the text for consistency with the lore ledger above.`;
   });
 
   // POST /api/lore-ledger/import
-  router.post('/lore-ledger/import', (req, res) => {
+  router.post('/lore-ledger/import', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -312,16 +313,14 @@ Please analyse the text for consistency with the lore ledger above.`;
       if (entries.length > 500) return res.status(400).json({ error: 'Max 500 entries per import' });
 
       const now = new Date().toISOString();
-      const insert = db.prepare(
-        `INSERT OR IGNORE INTO lore_ledger_entries (id, user_id, session_id, project_id, entry_type, name, summary, properties, tags, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      );
 
       let imported = 0;
       for (const entry of entries) {
         if (!entry.name?.trim()) continue;
-        insert.run(
-          crypto.randomUUID(), userId,
+        await db.run(
+          `INSERT OR IGNORE INTO lore_ledger_entries (id, user_id, session_id, project_id, entry_type, name, summary, properties, tags, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        , crypto.randomUUID(), userId,
           entry.session_id ?? null,
           project_id ?? entry.project_id ?? null,
           entry.entry_type ?? 'character',
@@ -329,8 +328,7 @@ Please analyse the text for consistency with the lore ledger above.`;
           entry.summary ?? '',
           JSON.stringify(entry.properties ?? {}),
           JSON.stringify(entry.tags ?? []),
-          now, now
-        );
+          now, now);
         imported++;
       }
 

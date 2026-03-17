@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { semanticSearch, keywordSearch, getChunkContext } from '../services/semantic-search.js';
 import { hybridSearch, findSimilar, embedAndStore } from '../services/hybrid-search.js';
 import { getVectorStore } from '../services/vector-store-adapter.js';
 
-export function createSearchRoutes(db: Database.Database) {
+export async function createSearchRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   /**
@@ -98,9 +98,9 @@ export function createSearchRoutes(db: Database.Database) {
   router.get('/search/stats', async (_req, res) => {
     try {
       const store = getVectorStore(db);
-      const rows = db.prepare(
+      const rows = await db.all(
         'SELECT content_type, COUNT(*) as count FROM embeddings GROUP BY content_type ORDER BY count DESC'
-      ).all() as Array<{ content_type: string; count: number }>;
+      ) as Array<{ content_type: string; count: number }>;
       const total = await store.getCount();
       res.json({ total, byType: rows });
     } catch (error) {
@@ -168,7 +168,7 @@ export function createSearchRoutes(db: Database.Database) {
    * GET /api/search/context/:chunkId
    * Get surrounding chunks for context (ChromaDB collections).
    */
-  router.get('/search/context/:chunkId', (req, res) => {
+  router.get('/search/context/:chunkId', async (req, res) => {
     try {
       const contextSize = parseInt(req.query.contextSize as string) || 2;
       const results = getChunkContext(db, req.params.chunkId, contextSize);

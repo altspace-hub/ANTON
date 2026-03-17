@@ -20,7 +20,8 @@ import { randomUUID } from 'crypto';
 import multer from 'multer';
 import { join } from 'path';
 import { mkdirSync, existsSync, unlinkSync } from 'fs';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type Anthropic from '@anthropic-ai/sdk';
 import {
   dispatchQuickSearch,
@@ -72,7 +73,7 @@ const upload = multer({
 // ── Route Factory ──────────────────────────────────────────────────────────
 
 export function createPathfinderRoutes(
-  db: Database.Database,
+  db: DatabaseAdapter,
   anthropic?: Anthropic | null,
 ): Router {
   const router = Router();
@@ -192,17 +193,17 @@ export function createPathfinderRoutes(
   });
 
   // ── GET /pathfinder/searches — Search history ─────────────────────────────
-  router.get('/pathfinder/searches', (req: Request, res: Response) => {
+  router.get('/pathfinder/searches', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
       const limit = Math.min(Number(req.query.limit) || 50, 100);
       const offset = Number(req.query.offset) || 0;
-      const searches = db.prepare(
+      const searches = await db.all(
         `SELECT id, query, depth, status, input_tokens, output_tokens, cost_usd, duration_ms, thread_id, created_at
          FROM pathfinder_searches WHERE user_id = ?
          ORDER BY created_at DESC LIMIT ? OFFSET ?`
-      ).all(uid, limit, offset);
-      const total = (db.prepare('SELECT COUNT(*) as count FROM pathfinder_searches WHERE user_id = ?').get(uid) as { count: number }).count;
+      , uid, limit, offset);
+      const total = ((await db.get('SELECT COUNT(*) as count FROM pathfinder_searches WHERE user_id = ?', uid)) as { count: number } | undefined)?.count ?? 0;
       res.json({ searches, total });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -210,9 +211,9 @@ export function createPathfinderRoutes(
   });
 
   // ── GET /pathfinder/searches/:id — Single search ──────────────────────────
-  router.get('/pathfinder/searches/:id', (req: Request, res: Response) => {
+  router.get('/pathfinder/searches/:id', async (req: Request, res: Response) => {
     try {
-      const search = db.prepare('SELECT * FROM pathfinder_searches WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+      const search = await db.get('SELECT * FROM pathfinder_searches WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
       if (!search) return res.status(404).json({ error: 'Search not found' });
 
       // Parse JSON fields
@@ -220,7 +221,7 @@ export function createPathfinderRoutes(
       search.web_sources = search.web_sources ? JSON.parse(search.web_sources as string) : [];
 
       // Get follow-ups
-      const followups = db.prepare('SELECT * FROM pathfinder_followups WHERE search_id = ? ORDER BY created_at').all(req.params.id);
+      const followups = await db.all('SELECT * FROM pathfinder_followups WHERE search_id = ? ORDER BY created_at', req.params.id);
       res.json({ search, followups });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -228,9 +229,9 @@ export function createPathfinderRoutes(
   });
 
   // ── DELETE /pathfinder/searches/:id ───────────────────────────────────────
-  router.delete('/pathfinder/searches/:id', (req: Request, res: Response) => {
+  router.delete('/pathfinder/searches/:id', async (req: Request, res: Response) => {
     try {
-      db.prepare('DELETE FROM pathfinder_searches WHERE id = ? AND user_id = ?').run(req.params.id, getUserId(req));
+      await db.run('DELETE FROM pathfinder_searches WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -238,50 +239,49 @@ export function createPathfinderRoutes(
   });
 
   // ── GET /pathfinder/available-models ──────────────────────────────────────
-  router.get('/pathfinder/available-models', (_req: Request, res: Response) => {
+  router.get('/pathfinder/available-models', async (_req: Request, res: Response) => {
     res.json({ models: getAvailableSearchModels() });
   });
 
   // ── Thread CRUD ──────────────────────────────────────────────────────────
-  router.get('/pathfinder/threads', (req: Request, res: Response) => {
+  router.get('/pathfinder/threads', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const threads = db.prepare(
-        `SELECT t.*, (SELECT COUNT(*) FROM pathfinder_searches WHERE thread_id = t.id) as search_count
+      const threads = await db.get(`SELECT t.*, (SELECT COUNT(*) FROM pathfinder_searches WHERE thread_id = t.id) as search_count
          FROM pathfinder_threads t WHERE t.user_id = ?
          ORDER BY t.pinned DESC, t.updated_at DESC`
-      ).all(uid);
+      , uid);
       res.json({ threads });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  router.post('/pathfinder/threads', (req: Request, res: Response) => {
+  router.post('/pathfinder/threads', async (req: Request, res: Response) => {
     try {
       const id = randomUUID();
       const { title = 'New Thread' } = req.body;
-      db.prepare('INSERT INTO pathfinder_threads (id, user_id, title) VALUES (?, ?, ?)').run(id, getUserId(req), title);
+      await db.run('INSERT INTO pathfinder_threads (id, user_id, title) VALUES (?, ?, ?)', id, getUserId(req), title);
       res.json({ id, title });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  router.patch('/pathfinder/threads/:id', (req: Request, res: Response) => {
+  router.patch('/pathfinder/threads/:id', async (req: Request, res: Response) => {
     try {
       const { title, pinned } = req.body;
-      if (title !== undefined) db.prepare('UPDATE pathfinder_threads SET title = ? WHERE id = ? AND user_id = ?').run(title, req.params.id, getUserId(req));
-      if (pinned !== undefined) db.prepare('UPDATE pathfinder_threads SET pinned = ? WHERE id = ? AND user_id = ?').run(pinned ? 1 : 0, req.params.id, getUserId(req));
+      if (title !== undefined) await db.run('UPDATE pathfinder_threads SET title = ? WHERE id = ? AND user_id = ?', title, req.params.id, getUserId(req));
+      if (pinned !== undefined) await db.run('UPDATE pathfinder_threads SET pinned = ? WHERE id = ? AND user_id = ?', pinned ? 1 : 0, req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  router.delete('/pathfinder/threads/:id', (req: Request, res: Response) => {
+  router.delete('/pathfinder/threads/:id', async (req: Request, res: Response) => {
     try {
-      db.prepare('DELETE FROM pathfinder_threads WHERE id = ? AND user_id = ?').run(req.params.id, getUserId(req));
+      await db.run('DELETE FROM pathfinder_threads WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -303,10 +303,10 @@ export function createPathfinderRoutes(
       const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
       const tokenEstimate = estimateTokens(extractedText);
 
-      db.prepare(
+      await db.run(
         `INSERT INTO pathfinder_documents (id, user_id, thread_id, filename, file_path, file_size, mime_type, extracted_text, word_count, token_estimate)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(id, uid, threadId, file.originalname, file.path, file.size, file.mimetype, extractedText, wordCount, tokenEstimate);
+      , id, uid, threadId, file.originalname, file.path, file.size, file.mimetype, extractedText, wordCount, tokenEstimate);
 
       res.json({ id, filename: file.originalname, wordCount, tokenEstimate });
     } catch (err) {
@@ -314,7 +314,7 @@ export function createPathfinderRoutes(
     }
   });
 
-  router.get('/pathfinder/documents', (req: Request, res: Response) => {
+  router.get('/pathfinder/documents', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
       const threadId = req.query.threadId as string | undefined;
@@ -322,20 +322,20 @@ export function createPathfinderRoutes(
       const params: unknown[] = [uid];
       if (threadId) { query += ' AND thread_id = ?'; params.push(threadId); }
       query += ' ORDER BY created_at DESC';
-      const docs = db.prepare(query).all(...params);
+      const docs = await db.run(query, ...params);
       res.json({ documents: docs });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  router.delete('/pathfinder/documents/:id', (req: Request, res: Response) => {
+  router.delete('/pathfinder/documents/:id', async (req: Request, res: Response) => {
     try {
-      const doc = db.prepare('SELECT file_path FROM pathfinder_documents WHERE id = ? AND user_id = ?').get(req.params.id, getUserId(req)) as { file_path: string } | undefined;
+      const doc = await db.get('SELECT file_path FROM pathfinder_documents WHERE id = ? AND user_id = ?', req.params.id, getUserId(req)) as { file_path: string } | undefined;
       if (doc?.file_path) {
         try { unlinkSync(doc.file_path); } catch { /* file may already be deleted */ }
       }
-      db.prepare('DELETE FROM pathfinder_documents WHERE id = ? AND user_id = ?').run(req.params.id, getUserId(req));
+      await db.run('DELETE FROM pathfinder_documents WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -343,9 +343,9 @@ export function createPathfinderRoutes(
   });
 
   // ── POST /pathfinder/searches/:id/to-module — Pipe results to a module ────
-  router.post('/pathfinder/searches/:id/to-module', (req: Request, res: Response) => {
+  router.post('/pathfinder/searches/:id/to-module', async (req: Request, res: Response) => {
     try {
-      const search = db.prepare('SELECT query, synthesis, web_sources FROM pathfinder_searches WHERE id = ?').get(req.params.id) as {
+      const search = await db.get('SELECT query, synthesis, web_sources FROM pathfinder_searches WHERE id = ?', req.params.id) as {
         query: string; synthesis: string; web_sources: string;
       } | undefined;
       if (!search) return res.status(404).json({ error: 'Search not found' });
@@ -379,23 +379,22 @@ export function createPathfinderRoutes(
   });
 
   // ── Suggestions ──────────────────────────────────────────────────────────
-  router.get('/pathfinder/suggestions', (req: Request, res: Response) => {
+  router.get('/pathfinder/suggestions', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const suggestions = db.prepare(
-        `SELECT id, query, context FROM pathfinder_suggestions
-         WHERE user_id = ? AND dismissed = 0 AND (expires_at IS NULL OR expires_at > datetime('now'))
-         ORDER BY created_at DESC LIMIT 5`
-      ).all(uid);
+      const suggestions = await db.all(
+        'SELECT * FROM pathfinder_suggestions WHERE user_id = ? AND dismissed = 0 ORDER BY created_at DESC LIMIT 10',
+        uid
+      );
       res.json({ suggestions });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  router.post('/pathfinder/suggestions/:id/dismiss', (req: Request, res: Response) => {
+  router.post('/pathfinder/suggestions/:id/dismiss', async (req: Request, res: Response) => {
     try {
-      db.prepare('UPDATE pathfinder_suggestions SET dismissed = 1 WHERE id = ? AND user_id = ?').run(req.params.id, getUserId(req));
+      await db.run('UPDATE pathfinder_suggestions SET dismissed = 1 WHERE id = ? AND user_id = ?', req.params.id, getUserId(req));
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -407,7 +406,7 @@ export function createPathfinderRoutes(
       if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
       const uid = getUserId(req);
       // Clear old suggestions
-      db.prepare('DELETE FROM pathfinder_suggestions WHERE user_id = ?').run(uid);
+      await db.run('DELETE FROM pathfinder_suggestions WHERE user_id = ?', uid);
       const suggestions = await generateSuggestions(db, uid, anthropic);
       res.json({ suggestions });
     } catch (err) {

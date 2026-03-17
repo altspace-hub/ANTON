@@ -7,14 +7,14 @@
  */
 
 import { Router, type Request, type Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { sendSlackMessage, testSlackWebhook } from '../services/integrations/slack-webhook.js';
 import { sendTeamsMessage, testTeamsWebhook } from '../services/integrations/teams-webhook.js';
 import { substituteVariables, type MessagePayload } from '../services/integrations/message-formatter.js';
 import { decryptConfig } from '../services/credential-vault.js';
 import { verifySlackSignature, handleSlackCommand, type SlackCommandPayload } from '../services/integrations/slack-commands.js';
 
-export function createIntegrationsRoutes(db: Database.Database) {
+export async function createIntegrationsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // ── Test a messaging connection ────────────────────────────────────────────
@@ -28,7 +28,7 @@ export function createIntegrationsRoutes(db: Database.Database) {
     const { connectionId } = req.body as { connectionId: string };
     if (!connectionId) return res.status(400).json({ error: 'connectionId required' });
 
-    const conn = db.prepare("SELECT * FROM connections WHERE id = ? AND type = 'messaging'").get(connectionId) as {
+    const conn = await db.get("SELECT * FROM connections WHERE id = ? AND type = 'messaging'", connectionId) as {
       id: string; config: string; display_name: string;
     } | undefined;
 
@@ -82,7 +82,7 @@ export function createIntegrationsRoutes(db: Database.Database) {
     if (!connectionId) return res.status(400).json({ error: 'connectionId required' });
     if (!msgRaw.title || !msgRaw.body) return res.status(400).json({ error: 'title and body required' });
 
-    const conn = db.prepare("SELECT * FROM connections WHERE id = ? AND type = 'messaging' AND status = 'active'").get(connectionId) as {
+    const conn = await db.get("SELECT * FROM connections WHERE id = ? AND type = 'messaging' AND status = 'active'", connectionId) as {
       id: string; config: string;
     } | undefined;
 
@@ -103,17 +103,17 @@ export function createIntegrationsRoutes(db: Database.Database) {
       if (platform === 'slack') {
         const result = await sendSlackMessage({ webhookUrl }, msg);
         // Audit log
-        db.prepare(
+        await db.run(
           `INSERT INTO connection_audit_log (connection_id, action, details, result_summary, executed_by)
            VALUES (?, 'send_message', ?, ?, ?)`
-        ).run(connectionId, JSON.stringify({ title: msg.title }), result.ok ? 'success' : result.error, 'system');
+        , connectionId, JSON.stringify({ title: msg.title }), result.ok ? 'success' : result.error, 'system');
         res.json(result);
       } else if (platform === 'teams') {
         const result = await sendTeamsMessage({ webhookUrl }, msg);
-        db.prepare(
+        await db.run(
           `INSERT INTO connection_audit_log (connection_id, action, details, result_summary, executed_by)
            VALUES (?, 'send_message', ?, ?, ?)`
-        ).run(connectionId, JSON.stringify({ title: msg.title }), result.ok ? 'success' : result.error, 'system');
+        , connectionId, JSON.stringify({ title: msg.title }), result.ok ? 'success' : result.error, 'system');
         res.json(result);
       } else {
         res.status(400).json({ error: `Unknown platform: ${platform}` });
@@ -190,14 +190,14 @@ export function createIntegrationsRoutes(db: Database.Database) {
    * GET /api/integrations/connections
    * List all messaging connections (active only for non-admins).
    */
-  router.get('/integrations/connections', (req, res) => {
+  router.get('/integrations/connections', async (req, res) => {
     try {
       const isAdmin = (req as unknown as { user?: { role?: string } }).user?.role === 'admin';
-      const rows = db.prepare(
-        `SELECT id, display_name, status, created_at, last_tested, last_test_result
-         FROM connections WHERE type = 'messaging' ${isAdmin ? '' : "AND status = 'active'"}
-         ORDER BY created_at DESC`
-      ).all() as Array<{ id: string; display_name: string; status: string; created_at: string; last_tested: string; last_test_result: string }>;
+      const rows = await db.all(
+        isAdmin
+          ? "SELECT id, display_name, status, created_at, last_tested, last_test_result FROM connections WHERE type = 'messaging' ORDER BY created_at DESC"
+          : "SELECT id, display_name, status, created_at, last_tested, last_test_result FROM connections WHERE type = 'messaging' AND status = 'active' ORDER BY created_at DESC"
+      ) as Array<{ id: string; display_name: string; status: string; created_at: string; last_tested: string; last_test_result: string }>;
 
       // Return connections without decrypting config (webhook URLs are sensitive)
       const safe = rows.map(r => ({

@@ -70,14 +70,14 @@ export default function EngagementReview({ engagement, onReload, onNext, onReExe
   const [customInstruction, setCustomInstruction] = useState<string>('');
   const [lensOpen, setLensOpen] = useState(false);
 
-  const iterations = engagement.iterations.slice().sort((a, b) => b.iteration_number - a.iteration_number);
+  const iterations = (engagement.iterations ?? []).slice().sort((a, b) => b.iteration_number - a.iteration_number);
   const latestDraft = iterations.find(it => it.status === 'draft');
   const approvedIterations = iterations.filter(it => it.status === 'approved');
 
   // Resources added after the most recent iteration was created — these are the "supplements" for next run
   const latestIterationDate = latestDraft?.created_at || iterations[0]?.created_at;
   const supplementResources = latestIterationDate
-    ? engagement.resources.filter(r => r.uploaded_at > latestIterationDate)
+    ? (engagement.resources ?? []).filter(r => r.uploaded_at > latestIterationDate)
     : [];
 
   async function generateGapAnalysis(iterationId: string) {

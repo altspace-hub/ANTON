@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import path from 'path';
 import fs from 'fs-extra';
 import { validate } from '../lib/validate.js';
@@ -24,7 +25,7 @@ function getUserId(req: unknown): string {
   return (req as { user?: { id?: string } }).user?.id ?? 'default';
 }
 
-export function createFolderRoutes(db: Database.Database) {
+export async function createFolderRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // POST /api/folders/browse — list directory contents
@@ -93,11 +94,11 @@ export function createFolderRoutes(db: Database.Database) {
       ).length;
 
       const userId = getUserId(req);
-      db.prepare(
+      await db.run(
         'INSERT OR REPLACE INTO registered_folders (path, label, file_count, last_indexed, user_id) VALUES (?, ?, ?, datetime("now"), ?)'
-      ).run(folderPath, label || path.basename(folderPath), fileCount, userId);
+      , folderPath, label || path.basename(folderPath), fileCount, userId);
 
-      const folder = db.prepare('SELECT * FROM registered_folders WHERE path = ? AND user_id = ?').get(folderPath, userId);
+      const folder = await db.get('SELECT * FROM registered_folders WHERE path = ? AND user_id = ?', folderPath, userId);
       res.json(folder);
     } catch (error) {
       res.status(500).json({ error: 'Failed to register folder' });
@@ -105,10 +106,10 @@ export function createFolderRoutes(db: Database.Database) {
   });
 
   // GET /api/folders/registered
-  router.get('/folders/registered', (req, res) => {
+  router.get('/folders/registered', async (req, res) => {
     try {
       const userId = getUserId(req);
-      const folders = db.prepare('SELECT * FROM registered_folders WHERE user_id = ? ORDER BY label ASC').all(userId);
+      const folders = await db.all('SELECT * FROM registered_folders WHERE user_id = ? ORDER BY label ASC', userId);
       res.json(folders);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch folders' });
@@ -116,10 +117,10 @@ export function createFolderRoutes(db: Database.Database) {
   });
 
   // DELETE /api/folders/registered/:id
-  router.delete('/folders/registered/:id', (req, res) => {
+  router.delete('/folders/registered/:id', async (req, res) => {
     try {
       const userId = getUserId(req);
-      db.prepare('DELETE FROM registered_folders WHERE id = ? AND user_id = ?').run(req.params.id, userId);
+      await db.run('DELETE FROM registered_folders WHERE id = ? AND user_id = ?', req.params.id, userId);
       res.json({ ok: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to delete folder' });

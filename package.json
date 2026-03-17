@@ -14,6 +14,8 @@
     "db:init:enhanced": "tsx server/db/init_enhanced.ts",
     "db:migrate": "tsx server/db/run_migrations.ts",
     "db:migrate:workspaces": "tsx server/db/migrate-workspaces.ts",
+    "db:init:pg": "DATABASE_URL=${DATABASE_URL} tsx -e \"import { initPostgresDatabase } from './server/db/init-postgresql.js'; await initPostgresDatabase(process.env.DATABASE_URL); console.log('PostgreSQL initialized'); process.exit(0);\"",
+    "db:migrate:pg": "DATABASE_URL=${DATABASE_URL} tsx -e \"import { initDatabaseAdapter } from './server/db/init-database.js'; const db = await initDatabaseAdapter(); import { runMigrationsPg } from './server/db/run-migrations-pg.js'; await runMigrationsPg(db); console.log('PG migrations complete'); process.exit(0);\"",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint src server --ext .ts,.tsx --max-warnings 100",
     "lint:fix": "eslint src server --ext .ts,.tsx --fix",

@@ -298,7 +298,7 @@ export function getTemperature(modelId: string, precision: PrecisionLevel): numb
   return TEMPERATURE_MAP[config.provider][precision];
 }
 
-export function getModelConfig(modelId: string, db?: import('better-sqlite3').Database): ModelConfig | undefined {
+export async function getModelConfig(modelId: string, db?: import('../db/database.js').DatabaseAdapter): ModelConfig | undefined {
   const registryEntry = MODEL_REGISTRY[modelId];
   if (registryEntry) return registryEntry;
 
@@ -306,7 +306,7 @@ export function getModelConfig(modelId: string, db?: import('better-sqlite3').Da
   if (db) {
     for (const slot of [1, 2]) {
       try {
-        const row = db.prepare(`SELECT value FROM app_settings WHERE key = 'custom_model_slot_${slot}'`).get() as { value: string } | undefined;
+        const row = await db.get(`SELECT value FROM app_settings WHERE key = 'custom_model_slot_${slot}'`) as { value: string } | undefined;
         if (row) {
           const custom = JSON.parse(row.value) as {
             enabled: boolean; modelId: string; displayName: string;

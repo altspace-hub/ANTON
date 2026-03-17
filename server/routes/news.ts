@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 
-export function createNewsRoutes(db: Database.Database, anthropic?: Anthropic) {
+export async function createNewsRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
 
   // DB migrations — non-fatal ALTER TABLE pattern
@@ -75,15 +76,13 @@ export function createNewsRoutes(db: Database.Database, anthropic?: Anthropic) {
   ];
 
   for (const sql of newsTables) {
-    try { db.exec(sql); } catch (e) { console.warn('[news] table migration warning:', e); }
+    try { await db.exec(sql); } catch (e) { console.warn('[news] table migration warning:', e); }
   }
 
   // Seed default news sources if empty
-  const sourceCount = (db.prepare('SELECT COUNT(*) as cnt FROM news_sources').get() as { cnt: number }).cnt;
+  const sourceCount = (await db.get('SELECT COUNT(*) as cnt FROM news_sources') as { cnt: number })?.cnt ?? 0;
   if (sourceCount === 0) {
-    const insertSource = db.prepare(
-      `INSERT OR IGNORE INTO news_sources (id, name, url, rss_url, country, language, bias_rating, factuality_score, category) VALUES (?,?,?,?,?,?,?,?,?)`
-    );
+    const INSERT_SOURCE_SQL = `INSERT OR IGNORE INTO news_sources (id, name, url, rss_url, country, language, bias_rating, factuality_score, category) VALUES (?,?,?,?,?,?,?,?,?)`;
     const defaultSources: [string, string, string, string, string, string, string, number, string][] = [
       ['reuters',     'Reuters',            'https://reuters.com',    'https://feeds.reuters.com/reuters/topNews',    'global', 'en', 'center',       90, 'general'],
       ['bbc-news',    'BBC News',           'https://bbc.com/news',   'http://feeds.bbci.co.uk/news/rss.xml',         'gb',     'en', 'center_left',  85, 'general'],
@@ -101,12 +100,12 @@ export function createNewsRoutes(db: Database.Database, anthropic?: Anthropic) {
       ['nature',      'Nature',            'https://nature.com',      'https://www.nature.com/nature.rss',            'global', 'en', 'center',       95, 'science'],
     ];
     for (const s of defaultSources) {
-      try { insertSource.run(...s); } catch { /* ignore duplicate seeds */ }
+      try { await db.run(INSERT_SOURCE_SQL, ...s); } catch { /* ignore duplicate seeds */ }
     }
   }
 
   // GET /api/news/sources — list all sources with optional filters
-  router.get('/news/sources', (req, res) => {
+  router.get('/news/sources', async (req, res) => {
     try {
       const { country, bias, category } = req.query;
       let query = 'SELECT * FROM news_sources WHERE is_active = 1';
@@ -115,12 +114,12 @@ export function createNewsRoutes(db: Database.Database, anthropic?: Anthropic) {
       if (bias)      { query += ' AND bias_rating = ?';  params.push(bias); }
       if (category)  { query += ' AND category = ?';     params.push(category); }
       query += ' ORDER BY factuality_score DESC';
-      res.json(db.prepare(query).all(...params));
+      res.json(await db.all(query, ...params));
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // GET /api/news/stories — list clustered stories
-  router.get('/news/stories', (req, res) => {
+  router.get('/news/stories', async (req, res) => {
     try {
       const { limit = '20', topic } = req.query;
       let query = 'SELECT * FROM news_stories';
@@ -128,28 +127,28 @@ export function createNewsRoutes(db: Database.Database, anthropic?: Anthropic) {
       if (topic) { query += ' WHERE topic_tags LIKE ?'; params.push(`%${topic}%`); }
       query += ' ORDER BY last_updated DESC LIMIT ?';
       params.push(Number(limit));
-      res.json(db.prepare(query).all(...params));
+      res.json(await db.all(query, ...params));
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // GET /api/news/stories/:id — single story with articles
-  router.get('/news/stories/:id', (req, res) => {
+  router.get('/news/stories/:id', async (req, res) => {
     try {
-      const story = db.prepare('SELECT * FROM news_stories WHERE id = ?').get(req.params.id);
+      const story = await db.get('SELECT * FROM news_stories WHERE id = ?', req.params.id);
       if (!story) return res.status(404).json({ error: 'Story not found' });
-      const articles = db.prepare(`
+      const articles = await db.all(`
         SELECT a.*, s.name as source_name, s.bias_rating, s.country
         FROM news_articles a
         LEFT JOIN news_sources s ON a.source_id = s.id
         WHERE a.story_id = ?
         ORDER BY a.published_at DESC
-      `).all(req.params.id);
+      `, req.params.id);
       return res.json({ story, articles });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
   // GET /api/news/articles — latest articles
-  router.get('/news/articles', (req, res) => {
+  router.get('/news/articles', async (req, res) => {
     try {
       const { limit = '50', source_id } = req.query;
       let query = `SELECT a.*, s.name as source_name, s.bias_rating, s.country, s.factuality_score
@@ -158,7 +157,7 @@ export function createNewsRoutes(db: Database.Database, anthropic?: Anthropic) {
       if (source_id) { query += ' WHERE a.source_id = ?'; params.push(source_id); }
       query += ' ORDER BY a.published_at DESC LIMIT ?';
       params.push(Number(limit));
-      res.json(db.prepare(query).all(...params));
+      res.json(await db.all(query, ...params));
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
@@ -197,9 +196,8 @@ Respond with:
       try { parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '')); } catch { /* keep empty */ }
 
       const id = `tc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      db.prepare(
-        `INSERT OR REPLACE INTO truth_checks (id, story_id, claim, verdict, confidence, explanation, sources_checked) VALUES (?,?,?,?,?,?,?)`
-      ).run(
+      await db.run(`INSERT OR REPLACE INTO truth_checks (id, story_id, claim, verdict, confidence, explanation, sources_checked) VALUES (?,?,?,?,?,?,?)`
+      , 
         id, story_id ?? null, claim,
         (parsed.verdict as string) || 'unverifiable',
         Number(parsed.confidence) || 50,
@@ -211,9 +209,9 @@ Respond with:
   });
 
   // GET /api/news/preferences — user news preferences
-  router.get('/news/preferences', (req, res) => {
+  router.get('/news/preferences', async (req, res) => {
     try {
-      const prefs = db.prepare("SELECT * FROM news_user_preferences WHERE user_id = 'default'").get() as Record<string, unknown> | undefined;
+      const prefs = await db.get("SELECT * FROM news_user_preferences WHERE user_id = 'default'") as Record<string, unknown> | undefined;
       if (!prefs) {
         return res.json({
           preferred_topics: [],
@@ -235,14 +233,13 @@ Respond with:
   });
 
   // PATCH /api/news/preferences — update user preferences
-  router.patch('/news/preferences', (req, res) => {
+  router.patch('/news/preferences', async (req, res) => {
     try {
-      const existing = db.prepare("SELECT * FROM news_user_preferences WHERE user_id = 'default'").get() as Record<string, unknown> | undefined;
+      const existing = await db.get("SELECT * FROM news_user_preferences WHERE user_id = 'default'") as Record<string, unknown> | undefined;
       const body = req.body as Record<string, unknown>;
       const id = existing ? (existing.id as string) : `np_${Date.now()}`;
-      db.prepare(
-        `INSERT OR REPLACE INTO news_user_preferences (id, user_id, preferred_topics, preferred_sources, blocked_sources, language_filter, bias_range, bias_profile) VALUES (?,?,?,?,?,?,?,?)`
-      ).run(
+      await db.run(`INSERT OR REPLACE INTO news_user_preferences (id, user_id, preferred_topics, preferred_sources, blocked_sources, language_filter, bias_range, bias_profile) VALUES (?,?,?,?,?,?,?,?)`
+      , 
         id, 'default',
         JSON.stringify(body.preferred_topics || (existing ? JSON.parse((existing.preferred_topics as string) || '[]') : [])),
         JSON.stringify(body.preferred_sources || (existing ? JSON.parse((existing.preferred_sources as string) || '[]') : [])),

@@ -58,7 +58,8 @@ export default function TeamWorkloadView() {
       try {
         const res = await fetch('/api/canvas/my-assignments');
         if (res.ok) {
-          setAssignments(await res.json());
+          const data = await res.json();
+          setAssignments(Array.isArray(data) ? data : []);
         }
       } catch {
         // silent

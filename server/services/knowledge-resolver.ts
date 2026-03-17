@@ -13,7 +13,8 @@
 
 import path from 'path';
 import fs from 'fs-extra';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { extractTextFromFile } from './text-extractor.js';
 import { fetchUrl } from './url-fetcher.js';
 import { retrieveChunks } from './rag/retriever.js';
@@ -77,7 +78,7 @@ export async function resolveKnowledgeSources(
   config: KnowledgeSourceConfig,
   uploadedFilePaths: string[] = [],
   options?: {
-    db?: Database.Database;
+    db?: DatabaseAdapter;
     ragMode?: RagModeConfig;
     userQuery?: string;
     /** Override the default 160k token budget. Set to ~800k when using the 1M context beta. */
@@ -92,6 +93,9 @@ export async function resolveKnowledgeSources(
     sourceManifest: [],
   };
 
+  // Guard: ensure config.modes exists
+  if (!config.modes) config.modes = {} as typeof config.modes;
+
   // Use caller-provided budget (e.g. 800k for 1M context beta), else env/default.
   const effectiveBudget = options?.contextBudget ?? AVAILABLE_CONTEXT_TOKENS;
 
@@ -101,7 +105,7 @@ export async function resolveKnowledgeSources(
 
   // ── MODE 1: Claude's Own Knowledge + Web Search ─────────────────────────────
 
-  if (config.modes.claudeKnowledge?.enabled) {
+  if (config.modes?.claudeKnowledge?.enabled) {
     if (config.modes.claudeKnowledge.webSearchEnabled) {
       result.tools.push({ type: 'web_search_20250305', name: 'web_search' });
       systemParts.push(

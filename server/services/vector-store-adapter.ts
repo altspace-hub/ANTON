@@ -10,7 +10,7 @@
  *   const results = await store.search({ queryVector, contentTypes: ['knowledge_atom'], topK: 10 });
  */
 
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { SQLiteVectorStore } from './vector-stores/sqlite-vector-store.js';
 import type { VectorSearchResult } from './vector-stores/sqlite-vector-store.js';
 
@@ -41,9 +41,9 @@ export interface VectorStoreAdapter {
 }
 
 let _instance: VectorStoreAdapter | null = null;
-let _db: Database.Database | null = null;
+let _db: DatabaseAdapter | null = null;
 
-export function getVectorStore(db: Database.Database): VectorStoreAdapter {
+export function getVectorStore(db: DatabaseAdapter): VectorStoreAdapter {
   // Return existing instance if same db
   if (_instance && _db === db) return _instance;
   _db = db;

@@ -4,7 +4,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { encryptConfig, decryptConfig } from './credential-vault.js';
 import { getDriver } from './db-drivers/driver-registry.js';
 
@@ -120,29 +120,29 @@ function parseScript(row: RawScriptRow): Script {
   };
 }
 
-export function createConnectionManager(db: Database) {
+export async function createConnectionManager(db: DatabaseAdapter) {
   return {
     // ── Connections ────────────────────────────────────────────
 
-    list(userId: string, role: string): Connection[] {
+    async list(userId: string, role: string): Connection[] {
       let rows: RawConnectionRow[];
       if (role === 'admin') {
-        rows = db.prepare('SELECT * FROM connections ORDER BY created_at DESC').all() as RawConnectionRow[];
+        rows = await db.all('SELECT * FROM connections ORDER BY created_at DESC') as RawConnectionRow[];
       } else {
-        rows = db.prepare(
+        rows = await db.all(
           "SELECT * FROM connections WHERE status = 'active' ORDER BY created_at DESC"
-        ).all() as RawConnectionRow[];
+        ) as RawConnectionRow[];
       }
       void userId;
       return rows.map(parseConnection);
     },
 
-    get(id: string): Connection | null {
-      const row = db.prepare('SELECT * FROM connections WHERE id = ?').get(id) as RawConnectionRow | undefined;
+    async get(id: string): Promise<Connection | null> {
+      const row = await db.get('SELECT * FROM connections WHERE id = ?', id) as RawConnectionRow | undefined;
       return row ? parseConnection(row) : null;
     },
 
-    create(
+    async create(
       data: {
         display_name: string;
         type: ConnectionType;
@@ -150,31 +150,29 @@ export function createConnectionManager(db: Database) {
         permissions?: string[];
       },
       userId: string
-    ): Connection {
+    ): Promise<Connection> {
       const id = randomUUID();
       const now = new Date().toISOString();
 
       // Encrypt sensitive fields before storing
       const encryptedConfig = encryptConfig(data.config);
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO connections
           (id, display_name, type, config, permissions, created_by, status, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-      `).run(
-        id,
+      `, id,
         data.display_name,
         data.type,
         JSON.stringify(encryptedConfig),
         JSON.stringify(data.permissions ?? []),
         userId,
         now,
-        now
-      );
+        now);
       return this.get(id)!;
     },
 
-    update(id: string, data: Partial<Pick<Connection, 'display_name' | 'config' | 'permissions' | 'status'>>): Connection | null {
+    async update(id: string, data: Partial<Pick<Connection, 'display_name' | 'config' | 'permissions' | 'status'>>): Promise<Connection | null> {
       const existing = this.get(id);
       if (!existing) return null;
 
@@ -184,27 +182,27 @@ export function createConnectionManager(db: Database) {
       const permissions = JSON.stringify(data.permissions ?? existing.permissions);
       const status = data.status ?? existing.status;
 
-      db.prepare(`
+      await db.run(`
         UPDATE connections
         SET display_name = ?, config = ?, permissions = ?, status = ?, updated_at = ?
         WHERE id = ?
-      `).run(display_name, config, permissions, status, now, id);
+      `, display_name, config, permissions, status, now, id);
 
       return this.get(id);
     },
 
-    approve(id: string, adminId: string): Connection | null {
+    async approve(id: string, adminId: string): Promise<Connection | null> {
       const now = new Date().toISOString();
-      db.prepare(`
+      await db.run(`
         UPDATE connections
         SET approved_by = ?, approved_at = ?, status = 'active', updated_at = ?
         WHERE id = ?
-      `).run(adminId, now, now, id);
+      `, adminId, now, now, id);
       return this.get(id);
     },
 
-    delete(id: string): void {
-      db.prepare("UPDATE connections SET status = 'disabled', updated_at = ? WHERE id = ?").run(
+    async delete(id: string): Promise<void> {
+      await db.run("UPDATE connections SET status = 'disabled', updated_at = ? WHERE id = ?", 
         new Date().toISOString(),
         id
       );
@@ -261,14 +259,14 @@ export function createConnectionManager(db: Database) {
       }
 
       const now = new Date().toISOString();
-      db.prepare(
+      await db.run(
         'UPDATE connections SET last_tested = ?, last_test_result = ?, updated_at = ? WHERE id = ?'
-      ).run(now, result.message, now, id);
+      , now, result.message, now, id);
 
       return result;
     },
 
-    logAction(
+    async logAction(
       connectionId: string,
       executionId: string | null,
       action: string,
@@ -276,11 +274,11 @@ export function createConnectionManager(db: Database) {
       result: string | null,
       userId: string
     ): void {
-      db.prepare(`
+      await db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
+      `, 
         connectionId,
         executionId,
         action,
@@ -290,25 +288,24 @@ export function createConnectionManager(db: Database) {
       );
     },
 
-    getAuditLog(connectionId: string, limit = 50): AuditEntry[] {
-      return db.prepare(
-        'SELECT * FROM connection_audit_log WHERE connection_id = ? ORDER BY executed_at DESC LIMIT ?'
-      ).all(connectionId, limit) as AuditEntry[];
+    async getAuditLog(connectionId: string, limit = 50): Promise<AuditEntry[]> {
+      return await db.all('SELECT * FROM connection_audit_log WHERE connection_id = ? ORDER BY executed_at DESC LIMIT ?'
+      , connectionId, limit) as AuditEntry[];
     },
 
     // ── Scripts ────────────────────────────────────────────────
 
-    listScripts(): Script[] {
-      const rows = db.prepare("SELECT * FROM scripts WHERE status = 'active' ORDER BY created_at DESC").all() as RawScriptRow[];
+    async listScripts(): Promise<Script[]> {
+      const rows = await db.all('SELECT * FROM connection_scripts ORDER BY display_name') as Record<string, unknown>[];
       return rows.map(parseScript);
     },
 
-    getScript(id: string): Script | null {
-      const row = db.prepare('SELECT * FROM scripts WHERE id = ?').get(id) as RawScriptRow | undefined;
+    async getScript(id: string): Promise<Script | null> {
+      const row = await db.get('SELECT * FROM connection_scripts WHERE id = ?', id) as Record<string, unknown> | undefined;
       return row ? parseScript(row) : null;
     },
 
-    createScript(data: {
+    async createScript(data: {
       display_name: string;
       description?: string;
       language: Script['language'];
@@ -325,13 +322,13 @@ export function createConnectionManager(db: Database) {
     }): Script {
       const id = randomUUID();
       const now = new Date().toISOString();
-      db.prepare(`
+      await db.run(`
         INSERT INTO scripts
           (id, display_name, description, language, script_path, parameters, expected_outputs,
            max_runtime_seconds, memory_limit_mb, sandbox, network_access, file_hash, version,
            approved_by, approved_at, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
-      `).run(
+      `, 
         id,
         data.display_name,
         data.description ?? null,
@@ -352,13 +349,13 @@ export function createConnectionManager(db: Database) {
       return this.getScript(id)!;
     },
 
-    updateScript(
+    async updateScript(
       id: string,
       data: Partial<Pick<Script, 'display_name' | 'description' | 'parameters' | 'expected_outputs' | 'max_runtime_seconds' | 'memory_limit_mb' | 'version'>>
     ): Script | null {
       const existing = this.getScript(id);
       if (!existing) return null;
-      db.prepare(`
+      await db.run(`
         UPDATE scripts SET
           display_name = ?,
           description = ?,
@@ -368,7 +365,7 @@ export function createConnectionManager(db: Database) {
           memory_limit_mb = ?,
           version = ?
         WHERE id = ?
-      `).run(
+      `, 
         data.display_name ?? existing.display_name,
         data.description ?? existing.description ?? null,
         data.parameters ? JSON.stringify(data.parameters) : (existing.parameters ? JSON.stringify(existing.parameters) : null),
@@ -381,8 +378,8 @@ export function createConnectionManager(db: Database) {
       return this.getScript(id);
     },
 
-    deleteScript(id: string): void {
-      db.prepare("UPDATE scripts SET status = 'deleted' WHERE id = ?").run(id);
+    async deleteScript(id: string): Promise<void> {
+      await db.run("UPDATE scripts SET status = 'deleted' WHERE id = ?", id);
     },
   };
 }

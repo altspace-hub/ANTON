@@ -9,7 +9,8 @@
 
 import { randomUUID } from 'crypto';
 import crypto from 'crypto';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { encryptConfig, decryptConfig } from './credential-vault.js';
 
 export type TriggerType = 'webhook' | 'git_push' | 'slack_event' | 'teams_event' | 'mcp_event' | 'internal';
@@ -105,11 +106,11 @@ export interface ProcessResult {
   error?: string;
 }
 
-export function createWebhookListener(db: Database) {
+export async function createWebhookListener(db: DatabaseAdapter) {
   /**
    * Create a new webhook trigger. Encrypts the secret before storing.
    */
-  function createTrigger(input: {
+  async function createTrigger(input: {
     name: string;
     description?: string;
     trigger_type: TriggerType;
@@ -121,7 +122,7 @@ export function createWebhookListener(db: Database) {
     rate_limit_window_seconds?: number;
     cooldown_seconds?: number;
     user_id?: string;
-  }): WebhookTrigger {
+  }): Promise<WebhookTrigger> {
     const id = randomUUID();
     const endpoint_path = `/api/webhooks/inbound/${id}`;
     const now = new Date().toISOString();
@@ -133,13 +134,13 @@ export function createWebhookListener(db: Database) {
       authToStore.secret = (encrypted as { secret: string }).secret;
     }
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO webhook_triggers
         (id, name, description, trigger_type, workflow_id, endpoint_path, auth_config,
          filter_config, payload_mapping, rate_limit_max, rate_limit_window_seconds,
          cooldown_seconds, status, user_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
-    `).run(
+    `,
       id, input.name, input.description ?? null,
       input.trigger_type, input.workflow_id, endpoint_path,
       JSON.stringify(authToStore),
@@ -152,47 +153,47 @@ export function createWebhookListener(db: Database) {
       now, now,
     );
 
-    return getTrigger(id)!;
+    return (await getTrigger(id))!;
   }
 
   /**
    * Get trigger by ID.
    */
-  function getTrigger(triggerId: string): WebhookTrigger | null {
-    const row = db.prepare('SELECT * FROM webhook_triggers WHERE id = ?').get(triggerId) as RawTriggerRow | undefined;
+  async function getTrigger(triggerId: string): Promise<WebhookTrigger | null> {
+    const row = await db.get('SELECT * FROM webhook_triggers WHERE id = ?', triggerId) as RawTriggerRow | undefined;
     return row ? parseTrigger(row) : null;
   }
 
   /**
    * Get trigger by endpoint path (used when inbound webhook arrives).
    */
-  function getTriggerByEndpoint(endpointPath: string): WebhookTrigger | null {
-    const row = db.prepare('SELECT * FROM webhook_triggers WHERE endpoint_path = ?').get(endpointPath) as RawTriggerRow | undefined;
+  async function getTriggerByEndpoint(endpointPath: string): Promise<WebhookTrigger | null> {
+    const row = await db.get('SELECT * FROM webhook_triggers WHERE endpoint_path = ?', endpointPath) as RawTriggerRow | undefined;
     return row ? parseTrigger(row) : null;
   }
 
   /**
    * List triggers.
    */
-  function listTriggers(userId?: string): WebhookTrigger[] {
+  async function listTriggers(userId?: string): Promise<WebhookTrigger[]> {
     const rows = userId
-      ? db.prepare('SELECT * FROM webhook_triggers WHERE user_id = ? ORDER BY created_at DESC').all(userId) as RawTriggerRow[]
-      : db.prepare('SELECT * FROM webhook_triggers ORDER BY created_at DESC').all() as RawTriggerRow[];
+      ? await db.all('SELECT * FROM webhook_triggers WHERE user_id = ? ORDER BY created_at DESC', userId) as RawTriggerRow[]
+      : await db.all('SELECT * FROM webhook_triggers ORDER BY created_at DESC') as RawTriggerRow[];
     return rows.map(parseTrigger);
   }
 
   /**
    * Update trigger status (active/paused).
    */
-  function setTriggerStatus(triggerId: string, status: 'active' | 'paused'): void {
-    db.prepare(`UPDATE webhook_triggers SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, triggerId);
+  async function setTriggerStatus(triggerId: string, status: 'active' | 'paused'): Promise<void> {
+    await db.run(`UPDATE webhook_triggers SET status = ?, updated_at = datetime('now') WHERE id = ?`, status, triggerId);
   }
 
   /**
    * Delete a trigger.
    */
-  function deleteTrigger(triggerId: string): boolean {
-    const result = db.prepare('DELETE FROM webhook_triggers WHERE id = ?').run(triggerId);
+  async function deleteTrigger(triggerId: string): Promise<boolean> {
+    const result = await db.run('DELETE FROM webhook_triggers WHERE id = ?', triggerId);
     return result.changes > 0;
   }
 
@@ -333,12 +334,12 @@ export function createWebhookListener(db: Database) {
 
   // ── RATE LIMITING ──────────────────────────────────────────────────────────
 
-  function checkRateLimit(trigger: WebhookTrigger): boolean {
+  async function checkRateLimit(trigger: WebhookTrigger): Promise<boolean> {
     const windowStart = new Date(Date.now() - trigger.rate_limit_window_seconds * 1000).toISOString();
-    const row = db.prepare(`
+    const row = await db.get(`
       SELECT COUNT(*) as count FROM webhook_events
       WHERE trigger_id = ? AND status = 'triggered' AND received_at >= ?
-    `).get(trigger.id, windowStart) as { count: number };
+    `, trigger.id, windowStart) as { count: number };
 
     return row.count < trigger.rate_limit_max;
   }
@@ -358,13 +359,13 @@ export function createWebhookListener(db: Database) {
     return crypto.createHash('sha256').update(keyData).digest('hex');
   }
 
-  function checkDedup(trigger: WebhookTrigger, signature: string): boolean {
+  async function checkDedup(trigger: WebhookTrigger, signature: string): Promise<boolean> {
     const windowStart = new Date(Date.now() - trigger.cooldown_seconds * 1000).toISOString();
-    const existing = db.prepare(`
+    const existing = await db.get(`
       SELECT id FROM webhook_events
       WHERE trigger_id = ? AND dedup_signature = ? AND received_at >= ?
         AND status NOT IN ('failed', 'filtered_out')
-    `).get(trigger.id, signature, windowStart) as { id: string } | undefined;
+    `, trigger.id, signature, windowStart) as { id: string } | undefined;
     return existing === undefined; // true = proceed (not a duplicate)
   }
 
@@ -400,7 +401,7 @@ export function createWebhookListener(db: Database) {
 
   // ── EVENT LOGGING ──────────────────────────────────────────────────────────
 
-  function logEvent(
+  async function logEvent(
     triggerId: string,
     status: EventStatus,
     payload?: Record<string, unknown>,
@@ -411,14 +412,14 @@ export function createWebhookListener(db: Database) {
       errorMessage?: string;
       processingMs?: number;
     },
-  ): string {
+  ): Promise<string> {
     const eventId = randomUUID();
-    db.prepare(`
+    await db.run(`
       INSERT INTO webhook_events
         (id, trigger_id, received_at, status, payload, mapped_variables,
          dedup_signature, workflow_run_id, error_message, processing_ms)
       VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `,
       eventId, triggerId, status,
       payload ? JSON.stringify(payload) : null,
       extra?.mappedVariables ? JSON.stringify(extra.mappedVariables) : null,
@@ -430,26 +431,26 @@ export function createWebhookListener(db: Database) {
     return eventId;
   }
 
-  function updateEventStatus(
+  async function updateEventStatus(
     eventId: string,
     status: EventStatus,
     extra?: { workflowRunId?: string; errorMessage?: string; processingMs?: number },
-  ): void {
-    db.prepare(`
+  ): Promise<void> {
+    await db.run(`
       UPDATE webhook_events SET status = ?, workflow_run_id = ?, error_message = ?, processing_ms = ?
       WHERE id = ?
-    `).run(status, extra?.workflowRunId ?? null, extra?.errorMessage ?? null, extra?.processingMs ?? null, eventId);
+    `, status, extra?.workflowRunId ?? null, extra?.errorMessage ?? null, extra?.processingMs ?? null, eventId);
   }
 
   // ── WORKFLOW HANDOFF ───────────────────────────────────────────────────────
 
-  function initiateWorkflow(
+  async function initiateWorkflow(
     workflowId: string,
     triggerId: string,
     eventId: string,
     mappedVariables: Record<string, unknown>,
     userId: string,
-  ): string {
+  ): Promise<string> {
     const runId = randomUUID();
     const contextWithTrigger = {
       ...mappedVariables,
@@ -457,16 +458,16 @@ export function createWebhookListener(db: Database) {
       _event_id: eventId,
     };
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO workflow_runs
         (id, workflow_id, trigger_source, status, current_step, user_id, started_at)
       VALUES (?, ?, 'event', 'pending', 0, ?, datetime('now'))
-    `).run(runId, workflowId, userId);
+    `, runId, workflowId, userId);
 
     // Store trigger context in run for executor to pick up
-    db.prepare(`
+    await db.run(`
       UPDATE workflow_runs SET trigger_source = ? WHERE id = ?
-    `).run(JSON.stringify({ type: 'event', variables: contextWithTrigger, trigger_id: triggerId }), runId);
+    `, JSON.stringify({ type: 'event', variables: contextWithTrigger, trigger_id: triggerId }), runId);
 
     return runId;
   }
@@ -486,7 +487,7 @@ export function createWebhookListener(db: Database) {
     const start = Date.now();
 
     // Step 1: Look up trigger
-    const trigger = getTrigger(triggerId);
+    const trigger = await getTrigger(triggerId);
     if (!trigger) {
       return { status: 'failed', event_id: '', error: 'trigger not found' };
     }
@@ -495,35 +496,35 @@ export function createWebhookListener(db: Database) {
     }
 
     // Log received
-    const eventId = logEvent(triggerId, 'received', parsedPayload);
+    const eventId = await logEvent(triggerId, 'received', parsedPayload);
 
     // Step 2: Authenticate
     const authResult = authenticateRequest(trigger, rawBody, headers);
     if (!authResult.valid) {
-      updateEventStatus(eventId, 'failed', {
+      await updateEventStatus(eventId, 'failed', {
         errorMessage: authResult.reason,
         processingMs: Date.now() - start,
       });
       return { status: 'failed', event_id: eventId, error: authResult.reason };
     }
-    updateEventStatus(eventId, 'validated');
+    await updateEventStatus(eventId, 'validated');
 
     // Step 3: Filter
     if (!matchesFilters(trigger, parsedPayload)) {
-      updateEventStatus(eventId, 'filtered_out', { processingMs: Date.now() - start });
+      await updateEventStatus(eventId, 'filtered_out', { processingMs: Date.now() - start });
       return { status: 'filtered_out', event_id: eventId };
     }
 
     // Step 4: Rate limit
-    if (!checkRateLimit(trigger)) {
-      updateEventStatus(eventId, 'rate_limited', { processingMs: Date.now() - start });
+    if (!(await checkRateLimit(trigger))) {
+      await updateEventStatus(eventId, 'rate_limited', { processingMs: Date.now() - start });
       return { status: 'rate_limited', event_id: eventId };
     }
 
     // Step 5: Dedup
     const dedupSig = computeDedupSignature(trigger, parsedPayload);
-    if (!checkDedup(trigger, dedupSig)) {
-      updateEventStatus(eventId, 'deduplicated', { processingMs: Date.now() - start });
+    if (!(await checkDedup(trigger, dedupSig))) {
+      await updateEventStatus(eventId, 'deduplicated', { processingMs: Date.now() - start });
       return { status: 'deduplicated', event_id: eventId };
     }
 
@@ -531,15 +532,15 @@ export function createWebhookListener(db: Database) {
     const mappedVariables = mapPayload(trigger.payload_mapping, parsedPayload);
 
     // Step 7: Initiate workflow
-    const runId = initiateWorkflow(trigger.workflow_id, trigger.id, eventId, mappedVariables, userId);
+    const runId = await initiateWorkflow(trigger.workflow_id, trigger.id, eventId, mappedVariables, userId);
 
-    updateEventStatus(eventId, 'triggered', {
+    await updateEventStatus(eventId, 'triggered', {
       workflowRunId: runId,
       processingMs: Date.now() - start,
     });
 
     // Update dedup signature after successful trigger
-    db.prepare('UPDATE webhook_events SET dedup_signature = ?, mapped_variables = ? WHERE id = ?').run(
+    await db.run('UPDATE webhook_events SET dedup_signature = ?, mapped_variables = ? WHERE id = ?', 
       dedupSig,
       JSON.stringify(mappedVariables),
       eventId,
@@ -560,10 +561,10 @@ export function createWebhookListener(db: Database) {
     const results: ProcessResult[] = [];
 
     // Find all active internal triggers matching this source
-    const triggers = db.prepare(`
+    const triggers = await db.all(`
       SELECT * FROM webhook_triggers
       WHERE trigger_type = 'internal' AND status = 'active'
-    `).all() as RawTriggerRow[];
+    `) as RawTriggerRow[];
 
     for (const rawTrigger of triggers) {
       const trigger = parseTrigger(rawTrigger);
@@ -573,32 +574,32 @@ export function createWebhookListener(db: Database) {
       if (filterCfg.source && filterCfg.source !== source) continue;
 
       const start = Date.now();
-      const eventId = logEvent(trigger.id, 'received', { source, ...payload });
+      const eventId = await logEvent(trigger.id, 'received', { source, ...payload });
 
       if (!matchesFilters(trigger, payload)) {
-        updateEventStatus(eventId, 'filtered_out', { processingMs: Date.now() - start });
+        await updateEventStatus(eventId, 'filtered_out', { processingMs: Date.now() - start });
         results.push({ status: 'filtered_out', event_id: eventId });
         continue;
       }
 
-      if (!checkRateLimit(trigger)) {
-        updateEventStatus(eventId, 'rate_limited', { processingMs: Date.now() - start });
+      if (!(await checkRateLimit(trigger))) {
+        await updateEventStatus(eventId, 'rate_limited', { processingMs: Date.now() - start });
         results.push({ status: 'rate_limited', event_id: eventId });
         continue;
       }
 
       const dedupSig = computeDedupSignature(trigger, payload);
-      if (!checkDedup(trigger, dedupSig)) {
-        updateEventStatus(eventId, 'deduplicated', { processingMs: Date.now() - start });
+      if (!(await checkDedup(trigger, dedupSig))) {
+        await updateEventStatus(eventId, 'deduplicated', { processingMs: Date.now() - start });
         results.push({ status: 'deduplicated', event_id: eventId });
         continue;
       }
 
       const mappedVariables = mapPayload(trigger.payload_mapping, payload);
-      const runId = initiateWorkflow(trigger.workflow_id, trigger.id, eventId, mappedVariables, userId);
+      const runId = await initiateWorkflow(trigger.workflow_id, trigger.id, eventId, mappedVariables, userId);
 
-      updateEventStatus(eventId, 'triggered', { workflowRunId: runId, processingMs: Date.now() - start });
-      db.prepare('UPDATE webhook_events SET dedup_signature = ?, mapped_variables = ? WHERE id = ?').run(
+      await updateEventStatus(eventId, 'triggered', { workflowRunId: runId, processingMs: Date.now() - start });
+      await db.run('UPDATE webhook_events SET dedup_signature = ?, mapped_variables = ? WHERE id = ?',
         dedupSig, JSON.stringify(mappedVariables), eventId,
       );
 
@@ -611,26 +612,30 @@ export function createWebhookListener(db: Database) {
   /**
    * Get event log for a trigger (paginated).
    */
-  function getEventLog(triggerId: string, limit = 50, offset = 0): Array<{
+  async function getEventLog(triggerId: string, limit = 50, offset = 0): Promise<Array<{
     id: string; received_at: string; status: string;
     workflow_run_id: string | null; error_message: string | null; processing_ms: number | null;
-  }> {
-    return db.prepare(`
+  }>> {
+    return await db.all(`
       SELECT id, received_at, status, workflow_run_id, error_message, processing_ms
       FROM webhook_events
       WHERE trigger_id = ?
       ORDER BY received_at DESC
       LIMIT ? OFFSET ?
-    `).all(triggerId, limit, offset) as ReturnType<typeof getEventLog>;
+    `, triggerId, limit, offset) as Array<{
+      id: string; received_at: string; status: string;
+      workflow_run_id: string | null; error_message: string | null; processing_ms: number | null;
+    }>;
   }
 
   /**
    * Replay a specific event (re-runs it through the full pipeline).
    */
   async function replayEvent(eventId: string, userId: string = 'default'): Promise<ProcessResult> {
-    const row = db.prepare('SELECT * FROM webhook_events WHERE id = ?').get(eventId) as {
-      trigger_id: string; payload: string | null;
-    } | undefined;
+    const row = await db.get(
+      `SELECT trigger_id, payload FROM webhook_events WHERE id = ?`,
+      eventId
+    ) as { trigger_id: string; payload: string | null; } | undefined;
 
     if (!row || !row.payload) {
       return { status: 'failed', event_id: eventId, error: 'event not found or has no payload' };
@@ -643,12 +648,12 @@ export function createWebhookListener(db: Database) {
   /**
    * Get aggregate metrics for a trigger.
    */
-  function getTriggerMetrics(triggerId: string, hours = 24): {
+  async function getTriggerMetrics(triggerId: string, hours = 24): Promise<{
     events_received: number; events_triggered: number;
     events_filtered: number; events_failed: number; avg_processing_ms: number;
-  } {
+  }> {
     const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-    const row = db.prepare(`
+    const row = await db.get(`
       SELECT
         COUNT(*) as events_received,
         SUM(CASE WHEN status = 'triggered' THEN 1 ELSE 0 END) as events_triggered,
@@ -657,7 +662,10 @@ export function createWebhookListener(db: Database) {
         AVG(processing_ms) as avg_processing_ms
       FROM webhook_events
       WHERE trigger_id = ? AND received_at >= ?
-    `).get(triggerId, since) as ReturnType<typeof getTriggerMetrics>;
+    `, triggerId, since) as {
+      events_received: number; events_triggered: number;
+      events_filtered: number; events_failed: number; avg_processing_ms: number;
+    } | undefined;
 
     return {
       events_received: row?.events_received ?? 0,

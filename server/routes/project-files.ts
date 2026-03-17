@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
 import { randomUUID } from 'crypto';
 import { getProjectWorkspace } from '../services/workspace.js';
 
-export function createProjectFilesRoutes(db: Database.Database) {
+export async function createProjectFilesRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // Configure multer for project-scoped uploads
@@ -30,11 +30,11 @@ export function createProjectFilesRoutes(db: Database.Database) {
   });
 
   // GET /api/projects/:id/files — list project files
-  router.get('/projects/:id/files', (req, res) => {
+  router.get('/projects/:id/files', async (req, res) => {
     try {
-      const files = db.prepare(
+      const files = await db.all(
         'SELECT * FROM project_files WHERE project_id = ? ORDER BY created_at DESC'
-      ).all(req.params.id);
+      , req.params.id);
       res.json(files);
     } catch (err) {
       console.error('[project-files] list error:', err);
@@ -48,7 +48,7 @@ export function createProjectFilesRoutes(db: Database.Database) {
       const projectId = req.params.id as string;
 
       // Verify project exists
-      const project = db.prepare('SELECT id, name, workspace_path FROM projects WHERE id = ?').get(projectId) as { id: string; name: string; workspace_path: string } | undefined;
+      const project = await db.get('SELECT id, name, workspace_path FROM projects WHERE id = ?', projectId) as { id: string; name: string; workspace_path: string } | undefined;
       if (!project) {
         return res.status(404).json({ error: 'Project not found' });
       }
@@ -73,10 +73,10 @@ export function createProjectFilesRoutes(db: Database.Database) {
         const fileId = randomUUID();
         const ext = path.extname(file.originalname).toLowerCase();
 
-        db.prepare(`
+        await db.run(`
           INSERT INTO project_files (id, project_id, filename, original_name, file_path, file_size, mime_type, extension, uploaded_by)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        `, 
           fileId,
           projectId,
           file.filename,
@@ -102,13 +102,11 @@ export function createProjectFilesRoutes(db: Database.Database) {
       }
 
       // Auto-register as knowledge source folder if not already registered
-      const existing = db.prepare(
-        'SELECT id FROM registered_folders WHERE path = ?'
-      ).get(workspace.uploads);
+      const existing = await db.get('SELECT id FROM registered_folders WHERE path = ?'
+      , workspace.uploads);
       if (!existing) {
-        db.prepare(
-          'INSERT INTO registered_folders (path, label, file_count, project_id) VALUES (?, ?, ?, ?)'
-        ).run(
+        await db.run('INSERT INTO registered_folders (path, label, file_count, project_id) VALUES (?, ?, ?, ?)'
+        , 
           workspace.uploads,
           `Project: ${project.name}`,
           inserted.length,
@@ -117,12 +115,10 @@ export function createProjectFilesRoutes(db: Database.Database) {
         console.log(`[project-files] Auto-registered folder as knowledge source: ${workspace.uploads}`);
       } else {
         // Update file count
-        const totalFiles = db.prepare(
-          'SELECT COUNT(*) as c FROM project_files WHERE project_id = ?'
-        ).get(projectId) as { c: number };
-        db.prepare(
-          'UPDATE registered_folders SET file_count = ? WHERE path = ?'
-        ).run(totalFiles.c, workspace.uploads);
+        const totalFiles = await db.get('SELECT COUNT(*) as c FROM project_files WHERE project_id = ?'
+        , projectId) as { c: number };
+        await db.run('UPDATE registered_folders SET file_count = ? WHERE path = ?'
+        , totalFiles.c, workspace.uploads);
       }
 
       res.json(inserted);
@@ -133,11 +129,10 @@ export function createProjectFilesRoutes(db: Database.Database) {
   });
 
   // GET /api/projects/:id/files/:fileId/download — download file
-  router.get('/projects/:id/files/:fileId/download', (req, res) => {
+  router.get('/projects/:id/files/:fileId/download', async (req, res) => {
     try {
-      const file = db.prepare(
-        'SELECT * FROM project_files WHERE id = ? AND project_id = ?'
-      ).get(req.params.fileId, req.params.id) as { file_path: string; original_name: string } | undefined;
+      const file = await db.get('SELECT * FROM project_files WHERE id = ? AND project_id = ?'
+      , req.params.fileId, req.params.id) as { file_path: string; original_name: string } | undefined;
 
       if (!file) {
         return res.status(404).json({ error: 'File not found' });
@@ -160,9 +155,9 @@ export function createProjectFilesRoutes(db: Database.Database) {
   // DELETE /api/projects/:id/files/:fileId — delete file
   router.delete('/projects/:id/files/:fileId', async (req, res) => {
     try {
-      const file = db.prepare(
+      const file = await db.get(
         'SELECT * FROM project_files WHERE id = ? AND project_id = ?'
-      ).get(req.params.fileId, req.params.id) as { id: string; file_path: string; project_id: string } | undefined;
+      , req.params.fileId, req.params.id) as { id: string; file_path: string; project_id: string } | undefined;
 
       if (!file) {
         return res.status(404).json({ error: 'File not found' });
@@ -176,16 +171,14 @@ export function createProjectFilesRoutes(db: Database.Database) {
       }
 
       // Delete from DB
-      db.prepare('DELETE FROM project_files WHERE id = ?').run(file.id);
+      await db.run('DELETE FROM project_files WHERE id = ?', file.id);
 
       // Update registered folder file count
       const workspace = await getProjectWorkspace(file.project_id);
-      const totalFiles = db.prepare(
-        'SELECT COUNT(*) as c FROM project_files WHERE project_id = ?'
-      ).get(file.project_id) as { c: number };
-      db.prepare(
-        'UPDATE registered_folders SET file_count = ? WHERE path = ?'
-      ).run(totalFiles.c, workspace.uploads);
+      const totalFiles = await db.get('SELECT COUNT(*) as c FROM project_files WHERE project_id = ?'
+      , file.project_id) as { c: number };
+      await db.run('UPDATE registered_folders SET file_count = ? WHERE path = ?'
+      , totalFiles.c, workspace.uploads);
 
       res.json({ ok: true });
     } catch (err) {

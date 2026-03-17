@@ -16,7 +16,8 @@
 
 import AdmZip from 'adm-zip';
 import crypto from 'crypto';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -213,14 +214,12 @@ export async function bundleModuleToAnton(
   moduleId: string
 ): Promise<Buffer> {
   // Fetch module from database using actual custom_modules schema
-  const module = db
-    .prepare(
+  const module = await db.get(
       `SELECT id, name, short_name, description, icon, area,
               system_prompt, config, created_at, updated_at
        FROM custom_modules
        WHERE id = ?`
-    )
-    .get(moduleId) as Record<string, unknown> | undefined;
+    , moduleId) as Record<string, unknown> | undefined;
 
   if (!module) {
     throw new Error('Module not found');
@@ -356,9 +355,7 @@ export async function bundleCodingReviewProfile(
   db: Database,
   sessionId: string
 ): Promise<Buffer> {
-  const session = db
-    .prepare('SELECT * FROM code_review_sessions WHERE id = ?')
-    .get(sessionId) as any;
+  const session = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', sessionId) as any;
 
   if (!session) {
     throw new Error('Code review session not found');
@@ -440,9 +437,7 @@ export async function bundleScriptLiteTemplate(
   db: Database,
   sessionId: string
 ): Promise<Buffer> {
-  const session = db
-    .prepare('SELECT * FROM sessions WHERE id = ?')
-    .get(sessionId) as any;
+  const session = await db.get('SELECT * FROM sessions WHERE id = ?', sessionId) as any;
 
   if (!session) {
     throw new Error('Session not found');
@@ -456,9 +451,7 @@ export async function bundleScriptLiteTemplate(
   let description = session.summary || 'Script Lite template';
 
   // Look for the latest assistant message containing Python code blocks
-  const messages = db
-    .prepare("SELECT content, role FROM messages WHERE session_id = ? ORDER BY created_at DESC")
-    .all(sessionId) as Array<{ content: string; role: string }>;
+  const messages = await db.all("SELECT content, role FROM messages WHERE session_id = ? ORDER BY created_at DESC", sessionId) as Array<{ content: string; role: string }>;
 
   for (const msg of messages) {
     if (msg.role === 'assistant' && msg.content) {
@@ -530,9 +523,7 @@ export async function bundleScriptMediumTemplate(
   db: Database,
   sessionId: string
 ): Promise<Buffer> {
-  const session = db
-    .prepare('SELECT * FROM sessions WHERE id = ?')
-    .get(sessionId) as any;
+  const session = await db.get('SELECT * FROM sessions WHERE id = ?', sessionId) as any;
 
   if (!session) {
     throw new Error('Session not found');
@@ -545,9 +536,7 @@ export async function bundleScriptMediumTemplate(
   let fileCount = 0;
 
   // Extract code files from assistant messages
-  const messages = db
-    .prepare("SELECT content, role FROM messages WHERE session_id = ? ORDER BY created_at ASC")
-    .all(sessionId) as Array<{ content: string; role: string }>;
+  const messages = await db.all("SELECT content, role FROM messages WHERE session_id = ? ORDER BY created_at ASC", sessionId) as Array<{ content: string; role: string }>;
 
   const extractedFiles: Array<{ path: string; content: string }> = [];
 
@@ -639,9 +628,7 @@ export async function bundleCodingLargeBlueprint(
   db: Database,
   projectId: string
 ): Promise<Buffer> {
-  const project = db
-    .prepare('SELECT * FROM coding_projects WHERE id = ?')
-    .get(projectId) as any;
+  const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', projectId) as any;
 
   if (!project) {
     throw new Error('Coding project not found');
@@ -650,21 +637,13 @@ export async function bundleCodingLargeBlueprint(
   const zip = new AdmZip();
 
   // Fetch related data
-  const releases = db
-    .prepare('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number ASC')
-    .all(projectId) as any[];
+  const releases = await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number ASC', projectId) as any[];
 
-  const tasks = db
-    .prepare('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order ASC')
-    .all(projectId) as any[];
+  const tasks = await db.all('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order ASC', projectId) as any[];
 
-  const techDebt = db
-    .prepare('SELECT * FROM coding_tech_debt WHERE coding_project_id = ? ORDER BY created_at ASC')
-    .all(projectId) as any[];
+  const techDebt = await db.all('SELECT * FROM coding_tech_debt WHERE coding_project_id = ? ORDER BY created_at ASC', projectId) as any[];
 
-  const reviews = db
-    .prepare('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at ASC')
-    .all(projectId) as any[];
+  const reviews = await db.all('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at ASC', projectId) as any[];
 
   // manifest.json
   const manifest = {
@@ -787,9 +766,7 @@ export async function bundleInstructionBuilderProject(
   db: Database,
   projectId: string
 ): Promise<Buffer> {
-  const project = db
-    .prepare('SELECT * FROM instruction_builder_projects WHERE id = ?')
-    .get(projectId) as any;
+  const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', projectId) as any;
 
   if (!project) {
     throw new Error('Instruction Builder project not found');
@@ -798,19 +775,15 @@ export async function bundleInstructionBuilderProject(
   const zip = new AdmZip();
 
   // Fetch instruction files
-  const instructionFiles = db
-    .prepare('SELECT * FROM instruction_files WHERE instruction_builder_project_id = ? ORDER BY file_type ASC, filename ASC')
-    .all(projectId) as any[];
+  const instructionFiles = await db.all('SELECT * FROM instruction_files WHERE instruction_builder_project_id = ? ORDER BY file_type ASC, filename ASC', projectId) as any[];
 
   // Fetch tool profile
   const toolProfile = project.tool_profile_id
-    ? db.prepare('SELECT * FROM tool_profiles WHERE id = ?').get(project.tool_profile_id)
-    : db.prepare('SELECT * FROM tool_profiles WHERE tool_name = ? AND is_default = 1').get(project.target_tool);
+    ? await db.get('SELECT * FROM tool_profiles WHERE id = ?', project.tool_profile_id)
+    : await db.get('SELECT * FROM tool_profiles WHERE tool_name = ? AND is_default = 1', project.target_tool);
 
   // Fetch reviews
-  const reviews = db
-    .prepare('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at ASC')
-    .all(project.coding_project_id || project.id) as any[];
+  const reviews = await db.all('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at ASC', project.coding_project_id || project.id) as any[];
 
   // manifest.json
   const manifest = {
@@ -907,10 +880,10 @@ export async function bundleComplianceRuleset(
     : 'WHERE active = 1';
   const params = options.categories && options.categories.length > 0 ? options.categories : [];
 
-  const rules = db.prepare(
+  const rules = await db.all(
     `SELECT id, rule_code, title, description, category, severity, regulatory_source, rule_logic, auto_remediate, remediation_steps
      FROM compliance_rules ${whereClause} ORDER BY category, severity DESC`
-  ).all(...params) as any[];
+  , ...params) as any[];
 
   const rulesetId = `compliance-ruleset-${Date.now()}`;
   const rulesetName = options.name || 'Compliance Ruleset';
@@ -1060,10 +1033,10 @@ export async function bundleQualityBaseline(
     : '';
   const params = options.moduleIds && options.moduleIds.length > 0 ? options.moduleIds : [];
 
-  const baselines = db.prepare(
+  const baselines = await db.all(
     `SELECT module_id, baseline_score, sample_size, established_at, updated_at
      FROM quality_baselines ${whereClause} ORDER BY module_id`
-  ).all(...params) as any[];
+  , ...params) as any[];
 
   const baselineId = `quality-baseline-${Date.now()}`;
   const baselineName = options.name || 'Quality Baselines';

@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { getAuditLog, getAuditStats } from '../services/auditLogger.js';
 
 // ============================================================================
@@ -72,7 +73,7 @@ function calculateCost(inputTokens: number, outputTokens: number, model: string)
   return inputCost + outputCost;
 }
 
-export function createAuditRoutes(db: Database.Database) {
+export async function createAuditRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // ============================================================================
@@ -82,7 +83,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/events - List audit events with comprehensive filtering
    */
-  router.get('/audit/events', (req, res) => {
+  router.get('/audit/events', async (req, res) => {
     try {
       const filters: AuditFilters = {
         sessionId: req.query.sessionId as string,
@@ -152,7 +153,7 @@ export function createAuditRoutes(db: Database.Database) {
       params.push(filters.limit || 50, filters.offset || 0);
 
       console.log('[Audit] Query:', query, 'Params:', params);
-      const events = db.prepare(query).all(...params);
+      const events = await db.all(query, ...params);
 
       res.json(events);
     } catch (error) {
@@ -164,9 +165,9 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/events/:id - Get specific audit event
    */
-  router.get('/audit/events/:id', (req, res) => {
+  router.get('/audit/events/:id', async (req, res) => {
     try {
-      const event = db.prepare('SELECT * FROM audit_log WHERE id = ?').get(req.params.id);
+      const event = await db.get('SELECT * FROM audit_log WHERE id = ?', req.params.id);
       if (!event) {
         res.status(404).json({ error: 'Audit event not found' });
         return;
@@ -181,9 +182,9 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * DELETE /api/audit/events/:id - Delete audit event (admin only)
    */
-  router.delete('/audit/events/:id', (req, res) => {
+  router.delete('/audit/events/:id', async (req, res) => {
     try {
-      const result = db.prepare('DELETE FROM audit_log WHERE id = ?').run(req.params.id);
+      const result = await db.run('DELETE FROM audit_log WHERE id = ?', req.params.id);
       if (result.changes === 0) {
         res.status(404).json({ error: 'Audit event not found' });
         return;
@@ -203,7 +204,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit - Legacy endpoint (redirects to /audit/events)
    */
-  router.get('/audit', (req, res) => {
+  router.get('/audit', async (req, res) => {
     try {
       const filters = {
         sessionId: req.query.sessionId as string,
@@ -224,7 +225,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * PATCH /api/audit/:id/review - Update review status
    */
-  router.patch('/audit/:id/review', (req, res) => {
+  router.patch('/audit/:id/review', async (req, res) => {
     try {
       const { status, reviewedBy } = req.body as { status: string; reviewedBy?: string };
 
@@ -233,9 +234,9 @@ export function createAuditRoutes(db: Database.Database) {
         return;
       }
 
-      const result = db.prepare(
+      const result = await db.run(
         'UPDATE audit_log SET review_status = ?, reviewed_by = ?, reviewed_at = ? WHERE id = ?'
-      ).run(status, reviewedBy || null, new Date().toISOString(), req.params.id);
+      , status, reviewedBy || null, new Date().toISOString(), req.params.id);
 
       if (result.changes === 0) {
         res.status(404).json({ error: 'Audit entry not found' });
@@ -257,7 +258,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/stats - Overall statistics
    */
-  router.get('/audit/stats', (_req, res) => {
+  router.get('/audit/stats', async (_req, res) => {
     try {
       const stats = getAuditStats(db);
       res.json(stats);
@@ -270,7 +271,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/stats/models - Usage breakdown by model
    */
-  router.get('/audit/stats/models', (req, res) => {
+  router.get('/audit/stats/models', async (req, res) => {
     try {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
@@ -299,7 +300,7 @@ export function createAuditRoutes(db: Database.Database) {
 
       query += ' GROUP BY model ORDER BY calls DESC';
 
-      const modelStats = db.prepare(query).all(...params);
+      const modelStats = await db.run(query, ...params);
       res.json(modelStats);
     } catch (error) {
       console.error('[Audit] Error fetching model stats:', error);
@@ -310,7 +311,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/stats/modules - Usage breakdown by module
    */
-  router.get('/audit/stats/modules', (req, res) => {
+  router.get('/audit/stats/modules', async (req, res) => {
     try {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
@@ -338,7 +339,7 @@ export function createAuditRoutes(db: Database.Database) {
 
       query += ' GROUP BY module_id ORDER BY calls DESC';
 
-      const moduleStats = db.prepare(query).all(...params);
+      const moduleStats = await db.all(query, ...params);
       res.json(moduleStats);
     } catch (error) {
       console.error('[Audit] Error fetching module stats:', error);
@@ -349,7 +350,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/stats/users - Usage breakdown by user (team mode)
    */
-  router.get('/audit/stats/users', (req, res) => {
+  router.get('/audit/stats/users', async (req, res) => {
     try {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
@@ -377,7 +378,7 @@ export function createAuditRoutes(db: Database.Database) {
 
       query += ' GROUP BY user_id ORDER BY calls DESC';
 
-      const userStats = db.prepare(query).all(...params);
+      const userStats = await db.all(query, ...params);
       res.json(userStats);
     } catch (error) {
       console.error('[Audit] Error fetching user stats:', error);
@@ -388,7 +389,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/stats/costs - Cost breakdown and trends
    */
-  router.get('/audit/stats/costs', (req, res) => {
+  router.get('/audit/stats/costs', async (req, res) => {
     try {
       const period = (req.query.period as string) || 'daily'; // daily, weekly, monthly
 
@@ -409,19 +410,10 @@ export function createAuditRoutes(db: Database.Database) {
         ORDER BY period DESC
       `;
 
-      const costTrends = db.prepare(query).all();
+      const costTrends = await db.all(query);
 
       // Calculate totals
-      const totals = db.prepare(`
-        SELECT
-          COUNT(*) as total_calls,
-          SUM(estimated_cost_usd) as total_cost,
-          AVG(estimated_cost_usd) as avg_cost_per_call,
-          SUM(input_token_count) as total_input_tokens,
-          SUM(output_token_count) as total_output_tokens
-        FROM audit_log
-        WHERE timestamp >= date('now', '-30 days')
-      `).get();
+
 
       res.json({ trends: costTrends, totals });
     } catch (error) {
@@ -437,7 +429,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/export - Export audit trail as CSV
    */
-  router.get('/audit/export', (req, res) => {
+  router.get('/audit/export', async (req, res) => {
     try {
       const startDate = req.query.startDate as string;
       const endDate = req.query.endDate as string;
@@ -456,7 +448,7 @@ export function createAuditRoutes(db: Database.Database) {
 
       query += ' ORDER BY timestamp DESC';
 
-      const events = db.prepare(query).all(...params) as Array<Record<string, unknown>>;
+
 
       // CSV headers
       const headers = [
@@ -534,7 +526,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/security - Get security events
    */
-  router.get('/audit/security', (req, res) => {
+  router.get('/audit/security', async (req, res) => {
     try {
       const limit = req.query.limit ? (parseInt(req.query.limit as string, 10) || 100) : 100;
       const severity = req.query.severity as string;
@@ -556,7 +548,7 @@ export function createAuditRoutes(db: Database.Database) {
       query += ' ORDER BY created_at DESC LIMIT ?';
       params.push(limit);
 
-      const events = db.prepare(query).all(...params);
+      const events = await db.all(query, ...params);
       res.json(events);
     } catch (error) {
       console.error('[Audit] Error fetching security events:', error);
@@ -567,7 +559,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * POST /api/audit/security - Log security event
    */
-  router.post('/audit/security', (req, res) => {
+  router.post('/audit/security', async (req, res) => {
     try {
       const event = req.body as SecurityEvent;
 
@@ -576,10 +568,10 @@ export function createAuditRoutes(db: Database.Database) {
         return;
       }
 
-      const result = db.prepare(`
+      const result = await db.run(`
         INSERT INTO security_events (event_type, user_id, ip_address, details, severity)
         VALUES (?, ?, ?, ?, ?)
-      `).run(
+      `, 
         event.event_type,
         event.user_id || null,
         event.ip_address || null,
@@ -602,7 +594,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * GET /api/audit/login-attempts - Get login attempts
    */
-  router.get('/audit/login-attempts', (req, res) => {
+  router.get('/audit/login-attempts', async (req, res) => {
     try {
       const limit = req.query.limit ? (parseInt(req.query.limit as string, 10) || 100) : 100;
       const username = req.query.username as string;
@@ -624,7 +616,7 @@ export function createAuditRoutes(db: Database.Database) {
       query += ' ORDER BY attempted_at DESC LIMIT ?';
       params.push(limit);
 
-      const attempts = db.prepare(query).all(...params);
+      const attempts = await db.run(query, ...params);
       res.json(attempts);
     } catch (error) {
       console.error('[Audit] Error fetching login attempts:', error);
@@ -635,7 +627,7 @@ export function createAuditRoutes(db: Database.Database) {
   /**
    * POST /api/audit/login-attempts - Log login attempt
    */
-  router.post('/audit/login-attempts', (req, res) => {
+  router.post('/audit/login-attempts', async (req, res) => {
     try {
       const attempt = req.body as LoginAttempt;
 
@@ -644,17 +636,7 @@ export function createAuditRoutes(db: Database.Database) {
         return;
       }
 
-      const result = db.prepare(`
-        INSERT INTO login_attempts (username, user_id, ip_address, user_agent, success, failure_reason)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        attempt.username,
-        attempt.user_id || null,
-        attempt.ip_address || null,
-        attempt.user_agent || null,
-        attempt.success ? 1 : 0,
-        attempt.failure_reason || null
-      );
+
 
       const eventType = attempt.success ? 'login_success' : 'login_failure';
       console.log(`[Audit] Logged login attempt: ${attempt.username} - ${eventType}`);

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { callSync } from '../services/claude-client.js';
 import { ingestLocalProject } from '../services/project-ingestor.js';
@@ -13,13 +13,13 @@ const DIMENSIONS = [
   { name: 'goal-drift', persona: 'Project Manager', reviewType: 'goal_alignment' },
 ] as const;
 
-export function createAlignmentReviewerRoutes(db: Database.Database): Router {
+export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // GET /api/coding/alignment-reviews — list all reviews
-  router.get('/coding/alignment-reviews', (req, res) => {
+  router.get('/coding/alignment-reviews', async (req, res) => {
     try {
-      const reviews = db.prepare('SELECT * FROM alignment_reviews ORDER BY created_at DESC').all();
+      const reviews = await db.all('SELECT * FROM alignment_reviews ORDER BY created_at DESC');
       res.json(reviews);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -27,7 +27,7 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
   });
 
   // POST /api/coding/alignment-reviews — create new review
-  router.post('/coding/alignment-reviews', (req, res) => {
+  router.post('/coding/alignment-reviews', async (req, res) => {
     try {
       const { project_name, instruction_builder_project_id, target_tool } = req.body;
       if (!project_name) {
@@ -36,12 +36,12 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
       }
 
       const id = randomUUID();
-      db.prepare(
+      await db.run(
         `INSERT INTO alignment_reviews (id, project_name, instruction_builder_project_id, target_tool)
          VALUES (?, ?, ?, ?)`
-      ).run(id, project_name, instruction_builder_project_id || null, target_tool || null);
+      , id, project_name, instruction_builder_project_id || null, target_tool || null);
 
-      const review = db.prepare('SELECT * FROM alignment_reviews WHERE id = ?').get(id);
+      const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', id);
       res.json(review);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -49,21 +49,21 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/alignment-reviews/:id — get review details
-  router.get('/coding/alignment-reviews/:id', (req, res) => {
+  router.get('/coding/alignment-reviews/:id', async (req, res) => {
     try {
-      const review = db.prepare('SELECT * FROM alignment_reviews WHERE id = ?').get(req.params.id) as any;
+      const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
         res.status(404).json({ error: 'Review not found' });
         return;
       }
 
-      const dimensions = db.prepare(
+      const dimensions = await db.all(
         'SELECT * FROM alignment_dimensions WHERE alignment_review_id = ?'
-      ).all(req.params.id);
+      , req.params.id);
 
-      const steering = db.prepare(
+      const steering = await db.all(
         'SELECT * FROM steering_instructions WHERE alignment_review_id = ?'
-      ).all(req.params.id);
+      , req.params.id);
 
       res.json({
         ...review,
@@ -78,7 +78,7 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
   // POST /api/coding/alignment-reviews/:id/ingest — ingest project
   router.post('/coding/alignment-reviews/:id/ingest', async (req, res) => {
     try {
-      const review = db.prepare('SELECT * FROM alignment_reviews WHERE id = ?').get(req.params.id) as any;
+      const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
         res.status(404).json({ error: 'Review not found' });
         return;
@@ -89,9 +89,8 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
       if (source_type === 'local-directory' && dirPath) {
         const projectState = await ingestLocalProject(dirPath);
 
-        db.prepare(
-          "UPDATE alignment_reviews SET project_state_summary = ?, status = 'ingesting', updated_at = datetime('now') WHERE id = ?"
-        ).run(JSON.stringify(projectState), req.params.id);
+        await db.run("UPDATE alignment_reviews SET project_state_summary = ?, status = 'ingesting', updated_at = datetime('now') WHERE id = ?"
+        , JSON.stringify(projectState), req.params.id);
 
         res.json({ projectState });
       } else {
@@ -105,7 +104,7 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
   // POST /api/coding/alignment-reviews/:id/goals — set goals reference
   router.post('/coding/alignment-reviews/:id/goals', async (req, res) => {
     try {
-      const review = db.prepare('SELECT * FROM alignment_reviews WHERE id = ?').get(req.params.id) as any;
+      const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
         res.status(404).json({ error: 'Review not found' });
         return;
@@ -117,7 +116,7 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
 
       if (instruction_builder_project_id) {
         // Load goals from IB project
-        const ibProject = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(instruction_builder_project_id) as any;
+        const ibProject = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', instruction_builder_project_id) as any;
         if (!ibProject) {
           res.status(404).json({ error: 'Instruction Builder project not found' });
           return;
@@ -129,8 +128,7 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
           discovery_notes: safeJsonParse(ibProject.discovery_notes, {}),
         };
 
-        db.prepare("UPDATE alignment_reviews SET instruction_builder_project_id = ?, updated_at = datetime('now') WHERE id = ?")
-          .run(instruction_builder_project_id, req.params.id);
+        await db.run("UPDATE alignment_reviews SET instruction_builder_project_id = ?, updated_at = datetime('now') WHERE id = ?", instruction_builder_project_id, req.params.id);
       } else if (goals) {
         goalsRef = { source: 'manual', goals };
       } else {
@@ -138,9 +136,8 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
         return;
       }
 
-      db.prepare(
-        "UPDATE alignment_reviews SET goals_reference = ?, status = 'goals-set', updated_at = datetime('now') WHERE id = ?"
-      ).run(JSON.stringify(goalsRef), req.params.id);
+      await db.run("UPDATE alignment_reviews SET goals_reference = ?, status = 'goals-set', updated_at = datetime('now') WHERE id = ?"
+      , JSON.stringify(goalsRef), req.params.id);
 
       res.json({ goals_reference: goalsRef });
     } catch (error) {
@@ -151,7 +148,7 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
   // POST /api/coding/alignment-reviews/:id/analyse — run alignment analysis
   router.post('/coding/alignment-reviews/:id/analyse', async (req, res) => {
     try {
-      const review = db.prepare('SELECT * FROM alignment_reviews WHERE id = ?').get(req.params.id) as any;
+      const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
         res.status(404).json({ error: 'Review not found' });
         return;
@@ -166,8 +163,7 @@ export function createAlignmentReviewerRoutes(db: Database.Database): Router {
       }
 
       // Update status
-      db.prepare("UPDATE alignment_reviews SET status = 'analysing', updated_at = datetime('now') WHERE id = ?")
-        .run(req.params.id);
+      await db.run("UPDATE alignment_reviews SET status = 'analysing', updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       // Analyse each dimension
       const dimensionResults: any[] = [];
@@ -197,10 +193,9 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
         if (statusMatch) status = statusMatch[1] as 'green' | 'amber' | 'red';
 
         const dimId = randomUUID();
-        db.prepare(
-          `INSERT INTO alignment_dimensions (id, alignment_review_id, dimension_name, status, findings, recommendations, reviewer_persona)
+        await db.run(`INSERT INTO alignment_dimensions (id, alignment_review_id, dimension_name, status, findings, recommendations, reviewer_persona)
            VALUES (?, ?, ?, ?, ?, ?, ?)`
-        ).run(dimId, req.params.id, dim.name, status, result.text, null, dim.persona);
+        , dimId, req.params.id, dim.name, status, result.text, null, dim.persona);
 
         dimensionResults.push({
           id: dimId,
@@ -224,9 +219,9 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
         analysed_at: new Date().toISOString(),
       };
 
-      db.prepare(
+      await db.run(
         "UPDATE alignment_reviews SET alignment_report = ?, overall_status = ?, status = 'reviewed', updated_at = datetime('now') WHERE id = ?"
-      ).run(JSON.stringify(alignmentReport), overallStatus, req.params.id);
+      , JSON.stringify(alignmentReport), overallStatus, req.params.id);
 
       res.json(alignmentReport);
     } catch (error) {
@@ -237,7 +232,7 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
   // POST /api/coding/alignment-reviews/:id/generate-steering — generate steering instructions
   router.post('/coding/alignment-reviews/:id/generate-steering', async (req, res) => {
     try {
-      const review = db.prepare('SELECT * FROM alignment_reviews WHERE id = ?').get(req.params.id) as any;
+      const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
         res.status(404).json({ error: 'Review not found' });
         return;
@@ -252,9 +247,9 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
       }
 
       // Load tool profile
-      const profile = db.prepare(
+      const profile = await db.get(
         'SELECT * FROM tool_profiles WHERE tool_name = ? AND is_default = 1'
-      ).get(targetTool) as any;
+      , targetTool) as any;
 
       if (!profile) {
         res.status(400).json({ error: `No default tool profile found for ${targetTool}` });
@@ -262,9 +257,9 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
       }
 
       // Get dimensions that need attention (amber or red)
-      const dimensions = db.prepare(
+      const dimensions = await db.all(
         "SELECT * FROM alignment_dimensions WHERE alignment_review_id = ? AND status != 'green'"
-      ).all(req.params.id) as any[];
+      , req.params.id) as any[];
 
       // Determine instruction types needed
       const instructionTypes: Array<{ type: string; filename: string }> = [];
@@ -308,10 +303,9 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
         });
 
         const fileId = randomUUID();
-        db.prepare(
-          `INSERT INTO steering_instructions (id, alignment_review_id, target_tool, instruction_type, filename, content)
+        await db.run(`INSERT INTO steering_instructions (id, alignment_review_id, target_tool, instruction_type, filename, content)
            VALUES (?, ?, ?, ?, ?, ?)`
-        ).run(fileId, req.params.id, targetTool, instrType.type, instrType.filename, result.text);
+        , fileId, req.params.id, targetTool, instrType.type, instrType.filename, result.text);
 
         generatedFiles.push({
           id: fileId,
@@ -322,8 +316,7 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
       }
 
       // Update status
-      db.prepare("UPDATE alignment_reviews SET status = 'steering-generated', target_tool = ?, updated_at = datetime('now') WHERE id = ?")
-        .run(targetTool, req.params.id);
+      await db.run("UPDATE alignment_reviews SET status = 'steering-generated', target_tool = ?, updated_at = datetime('now') WHERE id = ?", targetTool, req.params.id);
 
       res.json({ files: generatedFiles });
     } catch (error) {
@@ -332,18 +325,16 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
   });
 
   // GET /api/coding/alignment-reviews/:id/history — get review history
-  router.get('/coding/alignment-reviews/:id/history', (req, res) => {
+  router.get('/coding/alignment-reviews/:id/history', async (req, res) => {
     try {
-      const review = db.prepare('SELECT * FROM alignment_reviews WHERE id = ?').get(req.params.id) as any;
+
       if (!review) {
         res.status(404).json({ error: 'Review not found' });
         return;
       }
 
       // Get all reviews for the same project name for trend analysis
-      const history = db.prepare(
-        'SELECT id, project_name, review_date, status, overall_status, created_at FROM alignment_reviews WHERE project_name = ? ORDER BY created_at ASC'
-      ).all(review.project_name);
+
 
       res.json(history);
     } catch (error) {

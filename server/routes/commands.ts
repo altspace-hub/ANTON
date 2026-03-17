@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { parseCommand, executeCommand } from '../services/command-parser.js';
 
-export function createCommandRoutes(db: Database.Database, anthropic: Anthropic | undefined) {
+export async function createCommandRoutes(db: DatabaseAdapter, anthropic: Anthropic | undefined) {
   const router = Router();
 
   router.post('/commands/parse', async (req, res) => {

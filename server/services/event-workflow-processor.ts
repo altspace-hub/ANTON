@@ -7,7 +7,8 @@
  * Non-fatal: any error is logged but does NOT crash the server.
  */
 
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type { WorkflowDefinition } from '../../src/lib/workflow-definitions.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -43,18 +44,18 @@ const HEADLESS_STEP_TYPES = new Set([
  * Poll once: pick up pending event-triggered workflow runs and execute them.
  * Safe to call on any interval — idempotent guard via status='running' claim.
  */
-export async function processPendingEventRuns(db: Database.Database): Promise<void> {
+export async function processPendingEventRuns(db: DatabaseAdapter): Promise<void> {
   let pending: PendingEventRun[];
   try {
     // Only pick up runs whose trigger_source encodes type:'event' (set by webhook-listener)
-    pending = db.prepare(`
+    pending = await db.all(`
       SELECT id, workflow_id, trigger_source, user_id, started_at
       FROM workflow_runs
       WHERE status = 'pending'
         AND trigger_source LIKE '%"type":"event"%'
       ORDER BY started_at ASC
       LIMIT 10
-    `).all() as PendingEventRun[];
+    `) as PendingEventRun[];
   } catch {
     // Table may not exist in older deploys — silently skip
     return;
@@ -62,9 +63,9 @@ export async function processPendingEventRuns(db: Database.Database): Promise<vo
 
   for (const run of pending) {
     // Atomic claim: update to 'running' only if still 'pending' (prevents double-execution)
-    const claimed = db.prepare(`
+    const claimed = await db.run(`
       UPDATE workflow_runs SET status = 'running' WHERE id = ? AND status = 'pending'
-    `).run(run.id);
+    `, run.id);
 
     if (claimed.changes === 0) continue; // Already claimed by another process
 
@@ -73,9 +74,9 @@ export async function processPendingEventRuns(db: Database.Database): Promise<vo
     } catch (err) {
       console.error(`[event-processor] Run ${run.id} failed:`, err);
       try {
-        db.prepare(`
+        await db.run(`
           UPDATE workflow_runs SET status = 'failed', error_message = ?, completed_at = datetime('now') WHERE id = ?
-        `).run(String(err instanceof Error ? err.message : err), run.id);
+        `, String(err instanceof Error ? err.message : err), run.id);
       } catch { /* non-fatal */ }
     }
   }
@@ -83,7 +84,7 @@ export async function processPendingEventRuns(db: Database.Database): Promise<vo
 
 // ── Run executor ───────────────────────────────────────────────────────────
 
-async function executeEventRun(db: Database.Database, run: PendingEventRun): Promise<void> {
+async function executeEventRun(db: DatabaseAdapter, run: PendingEventRun): Promise<void> {
   // Parse trigger context (variables injected by webhook-listener)
   let triggerContext: Record<string, unknown> = {};
   try {
@@ -92,14 +93,13 @@ async function executeEventRun(db: Database.Database, run: PendingEventRun): Pro
   } catch { /* malformed trigger_source — continue with empty context */ }
 
   // Fetch workflow definition
-  const defRow = db.prepare(
-    'SELECT steps, config, label FROM workflow_definitions WHERE id = ?'
-  ).get(run.workflow_id) as { steps: string; config: string; label: string } | undefined;
+  const defRow = await db.get('SELECT steps, config, label FROM workflow_definitions WHERE id = ?'
+  , run.workflow_id) as { steps: string; config: string; label: string } | undefined;
 
   if (!defRow) {
-    db.prepare(`
+    await db.run(`
       UPDATE workflow_runs SET status = 'failed', error_message = 'Workflow definition not found', completed_at = datetime('now') WHERE id = ?
-    `).run(run.id);
+    `, run.id);
     console.warn(`[event-processor] Workflow ${run.workflow_id} not found for run ${run.id}`);
     return;
   }
@@ -155,10 +155,10 @@ async function executeEventRun(db: Database.Database, run: PendingEventRun): Pro
                 : v;
             }
           }
-          db.prepare(`
+          await db.run(`
             INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
             VALUES (?, ?, ?, 'pending', ?, datetime('now'))
-          `).run(
+          `, 
             newRunId,
             trigger.workflowId,
             JSON.stringify({ type: 'event', source: 'step_complete', triggeredBy: run.id, stepIndex: i, label: trigger.label || '', variables: triggerVars }),
@@ -171,7 +171,7 @@ async function executeEventRun(db: Database.Database, run: PendingEventRun): Pro
       }
 
       // Update progress
-      db.prepare('UPDATE workflow_runs SET current_step = ? WHERE id = ?').run(i + 1, run.id);
+      await db.run('UPDATE workflow_runs SET current_step = ? WHERE id = ?', i + 1, run.id);
     } catch (stepErr) {
       console.warn(`[event-processor] Run ${run.id} step ${i} (${step.type}) failed:`, stepErr);
       stepsSkipped++;
@@ -179,11 +179,11 @@ async function executeEventRun(db: Database.Database, run: PendingEventRun): Pro
     }
   }
 
-  db.prepare(`
+  await db.run(`
     UPDATE workflow_runs
     SET status = 'completed', completed_at = datetime('now'), current_step = ?
     WHERE id = ?
-  `).run(steps.length, run.id);
+  `, steps.length, run.id);
 
   console.log(`[event-processor] Run ${run.id} completed: ${stepsCompleted} steps executed, ${stepsSkipped} skipped`);
 }
@@ -195,7 +195,7 @@ async function executeEventRun(db: Database.Database, run: PendingEventRun): Pro
 async function executeHeadlessStep(
   step: WorkflowDefinition['steps'][number],
   context: Record<string, unknown>,
-  db: Database.Database,
+  db: DatabaseAdapter,
   runId: string,
 ): Promise<void> {
   const cfg = (step.config || {}) as Record<string, unknown>;
@@ -266,7 +266,7 @@ function resolveTemplate(template: string, context: Record<string, unknown>): st
  * Returns the interval handle so it can be cleared on graceful shutdown.
  */
 export function startEventWorkflowProcessor(
-  db: Database.Database,
+  db: DatabaseAdapter,
   intervalMs = 15_000,
 ): ReturnType<typeof setInterval> {
   console.log(`[event-processor] Starting — polling every ${intervalMs / 1000}s`);

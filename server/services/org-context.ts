@@ -4,7 +4,8 @@
  * every Claude prompt as layer 2a. Stores and retrieves org-level settings.
  */
 
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 export interface OrgContext {
   id: string;
@@ -53,26 +54,26 @@ function parseOrgContext(row: RawOrgContextRow): OrgContext {
 
 export type OrgContextUpdate = Partial<Omit<OrgContext, 'id' | 'user_id' | 'updated_at'>>;
 
-export function createOrgContextService(db: Database) {
+export async function createOrgContextService(db: DatabaseAdapter) {
   const CONTEXT_ID = 'default';
 
   /**
    * Get the org context for a user (creates empty one if not exists).
    */
-  function getContext(userId: string = 'default'): OrgContext {
-    const existing = db.prepare('SELECT * FROM org_context WHERE id = ?').get(CONTEXT_ID) as RawOrgContextRow | undefined;
+  async function getContext(userId: string = 'default'): OrgContext {
+    const existing = await db.get('SELECT * FROM org_context WHERE id = ?', CONTEXT_ID) as RawOrgContextRow | undefined;
 
     if (existing) return parseOrgContext(existing);
 
     // Create empty default context — use INSERT OR IGNORE then fetch directly
     // (no recursion: another process may have already inserted between our SELECT and INSERT)
     const now = new Date().toISOString();
-    db.prepare(`
+    await db.run(`
       INSERT OR IGNORE INTO org_context (id, user_id, updated_at)
       VALUES (?, ?, ?)
-    `).run(CONTEXT_ID, userId, now);
+    `, CONTEXT_ID, userId, now);
 
-    const created = db.prepare('SELECT * FROM org_context WHERE id = ?').get(CONTEXT_ID) as RawOrgContextRow | undefined;
+    const created = await db.get('SELECT * FROM org_context WHERE id = ?', CONTEXT_ID) as RawOrgContextRow | undefined;
     if (!created) throw new Error('Failed to initialise org context');
     return parseOrgContext(created);
   }
@@ -80,7 +81,7 @@ export function createOrgContextService(db: Database) {
   /**
    * Update the org context, logging history for changed fields.
    */
-  function updateContext(update: OrgContextUpdate, changedBy: string = 'default'): OrgContext {
+  async function updateContext(update: OrgContextUpdate, changedBy: string = 'default'): OrgContext {
     const current = getContext(changedBy);
 
     const fields: Record<string, unknown> = {};
@@ -110,15 +111,15 @@ export function createOrgContextService(db: Database) {
     const sets = [...Object.keys(fields).map((k) => `${k} = ?`), 'updated_at = ?'].join(', ');
     const values = [...Object.values(fields), now, CONTEXT_ID];
 
-    db.prepare(`UPDATE org_context SET ${sets} WHERE id = ?`).run(...values);
+    await db.run(`UPDATE org_context SET ${sets} WHERE id = ?`, ...values);
 
     // Log history
-    const historyStmt = db.prepare(`
+
+    for (const h of historyEntries) {
+      await db.run(`
       INSERT INTO org_context_history (org_context_id, field_changed, previous_value, new_value, changed_by, changed_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    for (const h of historyEntries) {
-      historyStmt.run(CONTEXT_ID, h.field, String(h.prev ?? ''), String(h.next ?? ''), changedBy, now);
+    `, CONTEXT_ID, h.field, String(h.prev ?? ''), String(h.next ?? ''), changedBy, now);
     }
 
     return getContext(changedBy);
@@ -169,14 +170,14 @@ export function createOrgContextService(db: Database) {
   /**
    * Get context change history.
    */
-  function getHistory(limit = 20): Array<{
+  async function getHistory(limit = 20): Array<{
     id: number; field_changed: string; previous_value: string;
     new_value: string; changed_by: string; changed_at: string;
   }> {
-    return db.prepare(`
+    return await db.all(`
       SELECT * FROM org_context_history WHERE org_context_id = ?
       ORDER BY changed_at DESC LIMIT ?
-    `).all(CONTEXT_ID, limit) as ReturnType<typeof getHistory>;
+    `, CONTEXT_ID, limit) as ReturnType<typeof getHistory>;
   }
 
   return {

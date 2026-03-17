@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createCodingIntegration } from '../services/coding-integration.js';
 import {
   bundleCodingReviewProfile,
@@ -8,36 +8,36 @@ import {
   bundleCodingLargeBlueprint,
 } from '../services/anton-bundler.js';
 
-export function createCodingRoutes(db: Database.Database): Router {
+export async function createCodingRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // GET /api/coding/overview — Dashboard stats for Coding area
-  router.get('/coding/overview', (req, res) => {
+  router.get('/coding/overview', async (req, res) => {
     try {
-      const projects = db.prepare(`
+      const projects = await db.get(`
         SELECT COUNT(*) as total,
           SUM(CASE WHEN status NOT IN ('completed','archived','paused') THEN 1 ELSE 0 END) as active,
           SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
         FROM coding_projects
-      `).get() as { total: number; active: number; completed: number } | undefined;
+      `) as { total: number; active: number; completed: number } | undefined;
 
-      const reviews = db.prepare(`
+      const reviews = await db.get(`
         SELECT COUNT(*) as total FROM code_review_sessions
-      `).get() as { total: number } | undefined;
+      `) as { total: number } | undefined;
 
-      const recentProjects = db.prepare(`
+      const recentProjects = await db.all(`
         SELECT cp.*, p.name as parent_project_name
         FROM coding_projects cp
         LEFT JOIN projects p ON cp.project_id = p.id
         ORDER BY cp.updated_at DESC
         LIMIT 5
-      `).all();
+      `);
 
-      const recentReviews = db.prepare(`
+      const recentReviews = await db.all(`
         SELECT * FROM code_review_sessions
         ORDER BY created_at DESC
         LIMIT 5
-      `).all();
+      `);
 
       res.json({
         stats: {
@@ -54,11 +54,11 @@ export function createCodingRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/activity — Recent activity across all coding features
-  router.get('/coding/activity', (req, res) => {
+  router.get('/coding/activity', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
 
-      const activity = db.prepare(`
+      const activity = await db.all(`
         SELECT 'project' as type, id, name as title, status, updated_at as timestamp
         FROM coding_projects
         UNION ALL
@@ -69,7 +69,7 @@ export function createCodingRoutes(db: Database.Database): Router {
         FROM coding_tasks
         ORDER BY timestamp DESC
         LIMIT ?
-      `).all(limit);
+      `, limit);
 
       res.json(activity);
     } catch (error) {
@@ -129,7 +129,7 @@ export function createCodingRoutes(db: Database.Database): Router {
         return res.status(400).json({ error: 'content and moduleId are required' });
       }
 
-      const integration = createCodingIntegration(db);
+      const integration = await createCodingIntegration(db);
       const result = await integration.scoreOutput(content, moduleId, areaId || 'coding', sessionId);
 
       if (!result) {
@@ -144,7 +144,7 @@ export function createCodingRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/versions/:entityType/:entityId — Get version history
-  router.get('/coding/versions/:entityType/:entityId', (req, res) => {
+  router.get('/coding/versions/:entityType/:entityId', async (req, res) => {
     try {
       const { entityType, entityId } = req.params;
       const limit = parseInt(req.query.limit as string) || 20;
@@ -160,7 +160,7 @@ export function createCodingRoutes(db: Database.Database): Router {
         });
       }
 
-      const integration = createCodingIntegration(db);
+      const integration = await createCodingIntegration(db);
       const versions = integration.getVersionHistory(entityType, entityId, limit);
 
       res.json(versions);
@@ -171,7 +171,7 @@ export function createCodingRoutes(db: Database.Database): Router {
   });
 
   // POST /api/coding/versions/:entityType/:entityId/diff — Compare versions
-  router.post('/coding/versions/:entityType/:entityId/diff', (req, res) => {
+  router.post('/coding/versions/:entityType/:entityId/diff', async (req, res) => {
     try {
       const { entityType, entityId } = req.params;
       const { v1, v2 } = req.body;
@@ -180,7 +180,7 @@ export function createCodingRoutes(db: Database.Database): Router {
         return res.status(400).json({ error: 'v1 and v2 version numbers are required' });
       }
 
-      const integration = createCodingIntegration(db);
+      const integration = await createCodingIntegration(db);
       const result = integration.diffVersions(entityType, entityId, Number(v1), Number(v2));
 
       if (!result) {

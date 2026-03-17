@@ -5,7 +5,8 @@
 
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '../../src/lib/workflow-definitions.js';
@@ -138,7 +139,7 @@ function applyTransformExpression(expression: string | undefined, value: unknown
 async function executeStep(
   step: WorkflowStep,
   execution: WorkflowExecution,
-  db: Database.Database
+  db: DatabaseAdapter
 ): Promise<{ output: Record<string, unknown>; skippedToStepId?: string }> {
   const ctx = execution.context;
   const executionId = execution.id;
@@ -206,8 +207,8 @@ async function executeStep(
     case 'api_call': {
       if (!step.config.connectionId) throw new Error('API call step requires connectionId');
 
-      const manager = createConnectionManager(db);
-      const conn = manager.get(step.config.connectionId);
+      const manager = await createConnectionManager(db);
+      const conn = await manager.get(step.config.connectionId);
       if (!conn) throw new Error(`Connection not found: ${step.config.connectionId}`);
       if (conn.type !== 'api') throw new Error(`Connection ${step.config.connectionId} is not an API connection`);
 
@@ -318,8 +319,8 @@ async function executeStep(
     case 'database_query': {
       if (!step.config.connectionId) throw new Error('Database query step requires connectionId');
 
-      const manager = createConnectionManager(db);
-      const conn = manager.get(step.config.connectionId);
+      const manager = await createConnectionManager(db);
+      const conn = await manager.get(step.config.connectionId);
       if (!conn) throw new Error(`Connection not found: ${step.config.connectionId}`);
       if (conn.type !== 'database') throw new Error(`Connection ${step.config.connectionId} is not a database connection`);
 
@@ -788,7 +789,7 @@ async function executeStep(
 
 // ── Core execution loop ──────────────────────────────────────────
 
-async function runExecution(execution: WorkflowExecution, db: Database.Database): Promise<void> {
+async function runExecution(execution: WorkflowExecution, db: DatabaseAdapter): Promise<void> {
   const steps = execution.workflowDefinition.steps;
   execution.status = 'running';
 
@@ -1013,7 +1014,7 @@ DESIGN PRINCIPLES:
 - Most workflows should have 3-6 steps
 - Add api_call or notification only if the user explicitly wants to connect to an external system`;
 
-export function createWorkflowRoutes(db: Database.Database, anthropic?: Anthropic): Router {
+export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anthropic): Router {
   const router = Router();
 
   // ── POST /api/workflows/executions — start a new execution
@@ -1053,7 +1054,7 @@ export function createWorkflowRoutes(db: Database.Database, anthropic?: Anthropi
   });
 
   // ── GET /api/workflows/executions/:id/status
-  router.get('/executions/:id/status', (req, res) => {
+  router.get('/executions/:id/status', async (req, res) => {
     const execution = executions.get(req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
 
@@ -1119,7 +1120,7 @@ export function createWorkflowRoutes(db: Database.Database, anthropic?: Anthropi
   });
 
   // ── POST /api/workflows/executions/:id/modify-step — modify output before continuing
-  router.post('/executions/:id/modify-step', (req, res) => {
+  router.post('/executions/:id/modify-step', async (req, res) => {
     const execution = executions.get(req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
     if (execution.status !== 'paused') {
@@ -1168,7 +1169,7 @@ export function createWorkflowRoutes(db: Database.Database, anthropic?: Anthropi
   });
 
   // ── POST /api/workflows/executions/:id/abort
-  router.post('/executions/:id/abort', (req, res) => {
+  router.post('/executions/:id/abort', async (req, res) => {
     const execution = executions.get(req.params.id);
     if (!execution) return res.status(404).json({ error: 'Execution not found' });
 
@@ -1179,7 +1180,7 @@ export function createWorkflowRoutes(db: Database.Database, anthropic?: Anthropi
   });
 
   // ── GET /api/workflows/executions — list recent executions
-  router.get('/executions', (_req, res) => {
+  router.get('/executions', async (_req, res) => {
     const list = Array.from(executions.values())
       .map((e) => ({
         id: e.id,

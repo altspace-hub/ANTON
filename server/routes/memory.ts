@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createInstitutionalMemory } from '../services/institutional-memory.js';
 
-export function createMemoryRoutes(db: Database.Database) {
+export async function createMemoryRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const memory = createInstitutionalMemory(db);
+  const memory = await createInstitutionalMemory(db);
 
   // POST /api/memory/checkpoints
   // Save a new checkpoint decision
@@ -53,7 +53,7 @@ export function createMemoryRoutes(db: Database.Database) {
 
   // PUT /api/memory/checkpoints/:id/feedback
   // Add user feedback (thumbs up/down) to a checkpoint decision
-  router.put('/memory/checkpoints/:id/feedback', (req, res) => {
+  router.put('/memory/checkpoints/:id/feedback', async (req, res) => {
     try {
       const { id } = req.params;
       const { feedback } = req.body;
@@ -74,7 +74,7 @@ export function createMemoryRoutes(db: Database.Database) {
   // GET /api/memory/checkpoints
   // Get checkpoint decision history
   // Query params: ?workflowId=workflow123&stepIndex=0&decidedBy=user123&limit=20
-  router.get('/memory/checkpoints', (req, res) => {
+  router.get('/memory/checkpoints', async (req, res) => {
     try {
       const workflowId = req.query.workflowId as string | undefined;
       const stepIndex = req.query.stepIndex ? parseInt(req.query.stepIndex as string, 10) : undefined;
@@ -158,7 +158,7 @@ export function createMemoryRoutes(db: Database.Database) {
   // GET /api/memory/insights
   // Get insight summary for checkpoint decisions
   // Query params: ?workflowId=workflow123&decidedBy=user123
-  router.get('/memory/insights', (req, res) => {
+  router.get('/memory/insights', async (req, res) => {
     try {
       const workflowId = req.query.workflowId as string | undefined;
       const decidedBy = req.query.decidedBy as string | undefined;

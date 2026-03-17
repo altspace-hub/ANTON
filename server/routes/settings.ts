@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 export interface CustomModelConfig {
   enabled: boolean;
@@ -25,11 +25,11 @@ const ALLOWED_KEYS = new Set([
   'CUSTOM_MODEL_2_API_KEY',
 ]);
 
-export function createSettingsRoutes(db: Database.Database) {
+export async function createSettingsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // POST /api/settings/set-env — runtime-only environment variable setter (dev convenience)
-  router.post('/settings/set-env', (req, res) => {
+  router.post('/settings/set-env', async (req, res) => {
     const { key, value } = req.body as { key?: string; value?: string };
 
     if (!key || typeof key !== 'string') {
@@ -54,7 +54,7 @@ export function createSettingsRoutes(db: Database.Database) {
   });
 
   // GET /api/settings/provider-status — check which provider keys are configured
-  router.get('/settings/provider-status', (_req, res) => {
+  router.get('/settings/provider-status', async (_req, res) => {
     res.json({
       ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
       OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
@@ -64,10 +64,10 @@ export function createSettingsRoutes(db: Database.Database) {
   });
 
   // GET /api/settings/custom-models — return both custom model slot configs
-  router.get('/settings/custom-models', (_req, res) => {
+  router.get('/settings/custom-models', async (_req, res) => {
     try {
-      const slot1Row = db.prepare("SELECT value FROM app_settings WHERE key = 'custom_model_slot_1'").get() as { value: string } | undefined;
-      const slot2Row = db.prepare("SELECT value FROM app_settings WHERE key = 'custom_model_slot_2'").get() as { value: string } | undefined;
+      const slot1Row = await db.get("SELECT value FROM app_settings WHERE key = 'custom_model_slot_1'") as { value: string } | undefined;
+      const slot2Row = await db.get("SELECT value FROM app_settings WHERE key = 'custom_model_slot_2'") as { value: string } | undefined;
 
       res.json({
         slot1: slot1Row ? JSON.parse(slot1Row.value) as CustomModelConfig : null,
@@ -80,7 +80,7 @@ export function createSettingsRoutes(db: Database.Database) {
   });
 
   // POST /api/settings/custom-models — save a custom model config for a slot
-  router.post('/settings/custom-models', (req, res) => {
+  router.post('/settings/custom-models', async (req, res) => {
     const { slot, config } = req.body as { slot?: number; config?: CustomModelConfig | null };
 
     if (slot !== 1 && slot !== 2) {
@@ -93,13 +93,13 @@ export function createSettingsRoutes(db: Database.Database) {
     try {
       if (config === null || config === undefined) {
         // Clear the slot
-        db.prepare("DELETE FROM app_settings WHERE key = ?").run(settingKey);
+        await db.run("DELETE FROM app_settings WHERE key = ?", settingKey);
         console.log(`[settings] Cleared custom model slot ${slot}`);
       } else {
         const jsonValue = JSON.stringify(config);
-        db.prepare(
+        await db.run(
           "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
-        ).run(settingKey, jsonValue);
+        , settingKey, jsonValue);
 
         // If there's an API key override, also set it in the runtime env
         if (config.apiKeyOverride) {

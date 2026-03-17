@@ -6,7 +6,7 @@
 
 import { randomUUID } from 'crypto';
 import { nanoid } from 'nanoid';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import type { Dataset } from './data-transformer.js';
 
 export interface StoredDataset {
@@ -38,7 +38,7 @@ export interface SaveDatasetOptions {
   userId: string;
 }
 
-export function createDatasetStore(db: Database) {
+export async function createDatasetStore(db: DatabaseAdapter) {
   return {
     /**
      * Save a dataset to persistent storage.
@@ -59,38 +59,33 @@ export function createDatasetStore(db: Database) {
 
       // Create table for dataset rows
       const columnDefs = dataset.columns.map(col => `${col.name} TEXT`).join(', ');
-      db.prepare(`CREATE TABLE ${tableName} (${columnDefs})`).run();
+      await db.run(`CREATE TABLE ${tableName} (${columnDefs})`);
 
       // Insert rows
       if (dataset.rows.length > 0) {
         const columnNames = dataset.columns.map(col => col.name).join(', ');
         const placeholders = dataset.columns.map(() => '?').join(', ');
-        const insertStmt = db.prepare(`INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders})`);
-
-        const insertMany = db.transaction((rows: Array<Record<string, unknown>>) => {
-          for (const row of rows) {
+        await db.transaction(async (txDb) => {
+          for (const row of dataset.rows) {
             const values = dataset.columns.map(col => {
               const val = row[col.name];
               return val === null || val === undefined ? null : JSON.stringify(val);
             });
-            insertStmt.run(...values);
+            await txDb.run(`INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders})`, ...values);
           }
         });
-
-        insertMany(dataset.rows);
       }
 
       // Calculate size
       const sizeBytes = JSON.stringify(dataset.rows).length;
 
       // Save metadata (store columns as "schema" for backward compatibility)
-      db.prepare(`
+      await db.run(`
         INSERT INTO datasets
           (id, name, description, schema, row_count, size_bytes, created_by, session_id, workflow_id,
            source_type, created_at, expires_at, storage_type, storage_path)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        id,
+      `, id,
         options.name,
         options.description || null,
         JSON.stringify(dataset.columns),
@@ -103,25 +98,24 @@ export function createDatasetStore(db: Database) {
         now,
         expiresAt,
         'sqlite',
-        tableName
-      );
+        tableName);
 
-      return this.get(id)!;
+      return (await this.get(id))!;
     },
 
     /**
      * Get dataset metadata by ID.
      */
-    get(id: string): StoredDataset | null {
-      const row = db.prepare('SELECT * FROM datasets WHERE id = ?').get(id);
+    async get(id: string): Promise<StoredDataset | null> {
+      const row = await db.get('SELECT * FROM datasets WHERE id = ?', id);
       return row ? (row as StoredDataset) : null;
     },
 
     /**
      * Get dataset by name.
      */
-    getByName(name: string): StoredDataset | null {
-      const row = db.prepare('SELECT * FROM datasets WHERE name = ?').get(name);
+    async getByName(name: string): Promise<StoredDataset | null> {
+      const row = await db.get('SELECT * FROM datasets WHERE name = ?', name);
       return row ? (row as StoredDataset) : null;
     },
 
@@ -129,8 +123,8 @@ export function createDatasetStore(db: Database) {
      * Load a dataset back into memory as a Dataset object.
      * Updates access tracking.
      */
-    load(id: string): Dataset | null {
-      const meta = this.get(id);
+    async load(id: string): Promise<Dataset | null> {
+      const meta = await this.get(id);
       if (!meta) return null;
 
       // Check expiration
@@ -140,7 +134,7 @@ export function createDatasetStore(db: Database) {
       }
 
       // Load rows from storage table
-      const rows = db.prepare(`SELECT * FROM ${meta.storage_path}`).all() as Array<Record<string, string | null>>;
+      const rows = await db.all(`SELECT * FROM ${meta.storage_path}`) as Array<Record<string, string | null>>;
 
       // Deserialize JSON-encoded values
       const columns = JSON.parse(meta.schema);
@@ -154,11 +148,11 @@ export function createDatasetStore(db: Database) {
       });
 
       // Update access tracking
-      db.prepare(`
+      await db.run(`
         UPDATE datasets
         SET last_accessed_at = datetime('now'), access_count = access_count + 1
         WHERE id = ?
-      `).run(id);
+      `, id);
 
       return {
         id: meta.storage_path,
@@ -176,7 +170,7 @@ export function createDatasetStore(db: Database) {
      * List datasets accessible to a user.
      * Includes global datasets (session_id IS NULL) and session-scoped for given sessionId.
      */
-    list(userId: string, sessionId?: string): StoredDataset[] {
+    async list(userId: string, sessionId?: string): Promise<StoredDataset[]> {
       let query = `
         SELECT * FROM datasets
         WHERE created_by = ?
@@ -194,25 +188,25 @@ export function createDatasetStore(db: Database) {
 
       query += ' ORDER BY created_at DESC';
 
-      return db.prepare(query).all(...params) as StoredDataset[];
+      return await db.run(query, ...params) as StoredDataset[];
     },
 
     /**
      * Delete a dataset (metadata + storage table).
      */
-    delete(id: string): boolean {
-      const meta = this.get(id);
+    async delete(id: string): Promise<boolean> {
+      const meta = await this.get(id);
       if (!meta) return false;
 
       // Drop storage table
       try {
-        db.prepare(`DROP TABLE IF EXISTS ${meta.storage_path}`).run();
+        await db.run(`DROP TABLE IF EXISTS ${meta.storage_path}`);
       } catch (err) {
         console.error(`[dataset-store] Failed to drop table ${meta.storage_path}:`, err);
       }
 
       // Delete metadata
-      db.prepare('DELETE FROM datasets WHERE id = ?').run(id);
+      await db.run('DELETE FROM datasets WHERE id = ?', id);
 
       return true;
     },
@@ -220,18 +214,18 @@ export function createDatasetStore(db: Database) {
     /**
      * Cleanup expired datasets (run periodically).
      */
-    cleanupExpired(): number {
-      const expired = db.prepare(`
+    async cleanupExpired(): Promise<number> {
+      const expired = await db.all(`
         SELECT id, storage_path FROM datasets
-        WHERE expires_at IS NOT NULL AND expires_at < datetime('now')
-      `).all() as Array<{ id: string; storage_path: string }>;
+        WHERE expires_at IS NOT NULL AND CAST(expires_at AS TIMESTAMP) < datetime('now')
+      `) as Array<{ id: string; storage_path: string }>;
 
       let deleted = 0;
 
       for (const ds of expired) {
         try {
-          db.prepare(`DROP TABLE IF EXISTS ${ds.storage_path}`).run();
-          db.prepare('DELETE FROM datasets WHERE id = ?').run(ds.id);
+          await db.exec(`DROP TABLE IF EXISTS "${ds.storage_path}"`);
+          await db.run('DELETE FROM datasets WHERE id = ?', ds.id);
           deleted++;
         } catch (err) {
           console.error(`[dataset-store] Failed to delete expired dataset ${ds.id}:`, err);
@@ -248,16 +242,16 @@ export function createDatasetStore(db: Database) {
     /**
      * Check if a dataset name already exists.
      */
-    nameExists(name: string): boolean {
-      const row = db.prepare('SELECT 1 FROM datasets WHERE name = ?').get(name);
+    async nameExists(name: string): Promise<boolean> {
+      const row = await db.get('SELECT 1 FROM datasets WHERE name = ?', name);
       return !!row;
     },
 
     /**
      * Update dataset description or TTL.
      */
-    update(id: string, updates: { description?: string; ttlDays?: number }): boolean {
-      const meta = this.get(id);
+    async update(id: string, updates: { description?: string; ttlDays?: number }): Promise<boolean> {
+      const meta = await this.get(id);
       if (!meta) return false;
 
       const fields: string[] = [];
@@ -278,7 +272,7 @@ export function createDatasetStore(db: Database) {
       if (fields.length === 0) return false;
 
       values.push(id);
-      db.prepare(`UPDATE datasets SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE datasets SET ${fields.join(', ')} WHERE id = ?`, ...values);
 
       return true;
     },
@@ -291,12 +285,12 @@ export type DatasetStore = ReturnType<typeof createDatasetStore>;
  * Start background cleanup job for expired datasets.
  * Runs every hour.
  */
-export function startDatasetCleanup(db: Database): NodeJS.Timeout {
-  const store = createDatasetStore(db);
+export async function startDatasetCleanup(db: DatabaseAdapter): Promise<NodeJS.Timeout> {
+  const store = await createDatasetStore(db);
 
-  const cleanup = () => {
+  const cleanup = async () => {
     try {
-      store.cleanupExpired();
+      await store.cleanupExpired();
     } catch (err) {
       console.error('[dataset-cleanup] Error during cleanup:', err);
     }

@@ -5,7 +5,8 @@
 // Used by the scheduler for automatic/scheduled execution.
 // ═══════════════════════════════════════════════════════════
 
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import path from 'path';
 import fs from 'fs';
@@ -56,7 +57,7 @@ interface ExecutionResult {
  * Steps requiring user interaction are skipped gracefully.
  */
 export async function executeScheduledWorkflow(
-  db: Database.Database,
+  db: DatabaseAdapter,
   workflowId: string,
   scheduleId: number
 ): Promise<ExecutionResult> {
@@ -65,9 +66,9 @@ export async function executeScheduledWorkflow(
   let stepsSkipped = 0;
 
   // Fetch the workflow definition from the schedule record (stored at creation time)
-  const scheduleRow = db.prepare(
+  const scheduleRow = await db.get(
     "SELECT workflow_definition FROM workflow_schedules WHERE id = ? AND workflow_id = ?"
-  ).get(scheduleId, workflowId) as { workflow_definition: string | null } | undefined;
+  , scheduleId, workflowId) as { workflow_definition: string | null } | undefined;
 
   let workflow: WorkflowDefinition;
   if (scheduleRow?.workflow_definition) {
@@ -75,9 +76,9 @@ export async function executeScheduledWorkflow(
   } else {
     // Also try workflow_definitions table (from schema_enhanced.sql)
     try {
-      const defRow = db.prepare(
+      const defRow = await db.get(
         "SELECT steps, config FROM workflow_definitions WHERE id = ?"
-      ).get(workflowId) as { steps: string; config: string } | undefined;
+      , workflowId) as { steps: string; config: string } | undefined;
       if (defRow) {
         const steps = JSON.parse(defRow.steps || '[]');
         const config = JSON.parse(defRow.config || '{}');
@@ -144,15 +145,13 @@ export async function executeScheduledWorkflow(
                 triggerVars[k] = resolveTemplate(v, context);
               }
             }
-            db.prepare(`
+            await db.run(`
               INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
               VALUES (?, ?, ?, 'pending', ?, datetime('now'))
-            `).run(
-              newRunId,
+            `, newRunId,
               trigger.workflowId,
               JSON.stringify({ type: 'event', source: 'step_complete', triggeredBy: runId, stepId: step.id, label: trigger.label || '', variables: triggerVars }),
-              'system'
-            );
+              'system');
             console.log(`[workflow-executor] Step trigger: started workflow ${trigger.workflowId} run ${newRunId}`);
           } catch (triggerErr) {
             console.warn('[workflow-executor] onCompleteTrigger failed (non-fatal):', triggerErr);
@@ -193,7 +192,7 @@ export async function executeScheduledWorkflow(
 async function executeHeadlessStep(
   step: WorkflowStep,
   context: Record<string, unknown>,
-  db: Database.Database,
+  db: DatabaseAdapter,
   runId: string
 ): Promise<{ output: Record<string, unknown>; skippedToStepId?: string }> {
   switch (step.type) {
@@ -251,12 +250,12 @@ async function executeHeadlessStep(
       if (connId.startsWith('kl:')) {
         // Knowledge Library entry — resolve path from knowledge_library table
         const klId = connId.slice(3);
-        const klEntry = db.prepare('SELECT path FROM knowledge_library WHERE id = ?').get(klId) as { path: string } | undefined;
+        const klEntry = await db.get('SELECT path FROM knowledge_library WHERE id = ?', klId) as { path: string } | undefined;
         if (!klEntry) throw new Error(`Knowledge Library entry not found: ${klId}`);
         basePath = klEntry.path;
       } else {
         // Regular filesystem connection
-        const manager = createConnectionManager(db);
+        const manager = await createConnectionManager(db);
         const conn = manager.get(connId);
         if (!conn) throw new Error(`Connection not found: ${connId}`);
         if (conn.type !== 'filesystem') throw new Error('Connection is not a filesystem connection');
@@ -307,7 +306,7 @@ async function executeHeadlessStep(
     case 'api_call': {
       if (!step.config?.connectionId) throw new Error('API call step requires connectionId');
 
-      const manager = createConnectionManager(db);
+      const manager = await createConnectionManager(db);
       const conn = manager.get(step.config.connectionId);
       if (!conn) throw new Error(`Connection not found: ${step.config.connectionId}`);
       if (conn.type !== 'api') throw new Error(`Connection is not an API connection`);
@@ -370,7 +369,7 @@ async function executeHeadlessStep(
     case 'database_query': {
       if (!step.config?.connectionId) throw new Error('Database query step requires connectionId');
 
-      const manager = createConnectionManager(db);
+      const manager = await createConnectionManager(db);
       const conn = manager.get(step.config.connectionId);
       if (!conn) throw new Error(`Connection not found: ${step.config.connectionId}`);
 
@@ -465,9 +464,9 @@ async function executeHeadlessStep(
         return { output: { sent: false, error: 'No connectionId configured' } };
       }
 
-      const conn = db.prepare(
+      const conn = await db.get(
         "SELECT * FROM connections WHERE id = ? AND type = 'messaging' AND status = 'active'"
-      ).get(connectionId) as { config: string } | undefined;
+      , connectionId) as { config: string } | undefined;
 
       if (!conn) {
         console.warn(`[workflow-executor] messaging_notification: connection ${connectionId} not found or not active`);
@@ -520,8 +519,8 @@ async function executeHeadlessStep(
 
 // ── Run tracking helpers ───────────────────────────────────
 
-function recordRun(
-  db: Database.Database,
+async function recordRun(
+  db: DatabaseAdapter,
   runId: string,
   workflowId: string,
   scheduleId: number,
@@ -529,26 +528,26 @@ function recordRun(
   errorMessage?: string
 ): void {
   try {
-    db.prepare(`
+    await db.run(`
       INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, error_message)
       VALUES (?, ?, ?, ?, 'scheduler', ?)
-    `).run(runId, workflowId, `schedule:${scheduleId}`, status, errorMessage || null);
+    `, runId, workflowId, `schedule:${scheduleId}`, status, errorMessage || null);
   } catch {
     // workflow_runs table may not exist in all deploys — log but don't crash
     console.warn(`[workflow-executor] Could not record run ${runId} (workflow_runs table may not exist)`);
   }
 }
 
-function updateRun(
-  db: Database.Database,
+async function updateRun(
+  db: DatabaseAdapter,
   runId: string,
   status: string,
   errorMessage?: string
 ): void {
   try {
-    db.prepare(`
+    await db.run(`
       UPDATE workflow_runs SET status = ?, completed_at = datetime('now'), error_message = ? WHERE id = ?
-    `).run(status, errorMessage || null, runId);
+    `, status, errorMessage || null, runId);
   } catch {
     console.warn(`[workflow-executor] Could not update run ${runId}`);
   }

@@ -8,7 +8,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDatabase } from './db/init.js';
+import { initDatabaseAdapter } from './db/init-database.js';
+import type { DatabaseAdapter } from './db/database.js';
+import { listTablesQuery, tableExistsQuery } from './db/dialect-helpers.js';
 import { authLimiter, userLimiter, claudeLimiter, webhookLimiter } from './middleware/rate-limit.js';
 import { createHealthRouter } from './routes/health.js';
 import { createClaudeRoutes } from './routes/claude.js';
@@ -147,11 +149,11 @@ if (!process.env.DEPLOYMENT_MODE) {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3011;
 
 // ── Allowed origins for CORS ──────────────────────────────────
 // Defaults to localhost only. Override with CORS_ORIGINS env var (comma-separated).
-const allowedOrigins = (process.env.CORS_ORIGINS || `http://localhost:${PORT},http://localhost:5173`)
+const allowedOrigins = (process.env.CORS_ORIGINS || `http://localhost:${PORT},http://localhost:5183`)
   .split(',')
   .map((o) => o.trim());
 
@@ -242,20 +244,20 @@ app.use((_req, res, next) => {
   next();
 });
 
-// Initialize database
-const db = initDatabase();
+// Initialize database (async — supports both SQLite and PostgreSQL)
+const db: DatabaseAdapter = await initDatabaseAdapter();
 
-// Verify database tables
-const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as Array<{ name: string }>;
+// Verify database tables (dialect-aware)
+const tables = await db.all<{ name: string }>(listTablesQuery(db.dialect));
 console.log('[db] Available tables:', tables.map(t => t.name).join(', '));
 
 // Verify projects table specifically
-const projectsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'").get();
+const projectsTable = await db.get<{ name: string }>(tableExistsQuery(db.dialect), 'projects');
 if (!projectsTable) {
   console.error('[db] ⚠️  WARNING: projects table not found!');
 } else {
-  const projectsCount = db.prepare('SELECT COUNT(*) as count FROM projects').get() as { count: number };
-  console.log(`[db] ✅ Projects table exists with ${projectsCount.count} projects`);
+  const projectsCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM projects');
+  console.log(`[db] ✅ Projects table exists with ${projectsCount?.count ?? 0} projects`);
 }
 
 // RATE-04: initialise async audit queue now that DB is ready
@@ -274,11 +276,11 @@ initScheduler(db);
 startEventWorkflowProcessor(db);
 
 // Initialize pattern detection background job (runs every hour)
-const patternDetection = createPatternDetection(db);
-setInterval(() => {
+const patternDetection = await createPatternDetection(db);
+setInterval(async () => {
   try {
     console.log('[pattern-detection] Running background detection...');
-    const result = patternDetection.runAllDetectors();
+    const result = await patternDetection.runAllDetectors();
     console.log(`[pattern-detection] Detected ${result.patternsDetected} patterns`);
   } catch (error) {
     console.error('[pattern-detection] Background job error:', error);
@@ -286,10 +288,10 @@ setInterval(() => {
 }, 3600000); // every hour
 
 // Run pattern detection on startup (delayed by 30 seconds)
-setTimeout(() => {
+setTimeout(async () => {
   try {
     console.log('[pattern-detection] Running initial pattern detection...');
-    const result = patternDetection.runAllDetectors();
+    const result = await patternDetection.runAllDetectors();
     console.log(`[pattern-detection] Initial scan detected ${result.patternsDetected} patterns`);
   } catch (error) {
     console.error('[pattern-detection] Initial scan error:', error);
@@ -309,16 +311,16 @@ if (process.env.DEPLOYMENT_MODE === 'team' && process.env.MCP_SECRET) {
 
 // MCP endpoint — mounted at /mcp, outside /api and outside auth middleware
 // MCP clients (Cursor, Claude Code) do not perform browser auth
-app.use('/mcp', createMcpRouter(db));
+app.use('/mcp', await createMcpRouter(db));
 
 // Prune expired CSRF tokens every hour
 setInterval(pruneExpiredCsrfTokens, 60 * 60 * 1000);
 
 // API routes — auth routes and config must be registered BEFORE the auth middleware
-app.use('/api', createAuthRoutes(db));
+app.use('/api', await createAuthRoutes(db));
 
 // Channel Bridge public query endpoint — uses per-bridge Bearer token, not session auth
-app.use('/api', createBridgePublicRoutes(db, anthropic));
+app.use('/api', await createBridgePublicRoutes(db, anthropic));
 
 // Deployment config endpoint (public — no auth required)
 app.get('/api/config', (req, res) => {
@@ -351,7 +353,7 @@ app.get('/api/config', (req, res) => {
 });
 
 // Auth middleware — protects all subsequent /api routes
-const authMiddleware = createAuthMiddleware(db);
+const authMiddleware = await createAuthMiddleware(db);
 app.use('/api', authMiddleware);
 
 // SEC-14: CSRF token endpoint — registered AFTER auth middleware so req.user is
@@ -366,8 +368,8 @@ app.use('/api', csrfProtection);
 // Apply per-user rate limiter to all authenticated API routes
 app.use('/api', userLimiter);
 
-app.use('/api', createHealthRouter(db));
-app.use('/', createMetricsRouter(db)); // OBS-03: Prometheus /metrics — mounted at root, not /api
+app.use('/api', await createHealthRouter(db));
+app.use('/', await createMetricsRouter(db)); // OBS-03: Prometheus /metrics — mounted at root, not /api
 
 // OBS-03: request + error counters
 app.use((_req, _res, next) => { incrementRequests(); next(); });
@@ -376,106 +378,106 @@ app.use((_err: unknown, _req: import('express').Request, res: import('express').
   next(_err);
 });
 
-app.use('/api', createClaudeRoutes(db, anthropic));
+app.use('/api', await createClaudeRoutes(db, anthropic));
 app.use('/api', filesRouter);
-app.use('/api', createSessionRoutes(db));
-app.use('/api', createFolderRoutes(db));
-app.use('/api', createExportRouter(db));
-app.use('/api', createTemplatesRouter(db));
-app.use('/api', createCustomModuleRoutes(db, anthropic)); // must be before modulesRouter — /modules/community would otherwise be swallowed by /modules/:id wildcard
+app.use('/api', await createSessionRoutes(db));
+app.use('/api', await createFolderRoutes(db));
+app.use('/api', await createExportRouter(db));
+app.use('/api', await createTemplatesRouter(db));
+app.use('/api', await createCustomModuleRoutes(db, anthropic)); // must be before modulesRouter — /modules/community would otherwise be swallowed by /modules/:id wildcard
 app.use('/api', modulesRouter);
-app.use('/api', createProfileRoutes(db));
-app.use('/api', createReviewRoutes(db, anthropic));
-app.use('/api', createProjectRoutes(db));
-app.use('/api', createProjectFilesRoutes(db));
-app.use('/api', createProjectCollaborationRoutes(db));
-app.use('/api', createSkillsRoutes(db));
-app.use('/api', createAuditRoutes(db));
-app.use('/api', createExchangeRoutes(db));
-app.use('/api', createSettingsRoutes(db));
-app.use('/api', createRagRoutes(db));
-app.use('/api', createKnowledgeLibraryRoutes(db));
-app.use('/api', createEurLexRoutes(db, anthropic));
-app.use('/api', createAdminRoutes(db));
-app.use('/api', createCompliancePolicyRoutes(db));
-app.use('/api/analytics', createAnalyticsRouter(db));
-app.use('/api', createScheduleRoutes(db));
-app.use('/api/versions', createVersionsRoutes(db));
+app.use('/api', await createProfileRoutes(db));
+app.use('/api', await createReviewRoutes(db, anthropic));
+app.use('/api', await createProjectRoutes(db));
+app.use('/api', await createProjectFilesRoutes(db));
+app.use('/api', await createProjectCollaborationRoutes(db));
+app.use('/api', await createSkillsRoutes(db));
+app.use('/api', await createAuditRoutes(db));
+app.use('/api', await createExchangeRoutes(db));
+app.use('/api', await createSettingsRoutes(db));
+app.use('/api', await createRagRoutes(db));
+app.use('/api', await createKnowledgeLibraryRoutes(db));
+app.use('/api', await createEurLexRoutes(db, anthropic));
+app.use('/api', await createAdminRoutes(db));
+app.use('/api', await createCompliancePolicyRoutes(db));
+app.use('/api/analytics', await createAnalyticsRouter(db));
+app.use('/api', await createScheduleRoutes(db));
+app.use('/api/versions', await createVersionsRoutes(db));
 app.use('/api/claude/review', claudeLimiter);
-app.use('/api', createConnectionsRoutes(db));
-app.use('/api', createBridgeRoutes(db, anthropic));
-app.use('/api', createDatasetsRoutes(db));
-app.use('/api', createKnowledgeRoutes(db));
-app.use('/api', createDeadlinesRoutes(db));
-app.use('/api/workflows', createWorkflowRoutes(db, anthropic));
-app.use('/api', createMemoryRoutes(db));
-app.use('/api', createCanvasRoutes(db));
+app.use('/api', await createConnectionsRoutes(db));
+app.use('/api', await createBridgeRoutes(db, anthropic));
+app.use('/api', await createDatasetsRoutes(db));
+app.use('/api', await createKnowledgeRoutes(db));
+app.use('/api', await createDeadlinesRoutes(db));
+app.use('/api/workflows', await createWorkflowRoutes(db, anthropic));
+app.use('/api', await createMemoryRoutes(db));
+app.use('/api', await createCanvasRoutes(db));
 // Initialize radar fetcher for automated feed scanning
-const radarFetcher = anthropic ? createRadarFetcher(db, anthropic) : undefined;
-app.use('/api', createRadarRoutes(db, radarFetcher));
+const radarFetcher = anthropic ? await createRadarFetcher(db, anthropic) : undefined;
+app.use('/api', await createRadarRoutes(db, radarFetcher));
 app.use('/api', createNotificationsRouter(db));
-app.use('/api', createQualityRoutes(db, anthropic));
-app.use('/api/engagements', createEngagementsRoutes(db));
-app.use('/api', createApprenticeRoutes(db));
-app.use('/api', createTradesRoutes(db));
-app.use('/api', createPEVCRoutes(db));
-app.use('/api', createSchoolRoutes(db));
-app.use('/api', createNewsRoutes(db, anthropic));
-app.use('/api', createFinanceRoutes(db, anthropic));
-app.use('/api', createTravelRoutes(db, anthropic));
-app.use('/api', createCommunityRoutes(db));
+app.use('/api', await createQualityRoutes(db, anthropic));
+app.use('/api/engagements', await createEngagementsRoutes(db));
+app.use('/api', await createApprenticeRoutes(db));
+app.use('/api', await createTradesRoutes(db));
+app.use('/api', await createPEVCRoutes(db));
+app.use('/api', await createSchoolRoutes(db));
+app.use('/api', await createNewsRoutes(db, anthropic));
+app.use('/api', await createFinanceRoutes(db, anthropic));
+app.use('/api', await createTravelRoutes(db, anthropic));
+app.use('/api', await createCommunityRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
-const webhookListenerInstance = createWebhookListener(db);
+const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton
-app.use('/api', createTriggersRoutes(db));           // RBAC-protected trigger management
+app.use('/api', await createTriggersRoutes(db));           // RBAC-protected trigger management
 app.use('/api/webhooks', webhookLimiter);             // Rate limit public webhook endpoint (SEC-19)
-app.use('/', createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth)
-app.use('/api', createSessionResumeRoutes(db));      // Session Resume (snapshots)
-app.use('/api', createInsightsRoutes(db));           // Proactive Intelligence
-app.use('/api', createOrgContextRoutes(db));         // Org Context Layer (prompt layer 2a)
-app.use('/api', createContinuityRoutes(db));         // Org Continuity (key-person risk)
-app.use('/api', createKnowledgePacksRoutes(db));     // Regulatory Knowledge Packs
-app.use('/api', createLegalResearchRoutes(db, anthropic));   // Counsel's Desk — legal research sessions
-app.use('/api', createGapAssessmentsRoutes(db, anthropic)); // Compliance Gap Assessor
-app.use('/api', createAiAssistRoutes());                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
-app.use('/api/task-agent', createTaskAgentRoutes(db, anthropic)); // ANTON Task Agent — conversational task intake + approach proposal
-app.use('/api', createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
-app.use('/api', createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
-app.use('/api', createRegulatoryFeedRoutes(db, anthropic)); // Regulatory Feed — subscribe + AI digest (LONE-07/18)
-app.use('/api', createLoreLedgerRoutes(db, anthropic));    // Lore Ledger — world-building + consistency checker (LONE-09)
-app.use('/api', createPathfinderRoutes(db, anthropic));     // Pathfinder — AI-powered multi-model search
-app.use('/api', createOrchestratorRoutes(db, anthropic));   // ANTON Orchestrator — AI management layer
-app.use('/api', createHumanOversightRoutes(db));            // EUAI-02: Human oversight sign-off for high-risk FCP modules
-app.use('/api', createPostMarketMonitoringRoutes(db));      // EUAI-04: Post-market monitoring log (quality, reversals, complaints)
-app.use('/api', createOpenApiRouter());                     // OSS-05: OpenAPI 3.0 spec at /api/openapi.json
-app.use('/api', createKnowledgeGraphRoutes(db));
-app.use('/api', createIntelligenceDashboardRoutes(db));
-app.use('/api', createPatternDetectionRoutes(db));
-app.use('/api/data', createDataRoutes(db));
-app.use('/api', createCommandRoutes(db, anthropic));
-app.use('/api', createComplianceRoutes(db));
-app.use('/api', createCollectionsRoutes(db));
-app.use('/api', createSearchRoutes(db));
-app.use('/api/embeddings', createEmbeddingRoutes(db));
-app.use('/api', createDocumentsRouter(db));
-app.use('/api', createDiscoveryRoutes(db, anthropic));
+app.use('/', await createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth)
+app.use('/api', await createSessionResumeRoutes(db));      // Session Resume (snapshots)
+app.use('/api', await createInsightsRoutes(db));           // Proactive Intelligence
+app.use('/api', await createOrgContextRoutes(db));         // Org Context Layer (prompt layer 2a)
+app.use('/api', await createContinuityRoutes(db));         // Org Continuity (key-person risk)
+app.use('/api', await createKnowledgePacksRoutes(db));     // Regulatory Knowledge Packs
+app.use('/api', await createLegalResearchRoutes(db, anthropic));   // Counsel's Desk — legal research sessions
+app.use('/api', await createGapAssessmentsRoutes(db, anthropic)); // Compliance Gap Assessor
+app.use('/api', await createAiAssistRoutes());                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
+app.use('/api/task-agent', await createTaskAgentRoutes(db, anthropic)); // ANTON Task Agent — conversational task intake + approach proposal
+app.use('/api', await createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
+app.use('/api', await createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
+app.use('/api', await createRegulatoryFeedRoutes(db, anthropic)); // Regulatory Feed — subscribe + AI digest (LONE-07/18)
+app.use('/api', await createLoreLedgerRoutes(db, anthropic));    // Lore Ledger — world-building + consistency checker (LONE-09)
+app.use('/api', await createPathfinderRoutes(db, anthropic));     // Pathfinder — AI-powered multi-model search
+app.use('/api', await createOrchestratorRoutes(db, anthropic));   // ANTON Orchestrator — AI management layer
+app.use('/api', await createHumanOversightRoutes(db));            // EUAI-02: Human oversight sign-off for high-risk FCP modules
+app.use('/api', await createPostMarketMonitoringRoutes(db));      // EUAI-04: Post-market monitoring log (quality, reversals, complaints)
+app.use('/api', await createOpenApiRouter());                     // OSS-05: OpenAPI 3.0 spec at /api/openapi.json
+app.use('/api', await createKnowledgeGraphRoutes(db));
+app.use('/api', await createIntelligenceDashboardRoutes(db));
+app.use('/api', await createPatternDetectionRoutes(db));
+app.use('/api/data', await createDataRoutes(db));
+app.use('/api', await createCommandRoutes(db, anthropic));
+app.use('/api', await createComplianceRoutes(db));
+app.use('/api', await createCollectionsRoutes(db));
+app.use('/api', await createSearchRoutes(db));
+app.use('/api/embeddings', await createEmbeddingRoutes(db));
+app.use('/api', await createDocumentsRouter(db));
+app.use('/api', await createDiscoveryRoutes(db, anthropic));
 app.use('/api/ollama', ollamaRouter);
-app.use('/api', createCodingRoutes(db));
-app.use('/api', createCodingReviewRoutes(db));
-app.use('/api', createCodingScriptsRoutes(db));
-app.use('/api', createCodingLargeRoutes(db));
-app.use('/api', createPptxPipelineRoutes(db));
-app.use('/api', createPresentationsRoutes(db));
-app.use('/api', createInstructionBuilderRoutes(db));
-app.use('/api', createAlignmentReviewerRoutes(db));
-app.use('/api/batch', createBatchRoutes(anthropic, db));
-app.use('/api', createSkillPacksRoutes(db));
-app.use('/api', createModelRouterRoutes());
-app.use('/api', createAudienceAdapterRoutes());
-app.use('/api', createSuggestionsRoutes(db));
-app.use('/api', createBenchmarkRoutes(db));
-app.use('/api', createConnectorTemplatesRoutes());
-app.use('/api', createIntegrationsRoutes(db));
+app.use('/api', await createCodingRoutes(db));
+app.use('/api', await createCodingReviewRoutes(db));
+app.use('/api', await createCodingScriptsRoutes(db));
+app.use('/api', await createCodingLargeRoutes(db));
+app.use('/api', await createPptxPipelineRoutes(db));
+app.use('/api', await createPresentationsRoutes(db));
+app.use('/api', await createInstructionBuilderRoutes(db));
+app.use('/api', await createAlignmentReviewerRoutes(db));
+app.use('/api/batch', await createBatchRoutes(anthropic, db));
+app.use('/api', await createSkillPacksRoutes(db));
+app.use('/api', await createModelRouterRoutes());
+app.use('/api', await createAudienceAdapterRoutes());
+app.use('/api', await createSuggestionsRoutes(db));
+app.use('/api', await createBenchmarkRoutes(db));
+app.use('/api', await createConnectorTemplatesRoutes());
+app.use('/api', await createIntegrationsRoutes(db));
 
 // Serve static React build in production
 const clientDist = path.join(__dirname, '..', 'dist', 'client');
@@ -541,9 +543,10 @@ communityNS.use((socket, next) => {
   if (!token) { next(new Error('Authentication required')); return; }
   try {
     jwt.verify(token, SOCK_JWT_SECRET);
-    const session = db.prepare('SELECT id FROM user_sessions WHERE token = ? AND expires_at > datetime("now")').get(token);
-    if (!session) { next(new Error('Session expired')); return; }
-    next();
+    db.get('SELECT id FROM user_sessions WHERE token = ? AND expires_at > datetime(\'now\')', token).then(session => {
+      if (!session) { next(new Error('Session expired')); return; }
+      next();
+    }).catch(() => next(new Error('Session lookup failed')));
   } catch {
     next(new Error('Invalid token'));
   }
@@ -562,11 +565,11 @@ communityNS.on('connection', (socket) => {
   });
 });
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
 
   // Start background dataset cleanup (runs every hour)
-  startDatasetCleanup(db);
+  await startDatasetCleanup(db);
   console.log('Dataset cleanup service started');
 
   // Start embedding pipeline (runs in background, 10s delay to avoid blocking startup)
@@ -578,7 +581,7 @@ httpServer.listen(PORT, () => {
 
   // Start deadline reminder service (checks every 15 minutes)
   try {
-    const reminderService = createDeadlineReminderService(db);
+    const reminderService = await createDeadlineReminderService(db);
     reminderService.startTimer(15);
     console.log('[deadline-reminders] Reminder service started');
   } catch (err) {
@@ -595,8 +598,8 @@ httpServer.listen(PORT, () => {
   // Initialize radar background scanning from DB settings
   if (radarFetcher) {
     try {
-      const autoEnabled = db.prepare("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'").get() as { value: string } | undefined;
-      const autoInterval = db.prepare("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'").get() as { value: string } | undefined;
+      const autoEnabled = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'");
+      const autoInterval = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'");
       const enabled = autoEnabled?.value === '1';
       const hours = parseInt(autoInterval?.value || '24', 10);
 
@@ -608,7 +611,8 @@ httpServer.listen(PORT, () => {
       }
 
       // Also check for cron-based radar schedule
-      const radarCronExpr = (db.prepare("SELECT value FROM radar_settings WHERE key = 'auto_scan_cron'").get() as { value: string } | undefined)?.value;
+      const radarCronRow = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_cron'");
+      const radarCronExpr = radarCronRow?.value;
       if (radarCronExpr && cron.validate(radarCronExpr)) {
         cron.schedule(radarCronExpr, async () => {
           console.log('[radar-cron] Starting scheduled radar scan');
@@ -641,18 +645,34 @@ function shutdown(signal: string): void {
       logger.info('HTTP server closed');
     }
     flushAuditQueue(); // RATE-04: drain pending audit entries before closing
-    try { db.close(); } catch { /* ignore */ }
-    logger.info('Database closed — exiting');
-    process.exit(closeErr ? 1 : 0);
+    db.close().catch(() => {}).finally(() => {
+      logger.info('Database closed — exiting');
+      process.exit(closeErr ? 1 : 0);
+    });
   });
 
   // Force-kill if drain takes too long
   setTimeout(() => {
     logger.error({ timeoutMs: DRAIN_TIMEOUT_MS }, 'Drain timeout exceeded — forcing exit');
-    try { db.close(); } catch { /* ignore */ }
-    process.exit(1);
+    db.close().catch(() => {}).finally(() => process.exit(1));
   }, DRAIN_TIMEOUT_MS).unref();
 }
 
 process.on('SIGINT',  () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// ── Safety net for async errors ───────────────────────────────
+// After the SQLite→async migration, any missing `await` or uncaught promise
+// rejection would crash the whole Node process.  Log and survive instead.
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error({ err: reason }, 'Unhandled promise rejection (server kept running)');
+  console.error('[unhandledRejection]', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error({ err }, 'Uncaught exception (server kept running)');
+  console.error('[uncaughtException]', err);
+  // Note: after an uncaught exception the process state may be inconsistent.
+  // We log but do NOT call process.exit() so the server stays up for the user.
+  // In production you may want to trigger a graceful restart instead.
+});

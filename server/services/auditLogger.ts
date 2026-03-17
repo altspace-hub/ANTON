@@ -1,4 +1,5 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import { childLogger } from '../lib/logger.js';
 
@@ -72,18 +73,17 @@ export interface GeneralAuditEvent {
 /**
  * Write AI model usage audit entry
  */
-export function writeAuditEntry(db: Database.Database, entry: AuditEntry): string {
+export async function writeAuditEntry(db: DatabaseAdapter, entry: AuditEntry): string {
   const id = randomUUID();
   try {
-    db.prepare(`INSERT INTO audit_log (
+    await db.run(`INSERT INTO audit_log (
       id, session_id, module_id, area_id, model, provider,
       thinking_level, creativity, writing_tone, emoji_enabled, structured_reasoning,
       transparency_level, knowledge_sources_used,
       input_token_count, output_token_count, cached_tokens, cache_creation_tokens,
       estimated_cost_usd, response_status, seed, user_id, rag_chunks,
       system_prompt_version_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      id,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id,
       entry.sessionId || null,
       entry.moduleId || null,
       entry.areaId || null,
@@ -105,8 +105,7 @@ export function writeAuditEntry(db: Database.Database, entry: AuditEntry): strin
       entry.seed !== undefined ? entry.seed : null,
       entry.userId || null,
       entry.ragChunks || null,
-      entry.systemPromptVersionId || null
-    );
+      entry.systemPromptVersionId || null);
     log.info({ model: entry.model, sessionId: entry.sessionId, cachedTokens: entry.cachedTokens }, 'AI usage logged');
   } catch (e) {
     log.error({ err: e }, 'Failed to write audit entry');
@@ -117,18 +116,16 @@ export function writeAuditEntry(db: Database.Database, entry: AuditEntry): strin
 /**
  * Log security event
  */
-export function logSecurityEvent(db: Database.Database, event: SecurityEvent): number | null {
+export async function logSecurityEvent(db: DatabaseAdapter, event: SecurityEvent): number | null {
   try {
-    const result = db.prepare(`
+    const result = await db.run(`
       INSERT INTO security_events (event_type, user_id, ip_address, details, severity)
       VALUES (?, ?, ?, ?, ?)
-    `).run(
-      event.event_type,
+    `, event.event_type,
       event.user_id || null,
       event.ip_address || null,
       event.details || null,
-      event.severity || 'medium'
-    );
+      event.severity || 'medium');
     log.info({ eventType: event.event_type, severity: event.severity }, 'Security event logged');
     return result.lastInsertRowid as number;
   } catch (e) {
@@ -140,12 +137,12 @@ export function logSecurityEvent(db: Database.Database, event: SecurityEvent): n
 /**
  * Log login attempt
  */
-export function logLoginAttempt(db: Database.Database, attempt: LoginAttempt): number | null {
+export async function logLoginAttempt(db: DatabaseAdapter, attempt: LoginAttempt): number | null {
   try {
-    const result = db.prepare(`
+    const result = await db.run(`
       INSERT INTO login_attempts (username, user_id, ip_address, user_agent, success, failure_reason)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
+    `, 
       attempt.username,
       attempt.user_id || null,
       attempt.ip_address || null,
@@ -165,12 +162,10 @@ export function logLoginAttempt(db: Database.Database, attempt: LoginAttempt): n
  * Log general audit event (session creation, deletion, exports, etc.)
  * Note: This uses the audit_log table from schema_enhanced.sql, not the AI usage table
  */
-export function logAuditEvent(db: Database.Database, event: GeneralAuditEvent): void {
+export async function logAuditEvent(db: DatabaseAdapter, event: GeneralAuditEvent): Promise<void> {
   try {
     // Check if the enhanced audit_log table exists (from schema_enhanced.sql)
-    const tableExists = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='audit_log'")
-      .get();
+    const tableExists = await db.get("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'audit_log'");
 
     if (!tableExists) {
       log.warn('audit_log table does not exist, skipping general audit');
@@ -180,10 +175,10 @@ export function logAuditEvent(db: Database.Database, event: GeneralAuditEvent): 
     // Try to insert into the enhanced audit_log table
     // Note: This is different from the AI usage audit_log table
     try {
-      db.prepare(`
+      await db.run(`
         INSERT INTO audit_log (user_id, action, resource_type, resource_id, old_value, new_value, ip_address, user_agent, success, error_message)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `, 
         event.user_id || null,
         event.action,
         event.resource_type,
@@ -208,8 +203,8 @@ export function logAuditEvent(db: Database.Database, event: GeneralAuditEvent): 
 /**
  * Get audit log entries with filtering
  */
-export function getAuditLog(
-  db: Database.Database,
+export async function getAuditLog(
+  db: DatabaseAdapter,
   filters: {
     sessionId?: string;
     moduleId?: string;
@@ -248,38 +243,30 @@ export function getAuditLog(
     params.push(filters.offset);
   }
 
-  return db.prepare(query).all(...params);
+  return await db.all(query, ...params);
 }
 
 /**
  * Get comprehensive audit statistics
  */
-export function getAuditStats(db: Database.Database) {
+export async function getAuditStats(db: DatabaseAdapter) {
   const today = new Date().toISOString().split('T')[0];
   const thisMonth = today.substring(0, 7);
 
   return {
-    totalCalls: (db.prepare('SELECT COUNT(*) as c FROM audit_log').get() as { c: number }).c,
+    totalCalls: ((await db.get('SELECT COUNT(*) as c FROM audit_log')) as { c: number } | undefined)?.c ?? 0,
     callsToday: (
-      db
-        .prepare('SELECT COUNT(*) as c FROM audit_log WHERE timestamp >= ?')
-        .get(today + 'T00:00:00') as { c: number }
+      await db.get('SELECT COUNT(*) as c FROM audit_log WHERE timestamp >= ?', today + 'T00:00:00') as { c: number }
     ).c,
     costThisMonth: (
-      db
-        .prepare('SELECT COALESCE(SUM(estimated_cost_usd),0) as c FROM audit_log WHERE timestamp >= ?')
-        .get(thisMonth + '-01') as { c: number }
+      await db.get('SELECT COALESCE(SUM(estimated_cost_usd),0) as c FROM audit_log WHERE timestamp >= ?', thisMonth + '-01') as { c: number }
     ).c,
-    byModel: db
-      .prepare(
+    byModel: await db.all(
         'SELECT model, COUNT(*) as calls, SUM(estimated_cost_usd) as total_cost FROM audit_log GROUP BY model ORDER BY calls DESC'
-      )
-      .all(),
-    byModule: db
-      .prepare(
+      ),
+    byModule: await db.all(
         'SELECT module_id, COUNT(*) as calls FROM audit_log WHERE module_id IS NOT NULL GROUP BY module_id ORDER BY calls DESC LIMIT 10'
-      )
-      .all(),
+      ),
   };
 }
 

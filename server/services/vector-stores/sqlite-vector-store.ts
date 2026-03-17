@@ -5,7 +5,8 @@
  */
 
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { cosineSimilarity, deserializeVector, serializeVector } from '../embedding-adapter.js';
 
 export interface VectorMetadata {
@@ -35,7 +36,7 @@ interface EmbeddingRow {
 }
 
 export class SQLiteVectorStore {
-  constructor(private db: Database.Database) {}
+  constructor(private db: DatabaseAdapter) {}
 
   async store(params: {
     contentType: string;
@@ -46,14 +47,14 @@ export class SQLiteVectorStore {
     metadata?: Record<string, unknown>;
   }): Promise<void> {
     const id = randomUUID();
-    this.db.prepare(`
+    await this.db.run(`
       INSERT INTO embeddings (id, content_type, content_id, content_text, embedding, embedding_model, embedding_dimension, metadata, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT(content_type, content_id, embedding_model) DO UPDATE SET
         content_text = excluded.content_text,
         embedding = excluded.embedding,
         updated_at = datetime('now')
-    `).run(
+    `,
       id,
       params.contentType,
       params.contentId,
@@ -86,7 +87,7 @@ export class SQLiteVectorStore {
       args.push(model);
     }
 
-    const rows = this.db.prepare(sql).all(...args) as EmbeddingRow[];
+    const rows = await this.db.all(sql, ...args) as EmbeddingRow[];
     const dims = queryVector.length;
 
     // KG-02: Skip rows with mismatched embedding dimensions (different model or re-embedded with different dim)
@@ -116,16 +117,15 @@ export class SQLiteVectorStore {
   }
 
   async delete(contentType: string, contentId: string): Promise<void> {
-    this.db.prepare('DELETE FROM embeddings WHERE content_type = ? AND content_id = ?')
-      .run(contentType, contentId);
+    await this.db.run('DELETE FROM embeddings WHERE content_type = ? AND content_id = ?', contentType, contentId);
   }
 
   async getCount(contentType?: string): Promise<number> {
     if (contentType) {
-      const row = this.db.prepare('SELECT COUNT(*) as c FROM embeddings WHERE content_type = ?').get(contentType) as { c: number };
+      const row = await this.db.get('SELECT COUNT(*) as c FROM embeddings WHERE content_type = ?', contentType) as { c: number };
       return row.c;
     }
-    const row = this.db.prepare('SELECT COUNT(*) as c FROM embeddings').get() as { c: number };
+    const row = await this.db.get('SELECT COUNT(*) as c FROM embeddings') as { c: number };
     return row.c;
   }
 }

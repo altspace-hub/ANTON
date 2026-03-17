@@ -20,7 +20,8 @@
 
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type AnthropicSDK from '@anthropic-ai/sdk';
 import { requireAuth } from '../middleware/auth.js';
 import {
@@ -34,20 +35,20 @@ import {
   getMeridianPersonaContext,
 } from '../services/orchestrator-demo.js';
 
-export function createOrchestratorRoutes(db: Database.Database, anthropic: AnthropicSDK | null | undefined): Router {
+export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): Router {
   const router = Router();
 
   // ── Status ─────────────────────────────────────────────────────────────────
-  router.get('/orchestrator/status', requireAuth, (_req: Request, res: Response) => {
+  router.get('/orchestrator/status', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const stage = db.prepare('SELECT * FROM orchestrator_stage WHERE id = ?').get('default');
-      const config = db.prepare('SELECT * FROM orchestrator_config WHERE id = ?').get('default');
-      const lastHeartbeat = db.prepare(
+      const stage = await db.get('SELECT * FROM orchestrator_stage WHERE id = ?', 'default');
+      const config = await db.get('SELECT * FROM orchestrator_config WHERE id = ?', 'default');
+      const lastHeartbeat = await db.get(
         'SELECT * FROM orchestrator_heartbeats ORDER BY ran_at DESC LIMIT 1'
-      ).get();
-      const unreadBriefings = (db.prepare(
+      );
+      const unreadBriefings = (await db.get(
         "SELECT COUNT(*) as c FROM orchestrator_briefings WHERE status = 'unread'"
-      ).get() as { c: number }).c;
+      ) as { c: number }).c;
 
       res.json({
         stage,
@@ -63,9 +64,9 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Stage ─────────────────────────────────────────────────────────────────
-  router.get('/orchestrator/stage', requireAuth, (_req: Request, res: Response) => {
+  router.get('/orchestrator/stage', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const stage = db.prepare('SELECT * FROM orchestrator_stage WHERE id = ?').get('default');
+      const stage = await db.get('SELECT * FROM orchestrator_stage WHERE id = ?', 'default');
       res.json({ stage });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -73,7 +74,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Briefings list ────────────────────────────────────────────────────────
-  router.get('/orchestrator/briefings', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/briefings', requireAuth, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
       const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
@@ -87,8 +88,8 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
       params.push(limit, offset);
 
-      const briefings = db.prepare(sql).all(...params);
-      const total = (db.prepare('SELECT COUNT(*) as c FROM orchestrator_briefings').get() as { c: number }).c;
+      const briefings = await db.all(sql, ...params);
+      const total = ((await db.get('SELECT COUNT(*) as c FROM orchestrator_briefings')) as { c: number } | undefined)?.c ?? 0;
       res.json({ briefings, total, limit, offset });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -96,18 +97,18 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Single briefing with proposals ───────────────────────────────────────
-  router.get('/orchestrator/briefings/:id', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/briefings/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const briefing = db.prepare('SELECT * FROM orchestrator_briefings WHERE id = ?').get(req.params.id) as { status: string } | undefined;
+      const briefing = await db.get('SELECT * FROM orchestrator_briefings WHERE id = ?', req.params.id) as { status: string } | undefined;
       if (!briefing) return res.status(404).json({ error: 'Briefing not found' });
 
-      const proposals = db.prepare(
+      const proposals = await db.all(
         'SELECT * FROM orchestrator_proposals WHERE briefing_id = ? ORDER BY urgency_score DESC'
-      ).all(req.params.id);
+      , req.params.id);
 
       // Mark as read
       if ((briefing as { status: string }).status === 'unread') {
-        db.prepare("UPDATE orchestrator_briefings SET status = 'read' WHERE id = ?").run(req.params.id);
+        await db.run("UPDATE orchestrator_briefings SET status = 'read' WHERE id = ?", req.params.id);
       }
 
       res.json({ briefing: { ...briefing, status: 'read' }, proposals });
@@ -129,7 +130,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Proposals list ────────────────────────────────────────────────────────
-  router.get('/orchestrator/proposals', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/proposals', requireAuth, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 200);
       const status = req.query.status as string | undefined;
@@ -142,7 +143,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       sql += ' ORDER BY urgency_score DESC, created_at DESC LIMIT ?';
       params.push(limit);
 
-      const proposals = db.prepare(sql).all(...params);
+      const proposals = await db.run(sql, ...params);
       res.json({ proposals });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -150,7 +151,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Rate / feedback on a proposal ────────────────────────────────────────
-  router.patch('/orchestrator/proposals/:id', requireAuth, (req: Request, res: Response) => {
+  router.patch('/orchestrator/proposals/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { human_rating, human_feedback } = req.body as {
         human_rating?: string;
@@ -162,34 +163,34 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         return res.status(400).json({ error: `human_rating must be one of: ${validRatings.join(', ')}` });
       }
 
-      const proposal = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id) as
+      const proposal = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id) as
         | { human_rating: string | null; status: string } | undefined;
       if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_proposals SET
           human_rating = COALESCE(?, human_rating),
           human_feedback = COALESCE(?, human_feedback),
           decided_at = COALESCE(decided_at, datetime('now')),
           decided_by = COALESCE(decided_by, 'solo')
         WHERE id = ?
-      `).run(human_rating ?? null, human_feedback ?? null, req.params.id);
+      `, human_rating ?? null, human_feedback ?? null, req.params.id);
 
       // Update stage metrics if this is a new rating
       if (human_rating && !proposal.human_rating) {
         const isPositive = ['good_catch', 'relevant'].includes(human_rating);
         const isNegative = ['irrelevant', 'wrong'].includes(human_rating);
-        db.prepare(`
+        await db.run(`
           UPDATE orchestrator_stage SET
             proposals_rated = proposals_rated + 1,
             proposals_good_or_relevant = proposals_good_or_relevant + ?,
             proposals_irrelevant_or_wrong = proposals_irrelevant_or_wrong + ?,
             updated_at = datetime('now')
           WHERE id = 'default'
-        `).run(isPositive ? 1 : 0, isNegative ? 1 : 0);
+        `, isPositive ? 1 : 0, isNegative ? 1 : 0);
       }
 
-      const updated = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id);
+      const updated = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id);
       res.json({ proposal: updated });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -197,13 +198,13 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Knowledge atoms (recent, from all sources) ──────────────────────────
-  router.get('/orchestrator/atoms', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/atoms', requireAuth, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? '30'), 10) || 30, 100);
       const days = Math.min(parseInt(String(req.query.days ?? '14'), 10) || 14, 90);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-      const atoms = db.prepare(`
+      const atoms = await db.all(`
         SELECT ka.id, ka.content, ka.atom_type, ka.category, ka.confidence,
                ka.subcategory, ka.sentiment, ka.source_workflow_id,
                ka.source_area_id, ka.source_module_id, ka.created_at,
@@ -213,7 +214,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         WHERE ka.is_active = 1 AND ka.created_at >= ?
         ORDER BY ka.created_at DESC
         LIMIT ?
-      `).all(since, limit);
+      `, since, limit);
 
       res.json({ atoms, total: atoms.length, limit, days });
     } catch (err) {
@@ -222,12 +223,12 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Heartbeat log ─────────────────────────────────────────────────────────
-  router.get('/orchestrator/heartbeats', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/heartbeats', requireAuth, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 200);
-      const rows = db.prepare(
+      const rows = await db.all(
         'SELECT * FROM orchestrator_heartbeats ORDER BY ran_at DESC LIMIT ?'
-      ).all(limit);
+      , limit);
       res.json({ heartbeats: rows });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -235,16 +236,16 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Config ────────────────────────────────────────────────────────────────
-  router.get('/orchestrator/config', requireAuth, (_req: Request, res: Response) => {
+  router.get('/orchestrator/config', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const config = db.prepare('SELECT * FROM orchestrator_config WHERE id = ?').get('default');
+      const config = await db.get('SELECT * FROM orchestrator_config WHERE id = ?', 'default');
       res.json({ config });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  router.patch('/orchestrator/config', requireAuth, (req: Request, res: Response) => {
+  router.patch('/orchestrator/config', requireAuth, async (req: Request, res: Response) => {
     try {
       const allowed = [
         'heartbeat_enabled', 'heartbeat_interval_minutes', 'briefing_schedule', 'briefing_time',
@@ -259,9 +260,9 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
 
       const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
       const vals = [...Object.values(updates), new Date().toISOString()];
-      db.prepare(`UPDATE orchestrator_config SET ${sets}, updated_at = ? WHERE id = 'default'`).run(...vals);
+      await db.run(`UPDATE orchestrator_config SET ${sets}, updated_at = ? WHERE id = 'default'`, ...vals);
 
-      const config = db.prepare('SELECT * FROM orchestrator_config WHERE id = ?').get('default');
+      const config = await db.get('SELECT * FROM orchestrator_config WHERE id = ?', 'default');
       res.json({ config });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -269,14 +270,14 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Kill switch: pause ────────────────────────────────────────────────────
-  router.post('/orchestrator/pause', requireAuth, (req: Request, res: Response) => {
+  router.post('/orchestrator/pause', requireAuth, async (req: Request, res: Response) => {
     try {
       const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_config SET
           orchestrator_paused = 1, paused_at = datetime('now'), paused_by = ?, updated_at = datetime('now')
         WHERE id = 'default'
-      `).run(user);
+      `, user);
       res.json({ ok: true, paused: true });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -284,13 +285,13 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Kill switch: resume ───────────────────────────────────────────────────
-  router.post('/orchestrator/resume', requireAuth, (req: Request, res: Response) => {
+  router.post('/orchestrator/resume', requireAuth, async (req: Request, res: Response) => {
     try {
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_config SET
           orchestrator_paused = 0, paused_at = NULL, paused_by = NULL, updated_at = datetime('now')
         WHERE id = 'default'
-      `).run();
+      `);
       res.json({ ok: true, paused: false });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -298,7 +299,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Kill switch: full disable (admin-only, irreversible until restart) ───
-  router.post('/orchestrator/disable', requireAuth, (req: Request, res: Response) => {
+  router.post('/orchestrator/disable', requireAuth, async (req: Request, res: Response) => {
     try {
       const user = (req as unknown as { user?: { username?: string; role?: string } }).user;
       // Require admin role (or solo mode where role is undefined) for full disable
@@ -308,7 +309,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       const by = user?.username ?? 'solo';
       const { reason } = req.body as { reason?: string };
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_config SET
           orchestrator_paused = 1,
           fully_disabled = 1,
@@ -316,13 +317,13 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
           paused_by = ?,
           updated_at = datetime('now')
         WHERE id = 'default'
-      `).run(by);
+      `, by);
 
       // Log the disable event
-      db.prepare(`
+      await db.run(`
         INSERT INTO orchestrator_heartbeats (ran_at, trigger_type, action, signals_evaluated, error_message)
         VALUES (datetime('now'), 'system', 'fully_disabled', 0, ?)
-      `).run(`Orchestrator fully disabled by ${by}. Reason: ${reason ?? 'Not provided'}`);
+      `, `Orchestrator fully disabled by ${by}. Reason: ${reason ?? 'Not provided'}`);
 
       console.warn(`[orchestrator] ⛔ FULLY DISABLED by ${by}. Reason: ${reason ?? 'none'}`);
       res.json({ ok: true, fully_disabled: true, disabled_by: by });
@@ -332,15 +333,15 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Hard limits (read-only — cannot be overridden) ────────────────────────
-  router.get('/orchestrator/limits', requireAuth, (_req: Request, res: Response) => {
+  router.get('/orchestrator/limits', requireAuth, async (_req: Request, res: Response) => {
     res.json({ limits: ORCHESTRATOR_HARD_LIMITS });
   });
 
   // ── Kill switch: reset to Observer ───────────────────────────────────────
-  router.post('/orchestrator/reset', requireAuth, (_req: Request, res: Response) => {
+  router.post('/orchestrator/reset', requireAuth, async (_req: Request, res: Response) => {
     try {
       const now = new Date().toISOString();
-      const existing = db.prepare('SELECT stage_history, current_stage, stage_entered_at FROM orchestrator_stage WHERE id = ?').get('default') as
+      const existing = await db.get('SELECT stage_history, current_stage, stage_entered_at FROM orchestrator_stage WHERE id = ?', 'default') as
         | { stage_history: string; current_stage: number; stage_entered_at: string } | undefined;
 
       const history = JSON.parse(existing?.stage_history || '[]') as unknown[];
@@ -353,19 +354,19 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         });
       }
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_stage SET
           current_stage = 1, stage_entered_at = ?, stage_history = ?,
           total_briefings = 0, total_proposals = 0, proposals_rated = 0,
           proposals_good_or_relevant = 0, proposals_irrelevant_or_wrong = 0,
           updated_at = ?
         WHERE id = 'default'
-      `).run(now, JSON.stringify(history), now);
+      `, now, JSON.stringify(history), now);
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_config SET orchestrator_paused = 0, updated_at = ?
         WHERE id = 'default'
-      `).run(now);
+      `, now);
 
       res.json({ ok: true, stage: 1, reset: true });
     } catch (err) {
@@ -374,13 +375,13 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Phase 2: Approve a proposal (creates orchestrator_execution) ────────────
-  router.post('/orchestrator/proposals/:id/approve', requireAuth, (req: Request, res: Response) => {
+  router.post('/orchestrator/proposals/:id/approve', requireAuth, async (req: Request, res: Response) => {
     try {
-      const proposal = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id) as
+      const proposal = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id) as
         | { id: string; status: string; proposed_action: string; action_type: string; confidence_score: number } | undefined;
       if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
 
-      const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
+      const stage = await db.get('SELECT current_stage FROM orchestrator_stage WHERE id = ?', 'default') as
         | { current_stage: number } | undefined;
       if (!stage || stage.current_stage < 2) {
         return res.status(403).json({ error: 'Proposal execution requires Stage 2 (Proposal Manager) or higher' });
@@ -393,31 +394,31 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       const workflowRunId = randomUUID();
       const workflowId = (proposal as Record<string, unknown>).action_type as string || 'orchestrator-action';
       try {
-        db.prepare(`
+        await db.run(`
           INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id)
           VALUES (?, ?, 'orchestrator_approval', 'running', ?)
-        `).run(workflowRunId, workflowId, user);
+        `, workflowRunId, workflowId, user);
       } catch {
         // workflow_runs table may not exist on older DBs — non-fatal
         console.warn('[orchestrator] workflow_runs insert skipped (table may not exist)');
       }
 
       const executionId = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO orchestrator_executions
           (id, proposal_id, workflow_run_id, org_id, initiated_by, initiated_at, human_notes)
         VALUES (?, ?, ?, ?, 'human_approved', datetime('now'), ?)
-      `).run(executionId, proposal.id, workflow_run_id ?? workflowRunId, null, notes ?? null);
+      `, executionId, proposal.id, workflow_run_id ?? workflowRunId, null, notes ?? null);
 
       // Update proposal status to approved
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_proposals SET
           status = 'approved', decided_at = datetime('now'), decided_by = ?
         WHERE id = ?
-      `).run(user, proposal.id);
+      `, user, proposal.id);
 
       // Create reasoning trail for this approval action
-      const trailId = createReasoningTrail(db, 'approval');
+      const trailId = await createReasoningTrail(db, 'approval');
       addTrailEntry(db, trailId, {
         entry_type: 'execution_decision',
         title: `Proposal approved by ${user}`,
@@ -427,7 +428,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       });
       completeTrail(db, trailId, 'completed', 0, { proposal_id: proposal.id, execution_id: executionId });
 
-      const execution = db.prepare('SELECT * FROM orchestrator_executions WHERE id = ?').get(executionId);
+      const execution = await db.get('SELECT * FROM orchestrator_executions WHERE id = ?', executionId);
       res.status(201).json({ execution, trailId });
     } catch (err) {
       console.error('[orchestrator] approve error:', err);
@@ -436,36 +437,36 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Phase 2: Reject a proposal ───────────────────────────────────────────
-  router.post('/orchestrator/proposals/:id/reject', requireAuth, (req: Request, res: Response) => {
+  router.post('/orchestrator/proposals/:id/reject', requireAuth, async (req: Request, res: Response) => {
     try {
-      const proposal = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id) as
+      const proposal = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id) as
         | { id: string; status: string } | undefined;
       if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
 
       const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
       const { reason } = req.body as { reason?: string };
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_proposals SET
           status = 'rejected', human_rating = 'wrong',
           human_feedback = ?, decided_at = datetime('now'), decided_by = ?
         WHERE id = ?
-      `).run(reason ?? null, user, proposal.id);
+      `, reason ?? null, user, proposal.id);
 
       // Update stage metrics (rejection = negative signal)
-      const existing = db.prepare('SELECT human_rating FROM orchestrator_proposals WHERE id = ?').get(proposal.id) as { human_rating: string | null } | undefined;
+      const existing = await db.get('SELECT human_rating FROM orchestrator_proposals WHERE id = ?', proposal.id) as { human_rating: string | null } | undefined;
       if (!existing?.human_rating) {
-        db.prepare(`
+        await db.run(`
           UPDATE orchestrator_stage SET
             proposals_rated = proposals_rated + 1,
             proposals_irrelevant_or_wrong = proposals_irrelevant_or_wrong + 1,
             updated_at = datetime('now')
           WHERE id = 'default'
-        `).run();
+        `);
       }
 
       // Create reasoning trail for rejection
-      const trailId = createReasoningTrail(db, 'rejection');
+      const trailId = await createReasoningTrail(db, 'rejection');
       addTrailEntry(db, trailId, {
         entry_type: 'execution_decision',
         title: `Proposal rejected by ${user}`,
@@ -482,13 +483,13 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Phase 2: Modify a proposal (human adjusts scope then approves) ───────
-  router.post('/orchestrator/proposals/:id/modify', requireAuth, (req: Request, res: Response) => {
+  router.post('/orchestrator/proposals/:id/modify', requireAuth, async (req: Request, res: Response) => {
     try {
-      const proposal = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(req.params.id) as
+      const proposal = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id) as
         | { id: string; status: string; proposed_action: string; action_type: string } | undefined;
       if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
 
-      const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
+      const stage = await db.get('SELECT current_stage FROM orchestrator_stage WHERE id = ?', 'default') as
         | { current_stage: number } | undefined;
       if (!stage || stage.current_stage < 2) {
         return res.status(403).json({ error: 'Proposal modification requires Stage 2 or higher' });
@@ -500,7 +501,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         modified_action?: string;
       };
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_proposals SET
           status = 'modified',
           human_feedback = ?,
@@ -508,19 +509,19 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
           decided_at = datetime('now'),
           decided_by = ?
         WHERE id = ?
-      `).run(modification_notes ?? null, modified_action ?? null, user, proposal.id);
+      `, modification_notes ?? null, modified_action ?? null, user, proposal.id);
 
       // Stage metric
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_stage SET
           plans_modified = plans_modified + 1,
           proposals_rated = proposals_rated + 1,
           proposals_good_or_relevant = proposals_good_or_relevant + 1,
           updated_at = datetime('now')
         WHERE id = 'default'
-      `).run();
+      `);
 
-      const trailId = createReasoningTrail(db, 'approval');
+      const trailId = await createReasoningTrail(db, 'approval');
       addTrailEntry(db, trailId, {
         entry_type: 'execution_decision',
         title: `Proposal modified by ${user}`,
@@ -530,7 +531,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
       });
       completeTrail(db, trailId, 'completed', 0, { proposal_id: proposal.id });
 
-      const updated = db.prepare('SELECT * FROM orchestrator_proposals WHERE id = ?').get(proposal.id);
+
       // Return redirect path so frontend can navigate to WorkflowMonitor with context
       res.json({
         proposal: updated,
@@ -544,26 +545,26 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Executions list ──────────────────────────────────────────────────────
-  router.get('/orchestrator/executions', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/executions', requireAuth, async (req: Request, res: Response) => {
     try {
       // Guard: table may not exist on older DBs
-      const tableExists = (db.prepare(
-        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_executions'"
-      ).get() as { c: number }).c > 0;
+      const tableExists = (await db.get(
+        "SELECT COUNT(*) as c FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'orchestrator_executions'"
+      ) as { c: number }).c > 0;
       if (!tableExists) return res.json({ executions: [], total: 0 });
 
       const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
       const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
 
-      const executions = db.prepare(`
+      const executions = await db.all(`
         SELECT e.*, p.proposed_action, p.action_type, p.signal_source
         FROM orchestrator_executions e
         LEFT JOIN orchestrator_proposals p ON p.id = e.proposal_id
         ORDER BY e.initiated_at DESC
         LIMIT ? OFFSET ?
-      `).all(limit, offset);
+      `, limit, offset);
 
-      const total = (db.prepare('SELECT COUNT(*) as c FROM orchestrator_executions').get() as { c: number }).c;
+      const total = ((await db.get('SELECT COUNT(*) as c FROM orchestrator_executions')) as { c: number } | undefined)?.c ?? 0;
       res.json({ executions, total, limit, offset });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -571,9 +572,9 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Single execution detail ──────────────────────────────────────────────
-  router.get('/orchestrator/executions/:id', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/executions/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const execution = db.prepare('SELECT * FROM orchestrator_executions WHERE id = ?').get(req.params.id);
+      const execution = await db.get('SELECT * FROM orchestrator_executions WHERE id = ?', req.params.id);
       if (!execution) return res.status(404).json({ error: 'Execution not found' });
       res.json({ execution });
     } catch (err) {
@@ -582,7 +583,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Record execution outcome ─────────────────────────────────────────────
-  router.patch('/orchestrator/executions/:id/outcome', requireAuth, (req: Request, res: Response) => {
+  router.patch('/orchestrator/executions/:id/outcome', requireAuth, async (req: Request, res: Response) => {
     try {
       const { outcome, quality_assessment, human_satisfaction, human_notes } = req.body as {
         outcome?: string;
@@ -596,7 +597,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         return res.status(400).json({ error: `outcome must be one of: ${validOutcomes.join(', ')}` });
       }
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_executions SET
           outcome = COALESCE(?, outcome),
           quality_assessment = COALESCE(?, quality_assessment),
@@ -604,7 +605,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
           human_notes = COALESCE(?, human_notes),
           completed_at = CASE WHEN ? IS NOT NULL THEN datetime('now') ELSE completed_at END
         WHERE id = ?
-      `).run(
+      `, 
         outcome ?? null,
         quality_assessment ? JSON.stringify(quality_assessment) : null,
         human_satisfaction ?? null,
@@ -613,7 +614,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         req.params.id
       );
 
-      const updated = db.prepare('SELECT * FROM orchestrator_executions WHERE id = ?').get(req.params.id);
+      const updated = await db.get('SELECT * FROM orchestrator_executions WHERE id = ?', req.params.id);
       res.json({ execution: updated });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -621,17 +622,17 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Reasoning trails list ────────────────────────────────────────────────
-  router.get('/orchestrator/trails', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/trails', requireAuth, async (req: Request, res: Response) => {
     try {
-      const tableExists = (db.prepare(
-        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_reasoning_trails'"
-      ).get() as { c: number }).c > 0;
+      const tableExists = (await db.get(
+        "SELECT COUNT(*) as c FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'orchestrator_reasoning_trails'"
+      ) as { c: number }).c > 0;
       if (!tableExists) return res.json({ trails: [], total: 0 });
 
       const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
       const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
 
-      const trails = db.prepare(`
+      const trails = await db.all(`
         SELECT id, trigger_type, transparency_level, status,
                narrative_summary, total_entries, duration_ms,
                heartbeat_id, briefing_id, proposal_id, execution_id,
@@ -639,9 +640,9 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         FROM orchestrator_reasoning_trails
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
-      `).all(limit, offset);
+      `, limit, offset);
 
-      const total = (db.prepare('SELECT COUNT(*) as c FROM orchestrator_reasoning_trails').get() as { c: number }).c;
+      const total = ((await db.get('SELECT COUNT(*) as c FROM orchestrator_reasoning_trails')) as { c: number } | undefined)?.c ?? 0;
       res.json({ trails, total, limit, offset });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -649,22 +650,22 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Single trail with entries ────────────────────────────────────────────
-  router.get('/orchestrator/trails/:id', requireAuth, (req: Request, res: Response) => {
+  router.get('/orchestrator/trails/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const trail = db.prepare('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?').get(req.params.id);
+      const trail = await db.get('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?', req.params.id);
       if (!trail) return res.status(404).json({ error: 'Trail not found' });
 
       const limit = Math.min(parseInt(String((req as Request & { query: Record<string, string> }).query.limit ?? '100'), 10) || 100, 200);
       const offset = parseInt(String((req as Request & { query: Record<string, string> }).query.offset ?? '0'), 10) || 0;
-      const entries = db.prepare(`
+      const entries = await db.all(`
         SELECT * FROM orchestrator_reasoning_entries
         WHERE trail_id = ?
         ORDER BY sequence_number ASC
         LIMIT ? OFFSET ?
-      `).all(req.params.id, limit, offset);
-      const totalEntries = (db.prepare(
+      `, req.params.id, limit, offset);
+      const totalEntries = (await db.get(
         'SELECT COUNT(*) as c FROM orchestrator_reasoning_entries WHERE trail_id = ?'
-      ).get(req.params.id) as { c: number }).c;
+      , req.params.id) as { c: number }).c;
 
       res.json({ trail, entries, total_entries: totalEntries, limit, offset });
     } catch (err) {
@@ -686,7 +687,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Stage demotion check ───────────────────────────────────────────────────
-  router.post('/orchestrator/demotion-check', requireAuth, (_req: Request, res: Response) => {
+  router.post('/orchestrator/demotion-check', requireAuth, async (_req: Request, res: Response) => {
     try {
       const result = checkStageDemotion(db);
       res.json(result);
@@ -696,13 +697,13 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Stage demotion history ────────────────────────────────────────────────
-  router.get('/orchestrator/demotions', requireAuth, (_req: Request, res: Response) => {
+  router.get('/orchestrator/demotions', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const tableExists = (db.prepare(
-        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_stage_demotions'"
-      ).get() as { c: number }).c > 0;
+      const tableExists = (await db.get(
+        "SELECT COUNT(*) as c FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'orchestrator_stage_demotions'"
+      ) as { c: number }).c > 0;
       if (!tableExists) return res.json({ demotions: [] });
-      const demotions = db.prepare('SELECT * FROM orchestrator_stage_demotions ORDER BY demoted_at DESC LIMIT 20').all();
+      const demotions = await db.all('SELECT * FROM orchestrator_stage_demotions ORDER BY demoted_at DESC LIMIT 20');
       res.json({ demotions });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -710,17 +711,18 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Patterns: list ───────────────────────────────────────────────────────
-  router.get('/orchestrator/patterns', requireAuth, (_req: Request, res: Response) => {
+  router.get('/orchestrator/patterns', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const tableExists = (db.prepare(
-        "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='orchestrator_patterns'"
-      ).get() as { c: number }).c > 0;
+      const tableExists = (await db.get(
+        "SELECT COUNT(*) as c FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'orchestrator_patterns'"
+      ) as { c: number }).c > 0;
       if (!tableExists) return res.json({ patterns: [], detections: [] });
 
-      const patterns = db.prepare('SELECT * FROM orchestrator_patterns ORDER BY last_detected_at DESC').all();
-      const detections = db.prepare(
+      const patterns = await db.all('SELECT * FROM orchestrator_patterns ORDER BY created_at DESC LIMIT 50');
+
+      const detections = await db.all(
         "SELECT * FROM orchestrator_pattern_detections ORDER BY detected_at DESC LIMIT 50"
-      ).all();
+      );
       res.json({ patterns, detections });
     } catch (err) {
       res.status(500).json({ error: String(err) });
@@ -728,25 +730,24 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Patterns: toggle auto-execute ────────────────────────────────────────
-  router.patch('/orchestrator/patterns/:id', requireAuth, (req: Request, res: Response) => {
+  router.patch('/orchestrator/patterns/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { auto_execute } = req.body as { auto_execute?: boolean };
-      const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
-        | { current_stage: number } | undefined;
+
 
       // Auto-execute requires Stage 3+
       if (auto_execute && (!stage || stage.current_stage < 3)) {
         return res.status(403).json({ error: 'Auto-execution requires Stage 3 (Supervised Orchestrator) or higher' });
       }
 
-      db.prepare(`
+      await db.run(`
         UPDATE orchestrator_patterns SET
           auto_execute = ?,
           updated_at = datetime('now')
         WHERE id = ?
-      `).run(auto_execute ? 1 : 0, req.params.id);
+      `, auto_execute ? 1 : 0, req.params.id);
 
-      const updated = db.prepare('SELECT * FROM orchestrator_patterns WHERE id = ?').get(req.params.id);
+
       if (!updated) return res.status(404).json({ error: 'Pattern not found' });
       res.json({ pattern: updated });
     } catch (err) {
@@ -772,7 +773,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Demo Mode: get state ─────────────────────────────────────────────────
-  router.get('/orchestrator/demo', requireAuth, (_req: Request, res: Response) => {
+  router.get('/orchestrator/demo', requireAuth, async (_req: Request, res: Response) => {
     try {
       const state = getDemoState(db);
       res.json({ demo: state, persona_context: state.mode !== 'off' ? getMeridianPersonaContext() : null });
@@ -782,7 +783,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Demo Mode: activate ──────────────────────────────────────────────────
-  router.post('/orchestrator/demo/activate', requireAuth, (req: Request, res: Response) => {
+  router.post('/orchestrator/demo/activate', requireAuth, async (req: Request, res: Response) => {
     try {
       const { mode } = req.body as { mode?: 'demo' | 'simulation' | 'accelerated' };
       const validModes = ['demo', 'simulation', 'accelerated'];
@@ -798,7 +799,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Demo Mode: deactivate ────────────────────────────────────────────────
-  router.post('/orchestrator/demo/deactivate', requireAuth, (_req: Request, res: Response) => {
+  router.post('/orchestrator/demo/deactivate', requireAuth, async (_req: Request, res: Response) => {
     try {
       const result = deactivateDemoMode(db);
       res.json({ ok: true, ...result });
@@ -822,7 +823,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
   });
 
   // ── Stage: manual progression check ─────────────────────────────────────
-  router.post('/orchestrator/check-progression', requireAuth, (_req: Request, res: Response) => {
+  router.post('/orchestrator/check-progression', requireAuth, async (_req: Request, res: Response) => {
     try {
       const { checkStageDemotion, checkStageProgression } = require('../services/orchestrator-engine.js');
       const demotion = checkStageDemotion(db);
@@ -834,7 +835,7 @@ export function createOrchestratorRoutes(db: Database.Database, anthropic: Anthr
         return res.json({ action: 'advanced', ...progression });
       }
       // Return current stage + criteria status for UI
-      const stage = db.prepare('SELECT * FROM orchestrator_stage WHERE id = ?').get('default') as Record<string, unknown> | undefined;
+      const stage = await db.get('SELECT * FROM orchestrator_stage WHERE id = ?', 'default') as Record<string, unknown> | undefined;
       res.json({ action: 'no_change', stage });
     } catch (err) {
       res.status(500).json({ error: String(err) });

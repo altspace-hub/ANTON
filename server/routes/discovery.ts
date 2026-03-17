@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import type Anthropic from '@anthropic-ai/sdk';
 import { createDiscoveryEngine } from '../services/discovery-engine.js';
 import type { DiscoveryTier } from '../services/discovery-engine.js';
 
-export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthropic) {
+export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
-  const engine = createDiscoveryEngine(db, anthropic);
+  const engine = await createDiscoveryEngine(db, anthropic);
 
   // POST /discovery/sessions — Start new session
-  router.post('/discovery/sessions', (req, res) => {
+  router.post('/discovery/sessions', async (req, res) => {
     try {
       const { tier } = req.body as { tier?: string };
       if (!tier || !['lite', 'standard', 'professional', 'expert'].includes(tier)) {
@@ -18,7 +18,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
         return;
       }
       const userId = (req as any).user?.id || null;
-      const session = engine.createSession(tier as DiscoveryTier, userId);
+      const session = await engine.createSession(tier as DiscoveryTier, userId);
       res.json({ id: session.id, state: session.state });
     } catch (err: any) {
       console.error('[discovery] Create session error:', err);
@@ -27,10 +27,10 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // GET /discovery/sessions — List user's sessions
-  router.get('/discovery/sessions', (req, res) => {
+  router.get('/discovery/sessions', async (req, res) => {
     try {
       const userId = (req as any).user?.id || null;
-      const sessions = engine.listSessions(userId);
+      const sessions = await engine.listSessions(userId);
       res.json(sessions);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -38,9 +38,9 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // GET /discovery/sessions/:id — Get session state
-  router.get('/discovery/sessions/:id', (req, res) => {
+  router.get('/discovery/sessions/:id', async (req, res) => {
     try {
-      const session = engine.getSession(req.params.id);
+      const session = await engine.getSession(req.params.id);
       if (!session) {
         res.status(404).json({ error: 'Session not found' });
         return;
@@ -52,9 +52,9 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // PUT /discovery/sessions/:id — Update session state (autosave)
-  router.put('/discovery/sessions/:id', (req, res) => {
+  router.put('/discovery/sessions/:id', async (req, res) => {
     try {
-      const session = engine.getSession(req.params.id);
+      const session = await engine.getSession(req.params.id);
       if (!session) {
         res.status(404).json({ error: 'Session not found' });
         return;
@@ -70,14 +70,14 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // PATCH /discovery/sessions/:id/status — Update session status
-  router.patch('/discovery/sessions/:id/status', (req, res) => {
+  router.patch('/discovery/sessions/:id/status', async (req, res) => {
     try {
       const { status } = req.body as { status?: string };
       if (!status || !['active', 'paused', 'completed', 'abandoned'].includes(status)) {
         res.status(400).json({ error: 'Invalid status' });
         return;
       }
-      engine.updateSessionStatus(req.params.id, status as any);
+      await engine.updateSessionStatus(req.params.id, status as any);
       res.json({ ok: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -85,9 +85,9 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // DELETE /discovery/sessions/:id — Delete session
-  router.delete('/discovery/sessions/:id', (req, res) => {
+  router.delete('/discovery/sessions/:id', async (req, res) => {
     try {
-      engine.deleteSession(req.params.id);
+      await engine.deleteSession(req.params.id);
       res.json({ ok: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -138,9 +138,9 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // GET /discovery/sessions/:id/output — Get generated output
-  router.get('/discovery/sessions/:id/output', (req, res) => {
+  router.get('/discovery/sessions/:id/output', async (req, res) => {
     try {
-      const output = engine.getOutputBySession(req.params.id);
+      const output = await engine.getOutputBySession(req.params.id);
       if (!output) {
         res.status(404).json({ error: 'No output generated yet' });
         return;
@@ -152,14 +152,14 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // POST /discovery/sessions/:id/followup — Schedule follow-up
-  router.post('/discovery/sessions/:id/followup', (req, res) => {
+  router.post('/discovery/sessions/:id/followup', async (req, res) => {
     try {
       const { type, scheduledDate } = req.body as { type?: string; scheduledDate?: string };
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO discovery_followups (id, session_id, type, scheduled_date, status)
         VALUES (?, ?, ?, ?, 'pending')
-      `).run(id, req.params.id, type || '30_day', scheduledDate || null);
+      `, id, req.params.id, type || '30_day', scheduledDate || null);
       res.json({ id });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -167,15 +167,15 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // GET /discovery/followups/pending — Get pending follow-ups
-  router.get('/discovery/followups/pending', (req, res) => {
+  router.get('/discovery/followups/pending', async (req, res) => {
     try {
-      const rows = db.prepare(`
+      const rows = await db.get(`
         SELECT f.*, ds.tier, ds.state
         FROM discovery_followups f
         JOIN discovery_sessions ds ON f.session_id = ds.id
         WHERE f.status = 'pending'
         ORDER BY f.scheduled_date ASC
-      `).all();
+      `);
       res.json(rows);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -183,7 +183,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // PUT /discovery/followups/:id — Update follow-up with progress data
-  router.put('/discovery/followups/:id', (req, res) => {
+  router.put('/discovery/followups/:id', async (req, res) => {
     try {
       const { status, follow_up_notes, progress_data, modules_tried, user_feedback } = req.body;
       const updates: string[] = [];
@@ -201,7 +201,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
       }
 
       values.push(req.params.id);
-      db.prepare(`UPDATE discovery_followups SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE discovery_followups SET ${updates.join(', ')} WHERE id = ?`, ...values);
       res.json({ ok: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -217,7 +217,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
         return;
       }
 
-      const output = engine.getOutputBySession(req.params.id);
+      const output = await engine.getOutputBySession(req.params.id);
       if (!output) {
         res.status(404).json({ error: 'No output generated yet. Generate the report first.' });
         return;
@@ -271,7 +271,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   // GET /discovery/sessions/:id/start — Get the initial message (starts the conversation)
   router.get('/discovery/sessions/:id/start', async (req, res) => {
     try {
-      const session = engine.getSession(req.params.id);
+      const session = await engine.getSession(req.params.id);
       if (!session) {
         res.status(404).json({ error: 'Session not found' });
         return;
@@ -302,7 +302,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // GET /discovery/packs — List available discovery packs
-  router.get('/discovery/packs', (_req, res) => {
+  router.get('/discovery/packs', async (_req, res) => {
     try {
       // Built-in packs (Phase 4)
       const builtInPacks = [
@@ -380,7 +380,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // GET /discovery/packs/:id — Get pack details
-  router.get('/discovery/packs/:id', (req, res) => {
+  router.get('/discovery/packs/:id', async (req, res) => {
     try {
       // Placeholder — full pack details would include question sets and pain patterns
       const packId = req.params.id;
@@ -405,7 +405,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // PATCH /discovery/sessions/:id/upgrade — Upgrade session tier
-  router.patch('/discovery/sessions/:id/upgrade', (req, res) => {
+  router.patch('/discovery/sessions/:id/upgrade', async (req, res) => {
     try {
       const { newTier } = req.body as { newTier?: string };
       if (!newTier || !['standard', 'professional', 'expert'].includes(newTier)) {
@@ -413,7 +413,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
         return;
       }
 
-      const session = engine.getSession(req.params.id);
+      const session = await engine.getSession(req.params.id);
       if (!session) {
         res.status(404).json({ error: 'Session not found' });
         return;
@@ -430,8 +430,8 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
 
       // Update tier in state and session
       const updatedState = { ...session.state, tier: newTier as any };
-      engine.updateSessionState(req.params.id, updatedState);
-      db.prepare('UPDATE discovery_sessions SET tier = ? WHERE id = ?').run(newTier, req.params.id);
+      await engine.updateSessionState(req.params.id, updatedState);
+      await db.run('UPDATE discovery_sessions SET tier = ? WHERE id = ?', newTier, req.params.id);
 
       res.json({ ok: true, tier: newTier });
     } catch (err: any) {
@@ -440,7 +440,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
   });
 
   // POST /discovery/sessions/:id/pack — Activate a discovery pack for this session
-  router.post('/discovery/sessions/:id/pack', (req, res) => {
+  router.post('/discovery/sessions/:id/pack', async (req, res) => {
     try {
       const { packId } = req.body as { packId?: string };
       if (!packId) {
@@ -448,7 +448,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
         return;
       }
 
-      const session = engine.getSession(req.params.id);
+      const session = await engine.getSession(req.params.id);
       if (!session) {
         res.status(404).json({ error: 'Session not found' });
         return;
@@ -461,7 +461,7 @@ export function createDiscoveryRoutes(db: Database.Database, anthropic?: Anthrop
 
       // Update state with active pack
       const updatedState = { ...session.state, activePack: packId };
-      engine.updateSessionState(req.params.id, updatedState);
+      await engine.updateSessionState(req.params.id, updatedState);
 
       res.json({ ok: true, activePack: packId });
     } catch (err: any) {

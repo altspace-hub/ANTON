@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { checkBudgetBeforeApiCall } from '../services/budget-manager.js';
 
 export function createBudgetMiddleware(db: Database) {

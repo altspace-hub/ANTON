@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 const TEMPLATES_DIR = path.join(process.cwd(), 'uploads', 'templates');
 fs.ensureDirSync(TEMPLATES_DIR);
@@ -18,13 +18,13 @@ const upload = multer({
   },
 });
 
-export function createTemplatesRouter(db: Database.Database): Router {
+export async function createTemplatesRouter(db: DatabaseAdapter): Router {
   const router = Router();
 
   // GET /api/templates — list all templates
-  router.get('/templates', (_req, res) => {
+  router.get('/templates', async (_req, res) => {
     try {
-      const templates = db.prepare('SELECT * FROM brand_templates ORDER BY created_at DESC').all();
+      const templates = await db.all('SELECT * FROM brand_templates ORDER BY created_at DESC');
       res.json(templates);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch templates';
@@ -33,7 +33,7 @@ export function createTemplatesRouter(db: Database.Database): Router {
   });
 
   // POST /api/templates/upload — upload a template file
-  router.post('/templates/upload', upload.single('template'), (req, res) => {
+  router.post('/templates/upload', upload.single('template'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded or invalid file type (only .docx and .pptx allowed)' });
       return;
@@ -53,9 +53,9 @@ export function createTemplatesRouter(db: Database.Database): Router {
     }
 
     try {
-      db.prepare(
+      await db.run(
         'INSERT INTO brand_templates (id, name, type, file_path, file_size) VALUES (?, ?, ?, ?, ?)'
-      ).run(id, name, ext, finalPath, req.file.size);
+      , id, name, ext, finalPath, req.file.size);
 
       res.json({ id, name, type: ext });
     } catch (err) {
@@ -67,9 +67,9 @@ export function createTemplatesRouter(db: Database.Database): Router {
   });
 
   // DELETE /api/templates/:id — delete a template
-  router.delete('/templates/:id', (req, res) => {
+  router.delete('/templates/:id', async (req, res) => {
     try {
-      const tpl = db.prepare('SELECT * FROM brand_templates WHERE id = ?').get(req.params.id) as
+      const tpl = await db.get('SELECT * FROM brand_templates WHERE id = ?', req.params.id) as
         | { id: string; name: string; type: string; file_path: string; file_size: number }
         | undefined;
 
@@ -82,7 +82,7 @@ export function createTemplatesRouter(db: Database.Database): Router {
         fs.unlinkSync(tpl.file_path);
       }
 
-      db.prepare('DELETE FROM brand_templates WHERE id = ?').run(req.params.id);
+      await db.run('DELETE FROM brand_templates WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete template';

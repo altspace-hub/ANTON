@@ -6,7 +6,8 @@
  */
 
 import { randomUUID } from 'crypto';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 export interface ProactiveInsight {
   id: string;
@@ -73,20 +74,20 @@ export interface CreateInsightInput {
   expires_at?: string;
 }
 
-export function createProactiveIntelligenceService(db: Database) {
+export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
   /**
    * Manually create an insight (used by radar, compliance, file watcher).
    */
-  function createInsight(input: CreateInsightInput): ProactiveInsight {
+  async function createInsight(input: CreateInsightInput): Promise<ProactiveInsight> {
     const id = randomUUID();
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO proactive_insights
         (id, insight_type, title, body, severity, source_session_ids, source_atom_ids,
          area_id, module_id, user_id, created_at, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `,
       id,
       input.insight_type,
       input.title,
@@ -101,24 +102,24 @@ export function createProactiveIntelligenceService(db: Database) {
       input.expires_at ?? null,
     );
 
-    return getInsight(id)!;
+    return (await getInsight(id))!;
   }
 
   /**
    * Get a single insight.
    */
-  function getInsight(insightId: string): ProactiveInsight | null {
-    const row = db.prepare('SELECT * FROM proactive_insights WHERE id = ?').get(insightId) as RawInsightRow | undefined;
+  async function getInsight(insightId: string): Promise<ProactiveInsight | null> {
+    const row = await db.get('SELECT * FROM proactive_insights WHERE id = ?', insightId) as RawInsightRow | undefined;
     return row ? parseInsight(row) : null;
   }
 
   /**
    * List active (not dismissed) insights for a user, newest first.
    */
-  function listInsights(
+  async function listInsights(
     userId: string,
     options: { dismissed?: boolean; areaId?: string; limit?: number } = {},
-  ): ProactiveInsight[] {
+  ): Promise<ProactiveInsight[]> {
     const conditions: string[] = ['user_id = ?'];
     const params: (string | number)[] = [userId];
 
@@ -137,14 +138,14 @@ export function createProactiveIntelligenceService(db: Database) {
     const limit = options.limit ?? 50;
     params.push(limit);
 
-    const rows = db.prepare(`
+    const rows = await db.all(`
       SELECT * FROM proactive_insights
       WHERE ${where}
       ORDER BY
         CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END,
         created_at DESC
       LIMIT ?
-    `).all(...params) as RawInsightRow[];
+    `, ...params) as RawInsightRow[];
 
     return rows.map(parseInsight);
   }
@@ -152,65 +153,56 @@ export function createProactiveIntelligenceService(db: Database) {
   /**
    * Count unread, non-dismissed insights (for the notification bell badge).
    */
-  function countUnread(userId: string): number {
-    const row = db.prepare(`
+  async function countUnread(userId: string): Promise<number> {
+    const row = await db.get(`
       SELECT COUNT(*) as count FROM proactive_insights
       WHERE user_id = ? AND read = 0 AND dismissed = 0
         AND (expires_at IS NULL OR expires_at > datetime('now'))
-    `).get(userId) as { count: number };
+    `, userId) as { count: number };
     return row.count;
   }
 
   /**
    * Mark insight as read.
    */
-  function markRead(insightId: string): void {
-    db.prepare(`
+  async function markRead(insightId: string): Promise<void> {
+    await db.run(`
       UPDATE proactive_insights SET read = 1, read_at = datetime('now') WHERE id = ?
-    `).run(insightId);
+    `, insightId);
   }
 
   /**
    * Dismiss an insight.
    */
-  function dismissInsight(insightId: string, actionTaken?: string): void {
-    db.prepare(`
+  async function dismissInsight(insightId: string, actionTaken?: string): Promise<void> {
+    await db.run(`
       UPDATE proactive_insights
       SET dismissed = 1, dismissed_at = datetime('now'), action_taken = ?
       WHERE id = ?
-    `).run(actionTaken ?? null, insightId);
+    `, actionTaken ?? null, insightId);
   }
 
   /**
    * Analyse recent knowledge atoms and session patterns to generate new insights.
    * This is the core "proactive" engine — runs periodically in the background.
    */
-  function runInsightGeneration(userId: string): { generated: number } {
+  async function runInsightGeneration(userId: string): Promise<{ generated: number }> {
     let generated = 0;
 
     // Pattern 1: Conflicting knowledge atoms across sessions
-    const conflicts = db.prepare(`
+    const conflicts = await db.all(`
       SELECT ka1.id as atom1_id, ka2.id as atom2_id,
              ka1.content as content1, ka2.content as content2,
-             ka1.session_id as session1_id, ka2.session_id as session2_id
-      FROM (
-        SELECT ka.id, ka.content, s.id as session_id, s.area_id
-        FROM knowledge_atoms ka
-        JOIN atom_sources asrc ON asrc.atom_id = ka.id
-        JOIN sessions s ON s.id = asrc.session_id
-        WHERE ka.user_id = ? AND ka.atom_type = 'conclusion'
-        ORDER BY ka.created_at DESC LIMIT 100
-      ) ka1
-      JOIN (
-        SELECT ka.id, ka.content, s.id as session_id, s.area_id
-        FROM knowledge_atoms ka
-        JOIN atom_sources asrc ON asrc.atom_id = ka.id
-        JOIN sessions s ON s.id = asrc.session_id
-        WHERE ka.user_id = ? AND ka.atom_type = 'conclusion'
-        ORDER BY ka.created_at DESC LIMIT 100
-      ) ka2 ON ka1.area_id = ka2.area_id AND ka1.id < ka2.id
+             ka1.source_session_id as session1_id, ka2.source_session_id as session2_id
+      FROM knowledge_atoms ka1
+      JOIN knowledge_atoms ka2 ON ka1.category = ka2.category
+        AND ka1.id < ka2.id
+        AND ka1.source_session_id != ka2.source_session_id
+      WHERE ka1.is_active = 1 AND ka2.is_active = 1
+        AND ka1.atom_type = 'conclusion' AND ka2.atom_type = 'conclusion'
+        AND ka1.created_at >= datetime('now', '-14 days')
       LIMIT 5
-    `).all(userId, userId) as Array<{
+    `) as Array<{
       atom1_id: string; atom2_id: string;
       content1: string; content2: string;
       session1_id: string; session2_id: string;
@@ -218,15 +210,15 @@ export function createProactiveIntelligenceService(db: Database) {
 
     for (const conflict of conflicts) {
       // Skip if already have a recent conflict insight for these atoms
-      const existing = db.prepare(`
+      const existing = await db.get(`
         SELECT id FROM proactive_insights
         WHERE user_id = ? AND insight_type = 'conflict'
           AND source_atom_ids LIKE ? AND dismissed = 0
           AND created_at > datetime('now', '-7 days')
-      `).get(userId, `%${conflict.atom1_id}%`) as { id: string } | undefined;
+      `, userId, `%${conflict.atom1_id}%`) as { id: string } | undefined;
 
       if (!existing) {
-        createInsight({
+        await createInsight({
           insight_type: 'conflict',
           title: 'Potentially conflicting conclusions detected',
           body: `Two sessions reached different conclusions on related topics.\n\nSession A: "${conflict.content1.slice(0, 200)}"\n\nSession B: "${conflict.content2.slice(0, 200)}"\n\nConsider reviewing both to reconcile the findings.`,
@@ -241,26 +233,27 @@ export function createProactiveIntelligenceService(db: Database) {
     }
 
     // Pattern 2: Session gap detection — areas with no recent activity
-    const areaActivity = db.prepare(`
+    const areaActivity = await db.all(`
       SELECT area_id, MAX(updated_at) as last_active, COUNT(*) as session_count
       FROM sessions
       WHERE user_id = ? AND area_id IS NOT NULL
         AND updated_at < datetime('now', '-14 days')
       GROUP BY area_id
-      HAVING session_count >= 3
+      HAVING COUNT(*) >= 3
       LIMIT 3
-    `).all(userId) as Array<{ area_id: string; last_active: string; session_count: number }>;
+    `, userId) as Array<{ area_id: string; last_active: string; session_count: number }>;
 
     for (const area of areaActivity) {
-      const existing = db.prepare(`
+      const existing = await db.get(`
         SELECT id FROM proactive_insights
-        WHERE user_id = ? AND insight_type = 'gap' AND area_id = ?
-          AND dismissed = 0 AND created_at > datetime('now', '-7 days')
-      `).get(userId, area.area_id) as { id: string } | undefined;
+        WHERE user_id = ? AND insight_type = 'gap'
+          AND area_id = ? AND dismissed = 0
+          AND created_at > datetime('now', '-7 days')
+      `, userId, area.area_id) as { id: string } | undefined;
 
       if (!existing) {
         const daysSince = Math.floor((Date.now() - new Date(area.last_active).getTime()) / (1000 * 60 * 60 * 24));
-        createInsight({
+        await createInsight({
           insight_type: 'gap',
           title: `No activity in ${area.area_id} for ${daysSince} days`,
           body: `You have ${area.session_count} sessions in the ${area.area_id} area, but no activity in ${daysSince} days. Consider reviewing whether ongoing commitments in this area need attention.`,

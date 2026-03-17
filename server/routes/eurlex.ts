@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import https from 'https';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 
@@ -49,11 +50,11 @@ async function fetchEurLexText(celexNumber: string): Promise<string> {
   });
 }
 
-export function createEurLexRoutes(db?: Database.Database, anthropic?: Anthropic) {
+export async function createEurLexRoutes(db?: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
 
   // GET /api/eurlex/lookup?q=AMLR — find a regulation by shorthand
-  router.get('/eurlex/lookup', (req, res) => {
+  router.get('/eurlex/lookup', async (req, res) => {
     const q = String(req.query.q || '')
       .toUpperCase()
       .trim();
@@ -69,7 +70,7 @@ export function createEurLexRoutes(db?: Database.Database, anthropic?: Anthropic
   });
 
   // GET /api/eurlex/list — list all known regulations
-  router.get('/eurlex/list', (_req, res) => {
+  router.get('/eurlex/list', async (_req, res) => {
     const list = Object.entries(REGULATION_LOOKUP).map(([shorthand, val]) => ({
       shorthand,
       title: val.title,
@@ -116,7 +117,7 @@ export function createEurLexRoutes(db?: Database.Database, anthropic?: Anthropic
     }
 
     // Load pack metadata
-    const pack = db.prepare('SELECT * FROM knowledge_packs WHERE id = ?').get(packId) as Record<string, unknown> | undefined;
+    const pack = await db.get('SELECT * FROM knowledge_packs WHERE id = ?', packId) as Record<string, unknown> | undefined;
     if (!pack) {
       res.status(404).json({ error: 'Knowledge pack not found' });
       return;
@@ -167,10 +168,10 @@ export function createEurLexRoutes(db?: Database.Database, anthropic?: Anthropic
       }
 
       // Step 2: Load pack entities
-      const entities = db.prepare(
+      const entities = await db.all(
         `SELECT entity_type, entity_id, canonical_name, metadata
          FROM entity_nodes WHERE pack_id = ? ORDER BY entity_type, canonical_name LIMIT 200`
-      ).all(packId) as Array<{ entity_type: string; entity_id: string; canonical_name: string; metadata: string }>;
+      , packId) as Array<{ entity_type: string; entity_id: string; canonical_name: string; metadata: string }>;
 
       send({ type: 'progress', message: `Validating ${entities.length} entities from pack "${pack.display_name}"…` });
 
@@ -226,11 +227,11 @@ ${eurLexText ? `OFFICIAL EUR-LEX TEXT (first 40,000 chars):\n${eurLexText.slice(
 
       // Store validation record
       try {
-        db.prepare(`
+        await db.run(`
           UPDATE knowledge_packs
           SET description = description || ' [Validated vs EUR-Lex ' || date('now') || ']'
           WHERE id = ?
-        `).run(packId);
+        `, packId);
       } catch { /* non-critical */ }
 
       send({

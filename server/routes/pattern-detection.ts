@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createPatternDetection } from '../services/pattern-detection.js';
 import { createPatternScheduler } from '../services/pattern-scheduler.js';
 
-export function createPatternDetectionRoutes(db: Database.Database) {
+export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const patternDetection = createPatternDetection(db);
-  const scheduler = createPatternScheduler(db);
+  const patternDetection = await createPatternDetection(db);
+  const scheduler = await createPatternScheduler(db);
 
   // POST /api/patterns/detect — run all detectors
   router.post('/patterns/detect', async (req, res) => {
@@ -27,7 +27,7 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   });
 
   // GET /api/patterns — list patterns with optional filters
-  router.get('/patterns', (req, res) => {
+  router.get('/patterns', async (req, res) => {
     try {
       const filters = {
         type: req.query.type as string | undefined,
@@ -55,7 +55,7 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   });
 
   // PUT /api/patterns/:id/status — update pattern status
-  router.put('/patterns/:id/status', (req, res) => {
+  router.put('/patterns/:id/status', async (req, res) => {
     try {
       const { id } = req.params;
       const { status, resolvedBy, notes } = req.body;
@@ -91,7 +91,7 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   });
 
   // GET /api/patterns/detector-state — get detector state
-  router.get('/patterns/detector-state', (req, res) => {
+  router.get('/patterns/detector-state', async (req, res) => {
     try {
       const state = patternDetection.getDetectorState();
       res.json({
@@ -160,9 +160,9 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   // ===== SCHEDULER ENDPOINTS =====
 
   // GET /api/patterns/scheduler/status — get scheduler status
-  router.get('/patterns/scheduler/status', (req, res) => {
+  router.get('/patterns/scheduler/status', async (req, res) => {
     try {
-      const status = scheduler.getStatus();
+      const status = await scheduler.getStatus();
       res.json({ success: true, ...status });
     } catch (error: any) {
       console.error('[pattern-scheduler] Error getting status:', error);
@@ -171,10 +171,10 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   });
 
   // POST /api/patterns/scheduler/start — start scheduler
-  router.post('/patterns/scheduler/start', (req, res) => {
+  router.post('/patterns/scheduler/start', async (req, res) => {
     try {
-      scheduler.start();
-      const status = scheduler.getStatus();
+      await scheduler.start();
+      const status = await scheduler.getStatus();
       res.json({ success: true, message: 'Scheduler started', ...status });
     } catch (error: any) {
       console.error('[pattern-scheduler] Error starting scheduler:', error);
@@ -183,10 +183,10 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   });
 
   // POST /api/patterns/scheduler/stop — stop scheduler
-  router.post('/patterns/scheduler/stop', (req, res) => {
+  router.post('/patterns/scheduler/stop', async (req, res) => {
     try {
-      scheduler.stop();
-      const status = scheduler.getStatus();
+      await scheduler.stop();
+      const status = await scheduler.getStatus();
       res.json({ success: true, message: 'Scheduler stopped', ...status });
     } catch (error: any) {
       console.error('[pattern-scheduler] Error stopping scheduler:', error);
@@ -195,11 +195,11 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   });
 
   // PUT /api/patterns/scheduler/config — update scheduler config
-  router.put('/patterns/scheduler/config', (req, res) => {
+  router.put('/patterns/scheduler/config', async (req, res) => {
     try {
       const { enabled, cronExpression, detectorTypes } = req.body;
-      scheduler.updateConfig({ enabled, cronExpression, detectorTypes });
-      const status = scheduler.getStatus();
+      await scheduler.updateConfig({ enabled, cronExpression, detectorTypes });
+      const status = await scheduler.getStatus();
       res.json({ success: true, message: 'Scheduler config updated', ...status });
     } catch (error: any) {
       console.error('[pattern-scheduler] Error updating config:', error);
@@ -219,10 +219,10 @@ export function createPatternDetectionRoutes(db: Database.Database) {
   });
 
   // GET /api/patterns/scheduler/history — get recent runs
-  router.get('/patterns/scheduler/history', (req, res) => {
+  router.get('/patterns/scheduler/history', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      const runs = scheduler.getRecentRuns(limit);
+      const runs = await scheduler.getRecentRuns(limit);
       res.json({ success: true, runs, count: runs.length });
     } catch (error: any) {
       console.error('[pattern-scheduler] Error getting history:', error);

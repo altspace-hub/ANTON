@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
 
@@ -1056,24 +1057,24 @@ If not enough data for a field, use null.`;
 
 // ── Main Engine Class ────────────────────────────────────────────────────
 
-export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthropic) {
+export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Anthropic) {
 
   // ── Session CRUD ─────────────────────────────────────────────────────
 
-  function createSession(tier: DiscoveryTier, userId?: string): { id: string; state: DiscoveryState } {
+  async function createSession(tier: DiscoveryTier, userId?: string): { id: string; state: DiscoveryState } {
     const id = randomUUID();
     const state = createDefaultState(tier);
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO discovery_sessions (id, user_id, tier, state, status, started_at, last_active_at)
       VALUES (?, ?, ?, ?, 'active', datetime('now'), datetime('now'))
-    `).run(id, userId || null, tier, JSON.stringify(state));
+    `, id, userId || null, tier, JSON.stringify(state));
 
     return { id, state };
   }
 
-  function getSession(id: string): { id: string; tier: DiscoveryTier; state: DiscoveryState; status: DiscoveryStatus; output_id: string | null } | null {
-    const row = db.prepare('SELECT * FROM discovery_sessions WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  async function getSession(id: string): { id: string; tier: DiscoveryTier; state: DiscoveryState; status: DiscoveryStatus; output_id: string | null } | null {
+    const row = await db.get('SELECT * FROM discovery_sessions WHERE id = ?', id) as Record<string, unknown> | undefined;
     if (!row) return null;
     return {
       id: row.id as string,
@@ -1084,7 +1085,7 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
     };
   }
 
-  function listSessions(userId?: string): Array<{ id: string; tier: string; status: string; started_at: string; last_active_at: string; phase: string; progress: number }> {
+  async function listSessions(userId?: string): Array<{ id: string; tier: string; status: string; started_at: string; last_active_at: string; phase: string; progress: number }> {
     let query = 'SELECT id, tier, status, started_at, last_active_at, state FROM discovery_sessions';
     const args: unknown[] = [];
     if (userId) {
@@ -1093,7 +1094,7 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
     }
     query += ' ORDER BY last_active_at DESC';
 
-    const rows = db.prepare(query).all(...args) as Array<Record<string, unknown>>;
+    const rows = await db.all(query, ...args) as Array<Record<string, unknown>>;
     return rows.map(row => {
       const state = JSON.parse(row.state as string) as DiscoveryState;
       return {
@@ -1108,21 +1109,21 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
     });
   }
 
-  function updateSessionState(id: string, state: DiscoveryState): void {
-    db.prepare(`
+  async function updateSessionState(id: string, state: DiscoveryState): void {
+    await db.run(`
       UPDATE discovery_sessions
       SET state = ?, last_active_at = datetime('now'), autosave_version = autosave_version + 1
       WHERE id = ?
-    `).run(JSON.stringify(state), id);
+    `, JSON.stringify(state), id);
   }
 
-  function updateSessionStatus(id: string, status: DiscoveryStatus): void {
+  async function updateSessionStatus(id: string, status: DiscoveryStatus): void {
     const extra = status === 'completed' ? ", completed_at = datetime('now')" : '';
-    db.prepare(`UPDATE discovery_sessions SET status = ?${extra} WHERE id = ?`).run(status, id);
+    await db.run(`UPDATE discovery_sessions SET status = ?${extra} WHERE id = ?`, status, id);
   }
 
-  function deleteSession(id: string): void {
-    db.prepare('DELETE FROM discovery_sessions WHERE id = ?').run(id);
+  async function deleteSession(id: string): void {
+    await db.run('DELETE FROM discovery_sessions WHERE id = ?', id);
   }
 
   // ── State Update Parsing ─────────────────────────────────────────────
@@ -1483,10 +1484,10 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
 
     // Save output
     const outputId = randomUUID();
-    db.prepare(`
+    await db.run(`
       INSERT INTO discovery_outputs (id, session_id, tier, title, content_md, module_matches, action_plan, metrics, non_ai_findings, executive_briefing, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    `).run(
+    `, 
       outputId, sessionId, session.tier,
       `AI ${session.tier === 'lite' ? 'Starter Map' : session.tier === 'standard' ? 'Opportunity Report' : session.tier === 'professional' ? 'Adoption Roadmap' : 'Transformation Plan'}`,
       contentMd, JSON.stringify(moduleMatches), JSON.stringify(actionPlan),
@@ -1494,8 +1495,7 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
     );
 
     // Link output to session and mark complete
-    db.prepare("UPDATE discovery_sessions SET output_id = ?, status = ?, completed_at = datetime('now') WHERE id = ?")
-      .run(outputId, 'completed', sessionId);
+    await db.run("UPDATE discovery_sessions SET output_id = ?, status = ?, completed_at = datetime('now') WHERE id = ?", outputId, 'completed', sessionId);
 
     return { outputId, contentMd, moduleMatches, actionPlan, metrics, nonAiFindings, executiveBriefing };
   }
@@ -1503,7 +1503,7 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
   // ── Get Output ───────────────────────────────────────────────────────
 
   function getOutput(outputId: string) {
-    const row = db.prepare('SELECT * FROM discovery_outputs WHERE id = ?').get(outputId) as Record<string, unknown> | undefined;
+
     if (!row) return null;
     return {
       id: row.id as string,
@@ -1520,8 +1520,8 @@ export function createDiscoveryEngine(db: Database.Database, anthropic?: Anthrop
     };
   }
 
-  function getOutputBySession(sessionId: string) {
-    const row = db.prepare('SELECT * FROM discovery_outputs WHERE session_id = ?').get(sessionId) as Record<string, unknown> | undefined;
+  async function getOutputBySession(sessionId: string) {
+    const row = await db.get('SELECT * FROM discovery_outputs WHERE session_id = ?', sessionId) as Record<string, unknown> | undefined;
     if (!row) return null;
     return getOutput(row.id as string);
   }

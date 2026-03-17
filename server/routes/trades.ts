@@ -19,7 +19,7 @@
 
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { isApiKeyConfigured, getClient } from '../services/claude-client.js';
 import { safeError } from '../lib/error-response.js';
 import multer from 'multer';
@@ -29,16 +29,16 @@ import fs from 'fs-extra';
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 const upload = multer({ dest: UPLOAD_DIR, limits: { fileSize: 20 * 1024 * 1024 } });
 
-export function createTradesRoutes(db: Database.Database) {
+export async function createTradesRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // ── Setup status ──────────────────────────────────────────────────────────
 
-  router.get('/trades/setup-status', (req, res) => {
+  router.get('/trades/setup-status', async (req, res) => {
     try {
-      const identity = db.prepare('SELECT id FROM business_identity WHERE id = ?').get('default') as { id: string } | undefined;
-      const templateCount = (db.prepare('SELECT COUNT(*) as c FROM document_templates').get() as { c: number }).c;
-      const patternCount = (db.prepare('SELECT COUNT(*) as c FROM process_patterns').get() as { c: number }).c;
+      const identity = await db.get('SELECT id FROM business_identity WHERE id = ?', 'default') as { id: string } | undefined;
+      const templateCount = (await db.get('SELECT COUNT(*) as c FROM document_templates') as { c: number }).c;
+      const patternCount = (await db.get('SELECT COUNT(*) as c FROM process_patterns') as { c: number }).c;
 
       res.json({
         hasIdentity: !!identity,
@@ -53,9 +53,9 @@ export function createTradesRoutes(db: Database.Database) {
 
   // ── Business Identity ─────────────────────────────────────────────────────
 
-  router.get('/trades/identity', (req, res) => {
+  router.get('/trades/identity', async (req, res) => {
     try {
-      const row = db.prepare('SELECT profile_data, created_at, updated_at FROM business_identity WHERE id = ?').get('default') as
+      const row = await db.get('SELECT profile_data, created_at, updated_at FROM business_identity WHERE id = ?', 'default') as
         | { profile_data: string; created_at: string; updated_at: string }
         | undefined;
 
@@ -72,7 +72,7 @@ export function createTradesRoutes(db: Database.Database) {
     }
   });
 
-  router.put('/trades/identity', (req, res) => {
+  router.put('/trades/identity', async (req, res) => {
     try {
       const profile = req.body;
       if (!profile || typeof profile !== 'object') {
@@ -81,11 +81,11 @@ export function createTradesRoutes(db: Database.Database) {
       }
 
       const now = new Date().toISOString();
-      db.prepare(`
+      await db.run(`
         INSERT INTO business_identity (id, profile_data, created_at, updated_at)
         VALUES ('default', ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET profile_data = excluded.profile_data, updated_at = excluded.updated_at
-      `).run(JSON.stringify(profile), now, now);
+      `, JSON.stringify(profile), now, now);
 
       res.json({ ok: true });
     } catch (err) {
@@ -189,9 +189,9 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
 
   // ── Document Templates ────────────────────────────────────────────────────
 
-  router.get('/trades/templates', (req, res) => {
+  router.get('/trades/templates', async (req, res) => {
     try {
-      const rows = db.prepare('SELECT id, document_type, name, is_default, created_at, updated_at FROM document_templates ORDER BY document_type, name').all() as
+      const rows = await db.all('SELECT id, document_type, name, is_default, created_at, updated_at FROM document_templates ORDER BY document_type, name') as
         Array<{ id: string; document_type: string; name: string; is_default: number; created_at: string; updated_at: string }>;
 
       res.json(rows.map(r => ({ ...r, isDefault: !!r.is_default })));
@@ -200,9 +200,9 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
     }
   });
 
-  router.get('/trades/templates/:id', (req, res) => {
+  router.get('/trades/templates/:id', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM document_templates WHERE id = ?').get(req.params.id) as
+      const row = await db.get('SELECT * FROM document_templates WHERE id = ?', req.params.id) as
         | { id: string; document_type: string; name: string; template_data: string; is_default: number; source_examples: string; created_at: string; updated_at: string }
         | undefined;
 
@@ -219,7 +219,7 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
     }
   });
 
-  router.put('/trades/templates/:id', (req, res) => {
+  router.put('/trades/templates/:id', async (req, res) => {
     try {
       const { documentType, name, templateData, isDefault, sourceExamples } = req.body;
       if (!documentType || !name) {
@@ -232,10 +232,10 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
 
       // If setting as default, clear existing default for this type first
       if (isDefault) {
-        db.prepare("UPDATE document_templates SET is_default = 0 WHERE document_type = ?").run(documentType);
+        await db.run("UPDATE document_templates SET is_default = 0 WHERE document_type = ?", documentType);
       }
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO document_templates (id, document_type, name, template_data, is_default, source_examples, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
@@ -245,7 +245,7 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
           is_default = excluded.is_default,
           source_examples = excluded.source_examples,
           updated_at = excluded.updated_at
-      `).run(
+      `, 
         id,
         documentType,
         name,
@@ -262,22 +262,22 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
     }
   });
 
-  router.delete('/trades/templates/:id', (req, res) => {
+  router.delete('/trades/templates/:id', async (req, res) => {
     try {
-      db.prepare('DELETE FROM document_templates WHERE id = ?').run(req.params.id);
+      await db.run('DELETE FROM document_templates WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
   });
 
-  router.post('/trades/templates/:id/set-default', (req, res) => {
+  router.post('/trades/templates/:id/set-default', async (req, res) => {
     try {
-      const row = db.prepare('SELECT id, document_type FROM document_templates WHERE id = ?').get(req.params.id) as
+      const row = await db.get('SELECT id, document_type FROM document_templates WHERE id = ?', req.params.id) as
         | { id: string; document_type: string } | undefined;
       if (!row) { res.status(404).json({ error: 'Template not found' }); return; }
-      db.prepare('UPDATE document_templates SET is_default = 0 WHERE document_type = ?').run(row.document_type);
-      db.prepare('UPDATE document_templates SET is_default = 1 WHERE id = ?').run(req.params.id);
+      await db.run('UPDATE document_templates SET is_default = 0 WHERE document_type = ?', row.document_type);
+      await db.run('UPDATE document_templates SET is_default = 1 WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -378,10 +378,10 @@ Return a JSON object with this structure:
       const extracted = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
       // Log to pattern_learning_log
-      db.prepare(`
+      await db.run(`
         INSERT INTO pattern_learning_log (source_type, source_ref, patterns_extracted, user_confirmed)
         VALUES (?, ?, ?, 0)
-      `).run(
+      `, 
         req.file ? 'uploaded_example' : 'pasted_text',
         req.file?.originalname || 'pasted',
         JSON.stringify(extracted)
@@ -400,9 +400,9 @@ Return a JSON object with this structure:
 
   // ── Process Patterns ──────────────────────────────────────────────────────
 
-  router.get('/trades/patterns', (req, res) => {
+  router.get('/trades/patterns', async (req, res) => {
     try {
-      const rows = db.prepare('SELECT id, process_type, name, pattern_data, created_at, updated_at FROM process_patterns ORDER BY process_type, name').all() as
+      const rows = await db.all('SELECT id, process_type, name, pattern_data, created_at, updated_at FROM process_patterns ORDER BY process_type, name') as
         Array<{ id: string; process_type: string; name: string; pattern_data: string; created_at: string; updated_at: string }>;
 
       res.json(rows.map(r => {
@@ -415,10 +415,10 @@ Return a JSON object with this structure:
     }
   });
 
-  router.get('/trades/patterns/:id', (req, res) => {
+  router.get('/trades/patterns/:id', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM process_patterns WHERE id = ?').get(req.params.id) as
-        | { id: string; process_type: string; name: string; pattern_data: string; created_at: string; updated_at: string }
+      const row = await db.get('SELECT * FROM process_patterns WHERE id = ?', req.params.id) as { id: string;
+        process_type: string; name: string; pattern_data: string; created_at: string; updated_at: string }
         | undefined;
 
       if (!row) { res.status(404).json({ error: 'Pattern not found' }); return; }
@@ -432,7 +432,7 @@ Return a JSON object with this structure:
     }
   });
 
-  router.put('/trades/patterns/:id', (req, res) => {
+  router.put('/trades/patterns/:id', async (req, res) => {
     try {
       const { processType, name, patternData } = req.body;
       if (!processType || !name) {
@@ -443,7 +443,7 @@ Return a JSON object with this structure:
       const id = req.params.id === 'new' ? randomUUID() : req.params.id;
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO process_patterns (id, process_type, name, pattern_data, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
@@ -451,7 +451,7 @@ Return a JSON object with this structure:
           name = excluded.name,
           pattern_data = excluded.pattern_data,
           updated_at = excluded.updated_at
-      `).run(id, processType, name, JSON.stringify(patternData || {}), now, now);
+      `, id, processType, name, JSON.stringify(patternData || {}), now, now);
 
       res.json({ ok: true, id });
     } catch (err) {
@@ -459,9 +459,9 @@ Return a JSON object with this structure:
     }
   });
 
-  router.delete('/trades/patterns/:id', (req, res) => {
+  router.delete('/trades/patterns/:id', async (req, res) => {
     try {
-      db.prepare('DELETE FROM process_patterns WHERE id = ?').run(req.params.id);
+      await db.run('DELETE FROM process_patterns WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });

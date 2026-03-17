@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ export interface ParsedFile {
 
 // ── Factory ────────────────────────────────────────────────
 
-export function createCodingEngine(db: Database.Database) {
+export async function createCodingEngine(db: DatabaseAdapter) {
 
   // ── APP TYPE METADATA ──────────────────────────────────────
 
@@ -871,7 +871,7 @@ Do NOT include any other commentary outside the file blocks and the change summa
   /**
    * Track token consumption for a coding project
    */
-  function trackTokens(
+  async function trackTokens(
     projectId: string,
     phase: string,
     inputTokens: number,
@@ -879,7 +879,7 @@ Do NOT include any other commentary outside the file blocks and the change summa
     costUsd: number,
   ) {
     try {
-      const project = db.prepare('SELECT cost_actual FROM coding_projects WHERE id = ?').get(projectId) as any;
+      const project = await db.get('SELECT cost_actual FROM coding_projects WHERE id = ?', projectId) as any;
       if (!project) return;
 
       const actual = JSON.parse(project.cost_actual || '{"total_input_tokens":0,"total_output_tokens":0,"total_cost_usd":0,"by_phase":{}}');
@@ -894,8 +894,7 @@ Do NOT include any other commentary outside the file blocks and the change summa
       actual.by_phase[phase].output += outputTokens;
       actual.by_phase[phase].cost_usd += costUsd;
 
-      db.prepare("UPDATE coding_projects SET cost_actual = ?, updated_at = datetime('now') WHERE id = ?")
-        .run(JSON.stringify(actual), projectId);
+      await db.run("UPDATE coding_projects SET cost_actual = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify(actual), projectId);
     } catch (error) {
       console.error('[coding-engine] Token tracking error:', error);
     }

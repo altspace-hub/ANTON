@@ -1,15 +1,16 @@
 import express from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { createKnowledgeGraph } from '../services/knowledge-graph.js';
 import { createGraphAnalytics } from '../services/graph-analytics.js';
 
-export function createKnowledgeGraphRoutes(db: Database.Database) {
+export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   const router = express.Router();
-  const graphService = createKnowledgeGraph(db);
-  const analytics = createGraphAnalytics(db);
+  const graphService = await createKnowledgeGraph(db);
+  const analytics = await createGraphAnalytics(db);
 
   // POST /api/knowledge-graph/build — rebuild graph
-  router.post('/knowledge-graph/build', (req, res) => {
+  router.post('/knowledge-graph/build', async (req, res) => {
     try {
       const { minAtomCount, sinceDays } = req.body;
       const result = graphService.buildGraph({ minAtomCount, sinceDays });
@@ -20,7 +21,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/entities — list top entities
-  router.get('/knowledge-graph/entities', (req, res) => {
+  router.get('/knowledge-graph/entities', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const entities = graphService.getTopEntities(limit);
@@ -31,12 +32,12 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/entities/:type/:id — get entity details + neighbors
-  router.get('/knowledge-graph/entities/:type/:id', (req, res) => {
+  router.get('/knowledge-graph/entities/:type/:id', async (req, res) => {
     try {
       const { type, id } = req.params;
       const depth = parseInt(req.query.depth as string) || 1;
 
-      const node = db.prepare('SELECT * FROM entity_nodes WHERE entity_type = ? AND entity_id = ?').get(type, id);
+      const node = await db.get('SELECT * FROM entity_nodes WHERE entity_type = ? AND entity_id = ?', type, id);
       if (!node) {
         return res.status(404).json({ error: 'Entity not found' });
       }
@@ -44,14 +45,14 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
       const neighbors = graphService.getEntityNeighbors(type, id, depth);
 
       // Get related atoms
-      const atoms = db.prepare(`
+      const atoms = await db.all(`
         SELECT ka.id, ka.content, ka.atom_type, ka.category, ka.created_at
         FROM knowledge_atoms ka
         JOIN knowledge_entity_refs ker ON ka.id = ker.atom_id
         WHERE ker.entity_type = ? AND ker.entity_id = ?
         ORDER BY ka.created_at DESC
         LIMIT 20
-      `).all(type, id);
+      `, type, id);
 
       res.json({ node, neighbors, atoms });
     } catch (error: any) {
@@ -61,7 +62,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
 
   // GET /api/knowledge-graph/entities/:type/:id/transitive — KG-06 transitive closure
   // ?relationship=requires,implements  &maxDepth=10  &packId=...
-  router.get('/knowledge-graph/entities/:type/:id/transitive', (req, res) => {
+  router.get('/knowledge-graph/entities/:type/:id/transitive', async (req, res) => {
     try {
       const { type, id } = req.params;
       const maxDepth = Math.min(parseInt(req.query.maxDepth as string) || 10, 20);
@@ -92,7 +93,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/entities/:type/:id/subgraph — get subgraph
-  router.get('/knowledge-graph/entities/:type/:id/subgraph', (req, res) => {
+  router.get('/knowledge-graph/entities/:type/:id/subgraph', async (req, res) => {
     try {
       const { type, id } = req.params;
       const maxDepth = parseInt(req.query.maxDepth as string) || 2;
@@ -105,7 +106,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // POST /api/knowledge-graph/entities/merge — merge entities
-  router.post('/knowledge-graph/entities/merge', (req, res) => {
+  router.post('/knowledge-graph/entities/merge', async (req, res) => {
     try {
       const { entityType, fromId, intoId, reason } = req.body;
       const mergedBy = (req as any).user?.username || 'system';
@@ -122,14 +123,14 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/merge-log — get recent merge history
-  router.get('/knowledge-graph/merge-log', (req, res) => {
+  router.get('/knowledge-graph/merge-log', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
-      const log = db.prepare(`
+      const log = await db.all(`
         SELECT * FROM entity_merge_log
         ORDER BY merged_at DESC
         LIMIT ?
-      `).all(limit);
+      `, limit);
       res.json(log);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -139,7 +140,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   // ===== ANALYTICS ENDPOINTS =====
 
   // GET /api/knowledge-graph/analytics/stats — get graph statistics
-  router.get('/knowledge-graph/analytics/stats', (req, res) => {
+  router.get('/knowledge-graph/analytics/stats', async (req, res) => {
     try {
       const stats = analytics.getGraphStats();
       res.json(stats);
@@ -149,7 +150,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/analytics/degree-centrality — get degree centrality rankings
-  router.get('/knowledge-graph/analytics/degree-centrality', (req, res) => {
+  router.get('/knowledge-graph/analytics/degree-centrality', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const results = analytics.calculateDegreeCentrality(limit);
@@ -160,7 +161,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/analytics/betweenness-centrality — get betweenness centrality
-  router.get('/knowledge-graph/analytics/betweenness-centrality', (req, res) => {
+  router.get('/knowledge-graph/analytics/betweenness-centrality', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const results = analytics.calculateBetweennessCentrality(limit);
@@ -171,7 +172,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/analytics/pagerank — get PageRank rankings
-  router.get('/knowledge-graph/analytics/pagerank', (req, res) => {
+  router.get('/knowledge-graph/analytics/pagerank', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const iterations = parseInt(req.query.iterations as string) || 20;
@@ -183,7 +184,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/analytics/communities — detect communities
-  router.get('/knowledge-graph/analytics/communities', (req, res) => {
+  router.get('/knowledge-graph/analytics/communities', async (req, res) => {
     try {
       const iterations = parseInt(req.query.iterations as string) || 10;
       const communities = analytics.detectCommunities(iterations);
@@ -202,7 +203,7 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/analytics/shortest-path — find shortest path between two entities
-  router.get('/knowledge-graph/analytics/shortest-path', (req, res) => {
+  router.get('/knowledge-graph/analytics/shortest-path', async (req, res) => {
     try {
       const { sourceType, sourceId, targetType, targetId } = req.query;
 
@@ -228,13 +229,13 @@ export function createKnowledgeGraphRoutes(db: Database.Database) {
   });
 
   // GET /api/knowledge-graph/export — export graph in various formats
-  router.get('/knowledge-graph/export', (req, res) => {
+  router.get('/knowledge-graph/export', async (req, res) => {
     try {
       const format = (req.query.format as string) || 'json';
 
       // Get all nodes and relationships
-      const nodes = db.prepare('SELECT * FROM entity_nodes').all();
-      const relationships = db.prepare('SELECT * FROM entity_relationships').all();
+
+      const relationships = await db.all('SELECT * FROM entity_relationships');
 
       if (format === 'graphml') {
         // GraphML format

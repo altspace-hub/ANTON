@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 
-export function createTravelRoutes(db: Database.Database, anthropic?: Anthropic) {
+export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
 
   // DB migrations
@@ -65,51 +66,49 @@ export function createTravelRoutes(db: Database.Database, anthropic?: Anthropic)
   ];
 
   for (const sql of travelTables) {
-    try { db.exec(sql); } catch (e) { console.warn('[travel] table migration warning:', e); }
+    try { await db.exec(sql); } catch (e) { console.warn('[travel] table migration warning:', e); }
   }
 
   // GET /api/travel/trips
-  router.get('/travel/trips', (req, res) => {
+  router.get('/travel/trips', async (req, res) => {
     try {
-      res.json(db.prepare("SELECT * FROM travel_trips WHERE user_id = 'default' ORDER BY created_at DESC").all());
+      res.json(await db.all("SELECT * FROM travel_trips WHERE user_id = 'default' ORDER BY created_at DESC"));
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // POST /api/travel/trips
-  router.post('/travel/trips', (req, res) => {
+  router.post('/travel/trips', async (req, res) => {
     try {
       const body = req.body as Record<string, unknown>;
       const id = `trip_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      db.prepare(
+      await db.run(
         `INSERT INTO travel_trips (id, user_id, title, destination, start_date, end_date, budget_total, currency, cover_emoji) VALUES (?,?,?,?,?,?,?,?,?)`
-      ).run(
-        id, 'default',
+      , id, 'default',
         body.title        || 'My Trip',
         body.destination  || '',
         body.start_date   ?? null,
         body.end_date     ?? null,
         body.budget_total ?? null,
         body.currency     || 'SEK',
-        body.cover_emoji  || '✈️'
-      );
+        body.cover_emoji  || '✈️');
       res.json({ id, ok: true });
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // GET /api/travel/trips/:id
-  router.get('/travel/trips/:id', (req, res) => {
+  router.get('/travel/trips/:id', async (req, res) => {
     try {
-      const trip = db.prepare("SELECT * FROM travel_trips WHERE id = ? AND user_id = 'default'").get(req.params.id);
+      const trip = await db.get("SELECT * FROM travel_trips WHERE id = ? AND user_id = 'default'", req.params.id);
       if (!trip) return res.status(404).json({ error: 'Trip not found' });
-      const items = db.prepare(
+      const items = await db.get(
         'SELECT * FROM travel_itinerary_items WHERE trip_id = ? ORDER BY day_number, time_slot'
-      ).all(req.params.id);
+      , req.params.id);
       return res.json({ trip, items });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
   // PATCH /api/travel/trips/:id
-  router.patch('/travel/trips/:id', (req, res) => {
+  router.patch('/travel/trips/:id', async (req, res) => {
     try {
       const body = req.body as Record<string, unknown>;
       const fields: string[] = [];
@@ -120,28 +119,28 @@ export function createTravelRoutes(db: Database.Database, anthropic?: Anthropic)
       }
       if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
       values.push(req.params.id);
-      db.prepare(`UPDATE travel_trips SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE travel_trips SET ${fields.join(', ')} WHERE id = ?`, ...values);
       return res.json({ ok: true });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
   // DELETE /api/travel/trips/:id
-  router.delete('/travel/trips/:id', (req, res) => {
+  router.delete('/travel/trips/:id', async (req, res) => {
     try {
-      db.prepare('DELETE FROM travel_itinerary_items WHERE trip_id = ?').run(req.params.id);
-      db.prepare("DELETE FROM travel_trips WHERE id = ? AND user_id = 'default'").run(req.params.id);
+      await db.run('DELETE FROM travel_itinerary_items WHERE trip_id = ?', req.params.id);
+      await db.run("DELETE FROM travel_trips WHERE id = ? AND user_id = 'default'", req.params.id);
       res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // POST /api/travel/trips/:id/itinerary — add item
-  router.post('/travel/trips/:id/itinerary', (req, res) => {
+  router.post('/travel/trips/:id/itinerary', async (req, res) => {
     try {
       const body = req.body as Record<string, unknown>;
       const id = `item_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      db.prepare(
+      await db.run(
         `INSERT INTO travel_itinerary_items (id, trip_id, day_number, time_slot, title, description, location, cost, category) VALUES (?,?,?,?,?,?,?,?,?)`
-      ).run(
+      , 
         id, req.params.id,
         body.day_number   ?? 1,
         body.time_slot    || '09:00',
@@ -156,9 +155,9 @@ export function createTravelRoutes(db: Database.Database, anthropic?: Anthropic)
   });
 
   // GET /api/travel/country/:code — country intelligence (cached)
-  router.get('/travel/country/:code', (req, res) => {
+  router.get('/travel/country/:code', async (req, res) => {
     try {
-      const intel = db.prepare('SELECT * FROM travel_country_intel WHERE country_code = ?').get(
+      const intel = await db.get('SELECT * FROM travel_country_intel WHERE country_code = ?', 
         req.params.code.toUpperCase()
       ) as Record<string, unknown> | undefined;
       if (!intel) return res.status(404).json({ error: 'No intel — generate first', needsGeneration: true });
@@ -213,9 +212,8 @@ export function createTravelRoutes(db: Database.Database, anthropic?: Anthropic)
       try {
         const parsed = JSON.parse(fullText.replace(/```json\n?|\n?```/g, '').trim()) as Record<string, unknown>;
         const id = `ci_${code}_${Date.now()}`;
-        db.prepare(
-          `INSERT OR REPLACE INTO travel_country_intel (id, country_code, country_name, culture_notes, safety_level, safety_notes, visa_info, currency_info, language_tips, transport_info, food_guide, scam_alerts, best_months, budget_estimate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-        ).run(
+        await db.run(`INSERT OR REPLACE INTO travel_country_intel (id, country_code, country_name, culture_notes, safety_level, safety_notes, visa_info, currency_info, language_tips, transport_info, food_guide, scam_alerts, best_months, budget_estimate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        , 
           id, code, country_name || code,
           parsed.culture_notes,  parsed.safety_level,   parsed.safety_notes,
           parsed.visa_info,      parsed.currency_info,  parsed.language_tips,

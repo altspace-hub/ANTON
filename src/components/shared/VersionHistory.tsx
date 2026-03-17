@@ -33,8 +33,8 @@ export default function VersionHistory({ entityType, entityId, onRestore, classN
     setLoading(true);
     try {
       const res = await fetch(`/api/versions/${entityType}/${entityId}`);
-      const data = (await res.json()) as Version[];
-      setVersions(data);
+      const raw = await res.json();
+      setVersions(Array.isArray(raw) ? raw as Version[] : []);
     } catch {
       setVersions([]);
     } finally {

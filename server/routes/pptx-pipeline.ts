@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { executeScript } from '../services/script-executor.js';
@@ -8,7 +8,7 @@ import { callSync } from '../services/claude-client.js';
 const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || './outputs');
 const MAX_FIX_CYCLES = 3;
 
-export function createPptxPipelineRoutes(db: Database.Database): Router {
+export async function createPptxPipelineRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // POST /api/pptx-pipeline/generate
@@ -85,10 +85,10 @@ CRITICAL RULES:
       // Save record to session if provided
       if (sessionId) {
         try {
-          db.prepare(
+          await db.run(
             `INSERT INTO messages (id, session_id, role, content, created_at)
              VALUES (?, ?, 'assistant', ?, ?)`
-          ).run(randomUUID(), sessionId, `[PPTX Generated: ${path.basename(filePath)}]`, new Date().toISOString());
+          , randomUUID(), sessionId, `[PPTX Generated: ${path.basename(filePath)}]`, new Date().toISOString());
         } catch { /* non-fatal */ }
       }
 

@@ -1,4 +1,4 @@
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 export interface KnowledgeCollection {
   id: string;
@@ -43,14 +43,13 @@ export interface RAGChunk {
 /**
  * Create a new knowledge collection
  */
-export function createCollection(db: Database, collection: Omit<KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): string {
+export async function createCollection(db: Database, collection: Omit<KnowledgeCollection, 'id' | 'created_at' | 'updated_at'>): string {
   const id = collection.name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
 
-  const result = db.prepare(`
+  const result = await db.run(`
     INSERT INTO knowledge_collections (id, name, display_name, description, icon, color, watch_directories, auto_index, metadata_schema, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    id,
+  `, id,
     collection.name,
     collection.display_name,
     collection.description,
@@ -59,8 +58,7 @@ export function createCollection(db: Database, collection: Omit<KnowledgeCollect
     collection.watch_directories || '[]',
     collection.auto_index ? 1 : 0,
     collection.metadata_schema || '{}',
-    collection.created_by
-  );
+    collection.created_by);
 
   return id;
 }
@@ -68,21 +66,21 @@ export function createCollection(db: Database, collection: Omit<KnowledgeCollect
 /**
  * List all collections
  */
-export function listCollections(db: Database): KnowledgeCollection[] {
-  return db.prepare('SELECT * FROM knowledge_collections ORDER BY created_at DESC').all() as KnowledgeCollection[];
+export async function listCollections(db: DatabaseAdapter): KnowledgeCollection[] {
+  return await db.all('SELECT * FROM knowledge_collections ORDER BY created_at DESC') as KnowledgeCollection[];
 }
 
 /**
  * Get collection by ID
  */
-export function getCollection(db: Database, id: string): KnowledgeCollection | null {
-  return db.prepare('SELECT * FROM knowledge_collections WHERE id = ?').get(id) as KnowledgeCollection | null;
+export async function getCollection(db: Database, id: string): KnowledgeCollection | null {
+  return await db.get('SELECT * FROM knowledge_collections WHERE id = ?', id) as KnowledgeCollection | null;
 }
 
 /**
  * Update collection
  */
-export function updateCollection(db: Database, id: string, updates: Partial<KnowledgeCollection>): boolean {
+export async function updateCollection(db: Database, id: string, updates: Partial<KnowledgeCollection>): Promise<boolean> {
   const fields: string[] = [];
   const values: any[] = [];
 
@@ -96,7 +94,7 @@ export function updateCollection(db: Database, id: string, updates: Partial<Know
   if (fields.length > 0) {
     fields.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
-    db.prepare(`UPDATE knowledge_collections SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    await db.run(`UPDATE knowledge_collections SET ${fields.join(', ')} WHERE id = ?`, ...values);
     return true;
   }
   return false;
@@ -105,9 +103,9 @@ export function updateCollection(db: Database, id: string, updates: Partial<Know
 /**
  * Delete collection metadata
  */
-export function deleteCollectionMetadata(db: Database, id: string): boolean {
+export async function deleteCollectionMetadata(db: Database, id: string): boolean {
   try {
-    db.prepare('DELETE FROM knowledge_collections WHERE id = ?').run(id);
+    await db.run('DELETE FROM knowledge_collections WHERE id = ?', id);
     return true;
   } catch {
     return false;
@@ -117,31 +115,31 @@ export function deleteCollectionMetadata(db: Database, id: string): boolean {
 /**
  * Get collection document count
  */
-export function getCollectionDocumentCount(db: Database, collectionId: string): number {
-  const result = db.prepare('SELECT COUNT(*) as count FROM rag_documents WHERE collection_id = ?').get(collectionId) as { count: number };
+export async function getCollectionDocumentCount(db: Database, collectionId: string): number {
+  const result = await db.get('SELECT COUNT(*) as count FROM rag_documents WHERE collection_id = ?', collectionId) as { count: number };
   return result.count;
 }
 
 /**
  * Get collection chunk count
  */
-export function getCollectionChunkCount(db: Database, collectionId: string): number {
-  const result = db.prepare(`
+export async function getCollectionChunkCount(db: Database, collectionId: string): number {
+  const result = await db.get(`
     SELECT SUM(chunk_count) as total FROM rag_documents WHERE collection_id = ?
-  `).get(collectionId) as { total: number | null };
+  `, collectionId) as { total: number | null };
   return result.total || 0;
 }
 
 /**
  * Create a RAG document record
  */
-export function createRAGDocument(db: Database, doc: Omit<RAGDocument, 'id' | 'uploaded_at' | 'indexed_at'>): string {
+export async function createRAGDocument(db: Database, doc: Omit<RAGDocument, 'id' | 'uploaded_at' | 'indexed_at'>): string {
   const id = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  db.prepare(`
+  await db.run(`
     INSERT INTO rag_documents (id, collection_id, filename, file_path, file_type, file_size, chunk_count, metadata, uploaded_by, index_status)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  `, 
     id,
     doc.collection_id,
     doc.filename,
@@ -160,7 +158,7 @@ export function createRAGDocument(db: Database, doc: Omit<RAGDocument, 'id' | 'u
 /**
  * Update RAG document
  */
-export function updateRAGDocument(db: Database, id: string, updates: Partial<RAGDocument>): boolean {
+export async function updateRAGDocument(db: Database, id: string, updates: Partial<RAGDocument>): Promise<boolean> {
   const fields: string[] = [];
   const values: any[] = [];
 
@@ -173,7 +171,7 @@ export function updateRAGDocument(db: Database, id: string, updates: Partial<RAG
 
   if (fields.length > 0) {
     values.push(id);
-    db.prepare(`UPDATE rag_documents SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    await db.run(`UPDATE rag_documents SET ${fields.join(', ')} WHERE id = ?`, ...values);
     return true;
   }
   return false;
@@ -182,20 +180,20 @@ export function updateRAGDocument(db: Database, id: string, updates: Partial<RAG
 /**
  * Get RAG documents for a collection
  */
-export function getCollectionDocuments(db: Database, collectionId: string): RAGDocument[] {
-  return db.prepare('SELECT * FROM rag_documents WHERE collection_id = ? ORDER BY uploaded_at DESC').all(collectionId) as RAGDocument[];
+export async function getCollectionDocuments(db: DatabaseAdapter, collectionId: string): Promise<RAGDocument[]> {
+  return await db.all('SELECT * FROM rag_documents WHERE collection_id = ? ORDER BY uploaded_at DESC', collectionId) as RAGDocument[];
 }
 
 /**
  * Create a RAG chunk record
  */
-export function createRAGChunk(db: Database, chunk: Omit<RAGChunk, 'id' | 'created_at'>): string {
+export async function createRAGChunk(db: Database, chunk: Omit<RAGChunk, 'id' | 'created_at'>): string {
   const id = `chunk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  db.prepare(`
+  await db.run(`
     INSERT INTO rag_chunks (id, document_id, chunk_index, content, chroma_id, metadata)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
+  `, 
     id,
     chunk.document_id,
     chunk.chunk_index,
@@ -210,16 +208,16 @@ export function createRAGChunk(db: Database, chunk: Omit<RAGChunk, 'id' | 'creat
 /**
  * Get chunks for a document
  */
-export function getDocumentChunks(db: Database, documentId: string): RAGChunk[] {
-  return db.prepare('SELECT * FROM rag_chunks WHERE document_id = ? ORDER BY chunk_index ASC').all(documentId) as RAGChunk[];
+export async function getDocumentChunks(db: DatabaseAdapter, documentId: string): Promise<RAGChunk[]> {
+  return await db.all('SELECT * FROM rag_chunks WHERE document_id = ? ORDER BY chunk_index ASC', documentId) as RAGChunk[];
 }
 
 /**
  * Delete RAG document and all its chunks
  */
-export function deleteRAGDocument(db: Database, id: string): boolean {
+export async function deleteRAGDocument(db: Database, id: string): boolean {
   try {
-    db.prepare('DELETE FROM rag_documents WHERE id = ?').run(id);
+    await db.run('DELETE FROM rag_documents WHERE id = ?', id);
     return true;
   } catch {
     return false;

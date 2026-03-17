@@ -13,7 +13,7 @@
  */
 
 import type { Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createModelAdapter, getProviderFromModelId, getCustomModelConfigs, type UnifiedLLMRequest } from './model-adapter.js';
 import * as claudeClient from './claude-client.js';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
@@ -31,7 +31,7 @@ interface UnifiedStreamConfig {
   maxTokens?: number;
   nativeReasoningEnabled?: boolean;
   seed?: number;
-  db?: Database.Database;
+  db?: DatabaseAdapter;
 }
 
 export interface StreamCompletionData {
@@ -54,7 +54,7 @@ const API_KEYS = {
 
 // ── Provider Detection ─────────────────────────────────────────
 
-function getApiKeyForModel(modelId: string, db?: Database.Database): string | undefined {
+function getApiKeyForModel(modelId: string, db?: DatabaseAdapter): string | undefined {
   // Check custom model slots for API key overrides
   if (db) {
     const customModels = getCustomModelConfigs(db);
@@ -80,7 +80,7 @@ function getApiKeyForModel(modelId: string, db?: Database.Database): string | un
   return keys[provider];
 }
 
-export function isModelAvailable(modelId: string, db?: Database.Database): boolean {
+export function isModelAvailable(modelId: string, db?: DatabaseAdapter): boolean {
   try {
     const provider = getProviderFromModelId(modelId, db);
 

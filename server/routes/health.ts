@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { isApiKeyConfigured } from '../services/claude-client.js';
 
 // OBS-04: active SSE stream counter — incremented/decremented in claude.ts
@@ -8,23 +9,23 @@ export function incrementActiveStreams(): void { _activeStreams++; }
 export function decrementActiveStreams(): void { if (_activeStreams > 0) _activeStreams--; }
 export function getActiveStreams(): number { return _activeStreams; }
 
-export function createHealthRouter(db: Database.Database) {
+export async function createHealthRouter(db: DatabaseAdapter) {
   const router = Router();
 
-  router.get('/health', (_req, res) => {
+  router.get('/health', async (_req, res) => {
     // Database check
     let dbOk = false;
     try {
-      db.prepare('SELECT 1').get();
+      await db.get('SELECT 1');
       dbOk = true;
     } catch { /* db not ready */ }
 
     // Pending workflow queue depth
     let queueDepth = 0;
     try {
-      const row = db.prepare(
+      const row = await db.get(
         "SELECT COUNT(*) as c FROM workflow_executions WHERE status IN ('pending','running')"
-      ).get() as { c: number } | undefined;
+      ) as { c: number } | undefined;
       queueDepth = row?.c ?? 0;
     } catch { /* table may not exist yet */ }
 

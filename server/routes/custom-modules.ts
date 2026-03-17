@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
@@ -54,15 +55,15 @@ executive-summary, decision-memo, detailed-findings, regulatory-comparison, impa
 
 Choose area based on the domain. Common area IDs: financial-crime-prevention, legal-compliance, risk-management, banking-finance, technology, marketing-communications, hr-talent, strategy-consulting, legal-general, tax, data-analytics, startups-entrepreneurship, education, healthcare, coding, my-modules`;
 
-export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anthropic) {
+export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
 
   // GET /api/custom-modules — list all custom modules
-  router.get('/custom-modules', (_req, res) => {
+  router.get('/custom-modules', async (_req, res) => {
     try {
-      const modules = db.prepare(
+      const modules = await db.all(
         `SELECT * FROM custom_modules ORDER BY updated_at DESC`
-      ).all() as Record<string, unknown>[];
+      ) as Record<string, unknown>[];
       res.json(modules.map((m) => ({
         ...m,
         config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config,
@@ -73,9 +74,9 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
   });
 
   // GET /api/custom-modules/:id — get single custom module
-  router.get('/custom-modules/:id', (req, res) => {
+  router.get('/custom-modules/:id', async (req, res) => {
     try {
-      const m = db.prepare(`SELECT * FROM custom_modules WHERE id = ?`).get(req.params.id) as Record<string, unknown> | undefined;
+      const m = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, req.params.id) as Record<string, unknown> | undefined;
       if (!m) return res.status(404).json({ error: 'Not found' });
       res.json({ ...m, config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config });
     } catch (error) {
@@ -84,7 +85,7 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
   });
 
   // POST /api/custom-modules — create custom module
-  router.post('/custom-modules', (req, res) => {
+  router.post('/custom-modules', async (req, res) => {
     try {
       const { name, short_name, description, icon, area, system_prompt, config } = req.body as {
         name: string;
@@ -103,10 +104,10 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
       const id = `custom-${randomUUID().slice(0, 8)}`;
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO custom_modules (id, name, short_name, description, icon, area, system_prompt, config, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `,
         id,
         name.trim(),
         (short_name || name).trim().slice(0, 20),
@@ -119,7 +120,7 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
         now,
       );
 
-      const created = db.prepare(`SELECT * FROM custom_modules WHERE id = ?`).get(id) as Record<string, unknown>;
+      const created = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, id) as Record<string, unknown>;
       res.status(201).json({ ...created, config: JSON.parse(created.config as string) });
     } catch (error) {
       res.status(500).json({ error: 'Failed to create custom module' });
@@ -127,15 +128,15 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
   });
 
   // PATCH /api/custom-modules/:id — update custom module
-  router.patch('/custom-modules/:id', (req, res) => {
+  router.patch('/custom-modules/:id', async (req, res) => {
     try {
-      const existing = db.prepare(`SELECT * FROM custom_modules WHERE id = ?`).get(req.params.id);
+      const existing = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, req.params.id);
       if (!existing) return res.status(404).json({ error: 'Not found' });
 
       const { name, short_name, description, icon, area, system_prompt, config } = req.body as Record<string, unknown>;
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await db.run(`
         UPDATE custom_modules
         SET name = COALESCE(?, name),
             short_name = COALESCE(?, short_name),
@@ -146,7 +147,7 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
             config = COALESCE(?, config),
             updated_at = ?
         WHERE id = ?
-      `).run(
+      `,
         name || null,
         short_name || null,
         description || null,
@@ -158,7 +159,7 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
         req.params.id,
       );
 
-      const updated = db.prepare(`SELECT * FROM custom_modules WHERE id = ?`).get(req.params.id) as Record<string, unknown>;
+      const updated = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, req.params.id) as Record<string, unknown>;
       res.json({ ...updated, config: JSON.parse(updated.config as string) });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update custom module' });
@@ -166,9 +167,9 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
   });
 
   // DELETE /api/custom-modules/:id
-  router.delete('/custom-modules/:id', (req, res) => {
+  router.delete('/custom-modules/:id', async (req, res) => {
     try {
-      const result = db.prepare(`DELETE FROM custom_modules WHERE id = ?`).run(req.params.id);
+      const result = await db.run(`DELETE FROM custom_modules WHERE id = ?`, req.params.id);
       if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
       res.json({ success: true });
     } catch (error) {
@@ -177,20 +178,20 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
   });
 
   // POST /api/modules/community — mark a custom module as community-shared
-  router.post('/modules/community', (req, res) => {
+  router.post('/modules/community', async (req, res) => {
     try {
       const { moduleId } = req.body as { moduleId: string };
       if (!moduleId?.trim()) {
         res.status(400).json({ error: 'moduleId is required' });
         return;
       }
-      const existing = db.prepare(`SELECT * FROM custom_modules WHERE id = ?`).get(moduleId);
+
+      const existing = await db.get(`SELECT id FROM custom_modules WHERE id = ?`, moduleId);
       if (!existing) {
         res.status(404).json({ error: 'Module not found' });
         return;
       }
-      db.prepare(`UPDATE custom_modules SET is_shared_with_community = 1, updated_at = ? WHERE id = ?`)
-        .run(new Date().toISOString(), moduleId);
+      await db.run(`UPDATE custom_modules SET is_shared_with_community = 1, updated_at = ? WHERE id = ?`, new Date().toISOString(), moduleId);
       res.json({ ok: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to share module with community' });
@@ -198,11 +199,9 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
   });
 
   // GET /api/modules/community — return all community-shared custom modules
-  router.get('/modules/community', (_req, res) => {
+  router.get('/modules/community', async (_req, res) => {
     try {
-      const modules = db.prepare(
-        `SELECT * FROM custom_modules WHERE is_shared_with_community = 1 ORDER BY updated_at DESC`
-      ).all() as Record<string, unknown>[];
+      const modules = await db.all(`SELECT * FROM custom_modules WHERE is_shared_with_community = 1 ORDER BY updated_at DESC`) as Record<string, unknown>[];
       res.json(modules.map((m) => ({
         ...m,
         config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config,
@@ -297,7 +296,7 @@ export function createCustomModuleRoutes(db: Database.Database, anthropic?: Anth
       // Resolve knowledge library paths for context
       if (knowledgeLibraryIds && knowledgeLibraryIds.length > 0) {
         const placeholders = knowledgeLibraryIds.map(() => '?').join(',');
-        const entries = db.prepare(`SELECT * FROM knowledge_library WHERE id IN (${placeholders})`).all(...knowledgeLibraryIds) as Array<{ path: string; label: string }>;
+        const entries = await db.all(`SELECT path, label FROM knowledge_library WHERE id IN (${placeholders})`, ...knowledgeLibraryIds) as Array<{ path: string; label: string }>;
         if (entries.length > 0) {
           const pathList = entries.map(e => `- ${e.label}: ${e.path}`).join('\n');
           fullSystem += `\n\n## KNOWLEDGE SOURCES\nThe following document corpora are available:\n${pathList}`;

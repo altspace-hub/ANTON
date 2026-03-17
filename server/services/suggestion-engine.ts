@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 
 export interface Suggestion {
@@ -51,7 +51,7 @@ function daysFromNow(dateStr: string): number {
 }
 
 export async function generateSuggestions(
-  db: Database.Database,
+  db: DatabaseAdapter,
   _userId?: string
 ): Promise<Suggestion[]> {
   const suggestions: Suggestion[] = [];
@@ -59,8 +59,7 @@ export async function generateSuggestions(
   // ── 1. Deadline-based suggestions ───────────────────────────────────────────
   // Find deadlines due within the next 7 days that are not completed
   try {
-    const upcomingDeadlines = db
-      .prepare(
+    const upcomingDeadlines = await db.all(
         `SELECT id, title, due_date, status, priority
          FROM deadlines
          WHERE status != 'completed'
@@ -68,8 +67,7 @@ export async function generateSuggestions(
            AND date(due_date) BETWEEN date('now') AND date('now', '+7 days')
          ORDER BY date(due_date) ASC
          LIMIT 3`
-      )
-      .all() as DeadlineRow[];
+      ) as DeadlineRow[];
 
     for (const deadline of upcomingDeadlines) {
       const days = daysFromNow(deadline.due_date);
@@ -98,15 +96,13 @@ export async function generateSuggestions(
   // ── 2. Quality-based suggestions ────────────────────────────────────────────
   // Find modules with a quality baseline below 7 (out of 10)
   try {
-    const lowQuality = db
-      .prepare(
+    const lowQuality = await db.all(
         `SELECT module_id, baseline_score
          FROM quality_baselines
          WHERE baseline_score < 7
          ORDER BY baseline_score ASC
          LIMIT 2`
-      )
-      .all() as QualityBaselineRow[];
+      ) as QualityBaselineRow[];
 
     for (const row of lowQuality) {
       const moduleLabel = row.module_id
@@ -131,14 +127,12 @@ export async function generateSuggestions(
   // ── 3. Recent session follow-up suggestions ─────────────────────────────────
   // Suggest logical next modules based on the last 3 sessions
   try {
-    const recentSessions = db
-      .prepare(
+    const recentSessions = await db.all(
         `SELECT id, module_id, title, updated_at
          FROM sessions
          ORDER BY updated_at DESC
          LIMIT 3`
-      )
-      .all() as SessionRow[];
+      ) as SessionRow[];
 
     const seen = new Set<string>();
     for (const session of recentSessions) {

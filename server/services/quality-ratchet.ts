@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import crypto from 'crypto';
 
 // Quality dimensions scored 0-10
@@ -35,13 +35,14 @@ Respond ONLY with valid JSON:
   "improvement_suggestion": "Add specific deadlines and responsible parties to each action item."
 }`;
 
-export function createQualityRatchet(db: Database.Database) {
+export async function createQualityRatchet(db: DatabaseAdapter) {
 
   // Auto-heal: ensure score_reasoning column exists (backward-compatible with older DBs)
   try {
-    const cols = (db.pragma('table_info(quality_scores)') as any[]).map((c: any) => c.name);
-    if (!cols.includes('score_reasoning')) {
-      db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
+    const cols = await db.all("SELECT name FROM pragma_table_info('quality_scores')") as Array<{ name: string }>;
+    const colNames = cols.map((c) => c.name);
+    if (!colNames.includes('score_reasoning')) {
+      await db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
     }
   } catch { /* table might not exist yet — init.ts will create it */ }
 
@@ -104,54 +105,54 @@ export function createQualityRatchet(db: Database.Database) {
     const reasoningJson = JSON.stringify({ strengths, weaknesses, improvementSuggestion });
     let inserted = false;
     try {
-      db.prepare(`
+      await db.run(`
         INSERT INTO quality_scores
           (id, session_id, module_id, area_id, content_hash, score_overall,
            score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count, score_reasoning)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
-             scores.overall, scores.completeness, scores.accuracy,
-             scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
+      `, id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
+         scores.overall, scores.completeness, scores.accuracy,
+         scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
       inserted = true;
     } catch (insertErr: any) {
       if (insertErr?.message?.includes('score_reasoning')) {
         // Column doesn't exist yet — add it now and retry
         try {
-          db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
-          db.prepare(`
+          await db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
+          await db.run(`
             INSERT INTO quality_scores
               (id, session_id, module_id, area_id, content_hash, score_overall,
                score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count, score_reasoning)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).run(id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
-                 scores.overall, scores.completeness, scores.accuracy,
-                 scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
+          `, id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
+             scores.overall, scores.completeness, scores.accuracy,
+             scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
           inserted = true;
         } catch { /* give up on reasoning, fall through */ }
       }
     }
     if (!inserted) {
       // Last resort: insert without reasoning so at least the numeric scores are stored
-      db.prepare(`
+      await db.run(`
         INSERT INTO quality_scores
           (id, session_id, module_id, area_id, content_hash, score_overall,
            score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
-             scores.overall, scores.completeness, scores.accuracy,
-             scores.structure, scores.actionability, scores.citations, wordCount);
+      `, id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
+         scores.overall, scores.completeness, scores.accuracy,
+         scores.structure, scores.actionability, scores.citations, wordCount);
     }
 
     // Check regression against baseline
     let regressionWarning: string | undefined;
-    const baseline = db.prepare('SELECT * FROM quality_baselines WHERE module_id = ?').get(params.moduleId) as any;
+    const baseline = await db.get('SELECT * FROM quality_baselines WHERE module_id = ?', params.moduleId) as any;
 
     if (baseline && scores.overall < baseline.baseline_score - 1.5) {
       regressionWarning = `Quality score (${scores.overall.toFixed(1)}) is significantly below baseline (${baseline.baseline_score.toFixed(1)}) for this module.`;
     }
 
     // Update baseline (rolling average — full weight for automated scores)
-    updateBaselineWithWeight(params.moduleId, scores.overall, 1.0);
+    await updateBaselineWithWeight(params.moduleId, scores.overall, 1.0);
 
     return { score: scores, id, regressionWarning, strengths, weaknesses, improvementSuggestion };
   }
@@ -191,13 +192,13 @@ export function createQualityRatchet(db: Database.Database) {
     return { overall, completeness, accuracy: 7, structure, actionability: 7, citations };
   }
 
-  function updateBaselineWithWeight(moduleId: string, newScore: number, weight = 1.0) {
-    const existing = db.prepare('SELECT * FROM quality_baselines WHERE module_id = ?').get(moduleId) as any;
+  async function updateBaselineWithWeight(moduleId: string, newScore: number, weight = 1.0) {
+    const existing = await db.get('SELECT * FROM quality_baselines WHERE module_id = ?', moduleId) as any;
     if (!existing) {
-      db.prepare(`
+      await db.run(`
         INSERT INTO quality_baselines (id, module_id, baseline_score, sample_size)
         VALUES (?, ?, ?, 1)
-      `).run(`qb_${Date.now()}`, moduleId, newScore);
+      `, `qb_${Date.now()}`, moduleId, newScore);
     } else {
       const n = existing.sample_size;
       // Weighted average: automated scores use weight=1.0, user feedback uses weight=0.5.
@@ -205,38 +206,37 @@ export function createQualityRatchet(db: Database.Database) {
       // Formula: (baseline * effectiveN + newScore * weight) / (effectiveN + weight)
       const effectiveN = Math.min(n, 9);
       const newBaseline = (existing.baseline_score * effectiveN + newScore * weight) / (effectiveN + weight);
-      db.prepare(`
+      await db.run(`
         UPDATE quality_baselines
         SET baseline_score = ?, sample_size = ?, updated_at = ?
         WHERE module_id = ?
-      `).run(newBaseline, n + 1, new Date().toISOString(), moduleId);
+      `, newBaseline, n + 1, new Date().toISOString(), moduleId);
     }
   }
 
-  function getModuleQualityTrend(moduleId: string, limit = 20) {
-    const scores = db.prepare(`
+  async function getModuleQualityTrend(moduleId: string, limit = 20) {
+    const scores = await db.all(`
       SELECT * FROM quality_scores WHERE module_id = ? ORDER BY scored_at DESC LIMIT ?
-    `).all(moduleId, limit) as any[];
-    const baseline = db.prepare('SELECT * FROM quality_baselines WHERE module_id = ?').get(moduleId) as any;
+    `, moduleId, limit) as any[];
+    const baseline = await db.get('SELECT * FROM quality_baselines WHERE module_id = ?', moduleId) as any;
     return { scores: scores.reverse(), baseline };
   }
 
-  function getQualityLeaderboard() {
-    const rows = db.prepare(`
+  async function getQualityLeaderboard() {
+    const rows = await db.all(`
       SELECT module_id, baseline_score, sample_size, updated_at
       FROM quality_baselines
       ORDER BY baseline_score DESC
       LIMIT 20
-    `).all() as Array<{ module_id: string; baseline_score: number; sample_size: number; updated_at: string }>;
+    `) as Array<{ module_id: string; baseline_score: number; sample_size: number; updated_at: string }>;
 
-    return rows.map(row => {
+    const results = [];
+    for (const row of rows) {
       // Get last 5 scores for this module
-      const recentScores = db.prepare(`
-        SELECT score_overall FROM quality_scores
-        WHERE module_id = ?
-        ORDER BY scored_at DESC
-        LIMIT 5
-      `).all(row.module_id) as Array<{ score_overall: number }>;
+      const recentScores = await db.all(
+        `SELECT score_overall FROM quality_scores WHERE module_id = ? ORDER BY scored_at DESC LIMIT 5`,
+        row.module_id
+      ) as Array<{ score_overall: number }>;
 
       let trend_direction: 'up' | 'down' | 'flat' = 'flat';
       if (recentScores.length >= 3) {
@@ -249,11 +249,12 @@ export function createQualityRatchet(db: Database.Database) {
           trend_direction = diff > 0.3 ? 'up' : diff < -0.3 ? 'down' : 'flat';
         }
       }
-      return { ...row, trend_direction };
-    });
+      results.push({ ...row, trend_direction });
+    }
+    return results;
   }
 
-  function submitFeedback(params: {
+  async function submitFeedback(params: {
     sessionId?: string;
     qualityScoreId?: string;
     moduleId: string;
@@ -261,12 +262,12 @@ export function createQualityRatchet(db: Database.Database) {
     rating: number;
     comment?: string;
     userId?: string;
-  }): { id: string; newBaseline?: number } {
+  }): Promise<{ id: string; newBaseline?: number }> {
     const id = `fb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    db.prepare(`
+    await db.run(`
       INSERT INTO output_feedback (id, session_id, quality_score_id, module_id, area_id, rating, comment, user_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `,
       id,
       params.sessionId ?? null,
       params.qualityScoreId ?? null,
@@ -281,22 +282,22 @@ export function createQualityRatchet(db: Database.Database) {
     const qualityEquivalent = (params.rating - 1) * 2.5;
 
     // Nudge baseline at half the weight of an automated score
-    updateBaselineWithWeight(params.moduleId, qualityEquivalent, 0.5);
+    await updateBaselineWithWeight(params.moduleId, qualityEquivalent, 0.5);
 
-    const baseline = db.prepare('SELECT baseline_score FROM quality_baselines WHERE module_id = ?').get(params.moduleId) as any;
+    const baseline = await db.get('SELECT * FROM quality_baselines WHERE module_id = ?', params.moduleId) as any;
     return { id, newBaseline: baseline?.baseline_score };
   }
 
-  function getFeedbackStats(moduleId: string): {
+  async function getFeedbackStats(moduleId: string): Promise<{
     count: number;
     avgRating: number;
     distribution: Record<number, number>;
     recentComments: { rating: number; comment: string; created_at: string }[];
-  } {
-    const rows = db.prepare(`
-      SELECT rating, comment, created_at FROM output_feedback
-      WHERE module_id = ? ORDER BY created_at DESC
-    `).all(moduleId) as Array<{ rating: number; comment: string | null; created_at: string }>;
+  }> {
+    const rows = await db.all(
+      `SELECT rating, comment, created_at FROM output_feedback WHERE module_id = ? ORDER BY created_at DESC LIMIT 100`,
+      moduleId
+    ) as Array<{ rating: number; comment: string | null; created_at: string }>;
 
     if (rows.length === 0) {
       return { count: 0, avgRating: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, recentComments: [] };

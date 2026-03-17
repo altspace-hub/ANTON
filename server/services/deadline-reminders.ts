@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { sendDeadlineReminderEmail } from './email.js';
 
 interface DeadlineReminder {
@@ -18,19 +18,19 @@ interface DeadlineRow {
   owner_id: string | null;
 }
 
-export function createDeadlineReminderService(db: Database.Database) {
+export async function createDeadlineReminderService(db: DatabaseAdapter) {
   async function checkAndSendReminders(): Promise<number> {
     const now = new Date();
 
     // Find unsent reminders where the reminder time has arrived
-    const reminders = db.prepare(`
+    const reminders = await db.all(`
       SELECT r.*, d.title as deadline_title, d.due_date, d.priority, d.status, d.owner_id
       FROM deadline_reminders r
       JOIN deadlines d ON r.deadline_id = d.id
       WHERE r.sent_at IS NULL
         AND d.status NOT IN ('completed')
         AND datetime(d.due_date, '-' || r.remind_days_before || ' days') <= datetime(?)
-    `).all(now.toISOString()) as Array<DeadlineReminder & DeadlineRow>;
+    `, now.toISOString()) as Array<DeadlineReminder & DeadlineRow>;
 
     let sentCount = 0;
 
@@ -42,16 +42,14 @@ export function createDeadlineReminderService(db: Database.Database) {
             { title: reminder.deadline_title, due_date: reminder.due_date, priority: reminder.priority },
             reminder.remind_days_before
           );
-          db.prepare('UPDATE deadline_reminders SET sent_at = ? WHERE id = ?')
-            .run(now.toISOString(), reminder.id);
+          await db.run('UPDATE deadline_reminders SET sent_at = ? WHERE id = ?', now.toISOString(), reminder.id);
           sentCount++;
         } catch (err) {
           console.error(`[deadline-reminders] Failed to send reminder ${reminder.id}:`, err);
         }
       } else {
         // in_app reminders: just mark as sent (UI can poll for these)
-        db.prepare('UPDATE deadline_reminders SET sent_at = ? WHERE id = ?')
-          .run(now.toISOString(), reminder.id);
+        await db.run('UPDATE deadline_reminders SET sent_at = ? WHERE id = ?', now.toISOString(), reminder.id);
         sentCount++;
       }
     }

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 export interface UserProfile {
   id: string;
@@ -24,13 +24,13 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export function createProfileRoutes(db: Database.Database) {
+export async function createProfileRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/profile — fetch the single user profile
-  router.get('/profile', (req, res) => {
+  router.get('/profile', async (req, res) => {
     try {
-      const profile = db.prepare('SELECT * FROM user_profiles WHERE id = ?').get('default') as UserProfile | undefined;
+      const profile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as UserProfile | undefined;
       res.json(
         profile || {
           id: 'default',
@@ -60,7 +60,7 @@ export function createProfileRoutes(db: Database.Database) {
   });
 
   // PUT /api/profile — upsert the profile
-  router.put('/profile', (req, res) => {
+  router.put('/profile', async (req, res) => {
     try {
       const {
         name,
@@ -83,7 +83,7 @@ export function createProfileRoutes(db: Database.Database) {
         brand_config,
       } = req.body;
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO user_profiles (id, name, role, company, industry, expertise, experience_level, communication_preferences, team_context, current_focus, display_name, role_title, organisation, jurisdiction, output_language, org_size, focus_areas, hourly_rate_eur, brand_config, updated_at)
         VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(id) DO UPDATE SET
@@ -106,8 +106,7 @@ export function createProfileRoutes(db: Database.Database) {
           hourly_rate_eur = excluded.hourly_rate_eur,
           brand_config = excluded.brand_config,
           updated_at = datetime('now')
-      `).run(
-        name || null,
+      `, name || null,
         role || null,
         company || null,
         industry || null,
@@ -124,10 +123,9 @@ export function createProfileRoutes(db: Database.Database) {
         org_size ?? 'mid-market',
         focus_areas ?? '[]',
         typeof hourly_rate_eur === 'number' ? hourly_rate_eur : 250,
-        brand_config || null,
-      );
+        brand_config || null);
 
-      const updated = db.prepare('SELECT * FROM user_profiles WHERE id = ?').get('default');
+      const updated = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default');
       res.json(updated);
     } catch {
       res.status(500).json({ error: 'Failed to save profile' });

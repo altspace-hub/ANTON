@@ -22,7 +22,8 @@
 import { randomUUID } from 'crypto';
 import fs from 'fs-extra';
 import path from 'path';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import AnthropicSDK from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
 
@@ -109,8 +110,8 @@ export const ORCHESTRATOR_HARD_LIMITS = {
 
 // ── Config loader ─────────────────────────────────────────────────────────────
 
-export function getOrchestratorConfig(db: Database.Database): OrchestratorConfig {
-  const row = db.prepare('SELECT * FROM orchestrator_config WHERE id = ?').get('default') as OrchestratorConfig | undefined;
+export async function getOrchestratorConfig(db: DatabaseAdapter): Promise<OrchestratorConfig> {
+  const row = await db.get('SELECT * FROM orchestrator_config WHERE id = ?', 'default') as OrchestratorConfig | undefined;
   return row ?? {
     heartbeat_enabled: 1,
     heartbeat_interval_minutes: 30,
@@ -128,8 +129,8 @@ export function getOrchestratorConfig(db: Database.Database): OrchestratorConfig
 // ── Signal Readers ────────────────────────────────────────────────────────────
 
 /** Read high-urgency new regulatory radar items since lastChecked */
-function readRadarSignals(db: Database.Database, threshold: number, since: Date): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readRadarSignals(db: DatabaseAdapter, threshold: number, since: Date): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT ri.id, ri.title, ri.urgency_score, ri.relevance_score, ri.item_type,
            ri.published_at, ri.summary, rs.display_name as source_name
     FROM radar_items ri
@@ -139,7 +140,7 @@ function readRadarSignals(db: Database.Database, threshold: number, since: Date)
       AND (ri.created_at >= ? OR ri.published_at >= ?)
     ORDER BY ri.urgency_score DESC
     LIMIT 10
-  `).all(threshold, since.toISOString(), since.toISOString().substring(0, 10)) as Array<{
+  `, threshold, since.toISOString(), since.toISOString().substring(0, 10)) as Array<{
     id: string; title: string; urgency_score: number; relevance_score: number;
     item_type: string; published_at: string; summary: string | null; source_name: string | null;
   }>;
@@ -156,8 +157,8 @@ function readRadarSignals(db: Database.Database, threshold: number, since: Date)
 }
 
 /** Read approaching and overdue deadlines */
-function readDeadlineSignals(db: Database.Database, alertDays: number): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readDeadlineSignals(db: DatabaseAdapter, alertDays: number): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT id, title, due_date, category, priority, status,
            julianday(due_date) - julianday('now') as days_remaining
     FROM deadlines
@@ -165,7 +166,7 @@ function readDeadlineSignals(db: Database.Database, alertDays: number): Platform
       AND julianday(due_date) - julianday('now') <= ?
     ORDER BY due_date ASC
     LIMIT 15
-  `).all(alertDays) as Array<{
+  `, alertDays) as Array<{
     id: string; title: string; due_date: string; category: string | null;
     priority: string | null; status: string; days_remaining: number;
   }>;
@@ -189,9 +190,9 @@ function readDeadlineSignals(db: Database.Database, alertDays: number): Platform
 }
 
 /** Read quality degradation signals — modules with declining scores */
-function readQualitySignals(db: Database.Database, declineThreshold: number): PlatformSignal[] {
+async function readQualitySignals(db: DatabaseAdapter, declineThreshold: number): Promise<PlatformSignal[]> {
   // Find modules where recent average is below baseline by threshold
-  const rows = db.prepare(`
+  const rows = await db.all(`
     SELECT qs.module_id,
            AVG(qs.score_overall) as recent_avg,
            qb.baseline_score,
@@ -201,10 +202,10 @@ function readQualitySignals(db: Database.Database, declineThreshold: number): Pl
     JOIN quality_baselines qb ON qb.module_id = qs.module_id
     WHERE qs.scored_at >= datetime('now', '-14 days')
     GROUP BY qs.module_id
-    HAVING decline >= ? AND sample_count >= 2
+    HAVING qb.baseline_score - AVG(qs.score_overall) >= ? AND COUNT(*) >= 2
     ORDER BY decline DESC
     LIMIT 8
-  `).all(declineThreshold) as Array<{
+  `, declineThreshold) as Array<{
     module_id: string; recent_avg: number; baseline_score: number; decline: number; sample_count: number;
   }>;
 
@@ -220,8 +221,8 @@ function readQualitySignals(db: Database.Database, declineThreshold: number): Pl
 }
 
 /** Read newly detected patterns that may warrant action */
-function readPatternSignals(db: Database.Database, since: Date): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readPatternSignals(db: DatabaseAdapter, since: Date): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT id, pattern_type, pattern_subtype, description, confidence_score, created_at
     FROM detected_patterns
     WHERE status = 'active'
@@ -229,7 +230,7 @@ function readPatternSignals(db: Database.Database, since: Date): PlatformSignal[
       AND created_at >= ?
     ORDER BY confidence_score DESC
     LIMIT 5
-  `).all(since.toISOString()) as Array<{
+  `, since.toISOString()) as Array<{
     id: string; pattern_type: string; pattern_subtype: string | null;
     description: string | null; confidence_score: number; created_at: string;
   }>;
@@ -246,8 +247,8 @@ function readPatternSignals(db: Database.Database, since: Date): PlatformSignal[
 }
 
 /** Read open compliance violations */
-function readComplianceSignals(db: Database.Database): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readComplianceSignals(db: DatabaseAdapter): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT rv.id, rv.description, rv.severity, rv.affected_entity, rv.created_at,
            cr.title as rule_title
     FROM rule_violations rv
@@ -256,7 +257,7 @@ function readComplianceSignals(db: Database.Database): PlatformSignal[] {
       AND rv.severity IN ('critical','high')
     ORDER BY CASE rv.severity WHEN 'critical' THEN 0 ELSE 1 END, rv.created_at DESC
     LIMIT 8
-  `).all() as Array<{
+  `) as Array<{
     id: string; description: string; severity: string;
     affected_entity: string | null; created_at: string; rule_title: string;
   }>;
@@ -273,8 +274,8 @@ function readComplianceSignals(db: Database.Database): PlatformSignal[] {
 }
 
 /** Read overdue step assignments (Collaborative Canvas) */
-function readAssignmentSignals(db: Database.Database): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readAssignmentSignals(db: DatabaseAdapter): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT id, assigned_to, execution_id, due_at, notes,
            julianday('now') - julianday(due_at) as days_overdue
     FROM step_assignments
@@ -283,7 +284,7 @@ function readAssignmentSignals(db: Database.Database): PlatformSignal[] {
       AND due_at < datetime('now')
     ORDER BY due_at ASC
     LIMIT 10
-  `).all() as Array<{
+  `) as Array<{
     id: string; assigned_to: string | null; execution_id: string;
     due_at: string; notes: string | null; days_overdue: number;
   }>;
@@ -309,15 +310,15 @@ function readAssignmentSignals(db: Database.Database): PlatformSignal[] {
 }
 
 /** Read recent failed/stalled workflow runs */
-function readWorkflowSignals(db: Database.Database, since: Date): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readWorkflowSignals(db: DatabaseAdapter, since: Date): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT id, workflow_id, status, error_message, started_at, completed_at
     FROM workflow_runs
     WHERE status IN ('failed','error')
       AND started_at >= ?
     ORDER BY started_at DESC
     LIMIT 8
-  `).all(since.toISOString()) as Array<{
+  `, since.toISOString()) as Array<{
     id: string; workflow_id: string | null; status: string;
     error_message: string | null; started_at: string; completed_at: string | null;
   }>;
@@ -334,8 +335,8 @@ function readWorkflowSignals(db: Database.Database, since: Date): PlatformSignal
 }
 
 /** Read apprentice stage changes — modules ready for progression or recently advanced */
-function readApprenticeSignals(db: Database.Database, since: Date): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readApprenticeSignals(db: DatabaseAdapter, since: Date): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT ap.id, ap.module_id, ap.area_id, ap.current_stage, ap.sessions_completed,
            ap.quality_avg, ap.last_session
     FROM apprentice_profiles ap
@@ -345,7 +346,7 @@ function readApprenticeSignals(db: Database.Database, since: Date): PlatformSign
       AND ap.current_stage < 4
     ORDER BY ap.quality_avg DESC
     LIMIT 5
-  `).all(since.toISOString()) as Array<{
+  `, since.toISOString()) as Array<{
     id: string; module_id: string; area_id: string | null;
     current_stage: number; sessions_completed: number; quality_avg: number; last_session: string;
   }>;
@@ -364,10 +365,10 @@ function readApprenticeSignals(db: Database.Database, since: Date): PlatformSign
 }
 
 /** Read Knowledge Graph signals — high-frequency entities with recent activity */
-function readKnowledgeGraphSignals(db: Database.Database): PlatformSignal[] {
+async function readKnowledgeGraphSignals(db: DatabaseAdapter): Promise<PlatformSignal[]> {
   try {
     // Use UNION instead of OR on JOIN to allow SQLite to use indexes on from_id and to_id
-    const rows = db.prepare(`
+    const rows = await db.all(`
       SELECT en.entity_type, en.canonical_name, en.interaction_count,
              en.last_seen,
              (SELECT COUNT(*) FROM (
@@ -380,7 +381,7 @@ function readKnowledgeGraphSignals(db: Database.Database): PlatformSignal[] {
         AND en.last_seen >= datetime('now', '-7 days')
       ORDER BY en.interaction_count DESC
       LIMIT 5
-    `).all() as Array<{
+    `) as Array<{
       entity_type: string; canonical_name: string; interaction_count: number;
       last_seen: string; relationship_count: number;
     }>;
@@ -398,15 +399,15 @@ function readKnowledgeGraphSignals(db: Database.Database): PlatformSignal[] {
 }
 
 /** Read unread high-severity proactive insights */
-function readProactiveSignals(db: Database.Database): PlatformSignal[] {
-  const rows = db.prepare(`
+async function readProactiveSignals(db: DatabaseAdapter): Promise<PlatformSignal[]> {
+  const rows = await db.all(`
     SELECT id, insight_type, title, body, severity, created_at
     FROM proactive_insights
     WHERE read = 0 AND dismissed = 0
       AND severity IN ('high','critical')
     ORDER BY CASE severity WHEN 'critical' THEN 0 ELSE 1 END, created_at DESC
     LIMIT 5
-  `).all() as Array<{
+  `) as Array<{
     id: string; insight_type: string; title: string; body: string;
     severity: string; created_at: string;
   }>;
@@ -423,9 +424,9 @@ function readProactiveSignals(db: Database.Database): PlatformSignal[] {
 }
 
 /** Read recently completed ANTON Task Agent tasks with outputs */
-function readTaskAgentSignals(db: Database.Database, since: Date): PlatformSignal[] {
+async function readTaskAgentSignals(db: DatabaseAdapter, since: Date): Promise<PlatformSignal[]> {
   try {
-    const rows = db.prepare(`
+    const rows = await db.all(`
       SELECT t.id, t.user_id, t.title, t.status, t.chosen_approach_id,
              t.execution_summary, t.completed_at,
              a.name AS approach_name
@@ -435,7 +436,7 @@ function readTaskAgentSignals(db: Database.Database, since: Date): PlatformSigna
         AND t.completed_at >= ?
       ORDER BY t.completed_at DESC
       LIMIT 10
-    `).all(since.toISOString()) as Array<{
+    `, since.toISOString()) as Array<{
       id: string; user_id: string; title: string; status: string;
       chosen_approach_id: string | null; execution_summary: string | null;
       completed_at: string; approach_name: string | null;
@@ -458,29 +459,31 @@ function readTaskAgentSignals(db: Database.Database, since: Date): PlatformSigna
 // ── Signal Aggregation ────────────────────────────────────────────────────────
 
 export async function aggregateSignals(
-  db: Database.Database,
+  db: DatabaseAdapter,
   since: Date
 ): Promise<PlatformSignal[]> {
-  const config = getOrchestratorConfig(db);
+  const config = await getOrchestratorConfig(db);
 
   // Each reader is wrapped in try/catch — tables may not exist yet
-  const safeRead = (fn: () => PlatformSignal[]): PlatformSignal[] => {
-    try { return fn(); } catch { return []; }
+  const safeRead = async (fn: () => Promise<PlatformSignal[]>): Promise<PlatformSignal[]> => {
+    try { return await fn(); } catch { return []; }
   };
 
-  const allSignals: PlatformSignal[] = [
-    ...safeRead(() => readRadarSignals(db, config.radar_urgency_threshold, since)),
-    ...safeRead(() => readDeadlineSignals(db, config.deadline_alert_days)),
-    ...safeRead(() => readQualitySignals(db, config.quality_decline_threshold)),
-    ...safeRead(() => readPatternSignals(db, since)),
-    ...safeRead(() => readComplianceSignals(db)),
-    ...safeRead(() => readAssignmentSignals(db)),
-    ...safeRead(() => readWorkflowSignals(db, since)),
-    ...safeRead(() => readApprenticeSignals(db, since)),
-    ...safeRead(() => readProactiveSignals(db)),
-    ...safeRead(() => readKnowledgeGraphSignals(db)),
-    ...safeRead(() => readTaskAgentSignals(db, since)),
-  ];
+  const results = await Promise.all([
+    safeRead(() => readRadarSignals(db, config.radar_urgency_threshold, since)),
+    safeRead(() => readDeadlineSignals(db, config.deadline_alert_days)),
+    safeRead(() => readQualitySignals(db, config.quality_decline_threshold)),
+    safeRead(() => readPatternSignals(db, since)),
+    safeRead(() => readComplianceSignals(db)),
+    safeRead(() => readAssignmentSignals(db)),
+    safeRead(() => readWorkflowSignals(db, since)),
+    safeRead(() => readApprenticeSignals(db, since)),
+    safeRead(() => readProactiveSignals(db)),
+    safeRead(() => readKnowledgeGraphSignals(db)),
+    safeRead(() => readTaskAgentSignals(db, since)),
+  ]);
+
+  const allSignals: PlatformSignal[] = results.flat();
 
   // Sort by urgency × relevance descending
   return allSignals.sort((a, b) => (b.urgency * b.relevance) - (a.urgency * a.relevance));
@@ -569,7 +572,7 @@ export async function generateBriefing(
   model: string,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'daily',
   thinkingEnabled = false,
-  db?: Database.Database
+  db?: DatabaseAdapter
 ): Promise<{ content: string; proposals: OrchestratorProposal[] }> {
   const signalSummary = signals
     .slice(0, 20)
@@ -580,7 +583,7 @@ export async function generateBriefing(
   let atomSection = '';
   if (db) {
     try {
-      const recentAtoms = db.prepare(`
+      const recentAtoms = await db.all(`
         SELECT ka.content, ka.atom_type, ka.category, ka.confidence, ka.sentiment,
                wo.workflow_name
         FROM knowledge_atoms ka
@@ -590,7 +593,7 @@ export async function generateBriefing(
           AND ka.confidence >= 0.6
         ORDER BY ka.confidence DESC, ka.created_at DESC
         LIMIT 25
-      `).all() as Array<{
+      `) as Array<{
         content: string; atom_type: string; category: string;
         confidence: number; sentiment: string | null; workflow_name: string | null;
       }>;
@@ -657,17 +660,17 @@ Current date: ${new Date().toISOString().substring(0, 10)}`;
 
 // ── Briefing Persistence ──────────────────────────────────────────────────────
 
-export function saveBriefing(
-  db: Database.Database,
+export async function saveBriefing(
+  db: DatabaseAdapter,
   briefing: Omit<OrchestratorBriefing, 'id'>,
   userId: string = 'solo'
-): string {
+): Promise<string> {
   const id = randomUUID();
-  db.prepare(`
+  await db.run(`
     INSERT INTO orchestrator_briefings
       (id, user_id, period, signals_read, proposals_count, content, signals_data)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  `,
     id,
     userId,
     briefing.period,
@@ -680,12 +683,12 @@ export function saveBriefing(
   // Save individual proposals (hard limit: max per briefing)
   const cappedProposals = briefing.proposals.slice(0, ORCHESTRATOR_HARD_LIMITS.MAX_PROPOSALS_PER_BRIEFING);
   for (const p of cappedProposals) {
-    db.prepare(`
+    await db.run(`
       INSERT INTO orchestrator_proposals
         (id, briefing_id, signal_source, signal_id, signal_summary,
          action_type, proposed_action, confidence_score, urgency_score, rationale, estimated_effort)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `,
       randomUUID(),
       id,
       p.signal_source,
@@ -701,21 +704,21 @@ export function saveBriefing(
   }
 
   // Update stage metrics
-  db.prepare(`
+  await db.run(`
     UPDATE orchestrator_stage SET
       total_briefings = total_briefings + 1,
       total_proposals = total_proposals + ?,
       updated_at = datetime('now')
     WHERE id = 'default'
-  `).run(cappedProposals.length);
+  `, cappedProposals.length);
 
   return id;
 }
 
 // ── Stage Progression Check ───────────────────────────────────────────────────
 
-export function checkStageProgression(db: Database.Database): { advanced: boolean; newStage?: number; reason?: string } {
-  const stage = db.prepare('SELECT * FROM orchestrator_stage WHERE id = ?').get('default') as {
+export async function checkStageProgression(db: DatabaseAdapter): Promise<{ advanced: boolean; newStage?: number; reason?: string }> {
+  const stage = await db.get('SELECT * FROM orchestrator_stage WHERE id = ?', 'default') as {
     current_stage: number;
     stage_entered_at: string;
     total_briefings: number;
@@ -739,7 +742,7 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
     (Date.now() - new Date(stage.stage_entered_at).getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  function advanceToStage(newStage: number, reason: string) {
+  async function advanceToStage(newStage: number, reason: string) {
     const now = new Date().toISOString();
     const history = JSON.parse(stage!.stage_history || '[]') as unknown[];
     history.push({
@@ -749,7 +752,7 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
       reason,
     });
     // Reset per-stage rating counters so demotion evaluates fresh data
-    db.prepare(`
+    await db.run(`
       UPDATE orchestrator_stage SET
         current_stage = ?,
         stage_entered_at = ?,
@@ -759,7 +762,7 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
         proposals_irrelevant_or_wrong = 0,
         updated_at = ?
       WHERE id = 'default'
-    `).run(newStage, now, JSON.stringify(history), now);
+    `, newStage, now, JSON.stringify(history), now);
     console.log(`[orchestrator] STAGE ADVANCEMENT: ${stage!.current_stage} → ${newStage}. ${reason}`);
     return { advanced: true, newStage, reason };
   }
@@ -782,7 +785,7 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
     const badRate = stage.proposals_irrelevant_or_wrong / stage.proposals_rated;
 
     if (goodRate >= minGoodRate && badRate <= maxBadRate) {
-      return advanceToStage(2, `Stage 1 criteria met after ${daysSinceEntry} days: ${Math.round(goodRate * 100)}% good/relevant, ${Math.round(badRate * 100)}% bad`);
+      return await advanceToStage(2, `Stage 1 criteria met after ${daysSinceEntry} days: ${Math.round(goodRate * 100)}% good/relevant, ${Math.round(badRate * 100)}% bad`);
     }
   }
 
@@ -806,7 +809,7 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
     const quality = stage.avg_quality_score ?? 0;
 
     if (failureRate <= maxFailureRate && quality >= minQuality) {
-      return advanceToStage(3, `Stage 2 criteria met after ${daysSinceEntry} days: ${stage.plans_approved} approved, ${Math.round((1 - failureRate) * 100)}% success, ${(quality * 100).toFixed(0)}% quality`);
+      return await advanceToStage(3, `Stage 2 criteria met after ${daysSinceEntry} days: ${stage.plans_approved} approved, ${Math.round((1 - failureRate) * 100)}% success, ${(quality * 100).toFixed(0)}% quality`);
     }
   }
 
@@ -827,7 +830,7 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
     const quality = stage.avg_quality_score ?? 0;
 
     if (overrideRate <= maxOverrideRate && quality >= minQuality) {
-      return advanceToStage(4, `Stage 3 criteria met after ${daysSinceEntry} days: ${stage.auto_executions} auto-executions, ${Math.round(overrideRate * 100)}% override rate, ${(quality * 100).toFixed(0)}% quality`);
+      return await advanceToStage(4, `Stage 3 criteria met after ${daysSinceEntry} days: ${stage.auto_executions} auto-executions, ${Math.round(overrideRate * 100)}% override rate, ${(quality * 100).toFixed(0)}% quality`);
     }
   }
 
@@ -838,8 +841,8 @@ export function checkStageProgression(db: Database.Database): { advanced: boolea
  * Automatic stage demotion: if performance deteriorates significantly after
  * advancing to Stage 2+, demote back to Stage 1 for recalibration.
  */
-export function checkStageDemotion(db: Database.Database): { demoted: boolean; fromStage?: number; reason?: string } {
-  const stage = db.prepare('SELECT * FROM orchestrator_stage WHERE id = ?').get('default') as {
+export async function checkStageDemotion(db: DatabaseAdapter): Promise<{ demoted: boolean; fromStage?: number; reason?: string }> {
+  const stage = await db.get('SELECT * FROM orchestrator_stage WHERE id = ?', 'default') as {
     current_stage: number;
     stage_entered_at: string;
     proposals_rated: number;
@@ -870,7 +873,7 @@ export function checkStageDemotion(db: Database.Database): { demoted: boolean; f
       was_demotion: true,
     });
 
-    db.prepare(`
+    await db.run(`
       UPDATE orchestrator_stage SET
         current_stage = 1,
         stage_entered_at = ?,
@@ -880,15 +883,15 @@ export function checkStageDemotion(db: Database.Database): { demoted: boolean; f
         proposals_irrelevant_or_wrong = 0,
         updated_at = ?
       WHERE id = 'default'
-    `).run(now, JSON.stringify(history), now);
+    `, now, JSON.stringify(history), now);
 
     // Log demotion event
     try {
-      db.prepare(`
+      await db.run(`
         INSERT INTO orchestrator_stage_demotions
           (id, from_stage, to_stage, reason, trigger_type, triggered_by)
         VALUES (?, ?, 1, ?, 'auto_quality', 'system')
-      `).run(randomUUID(), fromStage, reason);
+      `, randomUUID(), fromStage, reason);
     } catch { /* table may not exist */ }
 
     console.warn(`[orchestrator] STAGE DEMOTION: ${fromStage} → 1. Reason: ${reason}`);
@@ -905,7 +908,7 @@ export function checkStageDemotion(db: Database.Database): { demoted: boolean; f
  * Used by GET /orchestrator/report endpoint.
  */
 export async function generateManagementReport(
-  db: Database.Database,
+  db: DatabaseAdapter,
   anthropic: AnthropicSDK,
   period: 'week' | 'month' = 'week'
 ): Promise<string> {
@@ -913,26 +916,31 @@ export async function generateManagementReport(
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
   // Gather stats
-  const briefingCount = (db.prepare(
-    'SELECT COUNT(*) as c FROM orchestrator_briefings WHERE created_at >= ?'
-  ).get(since) as { c: number }).c;
-  const proposalCount = (db.prepare(
-    'SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ?'
-  ).get(since) as { c: number }).c;
-  const ratedCount = (db.prepare(
-    'SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ? AND human_rating IS NOT NULL'
-  ).get(since) as { c: number }).c;
-  const goodCount = (db.prepare(
-    "SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ? AND human_rating IN ('good_catch','relevant')"
-  ).get(since) as { c: number }).c;
-  const stage = db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as
+  const briefingCount = (await db.get(
+    'SELECT COUNT(*) as c FROM orchestrator_briefings WHERE created_at >= ?',
+    since
+  ) as { c: number }).c;
+  const proposalCount = (await db.get(
+    'SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ?',
+    since
+  ) as { c: number }).c;
+  const ratedCount = (await db.get(
+    'SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ? AND human_rating IS NOT NULL',
+    since
+  ) as { c: number }).c;
+  const goodCount = (await db.get(
+    "SELECT COUNT(*) as c FROM orchestrator_proposals WHERE created_at >= ? AND human_rating IN ('good_catch','relevant')",
+    since
+  ) as { c: number }).c;
+  const stage = await db.get('SELECT current_stage FROM orchestrator_stage WHERE id = ?', 'default') as
     { current_stage: number } | undefined;
 
   let executionStats = { c: 0 };
   try {
-    executionStats = db.prepare(
-      'SELECT COUNT(*) as c FROM orchestrator_executions WHERE initiated_at >= ?'
-    ).get(since) as { c: number };
+    executionStats = await db.get(
+      'SELECT COUNT(*) as c FROM orchestrator_executions WHERE initiated_at >= ?',
+      since
+    ) as { c: number };
   } catch { /* ignore */ }
 
   const platformStats = {
@@ -1057,13 +1065,13 @@ Produce a concrete, executable workflow plan using ANTON's existing step types.`
 
 export async function generateNarrativeSummary(
   trailId: string,
-  db: Database.Database,
+  db: DatabaseAdapter,
   anthropic: AnthropicSDK
 ): Promise<string> {
-  const entries = db.prepare(`
+  const entries = await db.all(`
     SELECT entry_type, title, content FROM orchestrator_reasoning_entries
     WHERE trail_id = ? ORDER BY sequence_number ASC
-  `).all(trailId) as Array<{ entry_type: string; title: string; content: string }>;
+  `, trailId) as Array<{ entry_type: string; title: string; content: string }>;
 
   if (entries.length === 0) return 'No reasoning entries recorded for this trail.';
 
@@ -1095,17 +1103,17 @@ Write the narrative summary:`;
 
 export async function saveTrailToWorkspace(
   trailId: string,
-  db: Database.Database
+  db: DatabaseAdapter
 ): Promise<string | null> {
   try {
-    const trail = db.prepare('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?').get(trailId) as
+    const trail = await db.get('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?', trailId) as
       Record<string, unknown> | undefined;
     if (!trail) return null;
 
-    const entries = db.prepare(`
+    const entries = await db.all(`
       SELECT * FROM orchestrator_reasoning_entries
       WHERE trail_id = ? ORDER BY sequence_number ASC
-    `).all(trailId) as Array<Record<string, unknown>>;
+    `, trailId) as Array<Record<string, unknown>>;
 
     const date = new Date().toISOString().substring(0, 10);
     const dirPath = path.join(process.cwd(), '.anton', 'orchestrator', 'trails', date);
@@ -1148,8 +1156,7 @@ export async function saveTrailToWorkspace(
     await fs.writeFile(filePath, lines.join('\n'), 'utf-8');
 
     // Store file path on trail
-    db.prepare(`UPDATE orchestrator_reasoning_trails SET workspace_file_path = ? WHERE id = ?`)
-      .run(filePath, trailId);
+    await db.run(`UPDATE orchestrator_reasoning_trails SET workspace_file_path = ? WHERE id = ?`, filePath, trailId);
 
     return filePath;
   } catch (err) {
@@ -1160,22 +1167,22 @@ export async function saveTrailToWorkspace(
 
 // ── Audit Log Integration ──────────────────────────────────────────────────────
 
-export function logTrailToAuditLog(
+export async function logTrailToAuditLog(
   trailId: string,
-  db: Database.Database,
+  db: DatabaseAdapter,
   trail: { trigger_type: string; status: string; total_entries: number; duration_ms?: number | null }
-): void {
+): Promise<void> {
   try {
-    const tableExists = (db.prepare(
-      "SELECT COUNT(*) as c FROM sqlite_master WHERE type='table' AND name='audit_log'"
-    ).get() as { c: number }).c > 0;
+    const tableExists = (await db.get(
+      "SELECT COUNT(*) as c FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'audit_log'"
+    ) as { c: number }).c > 0;
     if (!tableExists) return;
 
-    db.prepare(`
+    await db.run(`
       INSERT OR IGNORE INTO audit_log
         (id, timestamp, module_id, response_status, knowledge_sources_used)
       VALUES (?, datetime('now'), 'orchestrator', ?, ?)
-    `).run(
+    `,
       randomUUID(),
       trail.status === 'completed' ? 'completed' : 'error',
       JSON.stringify({ trail_id: trailId, trigger: trail.trigger_type, entries: trail.total_entries, duration_ms: trail.duration_ms })
@@ -1205,36 +1212,37 @@ export interface ReasoningEntryInput {
 }
 
 /** Create a new reasoning trail for a heartbeat cycle or approval action */
-export function createReasoningTrail(
-  db: Database.Database,
+export async function createReasoningTrail(
+  db: DatabaseAdapter,
   trigger_type: 'heartbeat' | 'on_demand' | 'approval' | 'rejection' | 'auto_execution' | 'chain',
   transparency_level: number = 1
-): string {
+): Promise<string> {
   const id = randomUUID();
-  db.prepare(`
+  await db.run(`
     INSERT INTO orchestrator_reasoning_trails (id, trigger_type, transparency_level)
     VALUES (?, ?, ?)
-  `).run(id, trigger_type, transparency_level);
+  `, id, trigger_type, transparency_level);
   return id;
 }
 
 /** Append a reasoning entry to an active trail */
-export function addTrailEntry(
-  db: Database.Database,
+export async function addTrailEntry(
+  db: DatabaseAdapter,
   trailId: string,
   entry: ReasoningEntryInput
-): void {
+): Promise<void> {
   try {
-    const seq = (db.prepare(
-      'SELECT COUNT(*) as c FROM orchestrator_reasoning_entries WHERE trail_id = ?'
-    ).get(trailId) as { c: number }).c + 1;
+    const seq = (await db.get(
+      'SELECT COUNT(*) as c FROM orchestrator_reasoning_entries WHERE trail_id = ?',
+      trailId
+    ) as { c: number }).c + 1;
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO orchestrator_reasoning_entries
         (id, trail_id, entry_type, sequence_number, title, content,
          thinking_content, confidence, duration_ms, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `,
       randomUUID(),
       trailId,
       entry.entry_type,
@@ -1247,9 +1255,9 @@ export function addTrailEntry(
       entry.metadata ? JSON.stringify(entry.metadata) : null
     );
 
-    db.prepare(`
+    await db.run(`
       UPDATE orchestrator_reasoning_trails SET total_entries = ? WHERE id = ?
-    `).run(seq, trailId);
+    `, seq, trailId);
   } catch (err) {
     // Trail recording must never break the main cycle
     console.warn('[orchestrator] Trail entry write failed (non-fatal):', err);
@@ -1257,18 +1265,18 @@ export function addTrailEntry(
 }
 
 /** Finalise a reasoning trail (sync DB update; async post-processing handled separately) */
-export function completeTrail(
-  db: Database.Database,
+export async function completeTrail(
+  db: DatabaseAdapter,
   trailId: string,
   status: 'completed' | 'failed' | 'abandoned',
   durationMs: number,
   linkages?: { heartbeat_id?: string; briefing_id?: string; proposal_id?: string; execution_id?: string }
-): void {
+): Promise<void> {
   try {
     const now = new Date().toISOString();
-    const total = (db.prepare('SELECT total_entries FROM orchestrator_reasoning_trails WHERE id = ?').get(trailId) as { total_entries: number } | undefined)?.total_entries ?? 0;
+    const total = (await db.get('SELECT total_entries FROM orchestrator_reasoning_trails WHERE id = ?', trailId) as { total_entries: number } | undefined)?.total_entries ?? 0;
 
-    db.prepare(`
+    await db.run(`
       UPDATE orchestrator_reasoning_trails SET
         status = ?, duration_ms = ?, completed_at = ?,
         heartbeat_id  = COALESCE(?, heartbeat_id),
@@ -1276,7 +1284,7 @@ export function completeTrail(
         proposal_id   = COALESCE(?, proposal_id),
         execution_id  = COALESCE(?, execution_id)
       WHERE id = ?
-    `).run(
+    `,
       status, durationMs, now,
       linkages?.heartbeat_id ?? null,
       linkages?.briefing_id ?? null,
@@ -1295,13 +1303,13 @@ export function completeTrail(
 /** Post-completion async enrichment: narrative summary + workspace file */
 export async function enrichTrailAsync(
   trailId: string,
-  db: Database.Database,
+  db: DatabaseAdapter,
   anthropic: AnthropicSDK
 ): Promise<void> {
   try {
     const narrative = await generateNarrativeSummary(trailId, db, anthropic);
     if (narrative) {
-      db.prepare('UPDATE orchestrator_reasoning_trails SET narrative_summary = ? WHERE id = ?').run(narrative, trailId);
+      await db.run('UPDATE orchestrator_reasoning_trails SET narrative_summary = ? WHERE id = ?', narrative, trailId);
     }
     await saveTrailToWorkspace(trailId, db);
   } catch (err) {
@@ -1312,12 +1320,12 @@ export async function enrichTrailAsync(
 // ── Full Heartbeat Cycle ──────────────────────────────────────────────────────
 
 export async function runHeartbeatCycle(
-  db: Database.Database,
+  db: DatabaseAdapter,
   anthropic: AnthropicSDK,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'heartbeat',
   forceBriefing: boolean = false
 ): Promise<{ action: 'none' | 'briefing_generated'; briefingId?: string; signalCount: number; trailId?: string }> {
-  const config = getOrchestratorConfig(db);
+  const config = await getOrchestratorConfig(db);
 
   if (config.fully_disabled || config.orchestrator_paused) {
     return { action: 'none', signalCount: 0 };
@@ -1330,7 +1338,7 @@ export async function runHeartbeatCycle(
 
   // Start reasoning trail
   const triggerType = period === 'on_demand' ? 'on_demand' : 'heartbeat';
-  const trailId = createReasoningTrail(db, triggerType, (config as OrchestratorConfig & { reasoning_transparency_level?: number }).reasoning_transparency_level ?? 1);
+  const trailId = await createReasoningTrail(db, triggerType, (config as OrchestratorConfig & { reasoning_transparency_level?: number }).reasoning_transparency_level ?? 1);
 
   let signals: PlatformSignal[] = [];
   let action: 'none' | 'briefing_generated' = 'none';
@@ -1342,7 +1350,7 @@ export async function runHeartbeatCycle(
     // Step 1: Aggregate signals
     const signalStart = Date.now();
     signals = await aggregateSignals(db, since);
-    addTrailEntry(db, trailId, {
+    await addTrailEntry(db, trailId, {
       entry_type: 'signal_detection',
       title: `${signals.length} platform signals detected`,
       content: signals.length === 0
@@ -1359,7 +1367,7 @@ export async function runHeartbeatCycle(
     // Step 2: Assess significance
     const assessStart = Date.now();
     const significant = forceBriefing || (await assessSignificance(signals, anthropic));
-    addTrailEntry(db, trailId, {
+    await addTrailEntry(db, trailId, {
       entry_type: 'signal_assessment',
       title: significant ? 'Signals assessed as significant — briefing warranted' : 'Signals assessed as routine — no briefing needed',
       content: significant
@@ -1373,7 +1381,7 @@ export async function runHeartbeatCycle(
     if (significant || period !== 'heartbeat') {
       // Step 3: Generate briefing + proposals
       const briefingStart = Date.now();
-      addTrailEntry(db, trailId, {
+      await addTrailEntry(db, trailId, {
         entry_type: 'proposal_reasoning',
         title: `Generating ${period} briefing with proposal recommendations`,
         content: `Calling ${config.briefing_model} to analyse ${signals.length} signals and generate actionable proposals.\n\nSignal composition:\n${[...new Set(signals.map(s => s.source))].map(src => `- ${src}: ${signals.filter(s => s.source === src).length} signals`).join('\n')}`,
@@ -1383,7 +1391,7 @@ export async function runHeartbeatCycle(
       const briefingThinking = !!(config as OrchestratorConfig).briefing_thinking_enabled;
       const { content, proposals } = await generateBriefing(signals, anthropic, config.briefing_model, period, briefingThinking, db);
 
-      addTrailEntry(db, trailId, {
+      await addTrailEntry(db, trailId, {
         entry_type: 'completion_summary',
         title: `Briefing generated — ${proposals.length} proposals`,
         content: `Briefing generation complete.\n\nProposals generated: ${proposals.length}\n${proposals.slice(0, 5).map((p, i) => `${i + 1}. [${p.action_type}] ${p.proposed_action} (confidence: ${Math.round(p.confidence_score * 100)}%)`).join('\n')}`,
@@ -1392,7 +1400,7 @@ export async function runHeartbeatCycle(
         metadata: { proposals_count: proposals.length, action_types: [...new Set(proposals.map(p => p.action_type))] },
       });
 
-      briefingId = saveBriefing(db, {
+      briefingId = await saveBriefing(db, {
         period,
         content,
         signals_read: signals.length,
@@ -1405,7 +1413,7 @@ export async function runHeartbeatCycle(
   } catch (err) {
     error = String(err);
     console.error('[orchestrator] Heartbeat cycle error:', err);
-    addTrailEntry(db, trailId, {
+    await addTrailEntry(db, trailId, {
       entry_type: 'completion_summary',
       title: 'Cycle failed with error',
       content: `Error during heartbeat cycle: ${error}`,
@@ -1415,11 +1423,11 @@ export async function runHeartbeatCycle(
 
   // Log heartbeat
   heartbeatId = randomUUID();
-  db.prepare(`
+  await db.run(`
     INSERT INTO orchestrator_heartbeats
       (id, signals_checked, signals_significant, action_taken, duration_ms, error_message, status)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  `, 
     heartbeatId,
     signals.length,
     signals.filter(s => s.urgency >= 0.6).length,
@@ -1429,8 +1437,8 @@ export async function runHeartbeatCycle(
     error ? 'error' : 'ok'
   );
 
-  // Complete trail (sync)
-  completeTrail(db, trailId, error ? 'failed' : 'completed', Date.now() - start, {
+  // Complete trail
+  await completeTrail(db, trailId, error ? 'failed' : 'completed', Date.now() - start, {
     heartbeat_id: heartbeatId,
     briefing_id: briefingId,
   });
@@ -1455,13 +1463,13 @@ export async function runHeartbeatCycle(
       }
 
       // Stage 3+ auto-execution: run patterns with auto_execute=1
-      const currentStage = (db.prepare('SELECT current_stage FROM orchestrator_stage WHERE id = ?').get('default') as { current_stage: number } | undefined)?.current_stage ?? 1;
+      const currentStage = (await db.get('SELECT current_stage FROM orchestrator_stage WHERE id = ?', 'default') as { current_stage: number } | undefined)?.current_stage ?? 1;
       if (currentStage >= 3 && isAutoExecutionAllowed(db)) {
-        const autoPatterns = db.prepare(`
-          SELECT id, pattern_type, name, suggested_action FROM orchestrator_patterns
-          WHERE auto_execute = 1
-            AND last_detected_at >= datetime('now', '-1 day')
-        `).all() as Array<{ id: string; pattern_type: string; name: string; suggested_action: string }>;
+        const autoPatterns = await db.all(`
+          SELECT id, pattern_type, name, suggested_action
+          FROM orchestrator_patterns
+          WHERE auto_execute = 1 AND status = 'active'
+        `) as Array<{ id: string; pattern_type: string; name: string; suggested_action: string }>;
 
         for (const ap of autoPatterns) {
           if (!isAutoExecutionAllowed(db)) break; // re-check limit each iteration
@@ -1469,26 +1477,26 @@ export async function runHeartbeatCycle(
           const execId = randomUUID();
           try {
             // Create execution record for audit trail
-            db.prepare(`
+            await db.run(`
               INSERT INTO orchestrator_executions
                 (id, proposal_id, status, outcome, started_at)
               VALUES (?, ?, 'completed', 'auto_executed', datetime('now'))
-            `).run(execId, ap.id);
+            `, execId, ap.id);
 
             // Mark detection as auto-executed
-            db.prepare(`
+            await db.run(`
               UPDATE orchestrator_pattern_detections SET auto_executed = 1
               WHERE pattern_id = ? AND auto_executed = 0
                 AND detected_at >= datetime('now', '-1 day')
-            `).run(ap.id);
+            `, ap.id);
 
             // Increment auto_executions counter
-            db.prepare(`
+            await db.run(`
               UPDATE orchestrator_stage SET
                 auto_executions = auto_executions + 1,
                 updated_at = datetime('now')
               WHERE id = 'default'
-            `).run();
+            `);
 
             console.log(`[orchestrator] Auto-executed pattern: ${ap.name} (${ap.pattern_type})`);
           } catch (autoErr) {
@@ -1500,11 +1508,11 @@ export async function runHeartbeatCycle(
       // Auto-pause check
       const { pause, reason } = shouldAutoPause(db);
       if (pause) {
-        db.prepare(`
+        await db.run(`
           UPDATE orchestrator_config SET
             orchestrator_paused = 1, paused_at = datetime('now'), paused_by = 'auto_quality_check', updated_at = datetime('now')
           WHERE id = 'default'
-        `).run();
+        `);
         console.warn(`[orchestrator] AUTO-PAUSED: ${reason}`);
       }
     } catch (e) {
@@ -1515,9 +1523,9 @@ export async function runHeartbeatCycle(
 
   // Check stage progression + demotion on every heartbeat cycle
   try {
-    const demotion = checkStageDemotion(db);
+    const demotion = await checkStageDemotion(db);
     if (!demotion.demoted) {
-      checkStageProgression(db);
+      await checkStageProgression(db);
     }
   } catch (e) {
     console.error('[orchestrator] Stage check error (non-fatal):', String(e));

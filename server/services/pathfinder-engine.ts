@@ -11,7 +11,8 @@ import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider, type ChatResult } from './provider-router.js';
 import { estimateTokens, estimateCost } from './token-estimator.js';
@@ -217,7 +218,7 @@ function enrichQuery(query: string, context?: SearchContext): string {
  * using hybrid BM25+vector search. Returns results as WebSource[] with sourceType='local'.
  */
 async function searchLocalKnowledge(
-  db: Database.Database,
+  db: DatabaseAdapter,
   query: string,
   topK = 3,
 ): Promise<WebSource[]> {
@@ -648,7 +649,7 @@ function buildDeepenPrompt(query: string, priorContext: string, gaps: string): s
 // ── Quick search (Haiku web_search → Haiku think_hard synthesis) ────────────
 
 export async function dispatchQuickSearch(
-  db: Database.Database,
+  db: DatabaseAdapter,
   query: string,
   userId: string,
   threadId: string | null,
@@ -731,7 +732,7 @@ export async function dispatchQuickSearch(
 // ── Thorough search (Haiku search → Haiku analysis → Sonnet chairman) ──────
 
 export async function dispatchThoroughSearch(
-  db: Database.Database,
+  db: DatabaseAdapter,
   query: string,
   userId: string,
   threadId: string | null,
@@ -834,7 +835,7 @@ export async function dispatchThoroughSearch(
 // ── Deep search (Haiku search → Sonnet IRE with confidence gating) ─────────
 
 export async function dispatchDeepSearch(
-  db: Database.Database,
+  db: DatabaseAdapter,
   query: string,
   userId: string,
   threadId: string | null,
@@ -994,14 +995,14 @@ export async function dispatchDeepSearch(
 // ── Follow-up handling ─────────────────────────────────────────────────────
 
 export async function handleFollowUp(
-  db: Database.Database,
+  db: DatabaseAdapter,
   searchId: string,
   question: string,
   anthropic: Anthropic,
   callbacks: Pick<SearchCallbacks, 'onTextDelta' | 'onThinkingDelta'>,
   signal?: AbortSignal,
 ): Promise<{ id: string; answer: string; thinking: string }> {
-  const search = db.prepare('SELECT * FROM pathfinder_searches WHERE id = ?').get(searchId) as Record<string, unknown> | undefined;
+  const search = await db.get('SELECT * FROM pathfinder_searches WHERE id = ?', searchId) as Record<string, unknown> | undefined;
   if (!search) throw new Error('Search not found');
 
   const followUpId = randomUUID();
@@ -1023,21 +1024,20 @@ export async function handleFollowUp(
   if (result.text) callbacks.onTextDelta(result.text);
   if (result.thinking) callbacks.onThinkingDelta(result.thinking);
 
-  db.prepare(
+  await db.run(
     'INSERT INTO pathfinder_followups (id, search_id, question, answer, thinking, input_tokens, output_tokens) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(followUpId, searchId, question, result.text, result.thinking, result.inputTokens, result.outputTokens);
+  , followUpId, searchId, question, result.text, result.thinking, result.inputTokens, result.outputTokens);
 
   return { id: followUpId, answer: result.text, thinking: result.thinking };
 }
 
 // ── Document context builder ───────────────────────────────────────────────
 
-export function buildDocumentContext(db: Database.Database, documentIds: string[], maxTokens = 30000): string {
+export async function buildDocumentContext(db: DatabaseAdapter, documentIds: string[], maxTokens = 30000): string {
   if (!documentIds.length) return '';
   const placeholders = documentIds.map(() => '?').join(',');
-  const docs = db.prepare(
-    `SELECT filename, extracted_text, token_estimate FROM pathfinder_documents WHERE id IN (${placeholders})`
-  ).all(...documentIds) as Array<{ filename: string; extracted_text: string; token_estimate: number }>;
+  const docs = await db.all(`SELECT filename, extracted_text, token_estimate FROM pathfinder_documents WHERE id IN (${placeholders})`
+  , ...documentIds) as Array<{ filename: string; extracted_text: string; token_estimate: number }>;
 
   let budget = maxTokens;
   const sections: string[] = [];
@@ -1061,18 +1061,18 @@ export function buildDocumentContext(db: Database.Database, documentIds: string[
 // ── Suggestion engine ──────────────────────────────────────────────────────
 
 export async function generateSuggestions(
-  db: Database.Database,
+  db: DatabaseAdapter,
   userId: string,
   anthropic: Anthropic,
 ): Promise<Array<{ id: string; query: string; context: string }>> {
   // Gather recent context
-  const recentSearches = db.prepare(
+  const recentSearches = await db.all(
     'SELECT query FROM pathfinder_searches WHERE user_id = ? ORDER BY created_at DESC LIMIT 5'
-  ).all(userId) as Array<{ query: string }>;
+  , userId) as Array<{ query: string }>;
 
-  const recentSessions = db.prepare(
+  const recentSessions = await db.all(
     'SELECT title, module_id FROM sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT 10'
-  ).all(userId) as Array<{ title: string; module_id: string }>;
+  , userId) as Array<{ title: string; module_id: string }>;
 
   if (recentSearches.length === 0 && recentSessions.length === 0) return [];
 
@@ -1097,9 +1097,8 @@ export async function generateSuggestions(
     const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
     for (const s of parsed.slice(0, 5)) {
       const id = randomUUID();
-      db.prepare(
-        'INSERT INTO pathfinder_suggestions (id, user_id, query, context, expires_at) VALUES (?, ?, ?, ?, ?)'
-      ).run(id, userId, s.query, s.context, expiresAt);
+      await db.run('INSERT INTO pathfinder_suggestions (id, user_id, query, context, expires_at) VALUES (?, ?, ?, ?, ?)'
+      , id, userId, s.query, s.context, expiresAt);
       suggestions.push({ id, query: s.query, context: s.context });
     }
     return suggestions;
@@ -1110,13 +1109,13 @@ export async function generateSuggestions(
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function persistSearch(db: Database.Database, result: SearchResult, userId: string, threadId: string | null) {
+async function persistSearch(db: DatabaseAdapter, result: SearchResult, userId: string, threadId: string | null) {
   // Try with new columns first; fall back to original schema if migration 047 hasn't run
   try {
-    db.prepare(`
+    await db.run(`
       INSERT INTO pathfinder_searches (id, user_id, thread_id, query, enriched_query, depth, synthesis, thinking, status, model_results, web_sources, input_tokens, output_tokens, cost_usd, duration_ms, active_area_id, active_module_id, context_snapshot, search_mode)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'complete', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `, 
       result.id, userId, threadId, result.query, result.enrichedQuery, result.depth,
       result.synthesis, result.thinking,
       JSON.stringify(result.modelResults),
@@ -1129,10 +1128,10 @@ function persistSearch(db: Database.Database, result: SearchResult, userId: stri
     );
   } catch {
     // Fallback: original schema without migration 047 columns
-    db.prepare(`
+    await db.run(`
       INSERT INTO pathfinder_searches (id, user_id, thread_id, query, depth, synthesis, thinking, status, model_results, web_sources, input_tokens, output_tokens, cost_usd, duration_ms)
       VALUES (?, ?, ?, ?, ?, ?, ?, 'complete', ?, ?, ?, ?, ?, ?)
-    `).run(
+    `, 
       result.id, userId, threadId, result.query, result.depth,
       result.synthesis, result.thinking,
       JSON.stringify(result.modelResults),
@@ -1143,13 +1142,11 @@ function persistSearch(db: Database.Database, result: SearchResult, userId: stri
 
   // Persist individual sources (web + local)
   try {
-    const stmt = db.prepare(
-      'INSERT INTO pathfinder_sources (id, search_id, url, title, snippet, source_type, model_id, relevance_score, quality_score, consensus_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    );
     const allSources = [...result.webSources, ...result.localSources];
     for (let i = 0; i < allSources.length; i++) {
       const src = allSources[i];
-      stmt.run(
+      await db.run(
+        'INSERT INTO pathfinder_sources (id, search_id, url, title, snippet, source_type, model_id, relevance_score, quality_score, consensus_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         randomUUID(), result.id, src.url, src.title, src.snippet,
         src.sourceType, src.modelId, src.relevanceScore,
         src.qualityScore, src.consensusScore,
@@ -1157,18 +1154,18 @@ function persistSearch(db: Database.Database, result: SearchResult, userId: stri
     }
   } catch {
     // Fallback: original schema without quality_score/consensus_score
-    const stmt = db.prepare(
-      'INSERT INTO pathfinder_sources (id, search_id, url, title, snippet, source_type, model_id, relevance_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    );
+
     const allSources = [...result.webSources, ...result.localSources];
     for (const src of allSources) {
-      stmt.run(randomUUID(), result.id, src.url, src.title, src.snippet, src.sourceType, src.modelId, src.relevanceScore);
+      await db.run(
+      'INSERT INTO pathfinder_sources (id, search_id, url, title, snippet, source_type, model_id, relevance_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    , randomUUID(), result.id, src.url, src.title, src.snippet, src.sourceType, src.modelId, src.relevanceScore);
     }
   }
 
   // Update thread timestamp if in a thread
   if (threadId) {
-    db.prepare('UPDATE pathfinder_threads SET updated_at = datetime(\'now\') WHERE id = ?').run(threadId);
+    await db.run('UPDATE pathfinder_threads SET updated_at = datetime(\'now\') WHERE id = ?', threadId);
   }
 }
 

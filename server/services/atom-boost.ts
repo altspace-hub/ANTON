@@ -9,6 +9,7 @@
  * smarter than generic vector search.
  */
 
+import type { DatabaseAdapter } from '../db/database.js';
 import type { HybridSearchResult } from './hybrid-search.js';
 
 export interface BoostContext {
@@ -23,11 +24,11 @@ export interface BoostContext {
  * When `db` is provided, past retrieval feedback is used as an additional
  * relevance signal (positive history boosts, negative history penalises).
  */
-export function applyAntonBoosts(
+export async function applyAntonBoosts(
   results: HybridSearchResult[],
   context: BoostContext,
-  db?: import('better-sqlite3').Database,
-): HybridSearchResult[] {
+  db?: DatabaseAdapter,
+): Promise<HybridSearchResult[]> {
   if (results.length === 0) return results;
 
   const now = Date.now();
@@ -38,14 +39,14 @@ export function applyAntonBoosts(
     try {
       const atomIds = results.map(r => r.content_id);
       const placeholders = atomIds.map(() => '?').join(',');
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT atom_id,
                 SUM(CASE WHEN was_relevant = 1 THEN 1 ELSE 0 END) as positive,
                 SUM(CASE WHEN was_relevant = 0 THEN 1 ELSE 0 END) as negative
          FROM retrieval_feedback
          WHERE atom_id IN (${placeholders}) AND was_relevant IS NOT NULL
          GROUP BY atom_id`
-      ).all(...atomIds) as Array<{ atom_id: string; positive: number; negative: number }>;
+      , ...atomIds) as Array<{ atom_id: string; positive: number; negative: number }>;
 
       for (const row of rows) {
         feedbackMap.set(row.atom_id, { positive: row.positive, negative: row.negative });

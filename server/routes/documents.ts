@@ -7,7 +7,7 @@ import express from 'express';
 import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { indexDocument, reindexDocument, deleteDocument, getCollectionIndexStats } from '../services/document-indexer.js';
 import { getCollectionDocuments } from '../services/collection-manager.js';
 
@@ -38,7 +38,7 @@ const upload = multer({
   },
 });
 
-export function createDocumentsRouter(db: Database) {
+export async function createDocumentsRouter(db: DatabaseAdapter) {
   const router = express.Router();
 
   /**
@@ -158,7 +158,7 @@ export function createDocumentsRouter(db: Database) {
    * GET /documents/collection/:collectionId
    * List all documents in a collection
    */
-  router.get('/documents/collection/:collectionId', (req, res) => {
+  router.get('/documents/collection/:collectionId', async (req, res) => {
     try {
       const { collectionId } = req.params;
       const documents = getCollectionDocuments(db, collectionId);
@@ -173,7 +173,7 @@ export function createDocumentsRouter(db: Database) {
    * GET /documents/collection/:collectionId/stats
    * Get indexing statistics for a collection
    */
-  router.get('/documents/collection/:collectionId/stats', (req, res) => {
+  router.get('/documents/collection/:collectionId/stats', async (req, res) => {
     try {
       const { collectionId } = req.params;
       const stats = getCollectionIndexStats(db, collectionId);
@@ -228,7 +228,7 @@ export function createDocumentsRouter(db: Database) {
       const { id } = req.params;
 
       // Get document to find collection
-      const doc = db.prepare('SELECT collection_id FROM rag_documents WHERE id = ?').get(id) as any;
+      const doc = await db.get('SELECT collection_id FROM rag_documents WHERE id = ?', id) as any;
 
       if (!doc) {
         return res.status(404).json({ error: 'Document not found' });
@@ -251,19 +251,17 @@ export function createDocumentsRouter(db: Database) {
    * GET /documents/:id
    * Get document details with chunks
    */
-  router.get('/documents/:id', (req, res) => {
+  router.get('/documents/:id', async (req, res) => {
     try {
       const { id } = req.params;
 
-      const document = db.prepare('SELECT * FROM rag_documents WHERE id = ?').get(id);
+      const document = await db.get('SELECT * FROM rag_documents WHERE id = ?', id);
 
       if (!document) {
         return res.status(404).json({ error: 'Document not found' });
       }
 
-      const chunks = db
-        .prepare('SELECT * FROM rag_chunks WHERE document_id = ? ORDER BY chunk_index ASC')
-        .all(id);
+      const chunks = await db.all('SELECT * FROM rag_chunks WHERE document_id = ? ORDER BY chunk_index ASC', id);
 
       res.json({ document, chunks });
     } catch (error) {

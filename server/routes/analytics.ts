@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
-export function createAnalyticsRouter(db: Database.Database) {
+
+export async function createAnalyticsRouter(db: DatabaseAdapter) {
   const router = Router();
 
   function getUserId(req: unknown): string {
@@ -21,15 +22,15 @@ export function createAnalyticsRouter(db: Database.Database) {
   }
 
   // GET /api/analytics/overview
-  router.get('/overview', (req, res) => {
+  router.get('/overview', async (req, res) => {
     try {
       const userId = getUserId(req);
-      const sessionRow = db.prepare('SELECT COUNT(*) AS total FROM sessions WHERE user_id = ?').get(userId) as { total: number };
-      const msgRow = db.prepare('SELECT COUNT(*) AS total FROM messages m JOIN sessions s ON s.id = m.session_id WHERE s.user_id = ?').get(userId) as { total: number };
-      const tokenCostRow = db.prepare(
+      const sessionRow = await db.get('SELECT COUNT(*) AS total FROM sessions WHERE user_id = ?', userId) as { total: number };
+      const msgRow = await db.get('SELECT COUNT(*) AS total FROM messages m JOIN sessions s ON s.id = m.session_id WHERE s.user_id = ?', userId) as { total: number };
+      const tokenCostRow = await db.get(
         'SELECT COALESCE(SUM(m.token_count), 0) AS totalTokens, COALESCE(SUM(m.cost), 0) AS totalCost FROM messages m JOIN sessions s ON s.id = m.session_id WHERE s.user_id = ?'
-      ).get(userId) as { totalTokens: number; totalCost: number };
-      const moduleRow = db.prepare('SELECT COUNT(DISTINCT module_id) AS unique_modules FROM sessions WHERE user_id = ?').get(userId) as {
+      , userId) as { totalTokens: number; totalCost: number };
+      const moduleRow = await db.get('SELECT COUNT(DISTINCT module_id) AS unique_modules FROM sessions WHERE user_id = ?', userId) as {
         unique_modules: number;
       };
 
@@ -48,7 +49,7 @@ export function createAnalyticsRouter(db: Database.Database) {
   });
 
   // GET /api/analytics/sessions-over-time?days=30
-  router.get('/sessions-over-time', (req, res) => {
+  router.get('/sessions-over-time', async (req, res) => {
     try {
       const userId = getUserId(req);
       const days = Math.min(Math.max(parseInt(String(req.query.days || '30'), 10) || 30, 1), 365);
@@ -56,13 +57,13 @@ export function createAnalyticsRouter(db: Database.Database) {
       cutoff.setDate(cutoff.getDate() - (days - 1));
       const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT date(created_at) AS date, COUNT(*) AS count
          FROM sessions
          WHERE date(created_at) >= ? AND user_id = ?
          GROUP BY date(created_at)
          ORDER BY date(created_at) ASC`
-      ).all(cutoffStr, userId) as Array<{ date: string; count: number }>;
+      , cutoffStr, userId) as Array<{ date: string; count: number }>;
 
       const lookup: Record<string, number> = {};
       for (const row of rows) lookup[row.date] = row.count;
@@ -77,12 +78,12 @@ export function createAnalyticsRouter(db: Database.Database) {
   });
 
   // GET /api/analytics/module-usage?limit=10
-  router.get('/module-usage', (req, res) => {
+  router.get('/module-usage', async (req, res) => {
     try {
       const userId = getUserId(req);
       const limit = Math.min(Math.max(parseInt(String(req.query.limit || '10'), 10) || 10, 1), 50);
 
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT s.module_id AS moduleId,
                 COUNT(DISTINCT s.id) AS count,
                 COALESCE(SUM(m.cost), 0) AS cost
@@ -92,7 +93,7 @@ export function createAnalyticsRouter(db: Database.Database) {
          GROUP BY s.module_id
          ORDER BY count DESC
          LIMIT ?`
-      ).all(userId, limit) as Array<{ moduleId: string; count: number; cost: number }>;
+      , userId, limit) as Array<{ moduleId: string; count: number; cost: number }>;
 
       // Humanise the module ID into a label
       function toLabel(id: string): string {
@@ -117,7 +118,7 @@ export function createAnalyticsRouter(db: Database.Database) {
   });
 
   // GET /api/analytics/cost-trend?days=30
-  router.get('/cost-trend', (req, res) => {
+  router.get('/cost-trend', async (req, res) => {
     try {
       const userId = getUserId(req);
       const days = Math.min(Math.max(parseInt(String(req.query.days || '30'), 10) || 30, 1), 365);
@@ -125,7 +126,7 @@ export function createAnalyticsRouter(db: Database.Database) {
       cutoff.setDate(cutoff.getDate() - (days - 1));
       const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT date(m.created_at) AS date,
                 COALESCE(SUM(m.cost), 0) AS cost,
                 COALESCE(SUM(m.token_count), 0) AS tokens
@@ -134,7 +135,7 @@ export function createAnalyticsRouter(db: Database.Database) {
          WHERE date(m.created_at) >= ? AND s.user_id = ?
          GROUP BY date(m.created_at)
          ORDER BY date(m.created_at) ASC`
-      ).all(cutoffStr, userId) as Array<{ date: string; cost: number; tokens: number }>;
+      , cutoffStr, userId) as Array<{ date: string; cost: number; tokens: number }>;
 
       const lookup: Record<string, { cost: number; tokens: number }> = {};
       for (const row of rows) lookup[row.date] = { cost: row.cost, tokens: row.tokens };
@@ -153,11 +154,11 @@ export function createAnalyticsRouter(db: Database.Database) {
   });
 
   // POST /api/analytics/budget-cap — update the global monthly budget cap (admin only)
-  router.post('/budget-cap', (req, res) => {
+  router.post('/budget-cap', async (req, res) => {
     try {
       const { cap } = req.body as { cap?: number };
       const value = typeof cap === 'number' && cap >= 0 ? cap : 0;
-      db.prepare("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('monthly_budget_cap', ?)").run(String(value));
+      await db.run("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('monthly_budget_cap', ?)", String(value));
       res.json({ success: true, cap: value });
     } catch (err) {
       console.error('[analytics/budget-cap]', err);
@@ -168,23 +169,18 @@ export function createAnalyticsRouter(db: Database.Database) {
   // GET /api/analytics/spending — monthly budget cap status
   // Returns { spent: number, cap: number, month: string }
   // cap = 0 means unlimited. spent is the sum of message costs for the current calendar month.
-  router.get('/spending', (req, res) => {
+  router.get('/spending', async (req, res) => {
     try {
       const userId = getUserId(req);
       const now = new Date();
       const month = now.toISOString().slice(0, 7); // YYYY-MM
 
-      const spentRow = db.prepare(
-        `SELECT COALESCE(SUM(m.cost), 0) as total
-         FROM messages m
-         JOIN sessions s ON s.id = m.session_id
-         WHERE strftime('%Y-%m', m.created_at) = ? AND s.user_id = ?`
-      ).get(month, userId) as { total: number };
+
 
       const spent = spentRow.total ?? 0;
 
       // Read cap from app_settings, fall back to env var, then 0 (unlimited)
-      const settingRow = db.prepare("SELECT value FROM app_settings WHERE key = 'monthly_budget_cap'").get() as { value: string } | undefined;
+
       const capFromDb = settingRow ? parseFloat(settingRow.value) : NaN;
       const capFromEnv = parseFloat(process.env.MONTHLY_BUDGET_CAP || '0');
       const cap = !isNaN(capFromDb) ? capFromDb : capFromEnv;

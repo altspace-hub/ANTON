@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -32,15 +32,15 @@ function parsePackRow(row: SkillPackRow) {
   };
 }
 
-export function createSkillPacksRoutes(db: Database.Database) {
+export async function createSkillPacksRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/skill-packs — list all packs (default packs first, then custom)
-  router.get('/skill-packs', requireAuth, (_req, res) => {
+  router.get('/skill-packs', requireAuth, async (_req, res) => {
     try {
-      const rows = db.prepare(
+      const rows = await db.all(
         'SELECT * FROM skill_packs ORDER BY is_default DESC, created_at ASC'
-      ).all() as SkillPackRow[];
+      ) as SkillPackRow[];
       res.json(rows.map(parsePackRow));
     } catch (error) {
       console.error('[skill-packs] GET /skill-packs error:', error);
@@ -49,9 +49,9 @@ export function createSkillPacksRoutes(db: Database.Database) {
   });
 
   // GET /api/skill-packs/:id — get single pack
-  router.get('/skill-packs/:id', requireAuth, (req, res) => {
+  router.get('/skill-packs/:id', requireAuth, async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM skill_packs WHERE id = ?').get(req.params.id) as SkillPackRow | undefined;
+      const row = await db.get('SELECT * FROM skill_packs WHERE id = ?', req.params.id) as SkillPackRow | undefined;
       if (!row) {
         res.status(404).json({ error: 'Skill pack not found' });
         return;
@@ -64,7 +64,7 @@ export function createSkillPacksRoutes(db: Database.Database) {
   });
 
   // POST /api/skill-packs — create a custom (non-default) pack
-  router.post('/skill-packs', requireAuth, (req, res) => {
+  router.post('/skill-packs', requireAuth, async (req, res) => {
     try {
       const {
         name,
@@ -105,13 +105,13 @@ export function createSkillPacksRoutes(db: Database.Database) {
           ? modules
           : '[]';
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO skill_packs (
           id, name, description, target_role, target_industry,
           modules, workflow_template, persona_configs, skills_attached,
           quality_baselines, getting_started, is_default, created_by, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
-      `).run(
+      `, 
         id,
         name.trim(),
         description?.trim() || null,
@@ -127,7 +127,7 @@ export function createSkillPacksRoutes(db: Database.Database) {
         now,
       );
 
-      const created = db.prepare('SELECT * FROM skill_packs WHERE id = ?').get(id) as SkillPackRow;
+
       res.status(201).json(parsePackRow(created));
     } catch (error) {
       console.error('[skill-packs] POST /skill-packs error:', error);

@@ -12,7 +12,8 @@
  *   'module'            — module descriptions (embedded at startup)
  */
 
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { getEmbeddingAdapter } from './embedding-adapter.js';
 import { getVectorStore } from './vector-store-adapter.js';
 import { retrieveChunks } from './rag/retriever.js';
@@ -48,7 +49,7 @@ const RRF_K = 60;
 // ── Core hybrid search ──────────────────────────────────────────────────────
 
 export async function hybridSearch(
-  db: Database.Database,
+  db: DatabaseAdapter,
   options: HybridSearchOptions,
 ): Promise<HybridSearchResult[]> {
   const {
@@ -82,7 +83,7 @@ export async function hybridSearch(
   });
 
   // ── BM25 keyword search on knowledge_atoms (SQL LIKE fallback) ───────────
-  const keywordAtoms = searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes);
+  const keywordAtoms = await searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes);
 
   // ── Build ranked lists ───────────────────────────────────────────────────
 
@@ -195,7 +196,7 @@ export async function hybridSearch(
 // ── Similarity search (find content similar to a known item) ───────────────
 
 export async function findSimilar(
-  db: Database.Database,
+  db: DatabaseAdapter,
   params: {
     contentType: string;
     contentId: string;
@@ -207,9 +208,9 @@ export async function findSimilar(
   const embeddingAdapter = getEmbeddingAdapter();
 
   // Get the source item's text from the embeddings table
-  const row = db.prepare(
+  const row = await db.get(
     'SELECT content_text FROM embeddings WHERE content_type = ? AND content_id = ? LIMIT 1'
-  ).get(params.contentType, params.contentId) as { content_text: string } | undefined;
+  , params.contentType, params.contentId) as { content_text: string } | undefined;
 
   if (!row) return [];
 
@@ -242,7 +243,7 @@ export async function findSimilar(
 // ── Store embedding for any content type ──────────────────────────────────
 
 export async function embedAndStore(
-  db: Database.Database,
+  db: DatabaseAdapter,
   params: {
     contentType: string;
     contentId: string;
@@ -267,45 +268,60 @@ export async function embedAndStore(
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function searchKnowledgeAtomsKeyword(
-  db: Database.Database,
+async function searchKnowledgeAtomsKeyword(
+  db: DatabaseAdapter,
   query: string,
   limit: number,
   contentTypes?: string[],
-): Array<{ id: string; content: string; category: string; atom_type: string; tags: string }> {
+): Promise<Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>> {
   // Only search knowledge_atoms if that content type is included (or no filter)
   if (contentTypes && !contentTypes.includes('knowledge_atom')) return [];
 
   const q = query.trim();
   if (!q) return [];
 
-  // KG-03: Use FTS5 BM25 scoring; fall back to LIKE if FTS5 table not yet created
+  // KG-03: Use FTS5/tsvector BM25 scoring; fall back to LIKE if FTS not available
   try {
-    // Build FTS5 match expression: each word as a prefix query, OR-joined
     const words = q.split(/\s+/).filter(w => w.length > 1);
     if (words.length === 0) return [];
-    const ftsQuery = words.map(w => `"${w.replace(/"/g, '').replace(/\*/g, '')}"*`).join(' OR ');
 
-    return db.prepare(
+    if (db.dialect === 'postgresql') {
+      // PostgreSQL: use tsvector + ts_rank
+      const tsQuery = words.join(' | ');
+      return await db.all(
+        `SELECT ka.id, ka.content, ka.category, ka.atom_type, COALESCE(ka.tags, '[]') as tags
+         FROM knowledge_atoms ka
+         WHERE ka.search_vector @@ plainto_tsquery('english', ?) AND ka.is_active = 1
+         ORDER BY ts_rank(ka.search_vector, plainto_tsquery('english', ?)) DESC
+         LIMIT ?`,
+        tsQuery, tsQuery, limit,
+      ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
+    }
+
+    // SQLite: use FTS5 MATCH
+    const ftsQuery = words.map(w => `"${w.replace(/"/g, '').replace(/\*/g, '')}"*`).join(' OR ');
+    return await db.all(
       `SELECT ka.id, ka.content, ka.category, ka.atom_type, COALESCE(ka.tags, '[]') as tags
        FROM knowledge_atoms ka
        JOIN knowledge_atoms_fts ON knowledge_atoms_fts.rowid = ka.rowid
        WHERE knowledge_atoms_fts MATCH ? AND ka.is_active = 1
        ORDER BY rank
-       LIMIT ?`
-    ).all(ftsQuery, limit) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
+       LIMIT ?`,
+      ftsQuery, limit,
+    ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
   } catch {
-    // FTS5 table not available yet — fall back to LIKE substring search
+    // FTS not available yet — fall back to LIKE substring search
     const words = q.toLowerCase().split(/\s+/).filter(w => w.length > 2);
     if (words.length === 0) return [];
     const pattern = `%${words.slice(0, 3).join('%')}%`;
     try {
-      return db.prepare(
+      return await db.all(
         `SELECT id, content, category, atom_type, COALESCE(tags, '[]') as tags
          FROM knowledge_atoms
          WHERE is_active = 1 AND LOWER(content) LIKE ?
-         ORDER BY created_at DESC LIMIT ?`
-      ).all(pattern, limit) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
+         ORDER BY created_at DESC LIMIT ?`,
+        pattern, limit,
+      ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
     } catch {
       return [];
     }

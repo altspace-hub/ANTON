@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { requireAuth } from '../middleware/auth.js';
 import { benchmarkOutput } from '../services/benchmark.js';
 
-export function createBenchmarkRoutes(_db: Database.Database) {
+export function createBenchmarkRoutes(_db: DatabaseAdapter) {
   const router = Router();
 
   // POST /api/benchmark — benchmark an output against standard components
-  router.post('/benchmark', requireAuth, (req, res) => {
+  router.post('/benchmark', requireAuth, async (req, res) => {
     try {
       const { content, moduleId } = req.body as { content?: string; moduleId?: string };
       if (!content || typeof content !== 'string') {

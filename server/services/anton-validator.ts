@@ -16,7 +16,7 @@
 
 import AdmZip from 'adm-zip';
 import crypto from 'crypto';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -440,9 +440,7 @@ async function resolveDependencies(
   // Check for missing skills
   if (requiredSkills && requiredSkills.length > 0) {
     for (const skillId of requiredSkills) {
-      const exists = db
-        .prepare('SELECT id FROM skills WHERE id = ?')
-        .get(skillId);
+      const exists = await db.get('SELECT id FROM skills WHERE id = ?', skillId);
 
       if (!exists) {
         warnings.push({
@@ -458,9 +456,7 @@ async function resolveDependencies(
   // Check for missing personas
   if (requiredPersonas && requiredPersonas.length > 0) {
     for (const personaId of requiredPersonas) {
-      const exists = db
-        .prepare('SELECT id FROM personas WHERE id = ?')
-        .get(personaId);
+      const exists = await db.get('SELECT id FROM personas WHERE id = ?', personaId);
 
       if (!exists) {
         warnings.push({

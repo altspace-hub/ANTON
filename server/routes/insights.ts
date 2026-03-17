@@ -4,19 +4,20 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { createProactiveIntelligenceService } from '../services/proactive-intelligence.js';
 
-export function createInsightsRoutes(db: Database.Database): Router {
+export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
-  const intelService = createProactiveIntelligenceService(db);
+  const intelService = await createProactiveIntelligenceService(db);
 
   function getUserId(req: Request): string {
     return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
   }
 
   // ── List insights ──────────────────────────────────────────────────────────
-  router.get('/insights', (req: Request, res: Response) => {
+  router.get('/insights', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const dismissedQ = String(req.query.dismissed || '');
@@ -35,7 +36,7 @@ export function createInsightsRoutes(db: Database.Database): Router {
   });
 
   // ── Get unread count (for bell badge) ─────────────────────────────────────
-  router.get('/insights/unread-count', (req: Request, res: Response) => {
+  router.get('/insights/unread-count', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const count = intelService.countUnread(userId);
@@ -46,7 +47,7 @@ export function createInsightsRoutes(db: Database.Database): Router {
   });
 
   // ── Mark as read ───────────────────────────────────────────────────────────
-  router.patch('/insights/:id/read', (req: Request, res: Response) => {
+  router.patch('/insights/:id/read', async (req: Request, res: Response) => {
     try {
       intelService.markRead(String(req.params.id));
       res.json({ read: true });
@@ -56,7 +57,7 @@ export function createInsightsRoutes(db: Database.Database): Router {
   });
 
   // ── Dismiss insight ────────────────────────────────────────────────────────
-  router.patch('/insights/:id/dismiss', (req: Request, res: Response) => {
+  router.patch('/insights/:id/dismiss', async (req: Request, res: Response) => {
     try {
       const { action_taken } = req.body as { action_taken?: string };
       intelService.dismissInsight(String(req.params.id), action_taken);
@@ -67,7 +68,7 @@ export function createInsightsRoutes(db: Database.Database): Router {
   });
 
   // ── Run insight generation (background job trigger) ────────────────────────
-  router.post('/insights/generate', (req: Request, res: Response) => {
+  router.post('/insights/generate', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const result = intelService.runInsightGeneration(userId);
@@ -79,7 +80,7 @@ export function createInsightsRoutes(db: Database.Database): Router {
   });
 
   // ── Create insight manually ────────────────────────────────────────────────
-  router.post('/insights', (req: Request, res: Response) => {
+  router.post('/insights', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const insight = intelService.createInsight({ ...req.body, user_id: userId });

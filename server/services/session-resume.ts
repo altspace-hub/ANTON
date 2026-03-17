@@ -6,7 +6,8 @@
  */
 
 import { randomUUID } from 'crypto';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 export interface SessionSnapshot {
   id: string;
@@ -62,19 +63,19 @@ export interface CreateSnapshotInput {
   user_id?: string;
 }
 
-export function createSessionResumeService(db: Database) {
+export async function createSessionResumeService(db: DatabaseAdapter) {
   /**
    * Create a snapshot of the current session state.
    */
-  function createSnapshot(input: CreateSnapshotInput): SessionSnapshot {
+  async function createSnapshot(input: CreateSnapshotInput): Promise<SessionSnapshot> {
     const id = randomUUID();
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO session_snapshots
         (id, session_id, snapshot_type, title, summary, key_decisions, open_questions, next_steps, context_state, token_count, user_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `,
       id,
       input.session_id,
       input.snapshot_type ?? 'auto',
@@ -89,19 +90,19 @@ export function createSessionResumeService(db: Database) {
       now,
     );
 
-    return getSnapshot(id)!;
+    return (await getSnapshot(id))!;
   }
 
   /**
    * Get the most recent snapshot for a session.
    */
-  function getLatestSnapshot(sessionId: string): SessionSnapshot | null {
-    const row = db.prepare(`
+  async function getLatestSnapshot(sessionId: string): Promise<SessionSnapshot | null> {
+    const row = await db.get(`
       SELECT * FROM session_snapshots
       WHERE session_id = ?
       ORDER BY created_at DESC
       LIMIT 1
-    `).get(sessionId) as RawSnapshotRow | undefined;
+    `, sessionId) as RawSnapshotRow | undefined;
 
     return row ? parseSnapshot(row) : null;
   }
@@ -109,21 +110,21 @@ export function createSessionResumeService(db: Database) {
   /**
    * Get a specific snapshot by ID.
    */
-  function getSnapshot(snapshotId: string): SessionSnapshot | null {
-    const row = db.prepare('SELECT * FROM session_snapshots WHERE id = ?').get(snapshotId) as RawSnapshotRow | undefined;
+  async function getSnapshot(snapshotId: string): Promise<SessionSnapshot | null> {
+    const row = await db.get('SELECT * FROM session_snapshots WHERE id = ?', snapshotId) as RawSnapshotRow | undefined;
     return row ? parseSnapshot(row) : null;
   }
 
   /**
    * List all snapshots for a session, most recent first.
    */
-  function listSnapshots(sessionId: string, limit = 10): SessionSnapshot[] {
-    const rows = db.prepare(`
+  async function listSnapshots(sessionId: string, limit = 10): Promise<SessionSnapshot[]> {
+    const rows = await db.all(`
       SELECT * FROM session_snapshots
       WHERE session_id = ?
       ORDER BY created_at DESC
       LIMIT ?
-    `).all(sessionId, limit) as RawSnapshotRow[];
+    `, sessionId, limit) as RawSnapshotRow[];
 
     return rows.map(parseSnapshot);
   }
@@ -131,8 +132,8 @@ export function createSessionResumeService(db: Database) {
   /**
    * Delete a snapshot.
    */
-  function deleteSnapshot(snapshotId: string): boolean {
-    const result = db.prepare('DELETE FROM session_snapshots WHERE id = ?').run(snapshotId);
+  async function deleteSnapshot(snapshotId: string): Promise<boolean> {
+    const result = await db.run('DELETE FROM session_snapshots WHERE id = ?', snapshotId);
     return result.changes > 0;
   }
 
@@ -175,12 +176,12 @@ export function createSessionResumeService(db: Database) {
     claudeClient?: { complete: (prompt: string, model: string) => Promise<string> },
   ): Promise<SessionSnapshot> {
     // Get last 10 assistant messages to summarise
-    const messages = db.prepare(`
+    const messages = await db.all(`
       SELECT role, content FROM messages
       WHERE session_id = ?
       ORDER BY created_at DESC
-      LIMIT 20
-    `).all(sessionId) as Array<{ role: string; content: string }>;
+      LIMIT 10
+    `, sessionId) as Array<{ role: string; content: string }>;
 
     const messageText = messages
       .reverse()

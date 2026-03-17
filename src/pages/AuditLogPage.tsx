@@ -71,10 +71,11 @@ export default function AuditLogPage() {
       if (page > 0) params.set('offset', String(page * pageSize));
       const res = await fetch(`/api/audit?${params.toString()}`);
       const data = await res.json();
+      const arr = Array.isArray(data) ? data : [];
       // Filter by review_status client-side if needed
       const filtered = filters.status
-        ? data.filter((e: AuditEntry) => e.review_status === filters.status)
-        : data;
+        ? arr.filter((e: AuditEntry) => e.review_status === filters.status)
+        : arr;
       setEntries(filtered);
     } catch {
       setEntries([]);

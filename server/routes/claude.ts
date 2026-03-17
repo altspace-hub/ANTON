@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import path from 'path';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
 import { runIterativeReasoning, getRevelationChain } from '../services/iterative-reasoning.js';
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
@@ -33,20 +34,20 @@ import { buildCompactionConfig, buildContextManagementParam } from '../services/
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
-export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
+export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   const router = Router();
-  const checkBudget = createBudgetMiddleware(db);
-  const ratchet = createQualityRatchet(db);
+  const checkBudget = await createBudgetMiddleware(db);
+  const ratchet = await createQualityRatchet(db);
 
   // Lazy knowledge pipeline instances — shared across requests, initialised on first use
-  let _atomExtractor: ReturnType<typeof createAtomExtractor> | null = null;
-  let _outputStore: ReturnType<typeof createOutputStore> | null = null;
-  function getAtomExtractor() {
-    if (!_atomExtractor) _atomExtractor = createAtomExtractor(db, getClient());
+  let _atomExtractor: Awaited<ReturnType<typeof createAtomExtractor>> | null = null;
+  let _outputStore: Awaited<ReturnType<typeof createOutputStore>> | null = null;
+  async function getAtomExtractor() {
+    if (!_atomExtractor) _atomExtractor = await createAtomExtractor(db, getClient());
     return _atomExtractor;
   }
-  function getSessionOutputStore() {
-    if (!_outputStore) _outputStore = createOutputStore(db);
+  async function getSessionOutputStore() {
+    if (!_outputStore) _outputStore = await createOutputStore(db);
     return _outputStore;
   }
 
@@ -97,16 +98,16 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       if (moduleId) {
         try {
           // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId
-          const policy = db.prepare(
+          const policy = await db.get(
             'SELECT enforce_model FROM compliance_policy WHERE module_id = ?'
-          ).get(moduleId) as { enforce_model: string | null } | undefined;
+          , moduleId) as { enforce_model: string | null } | undefined;
           if (policy?.enforce_model) policyModel = policy.enforce_model;
 
           // MGOV-02: per-user model allowlist (team mode only)
           if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
-            const userAllowlistCount = (db.prepare('SELECT COUNT(*) as c FROM model_allowed WHERE user_id = ?').get(req.user.id) as { c: number }).c;
+            const userAllowlistCount = (await db.get('SELECT COUNT(*) as c FROM model_allowed WHERE user_id = ?', req.user.id) as { c: number }).c;
             if (userAllowlistCount > 0) {
-              const allowed = (db.prepare('SELECT COUNT(*) as c FROM model_allowed WHERE user_id = ? AND model_id = ?').get(req.user.id, policyModel) as { c: number }).c;
+              const allowed = (await db.get('SELECT COUNT(*) as c FROM model_allowed WHERE user_id = ? AND model_id = ?', req.user.id, policyModel) as { c: number }).c;
               if (allowed === 0) {
                 res.status(403).json({ error: `Model '${policyModel}' is not permitted for your account. Contact your administrator.` });
                 return;
@@ -137,13 +138,13 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
 
       // Budget cap check (team mode only)
       if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
-        const budgetRow = db.prepare('SELECT monthly_token_budget FROM users WHERE id = ?').get(req.user.id) as { monthly_token_budget: number } | undefined;
+        const budgetRow = await db.get('SELECT monthly_token_budget FROM users WHERE id = ?', req.user.id) as { monthly_token_budget: number } | undefined;
         const budget = budgetRow?.monthly_token_budget ?? 0;
         if (budget > 0) {
           const yearMonth = new Date().toISOString().slice(0, 7);
-          const usageRow = db.prepare(
+          const usageRow = await db.get(
             'SELECT COALESCE(input_tokens, 0) + COALESCE(output_tokens, 0) as total FROM user_monthly_usage WHERE user_id = ? AND year_month = ?'
-          ).get(req.user.id, yearMonth) as { total: number } | undefined;
+          , req.user.id, yearMonth) as { total: number } | undefined;
           const used = usageRow?.total ?? 0;
           const pct = used / budget;
           if (pct >= 1) {
@@ -158,15 +159,15 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
 
       // E5: Global monthly budget cap check (EUR cost-based, applies to all modes)
       {
-        const settingRow = db.prepare("SELECT value FROM app_settings WHERE key = 'monthly_budget_cap'").get() as { value: string } | undefined;
+        const settingRow = await db.get("SELECT value FROM app_settings WHERE key = 'monthly_budget_cap'") as { value: string } | undefined;
         const capFromDb = settingRow ? parseFloat(settingRow.value) : NaN;
         const capFromEnv = parseFloat(process.env.MONTHLY_BUDGET_CAP || '0');
         const globalCap = !isNaN(capFromDb) ? capFromDb : capFromEnv;
         if (globalCap > 0) {
           const capMonth = new Date().toISOString().slice(0, 7);
-          const capSpentRow = db.prepare(
+          const capSpentRow = await db.get(
             `SELECT COALESCE(SUM(cost), 0) as total FROM messages WHERE strftime('%Y-%m', created_at) = ?`
-          ).get(capMonth) as { total: number };
+          , capMonth) as { total: number };
           const capSpent = capSpentRow.total ?? 0;
           if (capSpent >= globalCap) {
             res.status(402).json({ error: 'Monthly budget cap reached', spent: capSpent, cap: globalCap });
@@ -178,14 +179,13 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       // Save user message to DB before streaming starts
       if (sessionId && userMessage) {
         try {
-          db.prepare(
+          await db.run(
             `INSERT OR IGNORE INTO messages (id, session_id, role, content, created_at)
              VALUES (?, ?, 'user', ?, ?)`
-          ).run(crypto.randomUUID(), sessionId, userMessage, new Date().toISOString());
+          , crypto.randomUUID(), sessionId, userMessage, new Date().toISOString());
 
           // Update session timestamp
-          db.prepare(`UPDATE sessions SET updated_at = ? WHERE id = ?`)
-            .run(new Date().toISOString(), sessionId);
+          await db.run(`UPDATE sessions SET updated_at = ? WHERE id = ?`, new Date().toISOString(), sessionId);
         } catch {
           // Non-fatal — continue streaming even if save fails
         }
@@ -200,10 +200,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       const storedBlocksMap = new Map<string, object[]>();
       if (sessionId) {
         try {
-          const stored = db.prepare(
-            `SELECT content, content_blocks FROM messages
+          const stored = await db.get(`SELECT content, content_blocks FROM messages
              WHERE session_id = ? AND role = 'assistant' AND content_blocks IS NOT NULL`
-          ).all(sessionId) as Array<{ content: string; content_blocks: string }>;
+          , sessionId) as Array<{ content: string; content_blocks: string }>;
           for (const row of stored) {
             try { storedBlocksMap.set(row.content, JSON.parse(row.content_blocks) as object[]); } catch { /* ignore */ }
           }
@@ -281,9 +280,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       }
 
       // WP-11: Load user profile for Layer 0 prompt personalisation
-      const userProfile = db
-        .prepare('SELECT * FROM user_profiles WHERE id = ?')
-        .get('default') as Record<string, string | null> | undefined;
+      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
 
       const uploadedFilePaths = documentFileIds
         .map((id) => path.join(UPLOAD_DIR, id))
@@ -340,7 +337,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         const { collections, topK, rerank } = ragSearchConfig;
 
         try {
-          const results = await semanticSearch(db as Database.Database, {
+          const results = await semanticSearch(db as DatabaseAdapter, {
             query: userMessage, // Use user's message as search query
             collections,
             topK: topK || 10,
@@ -386,7 +383,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       let businessContext: string | null = null;
       if (moduleId === 'ic-memo') {
         try {
-          const identityRow = db.prepare("SELECT * FROM fund_identity WHERE id = 'default'").get() as Record<string, string | null> | undefined;
+
           if (identityRow) {
             const contextParts: string[] = ['## YOUR FIRM\'S CONTEXT (MY WAY OF WORKING)'];
             contextParts.push(
@@ -400,9 +397,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             );
 
             // Look up the default IC memo template
-            const tmplRow = db.prepare(
+            const tmplRow = await db.get(
               "SELECT template_content, section_order, style_notes FROM ic_memo_templates WHERE is_default = 1 ORDER BY updated_at DESC LIMIT 1"
-            ).get() as { template_content: string; section_order: string; style_notes: string } | undefined;
+            ) as { template_content: string; section_order: string; style_notes: string } | undefined;
 
             if (tmplRow?.template_content) {
               let sectionOrder: string[] = [];
@@ -431,7 +428,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       // Trades "My Way of Working" — fetch business identity + matching template/pattern
       if (!businessContext && areaId === 'trades') {
         try {
-          const identityRow = db.prepare("SELECT profile_data FROM business_identity WHERE id = 'default'").get() as { profile_data: string } | undefined;
+          const identityRow = await db.get("SELECT profile_data FROM business_identity WHERE id = 'default'") as { profile_data: string } | undefined;
           if (identityRow) {
             const profile = JSON.parse(identityRow.profile_data);
 
@@ -454,9 +451,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
 
             let templateData: unknown = null;
             if (docType) {
-              const tmplRow = db.prepare("SELECT template_data FROM document_templates WHERE document_type = ? AND is_default = 1 LIMIT 1").get(docType) as
-                | { template_data: string }
-                | undefined;
+
               if (tmplRow) {
                 try { templateData = JSON.parse(tmplRow.template_data); } catch { /* ignore */ }
               }
@@ -464,7 +459,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
 
             let patternData: unknown = null;
             if (processType) {
-              const ptnRow = db.prepare("SELECT pattern_data FROM process_patterns WHERE process_type = ? ORDER BY updated_at DESC LIMIT 1").get(processType) as
+              const ptnRow = await db.get("SELECT pattern_data FROM process_patterns WHERE process_type = ? ORDER BY updated_at DESC LIMIT 1", processType) as
                 | { pattern_data: string }
                 | undefined;
               if (ptnRow) {
@@ -523,9 +518,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       // reducing costs ~90% on those tokens. Dynamic layers (output format instructions,
       // knowledge additions, reference documents, etc.) are sent in a second uncached block.
       // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
-      const orgContextPrompt = buildOrgContextLayer(db, (req as any).user?.id || 'default');
-      const resumeContextPrompt = sessionId ? buildResumeContextLayer(db, String(sessionId)) : '';
-      const knowledgePackPrompt = buildKnowledgePackLayer(db);
+      const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
+      const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
+      const knowledgePackPrompt = await buildKnowledgePackLayer(db);
       const atomLayerPrompt = atomInjectionEnabled !== false ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null) : '';
 
       const promptComposerConfig = {
@@ -596,7 +591,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
-        ? (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[] }) => {
+        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[] }) => {
             // Build config snapshot first — used in both INSERT and UPDATE below
             const configSnapshot = {
               model: selectedModel,
@@ -625,10 +620,9 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
               channel: req.body.channel || null,
             };
             try {
-              db.prepare(
-                `INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, model_id, config_snapshot, created_at)
+              await db.run(`INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, model_id, config_snapshot, created_at)
                  VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)`
-              ).run(
+              , 
                 crypto.randomUUID(),
                 sessionId,
                 data.text,
@@ -647,9 +641,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             let systemPromptVersionId: string | undefined;
             if (moduleId) {
               try {
-                const spRow = db.prepare(
-                  `SELECT id FROM system_prompts WHERE module_id = ? AND deprecated_at IS NULL ORDER BY created_at DESC LIMIT 1`
-                ).get(moduleId) as { id: string } | undefined;
+                const spRow = await db.get(`SELECT id FROM system_prompts WHERE module_id = ? AND deprecated_at IS NULL ORDER BY created_at DESC LIMIT 1`
+                , moduleId) as { id: string } | undefined;
                 systemPromptVersionId = spRow?.id;
               } catch { /* non-fatal */ }
             }
@@ -691,13 +684,13 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
               try {
                 const yearMonth = new Date().toISOString().slice(0, 7);
                 const usageId = crypto.randomUUID();
-                db.prepare(`
+                await db.run(`
                   INSERT INTO user_monthly_usage (id, user_id, year_month, input_tokens, output_tokens)
                   VALUES (?, ?, ?, ?, ?)
                   ON CONFLICT(user_id, year_month) DO UPDATE SET
                     input_tokens = input_tokens + excluded.input_tokens,
                     output_tokens = output_tokens + excluded.output_tokens
-                `).run(usageId, req.user.id, yearMonth, data.inputTokens || 0, data.outputTokens || 0);
+                `, usageId, req.user.id, yearMonth, data.inputTokens || 0, data.outputTokens || 0);
               } catch {
                 // Non-fatal
               }
@@ -709,38 +702,32 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             }
             // Persist the settings that produced this output so history shows accurate config
             try {
-              db.prepare('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?')
-                .run(JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);
+              await db.run('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?', JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);
             } catch { /* non-fatal */ }
             // Auto-save version snapshot
             if (sessionId && data.text && data.text.length > 100) {
               try {
-                const last = db.prepare('SELECT MAX(version_number) as max_v FROM versions WHERE entity_type=? AND entity_id=?')
-                  .get('session', sessionId) as { max_v: number | null };
-                db.prepare('INSERT INTO versions (entity_type, entity_id, version_number, label, content) VALUES (?,?,?,?,?)')
-                  .run('session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text);
+                const last = await db.get('SELECT MAX(version_number) as max_v FROM versions WHERE entity_type=? AND entity_id=?', 'session', sessionId) as { max_v: number | null };
+                await db.run('INSERT INTO versions (entity_type, entity_id, version_number, label, content) VALUES (?,?,?,?,?)', 'session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text);
               } catch { /* non-fatal */ }
             }
             // Apprentice progression
             if (moduleId) {
               try {
                 const uid = req.user?.id || 'default';
-                const p = db.prepare('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?')
-                  .get(uid, moduleId) as any;
+                const p = await db.get('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?', uid, moduleId) as any;
                 if (!p) {
-                  db.prepare('INSERT OR IGNORE INTO apprentice_profiles (user_id,module_id,area_id,sessions_completed,last_session) VALUES (?,?,?,1,?)')
-                    .run(uid, moduleId, areaId || null, new Date().toISOString());
+                  await db.run('INSERT OR IGNORE INTO apprentice_profiles (user_id,module_id,area_id,sessions_completed,last_session) VALUES (?,?,?,1,?)', uid, moduleId, areaId || null, new Date().toISOString());
                 } else {
                   const newCount = p.sessions_completed + 1;
-                  db.prepare('UPDATE apprentice_profiles SET sessions_completed=?,last_session=? WHERE id=?')
-                    .run(newCount, new Date().toISOString(), p.id);
+                  await db.run('UPDATE apprentice_profiles SET sessions_completed=?,last_session=? WHERE id=?', newCount, new Date().toISOString(), p.id);
                   const s = p.stage;
                   if (s === 'observer' && newCount >= 3)
-                    db.prepare("UPDATE apprentice_profiles SET stage='guided',promoted_to_guided=? WHERE id=?").run(new Date().toISOString(), p.id);
+                    await db.run("UPDATE apprentice_profiles SET stage='guided',promoted_to_guided=? WHERE id=?", new Date().toISOString(), p.id);
                   else if (s === 'guided' && newCount >= 8 && (p.quality_avg ?? 0) >= 7.0)
-                    db.prepare("UPDATE apprentice_profiles SET stage='supervised',promoted_to_supervised=? WHERE id=?").run(new Date().toISOString(), p.id);
+                    await db.run("UPDATE apprentice_profiles SET stage='supervised',promoted_to_supervised=? WHERE id=?", new Date().toISOString(), p.id);
                   else if (s === 'supervised' && newCount >= 20 && (p.quality_avg ?? 0) >= 8.0)
-                    db.prepare("UPDATE apprentice_profiles SET stage='autonomous',promoted_to_autonomous=? WHERE id=?").run(new Date().toISOString(), p.id);
+                    await db.run("UPDATE apprentice_profiles SET stage='autonomous',promoted_to_autonomous=? WHERE id=?", new Date().toISOString(), p.id);
                 }
               } catch { /* non-fatal */ }
             }
@@ -750,7 +737,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
             if (atomCollectionEnabled !== false && data.text && data.text.length > 200) {
               try {
                 const workflowId = `module:${moduleId || 'general'}`;
-                const outputId = getSessionOutputStore().storeOutput({
+                const store = await getSessionOutputStore();
+                const outputId = await store.storeOutput({
                   executionId: sessionId,
                   workflowId,
                   stepIndex: 0,
@@ -762,7 +750,8 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
                   stepName: 'Claude Response',
                   userId: req.user?.id || 'default',
                 });
-                getAtomExtractor().extractAtoms(outputId).catch(() => {});
+                const extractor = await getAtomExtractor();
+                extractor.extractAtoms(outputId).catch(() => {});
               } catch { /* non-fatal */ }
             }
           }
@@ -1118,9 +1107,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
       } = req.body;
 
       // WP-11: Load user profile
-      const userProfile = db
-        .prepare('SELECT * FROM user_profiles WHERE id = ?')
-        .get('default') as Record<string, string | null> | undefined;
+      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
 
       // Resolve uploaded file IDs
       const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
@@ -1175,7 +1162,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // GET /api/claude/models — available models with metadata (legacy, Anthropic-only)
-  router.get('/claude/models', (_req, res) => {
+  router.get('/claude/models', async (_req, res) => {
     res.json([
       {
         id: 'claude-opus-4-6',
@@ -1230,7 +1217,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // GET /api/claude/models-all — all models from MODEL_REGISTRY with key availability
-  router.get('/claude/models-all', (_req, res) => {
+  router.get('/claude/models-all', async (_req, res) => {
     const models = Object.entries(MODEL_REGISTRY).map(([id, config]) => ({
       id,
       provider: config.provider,
@@ -1302,9 +1289,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // WP-11: Load user profile for prompt personalisation
-      const userProfile = db
-        .prepare('SELECT * FROM user_profiles WHERE id = ?')
-        .get('default') as Record<string, string | null> | undefined;
+      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
 
       // Compose system prompt (non-streaming path uses plain composer — no cache split needed)
       const composedPrompt = await composeSystemPrompt({
@@ -1459,9 +1444,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // User profile for personalisation
-      const userProfile = db
-        .prepare('SELECT * FROM user_profiles WHERE id = ?')
-        .get('default') as Record<string, string | null> | undefined;
+      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
 
       // Compose system prompt (full, non-cached — all 3 panelists share same base)
       const composedPrompt = await composeSystemPrompt({
@@ -1528,10 +1511,10 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
           const synthesisText = opinions.length > 0
             ? `[Deliberation — ${meta.confidence} confidence, ${meta.agreementLevel} agreement]\n\n${userMessage}`
             : userMessage;
-          db.prepare(
+          await db.run(
             `INSERT OR IGNORE INTO messages (id, session_id, role, content, created_at)
              VALUES (?, ?, 'user', ?, ?)`
-          ).run(crypto.randomUUID(), sessionId, synthesisText, new Date().toISOString());
+          , crypto.randomUUID(), sessionId, synthesisText, new Date().toISOString());
         } catch { /* non-fatal */ }
       }
 
@@ -1618,7 +1601,7 @@ export function createClaudeRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // GET /api/revelation-chains/:chainId — fetch a full revelation chain with steps
-  router.get('/revelation-chains/:chainId', (req, res) => {
+  router.get('/revelation-chains/:chainId', async (req, res) => {
     const { chainId } = req.params;
     if (!chainId || typeof chainId !== 'string') {
       res.status(400).json({ error: 'chainId required' });

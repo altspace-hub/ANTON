@@ -1,4 +1,5 @@
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { emitInternalEvent } from './event-emitter.js';
 
 export interface ComplianceRule {
@@ -41,25 +42,24 @@ export interface RuleViolation {
   created_at: string;
 }
 
-export function createComplianceRulesService(db: Database) {
+export async function createComplianceRulesService(db: DatabaseAdapter) {
   // Rule management
-  function getAllRules(category?: string): ComplianceRule[] {
+  async function getAllRules(category?: string): ComplianceRule[] {
     if (category) {
-      return db.prepare('SELECT * FROM compliance_rules WHERE category = ? ORDER BY severity DESC, title').all(category) as ComplianceRule[];
+      return await db.all('SELECT * FROM compliance_rules WHERE category = ? ORDER BY severity DESC, title', category) as ComplianceRule[];
     }
-    return db.prepare('SELECT * FROM compliance_rules ORDER BY category, severity DESC, title').all() as ComplianceRule[];
+    return await db.all('SELECT * FROM compliance_rules ORDER BY category, severity DESC, title') as ComplianceRule[];
   }
 
-  function getRule(id: number): ComplianceRule | null {
-    return db.prepare('SELECT * FROM compliance_rules WHERE id = ?').get(id) as ComplianceRule | null;
+  async function getRule(id: number): ComplianceRule | null {
+    return await db.get('SELECT * FROM compliance_rules WHERE id = ?', id) as ComplianceRule | null;
   }
 
-  function createRule(rule: Omit<ComplianceRule, 'id' | 'created_at' | 'updated_at'>): number {
-    const result = db.prepare(`
+  async function createRule(rule: Omit<ComplianceRule, 'id' | 'created_at' | 'updated_at'>): number {
+    const result = await db.run(`
       INSERT INTO compliance_rules (rule_code, title, description, category, severity, regulatory_source, rule_logic, active, auto_remediate, remediation_steps)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      rule.rule_code,
+    `, rule.rule_code,
       rule.title,
       rule.description,
       rule.category,
@@ -68,12 +68,11 @@ export function createComplianceRulesService(db: Database) {
       rule.rule_logic,
       rule.active,
       rule.auto_remediate,
-      rule.remediation_steps
-    );
+      rule.remediation_steps);
     return result.lastInsertRowid as number;
   }
 
-  function updateRule(id: number, updates: Partial<ComplianceRule>): void {
+  async function updateRule(id: number, updates: Partial<ComplianceRule>): Promise<void> {
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -87,12 +86,12 @@ export function createComplianceRulesService(db: Database) {
     if (fields.length > 0) {
       fields.push('updated_at = CURRENT_TIMESTAMP');
       values.push(id);
-      db.prepare(`UPDATE compliance_rules SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE compliance_rules SET ${fields.join(', ')} WHERE id = ?`, ...values);
     }
   }
 
-  function deleteRule(id: number): void {
-    db.prepare('DELETE FROM compliance_rules WHERE id = ?').run(id);
+  async function deleteRule(id: number): void {
+    await db.run('DELETE FROM compliance_rules WHERE id = ?', id);
   }
 
   // Rule execution engine
@@ -108,10 +107,10 @@ export function createComplianceRulesService(db: Database) {
     try {
       const evaluationResult = await evaluateRuleLogic(logic, context);
 
-      const execution = db.prepare(`
+      const execution = await db.run(`
         INSERT INTO rule_executions (rule_id, execution_context, result, findings, auto_remediated)
         VALUES (?, ?, ?, ?, ?)
-      `).run(
+      `, 
         ruleId,
         contextStr,
         evaluationResult.result,
@@ -124,10 +123,10 @@ export function createComplianceRulesService(db: Database) {
       // Create violation records if rule failed
       if (evaluationResult.result === 'fail' && evaluationResult.findings) {
         for (const finding of evaluationResult.findings) {
-          db.prepare(`
+          await db.run(`
             INSERT INTO rule_violations (rule_id, execution_id, severity, description, affected_entity, remediation_status)
             VALUES (?, ?, ?, ?, ?, ?)
-          `).run(
+          `, 
             ruleId,
             executionId,
             rule.severity,
@@ -149,15 +148,15 @@ export function createComplianceRulesService(db: Database) {
         });
       }
 
-      return db.prepare('SELECT * FROM rule_executions WHERE id = ?').get(executionId) as RuleExecution;
+      return await db.get('SELECT * FROM rule_executions WHERE id = ?', executionId) as RuleExecution;
     } catch (error) {
       // Log error execution
-      const execution = db.prepare(`
+      const execution = await db.run(`
         INSERT INTO rule_executions (rule_id, execution_context, result, findings)
         VALUES (?, ?, 'error', ?)
-      `).run(ruleId, contextStr, JSON.stringify([{ description: String(error) }]));
+      `, ruleId, contextStr, JSON.stringify([{ description: String(error) }]));
 
-      return db.prepare('SELECT * FROM rule_executions WHERE id = ?').get(execution.lastInsertRowid) as RuleExecution;
+      return await db.get('SELECT * FROM rule_executions WHERE id = ?', execution.lastInsertRowid) as RuleExecution;
     }
   }
 
@@ -305,7 +304,7 @@ export function createComplianceRulesService(db: Database) {
   }
 
   // Violation management
-  function getViolations(filters?: { status?: string; severity?: string; ruleId?: number }): RuleViolation[] {
+  async function getViolations(filters?: { status?: string; severity?: string; ruleId?: number }): RuleViolation[] {
     let query = 'SELECT * FROM rule_violations WHERE 1=1';
     const params: any[] = [];
 
@@ -323,10 +322,10 @@ export function createComplianceRulesService(db: Database) {
     }
 
     query += ' ORDER BY created_at DESC';
-    return db.prepare(query).all(...params) as RuleViolation[];
+    return await db.all(query, ...params) as RuleViolation[];
   }
 
-  function updateViolation(id: number, updates: Partial<RuleViolation>): void {
+  async function updateViolation(id: number, updates: Partial<RuleViolation>): Promise<void> {
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -339,7 +338,7 @@ export function createComplianceRulesService(db: Database) {
 
     if (fields.length > 0) {
       values.push(id);
-      db.prepare(`UPDATE rule_violations SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE rule_violations SET ${fields.join(', ')} WHERE id = ?`, ...values);
     }
   }
 
@@ -361,24 +360,14 @@ export function createComplianceRulesService(db: Database) {
   }
 
   // Compliance dashboard stats
-  function getComplianceDashboard(): any {
-    const totalRules = db.prepare('SELECT COUNT(*) as count FROM compliance_rules WHERE active = 1').get() as { count: number };
-    const totalViolations = db.prepare('SELECT COUNT(*) as count FROM rule_violations WHERE remediation_status = "open"').get() as { count: number };
-    const criticalViolations = db.prepare('SELECT COUNT(*) as count FROM rule_violations WHERE severity = "critical" AND remediation_status = "open"').get() as { count: number };
+  async function getComplianceDashboard(): any {
 
-    const recentExecutions = db.prepare(`
-      SELECT
-        r.title,
-        r.category,
-        re.result,
-        re.executed_at
-      FROM rule_executions re
-      JOIN compliance_rules r ON re.rule_id = r.id
-      ORDER BY re.executed_at DESC
-      LIMIT 10
-    `).all();
+    const totalViolations = await db.get("SELECT COUNT(*) as count FROM rule_violations WHERE remediation_status = 'open'") as { count: number };
+    const criticalViolations = await db.get("SELECT COUNT(*) as count FROM rule_violations WHERE severity = 'critical' AND remediation_status = 'open'") as { count: number };
 
-    const violationsByCategory = db.prepare(`
+
+
+    const violationsByCategory = await db.all(`
       SELECT
         r.category,
         COUNT(*) as count
@@ -386,25 +375,25 @@ export function createComplianceRulesService(db: Database) {
       JOIN compliance_rules r ON rv.rule_id = r.id
       WHERE rv.remediation_status = 'open'
       GROUP BY r.category
-    `).all();
+    `);
 
-    const violationsBySeverity = db.prepare(`
+    const violationsBySeverity = await db.all(`
       SELECT
         severity,
         COUNT(*) as count
       FROM rule_violations
       WHERE remediation_status = 'open'
       GROUP BY severity
-    `).all();
+    `);
 
-    const executionStats = db.prepare(`
+    const executionStats = await db.all(`
       SELECT
         result,
         COUNT(*) as count
       FROM rule_executions
       WHERE executed_at >= datetime('now', '-7 days')
       GROUP BY result
-    `).all();
+    `);
 
     return {
       activeRules: totalRules.count,

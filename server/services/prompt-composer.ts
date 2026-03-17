@@ -340,19 +340,19 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   parts.push(getFoundationPrompt());
 
   // Layer 2a: Organisational Context — org-wide settings injected after foundation
-  if (config.orgContextPrompt?.trim()) parts.push(config.orgContextPrompt.trim());
+  if (typeof config.orgContextPrompt === 'string' && config.orgContextPrompt.trim()) parts.push(config.orgContextPrompt.trim());
 
   // Layer 2b: Active Regulatory Knowledge Packs — structured regulatory entity context
-  if (config.knowledgePackPrompt?.trim()) parts.push(config.knowledgePackPrompt.trim());
+  if (typeof config.knowledgePackPrompt === 'string' && config.knowledgePackPrompt.trim()) parts.push(config.knowledgePackPrompt.trim());
 
   // Layer 2c: Roaring entity intelligence (Swedish registry, UBO chain, sanctions)
-  if (config.roaringEntityPrompt?.trim()) parts.push(config.roaringEntityPrompt.trim());
+  if (typeof config.roaringEntityPrompt === 'string' && config.roaringEntityPrompt.trim()) parts.push(config.roaringEntityPrompt.trim());
 
   // Layer 2d: Dow Jones screening data (global sanctions, PEP, adverse media)
-  if (config.djScreeningPrompt?.trim()) parts.push(config.djScreeningPrompt.trim());
+  if (typeof config.djScreeningPrompt === 'string' && config.djScreeningPrompt.trim()) parts.push(config.djScreeningPrompt.trim());
 
   // Layer 2e: Knowledge Atoms — recent insights from completed work
-  if (config.atomLayerPrompt?.trim()) parts.push(config.atomLayerPrompt.trim());
+  if (typeof config.atomLayerPrompt === 'string' && config.atomLayerPrompt.trim()) parts.push(config.atomLayerPrompt.trim());
 
   // Layer 3: Area Context — domain landscape, regulatory framework, terminology
   const areaId = config.areaId;
@@ -364,7 +364,7 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   // Layer 4: Module System Prompt
   // User override takes priority over file-based prompt.
   let modulePrompt = '';
-  if (config.systemPromptOverride?.trim()) {
+  if (typeof config.systemPromptOverride === 'string' && config.systemPromptOverride.trim()) {
     modulePrompt = config.systemPromptOverride.trim();
   } else if (config.moduleId) {
     modulePrompt = (await getModuleSystemPrompt(config.moduleId)) ?? '';
@@ -372,7 +372,7 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   if (modulePrompt) parts.push(modulePrompt);
 
   // Layer 4a: Session Resume Context — restores paused-session state after module prompt
-  if (config.resumeContextPrompt?.trim()) parts.push(config.resumeContextPrompt.trim());
+  if (typeof config.resumeContextPrompt === 'string' && config.resumeContextPrompt.trim()) parts.push(config.resumeContextPrompt.trim());
 
   // Layer 5: Expert Personas (single or multi-select)
   // Personas run before Skills so the character/role shapes how skills are applied.
@@ -415,7 +415,7 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   }
 
   // Layer 7e: Reference output example (golden example of a high-quality response)
-  if (config.referenceOutput?.trim()) {
+  if (typeof config.referenceOutput === 'string' && config.referenceOutput.trim()) {
     parts.push(`## REFERENCE OUTPUT EXAMPLE\nMatch the structure, depth, and formatting of this example:\n<reference>\n${config.referenceOutput.trim()}\n</reference>`);
   }
 
@@ -432,17 +432,17 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   }
 
   // Layer 7.5: Trades "My Way of Working" — Business Identity, Template, Process Pattern
-  if (config.businessContext?.trim()) {
+  if (typeof config.businessContext === 'string' && config.businessContext.trim()) {
     parts.push(config.businessContext.trim());
   }
 
   // Layer 8: Knowledge Source System additions
-  if (config.knowledgeSystemAdditions?.trim()) {
+  if (typeof config.knowledgeSystemAdditions === 'string' && config.knowledgeSystemAdditions.trim()) {
     parts.push(config.knowledgeSystemAdditions.trim());
   }
 
   // Layer 9: Reference documents — wrapped with injection-defence boundary markers
-  if (config.knowledgeContextDocuments?.trim()) {
+  if (typeof config.knowledgeContextDocuments === 'string' && config.knowledgeContextDocuments.trim()) {
     parts.push(wrapDocumentContext(config.knowledgeContextDocuments.trim()));
   }
 
@@ -471,19 +471,19 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
   staticParts.push(getFoundationPrompt());
 
   // Layer 2a: Organisational Context
-  if (config.orgContextPrompt?.trim()) staticParts.push(config.orgContextPrompt.trim());
+  if (typeof config.orgContextPrompt === 'string' && config.orgContextPrompt.trim()) staticParts.push(config.orgContextPrompt.trim());
 
   // Layer 2b: Active Regulatory Knowledge Packs
-  if (config.knowledgePackPrompt?.trim()) staticParts.push(config.knowledgePackPrompt.trim());
+  if (typeof config.knowledgePackPrompt === 'string' && config.knowledgePackPrompt.trim()) staticParts.push(config.knowledgePackPrompt.trim());
 
   // Layer 2c: Roaring entity intelligence
-  if (config.roaringEntityPrompt?.trim()) staticParts.push(config.roaringEntityPrompt.trim());
+  if (typeof config.roaringEntityPrompt === 'string' && config.roaringEntityPrompt.trim()) staticParts.push(config.roaringEntityPrompt.trim());
 
   // Layer 2d: Dow Jones screening data
-  if (config.djScreeningPrompt?.trim()) staticParts.push(config.djScreeningPrompt.trim());
+  if (typeof config.djScreeningPrompt === 'string' && config.djScreeningPrompt.trim()) staticParts.push(config.djScreeningPrompt.trim());
 
   // Layer 2e: Knowledge Atoms (prior work insights)
-  if (config.atomLayerPrompt?.trim()) staticParts.push(config.atomLayerPrompt.trim());
+  if (typeof config.atomLayerPrompt === 'string' && config.atomLayerPrompt.trim()) staticParts.push(config.atomLayerPrompt.trim());
 
   // Layer 3: Area Context
   if (config.areaId) {
@@ -493,7 +493,7 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
 
   // Layer 4: Module System Prompt
   let modulePrompt = '';
-  if (config.systemPromptOverride?.trim()) {
+  if (typeof config.systemPromptOverride === 'string' && config.systemPromptOverride.trim()) {
     modulePrompt = config.systemPromptOverride.trim();
   } else if (config.moduleId) {
     modulePrompt = (await getModuleSystemPrompt(config.moduleId)) ?? '';
@@ -501,7 +501,7 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
   if (modulePrompt) staticParts.push(modulePrompt);
 
   // Layer 4a: Session Resume Context
-  if (config.resumeContextPrompt?.trim()) staticParts.push(config.resumeContextPrompt.trim());
+  if (typeof config.resumeContextPrompt === 'string' && config.resumeContextPrompt.trim()) staticParts.push(config.resumeContextPrompt.trim());
 
   const staticPart = staticParts.filter(Boolean).join(SEP);
 
@@ -669,17 +669,17 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
   }
 
   // Layer 7.5: Trades "My Way of Working" enrichment
-  if (config.businessContext?.trim()) {
+  if (typeof config.businessContext === 'string' && config.businessContext.trim()) {
     dynamicParts.push(config.businessContext.trim());
   }
 
   // Layer 8: Knowledge System additions
-  if (config.knowledgeSystemAdditions?.trim()) {
+  if (typeof config.knowledgeSystemAdditions === 'string' && config.knowledgeSystemAdditions.trim()) {
     dynamicParts.push(config.knowledgeSystemAdditions.trim());
   }
 
   // Layer 9: Reference documents
-  if (config.knowledgeContextDocuments?.trim()) {
+  if (typeof config.knowledgeContextDocuments === 'string' && config.knowledgeContextDocuments.trim()) {
     dynamicParts.push(config.knowledgeContextDocuments.trim());
   }
 

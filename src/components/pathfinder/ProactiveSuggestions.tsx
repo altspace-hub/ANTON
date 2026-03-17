@@ -12,7 +12,7 @@ export default function ProactiveSuggestions({ onSearch, compact = false }: Proa
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchSuggestions().then(r => setSuggestions(r.suggestions)).catch(() => {});
+    fetchSuggestions().then(r => setSuggestions(Array.isArray(r?.suggestions) ? r.suggestions : [])).catch(() => {});
   }, []);
 
   async function handleDismiss(id: string) {
@@ -24,7 +24,7 @@ export default function ProactiveSuggestions({ onSearch, compact = false }: Proa
     setLoading(true);
     try {
       const r = await refreshSuggestions();
-      setSuggestions(r.suggestions);
+      setSuggestions(Array.isArray(r?.suggestions) ? r.suggestions : []);
     } catch { /* ignore */ }
     setLoading(false);
   }

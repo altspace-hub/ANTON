@@ -1,17 +1,17 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { callSync } from '../services/claude-client.js';
 
-export function createInstructionBuilderRoutes(db: Database.Database): Router {
+export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // GET /api/coding/instruction-builder/projects — list all IB projects
-  router.get('/coding/instruction-builder/projects', (req, res) => {
+  router.get('/coding/instruction-builder/projects', async (req, res) => {
     try {
-      const projects = db.prepare(
+      const projects = await db.all(
         'SELECT * FROM instruction_builder_projects ORDER BY updated_at DESC'
-      ).all();
+      );
       res.json(projects);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -19,7 +19,7 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
   });
 
   // POST /api/coding/instruction-builder/projects — create new IB project
-  router.post('/coding/instruction-builder/projects', (req, res) => {
+  router.post('/coding/instruction-builder/projects', async (req, res) => {
     try {
       const { name, description, target_tool } = req.body;
       if (!name || !target_tool) {
@@ -28,12 +28,12 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
       }
 
       const id = randomUUID();
-      db.prepare(
+      await db.run(
         `INSERT INTO instruction_builder_projects (id, name, description, target_tool)
          VALUES (?, ?, ?, ?)`
-      ).run(id, name, description || null, target_tool);
+      , id, name, description || null, target_tool);
 
-      const project = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(id);
+      const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', id);
       res.json(project);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -41,18 +41,18 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/instruction-builder/projects/:id — get project details
-  router.get('/coding/instruction-builder/projects/:id', (req, res) => {
+  router.get('/coding/instruction-builder/projects/:id', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(req.params.id);
+      const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', req.params.id);
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
       }
 
       // Also fetch instruction files
-      const files = db.prepare(
+      const files = await db.get(
         'SELECT * FROM instruction_files WHERE instruction_builder_project_id = ? ORDER BY file_type ASC, filename ASC'
-      ).all(req.params.id);
+      , req.params.id);
 
       res.json({ ...(project as any), instruction_files: files });
     } catch (error) {
@@ -61,7 +61,7 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
   });
 
   // PUT /api/coding/instruction-builder/projects/:id — update project fields
-  router.put('/coding/instruction-builder/projects/:id', (req, res) => {
+  router.put('/coding/instruction-builder/projects/:id', async (req, res) => {
     try {
       const { name, description, status, vision_goals, discovery_notes, architecture_proposal, tool_profile_id } = req.body;
 
@@ -84,9 +84,9 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
       updates.push("updated_at = datetime('now')");
       values.push(req.params.id);
 
-      db.prepare(`UPDATE instruction_builder_projects SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE instruction_builder_projects SET ${updates.join(', ')} WHERE id = ?`, ...values);
 
-      const project = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(req.params.id);
+      const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', req.params.id);
       res.json(project);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -96,7 +96,7 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
   // POST /api/coding/instruction-builder/projects/:id/discovery — process discovery turn
   router.post('/coding/instruction-builder/projects/:id/discovery', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM instruction_builder_projects WHERE id = ?', req.params.id) as any;
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
@@ -132,12 +132,10 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
         try {
           const structured = JSON.parse(structuredMatch[1]);
           if (structured.vision_goals) {
-            db.prepare("UPDATE instruction_builder_projects SET vision_goals = ?, updated_at = datetime('now') WHERE id = ?")
-              .run(JSON.stringify({ ...existingGoals, ...structured.vision_goals }), req.params.id);
+            await db.run("UPDATE instruction_builder_projects SET vision_goals = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify({ ...existingGoals, ...structured.vision_goals }), req.params.id);
           }
           if (structured.discovery_notes) {
-            db.prepare("UPDATE instruction_builder_projects SET discovery_notes = ?, updated_at = datetime('now') WHERE id = ?")
-              .run(JSON.stringify({ ...existingNotes, ...structured.discovery_notes }), req.params.id);
+            await db.run("UPDATE instruction_builder_projects SET discovery_notes = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify({ ...existingNotes, ...structured.discovery_notes }), req.params.id);
           }
         } catch { /* ignore parse failures */ }
       }
@@ -159,7 +157,7 @@ export function createInstructionBuilderRoutes(db: Database.Database): Router {
   // POST /api/coding/instruction-builder/projects/:id/architecture — generate architecture proposal
   router.post('/coding/instruction-builder/projects/:id/architecture', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(req.params.id) as any;
+
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
@@ -192,8 +190,7 @@ Format as well-structured Markdown. Be specific and actionable.`,
       });
 
       // Save architecture proposal
-      db.prepare("UPDATE instruction_builder_projects SET architecture_proposal = ?, status = 'architecture', updated_at = datetime('now') WHERE id = ?")
-        .run(result.text, req.params.id);
+      await db.run("UPDATE instruction_builder_projects SET architecture_proposal = ?, status = 'architecture', updated_at = datetime('now') WHERE id = ?", result.text, req.params.id);
 
       res.json({
         proposal: result.text,
@@ -209,7 +206,7 @@ Format as well-structured Markdown. Be specific and actionable.`,
   // POST /api/coding/instruction-builder/projects/:id/review — trigger expert panel review
   router.post('/coding/instruction-builder/projects/:id/review', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(req.params.id) as any;
+
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
@@ -259,10 +256,9 @@ Format your response as:
         const verdict = verdictMatch ? verdictMatch[1].toLowerCase() : 'flag';
 
         // Save to coding_reviews table
-        db.prepare(
-          `INSERT INTO coding_reviews (id, coding_project_id, reviewer_persona_id, review_type, verdict, findings, recommendations, status, review_completed_at)
+        await db.run(`INSERT INTO coding_reviews (id, coding_project_id, reviewer_persona_id, review_type, verdict, findings, recommendations, status, review_completed_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', datetime('now'))`
-        ).run(
+        , 
           reviewId,
           project.coding_project_id || project.id,
           member.id,
@@ -283,8 +279,7 @@ Format your response as:
       }
 
       // Update project status
-      db.prepare("UPDATE instruction_builder_projects SET status = 'review', review_cycle_count = review_cycle_count + 1, updated_at = datetime('now') WHERE id = ?")
-        .run(req.params.id);
+      await db.run("UPDATE instruction_builder_projects SET status = 'review', review_cycle_count = review_cycle_count + 1, updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       res.json({ reviews });
     } catch (error) {
@@ -295,16 +290,16 @@ Format your response as:
   // POST /api/coding/instruction-builder/projects/:id/generate — generate instruction files
   router.post('/coding/instruction-builder/projects/:id/generate', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM instruction_builder_projects WHERE id = ?').get(req.params.id) as any;
+
       if (!project) {
         res.status(404).json({ error: 'Project not found' });
         return;
       }
 
       // Load tool profile
-      const profile = db.prepare(
+      const profile = await db.get(
         'SELECT * FROM tool_profiles WHERE tool_name = ? AND is_default = 1'
-      ).get(project.target_tool) as any;
+      , project.target_tool) as any;
 
       if (!profile) {
         res.status(400).json({ error: `No default tool profile found for ${project.target_tool}` });
@@ -317,9 +312,9 @@ Format your response as:
       const structureTemplate = safeJsonParse(profile.structure_template, {});
 
       // Fetch expert reviews
-      const reviews = db.prepare(
+      const reviews = await db.get(
         'SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at DESC LIMIT 10'
-      ).all(project.coding_project_id || project.id) as any[];
+      , project.coding_project_id || project.id) as any[];
 
       const reviewSummary = reviews.map((r: any) => `${r.reviewer_persona_id}: ${r.verdict} — ${(r.findings || '').substring(0, 500)}`).join('\n');
 
@@ -352,10 +347,9 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
 
       // Save primary file
       const primaryId = randomUUID();
-      db.prepare(
-        `INSERT INTO instruction_files (id, instruction_builder_project_id, filename, file_type, target_tool, content, content_hash)
+      await db.run(`INSERT INTO instruction_files (id, instruction_builder_project_id, filename, file_type, target_tool, content, content_hash)
          VALUES (?, ?, ?, 'primary', ?, ?, ?)`
-      ).run(primaryId, req.params.id, profile.primary_filename, project.target_tool, primaryResult.text, simpleHash(primaryResult.text));
+      , primaryId, req.params.id, profile.primary_filename, project.target_tool, primaryResult.text, simpleHash(primaryResult.text));
 
       // Generate supplementary files for Claude Code
       const supplementaryFiles: any[] = [];
@@ -374,23 +368,20 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
           });
 
           const suppId = randomUUID();
-          db.prepare(
+          await db.run(
             `INSERT INTO instruction_files (id, instruction_builder_project_id, filename, file_type, target_tool, content, content_hash)
              VALUES (?, ?, ?, 'supplementary', ?, ?, ?)`
-          ).run(suppId, req.params.id, filename, project.target_tool, suppResult.text, simpleHash(suppResult.text));
+          , suppId, req.params.id, filename, project.target_tool, suppResult.text, simpleHash(suppResult.text));
 
           supplementaryFiles.push({ id: suppId, filename, content: suppResult.text });
         }
       }
 
       // Update project status
-      db.prepare("UPDATE instruction_builder_projects SET status = 'generated', updated_at = datetime('now') WHERE id = ?")
-        .run(req.params.id);
+      await db.run("UPDATE instruction_builder_projects SET status = 'generated', updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       // Fetch all files
-      const allFiles = db.prepare(
-        'SELECT * FROM instruction_files WHERE instruction_builder_project_id = ? ORDER BY file_type ASC, filename ASC'
-      ).all(req.params.id);
+
 
       res.json({
         primaryFile: { id: primaryId, filename: profile.primary_filename, content: primaryResult.text },
@@ -403,9 +394,9 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
   });
 
   // GET /api/coding/instruction-builder/tool-profiles — list tool profiles
-  router.get('/coding/instruction-builder/tool-profiles', (req, res) => {
+  router.get('/coding/instruction-builder/tool-profiles', async (req, res) => {
     try {
-      const profiles = db.prepare('SELECT * FROM tool_profiles ORDER BY tool_name ASC').all();
+
       res.json(profiles);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -413,9 +404,9 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
   });
 
   // GET /api/coding/instruction-builder/tool-profiles/:id — get profile
-  router.get('/coding/instruction-builder/tool-profiles/:id', (req, res) => {
+  router.get('/coding/instruction-builder/tool-profiles/:id', async (req, res) => {
     try {
-      const profile = db.prepare('SELECT * FROM tool_profiles WHERE id = ?').get(req.params.id);
+
       if (!profile) {
         res.status(404).json({ error: 'Tool profile not found' });
         return;
@@ -427,7 +418,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
   });
 
   // PUT /api/coding/instruction-builder/tool-profiles/:id — update profile
-  router.put('/coding/instruction-builder/tool-profiles/:id', (req, res) => {
+  router.put('/coding/instruction-builder/tool-profiles/:id', async (req, res) => {
     try {
       const { display_name, primary_filename, structure_template, tone_guidelines, formatting_rules, special_directives } = req.body;
 
@@ -449,9 +440,9 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
       updates.push("updated_at = datetime('now')");
       values.push(req.params.id);
 
-      db.prepare(`UPDATE tool_profiles SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE tool_profiles SET ${updates.join(', ')} WHERE id = ?`, ...values);
 
-      const profile = db.prepare('SELECT * FROM tool_profiles WHERE id = ?').get(req.params.id);
+
       res.json(profile);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });

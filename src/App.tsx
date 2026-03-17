@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense, useState } from 'react';
+import React, { useEffect, lazy, Suspense, useState } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MainLayout from './components/layout/MainLayout';
@@ -7,6 +7,44 @@ import { ensureCsrfToken } from './lib/api';
 import PWAInstallPrompt from './components/shared/PWAInstallPrompt';
 import { CommandPalette } from './components/shared/CommandPalette';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
+
+// Global error boundary — prevents blank-page crashes
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state: { error: Error | null } = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[AppErrorBoundary]', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ background: '#0B1426', color: '#E0E0E0', minHeight: '100vh', padding: '2rem', fontFamily: 'monospace' }}>
+          <h1 style={{ color: '#E74C3C', fontSize: '1.5rem', marginBottom: '1rem' }}>Something went wrong</h1>
+          <pre style={{ background: '#152238', padding: '1rem', borderRadius: '0.5rem', overflow: 'auto', fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>
+            {this.state.error.message}
+            {'\n\n'}
+            {this.state.error.stack}
+          </pre>
+          <button
+            onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+            style={{ marginTop: '1rem', background: '#2DD4A8', color: '#0B1426', border: 'none', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Core pages — loaded eagerly (always needed on first render)
 import Dashboard from './pages/Dashboard';
@@ -289,7 +327,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <AppErrorBoundary>
       <PWAInstallPrompt />
       <CommandPalette />
       <OnboardingTour isOpen={showTour} onClose={() => setShowTour(false)} />
@@ -472,6 +510,6 @@ export default function App() {
         </Route>
       </Routes>
     </Suspense>
-    </>
+    </AppErrorBoundary>
   );
 }

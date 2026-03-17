@@ -1,21 +1,21 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createCollaborativeCanvas } from '../services/collaborative-canvas.js';
 
-export function createCanvasRoutes(db: Database.Database) {
+export async function createCanvasRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const canvas = createCollaborativeCanvas(db);
+  const canvas = await createCollaborativeCanvas(db);
 
   function getUserId(req: Parameters<Parameters<typeof router.get>[1]>[0]): string {
     return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
   }
 
   // GET /api/canvas/my-assignments — assignments for current user
-  router.get('/canvas/my-assignments', (req, res) => {
+  router.get('/canvas/my-assignments', async (req, res) => {
     try {
-      canvas.refreshOverdueAssignments();
+      await canvas.refreshOverdueAssignments();
       const userId = getUserId(req);
-      const assignments = canvas.getMyAssignments(userId);
+      const assignments = await canvas.getMyAssignments(userId);
       res.json(assignments);
     } catch (err) {
       console.error('[canvas] my-assignments error:', err);
@@ -24,10 +24,10 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // GET /api/canvas/executions/:executionId/assignments — all assignments for an execution
-  router.get('/canvas/executions/:executionId/assignments', (req, res) => {
+  router.get('/canvas/executions/:executionId/assignments', async (req, res) => {
     try {
       const { executionId } = req.params;
-      const assignments = canvas.getAssignmentsForExecution(executionId);
+      const assignments = await canvas.getAssignmentsForExecution(executionId);
       res.json(assignments);
     } catch (err) {
       console.error('[canvas] execution assignments error:', err);
@@ -36,7 +36,7 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // POST /api/canvas/executions/:executionId/assign — assign a step
-  router.post('/canvas/executions/:executionId/assign', (req, res) => {
+  router.post('/canvas/executions/:executionId/assign', async (req, res) => {
     try {
       const { executionId } = req.params;
       const assignedBy = getUserId(req);
@@ -54,14 +54,14 @@ export function createCanvasRoutes(db: Database.Database) {
       }
 
       // Ensure workflow_executions row exists for this executionId
-      const existing = db.prepare('SELECT id FROM workflow_executions WHERE id = ?').get(executionId);
+      const existing = await db.get('SELECT id FROM workflow_executions WHERE id = ?', executionId);
       if (!existing) {
-        db.prepare(
+        await db.run(
           'INSERT INTO workflow_executions (id, workflow_id, workflow_name, status, created_by, user_id) VALUES (?, ?, ?, ?, ?, ?)'
-        ).run(executionId, workflowId ?? executionId, '', 'running', assignedBy, assignedBy);
+        , executionId, workflowId ?? executionId, '', 'running', assignedBy, assignedBy);
       }
 
-      const result = canvas.assignStep({
+      const result = await canvas.assignStep({
         executionId,
         workflowId: workflowId ?? executionId,
         stepIndex,
@@ -78,7 +78,7 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // PUT /api/canvas/assignments/:id/status — update assignment status
-  router.put('/canvas/assignments/:id/status', (req, res) => {
+  router.put('/canvas/assignments/:id/status', async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body as { status?: string };
@@ -86,7 +86,7 @@ export function createCanvasRoutes(db: Database.Database) {
         res.status(400).json({ error: 'status is required' });
         return;
       }
-      canvas.updateAssignmentStatus(id, status);
+      await canvas.updateAssignmentStatus(id, status);
       res.json({ success: true });
     } catch (err) {
       console.error('[canvas] update status error:', err);
@@ -95,10 +95,10 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // GET /api/canvas/executions/:executionId/steps/:stepIndex/reviews — get reviews + consensus
-  router.get('/canvas/executions/:executionId/steps/:stepIndex/reviews', (req, res) => {
+  router.get('/canvas/executions/:executionId/steps/:stepIndex/reviews', async (req, res) => {
     try {
       const { executionId, stepIndex } = req.params;
-      const consensus = canvas.getConsensus(executionId, parseInt(stepIndex, 10));
+      const consensus = await canvas.getConsensus(executionId, parseInt(stepIndex, 10));
       res.json(consensus);
     } catch (err) {
       console.error('[canvas] get reviews error:', err);
@@ -107,7 +107,7 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // POST /api/canvas/executions/:executionId/steps/:stepIndex/reviewers — add reviewer
-  router.post('/canvas/executions/:executionId/steps/:stepIndex/reviewers', (req, res) => {
+  router.post('/canvas/executions/:executionId/steps/:stepIndex/reviewers', async (req, res) => {
     try {
       const { executionId, stepIndex } = req.params;
       const assignedBy = getUserId(req);
@@ -123,14 +123,13 @@ export function createCanvasRoutes(db: Database.Database) {
       }
 
       // Ensure workflow_executions row exists
-      const existing = db.prepare('SELECT id FROM workflow_executions WHERE id = ?').get(executionId);
+      const existing = await db.get('SELECT id FROM workflow_executions WHERE id = ?', executionId);
       if (!existing) {
-        db.prepare(
-          'INSERT INTO workflow_executions (id, workflow_id, workflow_name, status, created_by) VALUES (?, ?, ?, ?, ?)'
-        ).run(executionId, workflowId ?? executionId, '', 'running', assignedBy);
+        await db.run('INSERT INTO workflow_executions (id, workflow_id, workflow_name, status, created_by) VALUES (?, ?, ?, ?, ?)'
+        , executionId, workflowId ?? executionId, '', 'running', assignedBy);
       }
 
-      const id = canvas.addParallelReviewer({
+      const id = await canvas.addParallelReviewer({
         executionId,
         stepIndex: parseInt(stepIndex, 10),
         reviewer,
@@ -144,7 +143,7 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // POST /api/canvas/executions/:executionId/steps/:stepIndex/review — submit review
-  router.post('/canvas/executions/:executionId/steps/:stepIndex/review', (req, res) => {
+  router.post('/canvas/executions/:executionId/steps/:stepIndex/review', async (req, res) => {
     try {
       const { executionId, stepIndex } = req.params;
       const { reviewer, status, comment } = req.body as {
@@ -158,7 +157,7 @@ export function createCanvasRoutes(db: Database.Database) {
         return;
       }
 
-      const consensus = canvas.submitReview({
+      const consensus = await canvas.submitReview({
         executionId,
         stepIndex: parseInt(stepIndex, 10),
         reviewer,
@@ -173,10 +172,10 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // GET /api/canvas/executions/:executionId/comments — get all comments
-  router.get('/canvas/executions/:executionId/comments', (req, res) => {
+  router.get('/canvas/executions/:executionId/comments', async (req, res) => {
     try {
       const { executionId } = req.params;
-      const comments = canvas.getComments(executionId);
+      const comments = await canvas.getComments(executionId);
       res.json(comments);
     } catch (err) {
       console.error('[canvas] get comments error:', err);
@@ -185,7 +184,7 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // POST /api/canvas/executions/:executionId/comments — add comment
-  router.post('/canvas/executions/:executionId/comments', (req, res) => {
+  router.post('/canvas/executions/:executionId/comments', async (req, res) => {
     try {
       const { executionId } = req.params;
       const currentUser = getUserId(req);
@@ -203,14 +202,13 @@ export function createCanvasRoutes(db: Database.Database) {
       }
 
       // Ensure workflow_executions row exists
-      const existing = db.prepare('SELECT id FROM workflow_executions WHERE id = ?').get(executionId);
+      const existing = await db.get('SELECT id FROM workflow_executions WHERE id = ?', executionId);
       if (!existing) {
-        db.prepare(
-          'INSERT INTO workflow_executions (id, workflow_id, workflow_name, status, created_by) VALUES (?, ?, ?, ?, ?)'
-        ).run(executionId, workflowId ?? executionId, '', 'running', currentUser);
+        await db.run('INSERT INTO workflow_executions (id, workflow_id, workflow_name, status, created_by) VALUES (?, ?, ?, ?, ?)'
+        , executionId, workflowId ?? executionId, '', 'running', currentUser);
       }
 
-      const id = canvas.addComment({
+      const id = await canvas.addComment({
         executionId,
         stepIndex,
         author: author ?? currentUser,
@@ -225,12 +223,12 @@ export function createCanvasRoutes(db: Database.Database) {
   });
 
   // PUT /api/canvas/comments/:id/resolve — resolve comment
-  router.put('/canvas/comments/:id/resolve', (req, res) => {
+  router.put('/canvas/comments/:id/resolve', async (req, res) => {
     try {
       const { id } = req.params;
       const { resolvedBy } = req.body as { resolvedBy?: string };
       const userId = resolvedBy ?? getUserId(req);
-      canvas.resolveComment(id, userId);
+      await canvas.resolveComment(id, userId);
       res.json({ success: true });
     } catch (err) {
       console.error('[canvas] resolve comment error:', err);

@@ -12,7 +12,8 @@
  */
 
 import { Router } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type Anthropic from '@anthropic-ai/sdk';
 import crypto from 'crypto';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
@@ -48,22 +49,22 @@ export const REGULATORY_SOURCES = [
 
 // ── Route factory ────────────────────────────────────────────────────────────
 
-export function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | null | undefined) {
+export async function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | null | undefined) {
   const router = Router();
 
   // GET /api/regulatory-feed/sources
-  router.get('/regulatory-feed/sources', (_req, res) => {
+  router.get('/regulatory-feed/sources', async (_req, res) => {
     return res.json(REGULATORY_SOURCES);
   });
 
   // GET /api/regulatory-feed/subscriptions
-  router.get('/regulatory-feed/subscriptions', (req, res) => {
+  router.get('/regulatory-feed/subscriptions', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT * FROM regulatory_feed_subscriptions WHERE user_id = ? AND active = 1 ORDER BY created_at DESC`
-      ).all(userId);
+      , userId);
       return res.json(rows);
     } catch (err) {
       console.error('[regulatory-feed/subscriptions GET]', err);
@@ -72,7 +73,7 @@ export function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | 
   });
 
   // POST /api/regulatory-feed/subscriptions
-  router.post('/regulatory-feed/subscriptions', (req, res) => {
+  router.post('/regulatory-feed/subscriptions', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -84,11 +85,11 @@ export function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | 
       if (!source) return res.status(400).json({ error: `Unknown source: ${source_id}` });
 
       const id = crypto.randomUUID();
-      db.prepare(
+      await db.run(
         `INSERT INTO regulatory_feed_subscriptions (id, user_id, source_id, source_name, source_url, category)
          VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(user_id, source_id) DO UPDATE SET active = 1`
-      ).run(id, userId, source.id, source.name, source.url, source.category);
+      , id, userId, source.id, source.name, source.url, source.category);
 
       return res.json({ ok: true, id });
     } catch (err) {
@@ -98,13 +99,13 @@ export function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | 
   });
 
   // DELETE /api/regulatory-feed/subscriptions/:id
-  router.delete('/regulatory-feed/subscriptions/:id', (req, res) => {
+  router.delete('/regulatory-feed/subscriptions/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-      db.prepare(
+      await db.run(
         `UPDATE regulatory_feed_subscriptions SET active = 0 WHERE id = ? AND user_id = ?`
-      ).run(req.params.id, userId);
+      , req.params.id, userId);
       return res.json({ ok: true });
     } catch (err) {
       console.error('[regulatory-feed/subscriptions DELETE]', err);
@@ -131,9 +132,8 @@ export function createRegulatoryFeedRoutes(db: Database, anthropic: Anthropic | 
         sources = REGULATORY_SOURCES.filter(s => source_ids.includes(s.id));
       } else {
         // Use subscribed sources
-        const subs = db.prepare(
-          `SELECT source_id FROM regulatory_feed_subscriptions WHERE user_id = ? AND active = 1`
-        ).all(userId) as { source_id: string }[];
+        const subs = await db.get(`SELECT source_id FROM regulatory_feed_subscriptions WHERE user_id = ? AND active = 1`
+        , userId) as { source_id: string }[];
         const subscribedIds = subs.map(s => s.source_id);
         sources = REGULATORY_SOURCES.filter(s => subscribedIds.includes(s.id));
       }
@@ -195,10 +195,9 @@ Structure the digest clearly so a compliance officer can immediately identify wh
         const digestId = crypto.randomUUID();
         const now = new Date().toISOString();
         const periodFrom = new Date(Date.now() - (period === '30d' ? 30 : 7) * 86_400_000).toISOString();
-        db.prepare(
-          `INSERT INTO regulatory_feed_digests (id, user_id, title, content, sources, period_from, period_to, token_count, created_at)
+        await db.run(`INSERT INTO regulatory_feed_digests (id, user_id, title, content, sources, period_from, period_to, token_count, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).run(
+        , 
           digestId, userId,
           `Regulatory Feed Digest — ${new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}`,
           fullText,
@@ -223,17 +222,11 @@ Structure the digest clearly so a compliance officer can immediately identify wh
   });
 
   // GET /api/regulatory-feed/digests
-  router.get('/regulatory-feed/digests', (req, res) => {
+  router.get('/regulatory-feed/digests', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-      const rows = db.prepare(
-        `SELECT id, title, sources, period_from, period_to, token_count, created_at
-         FROM regulatory_feed_digests
-         WHERE user_id = ?
-         ORDER BY created_at DESC
-         LIMIT 50`
-      ).all(userId) as Record<string, unknown>[];
+
       return res.json(rows.map(r => ({
         ...r,
         sources: JSON.parse((r.sources as string) || '[]'),
@@ -245,13 +238,11 @@ Structure the digest clearly so a compliance officer can immediately identify wh
   });
 
   // GET /api/regulatory-feed/digests/:id
-  router.get('/regulatory-feed/digests/:id', (req, res) => {
+  router.get('/regulatory-feed/digests/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-      const row = db.prepare(
-        `SELECT * FROM regulatory_feed_digests WHERE id = ? AND user_id = ?`
-      ).get(req.params.id, userId) as Record<string, unknown> | undefined;
+
       if (!row) return res.status(404).json({ error: 'Digest not found' });
       return res.json({ ...row, sources: JSON.parse((row.sources as string) || '[]') });
     } catch (err) {

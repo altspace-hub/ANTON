@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { embedAndStore } from './hybrid-search.js';
 
@@ -75,40 +75,21 @@ interface WorkflowOutputRow {
 
 // ── Factory ─────────────────────────────────────────────────────────────────
 
-export function createAtomExtractor(db: Database.Database, client: Anthropic) {
-  // Prepared statements
-  const selectOutput = db.prepare<[string], WorkflowOutputRow>(
-    'SELECT * FROM workflow_outputs WHERE id = ?'
-  );
+export async function createAtomExtractor(db: DatabaseAdapter, client: Anthropic) {
+  // ── SQL templates (prepared statements replaced by adapter calls) ───────
 
-  const insertAtom = db.prepare(`
+  const INSERT_ATOM_SQL = `
     INSERT INTO knowledge_atoms
       (id, source_output_id, source_workflow_id, source_execution_id, source_area_id, source_module_id,
        content, atom_type, confidence, category, subcategory, sentiment, temporal_type,
        entities, tags, valid_until, created_at)
-    VALUES
-      (@id, @source_output_id, @source_workflow_id, @source_execution_id, @source_area_id, @source_module_id,
-       @content, @atom_type, @confidence, @category, @subcategory, @sentiment, @temporal_type,
-       @entities, @tags, @valid_until, datetime('now'))
-  `);
-
-  const insertEntityRef = db.prepare(`
-    INSERT OR IGNORE INTO knowledge_entity_refs (atom_id, entity_type, entity_id, entity_name, relationship)
-    VALUES (@atom_id, @entity_type, @entity_id, @entity_name, @relationship)
-  `);
-
-  const selectAtomById = db.prepare<[string], KnowledgeAtomRow>(
-    'SELECT * FROM knowledge_atoms WHERE id = ?'
-  );
-
-  const selectEntityRefsByAtom = db.prepare<[string], EntityRefRow>(
-    'SELECT * FROM knowledge_entity_refs WHERE atom_id = ?'
-  );
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  `;
 
   // ── Extract atoms from a stored workflow output ───────────────────────────
 
   async function extractAtoms(outputId: string): Promise<void> {
-    const output = selectOutput.get(outputId);
+    const output = await db.get('SELECT * FROM workflow_outputs WHERE id = ?', outputId) as WorkflowOutputRow | undefined;
     if (!output) {
       console.warn('[atom-extractor] Output not found:', outputId);
       return;
@@ -190,32 +171,33 @@ Rules:
       return;
     }
 
-    // Persist each atom inside a transaction for atomicity
-    const insertAll = db.transaction((): string[] => {
+    // Persist each atom
+    let insertedAtomIds: string[] = [];
+    try {
       const ids: string[] = [];
       for (const raw of rawAtoms) {
         if (!raw.content || !raw.atom_type || !raw.category) continue;
 
         const atomId = `atom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-        insertAtom.run({
-          id: atomId,
-          source_output_id: output.id,
-          source_workflow_id: output.workflow_id,
-          source_execution_id: output.execution_id,
-          source_area_id: output.area_id ?? null,
-          source_module_id: output.module_id ?? null,
-          content: raw.content.slice(0, 2000),
-          atom_type: raw.atom_type,
-          confidence: typeof raw.confidence === 'number' ? raw.confidence : 0.8,
-          category: raw.category,
-          subcategory: raw.subcategory ?? null,
-          sentiment: raw.sentiment ?? null,
-          temporal_type: raw.temporal_type ?? null,
-          entities: raw.entities ? JSON.stringify(raw.entities) : null,
-          tags: raw.tags ? JSON.stringify(raw.tags) : null,
-          valid_until: raw.valid_until ?? null,
-        });
+        await db.run(INSERT_ATOM_SQL,
+          atomId,
+          output.id,
+          output.workflow_id,
+          output.execution_id,
+          output.area_id ?? null,
+          output.module_id ?? null,
+          raw.content.slice(0, 2000),
+          raw.atom_type,
+          typeof raw.confidence === 'number' ? raw.confidence : 0.8,
+          raw.category,
+          raw.subcategory ?? null,
+          raw.sentiment ?? null,
+          raw.temporal_type ?? null,
+          raw.entities ? JSON.stringify(raw.entities) : null,
+          raw.tags ? JSON.stringify(raw.tags) : null,
+          raw.valid_until ?? null,
+        );
 
         ids.push(atomId);
 
@@ -223,22 +205,20 @@ Rules:
         if (Array.isArray(raw.entities)) {
           for (const ent of raw.entities) {
             if (!ent.type || !ent.id) continue;
-            insertEntityRef.run({
-              atom_id: atomId,
-              entity_type: ent.type,
-              entity_id: String(ent.id),
-              entity_name: ent.name ?? null,
-              relationship: null,
-            });
+            await db.run(`
+    INSERT OR IGNORE INTO knowledge_entity_refs (atom_id, entity_type, entity_id, entity_name, relationship)
+    VALUES (?, ?, ?, ?, ?)
+  `,
+              atomId,
+              ent.type,
+              String(ent.id),
+              ent.name ?? null,
+              null,
+            );
           }
         }
       }
-      return ids;
-    });
-
-    let insertedAtomIds: string[] = [];
-    try {
-      insertedAtomIds = insertAll();
+      insertedAtomIds = ids;
     } catch (err) {
       console.error('[atom-extractor] DB insert failed for output', outputId, err);
     }
@@ -247,7 +227,7 @@ Rules:
     if (insertedAtomIds.length > 0) {
       (async () => {
         for (const atomId of insertedAtomIds) {
-          const atom = selectAtomById.get(atomId);
+          const atom = await db.get('SELECT * FROM knowledge_atoms WHERE id = ?', atomId) as KnowledgeAtomRow | undefined;
           if (!atom) continue;
           await embedAndStore(db, {
             contentType: 'knowledge_atom',
@@ -285,9 +265,10 @@ Rules:
     moduleId: string | null | undefined,
   ): Promise<void> {
     // Fetch new atoms
-    const newAtoms = newAtomIds
-      .map(id => selectAtomById.get(id))
-      .filter((a): a is KnowledgeAtomRow => a !== undefined);
+    const newAtomResults = await Promise.all(
+      newAtomIds.map(id => db.get('SELECT * FROM knowledge_atoms WHERE id = ?', id) as Promise<KnowledgeAtomRow | undefined>)
+    );
+    const newAtoms = newAtomResults.filter((a): a is KnowledgeAtomRow => a !== undefined);
     if (newAtoms.length === 0) return;
 
     // Fetch recent existing atoms from same area/module (excluding new ones)
@@ -296,11 +277,11 @@ Rules:
     if (areaId) { conditions.push('a.source_area_id = ?'); params.push(areaId); }
     if (moduleId) { conditions.push('a.source_module_id = ?'); params.push(moduleId); }
     const newIdSet = new Set(newAtomIds);
-    const existingAtoms = (db.prepare(`
+    const existingAtoms = (await db.all(`
       SELECT * FROM knowledge_atoms a
       WHERE ${conditions.join(' AND ')}
       ORDER BY a.created_at DESC LIMIT 50
-    `).all(...params) as KnowledgeAtomRow[]).filter(a => !newIdSet.has(a.id));
+    `, ...params) as KnowledgeAtomRow[]).filter(a => !newIdSet.has(a.id));
 
     if (existingAtoms.length === 0) return;
 
@@ -346,16 +327,8 @@ Rules:
       if (!Array.isArray(rels)) return;
 
       const validTypes = new Set(['supports', 'contradicts', 'extends', 'requires', 'caused_by', 'related_to']);
-      const insertRel = db.prepare(
-        `INSERT INTO atom_relationships (from_atom_id, to_atom_id, relationship_type, strength)
-         VALUES (?, ?, ?, ?)`
-      );
-
-      const insertMany = db.transaction((items: Array<{ fromId: string; toId: string; type: string; strength: number }>) => {
-        for (const item of items) {
-          insertRel.run(item.fromId, item.toId, item.type, item.strength);
-        }
-      });
+      const INSERT_REL_SQL = `INSERT INTO atom_relationships (from_atom_id, to_atom_id, relationship_type, strength)
+         VALUES (?, ?, ?, ?)`;
 
       const toInsert: Array<{ fromId: string; toId: string; type: string; strength: number }> = [];
       for (const rel of rels.slice(0, 10)) {
@@ -378,8 +351,8 @@ Rules:
         });
       }
 
-      if (toInsert.length > 0) {
-        insertMany(toInsert);
+      for (const item of toInsert) {
+        await db.run(INSERT_REL_SQL, item.fromId, item.toId, item.type, item.strength);
       }
     } catch (err) {
       console.warn('[atom-extractor] relationship Claude call failed:', err instanceof Error ? err.message : err);
@@ -388,7 +361,7 @@ Rules:
 
   // ── Search atoms ──────────────────────────────────────────────────────────
 
-  function searchAtoms(
+  async function searchAtoms(
     query: string,
     filters?: {
       areaId?: string;
@@ -397,7 +370,7 @@ Rules:
       entityId?: string;
       since?: Date;
     }
-  ): Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }> {
+  ): Promise<Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }>> {
     const conditions: string[] = ['a.is_active = 1'];
     const params: (string | number)[] = [];
 
@@ -453,51 +426,56 @@ Rules:
       `;
     }
 
-    const atoms = db.prepare(sql).all(...params) as KnowledgeAtomRow[];
+    const atoms = await db.all(sql, ...params) as KnowledgeAtomRow[];
 
-    return atoms.map((atom) => ({
-      ...atom,
-      entity_refs: selectEntityRefsByAtom.all(atom.id) as EntityRefRow[],
-    }));
+    const results: Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }> = [];
+    for (const atom of atoms) {
+      const entity_refs = await db.all('SELECT * FROM knowledge_entity_refs WHERE atom_id = ?', atom.id) as EntityRefRow[];
+      results.push({ ...atom, entity_refs });
+    }
+    return results;
   }
 
   // ── Get all atoms for a specific entity ──────────────────────────────────
 
-  function getAtomsByEntity(
+  async function getAtomsByEntity(
     entityType: string,
     entityId: string
-  ): Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }> {
-    const atoms = db.prepare(`
+  ): Promise<Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }>> {
+    const atoms = await db.all(`
       SELECT DISTINCT a.*
       FROM knowledge_atoms a
       JOIN knowledge_entity_refs er ON er.atom_id = a.id
       WHERE er.entity_type = ? AND er.entity_id = ? AND a.is_active = 1
       ORDER BY a.created_at DESC
-    `).all(entityType, entityId) as KnowledgeAtomRow[];
+    `, entityType, entityId) as KnowledgeAtomRow[];
 
-    return atoms.map((atom) => ({
-      ...atom,
-      entity_refs: selectEntityRefsByAtom.all(atom.id) as EntityRefRow[],
-    }));
+    const results: Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }> = [];
+    for (const atom of atoms) {
+      const entity_refs = await db.all('SELECT * FROM knowledge_entity_refs WHERE atom_id = ?', atom.id) as EntityRefRow[];
+      results.push({ ...atom, entity_refs });
+    }
+    return results;
   }
 
   // ── Find entities sharing atoms with a given entity (graph neighbors) ────
 
-  function getEntityConnections(
+  async function getEntityConnections(
     entityType: string,
     entityId: string
-  ): Array<{ entity_type: string; entity_id: string; entity_name: string | null; shared_atom_count: number }> {
+  ): Promise<Array<{ entity_type: string; entity_id: string; entity_name: string | null; shared_atom_count: number }>> {
     // Find all atoms that mention our entity
-    const atomIds = db.prepare(`
+    const atomIdRows = await db.all(`
       SELECT atom_id FROM knowledge_entity_refs
       WHERE entity_type = ? AND entity_id = ?
-    `).all(entityType, entityId).map((r) => (r as { atom_id: string }).atom_id);
+    `, entityType, entityId) as Array<{ atom_id: string }>;
+    const atomIds = atomIdRows.map((r) => r.atom_id);
 
     if (atomIds.length === 0) return [];
 
     // Find other entities that appear in those same atoms
     const placeholders = atomIds.map(() => '?').join(', ');
-    const neighbors = db.prepare(`
+    const neighbors = await db.all(`
       SELECT entity_type, entity_id, entity_name,
              COUNT(DISTINCT atom_id) AS shared_atom_count
       FROM knowledge_entity_refs
@@ -506,7 +484,7 @@ Rules:
       GROUP BY entity_type, entity_id
       ORDER BY shared_atom_count DESC
       LIMIT 50
-    `).all(...atomIds, entityType, entityId) as Array<{
+    `, ...atomIds, entityType, entityId) as Array<{
       entity_type: string;
       entity_id: string;
       entity_name: string | null;
@@ -518,14 +496,15 @@ Rules:
 
   // ── Get single atom with entity refs ─────────────────────────────────────
 
-  function getAtomDetail(
+  async function getAtomDetail(
     atomId: string
-  ): (KnowledgeAtomRow & { entity_refs: EntityRefRow[] }) | null {
-    const atom = selectAtomById.get(atomId);
+  ): Promise<(KnowledgeAtomRow & { entity_refs: EntityRefRow[] }) | null> {
+    const atom = await db.get('SELECT * FROM knowledge_atoms WHERE id = ?', atomId) as KnowledgeAtomRow | undefined;
     if (!atom) return null;
+    const entity_refs = await db.all('SELECT * FROM knowledge_entity_refs WHERE atom_id = ?', atomId) as EntityRefRow[];
     return {
       ...atom,
-      entity_refs: selectEntityRefsByAtom.all(atomId) as EntityRefRow[],
+      entity_refs,
     };
   }
 

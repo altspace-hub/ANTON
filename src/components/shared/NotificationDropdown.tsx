@@ -53,7 +53,7 @@ export function NotificationDropdown() {
       const res = await fetch('/api/notifications', { headers: getAuthHeader() });
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data);
+        setNotifications(Array.isArray(data) ? data : []);
       }
     } catch { /* ignore */ }
   };

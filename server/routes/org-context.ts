@@ -4,19 +4,20 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { createOrgContextService } from '../services/org-context.js';
 
-export function createOrgContextRoutes(db: Database.Database): Router {
+export async function createOrgContextRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
-  const orgCtxService = createOrgContextService(db);
+  const orgCtxService = await createOrgContextService(db);
 
   function getUserId(req: Request): string {
     return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
   }
 
   // ── Get org context ────────────────────────────────────────────────────────
-  router.get('/org-context', (req: Request, res: Response) => {
+  router.get('/org-context', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const context = orgCtxService.getContext(userId);
@@ -28,7 +29,7 @@ export function createOrgContextRoutes(db: Database.Database): Router {
   });
 
   // ── Update org context ─────────────────────────────────────────────────────
-  router.put('/org-context', (req: Request, res: Response) => {
+  router.put('/org-context', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const context = orgCtxService.updateContext(req.body, userId);
@@ -40,7 +41,7 @@ export function createOrgContextRoutes(db: Database.Database): Router {
   });
 
   // ── Get prompt layer 2a ────────────────────────────────────────────────────
-  router.get('/org-context/prompt', (req: Request, res: Response) => {
+  router.get('/org-context/prompt', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const prompt = orgCtxService.buildOrgContextPrompt(userId);
@@ -51,7 +52,7 @@ export function createOrgContextRoutes(db: Database.Database): Router {
   });
 
   // ── Get change history ─────────────────────────────────────────────────────
-  router.get('/org-context/history', (req: Request, res: Response) => {
+  router.get('/org-context/history', async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit || '20')), 100);
       const history = orgCtxService.getHistory(limit);

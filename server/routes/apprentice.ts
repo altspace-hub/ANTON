@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createApprentice, STAGE_LABELS, STAGE_THRESHOLDS } from '../services/apprentice.js';
 
 function getNextStageRequirements(profile: any) {
@@ -15,12 +15,12 @@ function getNextStageRequirements(profile: any) {
   return null; // autonomous — no further stages
 }
 
-export function createApprenticeRoutes(db: Database.Database) {
+export async function createApprenticeRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const apprentice = createApprentice(db);
+  const apprentice = await createApprentice(db);
   const DEFAULT_USER = 'default';
 
-  router.get('/apprentice/profiles', (req, res) => {
+  router.get('/apprentice/profiles', async (req, res) => {
     try {
       res.json(apprentice.getAllProfiles(DEFAULT_USER));
     } catch (error) {
@@ -29,7 +29,7 @@ export function createApprenticeRoutes(db: Database.Database) {
     }
   });
 
-  router.get('/apprentice/modules/:moduleId', (req, res) => {
+  router.get('/apprentice/modules/:moduleId', async (req, res) => {
     try {
       const profile = apprentice.getProfile(DEFAULT_USER, req.params.moduleId);
       const stage = profile?.stage ?? 'observer';
@@ -46,7 +46,7 @@ export function createApprenticeRoutes(db: Database.Database) {
   });
 
   // ── GET /apprentice/progression/:moduleId — Why this stage? ──────────
-  router.get('/apprentice/progression/:moduleId', (req, res) => {
+  router.get('/apprentice/progression/:moduleId', async (req, res) => {
     try {
       const result = apprentice.getProgressionHistory(DEFAULT_USER, req.params.moduleId);
       if (!result) {
@@ -70,7 +70,7 @@ export function createApprenticeRoutes(db: Database.Database) {
     }
   });
 
-  router.post('/apprentice/modules/:moduleId/session', (req, res) => {
+  router.post('/apprentice/modules/:moduleId/session', async (req, res) => {
     try {
       const result = apprentice.recordSession({
         userId: DEFAULT_USER,

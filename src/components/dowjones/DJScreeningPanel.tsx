@@ -105,11 +105,12 @@ export function DJScreeningPanel({ result, adverseMedia, pepProfile, onAddToMoni
   const riskCfg = RISK_CONFIG[result.riskScore];
   const isMock = result.source === 'mock_demo_data';
 
-  const sanctionHits = result.hits.filter(h => h.listType === 'SANCTIONS');
-  const pepHits = result.hits.filter(h => h.listType === 'PEP');
-  const mediaHits = result.hits.filter(h => h.listType === 'ADVERSE_MEDIA');
-  const soeHits = result.hits.filter(h => h.listType === 'SOE');
-  const enfHits = result.hits.filter(h => h.listType === 'ENFORCEMENT');
+  const hits = result.hits ?? [];
+  const sanctionHits = hits.filter(h => h.listType === 'SANCTIONS');
+  const pepHits = hits.filter(h => h.listType === 'PEP');
+  const mediaHits = hits.filter(h => h.listType === 'ADVERSE_MEDIA');
+  const soeHits = hits.filter(h => h.listType === 'SOE');
+  const enfHits = hits.filter(h => h.listType === 'ENFORCEMENT');
 
   return (
     <div className="space-y-4">

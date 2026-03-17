@@ -28,7 +28,57 @@ services:
       retries: 3
       start_period: 15s
 
+  # PostgreSQL service — activate with: docker compose --profile postgres up
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_DB: anton
+      POSTGRES_USER: anton
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-anton_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - openexpert_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anton -d anton"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # App configured for PostgreSQL — activate with: docker compose --profile postgres up
+  app-pg:
+    build: .
+    profiles: ["postgres"]
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - PORT=3001
+      - DATABASE_URL=postgresql://anton:${PG_PASSWORD:-anton_dev}@postgres:5432/anton
+      - DEPLOYMENT_MODE=${DEPLOYMENT_MODE:-team}
+      - UPLOAD_DIR=/app/uploads
+      - OUTPUT_DIR=/app/outputs
+      - MAX_FILE_SIZE_MB=50
+      - MAX_CONTEXT_TOKENS=180000
+      - DEFAULT_MODEL=claude-opus-4-6
+    volumes:
+      - openexpert_uploads:/app/uploads
+      - openexpert_outputs:/app/outputs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   openexpert_data:
   openexpert_uploads:
   openexpert_outputs:
+  openexpert_pgdata:

@@ -4,19 +4,20 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { createSessionResumeService, type CreateSnapshotInput } from '../services/session-resume.js';
 
-export function createSessionResumeRoutes(db: Database.Database): Router {
+export async function createSessionResumeRoutes(db: DatabaseAdapter): Router {
   const router = Router();
-  const resumeService = createSessionResumeService(db);
+  const resumeService = await createSessionResumeService(db);
 
   function getUserId(req: Request): string {
     return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
   }
 
   // ── Create snapshot ────────────────────────────────────────────────────────
-  router.post('/sessions/:sessionId/snapshots', (req: Request, res: Response) => {
+  router.post('/sessions/:sessionId/snapshots', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const sessionId = String(req.params.sessionId);
@@ -58,7 +59,7 @@ export function createSessionResumeRoutes(db: Database.Database): Router {
   });
 
   // ── List snapshots ─────────────────────────────────────────────────────────
-  router.get('/sessions/:sessionId/snapshots', (req: Request, res: Response) => {
+  router.get('/sessions/:sessionId/snapshots', async (req: Request, res: Response) => {
     try {
       const sessionId = String(req.params.sessionId);
       const limit = Math.min(parseInt(String(req.query.limit || '10')), 50);
@@ -71,7 +72,7 @@ export function createSessionResumeRoutes(db: Database.Database): Router {
   });
 
   // ── Get latest snapshot ────────────────────────────────────────────────────
-  router.get('/sessions/:sessionId/snapshots/latest', (req: Request, res: Response) => {
+  router.get('/sessions/:sessionId/snapshots/latest', async (req: Request, res: Response) => {
     try {
       const sessionId = String(req.params.sessionId);
       const snapshot = resumeService.getLatestSnapshot(sessionId);
@@ -84,7 +85,7 @@ export function createSessionResumeRoutes(db: Database.Database): Router {
   });
 
   // ── Get resume context (prompt layer 4a) ───────────────────────────────────
-  router.get('/sessions/:sessionId/resume-context', (req: Request, res: Response) => {
+  router.get('/sessions/:sessionId/resume-context', async (req: Request, res: Response) => {
     try {
       const sessionId = String(req.params.sessionId);
       const snapshot = resumeService.getLatestSnapshot(sessionId);
@@ -98,7 +99,7 @@ export function createSessionResumeRoutes(db: Database.Database): Router {
   });
 
   // ── Delete snapshot ────────────────────────────────────────────────────────
-  router.delete('/sessions/:sessionId/snapshots/:snapshotId', (req: Request, res: Response) => {
+  router.delete('/sessions/:sessionId/snapshots/:snapshotId', async (req: Request, res: Response) => {
     try {
       const deleted = resumeService.deleteSnapshot(String(req.params.snapshotId));
       if (!deleted) return res.status(404).json({ error: 'Snapshot not found' });

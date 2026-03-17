@@ -1,5 +1,5 @@
 import * as cron from 'node-cron';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { executeScheduledWorkflow } from './workflow-executor.js';
 import { createNotification } from './notification-service.js';
 
@@ -12,11 +12,11 @@ interface ScheduleRow {
 
 const activeTasks = new Map<number, cron.ScheduledTask>();
 
-export function initScheduler(db: Database) {
+export async function initScheduler(db: DatabaseAdapter) {
   // Load all active schedules on startup
-  const schedules = db.prepare(
+  const schedules = await db.all(
     'SELECT * FROM workflow_schedules WHERE is_active = 1'
-  ).all() as ScheduleRow[];
+  ) as ScheduleRow[];
 
   for (const schedule of schedules) {
     scheduleWorkflow(db, schedule);
@@ -24,7 +24,7 @@ export function initScheduler(db: Database) {
   console.log(`[scheduler] Loaded ${schedules.length} active workflow schedules`);
 }
 
-export function scheduleWorkflow(db: Database, schedule: ScheduleRow) {
+export async function scheduleWorkflow(db: Database, schedule: ScheduleRow) {
   // Validate cron expression
   if (!cron.validate(schedule.cron_expression)) {
     console.warn(`[scheduler] Invalid cron expression for schedule ${schedule.id}: ${schedule.cron_expression}`);
@@ -33,12 +33,10 @@ export function scheduleWorkflow(db: Database, schedule: ScheduleRow) {
 
   const task = cron.schedule(schedule.cron_expression, async () => {
     console.log(`[scheduler] Running workflow ${schedule.workflow_id} (schedule ${schedule.id})`);
-    db.prepare('UPDATE workflow_schedules SET last_run_at = CURRENT_TIMESTAMP, run_count = run_count + 1 WHERE id = ?')
-      .run(schedule.id);
+    await db.run('UPDATE workflow_schedules SET last_run_at = CURRENT_TIMESTAMP, run_count = run_count + 1 WHERE id = ?', schedule.id);
     // Log to audit log if the table exists
     try {
-      db.prepare('INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?, ?, ?, ?)')
-        .run('workflow_scheduled_run', 'workflow', schedule.workflow_id, JSON.stringify({ schedule_id: schedule.id }));
+      await db.run('INSERT INTO audit_log (action, entity_type, entity_id, details) VALUES (?, ?, ?, ?)', 'workflow_scheduled_run', 'workflow', schedule.workflow_id, JSON.stringify({ schedule_id: schedule.id }));
     } catch { /* audit table may not exist in all deploys */ }
 
     // Execute the workflow

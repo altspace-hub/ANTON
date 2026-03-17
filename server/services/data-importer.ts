@@ -21,7 +21,7 @@ import { stringify as stringifyCSV } from 'csv-stringify/sync';
 import xlsx from 'xlsx';
 import ExcelJS from 'exceljs';
 import { Dataset, createDataset } from './data-transformer.js';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 // ==================== Import Operations ====================
 
@@ -38,7 +38,7 @@ export interface ImportConfig {
   // Database source
   connectionId?: string;
   query?: string;
-  db?: Database.Database; // Direct DB instance (for testing)
+  db?: DatabaseAdapter; // Direct DB instance (for testing)
 
   // Common
   preview?: boolean; // Return first 100 rows only
@@ -173,8 +173,7 @@ async function importFromDatabase(config: ImportConfig): Promise<Dataset> {
   }
 
   try {
-    const stmt = config.db.prepare(config.query);
-    const rows = stmt.all() as Array<Record<string, any>>;
+    const rows = await config.db.all(config.query) as Array<Record<string, any>>;
 
     if (config.preview) {
       return createDataset(rows.slice(0, 100), `db:query`);
@@ -216,7 +215,7 @@ export interface ExportConfig {
   excelOptions?: ExcelExportOptions;
 
   // Database export
-  db?: Database.Database;
+  db?: DatabaseAdapter;
   tableName?: string;
   insertMode?: 'insert' | 'upsert' | 'replace';
 
@@ -383,17 +382,11 @@ async function exportToDatabase(dataset: Dataset, config: ExportConfig): Promise
       sql = `INSERT OR REPLACE INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
     }
 
-    const stmt = config.db.prepare(sql);
-
-    // Insert rows in transaction
-    const insertMany = config.db.transaction((rows: Array<Record<string, any>>) => {
-      for (const row of rows) {
-        const values = columns.map((col) => row[col]);
-        stmt.run(...values);
-      }
-    });
-
-    insertMany(dataset.rows);
+    // Insert rows
+    for (const row of dataset.rows) {
+      const values = columns.map((col) => row[col]);
+      await config.db.run(sql, ...values);
+    }
 
     return `Inserted ${dataset.rows.length} rows into ${config.tableName}`;
   } catch (error) {

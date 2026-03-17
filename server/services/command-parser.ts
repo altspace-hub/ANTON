@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { callChat, mapModelToProvider } from './provider-router.js';
 
 const COMMAND_PARSING_PROMPT = `You are a command parser for the openEXPERT platform.
@@ -100,7 +101,7 @@ export async function parseCommand(userInput: string, anthropic: Anthropic): Pro
 export async function executeCommand(
   parsed: ParsedCommand,
   context: {
-    db: Database.Database;
+    db: DatabaseAdapter;
     userId?: string;
   }
 ): Promise<ExecutionResult> {

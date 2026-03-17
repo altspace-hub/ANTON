@@ -15,7 +15,7 @@
 
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { MCP_TOOLS, createMcpToolExecutor } from './mcp-tools.js';
 
 // ── Rate limiter: 10 requests per minute ────────────────────────────────────
@@ -30,7 +30,7 @@ const mcpLimiter = rateLimit({
 
 // ── Router factory ───────────────────────────────────────────────────────────
 
-export function createMcpRouter(db: Database): Router {
+export async function createMcpRouter(db: Database): Router {
   const router = Router();
   const executor = createMcpToolExecutor(db);
 
@@ -41,7 +41,7 @@ export function createMcpRouter(db: Database): Router {
    * GET /mcp/tools
    * Returns the list of available ANTON tools in MCP format.
    */
-  router.get('/tools', (_req: Request, res: Response) => {
+  router.get('/tools', async (_req: Request, res: Response) => {
     res.json({ tools: MCP_TOOLS });
   });
 
@@ -98,7 +98,7 @@ export function createMcpRouter(db: Database): Router {
    * GET /mcp
    * Root info endpoint — useful for health checks and client discovery.
    */
-  router.get('/', (_req: Request, res: Response) => {
+  router.get('/', async (_req: Request, res: Response) => {
     res.json({
       name: 'ANTON MCP Endpoint',
       version: '1.0.0',

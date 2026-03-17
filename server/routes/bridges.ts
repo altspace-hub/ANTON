@@ -16,7 +16,8 @@
 
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import crypto from 'crypto';
 import type Anthropic from '@anthropic-ai/sdk';
 import { requireAdminOrSolo } from '../middleware/auth.js';
@@ -95,7 +96,7 @@ function parseBridgeRow(row: RawConnectionRow, showToken = false) {
 /**
  * Register BEFORE app.use('/api', authMiddleware) in server/index.ts
  */
-export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
+export async function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
   const router = Router();
 
   /**
@@ -108,9 +109,7 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
 
     try {
       // 1. Look up the bridge
-      const row = db
-        .prepare("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'")
-        .get(bridgeId) as RawConnectionRow | undefined;
+      const row = await db.get("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'", bridgeId) as RawConnectionRow | undefined;
 
       if (!row) {
         res.status(404).json({ error: 'Bridge not found' });
@@ -141,12 +140,12 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
 
       // 3. Rate limiting via SQLite timestamp window
       const rateLimitRpm = Number(bridgeConfig.rate_limit_rpm ?? 60);
-      const { count: recentCount } = db.prepare(`
+      const { count: recentCount } = await db.get(`
         SELECT COUNT(*) as count
         FROM connection_audit_log
         WHERE connection_id = ? AND action = 'query'
           AND executed_at > datetime('now', '-1 minute')
-      `).get(bridgeId) as { count: number };
+      `, bridgeId) as { count: number };
 
       if (recentCount >= rateLimitRpm) {
         res
@@ -226,7 +225,7 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
           call_count: (Number(rawConfig.call_count) || 0) + 1,
           last_called_at: new Date().toISOString(),
         };
-        db.prepare('UPDATE connections SET config = ?, updated_at = ? WHERE id = ?').run(
+        await db.run('UPDATE connections SET config = ?, updated_at = ? WHERE id = ?', 
           JSON.stringify(updatedConfig),
           new Date().toISOString(),
           bridgeId
@@ -236,11 +235,11 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
       }
 
       // 9. Write audit entry
-      db.prepare(`
+      await db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
         VALUES (?, NULL, 'query', ?, ?, 'bridge_client')
-      `).run(
+      `, 
         bridgeId,
         JSON.stringify({
           module: requestedModule,
@@ -273,15 +272,13 @@ export function createBridgePublicRoutes(db: Database, _anthropic?: Anthropic) {
 /**
  * Register AFTER app.use('/api', authMiddleware) in server/index.ts
  */
-export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
+export async function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
   const router = Router();
 
   // GET /api/bridges — list all channel bridges
-  router.get('/bridges', requireAdminOrSolo, (_req: Request, res: Response) => {
+  router.get('/bridges', requireAdminOrSolo, async (_req: Request, res: Response) => {
     try {
-      const rows = db
-        .prepare("SELECT * FROM connections WHERE type = 'channel_bridge' ORDER BY created_at DESC")
-        .all() as RawConnectionRow[];
+      const rows = await db.all("SELECT * FROM connections WHERE type = 'channel_bridge' ORDER BY created_at DESC") as RawConnectionRow[];
 
       res.json(rows.map((row) => parseBridgeRow(row, false)));
     } catch (err) {
@@ -291,7 +288,7 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
   });
 
   // POST /api/bridges — create new channel bridge
-  router.post('/bridges', requireAdminOrSolo, (req: Request, res: Response) => {
+  router.post('/bridges', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const {
         display_name,
@@ -342,18 +339,18 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO connections
           (id, display_name, type, config, permissions, created_by, status, created_at, updated_at)
         VALUES (?, ?, 'channel_bridge', ?, '[]', ?, 'pending', ?, ?)
-      `).run(id, display_name.trim(), JSON.stringify(encryptedConfig), req.user!.id, now, now);
+      `, id, display_name.trim(), JSON.stringify(encryptedConfig), req.user!.id, now, now);
 
       // Audit log
-      db.prepare(`
+      await db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
         VALUES (?, NULL, 'create', ?, 'Channel bridge created', ?)
-      `).run(id, JSON.stringify({ channel_type }), req.user!.id);
+      `, id, JSON.stringify({ channel_type }), req.user!.id);
 
       const baseUrl = getBaseUrl();
 
@@ -379,11 +376,9 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
   });
 
   // PATCH /api/bridges/:id — update bridge config
-  router.patch('/bridges/:id', requireAdminOrSolo, (req: Request, res: Response) => {
+  router.patch('/bridges/:id', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
-      const row = db
-        .prepare("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'")
-        .get(String(req.params.id)) as RawConnectionRow | undefined;
+      const row = await db.get("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'", String(req.params.id)) as RawConnectionRow | undefined;
 
       if (!row) {
         res.status(404).json({ error: 'Bridge not found' });
@@ -421,19 +416,17 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
           : row.display_name;
       const now = new Date().toISOString();
 
-      db.prepare(
+      await db.run(
         'UPDATE connections SET display_name = ?, config = ?, updated_at = ? WHERE id = ?'
-      ).run(newDisplayName, JSON.stringify(updatedConfig), now, String(req.params.id));
+      , newDisplayName, JSON.stringify(updatedConfig), now, String(req.params.id));
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
         VALUES (?, NULL, 'update', NULL, 'Bridge config updated', ?)
-      `).run(String(req.params.id), req.user!.id);
+      `, String(req.params.id), req.user!.id);
 
-      const updated = db
-        .prepare('SELECT * FROM connections WHERE id = ?')
-        .get(String(req.params.id)) as RawConnectionRow;
+      const updated = await db.get('SELECT * FROM connections WHERE id = ?', String(req.params.id)) as RawConnectionRow;
 
       res.json(parseBridgeRow(updated, false));
     } catch (err) {
@@ -443,11 +436,9 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
   });
 
   // DELETE /api/bridges/:id — soft-delete (disable)
-  router.delete('/bridges/:id', requireAdminOrSolo, (req: Request, res: Response) => {
+  router.delete('/bridges/:id', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
-      const row = db
-        .prepare("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'")
-        .get(String(req.params.id)) as RawConnectionRow | undefined;
+      const row = await db.get("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'", String(req.params.id)) as RawConnectionRow | undefined;
 
       if (!row) {
         res.status(404).json({ error: 'Bridge not found' });
@@ -455,16 +446,16 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
       }
 
       const now = new Date().toISOString();
-      db.prepare("UPDATE connections SET status = 'disabled', updated_at = ? WHERE id = ?").run(
+      await db.run("UPDATE connections SET status = 'disabled', updated_at = ? WHERE id = ?", 
         now,
         String(req.params.id)
       );
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
         VALUES (?, NULL, 'delete', NULL, 'Bridge deactivated', ?)
-      `).run(String(req.params.id), req.user!.id);
+      `, String(req.params.id), req.user!.id);
 
       res.json({ success: true });
     } catch (err) {
@@ -474,11 +465,9 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
   });
 
   // POST /api/bridges/:id/approve — approve pending bridge
-  router.post('/bridges/:id/approve', requireAdminOrSolo, (req: Request, res: Response) => {
+  router.post('/bridges/:id/approve', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
-      const row = db
-        .prepare("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'")
-        .get(String(req.params.id)) as RawConnectionRow | undefined;
+      const row = await db.get("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'", String(req.params.id)) as RawConnectionRow | undefined;
 
       if (!row) {
         res.status(404).json({ error: 'Bridge not found' });
@@ -491,19 +480,17 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
       }
 
       const now = new Date().toISOString();
-      db.prepare(
+      await db.run(
         "UPDATE connections SET approved_by = ?, approved_at = ?, status = 'active', updated_at = ? WHERE id = ?"
-      ).run(req.user!.id, now, now, String(req.params.id));
+      , req.user!.id, now, now, String(req.params.id));
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO connection_audit_log
           (connection_id, execution_id, action, details, result_summary, executed_by)
         VALUES (?, NULL, 'approve', NULL, 'Bridge approved and activated', ?)
-      `).run(String(req.params.id), req.user!.id);
+      `, String(req.params.id), req.user!.id);
 
-      const updated = db
-        .prepare('SELECT * FROM connections WHERE id = ?')
-        .get(String(req.params.id)) as RawConnectionRow;
+      const updated = await db.get('SELECT * FROM connections WHERE id = ?', String(req.params.id)) as RawConnectionRow;
 
       res.json(parseBridgeRow(updated, false));
     } catch (err) {
@@ -513,11 +500,9 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
   });
 
   // GET /api/bridges/:id/audit — audit log for a bridge
-  router.get('/bridges/:id/audit', requireAdminOrSolo, (req: Request, res: Response) => {
+  router.get('/bridges/:id/audit', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
-      const row = db
-        .prepare("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'")
-        .get(String(req.params.id)) as RawConnectionRow | undefined;
+      const row = await db.get("SELECT * FROM connections WHERE id = ? AND type = 'channel_bridge'", String(req.params.id)) as RawConnectionRow | undefined;
 
       if (!row) {
         res.status(404).json({ error: 'Bridge not found' });
@@ -525,11 +510,9 @@ export function createBridgeRoutes(db: Database, _anthropic?: Anthropic) {
       }
 
       const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10), 200);
-      const log = db
-        .prepare(
+      const log = await db.all(
           'SELECT * FROM connection_audit_log WHERE connection_id = ? ORDER BY executed_at DESC LIMIT ?'
-        )
-        .all(String(req.params.id), limit);
+        , String(req.params.id), limit);
 
       res.json(log);
     } catch (err) {

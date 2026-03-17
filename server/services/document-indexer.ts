@@ -3,7 +3,7 @@
  * Orchestrates: extraction → chunking → embedding → storage
  */
 
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import * as path from 'path';
 import fs from 'fs-extra';
 import { extractTextFromFile } from './text-extractor.js';
@@ -131,9 +131,7 @@ export async function reindexDocument(
 ): Promise<IndexDocumentResult> {
   try {
     // 1. Get existing document
-    const doc = db
-      .prepare('SELECT * FROM rag_documents WHERE id = ?')
-      .get(documentId) as any;
+    const doc = await db.get('SELECT * FROM rag_documents WHERE id = ?', documentId) as any;
 
     if (!doc) {
       return { success: false, error: 'Document not found' };
@@ -148,7 +146,7 @@ export async function reindexDocument(
     }
 
     // 3. Delete old chunk records from SQLite
-    db.prepare('DELETE FROM rag_chunks WHERE document_id = ?').run(documentId);
+    await db.run('DELETE FROM rag_chunks WHERE document_id = ?', documentId);
 
     // 4. Re-extract and re-chunk
     const extractedText = await extractTextFromFile(doc.file_path);
@@ -229,7 +227,7 @@ export async function deleteDocument(
     }
 
     // 3. Delete document from SQLite (CASCADE will delete chunks)
-    db.prepare('DELETE FROM rag_documents WHERE id = ?').run(documentId);
+    await db.run('DELETE FROM rag_documents WHERE id = ?', documentId);
 
     return true;
   } catch (error) {
@@ -241,14 +239,13 @@ export async function deleteDocument(
 /**
  * Get indexing statistics for a collection
  */
-export function getCollectionIndexStats(db: Database, collectionId: string): {
+export async function getCollectionIndexStats(db: Database, collectionId: string): Promise<{
   totalDocuments: number;
   indexedDocuments: number;
   failedDocuments: number;
   totalChunks: number;
-} {
-  const stats = db
-    .prepare(
+}> {
+  const stats = await db.get(
       `
     SELECT
       COUNT(*) as total_documents,
@@ -258,8 +255,7 @@ export function getCollectionIndexStats(db: Database, collectionId: string): {
     FROM rag_documents
     WHERE collection_id = ?
   `
-    )
-    .get(collectionId) as any;
+    , collectionId) as any;
 
   return {
     totalDocuments: stats.total_documents || 0,

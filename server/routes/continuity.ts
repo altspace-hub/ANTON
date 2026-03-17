@@ -5,7 +5,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 
 interface ContinuityProfile {
@@ -50,7 +51,7 @@ function parseProfile(row: RawProfileRow): ContinuityProfile {
   };
 }
 
-export function createContinuityRoutes(db: Database.Database): Router {
+export async function createContinuityRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   function getUserId(req: Request): string {
@@ -58,7 +59,7 @@ export function createContinuityRoutes(db: Database.Database): Router {
   }
 
   // ── List profiles ──────────────────────────────────────────────────────────
-  router.get('/continuity/profiles', (req: Request, res: Response) => {
+  router.get('/continuity/profiles', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const status = req.query.status ? String(req.query.status) : undefined;
@@ -68,7 +69,7 @@ export function createContinuityRoutes(db: Database.Database): Router {
       if (status) { query += ' AND status = ?'; params.push(status); }
       query += ' ORDER BY updated_at DESC';
 
-      const rows = db.prepare(query).all(...params) as RawProfileRow[];
+      const rows = await db.all(query, ...params) as RawProfileRow[];
       res.json({ profiles: rows.map(parseProfile) });
     } catch (err) {
       console.error('[continuity] list error:', err);
@@ -77,9 +78,9 @@ export function createContinuityRoutes(db: Database.Database): Router {
   });
 
   // ── Get profile ────────────────────────────────────────────────────────────
-  router.get('/continuity/profiles/:id', (req: Request, res: Response) => {
+  router.get('/continuity/profiles/:id', async (req: Request, res: Response) => {
     try {
-      const row = db.prepare('SELECT * FROM continuity_profiles WHERE id = ?').get(String(req.params.id)) as RawProfileRow | undefined;
+      const row = await db.get('SELECT * FROM continuity_profiles WHERE id = ?', String(req.params.id)) as RawProfileRow | undefined;
       if (!row) return res.status(404).json({ error: 'Profile not found' });
       res.json({ profile: parseProfile(row) });
     } catch (err) {
@@ -88,7 +89,7 @@ export function createContinuityRoutes(db: Database.Database): Router {
   });
 
   // ── Create profile ─────────────────────────────────────────────────────────
-  router.post('/continuity/profiles', (req: Request, res: Response) => {
+  router.post('/continuity/profiles', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const {
@@ -103,23 +104,21 @@ export function createContinuityRoutes(db: Database.Database): Router {
       const id = randomUUID();
       const now = new Date().toISOString();
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO continuity_profiles
           (id, profile_name, role, area_ids, expertise_summary, active_projects,
            key_decisions, critical_knowledge, handover_notes, status, user_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
-      `).run(
-        id, profile_name, role,
+      `, id, profile_name, role,
         JSON.stringify(area_ids ?? []),
         expertise_summary ?? null,
         JSON.stringify(active_projects ?? []),
         JSON.stringify(key_decisions ?? []),
         critical_knowledge ?? null,
         handover_notes ?? null,
-        userId, now, now,
-      );
+        userId, now, now,);
 
-      const created = db.prepare('SELECT * FROM continuity_profiles WHERE id = ?').get(id) as RawProfileRow;
+      const created = await db.get('SELECT * FROM continuity_profiles WHERE id = ?', id) as RawProfileRow;
       res.status(201).json({ profile: parseProfile(created) });
     } catch (err) {
       console.error('[continuity] create error:', err);
@@ -128,10 +127,10 @@ export function createContinuityRoutes(db: Database.Database): Router {
   });
 
   // ── Update profile ─────────────────────────────────────────────────────────
-  router.put('/continuity/profiles/:id', (req: Request, res: Response) => {
+  router.put('/continuity/profiles/:id', async (req: Request, res: Response) => {
     try {
       const id = String(req.params.id);
-      const existing = db.prepare('SELECT id FROM continuity_profiles WHERE id = ?').get(id);
+      const existing = await db.get('SELECT id FROM continuity_profiles WHERE id = ?', id);
       if (!existing) return res.status(404).json({ error: 'Profile not found' });
 
       const allowed = ['profile_name','role','area_ids','expertise_summary','active_projects','key_decisions','critical_knowledge','handover_notes','status'] as const;
@@ -153,8 +152,8 @@ export function createContinuityRoutes(db: Database.Database): Router {
       updates.push("updated_at = datetime('now')");
       values.push(id);
 
-      db.prepare(`UPDATE continuity_profiles SET ${updates.join(', ')} WHERE id = ?`).run(...values);
-      const updated = db.prepare('SELECT * FROM continuity_profiles WHERE id = ?').get(id) as RawProfileRow;
+      await db.run(`UPDATE continuity_profiles SET ${updates.join(', ')} WHERE id = ?`, ...values);
+      const updated = await db.get('SELECT * FROM continuity_profiles WHERE id = ?', id) as RawProfileRow;
       res.json({ profile: parseProfile(updated) });
     } catch (err) {
       res.status(500).json({ error: 'Failed to update profile' });
@@ -162,9 +161,9 @@ export function createContinuityRoutes(db: Database.Database): Router {
   });
 
   // ── Delete profile ─────────────────────────────────────────────────────────
-  router.delete('/continuity/profiles/:id', (req: Request, res: Response) => {
+  router.delete('/continuity/profiles/:id', async (req: Request, res: Response) => {
     try {
-      const result = db.prepare('DELETE FROM continuity_profiles WHERE id = ?').run(String(req.params.id));
+
       if (result.changes === 0) return res.status(404).json({ error: 'Profile not found' });
       res.json({ deleted: true });
     } catch (err) {
@@ -176,7 +175,7 @@ export function createContinuityRoutes(db: Database.Database): Router {
    * Build continuity context prompt for injection.
    * Used when active profiles have knowledge that should persist into new sessions.
    */
-  router.get('/continuity/context-prompt', (req: Request, res: Response) => {
+  router.get('/continuity/context-prompt', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const areaId = req.query.area_id ? String(req.query.area_id) : undefined;
@@ -189,7 +188,7 @@ export function createContinuityRoutes(db: Database.Database): Router {
       }
       query += ' ORDER BY updated_at DESC LIMIT 3';
 
-      const rows = db.prepare(query).all(...params) as RawProfileRow[];
+
       const profiles = rows.map(parseProfile);
 
       if (profiles.length === 0) {

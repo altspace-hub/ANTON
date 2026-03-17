@@ -50,7 +50,7 @@ export default function DatasetsPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setDatasets(data);
+        setDatasets(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error('Failed to load datasets:', err);

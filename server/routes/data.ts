@@ -26,14 +26,14 @@ import {
   deduplicateDataset,
   MergeConfig,
 } from '../services/data-merger.js';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import path from 'path';
 
 // In-memory cache for datasets during workflow execution
 // Key: dataset ID, Value: Dataset
 const datasetCache = new Map<string, Dataset>();
 
-export function createDataRoutes(db: Database.Database) {
+export async function createDataRoutes(db: DatabaseAdapter) {
   const router = express.Router();
 
 // ==================== Import ====================
@@ -294,7 +294,7 @@ router.post('/preview', async (req: Request, res: Response) => {
  * GET /api/data/cache/:id
  * Get cached dataset details
  */
-router.get('/cache/:id', (req: Request, res: Response) => {
+router.get('/cache/:id', async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const dataset = datasetCache.get(id);
 
@@ -315,7 +315,7 @@ router.get('/cache/:id', (req: Request, res: Response) => {
  * DELETE /api/data/cache/:id
  * Remove dataset from cache
  */
-router.delete('/cache/:id', (req: Request, res: Response) => {
+router.delete('/cache/:id', async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const deleted = datasetCache.delete(id);
 
@@ -326,7 +326,7 @@ router.delete('/cache/:id', (req: Request, res: Response) => {
  * DELETE /api/data/cache
  * Clear entire dataset cache
  */
-router.delete('/cache', (_req: Request, res: Response) => {
+router.delete('/cache', async (_req: Request, res: Response) => {
   const size = datasetCache.size;
   datasetCache.clear();
 

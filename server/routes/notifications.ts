@@ -1,20 +1,20 @@
 import { Router } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { getUnreadCount, markRead, markAllRead } from '../services/notification-service.js';
 
-export default function createNotificationsRouter(db: Database) {
+export default function createNotificationsRouter(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/notifications - list (newest first, limit 20)
-  router.get('/notifications', (req, res) => {
+  router.get('/notifications', async (req, res) => {
     try {
       const userId = (req as any).user?.id || 'solo';
-      const notifications = db.prepare(`
+      const notifications = await db.all(`
         SELECT * FROM notifications
         WHERE user_id = ?
         ORDER BY read_at IS NULL DESC, created_at DESC
         LIMIT 20
-      `).all(userId);
+      `, userId);
       res.json(notifications);
     } catch (err) {
       res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -22,7 +22,7 @@ export default function createNotificationsRouter(db: Database) {
   });
 
   // GET /api/notifications/count - unread count
-  router.get('/notifications/count', (req, res) => {
+  router.get('/notifications/count', async (req, res) => {
     try {
       const userId = (req as any).user?.id || 'solo';
       const unread = getUnreadCount(db, userId);
@@ -33,7 +33,7 @@ export default function createNotificationsRouter(db: Database) {
   });
 
   // PATCH /api/notifications/:id/read - mark one read
-  router.patch('/notifications/:id/read', (req, res) => {
+  router.patch('/notifications/:id/read', async (req, res) => {
     try {
       markRead(db, req.params.id);
       res.json({ success: true });
@@ -43,7 +43,7 @@ export default function createNotificationsRouter(db: Database) {
   });
 
   // POST /api/notifications/read-all - mark all read
-  router.post('/notifications/read-all', (req, res) => {
+  router.post('/notifications/read-all', async (req, res) => {
     try {
       const userId = (req as any).user?.id || 'solo';
       markAllRead(db, userId);

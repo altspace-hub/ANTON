@@ -18,7 +18,8 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Bundled packs live two levels up from server/services/ → project root/data/knowledge-packs/
@@ -136,24 +137,25 @@ function rowToPack(row: Record<string, unknown>): KnowledgePack {
 
 // ── Service factory ──────────────────────────────────────────────────────────
 
-export function createKnowledgePackService(db: Database.Database) {
+export async function createKnowledgePackService(db: DatabaseAdapter) {
 
   // ── List / Get ─────────────────────────────────────────────────────────────
 
-  function listPacks(userId: string): KnowledgePack[] {
+  async function listPacks(userId: string): Promise<KnowledgePack[]> {
     // Excludes the manifest JSON blob from the list query — fetched only via getPack(id)
-    const rows = db.prepare(
+    const rows = await db.all(
       `SELECT id, name, display_name, version, description, jurisdiction, regulatory_area,
               regulation_ids, author, publisher, tier, entity_count, relationship_count,
               alias_count, status, '{}' as manifest, file_hash, imported_at, activated_at,
               deactivated_at, user_id
-       FROM knowledge_packs WHERE user_id = ? OR user_id = 'system' ORDER BY imported_at DESC`
-    ).all(userId) as Record<string, unknown>[];
+       FROM knowledge_packs WHERE user_id = ? OR user_id = 'system' ORDER BY imported_at DESC`,
+      userId
+    ) as Record<string, unknown>[];
     return rows.map(rowToPack);
   }
 
-  function getPack(id: string): KnowledgePack | null {
-    const row = db.prepare('SELECT * FROM knowledge_packs WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  async function getPack(id: string): Promise<KnowledgePack | null> {
+    const row = await db.get('SELECT * FROM knowledge_packs WHERE id = ?', id) as Record<string, unknown> | undefined;
     return row ? rowToPack(row) : null;
   }
 
@@ -185,7 +187,7 @@ export function createKnowledgePackService(db: Database.Database) {
     return value;
   }
 
-  function importBundle(buffer: Buffer, userId: string): KnowledgePack {
+  async function importBundle(buffer: Buffer, userId: string): Promise<KnowledgePack> {
     // 0. Bundle size guard (ZIP bomb: check buffer size before extraction)
     if (buffer.length > MAX_BUNDLE_BYTES) {
       throw new Error(`Bundle exceeds max allowed size (${MAX_BUNDLE_BYTES / 1024 / 1024} MB)`);
@@ -193,7 +195,7 @@ export function createKnowledgePackService(db: Database.Database) {
 
     // 1. Hash the bundle for dedup detection
     const fileHash = crypto.createHash('sha256').update(buffer).digest('hex');
-    const existing = db.prepare('SELECT id FROM knowledge_packs WHERE file_hash = ?').get(fileHash) as { id: string } | undefined;
+    const existing = await db.get('SELECT id FROM knowledge_packs WHERE file_hash = ?', fileHash) as { id: string } | undefined;
     if (existing) {
       throw new Error(`Pack with this file hash is already imported (id: ${existing.id}). Delete it first to re-import.`);
     }
@@ -319,38 +321,39 @@ export function createKnowledgePackService(db: Database.Database) {
     const packId = randomUUID();
 
     // 5. Bulk insert in a transaction
-    const importTx = db.transaction(() => {
-      // Insert pack record first (no entity counts yet)
-      db.prepare(`
-        INSERT INTO knowledge_packs
-          (id, name, display_name, version, description, jurisdiction, regulatory_area,
-           regulation_ids, author, publisher, tier, entity_count, relationship_count,
-           alias_count, status, manifest, file_hash, user_id,
-           effective_date, source_url, validated_by, content_confirmed)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,0,0,0,'installed',?,?,?,?,?,?,?)
-      `).run(
-        packId,
-        manifest.name,
-        manifest.display_name ?? manifest.name,
-        manifest.version,
-        manifest.description ?? null,
-        manifest.jurisdiction ?? null,
-        manifest.regulatory_area ?? null,
-        JSON.stringify(manifest.regulation_ids ?? []),
-        manifest.author ?? null,
-        manifest.publisher ?? null,
-        manifest.tier ?? 2,
-        JSON.stringify(manifest),
-        fileHash,
-        userId,
-        manifest.effective_date ?? null,
-        manifest.source_url ?? null,
-        manifest.validated_by ?? null,
-        manifest.content_confirmed ? 1 : 0,
-      );
+    // Insert pack record first (no entity counts yet)
+    await db.run(`
+      INSERT INTO knowledge_packs
+        (id, name, display_name, version, description, jurisdiction, regulatory_area,
+         regulation_ids, author, publisher, tier, entity_count, relationship_count,
+         alias_count, status, manifest, file_hash, user_id,
+         effective_date, source_url, validated_by, content_confirmed)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,0,0,0,'installed',?,?,?,?,?,?,?)
+    `,
+      packId,
+      manifest.name,
+      manifest.display_name ?? manifest.name,
+      manifest.version,
+      manifest.description ?? null,
+      manifest.jurisdiction ?? null,
+      manifest.regulatory_area ?? null,
+      JSON.stringify(manifest.regulation_ids ?? []),
+      manifest.author ?? null,
+      manifest.publisher ?? null,
+      manifest.tier ?? 2,
+      JSON.stringify(manifest),
+      fileHash,
+      userId,
+      manifest.effective_date ?? null,
+      manifest.source_url ?? null,
+      manifest.validated_by ?? null,
+      manifest.content_confirmed ? 1 : 0,
+    );
 
-      // Insert entities (upsert — pack enriches existing nodes if same type+id)
-      const upsertNode = db.prepare(`
+    // Insert entities (upsert — pack enriches existing nodes if same type+id)
+    let entityCount = 0;
+    for (const e of entities) {
+      await db.run(`
         INSERT INTO entity_nodes
           (id, entity_type, entity_id, canonical_name, metadata, source, pack_id)
         VALUES (lower(hex(randomblob(8))), ?, ?, ?, ?, 'pack', ?)
@@ -359,89 +362,80 @@ export function createKnowledgePackService(db: Database.Database) {
           metadata = COALESCE(excluded.metadata, entity_nodes.metadata),
           source = CASE WHEN entity_nodes.source = 'workflow' THEN 'pack' ELSE entity_nodes.source END,
           pack_id = CASE WHEN entity_nodes.pack_id IS NULL THEN excluded.pack_id ELSE entity_nodes.pack_id END
-      `);
+      `,
+        e.entity_type,
+        e.entity_id,
+        e.canonical_name,
+        e.metadata ? JSON.stringify(e.metadata) : null,
+        packId,
+      );
+      entityCount++;
+    }
 
-      let entityCount = 0;
-      for (const e of entities) {
-        upsertNode.run(
-          e.entity_type,
-          e.entity_id,
-          e.canonical_name,
-          e.metadata ? JSON.stringify(e.metadata) : null,
-          packId,
-        );
-        entityCount++;
+    // Insert relationships — deduplicate within this pack to avoid multiple rows
+    // for the same (from, to, type) tuple (entity_relationships has no UNIQUE constraint).
+    // Where duplicates exist, keep the highest strength value.
+
+    type RelData = { strength: number; description?: string; metadata?: Record<string, unknown> };
+    const seenRels = new Map<string, RelData>(); // key → best entry by strength
+    const brokenRefs: string[] = []; // KG-04: track broken refs instead of silently dropping
+    for (const r of relationships) {
+      const from = refMap.get(r.from_ref);
+      const to = refMap.get(r.to_ref);
+      if (!from || !to) {
+        brokenRefs.push(`${r.from_ref} → ${r.to_ref} (${r.relationship_type})`);
+        continue;
       }
+      const key = `${from.entity_type}|${from.entity_id}|${to.entity_type}|${to.entity_id}|${r.relationship_type}`;
+      const strength = r.strength ?? 1.0;
+      const best = seenRels.get(key);
+      if (!best || strength > best.strength) {
+        seenRels.set(key, { strength, description: r.description, metadata: r.metadata });
+      }
+    }
 
-      // Insert relationships — deduplicate within this pack to avoid multiple rows
-      // for the same (from, to, type) tuple (entity_relationships has no UNIQUE constraint).
-      // Where duplicates exist, keep the highest strength value.
-      const insertRel = db.prepare(`
+    // KG-04: Log broken references (relationships referencing unknown ref_ids)
+    if (brokenRefs.length > 0) {
+      console.warn(`[knowledge-pack] ${brokenRefs.length} relationship(s) reference unknown ref_ids and were skipped:\n  ${brokenRefs.slice(0, 10).join('\n  ')}${brokenRefs.length > 10 ? `\n  ... and ${brokenRefs.length - 10} more` : ''}`);
+    }
+
+    let relCount = 0;
+    for (const [key, data] of seenRels) {
+      const [sourceType, sourceId, targetType, targetId, relType] = key.split('|');
+      await db.run(`
         INSERT OR IGNORE INTO entity_relationships
           (id, source_type, source_id, target_type, target_id, relationship_type, strength, description, metadata, source, pack_id)
         VALUES (lower(hex(randomblob(8))), ?, ?, ?, ?, ?, ?, ?, ?, 'pack', ?)
-      `);
+      `,
+        sourceType, sourceId, targetType, targetId, relType,
+        data.strength,
+        data.description ?? null,
+        data.metadata ? JSON.stringify(data.metadata) : null,
+        packId,
+      );
+      relCount++;
+    }
 
-      type RelData = { strength: number; description?: string; metadata?: Record<string, unknown> };
-      const seenRels = new Map<string, RelData>(); // key → best entry by strength
-      const brokenRefs: string[] = []; // KG-04: track broken refs instead of silently dropping
-      for (const r of relationships) {
-        const from = refMap.get(r.from_ref);
-        const to = refMap.get(r.to_ref);
-        if (!from || !to) {
-          brokenRefs.push(`${r.from_ref} → ${r.to_ref} (${r.relationship_type})`);
-          continue;
-        }
-        const key = `${from.entity_type}|${from.entity_id}|${to.entity_type}|${to.entity_id}|${r.relationship_type}`;
-        const strength = r.strength ?? 1.0;
-        const best = seenRels.get(key);
-        if (!best || strength > best.strength) {
-          seenRels.set(key, { strength, description: r.description, metadata: r.metadata });
-        }
+    // Insert aliases
+    let aliasCount = 0;
+    for (const a of aliases) {
+      const ref = refMap.get(a.ref_id);
+      if (!ref) continue;
+      for (const alias of a.aliases) {
+        await db.run(`
+          INSERT OR IGNORE INTO entity_aliases
+            (entity_type, primary_id, alias_id, alias_source, pack_id)
+          VALUES (?, ?, ?, 'pack', ?)
+        `, ref.entity_type, ref.entity_id, alias, packId);
+        aliasCount++;
       }
+    }
 
-      // KG-04: Log broken references (relationships referencing unknown ref_ids)
-      if (brokenRefs.length > 0) {
-        console.warn(`[knowledge-pack] ${brokenRefs.length} relationship(s) reference unknown ref_ids and were skipped:\n  ${brokenRefs.slice(0, 10).join('\n  ')}${brokenRefs.length > 10 ? `\n  ... and ${brokenRefs.length - 10} more` : ''}`);
-      }
-
-      let relCount = 0;
-      for (const [key, data] of seenRels) {
-        const [sourceType, sourceId, targetType, targetId, relType] = key.split('|');
-        insertRel.run(
-          sourceType, sourceId, targetType, targetId, relType,
-          data.strength,
-          data.description ?? null,
-          data.metadata ? JSON.stringify(data.metadata) : null,
-          packId,
-        );
-        relCount++;
-      }
-
-      // Insert aliases
-      const upsertAlias = db.prepare(`
-        INSERT OR IGNORE INTO entity_aliases
-          (entity_type, primary_id, alias_id, alias_source, pack_id)
-        VALUES (?, ?, ?, 'pack', ?)
-      `);
-
-      let aliasCount = 0;
-      for (const a of aliases) {
-        const ref = refMap.get(a.ref_id);
-        if (!ref) continue;
-        for (const alias of a.aliases) {
-          upsertAlias.run(ref.entity_type, ref.entity_id, alias, packId);
-          aliasCount++;
-        }
-      }
-
-      // Update counts
-      db.prepare(
-        `UPDATE knowledge_packs SET entity_count=?, relationship_count=?, alias_count=? WHERE id=?`
-      ).run(entityCount, relCount, aliasCount, packId);
-    });
-
-    importTx();
+    // Update counts
+    await db.run(
+      `UPDATE knowledge_packs SET entity_count=?, relationship_count=?, alias_count=? WHERE id=?`,
+      entityCount, relCount, aliasCount, packId
+    );
 
     // KG-01: Background-embed all entity nodes for semantic search (fire-and-forget).
     // Requires OPENAI_API_KEY — skips silently when not configured.
@@ -463,28 +457,30 @@ export function createKnowledgePackService(db: Database.Database) {
       }
     });
 
-    return getPack(packId)!;
+    return (await getPack(packId))!;
   }
 
   // ── Activate / Deactivate ──────────────────────────────────────────────────
   // Status tracking only — actual entity data is always present in the DB.
   // Active packs are preferred when the prompt-builder injects entity context.
 
-  function activatePack(id: string): void {
-    const pack = getPack(id);
+  async function activatePack(id: string): Promise<void> {
+    const pack = await getPack(id);
     if (!pack) throw new Error('Pack not found');
     if (pack.status === 'active') return;
-    db.prepare(
-      `UPDATE knowledge_packs SET status='active', activated_at=datetime('now'), deactivated_at=NULL WHERE id=?`
-    ).run(id);
+    await db.run(
+      `UPDATE knowledge_packs SET status='active', activated_at=datetime('now'), deactivated_at=NULL WHERE id=?`,
+      id
+    );
   }
 
-  function deactivatePack(id: string): void {
-    const pack = getPack(id);
+  async function deactivatePack(id: string): Promise<void> {
+    const pack = await getPack(id);
     if (!pack) throw new Error('Pack not found');
-    db.prepare(
-      `UPDATE knowledge_packs SET status='deactivated', deactivated_at=datetime('now') WHERE id=?`
-    ).run(id);
+    await db.run(
+      `UPDATE knowledge_packs SET status='deactivated', deactivated_at=datetime('now') WHERE id=?`,
+      id
+    );
   }
 
   // ── Delete (non-destructive for workflow-sourced nodes) ────────────────────
@@ -493,44 +489,43 @@ export function createKnowledgePackService(db: Database.Database) {
   // reverted to 'workflow' source rather than deleted.
   // Pack must be deactivated first to prevent removing context mid-session.
 
-  function deletePack(id: string): boolean {
-    const pack = getPack(id);
+  async function deletePack(id: string): Promise<boolean> {
+    const pack = await getPack(id);
     if (!pack) return false;
     if (pack.status === 'active') {
       throw new Error(`Pack '${pack.display_name}' is currently active. Deactivate it before deleting.`);
     }
 
-    const deleteTx = db.transaction(() => {
-      // Revert shared nodes back to workflow source
-      db.prepare(
-        `UPDATE entity_nodes SET source='workflow', pack_id=NULL WHERE pack_id=?`
-      ).run(id);
+    // Revert shared nodes back to workflow source
+    await db.run(
+      `UPDATE entity_nodes SET source='workflow', pack_id=NULL WHERE pack_id=?`,
+      id
+    );
 
-      // Revert pack-sourced relationships back to workflow source (non-destructive).
-      // Deleting would leave dangling edges where both endpoints still exist.
-      db.prepare(
-        `UPDATE entity_relationships SET source='workflow', pack_id=NULL WHERE pack_id=?`
-      ).run(id);
+    // Revert pack-sourced relationships back to workflow source (non-destructive).
+    // Deleting would leave dangling edges where both endpoints still exist.
+    await db.run(
+      `UPDATE entity_relationships SET source='workflow', pack_id=NULL WHERE pack_id=?`,
+      id
+    );
 
-      // Remove pack aliases
-      db.prepare(`DELETE FROM entity_aliases WHERE pack_id=?`).run(id);
+    // Remove pack aliases
+    await db.run(`DELETE FROM entity_aliases WHERE pack_id=?`, id);
 
-      // Remove pack record
-      db.prepare(`DELETE FROM knowledge_packs WHERE id=?`).run(id);
-    });
+    // Remove pack record
+    await db.run(`DELETE FROM knowledge_packs WHERE id=?`, id);
 
-    deleteTx();
     return true;
   }
 
   // ── Summary for active packs (for prompt injection) ───────────────────────
   // Returns a brief text summary of installed/active packs for context injection.
 
-  function getActivePacksSummary(): string {
-    const rows = db.prepare(
+  async function getActivePacksSummary(): Promise<string> {
+    const rows = await db.all(
       `SELECT display_name, regulatory_area, regulation_ids, entity_count
        FROM knowledge_packs WHERE status='active' ORDER BY tier ASC, display_name ASC`
-    ).all() as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
+    ) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
 
     if (rows.length === 0) return '';
     const lines = rows.map((r) => {
@@ -542,19 +537,21 @@ export function createKnowledgePackService(db: Database.Database) {
 
   // ── Entity / Relationship preview helpers ─────────────────────────────────
 
-  function getPackEntities(packId: string, limit = 100, offset = 0): Record<string, unknown>[] {
-    return db.prepare(
+  async function getPackEntities(packId: string, limit = 100, offset = 0): Promise<Record<string, unknown>[]> {
+    return await db.all(
       `SELECT entity_type, entity_id, canonical_name, metadata
-       FROM entity_nodes WHERE pack_id=? ORDER BY entity_type, canonical_name LIMIT ? OFFSET ?`
-    ).all(packId, limit, offset) as Record<string, unknown>[];
+       FROM entity_nodes WHERE pack_id=? ORDER BY entity_type, canonical_name LIMIT ? OFFSET ?`,
+      packId, limit, offset
+    ) as Record<string, unknown>[];
   }
 
-  function getPackRelationships(packId: string, limit = 100, offset = 0): Record<string, unknown>[] {
-    return db.prepare(
+  async function getPackRelationships(packId: string, limit = 100, offset = 0): Promise<Record<string, unknown>[]> {
+    return await db.all(
       `SELECT source_type, source_id, target_type, target_id, relationship_type, strength, description, metadata
        FROM entity_relationships WHERE pack_id=?
-       ORDER BY relationship_type, source_id LIMIT ? OFFSET ?`
-    ).all(packId, limit, offset) as Record<string, unknown>[];
+       ORDER BY relationship_type, source_id LIMIT ? OFFSET ?`,
+      packId, limit, offset
+    ) as Record<string, unknown>[];
   }
 
   // ── Bundled packs (ship with ANTON in data/knowledge-packs/) ──────────────
@@ -574,7 +571,7 @@ export function createKnowledgePackService(db: Database.Database) {
     status: 'available' | 'installed' | 'active' | 'deactivated';
   }
 
-  function listBundledPacks(): BundledPackInfo[] {
+  async function listBundledPacks(): Promise<BundledPackInfo[]> {
     if (!fs.existsSync(BUNDLED_PACKS_DIR)) return [];
     const results: BundledPackInfo[] = [];
 
@@ -591,9 +588,10 @@ export function createKnowledgePackService(db: Database.Database) {
         if (manifest.bundle_type !== 'regulatory-knowledge-pack') continue;
 
         // Check if this slug is already imported (match by name + version)
-        const existing = db.prepare(
-          `SELECT id, status FROM knowledge_packs WHERE name=? AND version=? LIMIT 1`
-        ).get(manifest.name, manifest.version) as { id: string; status: string } | undefined;
+        const existing = await db.get(
+          `SELECT id, status FROM knowledge_packs WHERE name = ? AND version = ?`,
+          manifest.name, manifest.version
+        ) as { id: string; status: string } | undefined;
 
         results.push({
           slug: dir.name,
@@ -619,7 +617,7 @@ export function createKnowledgePackService(db: Database.Database) {
     return results.sort((a, b) => a.tier - b.tier || a.display_name.localeCompare(b.display_name));
   }
 
-  function installBundledPack(slug: string, userId: string): KnowledgePack {
+  async function installBundledPack(slug: string, userId: string): Promise<KnowledgePack> {
     const packDir = path.join(BUNDLED_PACKS_DIR, slug);
     if (!fs.existsSync(packDir)) throw new Error(`Bundled pack '${slug}' not found`);
 

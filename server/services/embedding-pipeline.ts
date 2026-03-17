@@ -9,13 +9,13 @@
  * All operations are non-blocking — logged but never crash the server.
  */
 
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { embedAndStore } from './hybrid-search.js';
 import { getEmbeddingAdapter } from './embedding-adapter.js';
 
 // ── Module embedding (run at startup) ──────────────────────────────────────
 
-export async function embedModuleDescriptions(db: Database.Database): Promise<void> {
+export async function embedModuleDescriptions(db: DatabaseAdapter): Promise<void> {
   try {
     const { getAreas } = await import('./module-loader.js');
     const areas = await getAreas();
@@ -28,9 +28,9 @@ export async function embedModuleDescriptions(db: Database.Database): Promise<vo
       for (const mod of area.modules) {
         const contentId = mod.id;
         // Check if already embedded with this model
-        const exists = db.prepare(
+        const exists = await db.get(
           "SELECT 1 FROM embeddings WHERE content_type = 'module' AND content_id = ? AND embedding_model = ? LIMIT 1"
-        ).get(contentId, adapter.model);
+        , contentId, adapter.model);
 
         if (exists) { skipped++; continue; }
 
@@ -61,12 +61,12 @@ export async function embedModuleDescriptions(db: Database.Database): Promise<vo
 
 // ── Backfill knowledge atoms ──────────────────────────────────────────────
 
-export async function backfillKnowledgeAtoms(db: Database.Database, batchSize = 50): Promise<void> {
+export async function backfillKnowledgeAtoms(db: DatabaseAdapter, batchSize = 50): Promise<void> {
   try {
     const adapter = getEmbeddingAdapter();
 
     // Find atoms without embeddings in the unified table
-    const atoms = db.prepare(`
+    const atoms = await db.all(`
       SELECT id, content, category, atom_type, source_area_id, source_module_id,
              source_workflow_id, confidence, created_at, superseded_by
       FROM knowledge_atoms
@@ -76,7 +76,7 @@ export async function backfillKnowledgeAtoms(db: Database.Database, batchSize = 
           WHERE content_type = 'knowledge_atom' AND embedding_model = ?
         )
       LIMIT ?
-    `).all(adapter.model, batchSize) as Array<{
+    `, adapter.model, batchSize) as Array<{
       id: string; content: string; category: string; atom_type: string;
       source_area_id: string | null; source_module_id: string | null;
       source_workflow_id: string; confidence: number;
@@ -115,11 +115,11 @@ export async function backfillKnowledgeAtoms(db: Database.Database, batchSize = 
 
 // ── Backfill checkpoint decisions ─────────────────────────────────────────
 
-export async function backfillCheckpoints(db: Database.Database, batchSize = 50): Promise<void> {
+export async function backfillCheckpoints(db: DatabaseAdapter, batchSize = 50): Promise<void> {
   try {
     const adapter = getEmbeddingAdapter();
 
-    const decisions = db.prepare(`
+    const decisions = await db.all(`
       SELECT id, human_decision, human_reasoning, context_snapshot, workflow_id, step_index, decided_by
       FROM checkpoint_decisions
       WHERE id NOT IN (
@@ -127,7 +127,7 @@ export async function backfillCheckpoints(db: Database.Database, batchSize = 50)
         WHERE content_type = 'checkpoint' AND embedding_model = ?
       )
       LIMIT ?
-    `).all(adapter.model, batchSize) as Array<{
+    `, adapter.model, batchSize) as Array<{
       id: string; human_decision: string; human_reasoning: string | null;
       context_snapshot: string | null; workflow_id: string; step_index: number; decided_by: string;
     }>;
@@ -165,7 +165,7 @@ export async function backfillCheckpoints(db: Database.Database, batchSize = 50)
 
 // ── Run full pipeline ─────────────────────────────────────────────────────
 
-export async function runEmbeddingPipeline(db: Database.Database): Promise<void> {
+export async function runEmbeddingPipeline(db: DatabaseAdapter): Promise<void> {
   // Only run if an embedding provider is configured
   const hasOpenAI = !!process.env.OPENAI_API_KEY;
   const hasVoyage = !!process.env.VOYAGE_API_KEY;

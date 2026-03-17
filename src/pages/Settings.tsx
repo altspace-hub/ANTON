@@ -1774,10 +1774,10 @@ export default function Settings() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-adv-gray">Knowledge Atoms</span>
-                  <span className="text-xs text-adv-off-white">{embeddingStats.atoms.embedded} / {embeddingStats.atoms.total} ({embeddingStats.atoms.coverage}%)</span>
+                  <span className="text-xs text-adv-off-white">{embeddingStats.atoms?.embedded ?? 0} / {embeddingStats.atoms?.total ?? 0} ({embeddingStats.atoms?.coverage ?? 0}%)</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-adv-dark-2 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${embeddingStats.atoms.coverage >= 90 ? 'bg-adv-green' : embeddingStats.atoms.coverage >= 50 ? 'bg-adv-gold' : 'bg-adv-red'}`} style={{ width: `${embeddingStats.atoms.coverage}%` }} />
+                  <div className={`h-full rounded-full transition-all ${(embeddingStats.atoms?.coverage ?? 0) >= 90 ? 'bg-adv-green' : (embeddingStats.atoms?.coverage ?? 0) >= 50 ? 'bg-adv-gold' : 'bg-adv-red'}`} style={{ width: `${embeddingStats.atoms?.coverage ?? 0}%` }} />
                 </div>
               </div>
 
@@ -1785,30 +1785,30 @@ export default function Settings() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-adv-gray">Checkpoint Decisions</span>
-                  <span className="text-xs text-adv-off-white">{embeddingStats.checkpoints.embedded} / {embeddingStats.checkpoints.total} ({embeddingStats.checkpoints.coverage}%)</span>
+                  <span className="text-xs text-adv-off-white">{embeddingStats.checkpoints?.embedded ?? 0} / {embeddingStats.checkpoints?.total ?? 0} ({embeddingStats.checkpoints?.coverage ?? 0}%)</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-adv-dark-2 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${embeddingStats.checkpoints.coverage >= 90 ? 'bg-adv-green' : embeddingStats.checkpoints.coverage >= 50 ? 'bg-adv-gold' : 'bg-adv-red'}`} style={{ width: `${embeddingStats.checkpoints.coverage}%` }} />
+                  <div className={`h-full rounded-full transition-all ${(embeddingStats.checkpoints?.coverage ?? 0) >= 90 ? 'bg-adv-green' : (embeddingStats.checkpoints?.coverage ?? 0) >= 50 ? 'bg-adv-gold' : 'bg-adv-red'}`} style={{ width: `${embeddingStats.checkpoints?.coverage ?? 0}%` }} />
                 </div>
               </div>
 
               {/* Modules */}
               <div className="flex items-center justify-between">
                 <span className="text-xs text-adv-gray">Module Descriptions</span>
-                <span className="text-xs text-adv-off-white">{embeddingStats.modules.embedded} embedded</span>
+                <span className="text-xs text-adv-off-white">{embeddingStats.modules?.embedded ?? 0} embedded</span>
               </div>
             </div>
 
             {/* Feedback stats */}
-            {embeddingStats.feedback.total > 0 && (
+            {(embeddingStats.feedback?.total ?? 0) > 0 && (
               <div className="rounded-lg bg-adv-dark/50 border border-border p-3">
                 <div className="flex items-center gap-2">
                   <Database className="h-3 w-3 text-adv-gray" />
                   <span className="text-xs text-adv-gray">Retrieval Feedback</span>
                 </div>
                 <p className="mt-1 text-xs text-adv-off-white">
-                  {embeddingStats.feedback.total} atoms injected across sessions
-                  {embeddingStats.feedback.relevant > 0 && `, ${embeddingStats.feedback.relevant} marked relevant`}
+                  {embeddingStats.feedback?.total ?? 0} atoms injected across sessions
+                  {(embeddingStats.feedback?.relevant ?? 0) > 0 && `, ${embeddingStats.feedback?.relevant} marked relevant`}
                 </p>
               </div>
             )}

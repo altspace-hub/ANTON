@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { getClient } from './claude-client.js';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -66,56 +66,35 @@ export interface CheckpointDecision {
 
 // ── Factory ─────────────────────────────────────────────────────────────────
 
-export function createOutputStore(db: Database.Database) {
+export async function createOutputStore(db: DatabaseAdapter) {
   // Prepared statements (created once for performance)
-  const insertOutput = db.prepare(`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // ── Public API ─────────────────────────────────────────────────────────────
+
+  async function storeOutput(params: StoreOutputParams): string {
+    const id = `out_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    await db.run(`
     INSERT INTO workflow_outputs
       (id, execution_id, workflow_id, step_index, step_type, area_id, module_id, connection_id,
        output_data, created_by, workflow_name, step_name)
     VALUES
       (@id, @execution_id, @workflow_id, @step_index, @step_type, @area_id, @module_id, @connection_id,
        @output_data, @created_by, @workflow_name, @step_name)
-  `);
-
-  const updateSummary = db.prepare(`
-    UPDATE workflow_outputs SET output_summary = @summary WHERE id = @id
-  `);
-
-  const insertDecision = db.prepare(`
-    INSERT INTO checkpoint_decisions
-      (id, execution_id, workflow_id, step_index, ai_recommendation, ai_confidence,
-       human_decision, human_reasoning, is_override, override_category, context_snapshot, decided_by)
-    VALUES
-      (@id, @execution_id, @workflow_id, @step_index, @ai_recommendation, @ai_confidence,
-       @human_decision, @human_reasoning, @is_override, @override_category, @context_snapshot, @decided_by)
-  `);
-
-  const selectOutputsByExecution = db.prepare(`
-    SELECT * FROM workflow_outputs WHERE execution_id = ? ORDER BY step_index ASC
-  `);
-
-  const selectDecisionsByWorkflow = db.prepare(`
-    SELECT * FROM checkpoint_decisions WHERE workflow_id = ? ORDER BY decided_at DESC LIMIT ?
-  `);
-
-  const selectOutputById = db.prepare(`
-    SELECT * FROM workflow_outputs WHERE id = ?
-  `);
-
-  const selectDecisionDistribution = db.prepare(`
-    SELECT human_decision AS decision, COUNT(*) AS count
-    FROM checkpoint_decisions
-    WHERE workflow_id = ? AND step_index = ?
-    GROUP BY human_decision
-    ORDER BY count DESC
-  `);
-
-  // ── Public API ─────────────────────────────────────────────────────────────
-
-  function storeOutput(params: StoreOutputParams): string {
-    const id = `out_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-    insertOutput.run({
+  `, {
       id,
       execution_id: params.executionId,
       workflow_id: params.workflowId,
@@ -136,10 +115,17 @@ export function createOutputStore(db: Database.Database) {
     return id;
   }
 
-  function storeCheckpointDecision(params: StoreCheckpointDecisionParams): string {
+  async function storeCheckpointDecision(params: StoreCheckpointDecisionParams): string {
     const id = `dec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-    insertDecision.run({
+    await db.run(`
+    INSERT INTO checkpoint_decisions
+      (id, execution_id, workflow_id, step_index, ai_recommendation, ai_confidence,
+       human_decision, human_reasoning, is_override, override_category, context_snapshot, decided_by)
+    VALUES
+      (@id, @execution_id, @workflow_id, @step_index, @ai_recommendation, @ai_confidence,
+       @human_decision, @human_reasoning, @is_override, @override_category, @context_snapshot, @decided_by)
+  `, {
       id,
       execution_id: params.executionId,
       workflow_id: params.workflowId,
@@ -157,19 +143,29 @@ export function createOutputStore(db: Database.Database) {
     return id;
   }
 
-  function getOutputsForExecution(executionId: string): WorkflowOutput[] {
-    return selectOutputsByExecution.all(executionId) as WorkflowOutput[];
+  async function getOutputsForExecution(executionId: string): WorkflowOutput[] {
+    return await db.all(`
+    SELECT * FROM workflow_outputs WHERE execution_id = ? ORDER BY step_index ASC
+  `, executionId) as WorkflowOutput[];
   }
 
-  function getDecisionsForWorkflow(workflowId: string, limit = 100): CheckpointDecision[] {
-    return selectDecisionsByWorkflow.all(workflowId, limit) as CheckpointDecision[];
+  async function getDecisionsForWorkflow(workflowId: string, limit = 100): CheckpointDecision[] {
+    return await db.all(`
+    SELECT * FROM checkpoint_decisions WHERE workflow_id = ? ORDER BY decided_at DESC LIMIT ?
+  `, workflowId, limit) as CheckpointDecision[];
   }
 
-  function getDecisionDistribution(
+  async function getDecisionDistribution(
     workflowId: string,
     stepIndex: number
   ): Record<string, number> {
-    const rows = selectDecisionDistribution.all(workflowId, stepIndex) as Array<{
+    const rows = await db.all(`
+    SELECT human_decision AS decision, COUNT(*) AS count
+    FROM checkpoint_decisions
+    WHERE workflow_id = ? AND step_index = ?
+    GROUP BY human_decision
+    ORDER BY count DESC
+  `, workflowId, stepIndex) as Array<{
       decision: string;
       count: number;
     }>;
@@ -182,7 +178,7 @@ export function createOutputStore(db: Database.Database) {
 
   // ── Background helpers ───────────────────────────────────────────────────
 
-  function queueSummaryGeneration(outputId: string, outputData: unknown): void {
+  async function queueSummaryGeneration(outputId: string, outputData: unknown): void {
     // Run after current event-loop tick so the HTTP response is not delayed
     setImmediate(async () => {
       try {
@@ -211,7 +207,9 @@ export function createOutputStore(db: Database.Database) {
         }
         summary = summary.trim().slice(0, 500);
 
-        updateSummary.run({ id: outputId, summary });
+        await db.run(
+          'UPDATE workflow_outputs SET output_summary = ? WHERE id = ?',
+          summary, outputId);
 
         // Trigger atom extraction once summary is stored
         await triggerAtomExtraction(outputId);
@@ -226,7 +224,7 @@ export function createOutputStore(db: Database.Database) {
     try {
       // Lazy-import to avoid circular dependency: atom-extractor imports output-store
       const { createAtomExtractor } = await import('./atom-extractor.js');
-      const extractor = createAtomExtractor(db, getClient());
+      const extractor = await createAtomExtractor(db, getClient());
       await extractor.extractAtoms(outputId);
     } catch (err) {
       console.error('[output-store] Atom extraction failed for', outputId, err);
@@ -241,7 +239,9 @@ export function createOutputStore(db: Database.Database) {
     getDecisionDistribution,
     // Expose for testing
     _queueSummaryGeneration: queueSummaryGeneration,
-    _getOutputById: (id: string) => selectOutputById.get(id) as WorkflowOutput | undefined,
+    _getOutputById: async (id: string) => await db.get(`
+    SELECT * FROM workflow_outputs WHERE id = ?
+  `, id) as WorkflowOutput | undefined,
   };
 }
 

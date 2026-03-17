@@ -40,7 +40,8 @@
 
 import { Router } from 'express';
 import crypto from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
 import { streamChat, callChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
@@ -307,12 +308,12 @@ const ACHIEVEMENT_DEFS = [
 // ── Growth model helpers ────────────────────────────────────────────────────
 
 /** Returns the XP multiplier for any active season today, or 1.0 if none. */
-function getActiveSeasonMultiplier(db: Database.Database): number {
+async function getActiveSeasonMultiplier(db: DatabaseAdapter): Promise<number> {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const season = db.prepare(
+    const season = await db.get(
       `SELECT xp_multiplier FROM xp_seasons WHERE active = 1 AND start_date <= ? AND end_date >= ? LIMIT 1`
-    ).get(today, today) as { xp_multiplier: number } | undefined;
+    , today, today) as { xp_multiplier: number } | undefined;
     return season?.xp_multiplier ?? 1.0;
   } catch {
     return 1.0;
@@ -320,7 +321,7 @@ function getActiveSeasonMultiplier(db: Database.Database): number {
 }
 
 /** Record (or update) the student's XP earned in the current ISO week. */
-function updateWeeklySnapshot(db: Database.Database, userId: string, xpEarned: number): void {
+async function updateWeeklySnapshot(db: DatabaseAdapter, userId: string, xpEarned: number): Promise<void> {
   try {
     // ISO week start = Monday of current week
     const now = new Date();
@@ -330,23 +331,23 @@ function updateWeeklySnapshot(db: Database.Database, userId: string, xpEarned: n
     monday.setDate(now.getDate() + diffToMonday);
     const weekStart = monday.toISOString().split('T')[0];
     const updatedAt = new Date().toISOString();
-    db.prepare(
+    await db.run(
       `INSERT INTO weekly_xp_snapshots (id, student_user_id, week_start, week_xp, updated_at)
        VALUES (?, ?, ?, ?, ?)
        ON CONFLICT(student_user_id, week_start)
        DO UPDATE SET week_xp = week_xp + excluded.week_xp, updated_at = excluded.updated_at`
-    ).run(crypto.randomUUID(), userId, weekStart, xpEarned, updatedAt);
+    , crypto.randomUUID(), userId, weekStart, xpEarned, updatedAt);
   } catch { /* non-fatal */ }
 }
 
-function updateGrowthProfile(db: Database.Database, userId: string, eventType = 'chat_turn'): void {
+async function updateGrowthProfile(db: DatabaseAdapter, userId: string, eventType = 'chat_turn'): Promise<void> {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
 
-  const profile = db.prepare(
+  const profile = await db.get(
     `SELECT session_count, total_xp, xp_level, current_streak, longest_streak, last_active_date, streak_shields
      FROM student_growth_profiles WHERE student_user_id = ?`
-  ).get(userId) as {
+  , userId) as {
     session_count: number; total_xp: number; xp_level: number;
     current_streak: number; longest_streak: number; last_active_date: string | null;
     streak_shields: number;
@@ -356,17 +357,16 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
 
   if (!profile) {
     const initXp = (XP_VALUES['first_session'] ?? 25) + (XP_VALUES[eventType] ?? 5);
-    db.prepare(
+    await db.run(
       `INSERT INTO student_growth_profiles
          (id, student_user_id, stage, session_count, total_xp, xp_level, current_streak, longest_streak, last_active_date, updated_at)
        VALUES (?, ?, 'S1', 1, ?, 1, 1, 1, ?, ?)`
-    ).run(crypto.randomUUID(), userId, initXp, today, now);
+    , crypto.randomUUID(), userId, initXp, today, now);
     try {
-      db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
-        .run(crypto.randomUUID(), userId, 'first_session', XP_VALUES['first_session'] ?? 25, now);
+      await db.run(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`,
+        crypto.randomUUID(), userId, 'first_session', XP_VALUES['first_session'] ?? 25, now);
       if (eventType !== 'first_session') {
-        db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
-          .run(crypto.randomUUID(), userId, eventType, XP_VALUES[eventType] ?? 5, now);
+        await db.run(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`, crypto.randomUUID(), userId, eventType, XP_VALUES[eventType] ?? 5, now);
       }
     } catch { /* non-fatal */ }
     checkAndAwardAchievements(db, userId, { session_count: 1, xp_level: 1, current_streak: 1, stage: 'S1' });
@@ -392,10 +392,10 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
     const shields = (profile as unknown as Record<string, unknown>).streak_shields as number ?? 0;
     if (shields > 0) {
       // Shield absorbs the break — keep streak
-      db.prepare(`UPDATE student_growth_profiles SET streak_shields = streak_shields - 1 WHERE student_user_id = ?`).run(userId);
+      await db.run(`UPDATE student_growth_profiles SET streak_shields = streak_shields - 1 WHERE student_user_id = ?`, userId);
       try {
-        db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, context, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
-          .run(crypto.randomUUID(), userId, 'shield_used', 0, 'Streak shield activated', now);
+        await db.run(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, context, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+          crypto.randomUUID(), userId, 'shield_used', 0, 'Streak shield activated', now);
       } catch {}
     } else {
       // No shields — reset streak
@@ -406,26 +406,25 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
   }
 
   const baseEventXp = XP_VALUES[eventType] ?? 5;
-  const seasonMult = getActiveSeasonMultiplier(db);
+  const seasonMult = await getActiveSeasonMultiplier(db);
   const eventXp = Math.round(baseEventXp * seasonMult);
   const newXp = (profile.total_xp ?? 0) + eventXp + streakXp;
   const newLevel = computeXpLevel(newXp);
 
-  db.prepare(
+  await db.run(
     `UPDATE student_growth_profiles
      SET session_count = ?, stage = ?, total_xp = ?, xp_level = ?,
          current_streak = ?, longest_streak = ?, last_active_date = ?, updated_at = ?
      WHERE student_user_id = ?`
-  ).run(count, stage, newXp, newLevel, newStreak, longestStreak, today, now, userId);
+  , count, stage, newXp, newLevel, newStreak, longestStreak, today, now, userId);
 
   try {
     if (eventXp > 0) {
-      db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
-        .run(crypto.randomUUID(), userId, eventType, eventXp, now);
+      await db.run(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`,
+        crypto.randomUUID(), userId, eventType, eventXp, now);
     }
     if (streakXp > 0) {
-      db.prepare(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`)
-        .run(crypto.randomUUID(), userId, 'streak_day', streakXp, now);
+      await db.run(`INSERT INTO student_xp_events (id, student_user_id, event_type, xp_earned, created_at) VALUES (?, ?, ?, ?, ?)`, crypto.randomUUID(), userId, 'streak_day', streakXp, now);
     }
   } catch { /* non-fatal */ }
   // Update weekly snapshot for leaderboard
@@ -435,68 +434,64 @@ function updateGrowthProfile(db: Database.Database, userId: string, eventType = 
   // Grant a shield when streak reaches 7
   if (newStreak === 7) {
     try {
-      db.prepare(`UPDATE student_growth_profiles SET streak_shields = MIN(3, streak_shields + 1) WHERE student_user_id = ?`).run(userId);
+      await db.run(`UPDATE student_growth_profiles SET streak_shields = MIN(3, streak_shields + 1) WHERE student_user_id = ?`, userId);
     } catch {}
   }
 }
 
-function checkAndAwardAchievements(
-  db: Database.Database,
+async function checkAndAwardAchievements(
+  db: DatabaseAdapter,
   userId: string,
   profile: { session_count: number; xp_level: number; current_streak: number; stage: string }
-): void {
+): Promise<void> {
   try {
     const now = new Date().toISOString();
-    const earned = new Set(
-      (db.prepare('SELECT achievement_id FROM student_achievements WHERE student_user_id = ?')
-        .all(userId) as { achievement_id: string }[]).map(r => r.achievement_id)
-    );
+    const earnedRows = await db.all('SELECT achievement_id FROM student_achievements WHERE student_user_id = ?', userId) as { achievement_id: string }[];
+    const earned = new Set(earnedRows.map(r => r.achievement_id));
 
-    function award(id: string) {
+    async function award(id: string) {
       if (earned.has(id)) return;
       earned.add(id);
       try {
-        db.prepare('INSERT OR IGNORE INTO student_achievements (id, student_user_id, achievement_id, earned_at) VALUES (?, ?, ?, ?)')
-          .run(crypto.randomUUID(), userId, id, now);
+        await db.run('INSERT OR IGNORE INTO student_achievements (id, student_user_id, achievement_id, earned_at) VALUES (?, ?, ?, ?)', crypto.randomUUID(), userId, id, now);
       } catch { /* ignore */ }
     }
 
-    if (profile.session_count >= 1)  award('first_session');
-    if (profile.current_streak >= 3)  award('three_day_streak');
-    if (profile.current_streak >= 5)  award('five_day_streak');
-    if (profile.current_streak >= 10) award('ten_day_streak');
-    if (profile.xp_level >= 2) award('level_2');
-    if (profile.xp_level >= 3) award('level_3');
-    if (profile.xp_level >= 5) award('level_5');
-    if (profile.session_count >= 10)  award('ten_sessions');
-    if (profile.session_count >= 50)  award('fifty_sessions');
-    if (['S2', 'S3', 'S4'].includes(profile.stage)) award('s2_reached');
-    if (profile.stage === 'S4') award('s4_reached');
+    if (profile.session_count >= 1)  await award('first_session');
+    if (profile.current_streak >= 3)  await award('three_day_streak');
+    if (profile.current_streak >= 5)  await award('five_day_streak');
+    if (profile.current_streak >= 10) await award('ten_day_streak');
+    if (profile.xp_level >= 2) await award('level_2');
+    if (profile.xp_level >= 3) await award('level_3');
+    if (profile.xp_level >= 5) await award('level_5');
+    if (profile.session_count >= 10)  await award('ten_sessions');
+    if (profile.session_count >= 50)  await award('fifty_sessions');
+    if (['S2', 'S3', 'S4'].includes(profile.stage)) await award('s2_reached');
+    if (profile.stage === 'S4') await award('s4_reached');
 
     // bloom_any_50 / bloom_any_100 — check all progress rows
     try {
-      const rows = db.prepare('SELECT blooms_data FROM student_progress WHERE student_user_id = ?')
-        .all(userId) as { blooms_data: string }[];
+      const rows = await db.all('SELECT blooms_data FROM student_progress WHERE student_user_id = ?', userId) as { blooms_data: string }[];
       for (const row of rows) {
         if (!row.blooms_data) continue;
         const vals = Object.values(JSON.parse(row.blooms_data) as Record<string, number>);
-        if (vals.some(v => v >= 50))  award('bloom_any_50');
-        if (vals.some(v => v >= 100)) award('bloom_any_100');
+        if (vals.some(v => v >= 50))  await award('bloom_any_50');
+        if (vals.some(v => v >= 100)) await award('bloom_any_100');
       }
     } catch { /* ignore */ }
   } catch { /* non-fatal */ }
 }
 
-function updateStudentProgress(
-  db: Database.Database,
+async function updateStudentProgress(
+  db: DatabaseAdapter,
   userId: string,
   classId: string,
   subjectId: string,
   taskType: string
-): void {
-  const existing = db.prepare(
-    'SELECT blooms_data, overall_progress_pct FROM student_progress WHERE student_user_id = ? AND class_id = ?'
-  ).get(userId, classId) as { blooms_data: string; overall_progress_pct: number } | undefined;
+): Promise<void> {
+  const existing = await db.get(
+    `SELECT blooms_data, overall_progress_pct FROM student_progress WHERE student_user_id = ? AND class_id = ?`
+  , userId, classId) as { blooms_data: string; overall_progress_pct: number } | undefined;
   const blooms = existing?.blooms_data
     ? JSON.parse(existing.blooms_data)
     : { knowledge: 0, application: 0, analysis: 0, evaluation: 0, creation: 0, metacognition: 0 };
@@ -512,13 +507,13 @@ function updateStudentProgress(
   const newPct = Math.min(100, (existing?.overall_progress_pct ?? 0) + 1);
   const now = new Date().toISOString();
   if (existing) {
-    db.prepare(
+    await db.run(
       `UPDATE student_progress SET blooms_data = ?, overall_progress_pct = ?, updated_at = ? WHERE student_user_id = ? AND class_id = ?`
-    ).run(JSON.stringify(blooms), newPct, now, userId, classId);
+    , JSON.stringify(blooms), newPct, now, userId, classId);
   } else {
-    db.prepare(
+    await db.run(
       `INSERT INTO student_progress (id, student_user_id, class_id, subject_id, blooms_data, overall_progress_pct, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(crypto.randomUUID(), userId, classId, subjectId, JSON.stringify(blooms), 1, now);
+    , crypto.randomUUID(), userId, classId, subjectId, JSON.stringify(blooms), 1, now);
   }
 }
 
@@ -544,40 +539,41 @@ function generateDailyQuests(userId: string, date: string): Array<{ quest_type: 
 
 // ── Factory ────────────────────────────────────────────────────────────────
 
-export function createSchoolRoutes(db: Database.Database) {
-  // ── DB migrations (non-fatal) ─────────────────────────────────────────
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN streak_shields INTEGER DEFAULT 2`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN gymnasiet_program TEXT`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN university_program TEXT`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
-  try { db.exec(`ALTER TABLE teacher_assignments ADD COLUMN is_template INTEGER DEFAULT 0`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN total_xp INTEGER DEFAULT 0`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN xp_level INTEGER DEFAULT 1`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN current_streak INTEGER DEFAULT 0`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN longest_streak INTEGER DEFAULT 0`); } catch {}
-  try { db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN last_active_date TEXT`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS student_xp_events (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, event_type TEXT NOT NULL, xp_earned INTEGER NOT NULL, context TEXT, created_at DATETIME)`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS student_achievements (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, earned_at DATETIME, UNIQUE(student_user_id, achievement_id))`); } catch {}
-  try { db.exec(`ALTER TABLE school_classes ADD COLUMN leaderboard_enabled INTEGER DEFAULT 0`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS school_admin_config (key TEXT PRIMARY KEY, value TEXT)`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS student_daily_quests (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, quest_type TEXT NOT NULL, quest_date TEXT NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed INTEGER DEFAULT 0, xp_reward INTEGER NOT NULL, created_at DATETIME, UNIQUE(student_user_id, quest_date, quest_type))`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS guardian_digest_log (id TEXT PRIMARY KEY, guardian_user_id TEXT NOT NULL, student_user_id TEXT NOT NULL, sent_at DATETIME, digest_data TEXT)`); } catch {}
-  try { db.exec(`ALTER TABLE guardian_student_links ADD COLUMN email_digest INTEGER DEFAULT 1`); } catch {}
+export async function createSchoolRoutes(db: DatabaseAdapter) {
+  // ── DB migrations (non-fatal) — run in background IIFE ─────────────────────
+  (async () => {
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN sen_mode TEXT DEFAULT NULL`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN explanation_style TEXT DEFAULT 'balanced'`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN streak_shields INTEGER DEFAULT 2`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN gymnasiet_program TEXT`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN university_program TEXT`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS teacher_lessons (id TEXT PRIMARY KEY, teacher_user_id TEXT NOT NULL, class_id TEXT, title TEXT NOT NULL, subject_id TEXT NOT NULL DEFAULT 'mathematics', learning_objectives TEXT DEFAULT '[]', content_blocks TEXT DEFAULT '[]', tier TEXT DEFAULT 'T2', is_template INTEGER DEFAULT 0, created_at DATETIME, updated_at DATETIME)`); } catch {}
+  try { await db.exec(`ALTER TABLE teacher_assignments ADD COLUMN is_template INTEGER DEFAULT 0`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN total_xp INTEGER DEFAULT 0`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN xp_level INTEGER DEFAULT 1`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN current_streak INTEGER DEFAULT 0`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN longest_streak INTEGER DEFAULT 0`); } catch {}
+  try { await db.exec(`ALTER TABLE student_growth_profiles ADD COLUMN last_active_date TEXT`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_xp_events (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, event_type TEXT NOT NULL, xp_earned INTEGER NOT NULL, context TEXT, created_at DATETIME)`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_achievements (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, achievement_id TEXT NOT NULL, earned_at DATETIME, UNIQUE(student_user_id, achievement_id))`); } catch {}
+  try { await db.exec(`ALTER TABLE school_classes ADD COLUMN leaderboard_enabled INTEGER DEFAULT 0`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_admin_config (key TEXT PRIMARY KEY, value TEXT)`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_daily_quests (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, quest_type TEXT NOT NULL, quest_date TEXT NOT NULL, target INTEGER NOT NULL, progress INTEGER DEFAULT 0, completed INTEGER DEFAULT 0, xp_reward INTEGER NOT NULL, created_at DATETIME, UNIQUE(student_user_id, quest_date, quest_type))`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS guardian_digest_log (id TEXT PRIMARY KEY, guardian_user_id TEXT NOT NULL, student_user_id TEXT NOT NULL, sent_at DATETIME, digest_data TEXT)`); } catch {}
+  try { await db.exec(`ALTER TABLE guardian_student_links ADD COLUMN email_digest INTEGER DEFAULT 1`); } catch {}
   // Session D: review_cards (SM-2 spaced repetition)
-  try { db.exec(`CREATE TABLE IF NOT EXISTS review_cards (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, subject_id TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, source TEXT, due_date TEXT, interval_days INTEGER DEFAULT 1, ease_factor REAL DEFAULT 2.5, repetitions INTEGER DEFAULT 0, created_at DATETIME)`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS review_cards (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, subject_id TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, source TEXT, due_date TEXT, interval_days INTEGER DEFAULT 1, ease_factor REAL DEFAULT 2.5, repetitions INTEGER DEFAULT 0, created_at DATETIME)`); } catch {}
   // Session H: student_avatars (cosmetic system)
-  try { db.exec(`CREATE TABLE IF NOT EXISTS student_avatars (student_user_id TEXT PRIMARY KEY, avatar_char TEXT DEFAULT '🦊', color_scheme TEXT DEFAULT 'teal', frame TEXT DEFAULT 'none', title TEXT DEFAULT '', unlocked_items TEXT DEFAULT '[]', updated_at DATETIME)`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS student_avatars (student_user_id TEXT PRIMARY KEY, avatar_char TEXT DEFAULT '🦊', color_scheme TEXT DEFAULT 'teal', frame TEXT DEFAULT 'none', title TEXT DEFAULT '', unlocked_items TEXT DEFAULT '[]', updated_at DATETIME)`); } catch {}
   // Session M: study_rooms
-  try { db.exec(`CREATE TABLE IF NOT EXISTS study_rooms (id TEXT PRIMARY KEY, name TEXT NOT NULL, subject_id TEXT, host_user_id TEXT NOT NULL, max_participants INTEGER DEFAULT 8, is_public INTEGER DEFAULT 1, join_code TEXT UNIQUE, created_at DATETIME, expires_at DATETIME)`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS study_rooms (id TEXT PRIMARY KEY, name TEXT NOT NULL, subject_id TEXT, host_user_id TEXT NOT NULL, max_participants INTEGER DEFAULT 8, is_public INTEGER DEFAULT 1, join_code TEXT UNIQUE, created_at DATETIME, expires_at DATETIME)`); } catch {}
   // Session I: weekly XP snapshots + seasonal events
-  try { db.exec(`CREATE TABLE IF NOT EXISTS weekly_xp_snapshots (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, class_id TEXT, week_start TEXT NOT NULL, week_xp INTEGER DEFAULT 0, updated_at DATETIME, UNIQUE(student_user_id, week_start))`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS xp_seasons (id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT DEFAULT '⭐', start_date TEXT NOT NULL, end_date TEXT NOT NULL, xp_multiplier REAL DEFAULT 1.0, description TEXT, active INTEGER DEFAULT 1)`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS weekly_xp_snapshots (id TEXT PRIMARY KEY, student_user_id TEXT NOT NULL, class_id TEXT, week_start TEXT NOT NULL, week_xp INTEGER DEFAULT 0, updated_at DATETIME, UNIQUE(student_user_id, week_start))`); } catch {}
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS xp_seasons (id TEXT PRIMARY KEY, name TEXT NOT NULL, emoji TEXT DEFAULT '⭐', start_date TEXT NOT NULL, end_date TEXT NOT NULL, xp_multiplier REAL DEFAULT 1.0, description TEXT, active INTEGER DEFAULT 1)`); } catch {}
   // Seed 4 default seasons (non-fatal if already seeded)
   try {
-    const existingSeasons = db.prepare(`SELECT COUNT(*) as cnt FROM xp_seasons`).get() as { cnt: number };
-    if (existingSeasons.cnt === 0) {
+    const existingSeasonsRow = await db.get(`SELECT COUNT(*) as cnt FROM xp_seasons`) as { cnt: number };
+    if (existingSeasonsRow.cnt === 0) {
       const seasons = [
         { id: 'season-autumn-2026', name: 'Autumn Challenge', emoji: '🍂', start: '2026-09-01', end: '2026-11-30', mult: 1.5, desc: 'Back to school season — earn 50% bonus XP on all activities!' },
         { id: 'season-winter-2026', name: 'Winter Sprint',   emoji: '❄️', start: '2026-12-01', end: '2027-02-28', mult: 2.0, desc: 'Winter double XP event — all XP doubled during the Christmas break study sprint!' },
@@ -585,13 +581,13 @@ export function createSchoolRoutes(db: Database.Database) {
         { id: 'season-summer-2027', name: 'Summer Quest',   emoji: '☀️', start: '2027-06-01', end: '2027-08-31', mult: 1.25, desc: 'Keep learning through summer — 25% XP boost to stay sharp!' },
       ];
       for (const s of seasons) {
-        db.prepare(`INSERT OR IGNORE INTO xp_seasons (id, name, emoji, start_date, end_date, xp_multiplier, description, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`)
-          .run(s.id, s.name, s.emoji, s.start, s.end, s.mult, s.desc);
+        await db.run(`INSERT OR IGNORE INTO xp_seasons (id, name, emoji, start_date, end_date, xp_multiplier, description, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+          s.id, s.name, s.emoji, s.start, s.end, s.mult, s.desc);
       }
     }
   } catch { /* non-fatal */ }
   // School Enhancements: rich curriculum + lesson system
-  try { db.exec(`CREATE TABLE IF NOT EXISTS school_curricula (
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_curricula (
     id TEXT PRIMARY KEY,
     subject_id TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -602,7 +598,7 @@ export function createSchoolRoutes(db: Database.Database) {
     created_by TEXT DEFAULT 'system',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS school_lessons (
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_lessons (
     id TEXT PRIMARY KEY,
     curriculum_id TEXT,
     subject_id TEXT NOT NULL,
@@ -616,7 +612,7 @@ export function createSchoolRoutes(db: Database.Database) {
     created_by TEXT DEFAULT 'teacher',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`); } catch {}
-  try { db.exec(`CREATE TABLE IF NOT EXISTS school_lesson_progress (
+  try { await db.exec(`CREATE TABLE IF NOT EXISTS school_lesson_progress (
     id TEXT PRIMARY KEY,
     lesson_id TEXT NOT NULL,
     student_user_id TEXT NOT NULL,
@@ -630,9 +626,10 @@ export function createSchoolRoutes(db: Database.Database) {
   )`); } catch {}
   // Load persisted model-tier override (if any)
   try {
-    const cfgRow = db.prepare(`SELECT value FROM school_admin_config WHERE key = 'model_tier'`).get() as { value: string } | undefined;
+    const cfgRow = await db.get("SELECT value FROM school_admin_config WHERE key = 'model_tier'") as { value: string } | undefined;
     if (cfgRow) _ollamaTierEnabled = cfgRow.value === 'C';
   } catch {}
+  })(); // end of migrations IIFE
 
   const router = Router();
 
@@ -655,14 +652,13 @@ export function createSchoolRoutes(db: Database.Database) {
 
       let classRow: Record<string, unknown> | null = null;
       if (classId) {
-        classRow = db.prepare('SELECT * FROM school_classes WHERE id = ?')
-          .get(classId as string) as Record<string, unknown> | null;
+        classRow = await db.get('SELECT * FROM school_classes WHERE id = ?', classId as string) as Record<string, unknown> | null;
       }
 
       // Query growth profile for stage-adaptive prompting
-      const profile = db.prepare(
+      const profile = await db.get(
         `SELECT stage, sen_mode, explanation_style, gymnasiet_program, university_program FROM student_growth_profiles WHERE student_user_id = ?`
-      ).get(userId) as { stage: string; sen_mode: string | null; explanation_style: string; gymnasiet_program: string | null; university_program: string | null } | undefined;
+      , userId) as { stage: string; sen_mode: string | null; explanation_style: string; gymnasiet_program: string | null; university_program: string | null } | undefined;
 
       // Auto-infer module from last user message if not supplied
       const lastUserMsg = Array.isArray(messages) && messages.length > 0
@@ -674,8 +670,7 @@ export function createSchoolRoutes(db: Database.Database) {
       // Load lesson content when lessonId provided — overrides Layer 3 module context
       let lessonContext: string | undefined;
       if (lessonId) {
-        const lesson = db.prepare('SELECT * FROM teacher_lessons WHERE id = ?')
-          .get(lessonId as string) as Record<string, unknown> | null;
+        const lesson = await db.get('SELECT * FROM teacher_lessons WHERE id = ?', lessonId as string) as Record<string, unknown> | null;
         if (lesson) {
           const objectives: string[] = lesson.learning_objectives ? JSON.parse(lesson.learning_objectives as string) : [];
           const blocks: Array<{ type: string; content: string; durationMins?: number }> = lesson.content_blocks ? JSON.parse(lesson.content_blocks as string) : [];
@@ -706,26 +701,24 @@ export function createSchoolRoutes(db: Database.Database) {
       const resolvedSubjectId = (classRow?.subject_id as string) || (req.body.subjectId as string) || 'mathematics';
       const resolvedTaskType = (req.body.taskType as string) || 'studying';
 
-      const onComplete = (data: { text: string; outputTokens: number }) => {
+      const onComplete = async (data: { text: string; outputTokens: number }) => {
         try {
           if (sessionId) {
-            db.prepare(
+            await db.run(
               `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
                VALUES (?, ?, 'assistant', ?, ?, ?)`
-            ).run(crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
-            db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?')
-              .run(new Date().toISOString(), sessionId as string, userId);
+            , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+            await db.run('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?',
+              new Date().toISOString(), sessionId as string, userId);
           }
-          updateGrowthProfile(db, userId);
-          if (resolvedClassId) updateStudentProgress(db, userId, resolvedClassId, resolvedSubjectId, resolvedTaskType);
+          await updateGrowthProfile(db, userId);
+          if (resolvedClassId) await updateStudentProgress(db, userId, resolvedClassId, resolvedSubjectId, resolvedTaskType);
           // Daily quest: chat_turns
           try {
             const today = new Date().toISOString().split('T')[0];
-            const chatQuest = db.prepare(
-              `SELECT id FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ? AND quest_type = 'chat_turns' AND completed = 0`
-            ).get(userId, today) as { id: string } | undefined;
+            const chatQuest = await db.get(`SELECT id FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ? AND quest_type = 'chat_turns' AND completed = 0`, userId, today) as { id: string } | undefined;
             if (chatQuest) {
-              db.prepare(`UPDATE student_daily_quests SET progress = MIN(target, progress + 1), completed = CASE WHEN progress + 1 >= target THEN 1 ELSE 0 END WHERE id = ?`).run(chatQuest.id);
+              await db.run(`UPDATE student_daily_quests SET progress = MIN(target, progress + 1), completed = CASE WHEN progress + 1 >= target THEN 1 ELSE 0 END WHERE id = ?`, chatQuest.id);
             }
           } catch {}
         } catch (e) {
@@ -766,8 +759,7 @@ export function createSchoolRoutes(db: Database.Database) {
 
       let classRow: Record<string, unknown> | null = null;
       if (classId) {
-        classRow = db.prepare('SELECT * FROM school_classes WHERE id = ?')
-          .get(classId as string) as Record<string, unknown> | null;
+        classRow = await db.get('SELECT * FROM school_classes WHERE id = ?', classId as string) as Record<string, unknown> | null;
       }
 
       const subjectForLax = (classRow?.subject_id as string) || (req.body.subjectId as string) || 'mathematics';
@@ -796,10 +788,10 @@ export function createSchoolRoutes(db: Database.Database) {
       if (sessionId) {
         try {
           laxhjalpId = crypto.randomUUID();
-          db.prepare(
+          await db.run(
             `INSERT INTO laxhjalp_sessions (id, student_user_id, class_id, subject_id, topic, stuck_point, module_id, session_id, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          ).run(
+          ,
             laxhjalpId, userId,
             (classId as string) || null,
             (classRow?.subject_id as string) || 'mathematics',
@@ -816,15 +808,15 @@ export function createSchoolRoutes(db: Database.Database) {
       }
 
       const onComplete = laxhjalpId
-        ? (data: { text: string; outputTokens: number }) => {
+        ? async (data: { text: string; outputTokens: number }) => {
             try {
-              db.prepare('UPDATE laxhjalp_sessions SET resolved = 1, status = ?, updated_at = ? WHERE id = ?')
-                .run('resolved', new Date().toISOString(), laxhjalpId);
+              await db.run('UPDATE laxhjalp_sessions SET resolved = 1, status = ?, updated_at = ? WHERE id = ?',
+                'resolved', new Date().toISOString(), laxhjalpId);
               if (sessionId) {
-                db.prepare(
+                await db.run(
                   `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
                    VALUES (?, ?, 'assistant', ?, ?, ?)`
-                ).run(crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+                , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
               }
             } catch (e) {
               console.warn('[school/laxhjalp] onComplete error (non-fatal):', e);
@@ -860,8 +852,7 @@ export function createSchoolRoutes(db: Database.Database) {
       let objectivesText = '';
       if (assignmentId) {
         try {
-          const assignment = db.prepare('SELECT title, instructions FROM teacher_assignments WHERE id = ?')
-            .get(assignmentId) as { title: string; instructions: string } | null;
+          const assignment = await db.get('SELECT title, instructions FROM teacher_assignments WHERE id = ?', assignmentId) as { title: string; instructions: string } | null;
           if (assignment) {
             objectivesText = `\nExamination: "${assignment.title}"\nLearning objectives to assess:\n${assignment.instructions}`;
           }
@@ -903,8 +894,7 @@ Begin by briefly introducing yourself and asking your first question.`;
         conversation: { role: string; content: string }[];
       };
 
-      const assignment = db.prepare('SELECT title, instructions FROM teacher_assignments WHERE id = ?')
-        .get(req.params.id) as { title: string; instructions: string } | null;
+      const assignment = await db.get('SELECT title, instructions FROM teacher_assignments WHERE id = ?', req.params.id) as { title: string; instructions: string } | null;
 
       const objectives = assignment?.instructions ?? 'General subject knowledge and reasoning';
       const title = assignment?.title ?? 'Oral Examination';
@@ -953,7 +943,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/dashboard ──────────────────────────────────────────
-  router.get('/school/dashboard', (req, res) => {
+  router.get('/school/dashboard', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -961,22 +951,15 @@ Provide a structured evaluation with these exact sections:
       const schoolRole = req.user?.school_role;
 
       if (schoolRole === 'teacher' || schoolRole === 'school_admin') {
-        const classes = db.prepare(
-          `SELECT sc.*,
-             (SELECT COUNT(*) FROM class_enrollments ce WHERE ce.class_id = sc.id) AS student_count,
-             (SELECT COUNT(*) FROM assignment_submissions asub
-              JOIN teacher_assignments ta ON ta.id = asub.assignment_id
-              WHERE ta.class_id = sc.id AND asub.submitted_at IS NOT NULL AND asub.teacher_grade IS NULL) AS pending_submissions
-           FROM school_classes sc
-           WHERE sc.teacher_user_id = ?
-           ORDER BY sc.created_at DESC`
-        ).all(userId) as Record<string, unknown>[];
-
+        const classes = await db.all(
+          `SELECT sc.*, (SELECT COUNT(*) FROM class_enrollments ce WHERE ce.class_id = sc.id) AS student_count
+           FROM school_classes sc WHERE sc.teacher_user_id = ? ORDER BY sc.created_at DESC`
+        , userId) as Record<string, unknown>[];
         return res.json({ role: 'teacher', classes });
       }
 
       // Student view
-      const classes = db.prepare(
+      const classes = await db.all(
         `SELECT sc.*, ce.enrolled_at,
            (SELECT sp.current_block FROM student_progress sp
             WHERE sp.student_user_id = ? AND sp.class_id = sc.id LIMIT 1) AS last_topic,
@@ -986,9 +969,9 @@ Provide a structured evaluation with these exact sections:
          JOIN school_classes sc ON sc.id = ce.class_id
          WHERE ce.student_user_id = ?
          ORDER BY ce.enrolled_at DESC`
-      ).all(userId, userId, userId) as Record<string, unknown>[];
+      , userId, userId, userId) as Record<string, unknown>[];
 
-      const assignments = db.prepare(
+      const assignments = await db.all(
         `SELECT ta.id, ta.title, ta.due_date, sc.name AS class_name
          FROM teacher_assignments ta
          JOIN school_classes sc ON sc.id = ta.class_id
@@ -996,22 +979,22 @@ Provide a structured evaluation with these exact sections:
          WHERE ce.student_user_id = ? AND (ta.due_date IS NULL OR ta.due_date >= DATE('now'))
          ORDER BY ta.due_date ASC
          LIMIT 5`
-      ).all(userId) as Record<string, unknown>[];
+      , userId) as Record<string, unknown>[];
 
       // Growth profile — created on first interaction if missing
-      const growthProfile = db.prepare(
+      const growthProfile = await db.get(
         `SELECT stage, session_count, total_xp, xp_level, current_streak, longest_streak, streak_shields
          FROM student_growth_profiles WHERE student_user_id = ?`
-      ).get(userId) as {
+      , userId) as {
         stage: string; session_count: number;
         total_xp: number; xp_level: number; current_streak: number; longest_streak: number;
         streak_shields: number;
       } | undefined;
 
-      const sessionsThisWeek = db.prepare(
+      const sessionsThisWeek = await db.get(
         `SELECT COUNT(*) AS cnt FROM laxhjalp_sessions
          WHERE student_user_id = ? AND created_at >= DATE('now', '-7 days')`
-      ).get(userId) as { cnt: number } | undefined;
+      , userId) as { cnt: number } | undefined;
 
       const xpTotal = growthProfile?.total_xp ?? 0;
       const xpLevel = growthProfile?.xp_level ?? 1;
@@ -1042,14 +1025,14 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/achievements ───────────────────────────────────────
-  router.get('/school/achievements', (req, res) => {
+  router.get('/school/achievements', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const earned = db.prepare(
+      const earned = await db.all(
         'SELECT achievement_id, earned_at FROM student_achievements WHERE student_user_id = ? ORDER BY earned_at ASC'
-      ).all(userId) as { achievement_id: string; earned_at: string }[];
+      , userId) as { achievement_id: string; earned_at: string }[];
 
       res.json({ achievements: ACHIEVEMENT_DEFS, earned });
     } catch (err) {
@@ -1059,18 +1042,18 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/classes ────────────────────────────────────────────
-  router.get('/school/classes', (req, res) => {
+  router.get('/school/classes', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const classes = db.prepare(
+      const classes = await db.all(
         `SELECT sc.*,
            (SELECT COUNT(*) FROM class_enrollments ce WHERE ce.class_id = sc.id) AS student_count
          FROM school_classes sc
          WHERE sc.teacher_user_id = ?
          ORDER BY sc.created_at DESC`
-      ).all(userId) as Record<string, unknown>[];
+      , userId) as Record<string, unknown>[];
 
       res.json(classes);
     } catch (err) {
@@ -1080,7 +1063,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/classes ───────────────────────────────────────────
-  router.post('/school/classes', (req, res) => {
+  router.post('/school/classes', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1097,12 +1080,12 @@ Provide a structured evaluation with these exact sections:
       const classCode = generateClassCode();
       const now = new Date().toISOString();
 
-      db.prepare(
+      await db.run(
         `INSERT INTO school_classes
            (id, teacher_user_id, name, subject_id, education_tier, curriculum_id,
             default_assistance_level, web_search_enabled, class_code, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(id, userId, name as string, subject as string, educationTier as string,
+      , id, userId, name as string, subject as string, educationTier as string,
         curriculumId as string, defaultAssistanceLevel as string,
         webSearchEnabled ? 1 : 0, classCode, now, now);
 
@@ -1114,37 +1097,35 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/classes/:id ────────────────────────────────────────
-  router.get('/school/classes/:id', (req, res) => {
+  router.get('/school/classes/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const classRow = db.prepare('SELECT * FROM school_classes WHERE id = ?')
-        .get(req.params.id) as Record<string, unknown> | null;
+      const classRow = await db.get('SELECT * FROM school_classes WHERE id = ?', req.params.id) as Record<string, unknown> | null;
       if (!classRow) return res.status(404).json({ error: 'Class not found' });
 
       const isTeacher = classRow.teacher_user_id === userId;
       if (!isTeacher) {
-        const enrolled = db.prepare('SELECT 1 FROM class_enrollments WHERE class_id = ? AND student_user_id = ?')
-          .get(req.params.id, userId);
+        const enrolled = await db.get('SELECT 1 FROM class_enrollments WHERE class_id = ? AND student_user_id = ?', req.params.id, userId);
         if (!enrolled) return res.status(403).json({ error: 'Access denied' });
       }
 
       const students = isTeacher
-        ? db.prepare(
+        ? await db.all(
             `SELECT u.id, u.name, u.email, ce.enrolled_at
              FROM class_enrollments ce
              JOIN users u ON u.id = ce.student_user_id
              WHERE ce.class_id = ?`
-          ).all(req.params.id)
+          , req.params.id)
         : [];
 
       // Compute class-average Bloom's across all enrolled students' progress rows
-      const progressRows = db.prepare(
+      const progressRows = await db.all(
         `SELECT sp.blooms_data FROM student_progress sp
          JOIN class_enrollments ce ON ce.student_user_id = sp.student_user_id
          WHERE ce.class_id = ?`
-      ).all(req.params.id) as { blooms_data: string }[];
+      , req.params.id) as { blooms_data: string }[];
 
       const BLOOMS_DIMS = ['knowledge', 'application', 'analysis', 'evaluation', 'creation', 'metacognition'];
       const averageBlooms: Record<string, number> = Object.fromEntries(BLOOMS_DIMS.map(d => [d, 0]));
@@ -1164,18 +1145,17 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── PUT /api/school/classes/:id ────────────────────────────────────────
-  router.put('/school/classes/:id', (req, res) => {
+  router.put('/school/classes/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const exists = db.prepare('SELECT 1 FROM school_classes WHERE id = ? AND teacher_user_id = ?')
-        .get(req.params.id, userId);
+      const exists = await db.get('SELECT 1 FROM school_classes WHERE id = ? AND teacher_user_id = ?', req.params.id, userId);
       if (!exists) return res.status(404).json({ error: 'Class not found or access denied' });
 
       const { name, subject, educationTier, curriculumId, defaultAssistanceLevel, webSearchEnabled, leaderboardEnabled } = req.body as Record<string, unknown>;
 
-      db.prepare(
+      await db.run(
         `UPDATE school_classes SET
            name = COALESCE(?, name),
            subject_id = COALESCE(?, subject_id),
@@ -1186,7 +1166,7 @@ Provide a structured evaluation with these exact sections:
            leaderboard_enabled = COALESCE(?, leaderboard_enabled),
            updated_at = ?
          WHERE id = ?`
-      ).run(
+      , 
         name ?? null, subject ?? null, educationTier ?? null,
         curriculumId ?? null, defaultAssistanceLevel ?? null,
         webSearchEnabled !== undefined ? (webSearchEnabled ? 1 : 0) : null,
@@ -1194,7 +1174,7 @@ Provide a structured evaluation with these exact sections:
         new Date().toISOString(), req.params.id
       );
 
-      res.json(db.prepare('SELECT * FROM school_classes WHERE id = ?').get(req.params.id));
+      res.json(await db.get('SELECT * FROM school_classes WHERE id = ?', req.params.id));
     } catch (err) {
       console.error('[school/classes/:id PUT]', err);
       res.status(500).json({ error: safeError(err) });
@@ -1202,19 +1182,19 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/classes/:id/leaderboard ────────────────────────────
-  router.get('/school/classes/:id/leaderboard', (req, res) => {
+  router.get('/school/classes/:id/leaderboard', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const classRow = db.prepare(
+      const classRow = await db.get(
         'SELECT leaderboard_enabled FROM school_classes WHERE id = ?'
-      ).get(req.params.id) as { leaderboard_enabled: number } | null;
+      , req.params.id) as { leaderboard_enabled: number } | null;
 
       if (!classRow) return res.status(404).json({ error: 'Class not found' });
       if (!classRow.leaderboard_enabled) return res.json({ enabled: false, entries: [] });
 
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT u.display_name, u.username, COALESCE(sgp.total_xp, 0) AS total_xp, COALESCE(sgp.xp_level, 1) AS xp_level
          FROM class_enrollments ce
          JOIN users u ON u.id = ce.student_user_id
@@ -1222,7 +1202,7 @@ Provide a structured evaluation with these exact sections:
          WHERE ce.class_id = ?
          ORDER BY total_xp DESC
          LIMIT 10`
-      ).all(req.params.id) as { display_name: string | null; username: string; total_xp: number; xp_level: number }[];
+      , req.params.id) as { display_name: string | null; username: string; total_xp: number; xp_level: number }[];
 
       // Anonymise: first name + last initial
       const entries = rows.map((e, i) => {
@@ -1241,7 +1221,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/classes/join ──────────────────────────────────────
-  router.post('/school/classes/join', (req, res) => {
+  router.post('/school/classes/join', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1249,16 +1229,13 @@ Provide a structured evaluation with these exact sections:
       const { classCode } = req.body as { classCode: string };
       if (!classCode) return res.status(400).json({ error: 'Class code required' });
 
-      const classRow = db.prepare('SELECT * FROM school_classes WHERE class_code = ?')
-        .get(classCode.toUpperCase()) as Record<string, unknown> | null;
+      const classRow = await db.get('SELECT * FROM school_classes WHERE class_code = ?', classCode.toUpperCase()) as Record<string, unknown> | null;
       if (!classRow) return res.status(404).json({ error: 'Invalid class code' });
 
-      const existing = db.prepare('SELECT 1 FROM class_enrollments WHERE class_id = ? AND student_user_id = ?')
-        .get(classRow.id as string, userId);
+      const existing = await db.get('SELECT 1 FROM class_enrollments WHERE class_id = ? AND student_user_id = ?', classRow.id as string, userId);
       if (existing) return res.status(409).json({ error: 'Already enrolled' });
 
-      db.prepare(`INSERT INTO class_enrollments (id, class_id, student_user_id, enrolled_at) VALUES (?, ?, ?, ?)`)
-        .run(crypto.randomUUID(), classRow.id as string, userId, new Date().toISOString());
+      await db.run(`INSERT INTO class_enrollments (id, class_id, student_user_id, enrolled_at) VALUES (?, ?, ?, ?)`, crypto.randomUUID(), classRow.id as string, userId, new Date().toISOString());
 
       res.status(201).json({ message: 'Enrolled successfully', class: classRow });
     } catch (err) {
@@ -1268,7 +1245,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/assignments ────────────────────────────────────────
-  router.get('/school/assignments', (req, res) => {
+  router.get('/school/assignments', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1279,14 +1256,14 @@ Provide a structured evaluation with these exact sections:
       if (schoolRole === 'teacher' || schoolRole === 'school_admin') {
         const params: unknown[] = [userId];
         if (classId) params.push(classId);
-        const assignments = db.prepare(
-          `SELECT ta.*, sc.name AS class_name,
-             (SELECT COUNT(*) FROM assignment_submissions asub WHERE asub.assignment_id = ta.id) AS submission_count
+
+        const assignments = await db.all(
+          `SELECT ta.*, sc.name AS class_name
            FROM teacher_assignments ta
            JOIN school_classes sc ON sc.id = ta.class_id
            WHERE sc.teacher_user_id = ?${classId ? ' AND ta.class_id = ?' : ''}
-           ORDER BY ta.created_at DESC`
-        ).all(...params) as Record<string, unknown>[];
+           ORDER BY ta.due_date ASC`
+        , ...params) as Record<string, unknown>[];
 
         return res.json(assignments.map(a => ({
           ...a,
@@ -1297,7 +1274,7 @@ Provide a structured evaluation with these exact sections:
       // Student
       const params: unknown[] = [userId, userId];
       if (classId) params.push(classId);
-      const assignments = db.prepare(
+      const assignments = await db.all(
         `SELECT ta.*, sc.name AS class_name,
            asub.id AS submission_id, asub.submitted_at, asub.teacher_grade
          FROM teacher_assignments ta
@@ -1306,7 +1283,7 @@ Provide a structured evaluation with these exact sections:
          LEFT JOIN assignment_submissions asub ON asub.assignment_id = ta.id AND asub.student_user_id = ?
          ${classId ? 'WHERE ta.class_id = ?' : ''}
          ORDER BY ta.due_date ASC`
-      ).all(...params) as Record<string, unknown>[];
+      , ...params) as Record<string, unknown>[];
 
       res.json(assignments.map(a => ({
         ...a,
@@ -1319,7 +1296,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/assignments ──────────────────────────────────────
-  router.post('/school/assignments', (req, res) => {
+  router.post('/school/assignments', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1332,20 +1309,19 @@ Provide a structured evaluation with these exact sections:
 
       if (!classId || !title) return res.status(400).json({ error: 'classId and title required' });
 
-      const classRow = db.prepare('SELECT * FROM school_classes WHERE id = ? AND teacher_user_id = ?')
-        .get(classId as string, userId) as Record<string, unknown> | null;
+      const classRow = await db.get('SELECT * FROM school_classes WHERE id = ? AND teacher_user_id = ?', classId as string, userId) as Record<string, unknown> | null;
       if (!classRow) return res.status(403).json({ error: 'Class not found or access denied' });
 
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
       const resolvedSubjectId = (subjectId as string) || (classRow.subject_id as string) || 'mathematics';
 
-      db.prepare(
+      await db.run(
         `INSERT INTO teacher_assignments
            (id, teacher_user_id, class_id, title, description, assignment_type, subject_id,
             questions, total_marks, assistance_level_override, due_date, content, is_template, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
+      , 
         id, userId, classId as string, title as string, description as string,
         assignmentType as string, resolvedSubjectId,
         JSON.stringify(questions), totalMarks as number,
@@ -1362,18 +1338,18 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/assignments/templates ─────────────────────────────
-  router.get('/school/assignments/templates', (req, res) => {
+  router.get('/school/assignments/templates', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const templates = db.prepare(
+      const templates = await db.all(
         `SELECT ta.*, sc.name AS class_name
          FROM teacher_assignments ta
          JOIN school_classes sc ON sc.id = ta.class_id
          WHERE ta.teacher_user_id = ? AND ta.is_template = 1
          ORDER BY ta.created_at DESC`
-      ).all(userId) as Record<string, unknown>[];
+      , userId) as Record<string, unknown>[];
 
       res.json(templates.map(a => ({
         ...a,
@@ -1386,16 +1362,16 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/assignments/:id/duplicate ─────────────────────────
-  router.post('/school/assignments/:id/duplicate', (req, res) => {
+  router.post('/school/assignments/:id/duplicate', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const original = db.prepare(
+      const original = await db.get(
         `SELECT ta.* FROM teacher_assignments ta
          JOIN school_classes sc ON sc.id = ta.class_id
          WHERE ta.id = ? AND sc.teacher_user_id = ?`
-      ).get(req.params.id, userId) as Record<string, unknown> | null;
+      , req.params.id, userId) as Record<string, unknown> | null;
 
       if (!original) return res.status(404).json({ error: 'Assignment not found or access denied' });
 
@@ -1403,12 +1379,12 @@ Provide a structured evaluation with these exact sections:
       const now = new Date().toISOString();
       const newTitle = `${original.title} (copy)`;
 
-      db.prepare(
+      await db.run(
         `INSERT INTO teacher_assignments
            (id, teacher_user_id, class_id, title, description, assignment_type, subject_id,
             questions, total_marks, assistance_level_override, due_date, content, is_template, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`
-      ).run(
+      ,
         newId, userId,
         original.class_id as string,
         newTitle,
@@ -1431,22 +1407,21 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/assignments/:id ───────────────────────────────────
-  router.get('/school/assignments/:id', (req, res) => {
+  router.get('/school/assignments/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const assignment = db.prepare(
+      const assignment = await db.get(
         `SELECT ta.*, sc.name AS class_name, sc.teacher_user_id, sc.subject_id, sc.education_tier
          FROM teacher_assignments ta
          JOIN school_classes sc ON sc.id = ta.class_id
          WHERE ta.id = ?`
-      ).get(req.params.id) as Record<string, unknown> | null;
+      , req.params.id) as Record<string, unknown> | null;
       if (!assignment) return res.status(404).json({ error: 'Assignment not found' });
 
       if (assignment.teacher_user_id !== userId) {
-        const enrolled = db.prepare('SELECT 1 FROM class_enrollments WHERE class_id = ? AND student_user_id = ?')
-          .get(assignment.class_id as string, userId);
+        const enrolled = await db.get('SELECT 1 FROM class_enrollments WHERE class_id = ? AND student_user_id = ?', assignment.class_id as string, userId);
         if (!enrolled) return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -1461,18 +1436,16 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/assignments/:id/export-anton ─────────────────────
-  router.post('/school/assignments/:id/export-anton', (req, res) => {
+  router.post('/school/assignments/:id/export-anton', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const assignment = db.prepare(
-        `SELECT ta.*, sc.name AS class_name, sc.subject_id, sc.education_tier,
-           sc.curriculum_id, sc.default_assistance_level
-         FROM teacher_assignments ta
-         JOIN school_classes sc ON sc.id = ta.class_id
+      const assignment = await db.get(
+        `SELECT ta.*, sc.name AS class_name, sc.subject_id, sc.education_tier, sc.curriculum_id, sc.default_assistance_level
+         FROM teacher_assignments ta JOIN school_classes sc ON sc.id = ta.class_id
          WHERE ta.id = ? AND sc.teacher_user_id = ?`
-      ).get(req.params.id, userId) as Record<string, unknown> | null;
+      , req.params.id, userId) as Record<string, unknown> | null;
       if (!assignment) return res.status(404).json({ error: 'Assignment not found or access denied' });
 
       const bundle = {
@@ -1505,7 +1478,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/assignments/import ───────────────────────────────
-  router.post('/school/assignments/import', (req, res) => {
+  router.post('/school/assignments/import', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1518,15 +1491,15 @@ Provide a structured evaluation with these exact sections:
       const now = new Date().toISOString();
       const assignmentId = (bundle.assignment.id as string) || crypto.randomUUID();
 
-      const existingA = db.prepare('SELECT id FROM teacher_assignments WHERE id = ?').get(assignmentId) as { id: string } | null;
+      const existingA = await db.get('SELECT id FROM teacher_assignments WHERE id = ?', assignmentId) as { id: string } | null;
       if (!existingA) {
         try {
-          db.prepare(
+          await db.run(
             `INSERT OR IGNORE INTO teacher_assignments
                (id, teacher_user_id, class_id, title, description, assignment_type, subject_id,
                 questions, total_marks, assistance_level_override, due_date, content, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          ).run(
+          ,
             assignmentId, 'imported',
             (bundle.classConfig?.classId as string) || '',
             (bundle.assignment.title as string) || 'Imported Assignment',
@@ -1544,11 +1517,11 @@ Provide a structured evaluation with these exact sections:
       }
 
       const submissionId = crypto.randomUUID();
-      db.prepare(
+      await db.run(
         `INSERT OR IGNORE INTO assignment_submissions
            (id, assignment_id, student_user_id, answers, status, created_at, updated_at)
          VALUES (?, ?, ?, ?, 'draft', ?, ?)`
-      ).run(submissionId, assignmentId, userId, '{}', now, now);
+      , submissionId, assignmentId, userId, '{}', now, now);
 
       res.status(201).json({ submissionId, assignmentId, assignment: bundle.assignment, classConfig: bundle.classConfig });
     } catch (err) {
@@ -1558,7 +1531,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/submissions ────────────────────────────────────────
-  router.get('/school/submissions', (req, res) => {
+  router.get('/school/submissions', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1569,7 +1542,7 @@ Provide a structured evaluation with these exact sections:
       if (schoolRole === 'teacher' || schoolRole === 'school_admin') {
         const params: unknown[] = [userId];
         if (assignmentId) params.push(assignmentId);
-        const submissions = db.prepare(
+        const submissions = await db.all(
           `SELECT asub.*, ta.title AS assignment_title, u.name AS student_name, u.email AS student_email
            FROM assignment_submissions asub
            JOIN teacher_assignments ta ON ta.id = asub.assignment_id
@@ -1577,7 +1550,7 @@ Provide a structured evaluation with these exact sections:
            JOIN users u ON u.id = asub.student_user_id
            WHERE sc.teacher_user_id = ?${assignmentId ? ' AND asub.assignment_id = ?' : ''}
            ORDER BY asub.submitted_at DESC`
-        ).all(...params) as Record<string, unknown>[];
+        , ...params) as Record<string, unknown>[];
 
         return res.json(submissions.map(s => ({
           ...s,
@@ -1589,14 +1562,14 @@ Provide a structured evaluation with these exact sections:
       // Student
       const params: unknown[] = [userId];
       if (assignmentId) params.push(assignmentId);
-      const submissions = db.prepare(
+      const submissions = await db.all(
         `SELECT asub.*, ta.title AS assignment_title, sc.name AS class_name
          FROM assignment_submissions asub
          JOIN teacher_assignments ta ON ta.id = asub.assignment_id
          JOIN school_classes sc ON sc.id = ta.class_id
          WHERE asub.student_user_id = ?${assignmentId ? ' AND asub.assignment_id = ?' : ''}
          ORDER BY asub.created_at DESC`
-      ).all(...params) as Record<string, unknown>[];
+      , ...params) as Record<string, unknown>[];
 
       res.json(submissions.map(s => ({
         ...s,
@@ -1609,12 +1582,12 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── GET /api/school/submissions/:id ───────────────────────────────────
-  router.get('/school/submissions/:id', (req, res) => {
+  router.get('/school/submissions/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const submission = db.prepare(
+      const submission = await db.get(
         `SELECT asub.*, ta.title AS assignment_title, ta.questions, ta.total_marks,
            sc.name AS class_name, sc.teacher_user_id, u.name AS student_name
          FROM assignment_submissions asub
@@ -1622,7 +1595,7 @@ Provide a structured evaluation with these exact sections:
          JOIN school_classes sc ON sc.id = ta.class_id
          JOIN users u ON u.id = asub.student_user_id
          WHERE asub.id = ?`
-      ).get(req.params.id) as Record<string, unknown> | null;
+      , req.params.id) as Record<string, unknown> | null;
       if (!submission) return res.status(404).json({ error: 'Submission not found' });
 
       if (submission.student_user_id !== userId && submission.teacher_user_id !== userId) {
@@ -1642,7 +1615,7 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/submissions ──────────────────────────────────────
-  router.post('/school/submissions', (req, res) => {
+  router.post('/school/submissions', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1651,11 +1624,10 @@ Provide a structured evaluation with these exact sections:
       if (!assignmentId) return res.status(400).json({ error: 'assignmentId required' });
 
       const now = new Date().toISOString();
-      const existing = db.prepare('SELECT id FROM assignment_submissions WHERE assignment_id = ? AND student_user_id = ?')
-        .get(assignmentId as string, userId) as { id: string } | null;
+      const existing = await db.get('SELECT id FROM assignment_submissions WHERE assignment_id = ? AND student_user_id = ?', assignmentId as string, userId) as { id: string } | null;
 
       if (existing) {
-        db.prepare(
+        await db.run(
           `UPDATE assignment_submissions
            SET answers = ?,
                learning_evidence_log = COALESCE(?, learning_evidence_log),
@@ -1663,7 +1635,7 @@ Provide a structured evaluation with these exact sections:
                submitted_at = CASE WHEN ? = 1 THEN ? ELSE submitted_at END,
                updated_at = ?
            WHERE id = ?`
-        ).run(
+        , 
           JSON.stringify(answers),
           learningEvidenceLog ? JSON.stringify(learningEvidenceLog) : null,
           submit ? 'submitted' : 'draft',
@@ -1673,12 +1645,12 @@ Provide a structured evaluation with these exact sections:
       }
 
       const id = crypto.randomUUID();
-      db.prepare(
+      await db.run(
         `INSERT INTO assignment_submissions
            (id, assignment_id, student_user_id, answers, learning_evidence_log,
             status, submitted_at, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
+      , 
         id, assignmentId as string, userId,
         JSON.stringify(answers),
         learningEvidenceLog ? JSON.stringify(learningEvidenceLog) : null,
@@ -1694,30 +1666,30 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/submissions/:id/grade ────────────────────────────
-  router.post('/school/submissions/:id/grade', (req, res) => {
+  router.post('/school/submissions/:id/grade', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
       const { grade, feedback } = req.body as { grade?: string; feedback?: string };
 
-      const row = db.prepare(
+      const row = await db.get(
         `SELECT asub.id, sc.teacher_user_id
          FROM assignment_submissions asub
          JOIN teacher_assignments ta ON ta.id = asub.assignment_id
          JOIN school_classes sc ON sc.id = ta.class_id
          WHERE asub.id = ?`
-      ).get(req.params.id) as { id: string; teacher_user_id: string } | null;
+      , req.params.id) as { id: string; teacher_user_id: string } | null;
 
       if (!row) return res.status(404).json({ error: 'Submission not found' });
       if (row.teacher_user_id !== userId) return res.status(403).json({ error: 'Access denied' });
 
       const now = new Date().toISOString();
-      db.prepare(
+      await db.run(
         `UPDATE assignment_submissions
          SET teacher_grade = ?, teacher_feedback = ?, graded_at = ?, updated_at = ?
          WHERE id = ?`
-      ).run(grade ?? null, feedback ?? null, now, now, req.params.id);
+      , grade ?? null, feedback ?? null, now, now, req.params.id);
 
       res.json({ id: req.params.id, grade, feedback });
     } catch (err) {
@@ -1727,19 +1699,19 @@ Provide a structured evaluation with these exact sections:
   });
 
   // ── POST /api/school/submissions/:id/export-anton ─────────────────────
-  router.post('/school/submissions/:id/export-anton', (req, res) => {
+  router.post('/school/submissions/:id/export-anton', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const submission = db.prepare(
+      const submission = await db.get(
         `SELECT asub.*, ta.title AS assignment_title, ta.questions,
            sc.subject_id, sc.education_tier
          FROM assignment_submissions asub
          JOIN teacher_assignments ta ON ta.id = asub.assignment_id
          JOIN school_classes sc ON sc.id = ta.class_id
          WHERE asub.id = ? AND asub.student_user_id = ?`
-      ).get(req.params.id, userId) as Record<string, unknown> | null;
+      , req.params.id, userId) as Record<string, unknown> | null;
       if (!submission) return res.status(404).json({ error: 'Submission not found or access denied' });
 
       const bundle = {
@@ -1777,14 +1749,14 @@ Provide a structured evaluation with these exact sections:
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const submission = db.prepare(
+      const submission = await db.get(
         `SELECT asub.*, ta.title AS assignment_title, ta.questions, ta.total_marks,
            sc.subject_id, sc.education_tier, sc.teacher_user_id
          FROM assignment_submissions asub
          JOIN teacher_assignments ta ON ta.id = asub.assignment_id
          JOIN school_classes sc ON sc.id = ta.class_id
          WHERE asub.id = ?`
-      ).get(req.params.id) as Record<string, unknown> | null;
+      , req.params.id) as Record<string, unknown> | null;
 
       if (!submission) return res.status(404).json({ error: 'Submission not found' });
       if (submission.teacher_user_id !== userId) return res.status(403).json({ error: 'Access denied' });
@@ -1812,10 +1784,10 @@ Provide:
 
 Format with clear markdown headers.`;
 
-      const onComplete = (data: { text: string }) => {
+      const onComplete = async (data: { text: string }) => {
         try {
-          db.prepare('UPDATE assignment_submissions SET ai_feedback = ?, updated_at = ? WHERE id = ?')
-            .run(data.text, new Date().toISOString(), req.params.id);
+          await db.run('UPDATE assignment_submissions SET ai_feedback = ?, updated_at = ? WHERE id = ?',
+            data.text, new Date().toISOString(), req.params.id);
         } catch (e) {
           console.warn('[school/ai-grade] update error (non-fatal):', e);
         }
@@ -1838,18 +1810,17 @@ Format with clear markdown headers.`;
   });
 
   // ── GET /api/school/guardian/children ─────────────────────────────────
-  router.get('/school/guardian/children', (req, res) => {
+  router.get('/school/guardian/children', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const children = db.prepare(
-        `SELECT u.id, u.name, u.email,
-           (SELECT COUNT(*) FROM class_enrollments ce WHERE ce.student_user_id = u.id) AS class_count
+      const children = await db.all(
+        `SELECT u.id, u.name, u.email, gsl.created_at AS linked_at
          FROM guardian_student_links gsl
          JOIN users u ON u.id = gsl.student_user_id
          WHERE gsl.guardian_user_id = ?`
-      ).all(userId) as Record<string, unknown>[];
+      , userId) as Record<string, unknown>[];
 
       res.json(children);
     } catch (err) {
@@ -1859,7 +1830,7 @@ Format with clear markdown headers.`;
   });
 
   // ── POST /api/school/guardian/link ────────────────────────────────────
-  router.post('/school/guardian/link', (req, res) => {
+  router.post('/school/guardian/link', async (req, res) => {
     try {
       const guardianId = req.user?.id;
       if (!guardianId) return res.status(401).json({ error: 'Unauthorised' });
@@ -1867,18 +1838,16 @@ Format with clear markdown headers.`;
       const { inviteCode } = req.body as { inviteCode: string };
       if (!inviteCode) return res.status(400).json({ error: 'Invite code required' });
 
-      const student = db.prepare('SELECT id, name, email FROM users WHERE guardian_invite_code = ?')
-        .get(inviteCode.toUpperCase()) as { id: string; name: string; email: string } | null;
+      const student = await db.get('SELECT id, name, email FROM users WHERE guardian_invite_code = ?', inviteCode.toUpperCase()) as { id: string; name: string; email: string } | null;
       if (!student) return res.status(404).json({ error: 'Invalid invite code' });
 
-      const existing = db.prepare('SELECT 1 FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?')
-        .get(guardianId, student.id);
+      const existing = await db.get('SELECT 1 FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?', guardianId, student.id);
       if (existing) return res.status(409).json({ error: 'Already linked' });
 
-      db.prepare(
+      await db.run(
         `INSERT INTO guardian_student_links (id, guardian_user_id, student_user_id, created_at)
          VALUES (?, ?, ?, ?)`
-      ).run(crypto.randomUUID(), guardianId, student.id, new Date().toISOString());
+      , crypto.randomUUID(), guardianId, student.id, new Date().toISOString());
 
       res.status(201).json({ message: 'Linked successfully', student });
     } catch (err) {
@@ -1888,42 +1857,42 @@ Format with clear markdown headers.`;
   });
 
   // ── GET /api/school/guardian/digest/:studentId ─────────────────────────
-  router.get('/school/guardian/digest/:studentId', (req, res) => {
+  router.get('/school/guardian/digest/:studentId', async (req, res) => {
     const guardianId = req.user?.id;
     if (!guardianId) return res.status(401).json({ error: 'Unauthorised' });
 
     const studentId = req.params.studentId;
 
     // Verify guardian link
-    const link = db.prepare(
+    const link = await db.get(
       `SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`
-    ).get(guardianId, studentId) as { id: string } | undefined;
+    , guardianId, studentId) as { id: string } | undefined;
     if (!link) return res.status(403).json({ error: 'Not linked to this student' });
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
 
     // Sessions in past 7 days
-    const sessions = db.prepare(
-      `SELECT COUNT(*) as count FROM laxhjalp_sessions WHERE user_id = ? AND created_at >= ?`
-    ).get(studentId, sevenDaysAgo) as { count: number };
+    const sessions = await db.get(
+      `SELECT COUNT(*) as count FROM laxhjalp_sessions WHERE student_user_id = ? AND created_at >= ?`
+    , studentId, sevenDaysAgo) as { count: number };
 
     // Growth profile
-    const growth = db.prepare(
+    const growth = await db.get(
       `SELECT stage, total_xp, current_streak FROM student_growth_profiles WHERE student_user_id = ?`
-    ).get(studentId) as { stage: string; total_xp: number; current_streak: number } | undefined;
+    , studentId) as { stage: string; total_xp: number; current_streak: number } | undefined;
 
     // XP earned in past 7 days
-    const xpEarned = db.prepare(
+    const xpEarned = await db.get(
       `SELECT COALESCE(SUM(xp_earned), 0) as total FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`
-    ).get(studentId, sevenDaysAgo) as { total: number };
+    , studentId, sevenDaysAgo) as { total: number };
 
     // Assignments submitted in past 7 days
-    const submissions = db.prepare(
+    const submissions = await db.get(
       `SELECT COUNT(*) as count FROM assignment_submissions WHERE student_user_id = ? AND submitted_at >= ?`
-    ).get(studentId, sevenDaysAgo) as { count: number };
+    , studentId, sevenDaysAgo) as { count: number };
 
     // Student name
-    const student = db.prepare(`SELECT display_name, username FROM users WHERE id = ?`).get(studentId) as { display_name: string; username: string } | undefined;
+    const student = await db.get(`SELECT display_name, username FROM users WHERE id = ?`, studentId) as { display_name: string; username: string } | undefined;
 
     // Next send time (Monday 08:00)
     const now = new Date();
@@ -1933,9 +1902,9 @@ Format with clear markdown headers.`;
     nextMonday.setHours(8, 0, 0, 0);
 
     // Last digest
-    const lastDigest = db.prepare(
+    const lastDigest = await db.get(
       `SELECT sent_at FROM guardian_digest_log WHERE guardian_user_id = ? AND student_user_id = ? ORDER BY sent_at DESC LIMIT 1`
-    ).get(guardianId, studentId) as { sent_at: string } | undefined;
+    , guardianId, studentId) as { sent_at: string } | undefined;
 
     return res.json({
       student: { name: student?.display_name || student?.username || 'Student' },
@@ -1956,21 +1925,21 @@ Format with clear markdown headers.`;
     if (!guardianId) return res.status(401).json({ error: 'Unauthorised' });
 
     const studentId = req.params.studentId;
-    const link = db.prepare(`SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`).get(guardianId, studentId);
+    const link = await db.get(`SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`, guardianId, studentId);
     if (!link) return res.status(403).json({ error: 'Not linked' });
 
     // Build digest
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-    const growth = db.prepare(`SELECT stage, total_xp, current_streak FROM student_growth_profiles WHERE student_user_id = ?`).get(studentId) as { stage: string; total_xp: number; current_streak: number } | undefined;
-    const xpEarned = db.prepare(`SELECT COALESCE(SUM(xp_earned), 0) as total FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`).get(studentId, sevenDaysAgo) as { total: number };
-    const student = db.prepare(`SELECT display_name, username FROM users WHERE id = ?`).get(studentId) as { display_name: string; username: string } | undefined;
-    const guardian = db.prepare(`SELECT email FROM users WHERE id = ?`).get(guardianId) as { email: string } | undefined;
+    const growth = await db.get(`SELECT stage, total_xp, current_streak FROM student_growth_profiles WHERE student_user_id = ?`, studentId) as { stage: string; total_xp: number; current_streak: number } | undefined;
+    const xpEarned = await db.get(`SELECT COALESCE(SUM(xp_earned), 0) as total FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`, studentId, sevenDaysAgo) as { total: number };
+    const student = await db.get(`SELECT display_name, username FROM users WHERE id = ?`, studentId) as { display_name: string; username: string } | undefined;
+    const guardian = await db.get(`SELECT email FROM users WHERE id = ?`, guardianId) as { email: string } | undefined;
 
     const digestData = { student: student?.display_name || student?.username || 'Student', xpEarned: xpEarned.total, stage: growth?.stage, streak: growth?.current_streak, sentAt: new Date().toISOString() };
 
     const now = new Date().toISOString();
     try {
-      db.prepare(`INSERT INTO guardian_digest_log (id, guardian_user_id, student_user_id, sent_at, digest_data) VALUES (?, ?, ?, ?, ?)`).run(crypto.randomUUID(), guardianId, studentId, now, JSON.stringify(digestData));
+      await db.run(`INSERT INTO guardian_digest_log (id, guardian_user_id, student_user_id, sent_at, digest_data) VALUES (?, ?, ?, ?, ?)`, crypto.randomUUID(), guardianId, studentId, now, JSON.stringify(digestData));
     } catch {}
 
     // Log to console (email sending requires Nodemailer setup — log if EMAIL_FROM not configured)
@@ -1995,7 +1964,7 @@ Format with clear markdown headers.`;
       const { classId, curriculumText, gradeLevel = 'Year 7-9' } = req.body as Record<string, unknown>;
       if (!classId || !curriculumText) return res.status(400).json({ error: 'classId and curriculumText required' });
 
-      const classRow = db.prepare('SELECT 1 FROM school_classes WHERE id = ? AND teacher_user_id = ?').get(classId as string, userId);
+      const classRow = await db.get('SELECT 1 FROM school_classes WHERE id = ? AND teacher_user_id = ?', classId as string, userId);
       if (!classRow) return res.status(403).json({ error: 'Class not found or access denied' });
 
       const studyPlanPrompt = `You are an expert curriculum designer for ${gradeLevel}.
@@ -2031,10 +2000,9 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/personas ───────────────────────────────────────────
-  router.get('/school/personas', (req, res) => {
+  router.get('/school/personas', async (req, res) => {
     try {
-      const personas = db.prepare('SELECT * FROM teacher_personas ORDER BY name ASC')
-        .all() as Record<string, unknown>[];
+      const personas = await db.all('SELECT * FROM teacher_personas ORDER BY name ASC') as Record<string, unknown>[];
 
       res.json(personas.map(p => ({
         id: p.id, name: p.name, specialisation: p.specialisation,
@@ -2048,15 +2016,17 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/progress ──────────────────────────────────────────
-  router.get('/school/progress', (req, res) => {
+  router.get('/school/progress', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     try {
-      const rows = db.prepare(
-        `SELECT sp.class_id, sc.name AS class_name, sc.subject_id, sp.blooms_data, sp.overall_progress_pct
-         FROM student_progress sp JOIN school_classes sc ON sc.id = sp.class_id
+      const rows = await db.all(
+        `SELECT sp.class_id, sc.name as class_name, sp.subject_id, sp.overall_progress_pct, sp.blooms_data
+         FROM student_progress sp
+         JOIN school_classes sc ON sc.id = sp.class_id
          WHERE sp.student_user_id = ?`
-      ).all(userId) as Record<string, unknown>[];
+      , userId) as Array<{ class_id: string; class_name: string; subject_id: string; overall_progress_pct: number; blooms_data: string }>;
+
       res.json(rows.map((r) => ({
         classId: r.class_id, className: r.class_name, subjectId: r.subject_id,
         overallProgressPct: r.overall_progress_pct,
@@ -2070,13 +2040,13 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/settings ───────────────────────────────────────────
-  router.get('/school/settings', (req, res) => {
+  router.get('/school/settings', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     try {
-      const profile = db.prepare(
+      const profile = await db.get(
         `SELECT sen_mode, explanation_style, gymnasiet_program, university_program FROM student_growth_profiles WHERE student_user_id = ?`
-      ).get(userId) as { sen_mode: string | null; explanation_style: string; gymnasiet_program: string | null; university_program: string | null } | undefined;
+      , userId) as { sen_mode: string | null; explanation_style: string; gymnasiet_program: string | null; university_program: string | null } | undefined;
       res.json({
         senMode: profile?.sen_mode ?? null,
         explanationStyle: profile?.explanation_style ?? 'balanced',
@@ -2090,13 +2060,13 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── PATCH /api/school/settings ─────────────────────────────────────────
-  router.patch('/school/settings', (req, res) => {
+  router.patch('/school/settings', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     try {
       const { senMode, explanationStyle, gymnasietProgram, universityProgram } = req.body as { senMode?: string | null; explanationStyle?: string; gymnasietProgram?: string; universityProgram?: string };
       const now = new Date().toISOString();
-      const existing = db.prepare('SELECT id FROM student_growth_profiles WHERE student_user_id = ?').get(userId) as { id: string } | undefined;
+      const existing = await db.get('SELECT id FROM student_growth_profiles WHERE student_user_id = ?', userId) as { id: string } | undefined;
       if (existing) {
         // Build dynamic update — only update program fields if explicitly provided
         const updates: string[] = ['sen_mode = ?', 'explanation_style = ?', 'updated_at = ?'];
@@ -2104,11 +2074,11 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
         if (gymnasietProgram !== undefined) { updates.push('gymnasiet_program = ?'); params.push(gymnasietProgram); }
         if (universityProgram !== undefined) { updates.push('university_program = ?'); params.push(universityProgram); }
         params.push(userId);
-        db.prepare(`UPDATE student_growth_profiles SET ${updates.join(', ')} WHERE student_user_id = ?`).run(...params);
+        await db.run(`UPDATE student_growth_profiles SET ${updates.join(', ')} WHERE student_user_id = ?`, ...params);
       } else {
-        db.prepare(
+        await db.run(
           `INSERT INTO student_growth_profiles (id, student_user_id, stage, session_count, sen_mode, explanation_style, gymnasiet_program, university_program, updated_at) VALUES (?, ?, 'S1', 0, ?, ?, ?, ?, ?)`
-        ).run(crypto.randomUUID(), userId, senMode ?? null, explanationStyle ?? 'balanced', gymnasietProgram ?? null, universityProgram ?? null, now);
+        , crypto.randomUUID(), userId, senMode ?? null, explanationStyle ?? 'balanced', gymnasietProgram ?? null, universityProgram ?? null, now);
       }
       res.json({ ok: true });
     } catch (err) {
@@ -2118,7 +2088,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/admin/model-tier ──────────────────────────────────
-  router.get('/school/admin/model-tier', (req, res) => {
+  router.get('/school/admin/model-tier', async (req, res) => {
     if (req.user?.school_role !== 'school_admin') return res.status(403).json({ error: 'Forbidden' });
     res.json({
       modelTier: _ollamaTierEnabled ? 'C' : 'A',
@@ -2128,15 +2098,15 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── PATCH /api/school/admin/model-tier ─────────────────────────────────
-  router.patch('/school/admin/model-tier', (req, res) => {
+  router.patch('/school/admin/model-tier', async (req, res) => {
     if (req.user?.school_role !== 'school_admin') return res.status(403).json({ error: 'Forbidden' });
     const { modelTier } = req.body as { modelTier?: 'C' | 'A' };
     const tier = modelTier === 'C' ? 'C' : 'A';
     try {
-      db.prepare(
+      await db.run(
         `INSERT INTO school_admin_config (key, value) VALUES ('model_tier', ?)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value`
-      ).run(tier);
+      , tier);
       _ollamaTierEnabled = tier === 'C';
       res.json({ ok: true, modelTier: tier, ollamaUrl: tier === 'C' ? OLLAMA_BASE_URL : null });
     } catch (err) {
@@ -2146,12 +2116,12 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── DELETE /api/school/learning-history ────────────────────────────────
-  router.delete('/school/learning-history', (req, res) => {
+  router.delete('/school/learning-history', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     try {
-      db.prepare(`DELETE FROM messages WHERE session_id IN (SELECT id FROM sessions WHERE user_id = ? AND module_id LIKE 'school%')`).run(userId);
-      db.prepare(`DELETE FROM sessions WHERE user_id = ? AND module_id LIKE 'school%'`).run(userId);
+      await db.run(`DELETE FROM messages WHERE session_id IN (SELECT id FROM sessions WHERE user_id = ? AND module_id LIKE 'school%')`, userId);
+      await db.run(`DELETE FROM sessions WHERE user_id = ? AND module_id LIKE 'school%'`, userId);
       res.json({ ok: true });
     } catch (err) {
       console.error('[school/learning-history DELETE]', err);
@@ -2249,14 +2219,14 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/lessons ───────────────────────────────────────────
-  router.get('/school/lessons', (req, res) => {
+  router.get('/school/lessons', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const lessons = db.prepare(
+      const lessons = await db.all(
         'SELECT * FROM teacher_lessons WHERE teacher_user_id = ? ORDER BY created_at DESC'
-      ).all(userId) as Record<string, unknown>[];
+      , userId) as Record<string, unknown>[];
 
       res.json(lessons.map(l => ({
         id: l.id,
@@ -2277,7 +2247,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── POST /api/school/lessons ──────────────────────────────────────────
-  router.post('/school/lessons', (req, res) => {
+  router.post('/school/lessons', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -2293,11 +2263,11 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
-      db.prepare(
+      await db.run(
         `INSERT INTO teacher_lessons
            (id, teacher_user_id, class_id, title, subject_id, learning_objectives, content_blocks, tier, is_template, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
+      ,
         id, userId,
         (classId as string) || null,
         title as string,
@@ -2317,13 +2287,12 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/lessons/:id ───────────────────────────────────────
-  router.get('/school/lessons/:id', (req, res) => {
+  router.get('/school/lessons/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const lesson = db.prepare('SELECT * FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?')
-        .get(req.params.id, userId) as Record<string, unknown> | null;
+      const lesson = await db.get('SELECT * FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?', req.params.id, userId) as Record<string, unknown> | null;
       if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
       res.json({
@@ -2345,19 +2314,18 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── PUT /api/school/lessons/:id ───────────────────────────────────────
-  router.put('/school/lessons/:id', (req, res) => {
+  router.put('/school/lessons/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-      const exists = db.prepare('SELECT 1 FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?')
-        .get(req.params.id, userId);
+      const exists = await db.get('SELECT 1 FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?', req.params.id, userId);
       if (!exists) return res.status(404).json({ error: 'Lesson not found or access denied' });
 
       const { title, subjectId, tier, learningObjectives, contentBlocks, isTemplate } = req.body as Record<string, unknown>;
       const now = new Date().toISOString();
 
-      db.prepare(
+      await db.run(
         `UPDATE teacher_lessons SET
            title = COALESCE(?, title),
            subject_id = COALESCE(?, subject_id),
@@ -2367,7 +2335,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
            is_template = COALESCE(?, is_template),
            updated_at = ?
          WHERE id = ?`
-      ).run(
+      ,
         title ?? null,
         subjectId ?? null,
         tier ?? null,
@@ -2377,8 +2345,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
         now, req.params.id
       );
 
-      const updated = db.prepare('SELECT * FROM teacher_lessons WHERE id = ?')
-        .get(req.params.id) as Record<string, unknown>;
+      const updated = await db.get('SELECT * FROM teacher_lessons WHERE id = ?', req.params.id) as Record<string, unknown>;
       res.json({
         id: updated.id,
         title: updated.title,
@@ -2394,7 +2361,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── POST /api/school/lessons/:id/assign ──────────────────────────────
-  router.post('/school/lessons/:id/assign', (req, res) => {
+  router.post('/school/lessons/:id/assign', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -2402,16 +2369,13 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
       const { classId } = req.body as { classId: string };
       if (!classId) return res.status(400).json({ error: 'classId required' });
 
-      const lesson = db.prepare('SELECT 1 FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?')
-        .get(req.params.id, userId);
+      const lesson = await db.get('SELECT 1 FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?', req.params.id, userId);
       if (!lesson) return res.status(404).json({ error: 'Lesson not found or access denied' });
 
-      const classRow = db.prepare('SELECT 1 FROM school_classes WHERE id = ? AND teacher_user_id = ?')
-        .get(classId, userId);
+      const classRow = await db.get('SELECT 1 FROM school_classes WHERE id = ? AND teacher_user_id = ?', classId, userId);
       if (!classRow) return res.status(403).json({ error: 'Class not found or access denied' });
 
-      db.prepare('UPDATE teacher_lessons SET class_id = ?, updated_at = ? WHERE id = ?')
-        .run(classId, new Date().toISOString(), req.params.id);
+      await db.run('UPDATE teacher_lessons SET class_id = ?, updated_at = ? WHERE id = ?', classId, new Date().toISOString(), req.params.id);
 
       res.json({ ok: true, lessonId: req.params.id, classId });
     } catch (err) {
@@ -2446,45 +2410,46 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/quests/today ──────────────────────────────────────────
-  router.get('/school/quests/today', (req, res) => {
+  router.get('/school/quests/today', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
     const today = new Date().toISOString().split('T')[0];
 
     // Check if today's quests already exist
-    const existing = db.prepare(
-      `SELECT * FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ?`
-    ).all(userId, today) as Array<{ id: string; quest_type: string; target: number; progress: number; completed: number; xp_reward: number }>;
+    const existing = await db.all(
+      `SELECT id, quest_type, target, progress, completed, xp_reward FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ?`
+    , userId, today) as Array<{ id: string; quest_type: string; target: number; progress: number; completed: number; xp_reward: number }>;
 
     if (existing.length >= 3) return res.json({ quests: existing, date: today });
 
     // Generate quests for today
     const questDefs = generateDailyQuests(userId, today);
     const now = new Date().toISOString();
-    const quests = questDefs.map(def => {
+    const quests = [];
+    for (const def of questDefs) {
       const existingQuest = existing.find(e => e.quest_type === def.quest_type);
-      if (existingQuest) return existingQuest;
+      if (existingQuest) { quests.push(existingQuest); continue; }
       const id = crypto.randomUUID();
       try {
-        db.prepare(
+        await db.run(
           `INSERT OR IGNORE INTO student_daily_quests (id, student_user_id, quest_type, quest_date, target, progress, completed, xp_reward, created_at) VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)`
-        ).run(id, userId, def.quest_type, today, def.target, def.xp_reward, now);
+        , id, userId, def.quest_type, today, def.target, def.xp_reward, now);
       } catch {}
-      return { id, quest_type: def.quest_type, target: def.target, progress: 0, completed: 0, xp_reward: def.xp_reward };
-    });
+      quests.push({ id, quest_type: def.quest_type, target: def.target, progress: 0, completed: 0, xp_reward: def.xp_reward });
+    }
 
     return res.json({ quests, date: today });
   });
 
   // ── POST /api/school/quests/:id/progress ──────────────────────────────────
-  router.post('/school/quests/:id/progress', (req, res) => {
+  router.post('/school/quests/:id/progress', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
-    const quest = db.prepare(
+    const quest = await db.get(
       `SELECT * FROM student_daily_quests WHERE id = ? AND student_user_id = ?`
-    ).get(req.params.id, userId) as { id: string; progress: number; target: number; completed: number; xp_reward: number; quest_date: string } | undefined;
+    , req.params.id, userId) as { id: string; progress: number; target: number; completed: number; xp_reward: number; quest_date: string } | undefined;
 
     if (!quest) return res.status(404).json({ error: 'Quest not found' });
     if (quest.completed) return res.json({ quest, alreadyCompleted: true });
@@ -2492,81 +2457,81 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     const newProgress = quest.progress + 1;
     const nowComplete = newProgress >= quest.target ? 1 : 0;
 
-    db.prepare(
+    await db.run(
       `UPDATE student_daily_quests SET progress = ?, completed = ? WHERE id = ?`
-    ).run(newProgress, nowComplete, quest.id);
+    , newProgress, nowComplete, quest.id);
 
     if (nowComplete) {
-      updateGrowthProfile(db, userId, 'quest_complete');
+      await updateGrowthProfile(db, userId, 'quest_complete');
     }
 
     return res.json({ progress: newProgress, completed: nowComplete === 1, xp_reward: quest.xp_reward });
   });
 
   // ── GET /api/school/review-cards ──────────────────────────────────────────
-  router.get('/school/review-cards', (req, res) => {
+  router.get('/school/review-cards', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     const today = new Date().toISOString().split('T')[0];
-    const cards = db.prepare(
+    const cards = await db.all(
       `SELECT * FROM review_cards WHERE student_user_id = ? AND (due_date IS NULL OR due_date <= ?) ORDER BY due_date ASC LIMIT 20`
-    ).all(userId, today);
+    , userId, today);
     return res.json({ cards, date: today });
   });
 
   // ── POST /api/school/review-cards ─────────────────────────────────────────
-  router.post('/school/review-cards', (req, res) => {
+  router.post('/school/review-cards', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     const { subjectId = 'mathematics', front, back, source = 'manual' } = req.body as Record<string, string>;
     if (!front || !back) return res.status(400).json({ error: 'front and back required' });
     const id = crypto.randomUUID();
     const today = new Date().toISOString().split('T')[0];
-    db.prepare(
+    await db.run(
       `INSERT INTO review_cards (id, student_user_id, subject_id, front, back, source, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(id, userId, subjectId, front, back, source, today, new Date().toISOString());
+    , id, userId, subjectId, front, back, source, today, new Date().toISOString());
     return res.status(201).json({ id });
   });
 
   // ── PATCH /api/school/review-cards/:id/review ─────────────────────────────
-  router.patch('/school/review-cards/:id/review', (req, res) => {
+  router.patch('/school/review-cards/:id/review', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-    const card = db.prepare(`SELECT * FROM review_cards WHERE id = ? AND student_user_id = ?`).get(req.params.id, userId) as {
+    const card = await db.get(`SELECT * FROM review_cards WHERE id = ? AND student_user_id = ?`, req.params.id, userId) as {
       id: string; interval_days: number; ease_factor: number; repetitions: number;
     } | undefined;
     if (!card) return res.status(404).json({ error: 'Card not found' });
     const quality = Number(req.body.quality ?? 3);
     const updated = sm2Update(card.interval_days, card.ease_factor, card.repetitions, quality);
-    db.prepare(
+    await db.run(
       `UPDATE review_cards SET interval_days = ?, ease_factor = ?, repetitions = ?, due_date = ? WHERE id = ?`
-    ).run(updated.interval, updated.ease, updated.repetitions, updated.dueDate, card.id);
+    , updated.interval, updated.ease, updated.repetitions, updated.dueDate, card.id);
     // Quest progress for review_card
     try {
       const today = new Date().toISOString().split('T')[0];
-      const reviewQuest = db.prepare(`SELECT id FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ? AND quest_type = 'review_card' AND completed = 0`).get(userId, today) as { id: string } | undefined;
+      const reviewQuest = await db.get(`SELECT id FROM student_daily_quests WHERE student_user_id = ? AND quest_date = ? AND quest_type = 'review_card' AND completed = 0`, userId, today) as { id: string } | undefined;
       if (reviewQuest) {
-        db.prepare(`UPDATE student_daily_quests SET progress = MIN(target, progress + 1), completed = CASE WHEN progress + 1 >= target THEN 1 ELSE 0 END WHERE id = ?`).run(reviewQuest.id);
+        await db.run(`UPDATE student_daily_quests SET progress = MIN(target, progress + 1), completed = CASE WHEN progress + 1 >= target THEN 1 ELSE 0 END WHERE id = ?`, reviewQuest.id);
       }
     } catch {}
     return res.json({ ok: true, ...updated });
   });
 
   // ── DELETE /api/school/review-cards/:id ───────────────────────────────────
-  router.delete('/school/review-cards/:id', (req, res) => {
+  router.delete('/school/review-cards/:id', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-    db.prepare(`DELETE FROM review_cards WHERE id = ? AND student_user_id = ?`).run(req.params.id, userId);
+    await db.run(`DELETE FROM review_cards WHERE id = ? AND student_user_id = ?`, req.params.id, userId);
     return res.json({ ok: true });
   });
 
   // ── GET /api/school/seasons/active ────────────────────────────────────────
-  router.get('/school/seasons/active', (req, res) => {
+  router.get('/school/seasons/active', async (req, res) => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const season = db.prepare(
+      const season = await db.get(
         `SELECT id, name, emoji, start_date, end_date, xp_multiplier, description FROM xp_seasons WHERE active = 1 AND start_date <= ? AND end_date >= ? LIMIT 1`
-      ).get(today, today) as Record<string, unknown> | undefined;
+      , today, today) as Record<string, unknown> | undefined;
 
       if (!season) return res.json({ season: null });
 
@@ -2581,7 +2546,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
 
   // ── GET /api/school/leaderboard ───────────────────────────────────────────
   // period=all_time|weekly. If class_id provided, scoped to that class.
-  router.get('/school/leaderboard', (req, res) => {
+  router.get('/school/leaderboard', async (req, res) => {
     try {
       const { period = 'weekly', class_id, limit = '10' } = req.query as Record<string, string>;
       const lim = Math.min(parseInt(limit, 10) || 10, 50);
@@ -2598,7 +2563,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
         const weekStart = monday.toISOString().split('T')[0];
 
         if (class_id) {
-          entries = db.prepare(`
+          entries = await db.all(`
             SELECT w.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
                    COALESCE(w.week_xp, 0) as total_xp
             FROM student_class_enrollments e
@@ -2607,9 +2572,9 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
             WHERE e.class_id = ?
             ORDER BY total_xp DESC
             LIMIT ?
-          `).all(weekStart, class_id, lim) as typeof entries;
+          `, weekStart, class_id, lim) as typeof entries;
         } else {
-          entries = db.prepare(`
+          entries = await db.all(`
             SELECT w.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
                    COALESCE(w.week_xp, 0) as total_xp
             FROM weekly_xp_snapshots w
@@ -2617,12 +2582,12 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
             WHERE w.week_start = ?
             ORDER BY total_xp DESC
             LIMIT ?
-          `).all(weekStart, lim) as typeof entries;
+          `, weekStart, lim) as typeof entries;
         }
       } else {
         // All-time (use student_growth_profiles)
         if (class_id) {
-          entries = db.prepare(`
+          entries = await db.all(`
             SELECT g.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
                    COALESCE(g.total_xp, 0) as total_xp
             FROM student_class_enrollments e
@@ -2631,16 +2596,16 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
             WHERE e.class_id = ?
             ORDER BY total_xp DESC
             LIMIT ?
-          `).all(class_id, lim) as typeof entries;
+          `, class_id, lim) as typeof entries;
         } else {
-          entries = db.prepare(`
+          entries = await db.all(`
             SELECT g.student_user_id, COALESCE(u.display_name, u.username, 'Student') as display_name,
                    COALESCE(g.total_xp, 0) as total_xp
             FROM student_growth_profiles g
             JOIN users u ON u.id = g.student_user_id
             ORDER BY total_xp DESC
             LIMIT ?
-          `).all(lim) as typeof entries;
+          `, lim) as typeof entries;
         }
       }
 
@@ -2653,10 +2618,10 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── GET /api/school/avatar ────────────────────────────────────────────────
-  router.get('/school/avatar', (req, res) => {
+  router.get('/school/avatar', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-    const row = db.prepare(`SELECT * FROM student_avatars WHERE student_user_id = ?`).get(userId) as Record<string, unknown> | undefined;
+    const row = await db.get(`SELECT * FROM student_avatars WHERE student_user_id = ?`, userId) as Record<string, unknown> | undefined;
     if (!row) {
       // Return defaults
       return res.json({ avatarChar: '🦊', colorScheme: 'teal', frame: 'none', title: '', unlockedItems: [] });
@@ -2671,16 +2636,16 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── PATCH /api/school/avatar ───────────────────────────────────────────────
-  router.patch('/school/avatar', (req, res) => {
+  router.patch('/school/avatar', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     const { avatarChar, colorScheme, frame, title } = req.body as {
       avatarChar?: string; colorScheme?: string; frame?: string; title?: string;
     };
     const now = new Date().toISOString();
-    const existing = db.prepare(`SELECT * FROM student_avatars WHERE student_user_id = ?`).get(userId) as Record<string, unknown> | undefined;
+    const existing = await db.get(`SELECT * FROM student_avatars WHERE student_user_id = ?`, userId) as Record<string, unknown> | undefined;
     if (!existing) {
-      db.prepare(`INSERT INTO student_avatars (student_user_id, avatar_char, color_scheme, frame, title, unlocked_items, updated_at) VALUES (?, ?, ?, ?, ?, '[]', ?)`).run(
+      await db.run(`INSERT INTO student_avatars (student_user_id, avatar_char, color_scheme, frame, title, unlocked_items, updated_at) VALUES (?, ?, ?, ?, ?, '[]', ?)`, 
         userId, avatarChar ?? '🦊', colorScheme ?? 'teal', frame ?? 'none', title ?? '', now
       );
     } else {
@@ -2692,56 +2657,56 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
       if (title !== undefined) { updates.push('title = ?'); vals.push(title); }
       if (updates.length > 0) {
         updates.push('updated_at = ?'); vals.push(now); vals.push(userId);
-        db.prepare(`UPDATE student_avatars SET ${updates.join(', ')} WHERE student_user_id = ?`).run(...vals);
+        await db.run(`UPDATE student_avatars SET ${updates.join(', ')} WHERE student_user_id = ?`, ...vals);
       }
     }
     return res.json({ ok: true });
   });
 
   // ── POST /api/school/avatar/unlock ────────────────────────────────────────
-  router.post('/school/avatar/unlock', (req, res) => {
+  router.post('/school/avatar/unlock', async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorised' });
     const { item } = req.body as { item: string };
     if (!item) return res.status(400).json({ error: 'item required' });
-    const row = db.prepare(`SELECT unlocked_items FROM student_avatars WHERE student_user_id = ?`).get(userId) as { unlocked_items: string } | undefined;
+    const row = await db.get(`SELECT unlocked_items FROM student_avatars WHERE student_user_id = ?`, userId) as { unlocked_items: string } | undefined;
     const current: string[] = row ? JSON.parse(row.unlocked_items || '[]') : [];
     if (!current.includes(item)) current.push(item);
     const now = new Date().toISOString();
-    db.prepare(`INSERT INTO student_avatars (student_user_id, unlocked_items, updated_at) VALUES (?, ?, ?) ON CONFLICT(student_user_id) DO UPDATE SET unlocked_items = excluded.unlocked_items, updated_at = excluded.updated_at`).run(userId, JSON.stringify(current), now);
+    await db.run(`INSERT INTO student_avatars (student_user_id, unlocked_items, updated_at) VALUES (?, ?, ?) ON CONFLICT(student_user_id) DO UPDATE SET unlocked_items = excluded.unlocked_items, updated_at = excluded.updated_at`, userId, JSON.stringify(current), now);
     return res.json({ ok: true, unlockedItems: current });
   });
 
   // ── GET /api/school/parent/child-summary/:childId ─────────────────────────
-  router.get('/school/parent/child-summary/:childId', (req, res) => {
+  router.get('/school/parent/child-summary/:childId', async (req, res) => {
     const guardianId = req.user?.id;
     if (!guardianId) return res.status(401).json({ error: 'Unauthorised' });
     const childId = req.params.childId;
 
     // Verify guardian link
-    const link = db.prepare(`SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`).get(guardianId, childId);
+    const link = await db.get(`SELECT * FROM guardian_student_links WHERE guardian_user_id = ? AND student_user_id = ?`, guardianId, childId);
     if (!link) return res.status(403).json({ error: 'Not linked' });
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
     const today = new Date().toISOString().split('T')[0];
 
-    const growth = db.prepare(`SELECT stage, total_xp, current_streak, last_active_date FROM student_growth_profiles WHERE student_user_id = ?`).get(childId) as { stage: string; total_xp: number; current_streak: number; last_active_date: string } | undefined;
-    const student = db.prepare(`SELECT display_name, username FROM users WHERE id = ?`).get(childId) as { display_name: string; username: string } | undefined;
+    const growth = await db.get(`SELECT stage, total_xp, current_streak, last_active_date FROM student_growth_profiles WHERE student_user_id = ?`, childId) as { stage: string; total_xp: number; current_streak: number; last_active_date: string } | undefined;
+    const student = await db.get(`SELECT display_name, username FROM users WHERE id = ?`, childId) as { display_name: string; username: string } | undefined;
 
     // Sessions count (use XP events as proxy)
-    const sessions = db.prepare(`SELECT COUNT(*) as count FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`).get(childId, sevenDaysAgo) as { count: number };
+    const sessions = await db.get(`SELECT COUNT(*) as count FROM student_xp_events WHERE student_user_id = ? AND created_at >= ?`, childId, sevenDaysAgo) as { count: number };
 
     // Review cards due
     let reviewCardsDue = 0;
     try {
-      const rc = db.prepare(`SELECT COUNT(*) as count FROM review_cards WHERE student_user_id = ? AND due_date <= ?`).get(childId, today) as { count: number };
+      const rc = await db.get(`SELECT COUNT(*) as count FROM review_cards WHERE student_user_id = ? AND due_date <= ?`, childId, today) as { count: number };
       reviewCardsDue = rc.count;
     } catch {}
 
     // Subjects from progress
     let subjects: string[] = [];
     try {
-      const progressRows = db.prepare(`SELECT subject_id FROM student_progress WHERE student_user_id = ?`).all(childId) as { subject_id: string }[];
+      const progressRows = await db.all(`SELECT subject_id FROM student_progress WHERE student_user_id = ?`, childId) as { subject_id: string }[];
       subjects = progressRows.map(r => r.subject_id);
     } catch {}
 
@@ -2758,21 +2723,20 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
   });
 
   // ── PATCH /api/school/classes/:classId/students/:studentId/settings ───────
-  router.patch('/school/classes/:classId/students/:studentId/settings', (req, res) => {
+  router.patch('/school/classes/:classId/students/:studentId/settings', async (req, res) => {
     const teacherId = req.user?.id;
     if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
     const { teacherLevelOverride, senOverride } = req.body as Record<string, string>;
 
     // Verify teacher owns this class
-    const cls = db.prepare(`SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`).get(req.params.classId, teacherId);
+    const cls = await db.all(`SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`, req.params.classId, teacherId);
     if (!cls) return res.status(403).json({ error: 'Forbidden' });
 
     // Store override in student_class_enrollments (add columns if needed)
-    try { db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN teacher_level_override TEXT`); } catch {}
-    try { db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN sen_override TEXT`); } catch {}
+    try { await db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN teacher_level_override TEXT`); } catch {}
+    try { await db.exec(`ALTER TABLE student_class_enrollments ADD COLUMN sen_override TEXT`); } catch {}
 
-    db.prepare(`UPDATE student_class_enrollments SET teacher_level_override = ?, sen_override = ? WHERE class_id = ? AND student_user_id = ?`)
-      .run(teacherLevelOverride ?? null, senOverride ?? null, req.params.classId, req.params.studentId);
+    await db.run(`UPDATE student_class_enrollments SET teacher_level_override = ?, sen_override = ? WHERE class_id = ? AND student_user_id = ?`, teacherLevelOverride ?? null, senOverride ?? null, req.params.classId, req.params.studentId);
 
     return res.json({ ok: true });
   });
@@ -2864,7 +2828,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
         const { lessonId } = req.body as { lessonId?: string };
         if (!lessonId) return res.status(400).json({ error: 'lessonId required' });
 
-        const lesson = db.prepare(`SELECT * FROM teacher_lessons WHERE id = ? AND teacher_user_id = ?`).get(lessonId, userId) as Record<string, unknown> | undefined;
+
         if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
         const manifest = {
@@ -2900,9 +2864,9 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       } else if (bundleType === 'study-pack') {
         // Export student's review cards for a subject
         const { subjectId } = req.body as { subjectId?: string };
-        const cards = db.prepare(
+        const cards = await db.get(
           `SELECT * FROM review_cards WHERE student_user_id = ?${subjectId ? ' AND subject_id = ?' : ''} ORDER BY created_at ASC`
-        ).all(...[userId, ...(subjectId ? [subjectId] : [])]) as Record<string, unknown>[];
+        , ...[userId, ...(subjectId ? [subjectId] : [])]) as Record<string, unknown>[];
 
         const manifest = {
           format_version: '1.0.0',
@@ -2931,11 +2895,11 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       } else if (bundleType === 'assessment-bank') {
         // Export assessment questions from teacher_lessons content_blocks of type 'quiz'
         const { classId } = req.body as { classId?: string };
-        const lessons = db.prepare(
+        const lessons = await db.all(
           classId
             ? `SELECT * FROM teacher_lessons WHERE teacher_user_id = ? AND class_id = ?`
             : `SELECT * FROM teacher_lessons WHERE teacher_user_id = ?`
-        ).all(...[userId, ...(classId ? [classId] : [])]) as Record<string, unknown>[];
+        , ...[userId, ...(classId ? [classId] : [])]) as Record<string, unknown>[];
 
         const questions: unknown[] = [];
         for (const lesson of lessons) {
@@ -2987,7 +2951,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   // ── POST /api/school/import-bundle ────────────────────────────────────────
   // Import a .anton education bundle (multipart file upload)
   const antonUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-  router.post('/school/import-bundle', antonUpload.single('bundle'), (req, res) => {
+  router.post('/school/import-bundle', antonUpload.single('bundle'), async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -3028,10 +2992,9 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
 
         for (const card of cards) {
           if (!card.front || !card.back) continue;
-          db.prepare(
-            `INSERT OR IGNORE INTO review_cards (id, student_user_id, subject_id, front, back, source, due_date, created_at)
+          await db.run(`INSERT OR IGNORE INTO review_cards (id, student_user_id, subject_id, front, back, source, due_date, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-          ).run(crypto.randomUUID(), userId, card.subject_id ?? 'mixed', card.front, card.back, card.source ?? 'imported', today, now);
+          , crypto.randomUUID(), userId, card.subject_id ?? 'mixed', card.front, card.back, card.source ?? 'imported', today, now);
           imported.count++;
         }
         imported.message = `Imported ${imported.count} review cards`;
@@ -3058,12 +3021,11 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   });
 
   // ── GET /api/school/study-rooms ──────────────────────────────────────────
-  router.get('/school/study-rooms', (req, res) => {
+  router.get('/school/study-rooms', async (req, res) => {
     try {
       const { subject_id, limit = '20' } = req.query as Record<string, string>;
       const now = new Date().toISOString();
-      const rooms = db.prepare(
-        `SELECT r.id, r.name, r.subject_id, r.max_participants, r.join_code, r.created_at,
+      const rooms = await db.get(`SELECT r.id, r.name, r.subject_id, r.max_participants, r.join_code, r.created_at,
                 COALESCE(u.display_name, u.username) as host_name
          FROM study_rooms r
          JOIN users u ON u.id = r.host_user_id
@@ -3071,7 +3033,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
          ${subject_id ? 'AND r.subject_id = ?' : ''}
          ORDER BY r.created_at DESC
          LIMIT ?`
-      ).all(...[now, ...(subject_id ? [subject_id] : []), parseInt(limit, 10) || 20]) as Record<string, unknown>[];
+      , ...[now, ...(subject_id ? [subject_id] : []), parseInt(limit, 10) || 20]) as Record<string, unknown>[];
       return res.json({ rooms });
     } catch (err) {
       console.error('[school/study-rooms GET]', err);
@@ -3080,7 +3042,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   });
 
   // ── POST /api/school/study-rooms ─────────────────────────────────────────
-  router.post('/school/study-rooms', (req, res) => {
+  router.post('/school/study-rooms', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
@@ -3092,10 +3054,9 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       const now = new Date().toISOString();
       const expiresAt = new Date(Date.now() + (Number(expiresInHours) * 3_600_000)).toISOString();
 
-      db.prepare(
-        `INSERT INTO study_rooms (id, name, subject_id, host_user_id, max_participants, is_public, join_code, created_at, expires_at)
+      await db.run(`INSERT INTO study_rooms (id, name, subject_id, host_user_id, max_participants, is_public, join_code, created_at, expires_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(id, name, subjectId ?? null, userId, Number(maxParticipants), isPublic ? 1 : 0, joinCode, now, expiresAt);
+      , id, name, subjectId ?? null, userId, Number(maxParticipants), isPublic ? 1 : 0, joinCode, now, expiresAt);
 
       return res.status(201).json({ id, joinCode, expiresAt });
     } catch (err) {
@@ -3105,13 +3066,12 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   });
 
   // ── GET /api/school/study-rooms/:id ──────────────────────────────────────
-  router.get('/school/study-rooms/:id', (req, res) => {
+  router.get('/school/study-rooms/:id', async (req, res) => {
     try {
-      const room = db.prepare(
-        `SELECT r.*, COALESCE(u.display_name, u.username) as host_name
+      const room = await db.get(`SELECT r.*, COALESCE(u.display_name, u.username) as host_name
          FROM study_rooms r JOIN users u ON u.id = r.host_user_id
          WHERE r.id = ?`
-      ).get(req.params.id) as Record<string, unknown> | undefined;
+      , req.params.id) as Record<string, unknown> | undefined;
       if (!room) return res.status(404).json({ error: 'Room not found' });
       return res.json(room);
     } catch (err) {
@@ -3121,14 +3081,14 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   });
 
   // ── POST /api/school/study-rooms/join ────────────────────────────────────
-  router.post('/school/study-rooms/join', (req, res) => {
+  router.post('/school/study-rooms/join', async (req, res) => {
     try {
       const { joinCode } = req.body as { joinCode?: string };
       if (!joinCode) return res.status(400).json({ error: 'joinCode required' });
       const now = new Date().toISOString();
-      const room = db.prepare(
+      const room = await db.get(
         `SELECT id, name, subject_id FROM study_rooms WHERE join_code = ? AND (expires_at IS NULL OR expires_at > ?)`
-      ).get(joinCode.toUpperCase(), now) as { id: string; name: string; subject_id: string } | undefined;
+      , joinCode.toUpperCase(), now) as { id: string; name: string; subject_id: string } | undefined;
       if (!room) return res.status(404).json({ error: 'Room not found or expired' });
       return res.json({ roomId: room.id, name: room.name, subjectId: room.subject_id });
     } catch (err) {
@@ -3138,14 +3098,14 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   });
 
   // ── DELETE /api/school/study-rooms/:id ───────────────────────────────────
-  router.delete('/school/study-rooms/:id', (req, res) => {
+  router.delete('/school/study-rooms/:id', async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
-      const room = db.prepare(`SELECT host_user_id FROM study_rooms WHERE id = ?`).get(req.params.id) as { host_user_id: string } | undefined;
+      const room = await db.get(`SELECT host_user_id FROM study_rooms WHERE id = ?`, req.params.id) as { host_user_id: string } | undefined;
       if (!room) return res.status(404).json({ error: 'Not found' });
       if (room.host_user_id !== userId) return res.status(403).json({ error: 'Only the host can delete this room' });
-      db.prepare(`DELETE FROM study_rooms WHERE id = ?`).run(req.params.id);
+      await db.run(`DELETE FROM study_rooms WHERE id = ?`, req.params.id);
       return res.json({ ok: true });
     } catch (err) {
       console.error('[school/study-rooms DELETE]', err);
@@ -3156,23 +3116,23 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   // ── Lesson/Curriculum endpoints (School Enhancements) ────────────────────
 
   // GET /api/school/curricula
-  router.get('/school/curricula', (req, res) => {
+  router.get('/school/curricula', async (req, res) => {
     try {
       const { subject_id } = req.query;
       let sql = 'SELECT * FROM school_curricula';
       const params: unknown[] = [];
       if (subject_id) { sql += ' WHERE subject_id = ?'; params.push(subject_id); }
       sql += ' ORDER BY created_at DESC';
-      res.json(db.prepare(sql).all(...params));
+      res.json(await db.run(sql, ...params));
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // POST /api/school/curricula
-  router.post('/school/curricula', (req, res) => {
+  router.post('/school/curricula', async (req, res) => {
     try {
       const body = req.body as Record<string, unknown>;
       const id = `cur_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      db.prepare(`INSERT INTO school_curricula (id, subject_id, title, description, tier, language, units, created_by) VALUES (?,?,?,?,?,?,?,?)`).run(
+      await db.run(`INSERT INTO school_curricula (id, subject_id, title, description, tier, language, units, created_by) VALUES (?,?,?,?,?,?,?,?)`, 
         id, body.subject_id || '', body.title || 'Untitled Curriculum', body.description || null,
         body.tier || 'T2', body.language || 'en', JSON.stringify(body.units || []), body.created_by || 'teacher'
       );
@@ -3181,7 +3141,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   });
 
   // GET /api/school/lessons
-  router.get('/school/lessons', (req, res) => {
+  router.get('/school/lessons', async (req, res) => {
     try {
       const { subject_id, curriculum_id } = req.query;
       let sql = 'SELECT * FROM school_lessons';
@@ -3191,26 +3151,26 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       if (curriculum_id) { conditions.push('curriculum_id = ?'); params.push(curriculum_id); }
       if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
       sql += ' ORDER BY created_at DESC';
-      const rows = db.prepare(sql).all(...params) as Record<string, unknown>[];
+      const rows = await db.run(sql, ...params) as Record<string, unknown>[];
       res.json(rows.map(r => ({ ...r, content_blocks: JSON.parse((r.content_blocks as string) || '[]') })));
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // GET /api/school/lessons/:id
-  router.get('/school/lessons/:id', (req, res) => {
+  router.get('/school/lessons/:id', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM school_lessons WHERE id = ?').get(req.params.id) as Record<string, unknown> | undefined;
+      const row = await db.get('SELECT * FROM school_lessons WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
       if (!row) return res.status(404).json({ error: 'Lesson not found' });
       return res.json({ ...row, content_blocks: JSON.parse((row.content_blocks as string) || '[]') });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
   // POST /api/school/lessons
-  router.post('/school/lessons', (req, res) => {
+  router.post('/school/lessons', async (req, res) => {
     try {
       const body = req.body as Record<string, unknown>;
       const id = `lesson_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      db.prepare(`INSERT INTO school_lessons (id, curriculum_id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier, published, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(
+      await db.run(`INSERT INTO school_lessons (id, curriculum_id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier, published, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`, 
         id, body.curriculum_id || null, body.subject_id || '',
         body.title || 'Untitled Lesson', body.description || null,
         JSON.stringify(body.content_blocks || []),
@@ -3222,7 +3182,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   });
 
   // PATCH /api/school/lessons/:id
-  router.patch('/school/lessons/:id', (req, res) => {
+  router.patch('/school/lessons/:id', async (req, res) => {
     try {
       const body = req.body as Record<string, unknown>;
       const fields: string[] = [];
@@ -3235,30 +3195,30 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       if (body.published !== undefined) { fields.push('published = ?'); values.push(body.published ? 1 : 0); }
       if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
       values.push(req.params.id);
-      db.prepare(`UPDATE school_lessons SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE school_lessons SET ${fields.join(', ')} WHERE id = ?`, ...values);
       return res.json({ ok: true });
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
   // DELETE /api/school/lessons/:id
-  router.delete('/school/lessons/:id', (req, res) => {
+  router.delete('/school/lessons/:id', async (req, res) => {
     try {
-      db.prepare('DELETE FROM school_lessons WHERE id = ?').run(req.params.id);
+      await db.run('DELETE FROM school_lessons WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: String(e) }); }
   });
 
   // POST /api/school/lessons/:id/progress — track student progress through lesson
-  router.post('/school/lessons/:id/progress', (req, res) => {
+  router.post('/school/lessons/:id/progress', async (req, res) => {
     try {
       const body = req.body as { student_user_id?: string; completed_block?: string; status?: string; score?: number; time_spent_seconds?: number };
       const studentId = body.student_user_id || 'default';
-      const existing = db.prepare('SELECT * FROM school_lesson_progress WHERE lesson_id = ? AND student_user_id = ?').get(req.params.id, studentId) as Record<string, unknown> | undefined;
+      const existing = await db.get('SELECT * FROM school_lesson_progress WHERE lesson_id = ? AND student_user_id = ?', req.params.id, studentId) as Record<string, unknown> | undefined;
       const completed = existing ? JSON.parse((existing.completed_blocks as string) || '[]') : [];
       if (body.completed_block && !completed.includes(body.completed_block)) completed.push(body.completed_block);
       const id = existing ? (existing.id as string) : `lp_${Date.now()}`;
       const status = body.status || (existing?.status as string) || 'in_progress';
-      db.prepare(`INSERT OR REPLACE INTO school_lesson_progress (id, lesson_id, student_user_id, status, completed_blocks, score, time_spent_seconds, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?)`).run(
+      await db.run(`INSERT OR REPLACE INTO school_lesson_progress (id, lesson_id, student_user_id, status, completed_blocks, score, time_spent_seconds, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?)`, 
         id, req.params.id, studentId, status, JSON.stringify(completed),
         body.score ?? (existing?.score as number ?? null),
         (body.time_spent_seconds ?? 0) + ((existing?.time_spent_seconds as number) ?? 0),
@@ -3303,7 +3263,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
       try {
         const parsed = JSON.parse(fullText.replace(/```json\n?|\n?```/g, '').trim()) as Record<string, unknown>;
         const id = `lesson_${Date.now()}_gen`;
-        db.prepare(`INSERT INTO school_lessons (id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier) VALUES (?,?,?,?,?,?,?,?)`).run(
+        await db.run(`INSERT INTO school_lessons (id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier) VALUES (?,?,?,?,?,?,?,?)`, 
           id, subject_id, parsed.title || topic, parsed.description || null,
           JSON.stringify(parsed.content_blocks || []),
           parsed.estimated_minutes || 30, parsed.bloom_level || 'understand', tier || 'T2'
@@ -3320,7 +3280,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
 
   // GET /api/school/oversight/summary
   // Returns aggregate stats for the teacher's classes
-  router.get('/school/oversight/summary', (req, res) => {
+  router.get('/school/oversight/summary', async (req, res) => {
     try {
       const teacherId = req.user?.id;
       if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
@@ -3331,9 +3291,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
       const since = new Date(Date.now() - days * 86_400_000).toISOString();
 
       // Count students in teacher's classes
-      const classes = db.prepare(
-        `SELECT id FROM school_classes WHERE teacher_user_id = ?`
-      ).all(teacherId) as { id: string }[];
+
       const classIds = classes.map(c => c.id);
 
       let totalStudents = 0;
@@ -3342,23 +3300,23 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
 
       if (classIds.length > 0) {
         const placeholders = classIds.map(() => '?').join(',');
-        const students = db.prepare(
+        const students = await db.all(
           `SELECT DISTINCT student_user_id FROM class_members WHERE class_id IN (${placeholders})`
-        ).all(...classIds) as { student_user_id: string }[];
+        , ...classIds) as { student_user_id: string }[];
         totalStudents = students.length;
 
         const studentIds = students.map(s => s.student_user_id);
         if (studentIds.length > 0) {
           const sPlaceholders = studentIds.map(() => '?').join(',');
           const todaySince = new Date(Date.now() - 86_400_000).toISOString();
-          const activeTodayRows = db.prepare(
+          const activeTodayRows = await db.all(
             `SELECT COUNT(DISTINCT user_id) as cnt FROM sessions WHERE user_id IN (${sPlaceholders}) AND created_at > ?`
-          ).get(...studentIds, todaySince) as { cnt: number };
+          , ...studentIds, todaySince) as { cnt: number };
           activeToday = activeTodayRows.cnt ?? 0;
 
-          const sessionRows = db.prepare(
+          const sessionRows = await db.get(
             `SELECT COUNT(*) as cnt FROM sessions WHERE user_id IN (${sPlaceholders}) AND created_at > ?`
-          ).get(...studentIds, since) as { cnt: number };
+          , ...studentIds, since) as { cnt: number };
           totalSessions = sessionRows.cnt ?? 0;
         }
       }
@@ -3367,10 +3325,10 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
       let flagCount = 0;
       let unresolvedFlags = 0;
       try {
-        const flags = db.prepare(
+        const flags = await db.get(
           `SELECT COUNT(*) as total, SUM(CASE WHEN resolved = 0 THEN 1 ELSE 0 END) as unresolved
            FROM oversight_flags WHERE teacher_id = ? AND created_at > ?`
-        ).get(teacherId, since) as { total: number; unresolved: number } | undefined;
+        , teacherId, since) as { total: number; unresolved: number } | undefined;
         flagCount = flags?.total ?? 0;
         unresolvedFlags = flags?.unresolved ?? 0;
       } catch {}
@@ -3384,7 +3342,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
 
   // GET /api/school/oversight/students
   // Returns student list with recent activity for teacher's classes
-  router.get('/school/oversight/students', (req, res) => {
+  router.get('/school/oversight/students', async (req, res) => {
     try {
       const teacherId = req.user?.id;
       if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
@@ -3394,9 +3352,9 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
       const days = dayMap[range] ?? 7;
       const since = new Date(Date.now() - days * 86_400_000).toISOString();
 
-      const classes = db.prepare(
+      const classes = await db.get(
         `SELECT id FROM school_classes WHERE teacher_user_id = ?`
-      ).all(teacherId) as { id: string }[];
+      , teacherId) as { id: string }[];
       const classIds = class_id
         ? classes.map(c => c.id).filter(id => id === class_id)
         : classes.map(c => c.id);
@@ -3404,7 +3362,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
       if (classIds.length === 0) return res.json([]);
 
       const placeholders = classIds.map(() => '?').join(',');
-      const rows = db.prepare(
+      const rows = await db.all(
         `SELECT u.id, COALESCE(u.display_name, u.username) as name,
                 COUNT(DISTINCT s.id) as session_count,
                 MAX(s.created_at) as last_active
@@ -3414,7 +3372,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
          WHERE cm.class_id IN (${placeholders})
          GROUP BY u.id
          ORDER BY last_active DESC NULLS LAST`
-      ).all(since, ...classIds) as { id: string; name: string; session_count: number; last_active: string | null }[];
+      , since, ...classIds) as { id: string; name: string; session_count: number; last_active: string | null }[];
 
       return res.json(rows);
     } catch (err) {
@@ -3425,7 +3383,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
 
   // GET /api/school/oversight/flags
   // Returns oversight flags for the teacher's classes
-  router.get('/school/oversight/flags', (req, res) => {
+  router.get('/school/oversight/flags', async (req, res) => {
     try {
       const teacherId = req.user?.id;
       if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
@@ -3436,7 +3394,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
       const since = new Date(Date.now() - days * 86_400_000).toISOString();
 
       try {
-        const flags = db.prepare(
+        const flags = await db.all(
           `SELECT f.id, f.student_id, f.session_id, f.flag_type, f.reason, f.created_at, f.resolved,
                   COALESCE(u.display_name, u.username) as student_name
            FROM oversight_flags f
@@ -3445,7 +3403,7 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
              AND f.resolved = ?
            ORDER BY f.created_at DESC
            LIMIT 200`
-        ).all(teacherId, since, resolved === '1' ? 1 : 0) as Record<string, unknown>[];
+        , teacherId, since, resolved === '1' ? 1 : 0) as Record<string, unknown>[];
         return res.json(flags);
       } catch {
         // oversight_flags table may not exist yet
@@ -3459,19 +3417,16 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
 
   // POST /api/school/oversight/flags/:id/resolve
   // Mark an oversight flag as resolved
-  router.post('/school/oversight/flags/:id/resolve', (req, res) => {
+  router.post('/school/oversight/flags/:id/resolve', async (req, res) => {
     try {
       const teacherId = req.user?.id;
       if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
 
       const { id } = req.params;
       try {
-        const flag = db.prepare(
-          `SELECT id FROM oversight_flags WHERE id = ? AND teacher_id = ?`
-        ).get(id, teacherId);
+
         if (!flag) return res.status(404).json({ error: 'Flag not found' });
-        db.prepare(`UPDATE oversight_flags SET resolved = 1, resolved_at = ? WHERE id = ?`)
-          .run(new Date().toISOString(), id);
+        await db.run(`UPDATE oversight_flags SET resolved = 1, resolved_at = ? WHERE id = ?`, new Date().toISOString(), id);
         return res.json({ ok: true });
       } catch {
         return res.status(404).json({ error: 'Flag not found or table not initialised' });

@@ -8,7 +8,7 @@
  *   suggest_modules  — keyword-based module recommendations
  */
 
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

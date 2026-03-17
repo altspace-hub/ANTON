@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -28,8 +29,8 @@ declare global {
   }
 }
 
-export function createAuthMiddleware(db: Database) {
-  return function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function createAuthMiddleware(db: Database) {
+  return async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     // Solo mode: no auth required
     if (!IS_TEAM_MODE) {
       req.user = { id: 'solo', username: 'solo', role: 'admin' };
@@ -51,13 +52,13 @@ export function createAuthMiddleware(db: Database) {
       const token = rawToken;
       const payload = jwt.verify(token, JWT_SECRET!) as AuthUser & { exp: number };
       // Check token still in DB (allows logout to work)
-      const session = db.prepare('SELECT * FROM user_sessions WHERE token = ? AND expires_at > datetime("now")').get(token);
+      const session = await db.get('SELECT * FROM user_sessions WHERE token = ? AND expires_at > datetime("now")', token);
       if (!session) {
         res.status(401).json({ error: 'Session expired — please log in again' });
         return;
       }
       // Update last_seen
-      db.prepare('UPDATE user_sessions SET last_seen = CURRENT_TIMESTAMP WHERE token = ?').run(token);
+      await db.run('UPDATE user_sessions SET last_seen = CURRENT_TIMESTAMP WHERE token = ?', token);
       req.user = {
         id: payload.id,
         username: payload.username,

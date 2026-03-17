@@ -8,7 +8,7 @@
  * - Recommendations (what to do next)
  */
 
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 interface InsightParams {
@@ -29,7 +29,7 @@ interface Insight {
   created_at: string;
 }
 
-export function createInsightsGenerator(db: Database.Database, client: Anthropic) {
+export async function createInsightsGenerator(db: DatabaseAdapter, client: Anthropic) {
 
   /**
    * Generate insights from recent knowledge atoms using Claude
@@ -62,7 +62,7 @@ export function createInsightsGenerator(db: Database.Database, client: Anthropic
     query += ' ORDER BY created_at DESC LIMIT ?';
     queryParams.push(params.limit ?? 100);
 
-    const atoms = db.prepare(query).all(...queryParams) as any[];
+    const atoms = await db.all(query, ...queryParams) as any[];
 
     if (atoms.length === 0) {
       return [];
@@ -158,7 +158,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   /**
    * Get atom distribution by category
    */
-  function getAtomDistribution(params: InsightParams = {}): Record<string, number> {
+  async function getAtomDistribution(params: InsightParams = {}): Record<string, number> {
     let query = 'SELECT category, COUNT(*) as count FROM knowledge_atoms WHERE is_active = 1';
     const queryParams: any[] = [];
 
@@ -174,7 +174,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
 
     query += ' GROUP BY category';
 
-    const rows = db.prepare(query).all(...queryParams) as Array<{ category: string; count: number }>;
+    const rows = await db.all(query, ...queryParams) as Array<{ category: string; count: number }>;
 
     return rows.reduce((acc, row) => {
       acc[row.category] = row.count;
@@ -185,7 +185,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   /**
    * Get top entities by interaction count
    */
-  function getTopEntities(limit: number = 10): Array<{
+  async function getTopEntities(limit: number = 10): Array<{
     entity_type: string;
     entity_id: string;
     entity_name: string | null;
@@ -203,13 +203,13 @@ Return ONLY the JSON array, no markdown, no explanation.`;
       LIMIT ?
     `;
 
-    return db.prepare(query).all(limit) as any[];
+    return await db.all(query, limit) as any[];
   }
 
   /**
    * Get sentiment trend over time
    */
-  function getSentimentTrend(days: number = 30): Array<{
+  async function getSentimentTrend(days: number = 30): Array<{
     date: string;
     positive: number;
     negative: number;
@@ -230,7 +230,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
       ORDER BY date ASC
     `;
 
-    return db.prepare(query).all(days) as any[];
+    return await db.all(query, days) as any[];
   }
 
   return {

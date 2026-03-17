@@ -1,17 +1,17 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
 import { streamChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
 import { REVIEW_MODES } from '../services/review-engine.js';
 import { createReviewOrchestrator, type ReviewContext } from '../services/review-orchestrator.js';
 
-export function createReviewRoutes(db: Database.Database, anthropic?: Anthropic) {
+export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
   const orchestrator = createReviewOrchestrator(anthropic);
 
   // GET /api/reviews/modes — list available review modes
-  router.get('/reviews/modes', (_req, res) => {
+  router.get('/reviews/modes', async (_req, res) => {
     res.json(REVIEW_MODES.map(({ id, label, icon, description, color }) => ({ id, label, icon, description, color })));
   });
 
@@ -65,9 +65,9 @@ export function createReviewRoutes(db: Database.Database, anthropic?: Anthropic)
       // Save review to database
       if (sessionId) {
         try {
-          db.prepare(
+          await db.run(
             `INSERT INTO reviews (id, session_id, review_mode, content, created_at) VALUES (?, ?, ?, ?, ?)`
-          ).run(crypto.randomUUID(), sessionId, modeId, result.text, new Date().toISOString());
+          , crypto.randomUUID(), sessionId, modeId, result.text, new Date().toISOString());
         } catch {
           // Non-fatal
         }
@@ -79,11 +79,11 @@ export function createReviewRoutes(db: Database.Database, anthropic?: Anthropic)
   });
 
   // GET /api/reviews?sessionId= — list reviews for a session
-  router.get('/reviews', (req, res) => {
+  router.get('/reviews', async (req, res) => {
     const { sessionId } = req.query as { sessionId?: string };
     if (!sessionId) { res.json([]); return; }
     try {
-      const reviews = db.prepare('SELECT * FROM reviews WHERE session_id = ? ORDER BY created_at DESC').all(sessionId);
+
       res.json(reviews);
     } catch {
       res.json([]);

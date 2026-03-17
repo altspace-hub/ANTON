@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { randomUUID, randomBytes } from 'crypto';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { generateToken } from '../middleware/auth.js';
 import { sendPasswordResetEmail } from '../services/email.js';
 import { logSecurityEvent } from '../services/security-logger.js';
@@ -64,7 +65,7 @@ function createExchangeCode(token: string): string {
   return code;
 }
 
-export function createAuthRoutes(db: Database) {
+export async function createAuthRoutes(db: DatabaseAdapter) {
   const router = Router();
   const IS_TEAM_MODE = process.env.DEPLOYMENT_MODE === 'team';
 
@@ -78,10 +79,10 @@ export function createAuthRoutes(db: Database) {
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
 
     // Check for too many recent failed attempts (account lockout)
-    const recentFails = db.prepare(`
+    const recentFails = await db.get(`
       SELECT COUNT(*) as count FROM login_attempts
       WHERE username = ? AND success = 0 AND attempted_at > datetime('now', '-15 minutes')
-    `).get(username) as { count: number };
+    `, username) as { count: number };
 
     if (recentFails.count >= 5) {
       logSecurityEvent(db, {
@@ -95,11 +96,11 @@ export function createAuthRoutes(db: Database) {
       return;
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as Record<string, unknown> | undefined;
+    const user = await db.get('SELECT * FROM users WHERE username = ?', username) as Record<string, unknown> | undefined;
 
     if (!user) {
       // Record failed attempt
-      db.prepare('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 0)').run(username, ipAddress);
+      await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 0)', username, ipAddress);
       logSecurityEvent(db, {
         eventType: 'failed_login',
         ipAddress,
@@ -114,7 +115,7 @@ export function createAuthRoutes(db: Database) {
 
     if (!valid) {
       // Record failed attempt
-      db.prepare('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 0)').run(username, ipAddress);
+      await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 0)', username, ipAddress);
       logSecurityEvent(db, {
         eventType: 'failed_login',
         userId: user.id as string,
@@ -127,7 +128,7 @@ export function createAuthRoutes(db: Database) {
     }
 
     // Record successful attempt
-    db.prepare('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)').run(username, ipAddress);
+    await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', username, ipAddress);
 
     const authUser = {
       id: user.id as string,
@@ -139,8 +140,8 @@ export function createAuthRoutes(db: Database) {
 
     // Store session
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    db.prepare('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, user.id as string, expiresAt);
-    db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id as string);
+    await db.run('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)', token, user.id as string, expiresAt);
+    await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', user.id as string);
 
     // Auto-accept any pending project invitations for this email
     acceptPendingInvitations(db, user.id as string, user.email as string);
@@ -167,13 +168,12 @@ export function createAuthRoutes(db: Database) {
 
     try {
       // Look up user by email field
-      const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as Record<string, unknown> | undefined;
+      const user = await db.get('SELECT * FROM users WHERE email = ?', email) as Record<string, unknown> | undefined;
       if (user) {
         const token = randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-        db.prepare(
-          'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)'
-        ).run(user.id as string, token, expiresAt);
+        await db.run('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)'
+        , user.id as string, token, expiresAt);
 
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         try {
@@ -193,9 +193,8 @@ export function createAuthRoutes(db: Database) {
   router.post('/auth/reset-password', validate(ResetPasswordSchema), async (req, res) => {
     const { token, newPassword } = req.body as { token: string; newPassword: string };
 
-    const record = db.prepare(
-      `SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')`
-    ).get(token) as Record<string, unknown> | undefined;
+    const record = await db.get(`SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')`
+    , token) as Record<string, unknown> | undefined;
 
     if (!record) {
       res.status(400).json({ error: 'Invalid or expired reset token' });
@@ -204,9 +203,9 @@ export function createAuthRoutes(db: Database) {
 
     try {
       const hash = await bcrypt.hash(newPassword, 10);
-      db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, record.user_id as string);
-      db.prepare('DELETE FROM user_sessions WHERE user_id = ?').run(record.user_id as string);
-      db.prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?').run(record.id as number);
+      await db.run('UPDATE users SET password_hash = ? WHERE id = ?', hash, record.user_id as string);
+      await db.run('DELETE FROM user_sessions WHERE user_id = ?', record.user_id as string);
+      await db.run('UPDATE password_reset_tokens SET used = 1 WHERE id = ?', record.id as number);
       res.json({ success: true });
     } catch (err) {
       console.error('[auth] reset-password error:', err);
@@ -215,36 +214,35 @@ export function createAuthRoutes(db: Database) {
   });
 
   // POST /api/auth/logout
-  router.post('/auth/logout', (req, res) => {
+  router.post('/auth/logout', async (req, res) => {
     // SEC-05: Accept cookie token or Authorization header
     const cookieToken = (req as any).cookies?.['openexpert_session'];
     const bearerToken = req.headers.authorization?.slice(7);
     const token = cookieToken || bearerToken;
-    if (token) db.prepare('DELETE FROM user_sessions WHERE token = ?').run(token);
+    if (token) await db.run('DELETE FROM user_sessions WHERE token = ?', token);
     // SEC-05: Clear the session cookie
     res.clearCookie('openexpert_session', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/' });
     res.json({ success: true });
   });
 
   // GET /api/auth/me
-  router.get('/auth/me', (req, res) => {
+  router.get('/auth/me', async (req, res) => {
     if (!IS_TEAM_MODE) {
       res.json({ id: 'solo', username: 'solo', role: 'admin', display_name: 'Solo User' });
       return;
     }
     const token = req.headers.authorization?.slice(7);
     if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
-    const session = db.prepare(
-      `SELECT u.id, u.username, u.role, u.display_name FROM user_sessions s
+    const session = await db.get(`SELECT u.id, u.username, u.role, u.display_name FROM user_sessions s
        JOIN users u ON s.user_id = u.id
        WHERE s.token = ? AND s.expires_at > datetime('now')`
-    ).get(token) as Record<string, unknown> | undefined;
+    , token) as Record<string, unknown> | undefined;
     if (!session) { res.status(401).json({ error: 'Session expired' }); return; }
     res.json(session);
   });
 
   // GET /api/auth/me/budget — get current user's budget status
-  router.get('/auth/me/budget', (req, res) => {
+  router.get('/auth/me/budget', async (req, res) => {
     if (!IS_TEAM_MODE) {
       res.json({ budget: null }); // No budget in solo mode
       return;
@@ -252,11 +250,11 @@ export function createAuthRoutes(db: Database) {
     const token = req.headers.authorization?.slice(7);
     if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
 
-    const session = db.prepare(
+    const session = await db.get(
       `SELECT u.id FROM user_sessions s
        JOIN users u ON s.user_id = u.id
        WHERE s.token = ? AND s.expires_at > datetime('now')`
-    ).get(token) as { id: string } | undefined;
+    , token) as { id: string } | undefined;
 
     if (!session) { res.status(401).json({ error: 'Session expired' }); return; }
 
@@ -272,7 +270,7 @@ export function createAuthRoutes(db: Database) {
 
   // GET /api/auth/google — redirect to Google consent screen
   // Optional: ?from=school — causes callback to redirect to /school after auth
-  router.get('/auth/google', (req, res) => {
+  router.get('/auth/google', async (req, res) => {
     if (!GOOGLE_CLIENT_ID) {
       res.status(501).json({ error: 'Google OAuth not configured' });
       return;
@@ -335,7 +333,7 @@ export function createAuthRoutes(db: Database) {
   // ─── GitHub OAuth ──────────────────────────────────────────────────────────
 
   // GET /api/auth/github — redirect to GitHub
-  router.get('/auth/github', (_req, res) => {
+  router.get('/auth/github', async (_req, res) => {
     if (!GITHUB_CLIENT_ID) {
       res.status(501).json({ error: 'GitHub OAuth not configured' });
       return;
@@ -516,7 +514,7 @@ export function createAuthRoutes(db: Database) {
 
   // GET /api/auth/exchange/:code — swap one-time code for JWT (C2 fix)
   // The code is placed in the redirect URL after OAuth; the JWT never touches the URL.
-  router.get('/auth/exchange/:code', (req, res) => {
+  router.get('/auth/exchange/:code', async (req, res) => {
     const entry = authCodeStore.get(req.params.code);
     if (!entry || entry.expiresAt < Date.now()) {
       authCodeStore.delete(req.params.code);
@@ -546,9 +544,9 @@ export function createAuthRoutes(db: Database) {
       });
 
       // Store pending secret (not active until confirmed)
-      db.prepare(`
+      await db.run(`
         INSERT OR REPLACE INTO mfa_pending (user_id, secret) VALUES (?, ?)
-      `).run(userId, secret.base32);
+      `, userId, secret.base32);
 
       const otpAuthUrl = secret.otpauth_url!;
       const qrDataUrl = await qrcode.default.toDataURL(otpAuthUrl);
@@ -573,7 +571,7 @@ export function createAuthRoutes(db: Database) {
     }
 
     try {
-      const pending = db.prepare('SELECT secret FROM mfa_pending WHERE user_id = ?').get(userId) as { secret: string } | undefined;
+      const pending = await db.get('SELECT secret FROM mfa_pending WHERE user_id = ?', userId) as { secret: string } | undefined;
       if (!pending) { res.status(400).json({ error: 'No pending MFA setup found — call /api/auth/mfa/enable first' }); return; }
 
       const speakeasy = await import('speakeasy');
@@ -587,8 +585,8 @@ export function createAuthRoutes(db: Database) {
       if (!verified) { res.status(400).json({ error: 'Invalid TOTP token — check your authenticator app and try again' }); return; }
 
       // Activate MFA
-      db.prepare('UPDATE users SET mfa_enabled = 1, mfa_secret = ? WHERE id = ?').run(pending.secret, userId);
-      db.prepare('DELETE FROM mfa_pending WHERE user_id = ?').run(userId);
+      await db.run('UPDATE users SET mfa_enabled = 1, mfa_secret = ? WHERE id = ?', pending.secret, userId);
+      await db.run('DELETE FROM mfa_pending WHERE user_id = ?', userId);
 
       res.json({ success: true, message: 'MFA is now active on your account' });
     } catch (err) {
@@ -610,7 +608,7 @@ export function createAuthRoutes(db: Database) {
     }
 
     try {
-      const user = db.prepare('SELECT mfa_enabled, mfa_secret FROM users WHERE id = ?').get(userId) as { mfa_enabled: number; mfa_secret: string | null } | undefined;
+      const user = await db.get('SELECT mfa_enabled, mfa_secret FROM users WHERE id = ?', userId) as { mfa_enabled: number; mfa_secret: string | null } | undefined;
       if (!user?.mfa_enabled || !user.mfa_secret) { res.status(400).json({ error: 'MFA is not enabled on this account' }); return; }
 
       const speakeasy = await import('speakeasy');
@@ -623,7 +621,7 @@ export function createAuthRoutes(db: Database) {
 
       if (!verified) { res.status(400).json({ error: 'Invalid TOTP token' }); return; }
 
-      db.prepare('UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE id = ?').run(userId);
+      await db.run('UPDATE users SET mfa_enabled = 0, mfa_secret = NULL WHERE id = ?', userId);
       res.json({ success: true, message: 'MFA has been disabled' });
     } catch (err) {
       console.error('[auth] MFA disable error:', err);
@@ -639,7 +637,7 @@ export function createAuthRoutes(db: Database) {
     if (!/^\d{6}$/.test(totpToken)) { res.status(400).json({ error: 'Token must be 6 digits' }); return; }
 
     try {
-      const user = db.prepare('SELECT mfa_secret FROM users WHERE id = ? AND mfa_enabled = 1').get(userId) as { mfa_secret: string } | undefined;
+      const user = await db.get('SELECT mfa_secret FROM users WHERE id = ? AND mfa_enabled = 1', userId) as { mfa_secret: string } | undefined;
       if (!user?.mfa_secret) { res.status(400).json({ error: 'MFA not enabled for this user' }); return; }
 
       const speakeasy = await import('speakeasy');
@@ -662,24 +660,24 @@ export function createAuthRoutes(db: Database) {
 
 // ─── OAuth helper ────────────────────────────────────────────────────────────
 
-function acceptPendingInvitations(db: Database, userId: string, email: string) {
+async function acceptPendingInvitations(db: Database, userId: string, email: string) {
   try {
-    const pending = db.prepare(`
+    const pending = await db.get(`
       SELECT * FROM project_invitations
       WHERE email = ? AND status = 'pending' AND expires_at > datetime('now')
-    `).all(email) as Array<{ id: string; project_id: string; role: string; invited_by: string }>;
+    `, email) as Array<{ id: string; project_id: string; role: string; invited_by: string }>;
 
     for (const inv of pending) {
       const memberId = randomUUID();
       try {
-        db.prepare(`
+        await db.run(`
           INSERT INTO project_members (id, project_id, user_id, role, added_by)
           VALUES (?, ?, ?, ?, ?)
-        `).run(memberId, inv.project_id, userId, inv.role, inv.invited_by);
+        `, memberId, inv.project_id, userId, inv.role, inv.invited_by);
       } catch {
         // Already a member — skip
       }
-      db.prepare("UPDATE project_invitations SET status = 'accepted' WHERE id = ?").run(inv.id);
+      await db.run("UPDATE project_invitations SET status = 'accepted' WHERE id = ?", inv.id);
     }
 
     if (pending.length > 0) {
@@ -691,7 +689,7 @@ function acceptPendingInvitations(db: Database, userId: string, email: string) {
 }
 
 async function findOrCreateOAuthUser(db: Database, email: string, name: string, _provider: string): Promise<string> {
-  let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as Record<string, unknown> | undefined;
+  let user = await db.get('SELECT * FROM users WHERE email = ?', email) as Record<string, unknown> | undefined;
   let isNewUser = false;
 
   if (!user) {
@@ -700,16 +698,15 @@ async function findOrCreateOAuthUser(db: Database, email: string, name: string, 
     const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
     let username = baseUsername;
     let attempt = 0;
-    while (db.prepare('SELECT id FROM users WHERE username = ?').get(username)) {
+    while (await db.get('SELECT id FROM users WHERE username = ?', username)) {
       attempt += 1;
       username = `${baseUsername}_${attempt}`;
     }
 
     const id = randomUUID();
-    db.prepare(
-      'INSERT INTO users (id, username, email, password_hash, role, display_name) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(id, username, email, '', 'analyst', name || username);
-    user = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as Record<string, unknown>;
+    await db.run('INSERT INTO users (id, username, email, password_hash, role, display_name) VALUES (?, ?, ?, ?, ?, ?)'
+    , id, username, email, '', 'analyst', name || username);
+    user = await db.get('SELECT * FROM users WHERE id = ?', id) as Record<string, unknown>;
   }
 
   // Auto-accept pending project invitations for this email
@@ -726,8 +723,8 @@ async function findOrCreateOAuthUser(db: Database, email: string, name: string, 
 
   // Store session in DB (consistent with existing login route)
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  db.prepare('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, authUser.id, expiresAt);
-  db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(authUser.id);
+  await db.run('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)', token, authUser.id, expiresAt);
+  await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', authUser.id);
 
   return token;
 }

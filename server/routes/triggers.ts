@@ -5,19 +5,20 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { createWebhookListener, type TriggerType } from '../services/webhook-listener.js';
 
-export function createTriggersRoutes(db: Database.Database): Router {
+export async function createTriggersRoutes(db: DatabaseAdapter): Router {
   const router = Router();
-  const listener = createWebhookListener(db);
+  const listener = await createWebhookListener(db);
 
   function getUserId(req: Request): string {
     return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
   }
 
   // ── List triggers ──────────────────────────────────────────────────────────
-  router.get('/triggers', (req: Request, res: Response) => {
+  router.get('/triggers', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const triggers = listener.listTriggers(userId);
@@ -37,7 +38,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
   });
 
   // ── Get trigger ────────────────────────────────────────────────────────────
-  router.get('/triggers/:id', (req: Request, res: Response) => {
+  router.get('/triggers/:id', async (req: Request, res: Response) => {
     try {
       const trigger = listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
@@ -53,7 +54,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
   });
 
   // ── Create trigger ─────────────────────────────────────────────────────────
-  router.post('/triggers', (req: Request, res: Response) => {
+  router.post('/triggers', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const {
@@ -109,7 +110,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
   });
 
   // ── Update trigger ─────────────────────────────────────────────────────────
-  router.put('/triggers/:id', (req: Request, res: Response) => {
+  router.put('/triggers/:id', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const trigger = listener.getTrigger(String(req.params.id));
@@ -141,7 +142,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
       updates.push("updated_at = datetime('now')");
       values.push(String(req.params.id));
 
-      db.prepare(`UPDATE webhook_triggers SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE webhook_triggers SET ${updates.join(', ')} WHERE id = ?`, ...values);
 
       const updated = listener.getTrigger(String(req.params.id))!;
       res.json({ trigger: { ...updated, auth_config: { ...updated.auth_config, secret: undefined } } });
@@ -152,7 +153,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
   });
 
   // ── Activate / pause trigger ───────────────────────────────────────────────
-  router.patch('/triggers/:id/status', (req: Request, res: Response) => {
+  router.patch('/triggers/:id/status', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const trigger = listener.getTrigger(String(req.params.id));
@@ -175,7 +176,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
   });
 
   // ── Delete trigger ─────────────────────────────────────────────────────────
-  router.delete('/triggers/:id', (req: Request, res: Response) => {
+  router.delete('/triggers/:id', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const trigger = listener.getTrigger(String(req.params.id));
@@ -193,7 +194,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
   });
 
   // ── Event log ──────────────────────────────────────────────────────────────
-  router.get('/triggers/:id/events', (req: Request, res: Response) => {
+  router.get('/triggers/:id/events', async (req: Request, res: Response) => {
     try {
       const trigger = listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
@@ -209,10 +210,9 @@ export function createTriggersRoutes(db: Database.Database): Router {
     }
   });
 
-  router.get('/triggers/:id/events/:event_id', (req: Request, res: Response) => {
+  router.get('/triggers/:id/events/:event_id', async (req: Request, res: Response) => {
     try {
-      const row = db.prepare('SELECT * FROM webhook_events WHERE id = ? AND trigger_id = ?')
-        .get(String(req.params.event_id), String(req.params.id)) as Record<string, unknown> | undefined;
+      const row = await db.get('SELECT * FROM webhook_events WHERE id = ? AND trigger_id = ?', String(req.params.event_id), String(req.params.id)) as Record<string, unknown> | undefined;
       if (!row) return res.status(404).json({ error: 'Event not found' });
       res.json({ event: row });
     } catch (err) {
@@ -234,7 +234,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
   });
 
   // ── Metrics (summary MUST be before /:id/metrics to avoid route shadowing) ──
-  router.get('/triggers/metrics/summary', (req: Request, res: Response) => {
+  router.get('/triggers/metrics/summary', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const triggers = listener.listTriggers(userId);
@@ -252,7 +252,7 @@ export function createTriggersRoutes(db: Database.Database): Router {
     }
   });
 
-  router.get('/triggers/:id/metrics', (req: Request, res: Response) => {
+  router.get('/triggers/:id/metrics', async (req: Request, res: Response) => {
     try {
       const trigger = listener.getTrigger(String(req.params.id));
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });

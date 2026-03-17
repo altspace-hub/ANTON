@@ -5,24 +5,24 @@
  */
 
 import { Router } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createDatasetStore } from '../services/dataset-store.js';
 import { requireAuth } from '../middleware/auth.js';
 
 // Import from data routes to access in-memory cache
 import { getDatasetCache } from './data.js';
 
-export function createDatasetsRoutes(db: Database) {
+export async function createDatasetsRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const store = createDatasetStore(db);
+  const store = await createDatasetStore(db);
 
   // GET /api/datasets — list accessible datasets
-  router.get('/datasets', requireAuth, (req, res) => {
+  router.get('/datasets', requireAuth, async (req, res) => {
     try {
       const userId = req.user!.id;
       const sessionId = req.query.sessionId as string | undefined;
 
-      const datasets = store.list(userId, sessionId);
+      const datasets = await store.list(userId, sessionId);
 
       res.json(datasets);
     } catch (err) {
@@ -32,9 +32,9 @@ export function createDatasetsRoutes(db: Database) {
   });
 
   // GET /api/datasets/:id — get dataset metadata
-  router.get('/datasets/:id', requireAuth, (req, res) => {
+  router.get('/datasets/:id', requireAuth, async (req, res) => {
     try {
-      const dataset = store.get(req.params.id as string);
+      const dataset = await store.get(req.params.id as string);
 
       if (!dataset) {
         res.status(404).json({ error: 'Dataset not found' });
@@ -55,7 +55,7 @@ export function createDatasetsRoutes(db: Database) {
   });
 
   // POST /api/datasets — save a dataset from memory cache
-  router.post('/datasets', requireAuth, (req, res) => {
+  router.post('/datasets', requireAuth, async (req, res) => {
     try {
       const {
         datasetId,
@@ -96,7 +96,7 @@ export function createDatasetsRoutes(db: Database) {
       }
 
       // Save to persistent storage
-      const saved = store.save(dataset, {
+      const saved = await store.save(dataset, {
         name,
         description,
         sessionId,
@@ -114,9 +114,9 @@ export function createDatasetsRoutes(db: Database) {
   });
 
   // GET /api/datasets/:id/load — load dataset into memory cache
-  router.get('/datasets/:id/load', requireAuth, (req, res) => {
+  router.get('/datasets/:id/load', requireAuth, async (req, res) => {
     try {
-      const meta = store.get(req.params.id as string);
+      const meta = await store.get(req.params.id as string);
 
       if (!meta) {
         res.status(404).json({ error: 'Dataset not found' });
@@ -130,7 +130,7 @@ export function createDatasetsRoutes(db: Database) {
       }
 
       // Load dataset into memory
-      const dataset = store.load(req.params.id as string);
+      const dataset = await store.load(req.params.id as string);
 
       if (!dataset) {
         res.status(404).json({ error: 'Dataset expired or could not be loaded' });
@@ -156,9 +156,9 @@ export function createDatasetsRoutes(db: Database) {
   });
 
   // DELETE /api/datasets/:id — delete a dataset
-  router.delete('/datasets/:id', requireAuth, (req, res) => {
+  router.delete('/datasets/:id', requireAuth, async (req, res) => {
     try {
-      const meta = store.get(req.params.id as string);
+      const meta = await store.get(req.params.id as string);
 
       if (!meta) {
         res.status(404).json({ error: 'Dataset not found' });
@@ -171,7 +171,7 @@ export function createDatasetsRoutes(db: Database) {
         return;
       }
 
-      const deleted = store.delete(req.params.id as string);
+      const deleted = await store.delete(req.params.id as string);
 
       if (deleted) {
         res.json({ success: true });
@@ -185,9 +185,9 @@ export function createDatasetsRoutes(db: Database) {
   });
 
   // PATCH /api/datasets/:id — update dataset metadata
-  router.patch('/datasets/:id', requireAuth, (req, res) => {
+  router.patch('/datasets/:id', requireAuth, async (req, res) => {
     try {
-      const meta = store.get(req.params.id as string);
+      const meta = await store.get(req.params.id as string);
 
       if (!meta) {
         res.status(404).json({ error: 'Dataset not found' });
@@ -205,10 +205,10 @@ export function createDatasetsRoutes(db: Database) {
         ttlDays?: number;
       };
 
-      const updated = store.update(req.params.id as string, { description, ttlDays });
+      const updated = await store.update(req.params.id as string, { description, ttlDays });
 
       if (updated) {
-        res.json(store.get(req.params.id as string));
+        res.json(await store.get(req.params.id as string));
       } else {
         res.status(400).json({ error: 'No updates provided' });
       }
@@ -219,9 +219,9 @@ export function createDatasetsRoutes(db: Database) {
   });
 
   // POST /api/datasets/cleanup — manually trigger cleanup (admin only)
-  router.post('/datasets/cleanup', requireAuth, (req, res) => {
+  router.post('/datasets/cleanup', requireAuth, async (req, res) => {
     try {
-      const deleted = store.cleanupExpired();
+      const deleted = await store.cleanupExpired();
       res.json({ deleted });
     } catch (err) {
       console.error('[datasets] cleanup error:', err);

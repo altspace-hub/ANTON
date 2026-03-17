@@ -4,7 +4,8 @@
  * Handles large frameworks (86 AMLR articles) by splitting into batches of 12-15.
  */
 
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -600,30 +601,30 @@ ${capabilityView}`,
 
 type AssessmentRow = { id: string; frameworks: string; scope_config: string; context_config: string; article_scores: string; capability_view: string | null; status: string };
 
-export function createGapAssessmentEngine(db: Database.Database) {
-  function getAssessment(id: string): AssessmentRow | undefined {
-    return db.prepare('SELECT * FROM gap_assessments WHERE id = ?').get(id) as AssessmentRow | undefined;
+export async function createGapAssessmentEngine(db: DatabaseAdapter) {
+  async function getAssessment(id: string): AssessmentRow | undefined {
+    return await db.get('SELECT * FROM gap_assessments WHERE id = ?', id) as AssessmentRow | undefined;
   }
 
-  function getAssessmentForUser(id: string, userId: string): AssessmentRow | undefined {
-    return db.prepare('SELECT * FROM gap_assessments WHERE id = ? AND user_id = ?').get(id, userId) as AssessmentRow | undefined;
+  async function getAssessmentForUser(id: string, userId: string): AssessmentRow | undefined {
+    return await db.get('SELECT * FROM gap_assessments WHERE id = ? AND user_id = ?', id, userId) as AssessmentRow | undefined;
   }
 
-  function saveFindings(assessmentId: string, framework: string, findings: ArticleFinding[]) {
-    const insert = db.prepare(
+  async function saveFindings(assessmentId: string, framework: string, findings: ArticleFinding[]) {
+
+    const insertMany = db.transaction(async (items: ArticleFinding[]) => {
+      for (const f of items) {
+        await db.run(
       `INSERT OR REPLACE INTO gap_findings
        (assessment_id, framework, article_id, article_title, requirement, current_state, score, numeric_score, priority, notes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    );
-    const insertMany = db.transaction((items: ArticleFinding[]) => {
-      for (const f of items) {
-        insert.run(assessmentId, framework, f.articleId, f.articleTitle, f.requirement, f.currentState, f.score, f.numericScore ?? 0, f.priority, f.notes);
+    , assessmentId, framework, f.articleId, f.articleTitle, f.requirement, f.currentState, f.score, f.numericScore ?? 0, f.priority, f.notes);
       }
     });
     insertMany(findings);
   }
 
-  function updateArticleScores(assessmentId: string, framework: string, findings: ArticleFinding[]) {
+  async function updateArticleScores(assessmentId: string, framework: string, findings: ArticleFinding[]) {
     const assessment = getAssessment(assessmentId);
     if (!assessment) return;
 
@@ -634,8 +635,7 @@ export function createGapAssessmentEngine(db: Database.Database) {
     for (const f of findings) articleMap.set(f.articleId, f);
     existing[framework] = Array.from(articleMap.values());
 
-    db.prepare('UPDATE gap_assessments SET article_scores = ?, updated_at = ? WHERE id = ?')
-      .run(JSON.stringify(existing), new Date().toISOString(), assessmentId);
+    await db.run('UPDATE gap_assessments SET article_scores = ?, updated_at = ? WHERE id = ?', JSON.stringify(existing), new Date().toISOString(), assessmentId);
   }
 
   return { getAssessment, getAssessmentForUser, saveFindings, updateArticleScores, listAvailableFrameworks, getFramework };

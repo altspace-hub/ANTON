@@ -16,7 +16,8 @@
  */
 
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type { PlatformSignal } from './orchestrator-engine.js';
 
 // ── Meridian Bank synthetic signal library ─────────────────────────────────────
@@ -154,27 +155,26 @@ export interface DemoState {
 }
 
 /** Return the demo state from the DB config field */
-export function getDemoState(db: Database.Database): DemoState {
+export async function getDemoState(db: DatabaseAdapter): DemoState {
   try {
-    const row = db.prepare("SELECT demo_state FROM orchestrator_config WHERE id = 'default'").get() as
+    const row = await db.get("SELECT demo_state FROM orchestrator_config WHERE id = 'default'") as
       { demo_state: string | null } | undefined;
     if (row?.demo_state) return JSON.parse(row.demo_state) as DemoState;
   } catch { /* column may not exist yet */ }
   return { mode: 'off', persona: 'meridian', activated_at: null, signals_injected: 0, simulation_day: null };
 }
 
-function saveDemoState(db: Database.Database, state: DemoState): void {
+async function saveDemoState(db: DatabaseAdapter, state: DemoState): void {
   try {
-    db.prepare("UPDATE orchestrator_config SET demo_state = ?, updated_at = datetime('now') WHERE id = 'default'")
-      .run(JSON.stringify(state));
+    await db.run("UPDATE orchestrator_config SET demo_state = ?, updated_at = datetime('now') WHERE id = 'default'", JSON.stringify(state));
   } catch { /* column may not exist */ }
 }
 
 /** Activate Demo Mode — inject Meridian Bank signals as live platform data */
-export function activateDemoMode(db: Database.Database, mode: DemoState['mode'] = 'demo'): {
+export async function activateDemoMode(db: DatabaseAdapter, mode: DemoState['mode'] = 'demo'): Promise<{
   signals_injected: number;
   briefing_id_hint: string;
-} {
+}> {
   const now = new Date();
   let signalsInjected = 0;
   const briefingHintId = randomUUID();
@@ -194,11 +194,11 @@ export function activateDemoMode(db: Database.Database, mode: DemoState['mode'] 
     if (!sig) continue;
     if (sig.source === 'radar') {
       try {
-        db.prepare(`
+        await db.run(`
           INSERT OR IGNORE INTO radar_items
             (id, title, urgency_score, relevance_score, item_type, status, summary, created_at, published_date)
           VALUES (?, ?, ?, ?, 'regulatory_update', 'new', ?, datetime('now'), date('now'))
-        `).run(
+        `, 
           `demo-${sig.scenario_tag}-${randomUUID().substring(0, 8)}`,
           `[DEMO] ${sig.summary.substring(0, 120)}`,
           sig.urgency,
@@ -212,11 +212,11 @@ export function activateDemoMode(db: Database.Database, mode: DemoState['mode'] 
     if (sig.source === 'deadline') {
       try {
         const dueOffset = sig.urgency > 0.85 ? -45 : sig.urgency > 0.7 ? 8 : 21;
-        db.prepare(`
+        await db.run(`
           INSERT OR IGNORE INTO deadlines
             (id, title, due_date, category, priority, status, created_at)
           VALUES (?, ?, date('now', ?), 'compliance', 'high', 'in_progress', datetime('now'))
-        `).run(
+        `, 
           `demo-${sig.scenario_tag}-${randomUUID().substring(0, 8)}`,
           `[DEMO] ${sig.summary.substring(0, 100)}`,
           `${dueOffset} days`,
@@ -239,22 +239,22 @@ export function activateDemoMode(db: Database.Database, mode: DemoState['mode'] 
 }
 
 /** Deactivate Demo Mode — remove all injected signals and reset state */
-export function deactivateDemoMode(db: Database.Database): { cleaned: number } {
+export async function deactivateDemoMode(db: DatabaseAdapter): { cleaned: number } {
   let cleaned = 0;
   // Use a transaction so cleanup is atomic — partial cleanup is worse than no cleanup
   try {
-    db.exec('BEGIN TRANSACTION');
+    await db.exec('BEGIN TRANSACTION');
     try {
-      const r1 = db.prepare("DELETE FROM radar_items WHERE id LIKE 'demo-%'").run();
+
       cleaned += r1.changes;
     } catch { /* table may not exist */ }
     try {
-      const r2 = db.prepare("DELETE FROM deadlines WHERE id LIKE 'demo-%'").run();
+      const r2 = await db.run("DELETE FROM deadlines WHERE id LIKE 'demo-%'");
       cleaned += r2.changes;
     } catch { /* table may not exist */ }
-    db.exec('COMMIT');
+    await db.exec('COMMIT');
   } catch (e) {
-    try { db.exec('ROLLBACK'); } catch { /* ignore */ }
+    try { await db.exec('ROLLBACK'); } catch { /* ignore */ }
     console.error('[orchestrator-demo] Deactivation cleanup failed — rolled back:', e);
   }
 
@@ -277,7 +277,7 @@ When generating briefings and proposals, use this context to make recommendation
 }
 
 /** Advance simulation by one day (Accelerated Mode) */
-export function advanceSimulationDay(db: Database.Database): { day: number; done: boolean } {
+export function advanceSimulationDay(db: DatabaseAdapter): { day: number; done: boolean } {
   const state = getDemoState(db);
   if (state.mode !== 'simulation' && state.mode !== 'accelerated') {
     return { day: 0, done: true };

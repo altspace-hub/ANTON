@@ -1,0 +1,346 @@
+// ── PostgreSQL Adapter ────────────────────────────────────────────────────────
+// Wraps pg.Pool behind the async DatabaseAdapter interface.
+// Includes a 3-stage SQL auto-translation pipeline for common SQLite → PG patterns.
+
+import pg from 'pg';
+import type { DatabaseAdapter, RunResult } from '../database.js';
+
+const { Pool } = pg;
+
+// ── SQL Translation Pipeline ─────────────────────────────────────────────────
+
+/**
+ * Stage 1: Translate SQLite-specific SQL syntax to PostgreSQL equivalents.
+ * Handles the ~90% of queries that follow predictable patterns.
+ */
+export function translateSql(sql: string): string {
+  let out = sql;
+
+  // datetime('now') or datetime("now") → NOW()
+  out = out.replace(/datetime\(\s*['"]now['"]\s*\)/gi, 'NOW()');
+
+  // datetime('now', '-N days') or datetime("now", '-N days') → NOW() - INTERVAL 'N days'
+  out = out.replace(
+    /datetime\(\s*['"]now['"]\s*,\s*'(-?\d+)\s+(day|hour|minute|second|month|year)s?'\s*\)/gi,
+    (_m, n, unit) => `NOW() - INTERVAL '${Math.abs(Number(n))} ${unit}s'`,
+  );
+
+  // CURRENT_TIMESTAMP (already valid in PG, but ensure no parentheses issues)
+  // No change needed — CURRENT_TIMESTAMP is valid in both.
+
+  // INSERT OR IGNORE INTO → INSERT INTO ... ON CONFLICT DO NOTHING
+  out = out.replace(/INSERT\s+OR\s+IGNORE\s+INTO/gi, 'INSERT INTO');
+  // We'll append ON CONFLICT DO NOTHING at the end of INSERT statements that had OR IGNORE
+  if (/INSERT\s+INTO/i.test(sql) && /OR\s+IGNORE/i.test(sql)) {
+    // Only add if not already present
+    if (!/ON\s+CONFLICT/i.test(out)) {
+      // Insert before any RETURNING clause or at end
+      const returningMatch = out.match(/\s+RETURNING\s+/i);
+      if (returningMatch && returningMatch.index !== undefined) {
+        out = out.slice(0, returningMatch.index) + ' ON CONFLICT DO NOTHING' + out.slice(returningMatch.index);
+      } else {
+        out = out.trimEnd() + ' ON CONFLICT DO NOTHING';
+      }
+    }
+  }
+
+  // INSERT OR REPLACE INTO table (col1, col2, ...) VALUES (...)
+  // → INSERT INTO table (col1, col2, ...) VALUES (...) ON CONFLICT (col1) DO UPDATE SET col2=EXCLUDED.col2, ...
+  // Assumes first listed column is the primary/unique key.
+  const replaceMatch = out.match(/INSERT\s+OR\s+REPLACE\s+INTO\s+(\w+)\s*\(([^)]+)\)/i);
+  if (replaceMatch) {
+    const cols = replaceMatch[2].split(',').map(c => c.trim());
+    const conflictCol = cols[0];
+    const updateCols = cols.slice(1);
+    const updateSet = updateCols.map(c => `${c} = EXCLUDED.${c}`).join(', ');
+    out = out.replace(/INSERT\s+OR\s+REPLACE\s+INTO/i, 'INSERT INTO');
+    // Append ON CONFLICT before any trailing semicolon/RETURNING
+    const returningIdx = out.search(/\s+RETURNING\s+/i);
+    const onConflict = ` ON CONFLICT (${conflictCol}) DO UPDATE SET ${updateSet}`;
+    if (returningIdx !== -1) {
+      out = out.slice(0, returningIdx) + onConflict + out.slice(returningIdx);
+    } else {
+      out = out.trimEnd() + onConflict;
+    }
+  }
+
+  // strftime('%Y-%m-%d', column) → TO_CHAR(column, 'YYYY-MM-DD')
+  out = out.replace(
+    /strftime\(\s*'%Y-%m-%d'\s*,\s*([^)]+)\)/gi,
+    (_m, col) => `TO_CHAR(${col.trim()}, 'YYYY-MM-DD')`,
+  );
+
+  // strftime('%Y-%m', column) → TO_CHAR(column, 'YYYY-MM')
+  out = out.replace(
+    /strftime\(\s*'%Y-%m'\s*,\s*([^)]+)\)/gi,
+    (_m, col) => `TO_CHAR(${col.trim()}, 'YYYY-MM')`,
+  );
+
+  // strftime('%Y', column) → TO_CHAR(column, 'YYYY')
+  out = out.replace(
+    /strftime\(\s*'%Y'\s*,\s*([^)]+)\)/gi,
+    (_m, col) => `TO_CHAR(${col.trim()}, 'YYYY')`,
+  );
+
+  // strftime('%Y-%W', column) → TO_CHAR(column, 'IYYY-IW')
+  out = out.replace(
+    /strftime\(\s*'%Y-%W'\s*,\s*([^)]+)\)/gi,
+    (_m, col) => `TO_CHAR(${col.trim()}, 'IYYY-IW')`,
+  );
+
+  // strftime('%H', column) → TO_CHAR(column, 'HH24')
+  out = out.replace(
+    /strftime\(\s*'%H'\s*,\s*([^)]+)\)/gi,
+    (_m, col) => `TO_CHAR(${col.trim()}, 'HH24')`,
+  );
+
+  // strftime('%w', column) → EXTRACT(DOW FROM column)
+  out = out.replace(
+    /strftime\(\s*'%w'\s*,\s*([^)]+)\)/gi,
+    (_m, col) => `EXTRACT(DOW FROM ${col.trim()})`,
+  );
+
+  // json_extract(col, '$.key') → col->>'key'
+  out = out.replace(
+    /json_extract\(\s*([^,]+)\s*,\s*'\$\.([^']+)'\s*\)/gi,
+    (_m, col, key) => `${col.trim()}->>'${key}'`,
+  );
+
+  // json_group_array(...) → json_agg(...)
+  out = out.replace(/json_group_array\(/gi, 'json_agg(');
+
+  // json_group_object(key, value) → json_object_agg(key, value)
+  out = out.replace(/json_group_object\(/gi, 'json_object_agg(');
+
+  // group_concat(DISTINCT col, sep) → STRING_AGG(DISTINCT col, sep)
+  // group_concat(DISTINCT col) → STRING_AGG(DISTINCT col, ',')
+  out = out.replace(
+    /group_concat\(\s*DISTINCT\s+([^,)]+)\s*,\s*([^)]+)\s*\)/gi,
+    (_m, col, sep) => `STRING_AGG(DISTINCT ${col.trim()}, ${sep.trim()})`,
+  );
+  out = out.replace(
+    /group_concat\(\s*DISTINCT\s+([^)]+)\s*\)/gi,
+    (_m, col) => `STRING_AGG(DISTINCT ${col.trim()}, ',')`,
+  );
+  // group_concat(col, sep) → STRING_AGG(col, sep)
+  // group_concat(col) → STRING_AGG(col, ',')
+  out = out.replace(
+    /group_concat\(\s*([^,)]+)\s*,\s*([^)]+)\s*\)/gi,
+    (_m, col, sep) => `STRING_AGG(${col.trim()}, ${sep.trim()})`,
+  );
+  out = out.replace(
+    /group_concat\(\s*([^)]+)\s*\)/gi,
+    (_m, col) => `STRING_AGG(${col.trim()}, ',')`,
+  );
+
+  // AUTOINCREMENT → (handled in schema, but strip from runtime DDL if present)
+  out = out.replace(/\bAUTOINCREMENT\b/gi, '');
+
+  // INTEGER PRIMARY KEY AUTOINCREMENT → SERIAL PRIMARY KEY (for DDL only)
+  // This is handled in schema.postgresql.sql, not here.
+
+  // DATETIME type → TIMESTAMPTZ (for inline DDL in routes)
+  out = out.replace(/\bDATETIME\b/gi, 'TIMESTAMPTZ');
+
+  // REAL type → DOUBLE PRECISION
+  out = out.replace(/\bREAL\b/gi, 'DOUBLE PRECISION');
+
+  // IFNULL → COALESCE (IFNULL is not standard SQL in PG)
+  out = out.replace(/\bIFNULL\s*\(/gi, 'COALESCE(');
+
+  // julianday(expr) → EXTRACT(EPOCH FROM (expr)::timestamptz) / 86400.0
+  // julianday('now') → EXTRACT(EPOCH FROM NOW()) / 86400.0
+  out = out.replace(
+    /julianday\(\s*'now'\s*\)/gi,
+    '(EXTRACT(EPOCH FROM NOW()) / 86400.0)',
+  );
+  out = out.replace(
+    /julianday\(\s*([^)]+)\s*\)/gi,
+    (_m, col) => `(EXTRACT(EPOCH FROM (${col.trim()})::timestamptz) / 86400.0)`,
+  );
+
+  // typeof(x) = 'text' → (not directly translatable, rare in queries)
+  // Leave as-is — handled case-by-case if it appears.
+
+  // GLOB → not used in this codebase (LIKE is used instead)
+
+  // Boolean: SQLite uses 0/1, PG also supports 0/1 for INTEGER columns, so no change needed.
+
+  return out;
+}
+
+/**
+ * Stage 2: Convert positional placeholders from ? to $1, $2, $3, ...
+ */
+export function convertPlaceholders(sql: string): string {
+  let idx = 0;
+  return sql.replace(/\?/g, () => `$${++idx}`);
+}
+
+// ── Adapter Implementation ───────────────────────────────────────────────────
+
+export interface PostgresAdapterOptions {
+  connectionString: string;
+  maxConnections?: number;
+  idleTimeoutMs?: number;
+  connectionTimeoutMs?: number;
+}
+
+export class PostgresAdapter implements DatabaseAdapter {
+  readonly dialect = 'postgresql' as const;
+  private pool: pg.Pool;
+
+  constructor(opts: PostgresAdapterOptions) {
+    this.pool = new Pool({
+      connectionString: opts.connectionString,
+      max: opts.maxConnections ?? parseInt(process.env.PG_POOL_MAX || '20', 10),
+      idleTimeoutMillis: opts.idleTimeoutMs ?? parseInt(process.env.PG_POOL_IDLE_TIMEOUT || '30000', 10),
+      connectionTimeoutMillis: opts.connectionTimeoutMs ?? parseInt(process.env.PG_CONNECTION_TIMEOUT || '5000', 10),
+    });
+  }
+
+  /** Prepare SQL: translate + convert placeholders */
+  private prepareSql(sql: string): string {
+    return convertPlaceholders(translateSql(sql));
+  }
+
+  async get<T = Record<string, unknown>>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+    const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    const pgSql = this.prepareSql(sql);
+    const result = await this.pool.query(pgSql, flat as unknown[]);
+    return (result.rows[0] as T) ?? undefined;
+  }
+
+  async all<T = Record<string, unknown>>(sql: string, ...params: unknown[]): Promise<T[]> {
+    const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    const pgSql = this.prepareSql(sql);
+    const result = await this.pool.query(pgSql, flat as unknown[]);
+    return result.rows as T[];
+  }
+
+  async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+    const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    let pgSql = this.prepareSql(sql);
+
+    // Auto-add RETURNING * for INSERT statements that don't already have it
+    // so we can extract lastInsertRowid
+    const isInsert = /^\s*INSERT\s/i.test(pgSql);
+    const hasReturning = /\bRETURNING\b/i.test(pgSql);
+    if (isInsert && !hasReturning) {
+      pgSql = pgSql.trimEnd().replace(/;?\s*$/, '') + ' RETURNING *';
+    }
+
+    const result = await this.pool.query(pgSql, flat as unknown[]);
+
+    let lastInsertRowid: number | bigint = 0;
+    if (isInsert && result.rows.length > 0) {
+      const row = result.rows[0] as Record<string, unknown>;
+      // Try common PK column names
+      lastInsertRowid = (row.id as number | bigint) ?? 0;
+    }
+
+    return {
+      changes: result.rowCount ?? 0,
+      lastInsertRowid,
+    };
+  }
+
+  async exec(sql: string): Promise<void> {
+    // exec() runs raw SQL — no placeholder conversion, but still translate syntax
+    const pgSql = translateSql(sql);
+    await this.pool.query(pgSql);
+  }
+
+  async transaction<T>(fn: (db: DatabaseAdapter) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const txAdapter = new PgClientAdapter(client);
+      const result = await fn(txAdapter);
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.pool.end();
+  }
+}
+
+// ── Transaction-scoped adapter (uses a single pg.PoolClient) ─────────────────
+
+class PgClientAdapter implements DatabaseAdapter {
+  readonly dialect = 'postgresql' as const;
+  private client: pg.PoolClient;
+
+  constructor(client: pg.PoolClient) {
+    this.client = client;
+  }
+
+  private prepareSql(sql: string): string {
+    return convertPlaceholders(translateSql(sql));
+  }
+
+  async get<T = Record<string, unknown>>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+    const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    const result = await this.client.query(this.prepareSql(sql), flat as unknown[]);
+    return (result.rows[0] as T) ?? undefined;
+  }
+
+  async all<T = Record<string, unknown>>(sql: string, ...params: unknown[]): Promise<T[]> {
+    const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    const result = await this.client.query(this.prepareSql(sql), flat as unknown[]);
+    return result.rows as T[];
+  }
+
+  async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+    const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+    let pgSql = this.prepareSql(sql);
+
+    const isInsert = /^\s*INSERT\s/i.test(pgSql);
+    const hasReturning = /\bRETURNING\b/i.test(pgSql);
+    if (isInsert && !hasReturning) {
+      pgSql = pgSql.trimEnd().replace(/;?\s*$/, '') + ' RETURNING *';
+    }
+
+    const result = await this.client.query(pgSql, flat as unknown[]);
+
+    let lastInsertRowid: number | bigint = 0;
+    if (isInsert && result.rows.length > 0) {
+      const row = result.rows[0] as Record<string, unknown>;
+      lastInsertRowid = (row.id as number | bigint) ?? 0;
+    }
+
+    return {
+      changes: result.rowCount ?? 0,
+      lastInsertRowid,
+    };
+  }
+
+  async exec(sql: string): Promise<void> {
+    await this.client.query(translateSql(sql));
+  }
+
+  async transaction<T>(fn: (db: DatabaseAdapter) => Promise<T>): Promise<T> {
+    // Nested transactions use SAVEPOINTs
+    const sp = `sp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await this.client.query(`SAVEPOINT ${sp}`);
+    try {
+      const result = await fn(this);
+      await this.client.query(`RELEASE SAVEPOINT ${sp}`);
+      return result;
+    } catch (err) {
+      await this.client.query(`ROLLBACK TO SAVEPOINT ${sp}`);
+      throw err;
+    }
+  }
+
+  async close(): Promise<void> {
+    // No-op — client is released by the parent transaction
+  }
+}

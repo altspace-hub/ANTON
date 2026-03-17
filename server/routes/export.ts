@@ -2,7 +2,8 @@ import { Router } from 'express';
 import path from 'path';
 import fs from 'fs-extra';
 import crypto from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 // PERF-04: Heavy export libraries (docx, exceljs, puppeteer) are loaded lazily on first use
 // to improve server startup time. Dynamic imports are cached by Node's module system after first call.
 let _generateDocx: typeof import('../services/export-docx.js').generateDocx | undefined;
@@ -47,7 +48,7 @@ function getUserId(req: unknown): string {
 }
 
 // Factory function — accepts the shared db instance from server/index.ts
-export function createExportRouter(db: Database.Database): Router {
+export async function createExportRouter(db: DatabaseAdapter): Router {
   const router = Router();
 
   // POST /api/export — generate file for download
@@ -81,7 +82,7 @@ export function createExportRouter(db: Database.Database): Router {
           const contentHash = crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
 
           // Ensure table exists (idempotent)
-          db.exec(`CREATE TABLE IF NOT EXISTS session_exports (
+          await db.exec(`CREATE TABLE IF NOT EXISTS session_exports (
             id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
             session_id TEXT NOT NULL, module_id TEXT, format TEXT NOT NULL,
             version INTEGER NOT NULL DEFAULT 1, content_hash TEXT NOT NULL,
@@ -89,17 +90,17 @@ export function createExportRouter(db: Database.Database): Router {
           )`);
 
           // Look up prior exports for this session
-          const priorExports = db.prepare(
+          const priorExports = await db.all(
             `SELECT version, exported_at FROM session_exports WHERE session_id = ? ORDER BY version DESC LIMIT 5`
-          ).all(sessionId) as Array<{ version: number; exported_at: string }>;
+          , sessionId) as Array<{ version: number; exported_at: string }>;
 
           const newVersion = priorExports.length > 0 ? priorExports[0].version + 1 : 1;
           const isRevision = priorExports.length > 0;
 
           // Insert export record
-          db.prepare(
+          await db.run(
             `INSERT INTO session_exports (session_id, module_id, format, version, content_hash) VALUES (?, ?, ?, ?, ?)`
-          ).run(sessionId, moduleId ?? null, format, newVersion, contentHash);
+          , sessionId, moduleId ?? null, format, newVersion, contentHash);
 
           // Inject change log table into exported content
           const versionLabel = `v${newVersion}.0`;
@@ -118,7 +119,7 @@ export function createExportRouter(db: Database.Database): Router {
       // Load brand config from user profile
       let brandConfig = null;
       try {
-        const profile = db.prepare('SELECT brand_config FROM user_profiles WHERE id = ?').get('default') as { brand_config: string | null } | undefined;
+        const profile = await db.get('SELECT brand_config FROM user_profiles WHERE user_id = ?', getUserId(req)) as { brand_config: string } | undefined;
         if (profile?.brand_config) {
           brandConfig = JSON.parse(profile.brand_config);
         }
@@ -222,7 +223,7 @@ export function createExportRouter(db: Database.Database): Router {
       // templateId, content, format validated by ExportWithTemplateSchema
 
       // Look up the template record from the shared db
-      const tpl = db.prepare('SELECT * FROM brand_templates WHERE id = ?').get(templateId) as
+      const tpl = await db.get('SELECT * FROM brand_templates WHERE id = ?', templateId) as
         | { id: string; name: string; type: string; file_path: string }
         | undefined;
 
@@ -272,7 +273,7 @@ export function createExportRouter(db: Database.Database): Router {
       const userId = getUserId(req);
 
       // Fetch session row (with ownership check)
-      const session = db.prepare('SELECT id, module_id, title, config, created_at FROM sessions WHERE id = ? AND user_id = ?').get(sessionId, userId) as
+      const session = await db.get('SELECT id, module_id, title, config, created_at FROM sessions WHERE id = ? AND user_id = ?', sessionId, userId) as
         | { id: string; module_id: string | null; title: string | null; config: string | null; created_at: string }
         | undefined;
 
@@ -289,19 +290,19 @@ export function createExportRouter(db: Database.Database): Router {
       } catch { /* ignore */ }
 
       // Fetch latest quality score for this session
-      const qualityRow = db.prepare(
+      const qualityRow = await db.get(
         `SELECT score_overall, score_completeness, score_accuracy, score_structure, score_actionability, score_citations, scored_at
          FROM quality_scores WHERE session_id = ? ORDER BY scored_at DESC LIMIT 1`
-      ).get(sessionId) as {
+      , sessionId) as {
         score_overall: number; score_completeness: number | null; score_accuracy: number | null;
         score_structure: number | null; score_actionability: number | null; score_citations: number | null;
         scored_at: string;
       } | undefined;
 
       // Fetch user feedback for this session
-      const feedbackRows = db.prepare(
-        `SELECT rating, comment FROM output_feedback WHERE session_id = ? ORDER BY created_at DESC LIMIT 5`
-      ).all(sessionId) as Array<{ rating: number; comment: string | null }>;
+      const feedbackRows = await db.all(
+        `SELECT rating, comment FROM session_feedback WHERE session_id = ? ORDER BY created_at DESC LIMIT 10`
+      , sessionId) as Array<{ rating: number; comment: string | null }>;
 
       const avgRating = feedbackRows.length > 0
         ? (feedbackRows.reduce((s, r) => s + r.rating, 0) / feedbackRows.length).toFixed(1)

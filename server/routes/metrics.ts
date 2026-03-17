@@ -11,7 +11,8 @@
  */
 
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { getActiveStreams } from './health.js';
 
 // ── In-process counters (reset on restart) ────────────────────
@@ -35,10 +36,10 @@ function counter(name: string, help: string, value: number): string {
   return `# HELP ${name} ${help}\n# TYPE ${name} counter\n${name}_total ${value}\n`;
 }
 
-export function createMetricsRouter(db: Database.Database) {
+export async function createMetricsRouter(db: DatabaseAdapter) {
   const router = Router();
 
-  router.get('/metrics', (req, res) => {
+  router.get('/metrics', async (req, res) => {
     // Require explicit opt-in in non-local environments to avoid accidental exposure
     const enabled = process.env.METRICS_ENABLED === 'true' ||
       req.socket.remoteAddress === '127.0.0.1' ||
@@ -53,11 +54,11 @@ export function createMetricsRouter(db: Database.Database) {
     let dbQueueDepth = 0;
     let auditLogTotal = 0;
     try {
-      const q = db.prepare("SELECT COUNT(*) as c FROM workflow_executions WHERE status IN ('pending','running')").get() as { c: number } | undefined;
+      const q = await db.get("SELECT COUNT(*) as c FROM workflow_executions WHERE status IN ('pending','running')") as { c: number } | undefined;
       dbQueueDepth = q?.c ?? 0;
     } catch { /* table may not exist */ }
     try {
-      const a = db.prepare('SELECT COUNT(*) as c FROM audit_log').get() as { c: number } | undefined;
+      const a = await db.get('SELECT COUNT(*) as c FROM audit_log') as { c: number } | undefined;
       auditLogTotal = a?.c ?? 0;
     } catch { /* table may not exist */ }
 

@@ -14,7 +14,8 @@
  * 5. Red Team Reviewer - Edge cases, failure modes, risks
  */
 
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
 
@@ -59,7 +60,7 @@ export interface ReviewEngineOutput {
 
 // ── Review Orchestrator ────────────────────────────────────────
 
-export function createReviewOrchestrator(anthropic?: Anthropic) {
+export async function createReviewOrchestrator(anthropic?: Anthropic) {
   /**
    * Run all 5 review agents in parallel on an output
    */

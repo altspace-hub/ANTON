@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import Anthropic from '@anthropic-ai/sdk';
 import { createInsightsGenerator } from '../services/insights-generator.js';
 
@@ -7,20 +8,20 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
-export function createIntelligenceDashboardRoutes(db: Database.Database) {
+export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const insights = createInsightsGenerator(db, anthropic);
+  const insights = await createInsightsGenerator(db, anthropic);
 
   // GET /api/intelligence/summary — aggregate stats for dashboard
-  router.get('/intelligence/summary', (req, res) => {
+  router.get('/intelligence/summary', async (req, res) => {
     try {
       const stats = {
-        totalAtoms: (db.prepare('SELECT COUNT(*) as n FROM knowledge_atoms WHERE is_active = 1').get() as any).n,
-        totalEntities: (db.prepare('SELECT COUNT(*) as n FROM entity_nodes').get() as any).n,
-        totalPatterns: (db.prepare("SELECT COUNT(*) as n FROM detected_patterns WHERE status = 'active'").get() as any).n,
-        criticalPatterns: (db.prepare("SELECT COUNT(*) as n FROM detected_patterns WHERE severity = 'critical' AND status = 'active'").get() as any).n,
-        recentAtoms: db.prepare('SELECT * FROM knowledge_atoms WHERE is_active = 1 ORDER BY created_at DESC LIMIT 10').all(),
-        topEntities: db.prepare('SELECT * FROM entity_nodes ORDER BY interaction_count DESC LIMIT 10').all(),
+        totalAtoms: (await db.get('SELECT COUNT(*) as n FROM knowledge_atoms WHERE is_active = 1') as any).n,
+        totalEntities: (await db.get('SELECT COUNT(*) as n FROM entity_nodes') as any).n,
+        totalPatterns: (await db.get("SELECT COUNT(*) as n FROM detected_patterns WHERE status = 'active'") as any).n,
+        criticalPatterns: (await db.get("SELECT COUNT(*) as n FROM detected_patterns WHERE severity = 'critical' AND status = 'active'") as any).n,
+        recentAtoms: await db.all('SELECT * FROM knowledge_atoms WHERE is_active = 1 ORDER BY created_at DESC LIMIT 10'),
+        topEntities: await db.all('SELECT * FROM entity_nodes ORDER BY interaction_count DESC LIMIT 10'),
       };
       res.json(stats);
     } catch (error: any) {
@@ -30,17 +31,17 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/temporal/atoms-per-day
-  router.get('/intelligence/temporal/atoms-per-day', (req, res) => {
+  router.get('/intelligence/temporal/atoms-per-day', async (req, res) => {
     try {
       const days = parseInt(req.query.days as string) || 30;
-      const results = db.prepare(`
+      const results = await db.all(`
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM knowledge_atoms
         WHERE is_active = 1
           AND created_at >= datetime('now', '-' || ? || ' days')
         GROUP BY DATE(created_at)
         ORDER BY date ASC
-      `).all(days);
+      `, days);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/atoms-per-day]', error);
@@ -49,16 +50,16 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/temporal/patterns-per-week
-  router.get('/intelligence/temporal/patterns-per-week', (req, res) => {
+  router.get('/intelligence/temporal/patterns-per-week', async (req, res) => {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
-      const results = db.prepare(`
+      const results = await db.all(`
         SELECT strftime('%Y-W%W', first_detected) as week, COUNT(*) as count
         FROM detected_patterns
         WHERE first_detected >= datetime('now', '-' || ? || ' weeks')
         GROUP BY week
         ORDER BY week ASC
-      `).all(weeks);
+      `, weeks);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/patterns-per-week]', error);
@@ -67,17 +68,17 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/temporal/entity-activity
-  router.get('/intelligence/temporal/entity-activity', (req, res) => {
+  router.get('/intelligence/temporal/entity-activity', async (req, res) => {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
-      const results = db.prepare(`
+      const results = await db.all(`
         SELECT strftime('%Y-W%W', created_at) as week, COUNT(DISTINCT entity_type || ':' || entity_id) as entity_count
         FROM knowledge_entity_refs
         JOIN knowledge_atoms ON knowledge_entity_refs.atom_id = knowledge_atoms.id
         WHERE knowledge_atoms.created_at >= datetime('now', '-' || ? || ' weeks')
         GROUP BY week
         ORDER BY week ASC
-      `).all(weeks);
+      `, weeks);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/entity-activity]', error);
@@ -86,11 +87,11 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/temporal/quality-trend
-  router.get('/intelligence/temporal/quality-trend', (req, res) => {
+  router.get('/intelligence/temporal/quality-trend', async (req, res) => {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
       // knowledge_atoms has no quality_score column — use confidence as proxy
-      const results = db.prepare(`
+      const results = await db.all(`
         SELECT strftime('%Y-W%W', created_at) as week, AVG(confidence) as avg_quality
         FROM knowledge_atoms
         WHERE confidence IS NOT NULL
@@ -98,7 +99,7 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
           AND created_at >= datetime('now', '-' || ? || ' weeks')
         GROUP BY week
         ORDER BY week ASC
-      `).all(weeks);
+      `, weeks);
       res.json(results);
     } catch (error: any) {
       console.error('[intelligence/temporal/quality-trend]', error);
@@ -129,7 +130,7 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/distribution — atom distribution by category
-  router.get('/intelligence/distribution', (req, res) => {
+  router.get('/intelligence/distribution', async (req, res) => {
     try {
       const timeRange = (req.query.timeRange as string) || 'week';
       const distribution = insights.getAtomDistribution({ timeRange: timeRange as any });
@@ -141,7 +142,7 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/top-entities — top entities by interaction count
-  router.get('/intelligence/top-entities', (req, res) => {
+  router.get('/intelligence/top-entities', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
       const topEntities = insights.getTopEntities(limit);
@@ -153,7 +154,7 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/sentiment-trend — sentiment trend over time
-  router.get('/intelligence/sentiment-trend', (req, res) => {
+  router.get('/intelligence/sentiment-trend', async (req, res) => {
     try {
       const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
       const trend = insights.getSentimentTrend(days);
@@ -165,7 +166,7 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
   });
 
   // GET /api/intelligence/export — export atoms to CSV/JSON/XLSX
-  router.get('/intelligence/export', (req, res) => {
+  router.get('/intelligence/export', async (req, res) => {
     try {
       const format = (req.query.format as string) || 'json';
       const timeRange = req.query.timeRange as string | undefined;
@@ -192,7 +193,7 @@ export function createIntelligenceDashboardRoutes(db: Database.Database) {
 
       query += ' ORDER BY created_at DESC LIMIT 1000';
 
-      const atoms = db.prepare(query).all(...queryParams) as any[];
+      const atoms = await db.all(query, ...queryParams) as any[];
 
       if (format === 'csv') {
         // CSV export

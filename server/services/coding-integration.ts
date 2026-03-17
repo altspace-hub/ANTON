@@ -5,7 +5,7 @@
  * Follows the factory function pattern used by quality-ratchet and atom-extractor.
  */
 
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { createQualityRatchet } from './quality-ratchet.js';
 import { createAtomExtractor } from './atom-extractor.js';
@@ -48,14 +48,14 @@ interface DiffResult {
 
 // ── Factory ────────────────────────────────────────────────────
 
-export function createCodingIntegration(db: Database.Database, anthropicClient?: any) {
+export async function createCodingIntegration(db: DatabaseAdapter, anthropicClient?: any) {
 
   // ── Helpers ────────────────────────────────────────────────────
 
-  function tableExists(tableName: string): boolean {
-    const row = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name = ?"
-    ).get(tableName) as { name: string } | undefined;
+  async function tableExists(tableName: string): boolean {
+    const row = await db.get(
+      "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = ?"
+    , tableName) as { name: string } | undefined;
     return !!row;
   }
 
@@ -68,7 +68,7 @@ export function createCodingIntegration(db: Database.Database, anthropicClient?:
     sessionId?: string
   ): Promise<ScoreResult | null> {
     try {
-      const ratchet = createQualityRatchet(db);
+      const ratchet = await createQualityRatchet(db);
       const result = await ratchet.scoreOutput({
         content,
         moduleId,
@@ -85,23 +85,23 @@ export function createCodingIntegration(db: Database.Database, anthropicClient?:
 
   // ── saveVersion ────────────────────────────────────────────────
 
-  function saveVersion(
+  async function saveVersion(
     entityType: string,
     entityId: string,
     content: string,
     label?: string
   ): SavedVersion {
     // Get current max version_number for this entity
-    const maxRow = db.prepare(
+    const maxRow = await db.get(
       'SELECT MAX(version_number) as max_ver FROM versions WHERE entity_type = ? AND entity_id = ?'
-    ).get(entityType, entityId) as { max_ver: number | null } | undefined;
+    , entityType, entityId) as { max_ver: number | null } | undefined;
 
     const nextVersion = (maxRow?.max_ver ?? 0) + 1;
 
-    const result = db.prepare(
+    const result = await db.run(
       `INSERT INTO versions (entity_type, entity_id, version_number, label, content)
        VALUES (?, ?, ?, ?, ?)`
-    ).run(entityType, entityId, nextVersion, label || null, content);
+    , entityType, entityId, nextVersion, label || null, content);
 
     return {
       id: Number(result.lastInsertRowid),
@@ -112,18 +112,18 @@ export function createCodingIntegration(db: Database.Database, anthropicClient?:
 
   // ── getVersionHistory ──────────────────────────────────────────
 
-  function getVersionHistory(
+  async function getVersionHistory(
     entityType: string,
     entityId: string,
     limit: number = 20
   ): VersionRecord[] {
-    const rows = db.prepare(
+    const rows = await db.all(
       `SELECT id, version_number, label, created_at, LENGTH(content) as content_length
        FROM versions
        WHERE entity_type = ? AND entity_id = ?
        ORDER BY version_number DESC
        LIMIT ?`
-    ).all(entityType, entityId, limit) as Array<{
+    , entityType, entityId, limit) as Array<{
       id: number;
       version_number: number;
       label: string | null;
@@ -136,19 +136,18 @@ export function createCodingIntegration(db: Database.Database, anthropicClient?:
 
   // ── diffVersions ──────────────────────────────────────────────
 
-  function diffVersions(
+  async function diffVersions(
     entityType: string,
     entityId: string,
     v1: number,
     v2: number
   ): DiffResult | null {
-    const version1 = db.prepare(
-      'SELECT content FROM versions WHERE entity_type = ? AND entity_id = ? AND version_number = ?'
-    ).get(entityType, entityId, v1) as { content: string } | undefined;
+    const version1 = await db.get('SELECT content FROM versions WHERE entity_type = ? AND entity_id = ? AND version_number = ?'
+    , entityType, entityId, v1) as { content: string } | undefined;
 
-    const version2 = db.prepare(
+    const version2 = await db.get(
       'SELECT content FROM versions WHERE entity_type = ? AND entity_id = ? AND version_number = ?'
-    ).get(entityType, entityId, v2) as { content: string } | undefined;
+    , entityType, entityId, v2) as { content: string } | undefined;
 
     if (!version1 || !version2) {
       return null;
@@ -189,12 +188,12 @@ export function createCodingIntegration(db: Database.Database, anthropicClient?:
       const workflowId = `coding-${projectId}`;
       const executionId = `coding-phase-${phase}`;
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO workflow_outputs
           (id, workflow_id, execution_id, step_index, step_type, output_data,
            module_id, area_id, created_by, workflow_name, step_name)
         VALUES (?, ?, ?, 0, 'text', ?, ?, 'coding', 'system', ?, ?)
-      `).run(
+      `, 
         outputId,
         workflowId,
         executionId,
@@ -204,7 +203,7 @@ export function createCodingIntegration(db: Database.Database, anthropicClient?:
         `${phase}-output`
       );
 
-      const extractor = createAtomExtractor(db, anthropicClient);
+      const extractor = await createAtomExtractor(db, anthropicClient);
       await extractor.extractAtoms(outputId);
 
       console.log(`[coding-integration] Knowledge extracted for project ${projectId}, phase ${phase}`);

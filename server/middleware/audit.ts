@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 /**
  * Audit Middleware
@@ -42,8 +42,8 @@ function getRequestSize(req: Request): number {
 /**
  * Create audit middleware
  */
-export function createAuditMiddleware(db: Database.Database) {
-  return (req: Request, res: Response, next: NextFunction) => {
+export async function createAuditMiddleware(db: DatabaseAdapter) {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
 
     // Skip logging for health checks and static assets
@@ -75,7 +75,7 @@ export function createAuditMiddleware(db: Database.Database) {
     };
 
     // Log when response is finished
-    res.on('finish', () => {
+    res.on('finish', async () => {
       try {
         const duration = Date.now() - startTime;
         const logEntry: AuditRequestLog = {
@@ -91,12 +91,12 @@ export function createAuditMiddleware(db: Database.Database) {
         };
 
         // Insert into api_requests table
-        db.prepare(`
+        await db.run(`
           INSERT INTO api_requests (
             user_id, endpoint, method, status_code, response_time_ms,
             request_size_bytes, response_size_bytes, ip_address, user_agent
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        `, 
           logEntry.user_id || null,
           logEntry.endpoint,
           logEntry.method,
@@ -133,13 +133,13 @@ export function createAuditMiddleware(db: Database.Database) {
  * Tracks request counts per user/IP
  */
 export function createRateLimiter(
-  db: Database.Database,
+  db: DatabaseAdapter,
   windowMs: number = 60000, // 1 minute
   maxRequests: number = 100
 ) {
   const requestCounts = new Map<string, { count: number; resetAt: number }>();
 
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     const key = (req as unknown as { user?: { id: string } }).user?.id || getClientIp(req);
     const now = Date.now();
 
@@ -148,10 +148,10 @@ export function createRateLimiter(
       if (record.count >= maxRequests) {
         // Log rate limit event
         try {
-          db.prepare(`
+          await db.run(`
             INSERT INTO security_events (event_type, user_id, ip_address, details, severity)
             VALUES (?, ?, ?, ?, ?)
-          `).run(
+          `, 
             'rate_limit',
             (req as unknown as { user?: { id: string } }).user?.id || null,
             getClientIp(req),

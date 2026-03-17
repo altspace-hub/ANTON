@@ -14,7 +14,7 @@
  */
 
 import { createHmac, timingSafeEqual } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 // ── HMAC Verification ─────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ export interface CommandResult {
 
 export async function handleSlackCommand(
   payload: SlackCommandPayload,
-  db: Database.Database,
+  db: DatabaseAdapter,
 ): Promise<CommandResult> {
   const parts = payload.text.trim().split(/\s+/);
   const subcommand = (parts[0] || 'help').toLowerCase();
@@ -90,16 +90,16 @@ export async function handleSlackCommand(
 async function handleBrief(
   question: string,
   payload: SlackCommandPayload,
-  db: Database.Database,
+  db: DatabaseAdapter,
 ): Promise<CommandResult> {
   if (!question) {
     return { text: 'Usage: `/anton brief <your question>`', response_type: 'ephemeral' };
   }
 
   // Look up recent sessions for context
-  const recentSession = db.prepare(
+  const recentSession = await db.get(
     "SELECT id, module_id, title, summary FROM sessions WHERE summary IS NOT NULL ORDER BY updated_at DESC LIMIT 1"
-  ).get() as { id: string; module_id: string; title: string; summary: string } | undefined;
+  ) as { id: string; module_id: string; title: string; summary: string } | undefined;
 
   // Return an immediate acknowledgement + note that full analysis is available in web UI
   // (For actual AI response we'd need async handling — this is the Pattern B approach:
@@ -119,18 +119,18 @@ async function handleBrief(
 
 // ── /anton status <run-id-or-workflow-id> ────────────────────────────────
 
-function handleStatus(
+async function handleStatus(
   id: string,
-  db: Database.Database,
+  db: DatabaseAdapter,
 ): CommandResult {
   if (!id) {
     return { text: 'Usage: `/anton status <workflow-run-id>`', response_type: 'ephemeral' };
   }
 
   // Try workflow run first
-  const run = db.prepare(
+  const run = await db.get(
     "SELECT * FROM workflow_runs WHERE id = ? OR workflow_id = ? ORDER BY started_at DESC LIMIT 1"
-  ).get(id, id) as { id: string; workflow_id: string; status: string; started_at: string; completed_at: string | null; error_message: string | null } | undefined;
+  , id, id) as { id: string; workflow_id: string; status: string; started_at: string; completed_at: string | null; error_message: string | null } | undefined;
 
   if (!run) {
     return { text: `No workflow run found for ID: \`${id}\``, response_type: 'ephemeral' };
@@ -154,17 +154,17 @@ function handleStatus(
 
 // ── /anton latest <area> ──────────────────────────────────────────────────
 
-function handleLatest(
+async function handleLatest(
   area: string,
-  db: Database.Database,
+  db: DatabaseAdapter,
 ): CommandResult {
   const query = area
     ? "SELECT id, title, summary, updated_at FROM sessions WHERE module_id LIKE ? ORDER BY updated_at DESC LIMIT 1"
     : "SELECT id, title, summary, updated_at FROM sessions ORDER BY updated_at DESC LIMIT 1";
 
   const session = area
-    ? db.prepare(query).get(`%${area}%`) as { id: string; title: string; summary: string; updated_at: string } | undefined
-    : db.prepare(query).get() as { id: string; title: string; summary: string; updated_at: string } | undefined;
+    ? await db.get(query, `%${area}%`) as { id: string; title: string; summary: string; updated_at: string } | undefined
+    : await db.get(query) as { id: string; title: string; summary: string; updated_at: string } | undefined;
 
   if (!session) {
     return {

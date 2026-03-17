@@ -14,12 +14,13 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { createWebhookListener } from '../services/webhook-listener.js';
 
-export function createWebhooksPublicRoutes(db: Database.Database): Router {
+export async function createWebhooksPublicRoutes(db: DatabaseAdapter): Router {
   const router = Router();
-  const listener = createWebhookListener(db);
+  const listener = await createWebhookListener(db);
 
   // Increase body limit for webhook payloads (max 1MB)
   router.use((req, _res, next) => {

@@ -21,7 +21,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Mistral } from '@mistralai/mistralai';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import type { ModelProvider, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 import type { CustomModelConfig } from '../routes/settings.js';
 
@@ -582,11 +583,11 @@ export function createModelAdapter(
  * Load custom model configs from the app_settings table.
  * Returns an array of enabled CustomModelConfig objects.
  */
-export function getCustomModelConfigs(db: Database.Database): CustomModelConfig[] {
+export async function getCustomModelConfigs(db: DatabaseAdapter): CustomModelConfig[] {
   const configs: CustomModelConfig[] = [];
   for (const slot of [1, 2]) {
     try {
-      const row = db.prepare(`SELECT value FROM app_settings WHERE key = 'custom_model_slot_${slot}'`).get() as { value: string } | undefined;
+      const row = await db.get(`SELECT value FROM app_settings WHERE key = 'custom_model_slot_${slot}'`) as { value: string } | undefined;
       if (row) {
         const config = JSON.parse(row.value) as CustomModelConfig;
         if (config.enabled) configs.push(config);
@@ -598,7 +599,7 @@ export function getCustomModelConfigs(db: Database.Database): CustomModelConfig[
   return configs;
 }
 
-export function getProviderFromModelId(modelId: string, db?: Database.Database): ModelProvider {
+export function getProviderFromModelId(modelId: string, db?: DatabaseAdapter): ModelProvider {
   if (modelId.startsWith('claude-')) return 'anthropic';
   if (modelId.startsWith('gpt-')) return 'openai';
   if (modelId.startsWith('gemini-')) return 'google';

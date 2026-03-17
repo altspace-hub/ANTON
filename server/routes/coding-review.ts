@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { createCodingReviewEngine } from '../services/coding-review-engine.js';
 import { createCodingIntegration } from '../services/coding-integration.js';
 
-export function createCodingReviewRoutes(db: Database.Database): Router {
+export async function createCodingReviewRoutes(db: DatabaseAdapter): Router {
   const router = Router();
-  const reviewEngine = createCodingReviewEngine(db);
+  const reviewEngine = await createCodingReviewEngine(db);
 
   // POST /api/coding/review — Start new code review session
   router.post('/coding/review', async (req, res) => {
@@ -35,17 +35,15 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
       const fileHashes = reviewEngine.computeFileHashes(fileList);
 
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO code_review_sessions (
           id, session_id, project_id, source_type, source_path, source_url,
           explanation_level, review_lenses, security_mode, file_hashes
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        id, session_id || null, project_id || null, source_type,
+      `, id, session_id || null, project_id || null, source_type,
         source_path || null, source_url || null,
         explanation_level, JSON.stringify(review_lenses), security_mode || null,
-        JSON.stringify(fileHashes),
-      );
+        JSON.stringify(fileHashes),);
 
       // Build the review prompt for the frontend to send through /api/claude/message
       const lensPersonas = review_lenses.map((lens: string) => reviewEngine.mapLensToPersona(lens));
@@ -89,9 +87,9 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/review/:id — Get review session
-  router.get('/coding/review/:id', (req, res) => {
+  router.get('/coding/review/:id', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM code_review_sessions WHERE id = ?').get(req.params.id);
+      const row = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', req.params.id);
       if (!row) return res.status(404).json({ error: 'Review session not found' });
 
       const session = parseReviewSession(row);
@@ -103,18 +101,18 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/review/sessions — List review sessions
-  router.get('/coding/review/sessions', (req, res) => {
+  router.get('/coding/review/sessions', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const offset = parseInt(req.query.offset as string) || 0;
 
-      const rows = db.prepare(`
+      const rows = await db.all(`
         SELECT * FROM code_review_sessions
         ORDER BY created_at DESC
         LIMIT ? OFFSET ?
-      `).all(limit, offset);
+      `, limit, offset);
 
-      const total = db.prepare('SELECT COUNT(*) as c FROM code_review_sessions').get() as { c: number };
+      const total = await db.get('SELECT COUNT(*) as c FROM code_review_sessions') as { c: number };
 
       res.json({
         sessions: rows.map(parseReviewSession),
@@ -137,7 +135,7 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
         return res.status(400).json({ error: 'previous_session_id is required' });
       }
 
-      const previous = db.prepare('SELECT * FROM code_review_sessions WHERE id = ?').get(previous_session_id);
+
       if (!previous) return res.status(404).json({ error: 'Previous session not found' });
 
       const prevParsed = parseReviewSession(previous);
@@ -157,13 +155,13 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
       const id = randomUUID();
       const effectiveLenses = review_lenses || prevParsed.review_lenses;
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO code_review_sessions (
           id, source_type, source_path, source_url, explanation_level,
           review_lenses, security_mode, previous_session_id, is_diff_review,
           file_hashes
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-      `).run(
+      `, 
         id, prevParsed.source_type,
         source_path || prevParsed.source_path || null,
         source_url || prevParsed.source_url || null,
@@ -240,10 +238,10 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
       }
 
       const reviewId = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO code_review_sessions (id, source_type, review_lenses, session_id, project_id)
         VALUES (?, 'paste', '["dependency_audit"]', ?, ?)
-      `).run(reviewId, session_id || null, project_id || null);
+      `, reviewId, session_id || null, project_id || null);
 
       // Build dependency audit prompt for the frontend to send through /api/claude/message
       const lockFileSection = lock_file
@@ -304,10 +302,10 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
 
       // Feature search returns a session ID for tracking
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO code_review_sessions (id, source_type, source_path, review_lenses)
         VALUES (?, 'directory', ?, '["developer"]')
-      `).run(id, source_path || null);
+      `, id, source_path || null);
 
       res.json({ id, query, status: 'created' });
     } catch (error) {
@@ -322,7 +320,7 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
       const { id } = req.params;
       const { findings, tokens_consumed } = req.body;
 
-      const existing = db.prepare('SELECT id FROM code_review_sessions WHERE id = ?').get(id);
+
       if (!existing) {
         return res.status(404).json({ error: 'Review session not found' });
       }
@@ -344,7 +342,7 @@ export function createCodingReviewRoutes(db: Database.Database): Router {
       // Fire-and-forget quality scoring — don't block the response
       try {
         const findingsContent = typeof findings === 'string' ? findings : JSON.stringify(findings);
-        const integration = createCodingIntegration(db);
+        const integration = await createCodingIntegration(db);
         integration.scoreOutput(findingsContent, 'code-review-explain', 'coding', id).catch(() => {});
       } catch { /* scoring failure should never break the main flow */ }
 

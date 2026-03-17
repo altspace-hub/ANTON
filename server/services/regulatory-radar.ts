@@ -1,19 +1,20 @@
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { emitInternalEvent } from './event-emitter.js';
 
-export function createRegulatoryRadar(db: Database.Database) {
+export async function createRegulatoryRadar(db: DatabaseAdapter) {
 
-  function getSources(activeOnly = true, category?: string) {
+  async function getSources(activeOnly = true, category?: string) {
     let where = activeOnly ? 'WHERE is_active = 1' : 'WHERE 1=1';
     const args: unknown[] = [];
     if (category && category !== 'all') {
       where += ' AND category = ?';
       args.push(category);
     }
-    return db.prepare(`SELECT * FROM radar_sources ${where} ORDER BY display_name`).all(...args);
+    return await db.all(`SELECT * FROM radar_sources ${where} ORDER BY display_name`, ...args);
   }
 
-  function createSource(params: {
+  async function createSource(params: {
     displayName: string;
     url: string;
     sourceType: string;
@@ -23,10 +24,10 @@ export function createRegulatoryRadar(db: Database.Database) {
     category?: string;
   }) {
     const id = `src_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-    db.prepare(`
+    await db.run(`
       INSERT INTO radar_sources (id, display_name, url, source_type, fetch_interval_hours, areas, keywords, category)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, params.displayName, params.url, params.sourceType,
+    `, id, params.displayName, params.url, params.sourceType,
            params.fetchIntervalHours ?? 24,
            JSON.stringify(params.areas ?? []),
            JSON.stringify(params.keywords ?? []),
@@ -34,7 +35,7 @@ export function createRegulatoryRadar(db: Database.Database) {
     return id;
   }
 
-  function getItems(params: {
+  async function getItems(params: {
     status?: string;
     minRelevance?: number;
     limit?: number;
@@ -57,54 +58,52 @@ export function createRegulatoryRadar(db: Database.Database) {
 
     bindArgs.push(params.limit ?? 50, params.offset ?? 0);
 
-    return db.prepare(`
+    return await db.all(`
       SELECT ri.*, rs.display_name as source_name, rs.source_type, rs.category as source_category
       FROM radar_items ri
       JOIN radar_sources rs ON ri.source_id = rs.id
       ${where}
       ORDER BY ri.relevance_score DESC, ri.published_at DESC
       LIMIT ? OFFSET ?
-    `).all(...bindArgs);
+    `, ...bindArgs);
   }
 
-  function getRadarSummary() {
-    const newItems = (db.prepare("SELECT COUNT(*) as n FROM radar_items WHERE status = 'new'").get() as { n: number }).n;
-    const highRelevance = (db.prepare("SELECT COUNT(*) as n FROM radar_items WHERE relevance_score >= 0.7 AND status = 'new'").get() as { n: number }).n;
-    const consultationsOpen = (db.prepare("SELECT COUNT(*) as n FROM radar_items WHERE item_type = 'consultation' AND status != 'dismissed' AND status != 'archived'").get() as { n: number }).n;
-    const recent = db.prepare(`
-      SELECT ri.title, ri.relevance_score, ri.item_type, ri.published_at, rs.display_name as source_name, ri.category
-      FROM radar_items ri JOIN radar_sources rs ON ri.source_id = rs.id
-      WHERE ri.status = 'new' AND ri.relevance_score >= 0.5
-      ORDER BY ri.relevance_score DESC, ri.published_at DESC
-      LIMIT 5
-    `).all();
+  async function getRadarSummary() {
+    const newItems = (await db.get("SELECT COUNT(*) as n FROM radar_items WHERE status = 'new'") as { n: number }).n;
+    const highRelevance = (await db.get("SELECT COUNT(*) as n FROM radar_items WHERE relevance_score >= 0.7 AND status = 'new'") as { n: number }).n;
+    const consultationsOpen = (await db.get("SELECT COUNT(*) as n FROM radar_items WHERE item_type = 'consultation' AND status != 'dismissed' AND status != 'archived'") as { n: number }).n;
+
+
+    // Recent high-relevance items (last 7 days)
+    const recent = (await db.get(
+      "SELECT COUNT(*) as n FROM radar_items WHERE relevance_score >= 0.7 AND fetched_at >= datetime('now', '-7 days')"
+    ) as { n: number }).n;
 
     // Per-category counts
-    const categoryCounts = db.prepare(`
+    const categoryCounts = await db.all(`
       SELECT category, COUNT(*) as count FROM radar_items
       WHERE status = 'new'
       GROUP BY category
-    `).all() as Array<{ category: string; count: number }>;
+    `) as Array<{ category: string; count: number }>;
 
     return { newItems, highRelevance, consultationsOpen, recentHighRelevance: recent, categoryCounts };
   }
 
-  function updateItemStatus(id: string, status: string, userId?: string) {
+  async function updateItemStatus(id: string, status: string, userId?: string) {
     if (status === 'dismissed') {
-      db.prepare(
-        'UPDATE radar_items SET status = ?, dismissed_by = ?, dismissed_at = ? WHERE id = ?'
-      ).run(status, userId ?? 'user', new Date().toISOString(), id);
+      await db.run('UPDATE radar_items SET status = ?, dismissed_by = ?, dismissed_at = ? WHERE id = ?'
+      , status, userId ?? 'user', new Date().toISOString(), id);
     } else {
-      db.prepare('UPDATE radar_items SET status = ? WHERE id = ?').run(status, id);
+      await db.run('UPDATE radar_items SET status = ? WHERE id = ?', status, id);
     }
   }
 
-  function scoreItem(id: string, relevanceScore: number, urgencyScore: number, aiSummary: string, impactAreas: string[]) {
-    db.prepare(`
+  async function scoreItem(id: string, relevanceScore: number, urgencyScore: number, aiSummary: string, impactAreas: string[]) {
+    await db.run(`
       UPDATE radar_items
       SET relevance_score = ?, urgency_score = ?, ai_summary = ?, impact_areas = ?, ai_scored = 1
       WHERE id = ?
-    `).run(relevanceScore, urgencyScore, aiSummary, JSON.stringify(impactAreas), id);
+    `, relevanceScore, urgencyScore, aiSummary, JSON.stringify(impactAreas), id);
 
     // Emit internal event for high-relevance items so event triggers can fire
     if (relevanceScore >= 0.7 || urgencyScore >= 0.8) {
@@ -129,11 +128,11 @@ export function createRegulatoryRadar(db: Database.Database) {
   }) {
     const id = `ri_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
     const extId = `manual_${Date.now()}`;
-    db.prepare(`
+    await db.run(`
       INSERT OR IGNORE INTO radar_items
         (id, source_id, external_id, title, summary, url, item_type, published_at, relevance_score)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.7)
-    `).run(id, params.sourceId, extId, params.title, params.summary,
+    `, id, params.sourceId, extId, params.title, params.summary,
            params.url ?? null, params.itemType ?? 'publication',
            params.publishedAt ?? new Date().toISOString());
 
@@ -149,7 +148,7 @@ export function createRegulatoryRadar(db: Database.Database) {
     return id;
   }
 
-  function updateSource(id: string, params: {
+  async function updateSource(id: string, params: {
     displayName?: string;
     url?: string;
     sourceType?: string;
@@ -158,7 +157,7 @@ export function createRegulatoryRadar(db: Database.Database) {
     category?: string;
     isActive?: boolean;
   }) {
-    db.prepare(`
+    await db.run(`
       UPDATE radar_sources SET
         display_name = COALESCE(?, display_name),
         url = COALESCE(?, url),
@@ -168,7 +167,7 @@ export function createRegulatoryRadar(db: Database.Database) {
         category = COALESCE(?, category),
         is_active = COALESCE(?, is_active)
       WHERE id = ?
-    `).run(
+    `, 
       params.displayName ?? null,
       params.url ?? null,
       params.sourceType ?? null,
@@ -180,8 +179,8 @@ export function createRegulatoryRadar(db: Database.Database) {
     );
   }
 
-  function deleteSource(id: string) {
-    db.prepare('DELETE FROM radar_sources WHERE id = ?').run(id);
+  async function deleteSource(id: string) {
+    await db.run('DELETE FROM radar_sources WHERE id = ?', id);
   }
 
   return {

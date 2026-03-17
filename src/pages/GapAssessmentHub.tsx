@@ -117,8 +117,8 @@ export default function GapAssessmentHub() {
         fetch('/api/gap-assessments/frameworks', { headers: getAuthHeader() }),
         fetch('/api/gap-assessments', { headers: getAuthHeader() }),
       ]);
-      if (fwRes.ok) setFrameworks(await fwRes.json().then(d => d.frameworks));
-      if (assRes.ok) setAssessments(await assRes.json().then(d => d.assessments));
+      if (fwRes.ok) setFrameworks(await fwRes.json().then(d => d?.frameworks ?? []));
+      if (assRes.ok) setAssessments(await assRes.json().then(d => d?.assessments ?? []));
     } catch { /* ignore */ }
     setLoading(false);
   };

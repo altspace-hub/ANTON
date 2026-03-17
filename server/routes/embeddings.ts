@@ -11,14 +11,15 @@
  */
 
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { hybridSearch, findSimilar } from '../services/hybrid-search.js';
 import { getEmbeddingAdapter } from '../services/embedding-adapter.js';
 import { backfillKnowledgeAtoms, backfillCheckpoints, embedModuleDescriptions } from '../services/embedding-pipeline.js';
 import { applyAntonBoosts, applyTokenBudget } from '../services/atom-boost.js';
 import { safeError } from '../lib/error-response.js';
 
-export function createEmbeddingRoutes(db: Database.Database) {
+export async function createEmbeddingRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // ── POST /search/atoms — Atom-specific hybrid search ─────────────────────
@@ -48,12 +49,12 @@ export function createEmbeddingRoutes(db: Database.Database) {
       if (atomIds.length === 0) return res.json({ results: [], total: 0 });
 
       const placeholders = atomIds.map(() => '?').join(',');
-      const atomRows = db.prepare(`
+      const atomRows = await db.all(`
         SELECT id, content, atom_type, category, confidence, source_area_id,
                source_module_id, created_at, superseded_by, tags
         FROM knowledge_atoms
         WHERE id IN (${placeholders}) AND is_active = 1
-      `).all(...atomIds) as Array<{
+      `, ...atomIds) as Array<{
         id: string; content: string; atom_type: string; category: string;
         confidence: number; source_area_id: string | null; source_module_id: string | null;
         created_at: string; superseded_by: string | null; tags: string | null;
@@ -161,15 +162,15 @@ export function createEmbeddingRoutes(db: Database.Database) {
       const adapter = getEmbeddingAdapter();
 
       // Count items needing embedding before starting
-      const atomsBefore = (db.prepare(
+      const atomsBefore = (await db.get(
         `SELECT COUNT(*) as c FROM knowledge_atoms WHERE is_active = 1
          AND id NOT IN (SELECT content_id FROM embeddings WHERE content_type = 'knowledge_atom' AND embedding_model = ?)`
-      ).get(adapter.model) as { c: number }).c;
+      , adapter.model) as { c: number }).c;
 
-      const checkpointsBefore = (db.prepare(
+      const checkpointsBefore = (await db.get(
         `SELECT COUNT(*) as c FROM checkpoint_decisions
          WHERE id NOT IN (SELECT content_id FROM embeddings WHERE content_type = 'checkpoint' AND embedding_model = ?)`
-      ).get(adapter.model) as { c: number }).c;
+      , adapter.model) as { c: number }).c;
 
       // Run backfills (larger batch size for on-demand)
       await embedModuleDescriptions(db);
@@ -177,10 +178,10 @@ export function createEmbeddingRoutes(db: Database.Database) {
       await backfillCheckpoints(db, 200);
 
       // Count remaining after
-      const atomsAfter = (db.prepare(
+      const atomsAfter = (await db.get(
         `SELECT COUNT(*) as c FROM knowledge_atoms WHERE is_active = 1
          AND id NOT IN (SELECT content_id FROM embeddings WHERE content_type = 'knowledge_atom' AND embedding_model = ?)`
-      ).get(adapter.model) as { c: number }).c;
+      , adapter.model) as { c: number }).c;
 
       res.json({
         success: true,
@@ -197,34 +198,34 @@ export function createEmbeddingRoutes(db: Database.Database) {
 
   // ── GET /stats — Embedding coverage statistics ───────────────────────────
 
-  router.get('/stats', (_req, res) => {
+  router.get('/stats', async (_req, res) => {
     try {
       const adapter = getEmbeddingAdapter();
 
-      const totalAtoms = (db.prepare('SELECT COUNT(*) as c FROM knowledge_atoms WHERE is_active = 1').get() as { c: number }).c;
-      const embeddedAtoms = (db.prepare(
+      const totalAtoms = (await db.get('SELECT COUNT(*) as c FROM knowledge_atoms WHERE is_active = 1') as { c: number }).c;
+      const embeddedAtoms = (await db.get(
         `SELECT COUNT(DISTINCT content_id) as c FROM embeddings WHERE content_type = 'knowledge_atom' AND embedding_model = ?`
-      ).get(adapter.model) as { c: number }).c;
+      , adapter.model) as { c: number }).c;
 
-      const totalCheckpoints = (db.prepare('SELECT COUNT(*) as c FROM checkpoint_decisions').get() as { c: number }).c;
-      const embeddedCheckpoints = (db.prepare(
+      const totalCheckpoints = (await db.get('SELECT COUNT(*) as c FROM checkpoint_decisions') as { c: number }).c;
+      const embeddedCheckpoints = (await db.get(
         `SELECT COUNT(DISTINCT content_id) as c FROM embeddings WHERE content_type = 'checkpoint' AND embedding_model = ?`
-      ).get(adapter.model) as { c: number }).c;
+      , adapter.model) as { c: number }).c;
 
-      const totalModules = (db.prepare(
+      const totalModules = (await db.get(
         `SELECT COUNT(DISTINCT content_id) as c FROM embeddings WHERE content_type = 'module' AND embedding_model = ?`
-      ).get(adapter.model) as { c: number }).c;
+      , adapter.model) as { c: number }).c;
 
-      const byType = db.prepare(
+      const byType = await db.all(
         `SELECT content_type, COUNT(*) as count FROM embeddings WHERE embedding_model = ? GROUP BY content_type`
-      ).all(adapter.model) as Array<{ content_type: string; count: number }>;
+      , adapter.model) as Array<{ content_type: string; count: number }>;
 
       // Feedback stats
       let feedbackTotal = 0;
       let feedbackRelevant = 0;
       try {
-        feedbackTotal = (db.prepare('SELECT COUNT(*) as c FROM retrieval_feedback').get() as { c: number }).c;
-        feedbackRelevant = (db.prepare('SELECT COUNT(*) as c FROM retrieval_feedback WHERE was_relevant = 1').get() as { c: number }).c;
+        feedbackTotal = ((await db.get('SELECT COUNT(*) as c FROM retrieval_feedback')) as { c: number })?.c ?? 0;
+        feedbackRelevant = (await db.get('SELECT COUNT(*) as c FROM retrieval_feedback WHERE was_relevant = 1') as { c: number }).c;
       } catch {
         // retrieval_feedback table may not exist yet
       }
@@ -246,7 +247,7 @@ export function createEmbeddingRoutes(db: Database.Database) {
 
   // ── GET /config — Current embedding provider configuration ───────────────
 
-  router.get('/config', (_req, res) => {
+  router.get('/config', async (_req, res) => {
     try {
       const adapter = getEmbeddingAdapter();
       res.json({
@@ -265,17 +266,16 @@ export function createEmbeddingRoutes(db: Database.Database) {
 
   // ── GET /feedback/:sessionId — Retrieval feedback for a session ──────────
 
-  router.get('/feedback/:sessionId', (req, res) => {
+  router.get('/feedback/:sessionId', async (req, res) => {
     try {
       const { sessionId } = req.params;
-      const rows = db.prepare(
-        `SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant,
+      const rows = await db.get(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant,
                 ka.content, ka.atom_type, ka.category, ka.confidence
          FROM retrieval_feedback rf
          LEFT JOIN knowledge_atoms ka ON ka.id = rf.atom_id
          WHERE rf.session_id = ?
          ORDER BY rf.retrieval_score DESC`
-      ).all(sessionId) as Array<{
+      , sessionId) as Array<{
         atom_id: string; retrieval_method: string; retrieval_score: number;
         injected_at: string; was_relevant: number | null;
         content: string; atom_type: string; category: string; confidence: number;
@@ -289,7 +289,7 @@ export function createEmbeddingRoutes(db: Database.Database) {
 
   // ── POST /feedback — Record relevance feedback on a retrieved atom ──────
 
-  router.post('/feedback', (req, res) => {
+  router.post('/feedback', async (req, res) => {
     try {
       const { atomId, sessionId, wasRelevant } = req.body as {
         atomId: string;
@@ -301,9 +301,7 @@ export function createEmbeddingRoutes(db: Database.Database) {
         return res.status(400).json({ error: 'atomId, sessionId, and wasRelevant (boolean) are required' });
       }
 
-      const result = db.prepare(
-        `UPDATE retrieval_feedback SET was_relevant = ? WHERE session_id = ? AND atom_id = ?`
-      ).run(wasRelevant ? 1 : 0, sessionId, atomId);
+
 
       if (result.changes === 0) {
         return res.status(404).json({ error: 'No matching feedback row found' });

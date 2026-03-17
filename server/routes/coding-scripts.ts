@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { createCodingEngine } from '../services/coding-engine.js';
 
-export function createCodingScriptsRoutes(db: Database.Database): Router {
+export async function createCodingScriptsRoutes(db: DatabaseAdapter): Router {
   const router = Router();
-  const codingEngine = createCodingEngine(db);
+  const codingEngine = await createCodingEngine(db);
 
   // ── Tier 2: Script Lite ──────────────────────────────────────────────────
 
@@ -61,10 +61,10 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
         brief,
       };
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO sessions (id, module_id, title, config, created_at)
         VALUES (?, ?, ?, ?, datetime('now'))
-      `).run(sessionId, 'script-lite', title, JSON.stringify(config));
+      `, sessionId, 'script-lite', title, JSON.stringify(config));
 
       res.json({
         id: sessionId,
@@ -102,9 +102,9 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
       const { id } = req.params;
       const { script, explanation, dependencies } = req.body;
 
-      const session = db.prepare(
-        'SELECT id, config FROM sessions WHERE id = ? AND module_id = ?',
-      ).get(id, 'script-lite') as { id: string; config: string } | undefined;
+      const session = await db.get(
+        'SELECT id, config FROM sessions WHERE id = ? AND module_id = ?'
+      , id, 'script-lite') as { id: string; config: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Script session not found' });
 
@@ -116,10 +116,10 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
         saved_at: new Date().toISOString(),
       };
 
-      db.prepare(`
+      await db.run(`
         UPDATE sessions SET config = ?, updated_at = datetime('now')
         WHERE id = ?
-      `).run(JSON.stringify(config), id);
+      `, JSON.stringify(config), id);
 
       res.json({ id, status: 'saved' });
     } catch (error) {
@@ -129,15 +129,15 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/script-lite/history — List previous generations
-  router.get('/coding/script-lite/history', (req, res) => {
+  router.get('/coding/script-lite/history', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
-      const sessions = db.prepare(`
+      const sessions = await db.all(`
         SELECT s.* FROM sessions s
         WHERE s.module_id = 'script-lite'
         ORDER BY s.created_at DESC
         LIMIT ?
-      `).all(limit);
+      `, limit);
       res.json(sessions);
     } catch (error) {
       console.error('[coding-scripts] History error:', error);
@@ -146,9 +146,11 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/script-lite/:id — Get specific script
-  router.get('/coding/script-lite/:id', (req, res) => {
+  router.get('/coding/script-lite/:id', async (req, res) => {
     try {
-      const session = db.prepare('SELECT * FROM sessions WHERE id = ? AND module_id = ?').get(req.params.id, 'script-lite');
+      const session = await db.get(
+        'SELECT * FROM sessions WHERE id = ? AND module_id = ?'
+      , req.params.id, 'script-lite');
       if (!session) return res.status(404).json({ error: 'Script not found' });
       res.json(session);
     } catch (error) {
@@ -215,10 +217,10 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
         preview_mode: preview_mode || false,
       };
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO sessions (id, module_id, title, config, created_at)
         VALUES (?, ?, ?, ?, datetime('now'))
-      `).run(sessionId, 'script-medium', title, JSON.stringify(config));
+      `, sessionId, 'script-medium', title, JSON.stringify(config));
 
       res.json({
         id: sessionId,
@@ -258,9 +260,9 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
       }
 
       // Verify the session exists
-      const session = db.prepare(
-        'SELECT id FROM sessions WHERE id = ? AND module_id = ?',
-      ).get(session_id, 'script-medium') as { id: string } | undefined;
+      const session = await db.get(
+        'SELECT id FROM sessions WHERE id = ? AND module_id = ?'
+      , session_id, 'script-medium') as { id: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -291,9 +293,9 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
       }
 
       // Verify the session exists
-      const session = db.prepare(
-        'SELECT id FROM sessions WHERE id = ? AND module_id = ?',
-      ).get(session_id, 'script-medium') as { id: string } | undefined;
+      const session = await db.get(
+        'SELECT id FROM sessions WHERE id = ? AND module_id = ?'
+      , session_id, 'script-medium') as { id: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -325,9 +327,9 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
         return res.status(400).json({ error: 'files array is required' });
       }
 
-      const session = db.prepare(
-        'SELECT id, config FROM sessions WHERE id = ? AND module_id = ?',
-      ).get(id, 'script-medium') as { id: string; config: string } | undefined;
+      const session = await db.get(
+        'SELECT id, config FROM sessions WHERE id = ? AND module_id = ?'
+      , id, 'script-medium') as { id: string; config: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Application session not found' });
 
@@ -339,10 +341,10 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
       }));
       config.saved_at = new Date().toISOString();
 
-      db.prepare(`
+      await db.run(`
         UPDATE sessions SET config = ?, updated_at = datetime('now')
         WHERE id = ?
-      `).run(JSON.stringify(config), id);
+      `, JSON.stringify(config), id);
 
       res.json({ id, status: 'saved' });
     } catch (error) {
@@ -352,9 +354,11 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/script-medium/:id — Get specific generation
-  router.get('/coding/script-medium/:id', (req, res) => {
+  router.get('/coding/script-medium/:id', async (req, res) => {
     try {
-      const session = db.prepare('SELECT * FROM sessions WHERE id = ? AND module_id = ?').get(req.params.id, 'script-medium');
+      const session = await db.get(
+        'SELECT * FROM sessions WHERE id = ? AND module_id = ?'
+      , req.params.id, 'script-medium');
       if (!session) return res.status(404).json({ error: 'Application not found' });
       res.json(session);
     } catch (error) {
@@ -364,9 +368,9 @@ export function createCodingScriptsRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/script-medium/:id/files — List generated files
-  router.get('/coding/script-medium/:id/files', (req, res) => {
+  router.get('/coding/script-medium/:id/files', async (req, res) => {
     try {
-      const session = db.prepare('SELECT config FROM sessions WHERE id = ? AND module_id = ?').get(req.params.id, 'script-medium') as { config: string } | undefined;
+      const session = await db.get('SELECT config FROM sessions WHERE id = ? AND module_id = ?', req.params.id, 'script-medium') as { config: string } | undefined;
       if (!session) return res.status(404).json({ error: 'Application not found' });
 
       const config = JSON.parse(session.config || '{}');

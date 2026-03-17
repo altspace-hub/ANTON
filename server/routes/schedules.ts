@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import * as cron from 'node-cron';
 import { scheduleWorkflow, unscheduleWorkflow } from '../services/scheduler.js';
 
@@ -14,15 +14,15 @@ interface ScheduleRow {
   created_at: string;
 }
 
-export function createScheduleRoutes(db: Database.Database) {
+export async function createScheduleRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // GET /api/workflows/:workflowId/schedules — list schedules for a workflow
-  router.get('/workflows/:workflowId/schedules', (req, res) => {
+  router.get('/workflows/:workflowId/schedules', async (req, res) => {
     try {
-      const schedules = db.prepare(
+      const schedules = await db.all(
         'SELECT * FROM workflow_schedules WHERE workflow_id = ? ORDER BY created_at DESC'
-      ).all(req.params.workflowId) as ScheduleRow[];
+      , req.params.workflowId) as ScheduleRow[];
       res.json(schedules);
     } catch {
       res.status(500).json({ error: 'Failed to fetch schedules' });
@@ -30,7 +30,7 @@ export function createScheduleRoutes(db: Database.Database) {
   });
 
   // POST /api/workflows/:workflowId/schedules — create a schedule
-  router.post('/workflows/:workflowId/schedules', (req, res) => {
+  router.post('/workflows/:workflowId/schedules', async (req, res) => {
     try {
       const { cron_expression, workflow_definition } = req.body as { cron_expression: string; workflow_definition?: unknown };
       if (!cron_expression?.trim()) {
@@ -44,12 +44,12 @@ export function createScheduleRoutes(db: Database.Database) {
 
       // Store the workflow definition JSON so the scheduler can execute it headlessly
       const definitionJson = workflow_definition ? JSON.stringify(workflow_definition) : null;
-      const result = db.prepare(
+      const result = await db.run(
         'INSERT INTO workflow_schedules (workflow_id, cron_expression, is_active, workflow_definition) VALUES (?, ?, 1, ?)'
-      ).run(req.params.workflowId, cron_expression.trim(), definitionJson);
+      , req.params.workflowId, cron_expression.trim(), definitionJson);
 
       const newId = result.lastInsertRowid as number;
-      const newSchedule = db.prepare('SELECT * FROM workflow_schedules WHERE id = ?').get(newId) as ScheduleRow;
+      const newSchedule = await db.get('SELECT * FROM workflow_schedules WHERE id = ?', newId) as ScheduleRow;
 
       // Register with in-memory scheduler
       scheduleWorkflow(db, {
@@ -65,12 +65,12 @@ export function createScheduleRoutes(db: Database.Database) {
   });
 
   // PATCH /api/workflows/:workflowId/schedules/:id — update (toggle active, change cron)
-  router.patch('/workflows/:workflowId/schedules/:id', (req, res) => {
+  router.patch('/workflows/:workflowId/schedules/:id', async (req, res) => {
     try {
       const scheduleId = parseInt(req.params.id, 10);
-      const existing = db.prepare(
+      const existing = await db.get(
         'SELECT * FROM workflow_schedules WHERE id = ? AND workflow_id = ?'
-      ).get(scheduleId, req.params.workflowId) as ScheduleRow | undefined;
+      , scheduleId, req.params.workflowId) as ScheduleRow | undefined;
 
       if (!existing) {
         res.status(404).json({ error: 'Schedule not found' });
@@ -88,9 +88,8 @@ export function createScheduleRoutes(db: Database.Database) {
       const newCron = cron_expression !== undefined ? cron_expression.trim() : existing.cron_expression;
       const newActive = is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active;
 
-      db.prepare(
-        'UPDATE workflow_schedules SET cron_expression = ?, is_active = ? WHERE id = ?'
-      ).run(newCron, newActive, scheduleId);
+      await db.run('UPDATE workflow_schedules SET cron_expression = ?, is_active = ? WHERE id = ?'
+      , newCron, newActive, scheduleId);
 
       // Update in-memory scheduler
       unscheduleWorkflow(scheduleId);
@@ -102,7 +101,7 @@ export function createScheduleRoutes(db: Database.Database) {
         });
       }
 
-      const updated = db.prepare('SELECT * FROM workflow_schedules WHERE id = ?').get(scheduleId) as ScheduleRow;
+      const updated = await db.get('SELECT * FROM workflow_schedules WHERE id = ?', scheduleId) as ScheduleRow;
       res.json(updated);
     } catch {
       res.status(500).json({ error: 'Failed to update schedule' });
@@ -110,12 +109,12 @@ export function createScheduleRoutes(db: Database.Database) {
   });
 
   // DELETE /api/workflows/:workflowId/schedules/:id — delete a schedule
-  router.delete('/workflows/:workflowId/schedules/:id', (req, res) => {
+  router.delete('/workflows/:workflowId/schedules/:id', async (req, res) => {
     try {
       const scheduleId = parseInt(req.params.id, 10);
-      const existing = db.prepare(
+      const existing = await db.get(
         'SELECT * FROM workflow_schedules WHERE id = ? AND workflow_id = ?'
-      ).get(scheduleId, req.params.workflowId) as ScheduleRow | undefined;
+      , scheduleId, req.params.workflowId) as ScheduleRow | undefined;
 
       if (!existing) {
         res.status(404).json({ error: 'Schedule not found' });
@@ -125,7 +124,7 @@ export function createScheduleRoutes(db: Database.Database) {
       // Stop the in-memory task first
       unscheduleWorkflow(scheduleId);
 
-      db.prepare('DELETE FROM workflow_schedules WHERE id = ?').run(scheduleId);
+      await db.run('DELETE FROM workflow_schedules WHERE id = ?', scheduleId);
       res.json({ success: true });
     } catch {
       res.status(500).json({ error: 'Failed to delete schedule' });

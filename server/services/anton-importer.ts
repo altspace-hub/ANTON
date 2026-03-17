@@ -8,7 +8,7 @@
  */
 
 import { validateAntonFile, type ValidationResult } from './anton-validator.js';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import crypto from 'crypto';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -63,13 +63,13 @@ export async function importAntonFile(
 
   // Insert using actual custom_modules schema
   try {
-    db.prepare(
+    await db.run(
       `INSERT INTO custom_modules (
         id, name, short_name, description, icon, area,
         system_prompt, config,
         created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
+    , 
       moduleId,
       manifest.meta.name,
       manifest.meta.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30),

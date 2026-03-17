@@ -48,7 +48,7 @@ export default function ProjectFiles({ projectId, projectName }: { projectId: st
     try {
       const res = await fetch(`/api/projects/${projectId}/files`, { headers: getAuthHeader() });
       const data = await res.json();
-      setFiles(data);
+      setFiles(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('[project-files] fetch error:', err);
     }

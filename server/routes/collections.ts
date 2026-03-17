@@ -1,9 +1,9 @@
 import express from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import * as collectionManager from '../services/collection-manager.js';
 import * as chromaClient from '../services/chroma-client.js';
 
-export function createCollectionsRoutes(db: Database) {
+export async function createCollectionsRoutes(db: DatabaseAdapter) {
   const router = express.Router();
 
   /**
@@ -56,7 +56,7 @@ export function createCollectionsRoutes(db: Database) {
   /**
    * Create new collection (any authenticated user can create)
    */
-  router.post('/collections', (req, res) => {
+  router.post('/collections', async (req, res) => {
     try {
       const { name, displayName, description, icon, color, watchDirectories, autoIndex, metadataSchema } = req.body;
       const userId = (req as any).user?.id || 'system';
@@ -87,7 +87,7 @@ export function createCollectionsRoutes(db: Database) {
   /**
    * Update collection
    */
-  router.put('/collections/:id', (req, res) => {
+  router.put('/collections/:id', async (req, res) => {
     try {
       const updates: any = {};
       const { displayName, description, icon, color, watchDirectories, autoIndex, metadataSchema } = req.body;
@@ -135,7 +135,7 @@ export function createCollectionsRoutes(db: Database) {
   /**
    * Get documents in a collection
    */
-  router.get('/collections/:id/documents', (req, res) => {
+  router.get('/collections/:id/documents', async (req, res) => {
     try {
       const documents = collectionManager.getCollectionDocuments(db, req.params.id);
       const enriched = documents.map(doc => ({

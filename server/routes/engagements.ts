@@ -6,7 +6,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import multer from 'multer';
 import path from 'path';
@@ -35,54 +36,52 @@ const IS_TEAM = process.env.DEPLOYMENT_MODE === 'team';
 function getUserId(req: Request): string { return (req as unknown as { user?: { id?: string } }).user?.id ?? 'solo'; }
 function getUserRole(req: Request): string { return (req as unknown as { user?: { role?: string } }).user?.role ?? 'admin'; }
 
-function canView(db: Database.Database, engagementId: string, userId: string, userRole: string): boolean {
+async function canView(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): boolean {
   if (!IS_TEAM || userRole === 'admin') return true;
-  const e = db.prepare('SELECT user_id, project_id FROM engagements WHERE id = ?').get(engagementId) as { user_id: string; project_id: string | null } | undefined;
+  const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
   if (!e) return false;
   if (e.user_id === userId) return true;
   if (e.project_id) {
-    const mem = db.prepare('SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?').get(e.project_id, userId);
+    const mem = await db.get('SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?', e.project_id, userId);
     if (mem) return true;
   }
   return false;
 }
 
-function canEdit(db: Database.Database, engagementId: string, userId: string, userRole: string): boolean {
+async function canEdit(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): boolean {
   if (!IS_TEAM || userRole === 'admin') return true;
-  const e = db.prepare('SELECT user_id, project_id FROM engagements WHERE id = ?').get(engagementId) as { user_id: string; project_id: string | null } | undefined;
+  const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
   if (!e) return false;
   if (e.user_id === userId) return true;
   if (e.project_id) {
-    const mem = db.prepare(
+    const mem = await db.get(
       `SELECT role FROM project_members WHERE project_id = ? AND user_id = ?`
-    ).get(e.project_id, userId) as { role: string } | undefined;
+    , e.project_id, userId) as { role: string } | undefined;
     if (mem && mem.role !== 'viewer') return true;
   }
   return false;
 }
 
-export function createEngagementsRoutes(db: Database.Database): Router {
+export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // ── Helper ──────────────────────────────────────────────────────────────────
 
-  function logChange(engagementId: string, phase: string, action: string, description: string, prev?: unknown, next?: unknown) {
-    db.prepare(`INSERT INTO engagement_changelog (id, engagement_id, phase, action, description, previous_value, new_value)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
-      randomUUID(), engagementId, phase, action, description,
+  async function logChange(engagementId: string, phase: string, action: string, description: string, prev?: unknown, next?: unknown) {
+    await db.run(`INSERT INTO engagement_changelog (id, engagement_id, phase, action, description, previous_value, new_value)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`, randomUUID(), engagementId, phase, action, description,
       prev ? JSON.stringify(prev) : null,
-      next ? JSON.stringify(next) : null
-    );
+      next ? JSON.stringify(next) : null);
   }
 
   // ── Engagements CRUD ────────────────────────────────────────────────────────
 
   // GET /api/engagements — list all engagements
-  router.get('/', (req: Request, res: Response) => {
+  router.get('/', async (req: Request, res: Response) => {
     try {
       if (IS_TEAM && getUserRole(req) !== 'admin') {
         const userId = getUserId(req);
-        const engagements = db.prepare(`
+        const engagements = await db.all(`
           SELECT e.*,
             (SELECT COUNT(*) FROM engagement_scope_items si WHERE si.engagement_id = e.id) as scope_count,
             (SELECT COUNT(*) FROM engagement_resources r WHERE r.engagement_id = e.id) as resource_count,
@@ -96,10 +95,10 @@ export function createEngagementsRoutes(db: Database.Database): Router {
               )
             )
           ORDER BY e.updated_at DESC
-        `).all(userId, userId);
+        `, userId, userId);
         return res.json(engagements);
       }
-      const engagements = db.prepare(`
+      const engagements = await db.all(`
         SELECT e.*,
           (SELECT COUNT(*) FROM engagement_scope_items si WHERE si.engagement_id = e.id) as scope_count,
           (SELECT COUNT(*) FROM engagement_resources r WHERE r.engagement_id = e.id) as resource_count,
@@ -107,7 +106,7 @@ export function createEngagementsRoutes(db: Database.Database): Router {
         FROM engagements e
         WHERE e.status != 'archived'
         ORDER BY e.updated_at DESC
-      `).all();
+      `);
       res.json(engagements);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -115,15 +114,15 @@ export function createEngagementsRoutes(db: Database.Database): Router {
   });
 
   // POST /api/engagements — create new engagement
-  router.post('/', (req: Request, res: Response) => {
+  router.post('/', async (req: Request, res: Response) => {
     try {
       const { title, engagement_type = 'full', your_organisation, client_name, domain_areas = [] } = req.body;
       if (!title) return res.status(400).json({ error: 'title is required' });
       const id = randomUUID();
       const userId = getUserId(req);
-      db.prepare(`INSERT INTO engagements (id, title, engagement_type, your_organisation, client_name, domain_areas, user_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(id, title, engagement_type, your_organisation || null, client_name || null, JSON.stringify(domain_areas), userId);
-      const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(id);
+      await db.run(`INSERT INTO engagements (id, title, engagement_type, your_organisation, client_name, domain_areas, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`, id, title, engagement_type, your_organisation || null, client_name || null, JSON.stringify(domain_areas), userId);
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', id);
       logChange(id, 'setup', 'engagement_created', `Engagement "${title}" created`);
       res.json(engagement);
     } catch (e) {
@@ -133,9 +132,9 @@ export function createEngagementsRoutes(db: Database.Database): Router {
 
   // GET /api/engagements/peer-library — anonymised list of completed engagements for benchmarking
   // NOTE: This route must be defined BEFORE /:id routes to avoid conflict
-  router.get('/peer-library', (req: Request, res: Response) => {
+  router.get('/peer-library', async (req: Request, res: Response) => {
     try {
-      const completed = db.prepare(`
+      const completed = await db.get(`
         SELECT e.id, e.title, e.your_organisation, e.domain_areas, e.updated_at,
           qg.overall_score, qg.scope_completeness, qg.status as qg_status
         FROM engagements e
@@ -143,7 +142,7 @@ export function createEngagementsRoutes(db: Database.Database): Router {
         WHERE e.status IN ('review', 'completed') AND e.enable_as_benchmark = 1
         ORDER BY e.updated_at DESC
         LIMIT 50
-      `).all() as Array<Record<string, unknown>>;
+      `) as Array<Record<string, unknown>>;
 
       // Anonymise: replace real title/client names with "Peer Institution A", "B", etc.
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -162,25 +161,25 @@ export function createEngagementsRoutes(db: Database.Database): Router {
   });
 
   // GET /api/engagements/:id — get engagement with all related data
-  router.get('/:id', (req: Request, res: Response) => {
+  router.get('/:id', async (req: Request, res: Response) => {
     try {
-      const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id));
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
       if (!engagement) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
       const userRole = getUserRole(req);
       if (!canView(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
-      const documents = db.prepare('SELECT * FROM engagement_documents WHERE engagement_id = ? ORDER BY uploaded_at').all(String(req.params.id));
-      const scope_items = db.prepare('SELECT * FROM engagement_scope_items WHERE engagement_id = ? ORDER BY sort_order').all(String(req.params.id));
-      const workstreams = db.prepare('SELECT * FROM engagement_workstreams WHERE engagement_id = ? ORDER BY sort_order').all(String(req.params.id));
-      const resources = db.prepare('SELECT * FROM engagement_resources WHERE engagement_id = ? ORDER BY category, uploaded_at').all(String(req.params.id));
-      const deliverables = db.prepare('SELECT * FROM engagement_deliverables WHERE engagement_id = ?').all(String(req.params.id));
-      const boundaries = db.prepare('SELECT * FROM engagement_boundaries WHERE engagement_id = ? AND status = ?').all(String(req.params.id), 'active');
-      const client_intelligence = db.prepare('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?').get(String(req.params.id));
-      const iterations = db.prepare('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC').all(String(req.params.id));
-      const stakeholders = db.prepare('SELECT * FROM engagement_stakeholders WHERE engagement_id = ?').all(String(req.params.id));
-      const peer_benchmarks = db.prepare('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC').all(String(req.params.id));
-      const quality_gate = db.prepare('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1').get(String(req.params.id)) || null;
+      const documents = await db.all('SELECT * FROM engagement_documents WHERE engagement_id = ? ORDER BY uploaded_at', String(req.params.id));
+      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? ORDER BY sort_order', String(req.params.id));
+      const workstreams = await db.all('SELECT * FROM engagement_workstreams WHERE engagement_id = ? ORDER BY sort_order', String(req.params.id));
+      const resources = await db.all('SELECT * FROM engagement_resources WHERE engagement_id = ? ORDER BY category, uploaded_at', String(req.params.id));
+      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id));
+      const boundaries = await db.all('SELECT * FROM engagement_boundaries WHERE engagement_id = ? AND status = ?', String(req.params.id), 'active');
+      const client_intelligence = await db.all('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id));
+      const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC', String(req.params.id));
+      const stakeholders = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ?', String(req.params.id));
+      const peer_benchmarks = await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id));
+      const quality_gate = await db.all('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
       res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate });
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -188,11 +187,11 @@ export function createEngagementsRoutes(db: Database.Database): Router {
   });
 
   // PATCH /api/engagements/:id — update engagement
-  router.patch('/:id', (req: Request, res: Response) => {
+  router.patch('/:id', async (req: Request, res: Response) => {
     try {
       const { status, your_organisation, client_name, domain_areas, engagement_brief, quality_blueprint,
         thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title } = req.body;
-      const existing = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id)) as Record<string, unknown>;
+      const existing = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!existing) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
       const userRole = getUserRole(req);
@@ -213,11 +212,11 @@ export function createEngagementsRoutes(db: Database.Database): Router {
       if (knowledge_config !== undefined) { updates.push('knowledge_config = ?'); values.push(JSON.stringify(knowledge_config)); }
       if (scope_confirmed_at !== undefined) { updates.push('scope_confirmed_at = ?'); values.push(scope_confirmed_at); }
       values.push(String(req.params.id));
-      db.prepare(`UPDATE engagements SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE engagements SET ${updates.join(', ')} WHERE id = ?`, ...values);
       if (status && status !== existing.status) {
         logChange(String(req.params.id), status, 'status_changed', `Status changed from ${existing.status} to ${status}`, existing.status, status);
       }
-      const updated = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id));
+      const updated = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
       res.json(updated);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -225,13 +224,13 @@ export function createEngagementsRoutes(db: Database.Database): Router {
   });
 
   // DELETE /api/engagements/:id — archive engagement
-  router.delete('/:id', (req: Request, res: Response) => {
+  router.delete('/:id', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
       if (!canEdit(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
-      db.prepare("UPDATE engagements SET status = 'archived', updated_at = datetime('now') WHERE id = ?").run(String(req.params.id));
+      await db.run("UPDATE engagements SET status = 'archived', updated_at = datetime('now') WHERE id = ?", String(req.params.id));
       res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -239,25 +238,25 @@ export function createEngagementsRoutes(db: Database.Database): Router {
   });
 
   // PATCH /api/engagements/:id/project — link/unlink engagement to a project
-  router.patch('/:id/project', (req: Request, res: Response) => {
+  router.patch('/:id/project', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
       // Only engagement owner or admin can link/unlink
-      const existing = db.prepare('SELECT user_id FROM engagements WHERE id = ?').get(String(req.params.id)) as { user_id: string } | undefined;
+      const existing = await db.get('SELECT user_id FROM engagements WHERE id = ?', String(req.params.id)) as { user_id: string } | undefined;
       if (!existing) return res.status(404).json({ error: 'Not found' });
       if (IS_TEAM && userRole !== 'admin' && existing.user_id !== userId)
         return res.status(403).json({ error: 'Only the engagement owner can link to a project' });
       const { project_id } = req.body as { project_id: string | null };
       // Validate project exists if provided
       if (project_id) {
-        const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(project_id);
+        const project = await db.get('SELECT id FROM projects WHERE id = ?', project_id);
         if (!project) return res.status(404).json({ error: 'Project not found' });
       }
-      db.prepare("UPDATE engagements SET project_id = ?, updated_at = datetime('now') WHERE id = ?").run(project_id || null, String(req.params.id));
+      await db.run("UPDATE engagements SET project_id = ?, updated_at = datetime('now') WHERE id = ?", project_id || null, String(req.params.id));
       logChange(String(req.params.id), 'setup', project_id ? 'project_linked' : 'project_unlinked',
         project_id ? `Linked to project ${project_id}` : 'Unlinked from project');
-      const updated = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id));
+      const updated = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
       res.json(updated);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -272,11 +271,11 @@ export function createEngagementsRoutes(db: Database.Database): Router {
       const { document_type = 'engagement_letter' } = req.body;
       if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
       const id = randomUUID();
-      db.prepare(`INSERT INTO engagement_documents (id, engagement_id, document_type, file_path, file_name)
-        VALUES (?, ?, ?, ?, ?)`).run(id, String(req.params.id), document_type, req.file.path, req.file.originalname);
-      db.prepare("UPDATE engagements SET updated_at = datetime('now') WHERE id = ?").run(String(req.params.id));
+      await db.run(`INSERT INTO engagement_documents (id, engagement_id, document_type, file_path, file_name)
+        VALUES (?, ?, ?, ?, ?)`, id, String(req.params.id), document_type, req.file.path, req.file.originalname);
+      await db.run("UPDATE engagements SET updated_at = datetime('now') WHERE id = ?", String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'document_uploaded', `Uploaded ${document_type}: ${req.file.originalname}`);
-      const doc = db.prepare('SELECT * FROM engagement_documents WHERE id = ?').get(id);
+      const doc = await db.get('SELECT * FROM engagement_documents WHERE id = ?', id);
       res.json(doc);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -286,7 +285,7 @@ export function createEngagementsRoutes(db: Database.Database): Router {
   // POST /api/engagements/:id/documents/:docId/extract — trigger Claude extraction
   router.post('/:id/documents/:docId/extract', async (req: Request, res: Response) => {
     try {
-      const doc = db.prepare('SELECT * FROM engagement_documents WHERE id = ? AND engagement_id = ?').get(String(req.params.docId), String(req.params.id)) as Record<string, unknown> | undefined;
+      const doc = await db.get('SELECT * FROM engagement_documents WHERE id = ? AND engagement_id = ?', String(req.params.docId), String(req.params.id)) as Record<string, unknown> | undefined;
       if (!doc) return res.status(404).json({ error: 'Document not found' });
       // Read file content — if file on disk has no extension, rename it using original file_name
       let filePath = doc.file_path as string;
@@ -295,7 +294,7 @@ export function createEngagementsRoutes(db: Database.Database): Router {
         if (ext) {
           const newPath = filePath + ext;
           try { await fs.rename(filePath, newPath); filePath = newPath;
-            db.prepare('UPDATE engagement_documents SET file_path = ? WHERE id = ?').run(newPath, String(req.params.docId));
+            await db.run('UPDATE engagement_documents SET file_path = ? WHERE id = ?', newPath, String(req.params.docId));
           } catch { /* keep original path */ }
         }
       }
@@ -307,7 +306,7 @@ export function createEngagementsRoutes(db: Database.Database): Router {
         fileContent = 'Could not extract text from file.';
       }
 
-      const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id)) as Record<string, unknown>;
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
 
       // Build extraction prompt based on document type
       let extractionPrompt = '';
@@ -399,81 +398,83 @@ Return ONLY valid JSON, no explanation.`;
           extracted = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
         } catch { extracted = {}; }
         // Save extraction results
-        db.prepare(`UPDATE engagement_documents SET extracted_content = ?, extraction_summary = ? WHERE id = ?`)
-          .run(fileContent.slice(0, 50000), JSON.stringify(extracted), String(req.params.docId));
+        await db.run(`UPDATE engagement_documents SET extracted_content = ?, extraction_summary = ? WHERE id = ?`, fileContent.slice(0, 50000), JSON.stringify(extracted), String(req.params.docId));
         // For engagement_letter/project_plan: auto-populate scope items, workstreams, deliverables, boundaries
         if ((doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') && extracted && typeof extracted === 'object') {
           const ex = extracted as Record<string, unknown>;
-          const existing = db.prepare('SELECT id FROM engagement_scope_items WHERE engagement_id = ?').all(String(req.params.id));
+
           if (existing.length === 0 && Array.isArray(ex.scope_items)) {
-            (ex.scope_items as Array<Record<string, unknown>>).forEach((si, idx) => {
-              db.prepare(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', ?)`).run(
+            const scopeItems = ex.scope_items as Array<Record<string, unknown>>;
+            for (let idx = 0; idx < scopeItems.length; idx++) {
+              const si = scopeItems[idx];
+              await db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', ?)`,
                 randomUUID(), String(req.params.id),
                 String(si.title || ''), String(si.description || ''), String(si.category || 'analysis'),
                 JSON.stringify(si.methodology || []), idx, String(si.description || '')
               );
-            });
+            }
           }
           if (Array.isArray(ex.workstreams)) {
-            const existingWs = db.prepare('SELECT id FROM engagement_workstreams WHERE engagement_id = ?').all(String(req.params.id));
+            const existingWs = await db.get('SELECT id FROM engagement_workstreams WHERE engagement_id = ?', String(req.params.id));
             if (existingWs.length === 0) {
-              (ex.workstreams as Array<Record<string, unknown>>).forEach((ws, idx) => {
-                db.prepare(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, timeline_start, timeline_end, sort_order)
-                  VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+              const workstreams = ex.workstreams as Array<Record<string, unknown>>;
+              for (let idx = 0; idx < workstreams.length; idx++) {
+                const ws = workstreams[idx];
+                await db.run(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, timeline_start, timeline_end, sort_order)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
                   randomUUID(), String(req.params.id), String(ws.title || ''), String(ws.description || ''),
                   String(ws.timeline_start || ''), String(ws.timeline_end || ''), idx
                 );
-              });
+              }
             }
           }
           if (Array.isArray(ex.deliverables)) {
-            const existingDel = db.prepare('SELECT id FROM engagement_deliverables WHERE engagement_id = ?').all(String(req.params.id));
+            const existingDel = await db.get('SELECT id FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id));
             if (existingDel.length === 0) {
-              (ex.deliverables as Array<Record<string, unknown>>).forEach((d) => {
-                db.prepare(`INSERT INTO engagement_deliverables (id, engagement_id, title, format, description, delivery_date)
-                  VALUES (?, ?, ?, ?, ?, ?)`).run(
+              const deliverables = ex.deliverables as Array<Record<string, unknown>>;
+              for (const d of deliverables) {
+                await db.run(`INSERT INTO engagement_deliverables (id, engagement_id, title, format, description, delivery_date)
+                  VALUES (?, ?, ?, ?, ?, ?)`,
                   randomUUID(), String(req.params.id), String(d.title || ''), String(d.format || 'docx'),
                   String(d.description || ''), String(d.delivery_date || '')
                 );
-              });
+              }
             }
           }
           // Add boundaries (assumptions + exclusions)
           if (Array.isArray(ex.assumptions)) {
-            (ex.assumptions as string[]).forEach((a) => {
-              if (a) db.prepare(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
-                VALUES (?, ?, 'assumption', ?, 'engagement_letter')`).run(randomUUID(), String(req.params.id), String(a));
-            });
+            for (const a of (ex.assumptions as string[])) {
+              if (a) await db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
+                VALUES (?, ?, 'assumption', ?, 'engagement_letter')`, randomUUID(), String(req.params.id), String(a));
+            }
           }
           if (Array.isArray(ex.exclusions)) {
-            (ex.exclusions as string[]).forEach((e2) => {
-              if (e2) db.prepare(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
-                VALUES (?, ?, 'exclusion', ?, 'engagement_letter')`).run(randomUUID(), String(req.params.id), String(e2));
-            });
+            for (const e2 of (ex.exclusions as string[])) {
+              if (e2) await db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source)
+                VALUES (?, ?, 'exclusion', ?, 'engagement_letter')`, randomUUID(), String(req.params.id), String(e2));
+            }
           }
           // Auto-populate stakeholders from parties.contacts (only if none exist yet)
-          const existingTeam = db.prepare('SELECT id FROM engagement_stakeholders WHERE engagement_id = ?').all(String(req.params.id));
+          const existingTeam = await db.get('SELECT id FROM engagement_stakeholders WHERE engagement_id = ?', String(req.params.id));
           if (existingTeam.length === 0 && ex.parties && typeof ex.parties === 'object') {
             const parties = ex.parties as Record<string, unknown>;
             const contacts = Array.isArray(parties.contacts) ? parties.contacts as Array<Record<string, unknown>> : [];
-            contacts.forEach((c) => {
+            for (const c of contacts) {
               if (c.name) {
-                db.prepare(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, stakeholder_type, expertise_areas)
-                  VALUES (?, ?, ?, ?, ?, 'client_contact', '[]')`).run(
+                await db.run(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, stakeholder_type, expertise_areas)
+                  VALUES (?, ?, ?, ?, ?, 'client_contact', '[]')`,
                   randomUUID(), String(req.params.id), String(c.name), String(c.role || ''), String(c.organisation || '')
                 );
               }
-            });
+            }
           }
           // Update engagement_brief
-          db.prepare("UPDATE engagements SET engagement_brief = ?, updated_at = datetime('now') WHERE id = ?")
-            .run(JSON.stringify(extracted), String(req.params.id));
+          await db.run("UPDATE engagements SET engagement_brief = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
         }
         // For good_example: update quality_blueprint
         if (doc.document_type === 'good_example') {
-          db.prepare("UPDATE engagements SET quality_blueprint = ?, updated_at = datetime('now') WHERE id = ?")
-            .run(JSON.stringify(extracted), String(req.params.id));
+          await db.run("UPDATE engagements SET quality_blueprint = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
         }
         logChange(String(req.params.id), 'setup', 'document_extracted', `Extracted ${doc.document_type}: ${doc.file_name}`);
         res.json({ ok: true, extracted });
@@ -487,24 +488,24 @@ Return ONLY valid JSON, no explanation.`;
 
   // ── Scope Items ─────────────────────────────────────────────────────────────
 
-  router.post('/:id/scope-items', (req: Request, res: Response) => {
+  router.post('/:id/scope-items', async (req: Request, res: Response) => {
     try {
       const { title, description, category, methodology = [], sort_order = 0 } = req.body;
       if (!title) return res.status(400).json({ error: 'title is required' });
       const id = randomUUID();
-      db.prepare(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'added')`).run(id, String(req.params.id), title, description || null, category || null, JSON.stringify(methodology), sort_order);
+      await db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'added')`, id, String(req.params.id), title, description || null, category || null, JSON.stringify(methodology), sort_order);
       logChange(String(req.params.id), 'scope_agreement', 'scope_item_added', `Added scope item: ${title}`);
-      res.json(db.prepare('SELECT * FROM engagement_scope_items WHERE id = ?').get(id));
+      res.json(await db.get('SELECT * FROM engagement_scope_items WHERE id = ?', id));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
-  router.patch('/:id/scope-items/:itemId', (req: Request, res: Response) => {
+  router.patch('/:id/scope-items/:itemId', async (req: Request, res: Response) => {
     try {
       const { title, description, category, status, methodology, workstream_id } = req.body;
-      const existing = db.prepare('SELECT * FROM engagement_scope_items WHERE id = ? AND engagement_id = ?').get(String(req.params.itemId), String(req.params.id));
+      const existing = await db.get('SELECT * FROM engagement_scope_items WHERE id = ? AND engagement_id = ?', String(req.params.itemId), String(req.params.id));
       if (!existing) return res.status(404).json({ error: 'Not found' });
       const updates: string[] = [];
       const values: unknown[] = [];
@@ -516,9 +517,9 @@ Return ONLY valid JSON, no explanation.`;
       if (workstream_id !== undefined) { updates.push('workstream_id = ?'); values.push(workstream_id); }
       if (updates.length === 0) return res.json(existing);
       values.push(String(req.params.itemId));
-      db.prepare(`UPDATE engagement_scope_items SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      await db.run(`UPDATE engagement_scope_items SET ${updates.join(', ')} WHERE id = ?`, ...values);
       logChange(String(req.params.id), 'scope_agreement', 'scope_item_modified', `Modified scope item`);
-      res.json(db.prepare('SELECT * FROM engagement_scope_items WHERE id = ?').get(String(req.params.itemId)));
+      res.json(await db.get('SELECT * FROM engagement_scope_items WHERE id = ?', String(req.params.itemId)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -535,30 +536,30 @@ Return ONLY valid JSON, no explanation.`;
       // text_content: inline text note — store directly as extracted_content, no file/url needed
       const isTextNote = !!text_content && !req.file && !url;
 
-      db.prepare(`INSERT INTO engagement_resources (id, engagement_id, workstream_id, category, title, file_path, url, status, extracted_content)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      await db.run(`INSERT INTO engagement_resources (id, engagement_id, workstream_id, category, title, file_path, url, status, extracted_content)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
         id, String(req.params.id), workstream_id || null, category, resourceTitle,
         req.file ? req.file.path : null, url || null,
         isTextNote ? 'reviewed' : 'uploaded',
         isTextNote ? String(text_content).slice(0, 50000) : null
       );
-      db.prepare("UPDATE engagements SET updated_at = datetime('now') WHERE id = ?").run(String(req.params.id));
+      await db.run("UPDATE engagements SET updated_at = datetime('now') WHERE id = ?", String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'resource_added', `Added ${category} resource: ${resourceTitle}`);
       // Auto-extract text if file uploaded
       if (req.file) {
         try {
           const { extractTextFromFile } = await import('../services/text-extractor.js');
           const extracted = await extractTextFromFile(req.file.path);
-          db.prepare("UPDATE engagement_resources SET extracted_content = ?, status = 'reviewed' WHERE id = ?").run((extracted ?? '').slice(0, 50000), id);
+          await db.run("UPDATE engagement_resources SET extracted_content = ?, status = 'reviewed' WHERE id = ?", (extracted ?? '').slice(0, 50000), id);
         } catch { /* non-fatal */ }
       }
-      res.json(db.prepare('SELECT * FROM engagement_resources WHERE id = ?').get(id));
+      res.json(await db.get('SELECT * FROM engagement_resources WHERE id = ?', id));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
-  router.patch('/:id/resources/:resId', (req: Request, res: Response) => {
+  router.patch('/:id/resources/:resId', async (req: Request, res: Response) => {
     try {
       const { status, relevance_tags } = req.body;
       const updates: string[] = [];
@@ -567,25 +568,24 @@ Return ONLY valid JSON, no explanation.`;
       if (relevance_tags !== undefined) { updates.push('relevance_tags = ?'); values.push(JSON.stringify(relevance_tags)); }
       if (updates.length) {
         values.push(String(req.params.resId));
-        db.prepare(`UPDATE engagement_resources SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+        await db.run(`UPDATE engagement_resources SET ${updates.join(', ')} WHERE id = ?`, ...values);
       }
-      res.json(db.prepare('SELECT * FROM engagement_resources WHERE id = ?').get(String(req.params.resId)));
+      res.json(await db.get('SELECT * FROM engagement_resources WHERE id = ?', String(req.params.resId)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
   // PATCH resource category status
-  router.patch('/:id/resource-categories', (req: Request, res: Response) => {
+  router.patch('/:id/resource-categories', async (req: Request, res: Response) => {
     try {
       const { category, workstream_id, status, notes } = req.body;
-      const existing = db.prepare('SELECT * FROM engagement_resource_categories WHERE engagement_id = ? AND category = ?').get(String(req.params.id), category);
+      const existing = await db.get('SELECT * FROM engagement_resource_categories WHERE engagement_id = ? AND category = ?', String(req.params.id), category);
       if (existing) {
-        db.prepare("UPDATE engagement_resource_categories SET status = ?, notes = ?, updated_at = datetime('now') WHERE engagement_id = ? AND category = ?")
-          .run(status, notes || null, String(req.params.id), category);
+        await db.run("UPDATE engagement_resource_categories SET status = ?, notes = ?, updated_at = datetime('now') WHERE engagement_id = ? AND category = ?", status, notes || null, String(req.params.id), category);
       } else {
-        db.prepare(`INSERT INTO engagement_resource_categories (id, engagement_id, workstream_id, category, status, notes)
-          VALUES (?, ?, ?, ?, ?, ?)`).run(randomUUID(), String(req.params.id), workstream_id || null, category, status, notes || null);
+        await db.run(`INSERT INTO engagement_resource_categories (id, engagement_id, workstream_id, category, status, notes)
+          VALUES (?, ?, ?, ?, ?, ?)`, randomUUID(), String(req.params.id), workstream_id || null, category, status, notes || null);
       }
       logChange(String(req.params.id), 'resource_collection', 'category_status_changed', `Category ${category} status: ${status}`);
       res.json({ ok: true });
@@ -615,8 +615,7 @@ Return ONLY valid JSON, no explanation.`;
       }
 
       const result = await indexFolder(db, normalised);
-      db.prepare(`UPDATE engagements SET rag_directory_path = ?, updated_at = datetime('now') WHERE id = ?`)
-        .run(normalised, String(req.params.id));
+      await db.run(`UPDATE engagements SET rag_directory_path = ?, updated_at = datetime('now') WHERE id = ?`, normalised, String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_set', `RAG directory: ${normalised}`);
       res.json({ ok: true, folderPath: normalised, ...result });
     } catch (e) {
@@ -625,10 +624,9 @@ Return ONLY valid JSON, no explanation.`;
   });
 
   // DELETE /:id/rag-directory — remove RAG directory from this engagement
-  router.delete('/:id/rag-directory', (req: Request, res: Response) => {
+  router.delete('/:id/rag-directory', async (req: Request, res: Response) => {
     try {
-      db.prepare(`UPDATE engagements SET rag_directory_path = NULL, updated_at = datetime('now') WHERE id = ?`)
-        .run(String(req.params.id));
+      await db.run(`UPDATE engagements SET rag_directory_path = NULL, updated_at = datetime('now') WHERE id = ?`, String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_removed', 'RAG directory removed');
       res.json({ ok: true });
     } catch (e) {
@@ -639,8 +637,7 @@ Return ONLY valid JSON, no explanation.`;
   // POST /:id/rag-directory/reindex — re-run BM25 indexing on the configured folder
   router.post('/:id/rag-directory/reindex', async (req: Request, res: Response) => {
     try {
-      const engagement = db.prepare('SELECT rag_directory_path FROM engagements WHERE id = ?')
-        .get(String(req.params.id)) as { rag_directory_path: string | null } | undefined;
+      const engagement = await db.get('SELECT rag_directory_path FROM engagements WHERE id = ?', String(req.params.id)) as { rag_directory_path: string | null } | undefined;
       if (!engagement?.rag_directory_path) {
         res.status(400).json({ error: 'No RAG directory configured for this engagement' }); return;
       }
@@ -654,18 +651,18 @@ Return ONLY valid JSON, no explanation.`;
 
   // ── Client Intelligence ─────────────────────────────────────────────────────
 
-  router.put('/:id/client-intelligence', (req: Request, res: Response) => {
+  router.put('/:id/client-intelligence', async (req: Request, res: Response) => {
     try {
-      const existing = db.prepare('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?').get(String(req.params.id));
+
       const data = req.body;
       if (existing) {
-        db.prepare(`UPDATE engagement_client_intelligence SET
+        await db.run(`UPDATE engagement_client_intelligence SET
           client_name = ?, division_department = ?, region_jurisdiction = ?, products_in_scope = ?,
           scale_indicators = ?, regulatory_supervisors = ?, recent_regulatory_history = ?,
           peer_comparators = ?, business_model_description = ?, technology_landscape = ?,
           organisational_context = ?, engagement_trigger = ?, client_maturity_signal = ?,
           sensitivities = ?, online_research_authorised = ?, source_channels = ?, updated_at = datetime('now')
-          WHERE engagement_id = ?`).run(
+          WHERE engagement_id = ?`, 
           data.client_name, data.division_department, data.region_jurisdiction,
           JSON.stringify(data.products_in_scope || []), JSON.stringify(data.scale_indicators || {}),
           JSON.stringify(data.regulatory_supervisors || []), JSON.stringify(data.recent_regulatory_history || []),
@@ -675,11 +672,11 @@ Return ONLY valid JSON, no explanation.`;
           String(req.params.id)
         );
       } else {
-        db.prepare(`INSERT INTO engagement_client_intelligence (id, engagement_id, client_name, division_department, region_jurisdiction,
+        await db.run(`INSERT INTO engagement_client_intelligence (id, engagement_id, client_name, division_department, region_jurisdiction,
           products_in_scope, scale_indicators, regulatory_supervisors, recent_regulatory_history, peer_comparators,
           business_model_description, technology_landscape, organisational_context, engagement_trigger,
           client_maturity_signal, sensitivities, online_research_authorised, source_channels)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
           randomUUID(), String(req.params.id), data.client_name, data.division_department, data.region_jurisdiction,
           JSON.stringify(data.products_in_scope || []), JSON.stringify(data.scale_indicators || {}),
           JSON.stringify(data.regulatory_supervisors || []), JSON.stringify(data.recent_regulatory_history || []),
@@ -689,7 +686,7 @@ Return ONLY valid JSON, no explanation.`;
         );
       }
       logChange(String(req.params.id), 'client_intelligence', 'intelligence_updated', 'Client intelligence updated');
-      res.json(db.prepare('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?').get(String(req.params.id)));
+      res.json(await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -697,21 +694,21 @@ Return ONLY valid JSON, no explanation.`;
 
   // ── Workstreams ─────────────────────────────────────────────────────────────
 
-  router.post('/:id/workstreams', (req: Request, res: Response) => {
+  router.post('/:id/workstreams', async (req: Request, res: Response) => {
     try {
       const { title, description, expert_panel = [], thinking_level, timeline_start, timeline_end, sort_order = 0 } = req.body;
       if (!title) return res.status(400).json({ error: 'title is required' });
       const id = randomUUID();
-      db.prepare(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, expert_panel, thinking_level, timeline_start, timeline_end, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(id, String(req.params.id), title, description || null, JSON.stringify(expert_panel), thinking_level || null, timeline_start || null, timeline_end || null, sort_order);
+      await db.run(`INSERT INTO engagement_workstreams (id, engagement_id, title, description, expert_panel, thinking_level, timeline_start, timeline_end, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, String(req.params.id), title, description || null, JSON.stringify(expert_panel), thinking_level || null, timeline_start || null, timeline_end || null, sort_order);
       logChange(String(req.params.id), 'workstream_planning', 'workstream_added', `Added workstream: ${title}`);
-      res.json(db.prepare('SELECT * FROM engagement_workstreams WHERE id = ?').get(id));
+      res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', id));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
-  router.patch('/:id/workstreams/:wsId', (req: Request, res: Response) => {
+  router.patch('/:id/workstreams/:wsId', async (req: Request, res: Response) => {
     try {
       const { title, description, execution_status, expert_panel, thinking_level, timeline_start, timeline_end } = req.body;
       const updates: string[] = [];
@@ -723,8 +720,8 @@ Return ONLY valid JSON, no explanation.`;
       if (thinking_level !== undefined) { updates.push('thinking_level = ?'); values.push(thinking_level); }
       if (timeline_start !== undefined) { updates.push('timeline_start = ?'); values.push(timeline_start); }
       if (timeline_end !== undefined) { updates.push('timeline_end = ?'); values.push(timeline_end); }
-      if (updates.length) { values.push(String(req.params.wsId)); db.prepare(`UPDATE engagement_workstreams SET ${updates.join(', ')} WHERE id = ?`).run(...values); }
-      res.json(db.prepare('SELECT * FROM engagement_workstreams WHERE id = ?').get(String(req.params.wsId)));
+      if (updates.length) { values.push(String(req.params.wsId)); await db.run(`UPDATE engagement_workstreams SET ${updates.join(', ')} WHERE id = ?`, ...values); }
+      res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', String(req.params.wsId)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -735,15 +732,15 @@ Return ONLY valid JSON, no explanation.`;
   router.post('/:id/execute', async (req: Request, res: Response) => {
     try {
       const { workstream_id } = req.body;
-      const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id)) as Record<string, unknown>;
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Engagement not found' });
 
-      const workstream = workstream_id ? db.prepare('SELECT * FROM engagement_workstreams WHERE id = ?').get(workstream_id) as Record<string, unknown> : null;
-      const scope_items = db.prepare('SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != ?').all(String(req.params.id), 'removed') as Array<Record<string, unknown>>;
-      const resources = db.prepare('SELECT id, category, title, extracted_content, url FROM engagement_resources WHERE engagement_id = ? AND status NOT IN (?, ?)').all(String(req.params.id), 'not_available', 'coming_later') as Array<Record<string, unknown>>;
-      const client_intel = db.prepare('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?').get(String(req.params.id)) as Record<string, unknown> | undefined;
-      const deliverables = db.prepare('SELECT * FROM engagement_deliverables WHERE engagement_id = ?').all(String(req.params.id)) as Array<Record<string, unknown>>;
-      const team_members = db.prepare(`SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY stakeholder_type, created_at ASC`).all(String(req.params.id)) as Array<Record<string, unknown>>;
+      const workstream = workstream_id ? await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', workstream_id) as Record<string, unknown> : null;
+      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != ?', String(req.params.id), 'removed') as Array<Record<string, unknown>>;
+      const resources = await db.all('SELECT id, category, title, extracted_content, url FROM engagement_resources WHERE engagement_id = ? AND status NOT IN (?, ?)', String(req.params.id), 'not_available', 'coming_later') as Array<Record<string, unknown>>;
+      const client_intel = await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
+      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
+      const team_members = await db.all(`SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY stakeholder_type, created_at ASC`, String(req.params.id)) as Array<Record<string, unknown>>;
 
       let qualityBlueprint: Record<string, unknown> = {};
       try { qualityBlueprint = JSON.parse(String(engagement.quality_blueprint || '{}')); } catch { /**/ }
@@ -789,7 +786,7 @@ ${deliveryTeam.map(m => {
       const qualityInstructions = qualityBlueprint && (qualityBlueprint as Record<string, unknown>).quality_instructions
         ? `\n\nQUALITY BLUEPRINT:\n${((qualityBlueprint as Record<string, unknown>).quality_instructions as string[] || []).join('\n')}` : '';
 
-      const peerBenchmarks = db.prepare('SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ?').all(String(req.params.id)) as Array<Record<string, unknown>>;
+      const peerBenchmarks = await db.all('SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
       const peerContext = peerBenchmarks.length > 0 ? `
 
 PEER BENCHMARKS (for comparative context — institution identities are confidential):
@@ -824,14 +821,14 @@ Use these benchmarks to position the client relative to industry peers where rel
       // Knowledge Packs (Mode 6) — inject active pack entities
       if (knowledgeConfig.knowledgePacksEnabled) {
         try {
-          const packRows = db.prepare(`
+          const packRows = await db.all(`
             SELECT kp.name, kp.jurisdiction, en.label, en.entity_type, en.description
             FROM knowledge_packs kp
             JOIN entity_nodes en ON en.pack_id = kp.pack_id
             WHERE kp.is_active = 1
             ORDER BY kp.name, en.entity_type
             LIMIT 200
-          `).all() as Array<{ name: string; jurisdiction: string; label: string; entity_type: string; description: string }>;
+          `) as Array<{ name: string; jurisdiction: string; label: string; entity_type: string; description: string }>;
           if (packRows.length > 0) {
             const grouped = new Map<string, string[]>();
             for (const r of packRows) {
@@ -913,16 +910,16 @@ Format your output as professional consulting deliverables. Use clear headings, 
       const fullThinking = streamResult.thinking;
 
       // Save iteration
-      const iterationNumber = (db.prepare('SELECT MAX(iteration_number) as max FROM engagement_iterations WHERE engagement_id = ?').get(String(req.params.id)) as { max: number | null })?.max ?? 0;
+      const iterationNumber = ((await db.get('SELECT MAX(iteration_number) as max FROM engagement_iterations WHERE engagement_id = ?', String(req.params.id))) as { max: number | null } | undefined)?.max ?? 0;
       const iterationId = randomUUID();
-      db.prepare(`INSERT INTO engagement_iterations (id, engagement_id, workstream_id, iteration_number, output_content, thinking_content, status, resources_used)
-        VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`).run(
+      await db.run(`INSERT INTO engagement_iterations (id, engagement_id, workstream_id, iteration_number, output_content, thinking_content, status, resources_used)
+        VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`, 
         iterationId, String(req.params.id), workstream_id || null, iterationNumber + 1,
         fullContent, fullThinking || null, JSON.stringify(resources.map(r => r.id))
       );
-      db.prepare("UPDATE engagements SET status = 'review', updated_at = datetime('now') WHERE id = ?").run(String(req.params.id));
+      await db.run("UPDATE engagements SET status = 'review', updated_at = datetime('now') WHERE id = ?", String(req.params.id));
       if (workstream_id) {
-        db.prepare("UPDATE engagement_workstreams SET execution_status = 'review' WHERE id = ?").run(workstream_id);
+        await db.run("UPDATE engagement_workstreams SET execution_status = 'review' WHERE id = ?", workstream_id);
       }
       logChange(String(req.params.id), 'execution', 'iteration_created', `Iteration ${iterationNumber + 1} created for ${workstream ? workstream.title : 'engagement'}`);
       res.write(`data: ${JSON.stringify({ type: 'done', iterationId })}\n\n`);
@@ -935,16 +932,16 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
   // ── Iterations ──────────────────────────────────────────────────────────────
 
-  router.get('/:id/iterations', (req: Request, res: Response) => {
+  router.get('/:id/iterations', async (req: Request, res: Response) => {
     try {
-      const iterations = db.prepare('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC').all(String(req.params.id));
+      const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC', String(req.params.id));
       res.json(iterations);
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
-  router.patch('/:id/iterations/:itId', (req: Request, res: Response) => {
+  router.patch('/:id/iterations/:itId', async (req: Request, res: Response) => {
     try {
       const { status, gap_analysis, quality_scores, expert_reviews } = req.body;
       const updates: string[] = [];
@@ -953,8 +950,8 @@ Format your output as professional consulting deliverables. Use clear headings, 
       if (gap_analysis !== undefined) { updates.push('gap_analysis = ?'); values.push(JSON.stringify(gap_analysis)); }
       if (quality_scores !== undefined) { updates.push('quality_scores = ?'); values.push(JSON.stringify(quality_scores)); }
       if (expert_reviews !== undefined) { updates.push('expert_reviews = ?'); values.push(JSON.stringify(expert_reviews)); }
-      if (updates.length) { values.push(String(req.params.itId)); db.prepare(`UPDATE engagement_iterations SET ${updates.join(', ')} WHERE id = ?`).run(...values); }
-      res.json(db.prepare('SELECT * FROM engagement_iterations WHERE id = ?').get(String(req.params.itId)));
+      if (updates.length) { values.push(String(req.params.itId)); await db.run(`UPDATE engagement_iterations SET ${updates.join(', ')} WHERE id = ?`, ...values); }
+      res.json(await db.get('SELECT * FROM engagement_iterations WHERE id = ?', String(req.params.itId)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -963,14 +960,14 @@ Format your output as professional consulting deliverables. Use clear headings, 
   // POST /api/engagements/:id/iterations/:itId/gap-analysis — lens-aware gap analysis
   router.post('/:id/iterations/:itId/gap-analysis', async (req: Request, res: Response) => {
     try {
-      const iteration = db.prepare('SELECT * FROM engagement_iterations WHERE id = ? AND engagement_id = ?').get(String(req.params.itId), String(req.params.id)) as Record<string, unknown> | undefined;
+      const iteration = await db.get('SELECT * FROM engagement_iterations WHERE id = ? AND engagement_id = ?', String(req.params.itId), String(req.params.id)) as Record<string, unknown> | undefined;
       if (!iteration) return res.status(404).json({ error: 'Iteration not found' });
 
       const { lens = 'scope', custom_instruction = '' } = req.body as { lens?: string; custom_instruction?: string };
 
-      const engagement = db.prepare('SELECT * FROM engagement_tasks WHERE id = ?').get(String(req.params.id)) as Record<string, unknown> | undefined;
-      const scope_items = db.prepare('SELECT * FROM engagement_scope_items WHERE engagement_id = ?').all(String(req.params.id)) as Record<string, unknown>[];
-      const resources = db.prepare('SELECT id, category, title, extracted_content FROM engagement_resources WHERE engagement_id = ?').all(String(req.params.id)) as Record<string, unknown>[];
+      const engagement = await db.get('SELECT * FROM engagement_tasks WHERE id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
+      const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown>[];
+      const resources = await db.all('SELECT id, category, title, extracted_content FROM engagement_resources WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown>[];
 
       // Build reference context based on lens
       let lensInstruction = '';
@@ -1057,7 +1054,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
         if (jsonMatch) result = { ...result, ...JSON.parse(jsonMatch[0]) };
       } catch { /* keep defaults */ }
 
-      db.prepare('UPDATE engagement_iterations SET gap_analysis = ? WHERE id = ?').run(JSON.stringify(result), String(req.params.itId));
+      await db.run('UPDATE engagement_iterations SET gap_analysis = ? WHERE id = ?', JSON.stringify(result), String(req.params.itId));
       res.json(result);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -1067,9 +1064,9 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
   // ── Team / Stakeholders ──────────────────────────────────────────────────────
 
   // GET /api/engagements/:id/team — list all team members + client contacts
-  router.get('/:id/team', (req: Request, res: Response) => {
+  router.get('/:id/team', async (req: Request, res: Response) => {
     try {
-      const members = db.prepare('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY created_at ASC').all(String(req.params.id));
+      const members = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? ORDER BY created_at ASC', String(req.params.id));
       res.json(members);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -1077,25 +1074,25 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
   });
 
   // POST /api/engagements/:id/team — add a team member or client contact
-  router.post('/:id/team', (req: Request, res: Response) => {
+  router.post('/:id/team', async (req: Request, res: Response) => {
     try {
       const { name, role, organisation, contact_info, stakeholder_type = 'client_contact', expertise_areas = [], notes } = req.body;
       if (!name) return res.status(400).json({ error: 'name required' });
       const id = randomUUID();
-      db.prepare(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, contact_info, stakeholder_type, expertise_areas, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      await db.run(`INSERT INTO engagement_stakeholders (id, engagement_id, name, role, organisation, contact_info, stakeholder_type, expertise_areas, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
         id, String(req.params.id), name, role || null, organisation || null,
         contact_info || null, stakeholder_type, JSON.stringify(expertise_areas), notes || null
       );
       logChange(String(req.params.id), 'team', 'member_added', `Added ${stakeholder_type}: ${name}`);
-      res.json(db.prepare('SELECT * FROM engagement_stakeholders WHERE id = ?').get(id));
+      res.json(await db.get('SELECT * FROM engagement_stakeholders WHERE id = ?', id));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
   // PATCH /api/engagements/:id/team/:memberId — update team member
-  router.patch('/:id/team/:memberId', (req: Request, res: Response) => {
+  router.patch('/:id/team/:memberId', async (req: Request, res: Response) => {
     try {
       const { name, role, organisation, contact_info, stakeholder_type, expertise_areas, notes } = req.body;
       const updates: string[] = [];
@@ -1107,18 +1104,18 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       if (stakeholder_type !== undefined) { updates.push('stakeholder_type = ?'); values.push(stakeholder_type); }
       if (expertise_areas !== undefined) { updates.push('expertise_areas = ?'); values.push(JSON.stringify(expertise_areas)); }
       if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
-      if (updates.length) { values.push(String(req.params.memberId)); db.prepare(`UPDATE engagement_stakeholders SET ${updates.join(', ')} WHERE id = ?`).run(...values); }
-      res.json(db.prepare('SELECT * FROM engagement_stakeholders WHERE id = ?').get(String(req.params.memberId)));
+      if (updates.length) { values.push(String(req.params.memberId)); await db.run(`UPDATE engagement_stakeholders SET ${updates.join(', ')} WHERE id = ?`, ...values); }
+      res.json(await db.get('SELECT * FROM engagement_stakeholders WHERE id = ?', String(req.params.memberId)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
   // DELETE /api/engagements/:id/team/:memberId — remove team member
-  router.delete('/:id/team/:memberId', (req: Request, res: Response) => {
+  router.delete('/:id/team/:memberId', async (req: Request, res: Response) => {
     try {
-      const member = db.prepare('SELECT name FROM engagement_stakeholders WHERE id = ?').get(String(req.params.memberId)) as { name: string } | undefined;
-      db.prepare('DELETE FROM engagement_stakeholders WHERE id = ? AND engagement_id = ?').run(String(req.params.memberId), String(req.params.id));
+      const member = await db.get('SELECT name FROM engagement_stakeholders WHERE id = ?', String(req.params.memberId)) as { name: string } | undefined;
+      await db.run('DELETE FROM engagement_stakeholders WHERE id = ? AND engagement_id = ?', String(req.params.memberId), String(req.params.id));
       if (member) logChange(String(req.params.id), 'team', 'member_removed', `Removed: ${member.name}`);
       res.json({ ok: true });
     } catch (e) {
@@ -1129,8 +1126,8 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
   // POST /api/engagements/:id/team/extract — Claude Haiku extracts team from engagement letter
   router.post('/:id/team/extract', async (req: Request, res: Response) => {
     try {
-      const letterDoc = db.prepare(`SELECT * FROM engagement_documents WHERE engagement_id = ? AND document_type = 'engagement_letter' ORDER BY uploaded_at DESC LIMIT 1`).get(String(req.params.id)) as Record<string, unknown> | undefined;
-      const planDoc = db.prepare(`SELECT * FROM engagement_documents WHERE engagement_id = ? AND document_type = 'project_plan' ORDER BY uploaded_at DESC LIMIT 1`).get(String(req.params.id)) as Record<string, unknown> | undefined;
+      const letterDoc = await db.get(`SELECT * FROM engagement_documents WHERE engagement_id = ? AND document_type = 'engagement_letter' ORDER BY uploaded_at DESC LIMIT 1`, String(req.params.id)) as Record<string, unknown> | undefined;
+      const planDoc = await db.get(`SELECT * FROM engagement_documents WHERE engagement_id = ? AND document_type = 'project_plan' ORDER BY uploaded_at DESC LIMIT 1`, String(req.params.id)) as Record<string, unknown> | undefined;
       const doc = letterDoc || planDoc;
       if (!doc) return res.status(400).json({ error: 'No engagement letter uploaded. Upload the letter first.' });
 
@@ -1141,7 +1138,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
         if (ext) {
           const newPath = teamFilePath + ext;
           try { await fs.rename(teamFilePath, newPath); teamFilePath = newPath;
-            db.prepare('UPDATE engagement_documents SET file_path = ? WHERE id = ?').run(newPath, String(doc.id));
+            await db.run('UPDATE engagement_documents SET file_path = ? WHERE id = ?', newPath, String(doc.id));
           } catch { /* keep original */ }
         }
       }
@@ -1206,7 +1203,7 @@ Return ONLY valid JSON.`,
       const { query } = req.body;
       if (!query) return res.status(400).json({ error: 'query required' });
 
-      const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id)) as Record<string, unknown>;
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
 
       const benchmarkResult = await callChat({
@@ -1247,8 +1244,8 @@ Return ONLY valid JSON.`,
       } catch { /**/ }
 
       const id = randomUUID();
-      db.prepare(`INSERT INTO engagement_peer_benchmarks (id, engagement_id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, raw_content)
-        VALUES (?, ?, 'web_search', ?, ?, ?, ?, ?, ?, ?)`).run(
+      await db.run(`INSERT INTO engagement_peer_benchmarks (id, engagement_id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, raw_content)
+        VALUES (?, ?, 'web_search', ?, ?, ?, ?, ?, ?, ?)`, 
         id, String(req.params.id),
         String(extracted.anonymized_label || query),
         String(extracted.domain || ''),
@@ -1259,7 +1256,7 @@ Return ONLY valid JSON.`,
         String(extracted.raw_summary || rawText.slice(0, 5000))
       );
       logChange(String(req.params.id), 'resource_collection', 'peer_benchmark_added', `Web search benchmark: ${query}`);
-      res.json(db.prepare('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE id = ?').get(id));
+      res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE id = ?', id));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -1268,18 +1265,18 @@ Return ONLY valid JSON.`,
   // POST /api/engagements/:id/peer-benchmarks/from-internal/:sourceId — use internal engagement as benchmark
   router.post('/:id/peer-benchmarks/from-internal/:sourceId', async (req: Request, res: Response) => {
     try {
-      const sourceEng = db.prepare('SELECT * FROM engagements WHERE id = ? AND enable_as_benchmark = 1').get(String(req.params.sourceId)) as Record<string, unknown> | undefined;
+      const sourceEng = await db.get('SELECT * FROM engagements WHERE id = ? AND enable_as_benchmark = 1', String(req.params.sourceId)) as Record<string, unknown> | undefined;
       if (!sourceEng) return res.status(404).json({ error: 'Source engagement not available as benchmark' });
 
-      const sourceQG = db.prepare('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1').get(String(req.params.sourceId)) as Record<string, unknown> | undefined;
-      const sourceIterations = db.prepare("SELECT output_content FROM engagement_iterations WHERE engagement_id = ? AND status = 'approved' ORDER BY iteration_number DESC LIMIT 1").get(String(req.params.sourceId)) as Record<string, unknown> | undefined;
+      const sourceQG = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.sourceId)) as Record<string, unknown> | undefined;
+      const sourceIterations = await db.get("SELECT output_content FROM engagement_iterations WHERE engagement_id = ? AND status = 'approved' ORDER BY iteration_number DESC LIMIT 1", String(req.params.sourceId)) as Record<string, unknown> | undefined;
 
       // Count existing benchmarks to assign letter label
-      const existingCount = (db.prepare('SELECT COUNT(*) as n FROM engagement_peer_benchmarks WHERE engagement_id = ?').get(String(req.params.id)) as { n: number }).n;
+      const existingCount = (await db.get('SELECT COUNT(*) as n FROM engagement_peer_benchmarks WHERE engagement_id = ?', String(req.params.id)) as { n: number }).n;
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const label = `Peer Institution ${letters[existingCount] || existingCount + 1}`;
 
-      const domainAreas = (() => { try { return JSON.parse(String(sourceEng.domain_areas || '[]')).join(', '); } catch { return ''; } })();
+      const domainAreas = async (() => { try { return JSON.parse(String(sourceEng.domain_areas || '[]')).join(', '); } catch { return ''; } })();
 
       // Extract key findings from quality gate if available
       let keyFindings: string[] = [];
@@ -1299,31 +1296,31 @@ Return ONLY valid JSON.`,
       }
 
       const id = randomUUID();
-      db.prepare(`INSERT INTO engagement_peer_benchmarks (id, engagement_id, benchmark_type, source_engagement_id, anonymized_label, domain, scope_similarity, maturity_data, key_findings)
-        VALUES (?, ?, 'internal', ?, ?, ?, 'Similar scope and domain', ?, ?)`).run(
+      await db.run(`INSERT INTO engagement_peer_benchmarks (id, engagement_id, benchmark_type, source_engagement_id, anonymized_label, domain, scope_similarity, maturity_data, key_findings)
+        VALUES (?, ?, 'internal', ?, ?, ?, 'Similar scope and domain', ?, ?)`, 
         id, String(req.params.id), String(req.params.sourceId), label, domainAreas,
         JSON.stringify(maturityData), JSON.stringify(keyFindings)
       );
       logChange(String(req.params.id), 'resource_collection', 'peer_benchmark_added', `Internal benchmark added: ${label}`);
-      res.json(db.prepare('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, created_at FROM engagement_peer_benchmarks WHERE id = ?').get(id));
+      res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, created_at FROM engagement_peer_benchmarks WHERE id = ?', id));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
   // GET /api/engagements/:id/peer-benchmarks
-  router.get('/:id/peer-benchmarks', (req: Request, res: Response) => {
+  router.get('/:id/peer-benchmarks', async (req: Request, res: Response) => {
     try {
-      res.json(db.prepare('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC').all(String(req.params.id)));
+      res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
   });
 
   // DELETE /api/engagements/:id/peer-benchmarks/:benchmarkId
-  router.delete('/:id/peer-benchmarks/:benchmarkId', (req: Request, res: Response) => {
+  router.delete('/:id/peer-benchmarks/:benchmarkId', async (req: Request, res: Response) => {
     try {
-      db.prepare('DELETE FROM engagement_peer_benchmarks WHERE id = ? AND engagement_id = ?').run(String(req.params.benchmarkId), String(req.params.id));
+      await db.run('DELETE FROM engagement_peer_benchmarks WHERE id = ? AND engagement_id = ?', String(req.params.benchmarkId), String(req.params.id));
       res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -1336,20 +1333,20 @@ Return ONLY valid JSON.`,
   router.post('/:id/quality-gate/run', async (req: Request, res: Response) => {
     try {
       const { iteration_id } = req.body;
-      const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id)) as Record<string, unknown>;
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
 
       // Get the iteration to review (latest approved or specified)
       const iteration = iteration_id
-        ? db.prepare('SELECT * FROM engagement_iterations WHERE id = ?').get(iteration_id) as Record<string, unknown>
-        : db.prepare("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1").get(String(req.params.id)) as Record<string, unknown>;
+        ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
+        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
       if (!iteration) return res.status(400).json({ error: 'No iteration found to review' });
 
-      const scope_items = db.prepare("SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != 'removed'").all(String(req.params.id)) as Array<Record<string, unknown>>;
-      const boundaries = db.prepare('SELECT * FROM engagement_boundaries WHERE engagement_id = ?').all(String(req.params.id)) as Array<Record<string, unknown>>;
-      const deliverables = db.prepare('SELECT * FROM engagement_deliverables WHERE engagement_id = ?').all(String(req.params.id)) as Array<Record<string, unknown>>;
-      const peer_benchmarks = db.prepare("SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ?").all(String(req.params.id)) as Array<Record<string, unknown>>;
+      const scope_items = await db.all("SELECT * FROM engagement_scope_items WHERE engagement_id = ? AND status != 'removed'", String(req.params.id)) as Array<Record<string, unknown>>;
+      const boundaries = await db.all('SELECT * FROM engagement_boundaries WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
+      const deliverables = await db.all('SELECT * FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id)) as Array<Record<string, unknown>>;
+      const peer_benchmarks = await db.all("SELECT * FROM engagement_peer_benchmarks WHERE engagement_id = ?", String(req.params.id)) as Array<Record<string, unknown>>;
 
       let qualityBlueprint: Record<string, unknown> = {};
       try { qualityBlueprint = JSON.parse(String(engagement.quality_blueprint || '{}')); } catch { /**/ }
@@ -1466,8 +1463,8 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
 
       // Save quality gate record
       const qgId = randomUUID();
-      db.prepare(`INSERT INTO engagement_quality_gates (id, engagement_id, iteration_id, scope_completeness, blueprint_alignment, cross_consistency, assumptions_section, executive_summary, expert_reviews, overall_score, release_ready, blockers, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed')`).run(
+      await db.run(`INSERT INTO engagement_quality_gates (id, engagement_id, iteration_id, scope_completeness, blueprint_alignment, cross_consistency, assumptions_section, executive_summary, expert_reviews, overall_score, release_ready, blockers, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed')`, 
         qgId, String(req.params.id), String(iteration.id),
         JSON.stringify(results['scope_completeness']),
         JSON.stringify(results['blueprint_alignment']),
@@ -1478,7 +1475,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
         overallScore, releaseReady ? 1 : 0,
         JSON.stringify(blockers)
       );
-      db.prepare("UPDATE engagements SET status = 'quality_gate', updated_at = datetime('now') WHERE id = ?").run(String(req.params.id));
+      await db.run("UPDATE engagements SET status = 'quality_gate', updated_at = datetime('now') WHERE id = ?", String(req.params.id));
       logChange(String(req.params.id), 'quality_gate', 'quality_gate_run', `Quality gate completed. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`);
 
       res.write(`data: ${JSON.stringify({ type: 'done', quality_gate_id: qgId, overall_score: overallScore, release_ready: releaseReady, blockers })}\n\n`);
@@ -1490,9 +1487,9 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
   });
 
   // GET /api/engagements/:id/quality-gate/latest
-  router.get('/:id/quality-gate/latest', (req: Request, res: Response) => {
+  router.get('/:id/quality-gate/latest', async (req: Request, res: Response) => {
     try {
-      const qg = db.prepare('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1').get(String(req.params.id));
+
       res.json(qg || null);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -1505,18 +1502,18 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
   router.post('/:id/export', async (req: Request, res: Response) => {
     try {
       const { format = 'docx', iteration_id, include_executive_summary = true } = req.body;
-      const engagement = db.prepare('SELECT * FROM engagements WHERE id = ?').get(String(req.params.id)) as Record<string, unknown>;
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!engagement) return res.status(404).json({ error: 'Not found' });
 
       // Get iteration content
       const iteration = iteration_id
-        ? db.prepare('SELECT * FROM engagement_iterations WHERE id = ?').get(iteration_id) as Record<string, unknown>
-        : db.prepare("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1").get(String(req.params.id)) as Record<string, unknown>;
+        ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
+        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
       if (!iteration || !iteration.output_content) return res.status(400).json({ error: 'No iteration content to export' });
 
       // Get quality gate for executive summary
-      const qg = db.prepare('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1').get(String(req.params.id)) as Record<string, unknown> | undefined;
+      const qg = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) as Record<string, unknown> | undefined;
 
       let fullContent = '';
       if (include_executive_summary && qg?.executive_summary) {
@@ -1573,9 +1570,9 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
 
   // ── Changelog ───────────────────────────────────────────────────────────────
 
-  router.get('/:id/changelog', (req: Request, res: Response) => {
+  router.get('/:id/changelog', async (req: Request, res: Response) => {
     try {
-      const changes = db.prepare('SELECT * FROM engagement_changelog WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 50').all(String(req.params.id));
+
       res.json(changes);
     } catch (e) {
       res.status(500).json({ error: String(e) });

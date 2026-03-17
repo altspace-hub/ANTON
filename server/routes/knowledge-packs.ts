@@ -4,7 +4,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
@@ -31,18 +32,18 @@ const upload = multer({
   },
 });
 
-export function createKnowledgePacksRoutes(db: Database.Database): Router {
+export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
-  const svc = createKnowledgePackService(db);
+  const svc = await createKnowledgePackService(db);
 
   function getUserId(req: Request): string {
     return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
   }
 
   // ── List packs ─────────────────────────────────────────────────────────────
-  router.get('/knowledge-packs', (req: Request, res: Response) => {
+  router.get('/knowledge-packs', async (req: Request, res: Response) => {
     try {
-      const packs = svc.listPacks(getUserId(req));
+      const packs = await svc.listPacks(getUserId(req));
       res.json({ packs });
     } catch (err) {
       console.error('[knowledge-packs] list error:', err);
@@ -51,9 +52,9 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Get single pack ────────────────────────────────────────────────────────
-  router.get('/knowledge-packs/:id', (req: Request, res: Response) => {
+  router.get('/knowledge-packs/:id', async (req: Request, res: Response) => {
     try {
-      const pack = svc.getPack(String(req.params.id));
+      const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       res.json({ pack });
     } catch (err) {
@@ -63,13 +64,13 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Get pack entities (preview) ────────────────────────────────────────────
-  router.get('/knowledge-packs/:id/entities', (req: Request, res: Response) => {
+  router.get('/knowledge-packs/:id/entities', async (req: Request, res: Response) => {
     try {
-      const pack = svc.getPack(String(req.params.id));
+      const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const limit = Math.min(parseInt(String(req.query.limit ?? '100')), 500);
       const offset = parseInt(String(req.query.offset ?? '0'));
-      const entities = svc.getPackEntities(String(req.params.id), limit, offset);
+      const entities = await svc.getPackEntities(String(req.params.id), limit, offset);
       res.json({ entities, total: pack.entity_count });
     } catch (err) {
       console.error('[knowledge-packs] entities error:', err);
@@ -78,13 +79,13 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Get pack relationships (preview) ──────────────────────────────────────
-  router.get('/knowledge-packs/:id/relationships', (req: Request, res: Response) => {
+  router.get('/knowledge-packs/:id/relationships', async (req: Request, res: Response) => {
     try {
-      const pack = svc.getPack(String(req.params.id));
+      const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const limit = Math.min(parseInt(String(req.query.limit ?? '100')), 500);
       const offset = parseInt(String(req.query.offset ?? '0'));
-      const relationships = svc.getPackRelationships(String(req.params.id), limit, offset);
+      const relationships = await svc.getPackRelationships(String(req.params.id), limit, offset);
       res.json({ relationships, total: pack.relationship_count });
     } catch (err) {
       console.error('[knowledge-packs] relationships error:', err);
@@ -94,9 +95,9 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
 
   // ── List bundled packs (ship with ANTON in data/knowledge-packs/) ──────────
   // MUST be before /:id to avoid route shadowing
-  router.get('/knowledge-packs/bundled/list', (_req: Request, res: Response) => {
+  router.get('/knowledge-packs/bundled/list', async (_req: Request, res: Response) => {
     try {
-      const packs = svc.listBundledPacks();
+      const packs = await svc.listBundledPacks();
       res.json({ packs });
     } catch (err) {
       console.error('[knowledge-packs] bundled list error:', err);
@@ -105,11 +106,11 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Install a bundled pack ─────────────────────────────────────────────────
-  router.post('/knowledge-packs/bundled/:slug/install', importRateLimit, (req: Request, res: Response) => {
+  router.post('/knowledge-packs/bundled/:slug/install', importRateLimit, async (req: Request, res: Response) => {
     try {
       const slug = String(req.params.slug).replace(/[^a-z0-9-]/gi, ''); // sanitise
       const userId = getUserId(req);
-      const pack = svc.installBundledPack(slug, userId);
+      const pack = await svc.installBundledPack(slug, userId);
       res.status(201).json({ pack, message: `Pack '${pack.display_name}' installed with ${pack.entity_count} entities` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Install failed';
@@ -119,9 +120,9 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Summary (for prompt layer) — MUST be before /:id to avoid route shadowing ──
-  router.get('/knowledge-packs/meta/active-summary', (_req: Request, res: Response) => {
+  router.get('/knowledge-packs/meta/active-summary', async (_req: Request, res: Response) => {
     try {
-      const summary = svc.getActivePacksSummary();
+      const summary = await svc.getActivePacksSummary();
       res.json({ summary });
     } catch (err) {
       console.error('[knowledge-packs] summary error:', err);
@@ -130,11 +131,11 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Import pack from .anton bundle ─────────────────────────────────────────
-  router.post('/knowledge-packs/import', importRateLimit, upload.single('bundle'), (req: Request, res: Response) => {
+  router.post('/knowledge-packs/import', importRateLimit, upload.single('bundle'), async (req: Request, res: Response) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'No bundle file uploaded (field: bundle)' });
       const userId = getUserId(req);
-      const pack = svc.importBundle(req.file.buffer, userId);
+      const pack = await svc.importBundle(req.file.buffer, userId);
       res.status(201).json({ pack, message: `Pack '${pack.display_name}' imported successfully with ${pack.entity_count} entities` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Import failed';
@@ -144,15 +145,15 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Activate pack ──────────────────────────────────────────────────────────
-  router.patch('/knowledge-packs/:id/activate', (req: Request, res: Response) => {
+  router.patch('/knowledge-packs/:id/activate', async (req: Request, res: Response) => {
     try {
-      const pack = svc.getPack(String(req.params.id));
+      const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const userId = getUserId(req);
       if (pack.user_id !== userId && userId !== 'default' && pack.user_id !== 'system') {
         return res.status(403).json({ error: 'Forbidden' });
       }
-      svc.activatePack(String(req.params.id));
+      await svc.activatePack(String(req.params.id));
       res.json({ status: 'active' });
     } catch (err) {
       console.error('[knowledge-packs] activate error:', err);
@@ -161,15 +162,15 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Deactivate pack ────────────────────────────────────────────────────────
-  router.patch('/knowledge-packs/:id/deactivate', (req: Request, res: Response) => {
+  router.patch('/knowledge-packs/:id/deactivate', async (req: Request, res: Response) => {
     try {
-      const pack = svc.getPack(String(req.params.id));
+      const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const userId = getUserId(req);
       if (pack.user_id !== userId && userId !== 'default' && pack.user_id !== 'system') {
         return res.status(403).json({ error: 'Forbidden' });
       }
-      svc.deactivatePack(String(req.params.id));
+      await svc.deactivatePack(String(req.params.id));
       res.json({ status: 'deactivated' });
     } catch (err) {
       console.error('[knowledge-packs] deactivate error:', err);
@@ -178,15 +179,15 @@ export function createKnowledgePacksRoutes(db: Database.Database): Router {
   });
 
   // ── Delete pack ────────────────────────────────────────────────────────────
-  router.delete('/knowledge-packs/:id', (req: Request, res: Response) => {
+  router.delete('/knowledge-packs/:id', async (req: Request, res: Response) => {
     try {
-      const pack = svc.getPack(String(req.params.id));
+      const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const userId = getUserId(req);
       if (pack.user_id !== userId && userId !== 'default' && pack.user_id !== 'system') {
         return res.status(403).json({ error: 'Forbidden' });
       }
-      svc.deletePack(String(req.params.id));
+      await svc.deletePack(String(req.params.id));
       res.json({ deleted: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Delete failed';

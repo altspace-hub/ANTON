@@ -2,7 +2,7 @@
  * RAG Retriever -- given a query, returns the top-k most relevant chunks using BM25.
  */
 
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { bm25Score, tokenise, type BM25Corpus } from './bm25.js';
 
 export interface RetrievedChunk {
@@ -15,13 +15,13 @@ export interface RetrievedChunk {
   tokenCount: number;
 }
 
-export function retrieveChunks(
-  db: Database.Database,
+export async function retrieveChunks(
+  db: DatabaseAdapter,
   query: string,
   folderPaths: string[],
   topK: number = 10,
   minScore: number = 0.1,
-): RetrievedChunk[] {
+): Promise<RetrievedChunk[]> {
   if (!query.trim() || folderPaths.length === 0) return [];
 
   const queryTokens = tokenise(query);
@@ -29,10 +29,11 @@ export function retrieveChunks(
 
   // Get all chunks from the specified folders
   const placeholders = folderPaths.map(() => '?').join(',');
-  const chunks = db.prepare(
+  const chunks = await db.all(
     `SELECT id, folder_path, document_name, chunk_index, chunk_text, token_count
      FROM document_chunks WHERE folder_path IN (${placeholders})`,
-  ).all(...folderPaths) as Array<{
+    ...folderPaths
+  ) as Array<{
     id: string; folder_path: string; document_name: string;
     chunk_index: number; chunk_text: string; token_count: number;
   }>;
@@ -41,12 +42,13 @@ export function retrieveChunks(
 
   // Get corpus stats (document frequency per term, for BM25 IDF)
   const queryPlaceholders = queryTokens.map(() => '?').join(',');
-  const dfRows = db.prepare(
+  const dfRows = await db.all(
     `SELECT term, COUNT(DISTINCT chunk_id) as df FROM chunk_terms
      WHERE chunk_id IN (SELECT id FROM document_chunks WHERE folder_path IN (${placeholders}))
      AND term IN (${queryPlaceholders})
      GROUP BY term`,
-  ).all(...folderPaths, ...queryTokens) as Array<{ term: string; df: number }>;
+    ...folderPaths, ...queryTokens
+  ) as Array<{ term: string; df: number }>;
 
   const docFrequency: Record<string, number> = {};
   for (const row of dfRows) docFrequency[row.term] = row.df;
@@ -61,9 +63,10 @@ export function retrieveChunks(
   const scored: RetrievedChunk[] = [];
   for (const chunk of chunks) {
     // Get term frequencies for this chunk
-    const tfRows = db.prepare(
+    const tfRows = await db.all(
       `SELECT term, freq FROM chunk_terms WHERE chunk_id = ? AND term IN (${queryPlaceholders})`,
-    ).all(chunk.id, ...queryTokens) as Array<{ term: string; freq: number }>;
+      chunk.id, ...queryTokens
+    ) as Array<{ term: string; freq: number }>;
 
     const termFreqs: Record<string, number> = {};
     for (const row of tfRows) termFreqs[row.term] = row.freq;

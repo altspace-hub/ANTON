@@ -44,7 +44,7 @@ export default function ProjectNotes({ projectId }: { projectId: string }) {
     try {
       const res = await fetch(`/api/projects/${projectId}/notes`, { headers: getAuthHeader() });
       const data = await res.json();
-      setNotes(data);
+      setNotes(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('[project-notes] fetch error:', err);
     }

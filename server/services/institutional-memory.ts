@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import {
   generateDecisionEmbedding,
   cosineSimilarity,
@@ -9,7 +9,7 @@ import {
 import { nanoid } from 'nanoid';
 import { embedAndStore } from './hybrid-search.js';
 
-export function createInstitutionalMemory(db: Database.Database) {
+export async function createInstitutionalMemory(db: DatabaseAdapter) {
 
   /**
    * Save a checkpoint decision with automatic embedding generation
@@ -37,14 +37,13 @@ export function createInstitutionalMemory(db: Database.Database) {
       reasoning: params.humanReasoning || '',
     });
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO checkpoint_decisions
       (id, execution_id, workflow_id, step_index, ai_recommendation, ai_confidence,
        human_decision, human_reasoning, is_override, override_category, context_snapshot,
        decided_by, embedding)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
+    `, id,
       params.executionId,
       params.workflowId,
       params.stepIndex,
@@ -56,8 +55,7 @@ export function createInstitutionalMemory(db: Database.Database) {
       params.overrideCategory || null,
       params.contextSnapshot ? JSON.stringify(params.contextSnapshot) : null,
       params.decidedBy,
-      serializeEmbedding(embedding)
-    );
+      serializeEmbedding(embedding));
 
     // Also store in unified embeddings table for cross-content hybrid search
     const decisionText = [
@@ -86,12 +84,12 @@ export function createInstitutionalMemory(db: Database.Database) {
   /**
    * Add user feedback to a checkpoint decision (thumbs up/down)
    */
-  function addFeedback(checkpointId: string, feedback: 1 | -1) {
-    db.prepare(`
+  async function addFeedback(checkpointId: string, feedback: 1 | -1) {
+    await db.run(`
       UPDATE checkpoint_decisions
       SET user_feedback = ?, feedback_at = datetime('now')
       WHERE id = ?
-    `).run(feedback, checkpointId);
+    `, feedback, checkpointId);
   }
 
   function getCheckpointHistory(params: {
@@ -121,7 +119,7 @@ export function createInstitutionalMemory(db: Database.Database) {
     query += ' ORDER BY decided_at DESC LIMIT ?';
     queryParams.push(params.limit ?? 20);
 
-    const rows = db.prepare(query).all(...queryParams) as any[];
+
 
     // Calculate distribution
     const distribution: Record<string, number> = {};
@@ -192,7 +190,7 @@ export function createInstitutionalMemory(db: Database.Database) {
       queryParams.push(params.decidedBy);
     }
 
-    const rows = db.prepare(query).all(...queryParams) as any[];
+    const rows = await db.all(query, ...queryParams) as any[];
 
     // Compute similarities
     const similarities = rows.map(row => {
@@ -256,7 +254,7 @@ export function createInstitutionalMemory(db: Database.Database) {
       queryParams.push(params.decidedBy);
     }
 
-    const rows = db.prepare(query).all(...queryParams) as any[];
+    const rows = await db.all(query, ...queryParams) as any[];
 
     if (rows.length < 3) {
       return []; // Not enough decisions to cluster

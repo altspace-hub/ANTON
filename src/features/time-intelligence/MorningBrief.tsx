@@ -56,7 +56,7 @@ export default function MorningBrief() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totalUrgent = (brief?.overdue.length ?? 0) + (brief?.dueToday.length ?? 0) + (brief?.atRisk.length ?? 0);
+  const totalUrgent = (brief?.overdue?.length ?? 0) + (brief?.dueToday?.length ?? 0) + (brief?.atRisk?.length ?? 0);
 
   if (loading) {
     return (
@@ -75,10 +75,10 @@ export default function MorningBrief() {
   }
 
   const hasAnything =
-    brief.overdue.length > 0 ||
-    brief.dueToday.length > 0 ||
-    brief.atRisk.length > 0 ||
-    brief.dueThisWeek.length > 0 ||
+    (brief.overdue?.length ?? 0) > 0 ||
+    (brief.dueToday?.length ?? 0) > 0 ||
+    (brief.atRisk?.length ?? 0) > 0 ||
+    (brief.dueThisWeek?.length ?? 0) > 0 ||
     brief.capacityWarning;
 
   if (!hasAnything) {

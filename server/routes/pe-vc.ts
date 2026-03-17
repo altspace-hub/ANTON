@@ -15,7 +15,7 @@
 
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { isApiKeyConfigured, getClient } from '../services/claude-client.js';
 import { safeError } from '../lib/error-response.js';
 import multer from 'multer';
@@ -25,15 +25,15 @@ import fs from 'fs-extra';
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 const upload = multer({ dest: UPLOAD_DIR, limits: { fileSize: 20 * 1024 * 1024 } });
 
-export function createPEVCRoutes(db: Database.Database) {
+export async function createPEVCRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // ── Setup status ───────────────────────────────────────────────────────────
 
-  router.get('/pe-vc/setup-status', (req, res) => {
+  router.get('/pe-vc/setup-status', async (req, res) => {
     try {
-      const identity = db.prepare('SELECT id FROM fund_identity WHERE id = ?').get('default') as { id: string } | undefined;
-      const templateCount = (db.prepare('SELECT COUNT(*) as c FROM ic_memo_templates').get() as { c: number }).c;
+      const identity = await db.get('SELECT id FROM fund_identity WHERE id = ?', 'default') as { id: string } | undefined;
+      const templateCount = (await db.get('SELECT COUNT(*) as c FROM ic_memo_templates') as { c: number }).c;
 
       res.json({
         hasIdentity: !!identity,
@@ -47,9 +47,9 @@ export function createPEVCRoutes(db: Database.Database) {
 
   // ── Fund Identity ──────────────────────────────────────────────────────────
 
-  router.get('/pe-vc/identity', (req, res) => {
+  router.get('/pe-vc/identity', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM fund_identity WHERE id = ?').get('default') as
+      const row = await db.get('SELECT * FROM fund_identity WHERE id = ?', 'default') as
         | Record<string, unknown>
         | undefined;
 
@@ -60,7 +60,7 @@ export function createPEVCRoutes(db: Database.Database) {
     }
   });
 
-  router.put('/pe-vc/identity', (req, res) => {
+  router.put('/pe-vc/identity', async (req, res) => {
     try {
       const {
         fund_name, fund_type, geography_focus, sector_focus,
@@ -69,7 +69,7 @@ export function createPEVCRoutes(db: Database.Database) {
       } = req.body as Record<string, string | undefined>;
 
       const now = new Date().toISOString();
-      db.prepare(`
+      await db.run(`
         INSERT INTO fund_identity
           (id, fund_name, fund_type, geography_focus, sector_focus,
            typical_check_size, investment_style_notes, partner_name,
@@ -86,7 +86,7 @@ export function createPEVCRoutes(db: Database.Database) {
           firm_website = excluded.firm_website,
           currency = excluded.currency,
           updated_at = excluded.updated_at
-      `).run(
+      `,
         fund_name || null, fund_type || null, geography_focus || null, sector_focus || null,
         typical_check_size || null, investment_style_notes || null, partner_name || null,
         firm_website || null, currency || 'EUR', now, now
@@ -181,11 +181,11 @@ Return a JSON object with this structure (use null for fields not found):
 
   // ── IC Memo Templates ──────────────────────────────────────────────────────
 
-  router.get('/pe-vc/templates', (req, res) => {
+  router.get('/pe-vc/templates', async (req, res) => {
     try {
-      const rows = db.prepare(
+      const rows = await db.all(
         'SELECT id, name, memo_type, is_default, created_at, updated_at FROM ic_memo_templates ORDER BY memo_type, name'
-      ).all() as Array<{ id: string; name: string; memo_type: string; is_default: number; created_at: string; updated_at: string }>;
+      ) as Array<{ id: string; name: string; memo_type: string; is_default: number; created_at: string; updated_at: string }>;
 
       res.json(rows.map(r => ({ ...r, isDefault: !!r.is_default })));
     } catch (err) {
@@ -193,10 +193,10 @@ Return a JSON object with this structure (use null for fields not found):
     }
   });
 
-  router.get('/pe-vc/templates/:id', (req, res) => {
+  router.get('/pe-vc/templates/:id', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM ic_memo_templates WHERE id = ?').get(req.params.id) as
-        | { id: string; name: string; memo_type: string; template_content: string; section_order: string; style_notes: string; is_default: number; created_at: string; updated_at: string }
+      const row = await db.get('SELECT * FROM ic_memo_templates WHERE id = ?', req.params.id) as {
+        id: string; name: string; memo_type: string; template_content: string; section_order: string; style_notes: string; is_default: number; created_at: string; updated_at: string }
         | undefined;
 
       if (!row) { res.status(404).json({ error: 'Template not found' }); return; }
@@ -210,7 +210,7 @@ Return a JSON object with this structure (use null for fields not found):
     }
   });
 
-  router.put('/pe-vc/templates/:id', (req, res) => {
+  router.put('/pe-vc/templates/:id', async (req, res) => {
     try {
       const { name, memoType, templateContent, sectionOrder, styleNotes, isDefault } = req.body as {
         name?: string; memoType?: string; templateContent?: string;
@@ -226,10 +226,10 @@ Return a JSON object with this structure (use null for fields not found):
       const now = new Date().toISOString();
 
       if (isDefault) {
-        db.prepare('UPDATE ic_memo_templates SET is_default = 0 WHERE memo_type = ?').run(memoType);
+        await db.run('UPDATE ic_memo_templates SET is_default = 0 WHERE memo_type = ?', memoType);
       }
 
-      db.prepare(`
+      await db.run(`
         INSERT INTO ic_memo_templates
           (id, name, memo_type, template_content, section_order, style_notes, is_default, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -241,7 +241,7 @@ Return a JSON object with this structure (use null for fields not found):
           style_notes = excluded.style_notes,
           is_default = excluded.is_default,
           updated_at = excluded.updated_at
-      `).run(
+      `, 
         id, name, memoType,
         templateContent || '',
         JSON.stringify(sectionOrder || []),
@@ -256,22 +256,22 @@ Return a JSON object with this structure (use null for fields not found):
     }
   });
 
-  router.delete('/pe-vc/templates/:id', (req, res) => {
+  router.delete('/pe-vc/templates/:id', async (req, res) => {
     try {
-      db.prepare('DELETE FROM ic_memo_templates WHERE id = ?').run(req.params.id);
+      await db.run('DELETE FROM ic_memo_templates WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
   });
 
-  router.post('/pe-vc/templates/:id/set-default', (req, res) => {
+  router.post('/pe-vc/templates/:id/set-default', async (req, res) => {
     try {
-      const row = db.prepare('SELECT id, memo_type FROM ic_memo_templates WHERE id = ?').get(req.params.id) as
+      const row = await db.get('SELECT id, memo_type FROM ic_memo_templates WHERE id = ?', req.params.id) as
         | { id: string; memo_type: string } | undefined;
       if (!row) { res.status(404).json({ error: 'Template not found' }); return; }
-      db.prepare('UPDATE ic_memo_templates SET is_default = 0 WHERE memo_type = ?').run(row.memo_type);
-      db.prepare('UPDATE ic_memo_templates SET is_default = 1 WHERE id = ?').run(req.params.id);
+      await db.run('UPDATE ic_memo_templates SET is_default = 0 WHERE memo_type = ?', row.memo_type);
+      await db.run('UPDATE ic_memo_templates SET is_default = 1 WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });

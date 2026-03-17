@@ -48,7 +48,7 @@ export default function PathfinderBar() {
   function handleFocus() {
     setShowHistory(true);
     fetchSearchHistory(8, 0)
-      .then(r => setRecentSearches(r.searches as unknown as RecentSearch[]))
+      .then(r => setRecentSearches(Array.isArray(r?.searches) ? r.searches as unknown as RecentSearch[] : []))
       .catch(() => {});
   }
 

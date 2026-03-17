@@ -1,3 +1,4 @@
+import type { DatabaseAdapter } from '../db/database.js';
 import { applyAntonBoosts, applyTokenBudget } from './atom-boost.js';
 import { hybridSearch } from './hybrid-search.js';
 
@@ -179,7 +180,7 @@ export function getMetaCognitiveInstruction(): string {
  * is not provided.
  */
 export async function buildProjectContextSummary(
-  db: import('better-sqlite3').Database,
+  db: DatabaseAdapter,
   projectId: string,
   currentSessionId?: string
 ): Promise<string> {
@@ -203,7 +204,7 @@ export async function buildProjectContextSummary(
       ? [projectId, currentSessionId]
       : [projectId];
 
-    const sessions = db.prepare(sessionQuery).all(...params) as Array<{
+    const sessions = await db.all(sessionQuery, ...params) as Array<{
       id: string;
       title: string;
       module_id: string;
@@ -216,14 +217,13 @@ export async function buildProjectContextSummary(
 
     for (const session of sessions) {
       // Get last assistant message for this session
-      const msgRow = db
-        .prepare(
-          `SELECT content FROM messages
-           WHERE session_id = ? AND role = 'assistant'
-           ORDER BY created_at DESC
-           LIMIT 1`
-        )
-        .get(session.id) as { content: string } | undefined;
+      const msgRow = await db.get(
+        `SELECT content FROM messages
+         WHERE session_id = ? AND role = 'assistant'
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        session.id
+      ) as { content: string } | undefined;
 
       if (!msgRow?.content) continue;
 
@@ -258,12 +258,12 @@ export async function buildProjectContextSummary(
  * Layer 2a: Inject organisational context into system prompt.
  * Called by the claude route when building the full system prompt.
  */
-export function buildOrgContextLayer(
-  db: import('better-sqlite3').Database,
+export async function buildOrgContextLayer(
+  db: DatabaseAdapter,
   userId: string = 'default',
-): string {
+): Promise<string> {
   try {
-    const row = db.prepare('SELECT * FROM org_context WHERE id = ?').get('default') as Record<string, unknown> | undefined;
+    const row = await db.get('SELECT * FROM org_context WHERE id = ?', 'default') as Record<string, unknown> | undefined;
     if (!row) return '';
 
     const orgName = row['org_name'] as string | null;
@@ -298,14 +298,14 @@ export function buildOrgContextLayer(
  * Layer 4a: Inject session resume context.
  * Called when resuming a paused session — restores full context.
  */
-export function buildResumeContextLayer(
-  db: import('better-sqlite3').Database,
+export async function buildResumeContextLayer(
+  db: DatabaseAdapter,
   sessionId: string,
-): string {
+): Promise<string> {
   try {
-    const snapshot = db.prepare(`
+    const snapshot = await db.get(`
       SELECT * FROM session_snapshots WHERE session_id = ? ORDER BY created_at DESC LIMIT 1
-    `).get(sessionId) as Record<string, unknown> | undefined;
+    `, sessionId) as Record<string, unknown> | undefined;
 
     if (!snapshot) return '';
 
@@ -340,20 +340,20 @@ export function buildResumeContextLayer(
  * Surfaces structured regulatory entity knowledge from installed + active packs.
  * Short-circuits if no packs are active (common case — zero cost).
  */
-export function buildKnowledgePackLayer(
-  db: import('better-sqlite3').Database,
-): string {
+export async function buildKnowledgePackLayer(
+  db: DatabaseAdapter,
+): Promise<string> {
   try {
     // Lightweight check: any active packs at all?
-    const count = db.prepare(
+    const count = await db.get(
       "SELECT COUNT(*) as c FROM knowledge_packs WHERE status='active'"
-    ).get() as { c: number } | undefined;
+    ) as { c: number } | undefined;
     if (!count || count.c === 0) return '';
 
-    const rows = db.prepare(
+    const rows = await db.all(
       `SELECT display_name, regulatory_area, regulation_ids, entity_count
        FROM knowledge_packs WHERE status='active' ORDER BY tier ASC, display_name ASC`
-    ).all() as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
+    ) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
 
     if (rows.length === 0) return '';
 
@@ -379,7 +379,7 @@ export function buildKnowledgePackLayer(
  * Falls back to the original SQL query when hybrid search is unavailable.
  */
 export async function buildAtomLayer(
-  db: import('better-sqlite3').Database,
+  db: DatabaseAdapter,
   areaId?: string | null,
   moduleId?: string | null,
   userMessage?: string | null,
@@ -404,13 +404,12 @@ export async function buildAtomLayer(
         // always fetch the authoritative atom data from the DB.
         const atomIds = results.map(r => r.content_id);
         const placeholders = atomIds.map(() => '?').join(',');
-        const atomRows = db.prepare(`
-          SELECT id, content, atom_type, category, confidence,
-                 source_area_id, source_module_id, created_at, superseded_by
-          FROM knowledge_atoms
-          WHERE id IN (${placeholders}) AND is_active = 1
-        `).all(...atomIds) as Array<{
-          id: string; content: string; atom_type: string; category: string;
+        const atomRows = await db.all(
+          `SELECT id, content, atom_type, category, confidence, source_area_id, source_module_id,
+                  created_at, superseded_by
+           FROM knowledge_atoms WHERE id IN (${placeholders})`,
+          ...atomIds
+        ) as Array<{ id: string; content: string; atom_type: string; category: string;
           confidence: number; source_area_id: string | null; source_module_id: string | null;
           created_at: string; superseded_by: string | null;
         }>;
@@ -451,16 +450,13 @@ export async function buildAtomLayer(
         // ── Log retrieval feedback (non-blocking) ──────────────────────────
         if (sessionId) {
           try {
-            const insertFeedback = db.prepare(
-              `INSERT INTO retrieval_feedback (session_id, atom_id, retrieval_method, retrieval_score)
-               VALUES (?, ?, ?, ?)`
-            );
-            const logMany = db.transaction((items: Array<{ id: string; score: number }>) => {
-              for (const item of items) {
-                insertFeedback.run(sessionId, item.id, 'hybrid', item.score);
-              }
-            });
-            logMany(capped.map(r => ({ id: r.content_id, score: r.score })));
+            for (const item of capped) {
+              await db.run(
+                `INSERT INTO retrieval_feedback (session_id, atom_id, retrieval_method, retrieval_score)
+                 VALUES (?, ?, ?, ?)`,
+                sessionId, item.content_id, 'hybrid', item.score
+              );
+            }
           } catch {
             // Non-fatal — retrieval_feedback table may not exist yet
           }
@@ -494,10 +490,10 @@ export async function buildAtomLayer(
 }
 
 /** Original SQL-only atom retrieval — used as fallback when hybrid search is unavailable. */
-function buildAtomLayerFallback(
-  db: import('better-sqlite3').Database,
+async function buildAtomLayerFallback(
+  db: DatabaseAdapter,
   areaId?: string | null,
-): string {
+): Promise<string> {
   try {
     const conditions = ['ka.is_active = 1', "ka.created_at >= datetime('now', '-30 days')", 'ka.confidence >= 0.7'];
     const params: unknown[] = [];
@@ -507,14 +503,13 @@ function buildAtomLayerFallback(
       params.push(areaId);
     }
 
-    const atoms = db.prepare(`
+    const atoms = await db.all(`
       SELECT ka.content, ka.atom_type, ka.category, ka.confidence
       FROM knowledge_atoms ka
       WHERE ${conditions.join(' AND ')}
       ORDER BY ka.confidence DESC, ka.created_at DESC
       LIMIT 15
-    `).all(...params) as Array<{
-      content: string; atom_type: string; category: string; confidence: number;
+    `, ...params) as Array<{ content: string; atom_type: string; category: string; confidence: number;
     }>;
 
     if (atoms.length === 0) return '';

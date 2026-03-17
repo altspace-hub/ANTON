@@ -16,7 +16,8 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { Response } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { getClient } from './claude-client.js';
 
 // ── Phase definitions ─────────────────────────────────────────────
@@ -329,7 +330,7 @@ async function runInternalPhase(
 export async function runIterativeReasoning(
   config: IREConfig,
   res: Response,
-  db: Database.Database,
+  db: DatabaseAdapter,
 ): Promise<IRESummary> {
   const anthropic = getClient();
   const phases = PHASE_MAP[config.thinkingLevel];
@@ -338,10 +339,10 @@ export async function runIterativeReasoning(
 
   // Persist revelation chain stub
   try {
-    db.prepare(
+    await db.run(
       `INSERT INTO revelation_chains (id, session_id, thinking_level, created_at)
        VALUES (?, ?, ?, ?)`
-    ).run(chainId, config.sessionId ?? null, config.thinkingLevel, new Date().toISOString());
+    , chainId, config.sessionId ?? null, config.thinkingLevel, new Date().toISOString());
   } catch (e) {
     console.error('[IRE] Failed to create revelation_chain row:', e);
   }
@@ -405,15 +406,14 @@ export async function runIterativeReasoning(
 
         // Store the step
         try {
-          db.prepare(
+          await db.run(
             `INSERT INTO revelation_steps
              (id, chain_id, session_id, phase_index, phase_name,
               thinking_content, output_content, confidence_score,
               revision_needed, next_action, input_tokens, output_tokens,
               duration_ms, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          ).run(
-            crypto.randomUUID(),
+          , crypto.randomUUID(),
             chainId,
             config.sessionId ?? null,
             i,
@@ -426,8 +426,7 @@ export async function runIterativeReasoning(
             result.inputTokens,
             result.outputTokens,
             result.durationMs,
-            new Date().toISOString(),
-          );
+            new Date().toISOString(),);
         } catch (e) {
           console.error('[IRE] Failed to save revelation_step:', e);
         }
@@ -587,14 +586,14 @@ export async function runIterativeReasoning(
 
         // Persist synthesis step
         try {
-          db.prepare(
+          await db.run(
             `INSERT INTO revelation_steps
              (id, chain_id, session_id, phase_index, phase_name,
               thinking_content, output_content, confidence_score,
               revision_needed, next_action, input_tokens, output_tokens,
               duration_ms, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          ).run(
+          , 
             crypto.randomUUID(),
             chainId,
             config.sessionId ?? null,
@@ -630,7 +629,7 @@ export async function runIterativeReasoning(
   // Update revelation_chain with final totals
   const totalDuration = Date.now() - totalStart;
   try {
-    db.prepare(
+    await db.run(
       `UPDATE revelation_chains
        SET phase_count = ?,
            total_input_tokens = ?,
@@ -638,7 +637,7 @@ export async function runIterativeReasoning(
            total_duration_ms = ?,
            synthesis_quality_score = ?
        WHERE id = ?`
-    ).run(phases.length, totalInputTokens, totalOutputTokens, totalDuration, synthesisQualityScore, chainId);
+    , phases.length, totalInputTokens, totalOutputTokens, totalDuration, synthesisQualityScore, chainId);
   } catch (e) {
     console.error('[IRE] Failed to update revelation_chain totals:', e);
   }
@@ -657,13 +656,13 @@ export async function runIterativeReasoning(
 // ── Revelation chain fetcher ──────────────────────────────────────
 
 export function getRevelationChain(
-  db: Database.Database,
+  db: DatabaseAdapter,
   chainId: string,
 ): Record<string, unknown> | null {
   try {
-    const chain = db.prepare('SELECT * FROM revelation_chains WHERE id = ?').get(chainId) as Record<string, unknown> | undefined;
+
     if (!chain) return null;
-    const rawSteps = db.prepare('SELECT * FROM revelation_steps WHERE chain_id = ? ORDER BY phase_index ASC').all(chainId) as Record<string, unknown>[];
+
 
     // Map snake_case DB columns → camelCase for frontend
     const steps = rawSteps.map((s) => ({

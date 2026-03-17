@@ -6,7 +6,7 @@
  */
 
 import cron, { ScheduledTask } from 'node-cron';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createPatternDetection } from './pattern-detection.js';
 
 export interface ScheduleConfig {
@@ -15,8 +15,8 @@ export interface ScheduleConfig {
   detectorTypes?: string[]; // If specified, only run these detectors
 }
 
-export function createPatternScheduler(db: Database.Database) {
-  const patternDetection = createPatternDetection(db);
+export async function createPatternScheduler(db: DatabaseAdapter) {
+  const patternDetection = await createPatternDetection(db);
   let scheduledTask: ScheduledTask | null = null;
   let config: ScheduleConfig = {
     enabled: true,
@@ -161,7 +161,7 @@ export function createPatternScheduler(db: Database.Database) {
   /**
    * Log detection run to database
    */
-  function logDetectionRun(data: {
+  async function logDetectionRun(data: {
     run_time: string;
     patterns_detected: number;
     duration_ms: number;
@@ -170,17 +170,15 @@ export function createPatternScheduler(db: Database.Database) {
     is_manual?: boolean;
   }) {
     try {
-      db.prepare(`
+      await db.run(`
         INSERT INTO pattern_detection_runs (run_time, patterns_detected, duration_ms, status, error_message, is_manual)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        data.run_time,
+      `, data.run_time,
         data.patterns_detected,
         data.duration_ms,
         data.status,
         data.error_message || null,
-        data.is_manual ? 1 : 0
-      );
+        data.is_manual ? 1 : 0);
     } catch (error) {
       console.error('[pattern-scheduler] Failed to log detection run:', error);
     }
@@ -189,13 +187,13 @@ export function createPatternScheduler(db: Database.Database) {
   /**
    * Get last run information
    */
-  function getLastRunInfo() {
+  async function getLastRunInfo() {
     try {
-      return db.prepare(`
+      return await db.all(`
         SELECT * FROM pattern_detection_runs
         ORDER BY run_time DESC
         LIMIT 1
-      `).get() as any;
+      `) as any;
     } catch (error) {
       return null;
     }
@@ -204,13 +202,13 @@ export function createPatternScheduler(db: Database.Database) {
   /**
    * Get recent runs
    */
-  function getRecentRuns(limit = 10) {
+  async function getRecentRuns(limit = 10) {
     try {
-      return db.prepare(`
+      return await db.get(`
         SELECT * FROM pattern_detection_runs
         ORDER BY run_time DESC
         LIMIT ?
-      `).all(limit) as any[];
+      `, limit) as any[];
     } catch (error) {
       return [];
     }
@@ -219,12 +217,12 @@ export function createPatternScheduler(db: Database.Database) {
   /**
    * Save configuration to database
    */
-  function saveConfig(config: ScheduleConfig) {
+  async function saveConfig(config: ScheduleConfig) {
     try {
-      db.prepare(`
+      await db.run(`
         INSERT OR REPLACE INTO pattern_scheduler_config (id, enabled, cron_expression, detector_types, updated_at)
         VALUES (1, ?, ?, ?, ?)
-      `).run(
+      `, 
         config.enabled ? 1 : 0,
         config.cronExpression,
         config.detectorTypes ? JSON.stringify(config.detectorTypes) : null,
@@ -240,7 +238,7 @@ export function createPatternScheduler(db: Database.Database) {
    */
   function loadConfig(): ScheduleConfig {
     try {
-      const row = db.prepare('SELECT * FROM pattern_scheduler_config WHERE id = 1').get() as any;
+
       if (row) {
         return {
           enabled: row.enabled === 1,

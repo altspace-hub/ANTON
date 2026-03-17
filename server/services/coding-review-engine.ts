@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createHash, randomUUID } from 'crypto';
 
 // ── Types ──────────────────────────────────────────────────
@@ -49,7 +49,7 @@ export interface ReviewSessionRow {
   updated_at: string;
 }
 
-export function createCodingReviewEngine(db: Database.Database) {
+export async function createCodingReviewEngine(db: DatabaseAdapter) {
   /**
    * Map review lenses to persona IDs for prompt composition
    */
@@ -104,18 +104,18 @@ export function createCodingReviewEngine(db: Database.Database) {
   /**
    * Update review session with findings
    */
-  function updateFindings(sessionId: string, findings: Record<string, unknown>, tokensConsumed: { input: number; output: number; cost_usd: number }) {
-    db.prepare(`
+  async function updateFindings(sessionId: string, findings: Record<string, unknown>, tokensConsumed: { input: number; output: number; cost_usd: number }) {
+    await db.run(`
       UPDATE code_review_sessions
       SET findings_summary = ?, tokens_consumed = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).run(JSON.stringify(findings), JSON.stringify(tokensConsumed), sessionId);
+    `, JSON.stringify(findings), JSON.stringify(tokensConsumed), sessionId);
   }
 
   /**
    * Store dependency audit results
    */
-  function storeDependencies(
+  async function storeDependencies(
     sessionId: string,
     projectId: string | null,
     dependencies: Array<{
@@ -132,17 +132,15 @@ export function createCodingReviewEngine(db: Database.Database) {
       recommendation?: string;
     }>,
   ) {
-    const stmt = db.prepare(`
-      INSERT INTO coding_dependencies (
-        id, code_review_session_id, coding_project_id, package_name,
-        current_version, latest_version, ecosystem, vulnerability_count,
-        vulnerability_details, licence, licence_risk, maintenance_status,
-        is_direct, recommendation
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
     for (const dep of dependencies) {
-      stmt.run(
+      await db.run(`
+        INSERT INTO coding_dependencies (
+          id, code_review_session_id, coding_project_id, package_name,
+          current_version, latest_version, ecosystem, vulnerability_count,
+          vulnerability_details, licence, licence_risk, maintenance_status,
+          is_direct, recommendation
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
         randomUUID(),
         sessionId,
         projectId,
@@ -433,7 +431,7 @@ Use severity badges: \`🔴 CRITICAL\`, \`🟠 HIGH\`, \`🟡 MEDIUM\`, \`🔵 L
    * the composed review prompt configuration for the frontend to send to
    * POST /api/claude/message.
    */
-  function startReview(config: StartReviewConfig): StartReviewResult {
+  async function startReview(config: StartReviewConfig): StartReviewResult {
     const {
       sourceType,
       code,
@@ -455,13 +453,12 @@ Use severity badges: \`🔴 CRITICAL\`, \`🟠 HIGH\`, \`🟡 MEDIUM\`, \`🔵 L
 
     // Create the DB record
     const reviewSessionId = randomUUID();
-    db.prepare(`
+    await db.run(`
       INSERT INTO code_review_sessions (
         id, session_id, project_id, source_type, source_path, source_url,
         explanation_level, review_lenses, security_mode, file_hashes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      reviewSessionId,
+    `, reviewSessionId,
       sessionId || null,
       projectId || null,
       sourceType,
@@ -470,8 +467,7 @@ Use severity badges: \`🔴 CRITICAL\`, \`🟠 HIGH\`, \`🟡 MEDIUM\`, \`🔵 L
       explanationLevel,
       JSON.stringify(reviewLenses),
       securityMode || null,
-      JSON.stringify(fileHashes),
-    );
+      JSON.stringify(fileHashes),);
 
     // Build the system prompt override for the review
     const systemPromptOverride = buildReviewSystemPrompt(
@@ -708,7 +704,7 @@ For each HIGH or CRITICAL risk dependency, provide:
    * Returns a parsed review session from the DB, or null if not found.
    */
   function getReviewSession(id: string): ReviewSessionRow | null {
-    const row = db.prepare('SELECT * FROM code_review_sessions WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+
     if (!row) return null;
 
     return {
@@ -737,17 +733,13 @@ For each HIGH or CRITICAL risk dependency, provide:
   /**
    * Returns a paginated list of review sessions.
    */
-  function listReviewSessions(
+  async function listReviewSessions(
     limit: number = 20,
     offset: number = 0,
   ): { sessions: ReviewSessionRow[]; total: number } {
-    const rows = db.prepare(`
-      SELECT * FROM code_review_sessions
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `).all(limit, offset) as Array<Record<string, unknown>>;
 
-    const total = (db.prepare('SELECT COUNT(*) as c FROM code_review_sessions').get() as { c: number }).c;
+
+    const total = ((await db.get('SELECT COUNT(*) as c FROM code_review_sessions')) as { c: number } | undefined)?.c ?? 0;
 
     const sessions = rows.map(row => ({
       id: row.id as string,

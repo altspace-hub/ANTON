@@ -10,7 +10,8 @@
 import { Router, Request, Response } from 'express';
 import { validate } from '../lib/validate.js';
 import { TaskCreateSchema, TaskMessageSchema, TaskSelectApproachSchema, TaskIngestSchema } from '../lib/schemas.js';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 import { randomUUID } from 'crypto';
 import type Anthropic from '@anthropic-ai/sdk';
 import AnthropicSDK from '@anthropic-ai/sdk';
@@ -271,7 +272,7 @@ ${intakeSection}
 ${selfKnowledge}`;
 }
 
-export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropic | null | undefined): Router {
+export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anthropic | null | undefined): Router {
   const router = Router();
   const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -284,7 +285,7 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   }
 
   /** Create a workflow_output row and fire-and-forget atom extraction */
-  function emitTaskAtoms(task: TaskRow, output: string, stepName: string, stepIndex: number) {
+  async function emitTaskAtoms(task: TaskRow, output: string, stepName: string, stepIndex: number) {
     try {
       const outputId = `wo_task_${task.id}_${Date.now()}`;
       const outputData = JSON.stringify({
@@ -292,12 +293,12 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
         description: task.description,
         output: output.length > 5000 ? output.slice(0, 5000) + '...(truncated)' : output,
       });
-      db.prepare(`
+      await db.run(`
         INSERT INTO workflow_outputs
           (id, execution_id, workflow_id, step_index, step_type,
            output_data, output_summary, created_by, workflow_name, step_name)
         VALUES (?, ?, ?, ?, 'task_completion', ?, ?, ?, ?, ?)
-      `).run(
+      `,
         outputId,
         task.id,
         `task-${task.id}`,
@@ -318,14 +319,14 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   }
 
   // ── GET /api/task-agent/capabilities — list self-knowledge ──────────────
-  router.get('/capabilities', (_req: Request, res: Response) => {
+  router.get('/capabilities', async (_req: Request, res: Response) => {
     try {
-      const caps = db.prepare(
+      const caps = await db.all(
         'SELECT * FROM anton_capabilities WHERE active=1 ORDER BY capability_type, name'
-      ).all() as CapabilityRow[];
-      const approaches = db.prepare(
+      ) as CapabilityRow[];
+      const approaches = await db.all(
         'SELECT * FROM anton_approaches WHERE active=1 ORDER BY times_used DESC'
-      ).all() as ApproachRow[];
+      ) as ApproachRow[];
       res.json({ capabilities: caps, approaches });
     } catch (err) {
       res.status(500).json({ error: 'Failed to load capabilities', detail: String(err) });
@@ -333,20 +334,21 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   });
 
   // ── GET /api/task-agent/tasks — list tasks ──────────────────────────────
-  router.get('/tasks', (req: Request, res: Response) => {
+  router.get('/tasks', async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const { status, limit = '20', offset = '0' } = req.query as Record<string, string>;
     try {
       const where = status ? 'WHERE user_id=? AND status=?' : 'WHERE user_id=?';
       const params = status ? [userId, status] : [userId];
-      const tasks = db.prepare(
+      const tasks = await db.all(
         `SELECT id, title, description, status, source, source_ref, priority, tags, due_date,
                 created_at, updated_at, chosen_approach_id, completed_at
          FROM anton_tasks ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
-      ).all(...params, Math.min(parseInt(limit) || 20, 100), Math.max(parseInt(offset) || 0, 0)) as Partial<TaskRow>[];
-      const { count } = db.prepare(
+      , ...params, Math.min(parseInt(limit) || 20, 100), Math.max(parseInt(offset) || 0, 0)) as Partial<TaskRow>[];
+      const countRow = await db.get(
         `SELECT COUNT(*) as count FROM anton_tasks ${where}`
-      ).get(...params) as { count: number };
+      , ...params) as { count: number };
+      const { count } = countRow;
       res.json({
         tasks: tasks.map((t) => ({ ...t, tags: parseJson(t.tags, []) })),
         total: count,
@@ -357,7 +359,7 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   });
 
   // ── POST /api/task-agent/tasks — create a new task ─────────────────────
-  router.post('/tasks', validate(TaskCreateSchema), (req: Request, res: Response) => {
+  router.post('/tasks', validate(TaskCreateSchema), async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const { title, description, source = 'manual', source_ref, priority = 'normal', tags = [], due_date } = req.body as {
       title: string; description: string; source?: string; source_ref?: string;
@@ -365,11 +367,11 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     };
     const id = randomUUID();
     try {
-      db.prepare(`
+      await db.run(`
         INSERT INTO anton_tasks (id, user_id, title, description, status, source, source_ref, priority, tags, due_date)
         VALUES (?, ?, ?, ?, 'intake', ?, ?, ?, ?, ?)
-      `).run(id, userId, title.trim(), description.trim(), source, source_ref ?? null, priority, JSON.stringify(tags), due_date ?? null);
-      const row = db.prepare('SELECT * FROM anton_tasks WHERE id=?').get(id) as TaskRow;
+      `, id, userId, title.trim(), description.trim(), source, source_ref ?? null, priority, JSON.stringify(tags), due_date ?? null);
+      const row = await db.get('SELECT * FROM anton_tasks WHERE id=?', id) as TaskRow;
       res.status(201).json({ task: { ...row, tags: parseJson(row.tags, []) } });
     } catch (err) {
       console.error('[task-agent] POST /tasks failed:', err);
@@ -378,14 +380,14 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   });
 
   // ── GET /api/task-agent/tasks/:id — get task detail ────────────────────
-  router.get('/tasks/:id', (req: Request, res: Response) => {
+  router.get('/tasks/:id', async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
     // Resolve execution steps from chosen approach
     let executionSteps: ExecutionStep[] = [];
     if (task.chosen_approach_id) {
-      const approach = db.prepare('SELECT execution_steps FROM anton_approaches WHERE id=?').get(task.chosen_approach_id) as { execution_steps: string } | undefined;
+      const approach = await db.get('SELECT execution_steps FROM anton_approaches WHERE id=?', task.chosen_approach_id) as { execution_steps: string } | undefined;
       if (approach) executionSteps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
     }
 
@@ -410,25 +412,25 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   // ── POST /api/task-agent/tasks/:id/message — send message (streaming) ──
   router.post('/tasks/:id/message', validate(TaskMessageSchema), async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     const { content } = req.body as { content: string };
     if (content.length > 2000) return res.status(400).json({ error: 'Message must be ≤2000 characters' });
 
     // Load self-knowledge
-    const caps = db.prepare('SELECT * FROM anton_capabilities WHERE active=1').all() as CapabilityRow[];
-    const approaches = db.prepare('SELECT * FROM anton_approaches WHERE active=1').all() as ApproachRow[];
+    const caps = await db.all('SELECT * FROM anton_capabilities WHERE active=1') as CapabilityRow[];
+    const approaches = await db.all('SELECT * FROM anton_approaches WHERE active=1') as ApproachRow[];
     const selfKnowledge = buildSelfKnowledgeContext(caps, approaches);
 
     // Build task context for intake phase
     let taskCtx: IntakeTaskContext | undefined;
     if (task.status === 'clarifying' && task.chosen_approach_id) {
-      const chosenApp = db.prepare('SELECT * FROM anton_approaches WHERE id=?').get(task.chosen_approach_id) as ApproachRow | undefined;
+      const chosenApp = await db.get('SELECT * FROM anton_approaches WHERE id=?', task.chosen_approach_id) as ApproachRow | undefined;
       if (chosenApp) {
         const steps = parseJson<ExecutionStep[]>(chosenApp.execution_steps, []);
         const primaryCapId = parseJson<string[]>(chosenApp.capability_ids, [])[0];
-        const cap = primaryCapId ? db.prepare('SELECT * FROM anton_capabilities WHERE id=?').get(primaryCapId) as CapabilityRow | undefined : undefined;
+        const cap = primaryCapId ? await db.get('SELECT * FROM anton_capabilities WHERE id=?', primaryCapId) as CapabilityRow | undefined : undefined;
         taskCtx = {
           status: task.status,
           title: task.title,
@@ -446,13 +448,14 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
           intakeAnswers: parseJson<Record<string, string>>(task.intake_answers ?? '{}', {}),
           currentStep: task.current_step ?? 0,
           attachedFileNames: parseJson<TaskFile[]>(task.task_files ?? '[]', []).map((f) => f.name),
-          activePackNames: (() => {
+          activePackNames: await (async () => {
             const packIds = parseJson<string[]>(task.active_knowledge_packs ?? '[]', []);
             if (packIds.length === 0) return [];
             try {
-              return db.prepare(
+              const packRows = await db.all(
                 `SELECT display_name FROM knowledge_packs WHERE id IN (${packIds.map(() => '?').join(',')}) AND status='active'`
-              ).all(...packIds).map((r: any) => r.display_name as string);
+              , ...packIds) as Array<{ display_name: string }>;
+              return packRows.map((r) => r.display_name);
             } catch { return []; }
           })(),
         };
@@ -529,12 +532,12 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
         } catch { /* ignore malformed JSON */ }
       }
 
-      db.prepare(`
+      await db.run(`
         UPDATE anton_tasks
         SET conversation=?, proposals=?, clarifying_questions=?, status=?,
             intake_answers=?, intake_ready=?, updated_at=datetime('now')
         WHERE id=?
-      `).run(
+      `,
         JSON.stringify(history),
         JSON.stringify(proposals),
         JSON.stringify(clarifyingQs),
@@ -553,25 +556,25 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   });
 
   // ── POST /api/task-agent/tasks/:id/select-approach ─────────────────────
-  router.post('/tasks/:id/select-approach', validate(TaskSelectApproachSchema), (req: Request, res: Response) => {
+  router.post('/tasks/:id/select-approach', validate(TaskSelectApproachSchema), async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     const { approach_id, config = {} } = req.body as { approach_id: string; config: Record<string, unknown> };
 
-    const approach = db.prepare('SELECT * FROM anton_approaches WHERE id=?').get(approach_id) as ApproachRow | undefined;
+    const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', approach_id) as ApproachRow | undefined;
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
 
-    db.prepare(`
+    await db.run(`
       UPDATE anton_tasks
       SET chosen_approach_id=?, chosen_approach_config=?, status='clarifying',
           intake_answers='{}', intake_ready=0, current_step=0, updated_at=datetime('now')
       WHERE id=?
-    `).run(approach_id, JSON.stringify(config), task.id);
+    `, approach_id, JSON.stringify(config), task.id);
 
     // Update usage stats
-    db.prepare('UPDATE anton_approaches SET times_used=times_used+1 WHERE id=?').run(approach_id);
+    await db.run('UPDATE anton_approaches SET times_used=times_used+1 WHERE id=?', approach_id);
 
     const steps = parseJson<unknown[]>(approach.execution_steps, []);
     res.json({ success: true, approach, steps });
@@ -580,7 +583,7 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
   // ── POST /api/task-agent/tasks/:id/upload — attach a document ───────────
   router.post('/tasks/:id/upload', upload.single('file'), async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -614,44 +617,41 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     };
 
     existingFiles.push(fileEntry);
-    db.prepare("UPDATE anton_tasks SET task_files=?, updated_at=datetime('now') WHERE id=?")
-      .run(JSON.stringify(existingFiles), task.id);
+    await db.run("UPDATE anton_tasks SET task_files=?, updated_at=datetime('now') WHERE id=?", JSON.stringify(existingFiles), task.id);
 
     res.json({ file: { id: fileEntry.id, name: fileEntry.name, size: fileEntry.size, uploaded_at: fileEntry.uploaded_at } });
   });
 
   // ── DELETE /api/task-agent/tasks/:id/upload/:fileId — remove attachment ─
-  router.delete('/tasks/:id/upload/:fileId', (req: Request, res: Response) => {
+  router.delete('/tasks/:id/upload/:fileId', async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const files = parseJson<TaskFile[]>(task.task_files ?? '[]', []).filter((f) => f.id !== req.params.fileId);
-    db.prepare("UPDATE anton_tasks SET task_files=?, updated_at=datetime('now') WHERE id=?")
-      .run(JSON.stringify(files), task.id);
+    await db.run("UPDATE anton_tasks SET task_files=?, updated_at=datetime('now') WHERE id=?", JSON.stringify(files), task.id);
     res.json({ success: true });
   });
 
   // ── PUT /api/task-agent/tasks/:id/knowledge-packs — set active packs ─────
-  router.put('/tasks/:id/knowledge-packs', (req: Request, res: Response) => {
+  router.put('/tasks/:id/knowledge-packs', async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const { pack_ids } = req.body as { pack_ids: string[] };
     if (!Array.isArray(pack_ids)) return res.status(400).json({ error: 'pack_ids must be an array' });
-    db.prepare("UPDATE anton_tasks SET active_knowledge_packs=?, updated_at=datetime('now') WHERE id=?")
-      .run(JSON.stringify(pack_ids), task.id);
+    await db.run("UPDATE anton_tasks SET active_knowledge_packs=?, updated_at=datetime('now') WHERE id=?", JSON.stringify(pack_ids), task.id);
     res.json({ active_knowledge_packs: pack_ids });
   });
 
   // ── POST /api/task-agent/tasks/:id/execute-step — run current step ───────
   router.post('/tasks/:id/execute-step', async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
     if (!task.chosen_approach_id) return res.status(400).json({ error: 'No approach selected' });
     if (!(task.intake_ready ?? 0)) return res.status(400).json({ error: 'Intake not complete — ANTON still needs more information' });
 
-    const approach = db.prepare('SELECT * FROM anton_approaches WHERE id=?').get(task.chosen_approach_id) as ApproachRow | undefined;
+    const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', task.chosen_approach_id) as ApproachRow | undefined;
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
 
     const steps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
@@ -662,7 +662,7 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     // Resolve capability for this step
     const capId = step.capability_id ?? parseJson<string[]>(approach.capability_ids, [])[0];
     const capability = capId
-      ? db.prepare('SELECT * FROM anton_capabilities WHERE id=?').get(capId) as CapabilityRow | undefined
+      ? await db.get('SELECT * FROM anton_capabilities WHERE id=?', capId) as CapabilityRow | undefined
       : undefined;
 
     // Load module system prompt from disk
@@ -697,10 +697,10 @@ export function createTaskAgentRoutes(db: Database.Database, anthropic: Anthropi
     // Inject active knowledge packs
     if (activePackIds.length > 0) {
       try {
-        const packs = db.prepare(
+        const packs = await db.all(
           `SELECT display_name, regulatory_area, regulation_ids, entity_count, description
            FROM knowledge_packs WHERE id IN (${activePackIds.map(() => '?').join(',')}) AND status='active'`
-        ).all(...activePackIds) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number; description: string | null }>;
+        , ...activePackIds) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number; description: string | null }>;
         if (packs.length > 0) {
           const packLines = packs.map((p) => {
             const regs = parseJson<string[]>(p.regulation_ids, []).join(', ');
@@ -857,23 +857,23 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
       conversation.push({ role: 'assistant', content: stepSummaryMsg });
 
       if (newStatus === 'completed') {
-        db.prepare(`
+        await db.run(`
           UPDATE anton_tasks SET execution_results=?, current_step=?, intake_ready=0,
             status='completed', completed_at=datetime('now'), conversation=?, updated_at=datetime('now')
           WHERE id=?
-        `).run(JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
-        db.prepare('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?').run(approach.id);
+        `, JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
+        await db.run('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?', approach.id);
 
         // Update approach quality rolling average
         if (qualityScore !== null) {
-          const approachRow = db.prepare(
+          const approachRow = await db.get(
             'SELECT avg_quality_score, times_completed FROM anton_approaches WHERE id=?'
-          ).get(approach.id) as { avg_quality_score: number | null; times_completed: number } | undefined;
+          , approach.id) as { avg_quality_score: number | null; times_completed: number } | undefined;
           if (approachRow) {
             const prevAvg = approachRow.avg_quality_score ?? qualityScore;
             const n = approachRow.times_completed;
             const newAvg = n > 0 ? (prevAvg * (n - 1) + qualityScore) / n : qualityScore;
-            db.prepare('UPDATE anton_approaches SET avg_quality_score=? WHERE id=?').run(newAvg, approach.id);
+            await db.run('UPDATE anton_approaches SET avg_quality_score=? WHERE id=?', newAvg, approach.id);
           }
         }
 
@@ -886,11 +886,11 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
         // Auto-advance: set intake_ready=1 so the user can immediately run the next step.
         // Context carries forward from previous steps — no additional intake needed by default.
         // The user can still chat / attach docs before clicking "Run Step N".
-        db.prepare(`
+        await db.run(`
           UPDATE anton_tasks SET execution_results=?, current_step=?, intake_ready=1,
             status='clarifying', conversation=?, updated_at=datetime('now')
           WHERE id=?
-        `).run(JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
+        `, JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
       }
 
       const nextStep = hasMoreSteps ? steps[nextStepIdx] : null;
@@ -912,9 +912,9 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
   });
 
   // ── POST /api/task-agent/tasks/:id/complete ─────────────────────────────
-  router.post('/tasks/:id/complete', (req: Request, res: Response) => {
+  router.post('/tasks/:id/complete', async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     const { summary, run_ids = [], quality_score } = req.body as {
@@ -923,11 +923,11 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
       quality_score?: number;
     };
 
-    db.prepare(`
+    await db.run(`
       UPDATE anton_tasks
       SET status='completed', execution_summary=?, execution_run_ids=?, completed_at=datetime('now'), updated_at=datetime('now')
       WHERE id=?
-    `).run(summary ?? null, JSON.stringify(run_ids), task.id);
+    `, summary ?? null, JSON.stringify(run_ids), task.id);
 
     // Emit atoms from the summary/results
     if (summary) {
@@ -936,14 +936,12 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
     // Update approach quality score if provided
     if (task.chosen_approach_id && quality_score != null) {
-      const approach = db.prepare('SELECT avg_quality_score, times_completed FROM anton_approaches WHERE id=?')
-        .get(task.chosen_approach_id) as { avg_quality_score: number | null; times_completed: number } | undefined;
+      const approach = await db.get('SELECT avg_quality_score, times_completed FROM anton_approaches WHERE id=?', task.chosen_approach_id) as { avg_quality_score: number | null; times_completed: number } | undefined;
       if (approach) {
         const prevAvg = approach.avg_quality_score ?? quality_score;
         const n = approach.times_completed + 1;
         const newAvg = (prevAvg * approach.times_completed + quality_score) / n;
-        db.prepare('UPDATE anton_approaches SET times_completed=?, avg_quality_score=? WHERE id=?')
-          .run(n, newAvg, task.chosen_approach_id);
+        await db.run('UPDATE anton_approaches SET times_completed=?, avg_quality_score=? WHERE id=?', n, newAvg, task.chosen_approach_id);
       }
     }
 
@@ -951,9 +949,9 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
   });
 
   // ── PATCH /api/task-agent/tasks/:id — update status/priority/etc ────────
-  router.patch('/tasks/:id', (req: Request, res: Response) => {
+  router.patch('/tasks/:id', async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
     const allowed = ['status', 'priority', 'title', 'description', 'due_date', 'tags'];
@@ -971,28 +969,26 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
     updates.push("updated_at=datetime('now')");
     values.push(task.id);
-    db.prepare(`UPDATE anton_tasks SET ${updates.join(', ')} WHERE id=?`).run(...values);
+    await db.run(`UPDATE anton_tasks SET ${updates.join(', ')} WHERE id=?`, ...values);
 
-    const updated = db.prepare('SELECT * FROM anton_tasks WHERE id=?').get(task.id) as TaskRow;
+    const updated = await db.get('SELECT * FROM anton_tasks WHERE id=?', task.id) as TaskRow;
     res.json({ task: updated });
   });
 
   // ── POST /api/task-agent/backfill-atoms — extract atoms from all existing completed tasks ──
   router.post('/backfill-atoms', async (req: Request, res: Response) => {
     try {
-      const completedTasks = db.prepare(`
+      const completedTasks = await db.all(`
         SELECT * FROM anton_tasks WHERE status='completed' AND execution_results IS NOT NULL
         ORDER BY completed_at DESC LIMIT 50
-      `).all() as TaskRow[];
+      `) as TaskRow[];
 
       let created = 0;
       let skipped = 0;
 
       for (const task of completedTasks) {
         // Check if we already have a workflow_output for this task
-        const existing = db.prepare(
-          "SELECT id FROM workflow_outputs WHERE workflow_id = ?"
-        ).get(`task-${task.id}`) as { id: string } | undefined;
+        const existing = await db.get(`SELECT id FROM workflow_outputs WHERE execution_id = ?`, task.id);
 
         if (existing) {
           skipped++;
@@ -1022,17 +1018,17 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
   });
 
   // ── DELETE /api/task-agent/tasks/:id ───────────────────────────────────
-  router.delete('/tasks/:id', (req: Request, res: Response) => {
+  router.delete('/tasks/:id', async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const task = db.prepare('SELECT * FROM anton_tasks WHERE id=? AND user_id=?').get(req.params.id, userId) as TaskRow | undefined;
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
-    db.prepare('DELETE FROM anton_tasks WHERE id=?').run(req.params.id);
+    await db.run('DELETE FROM anton_tasks WHERE id=?', req.params.id);
     res.json({ success: true });
   });
 
   // ── POST /api/task-agent/ingest — external task intake (Jira/Slack) ────
   // Requires X-ANTON-Token header matching TASK_AGENT_WEBHOOK_SECRET env var
-  router.post('/ingest', validate(TaskIngestSchema), (req: Request, res: Response) => {
+  router.post('/ingest', validate(TaskIngestSchema), async (req: Request, res: Response) => {
     const webhookSecret = process.env.TASK_AGENT_WEBHOOK_SECRET;
     const providedToken = req.headers['x-anton-token'];
     if (webhookSecret && providedToken !== webhookSecret) {
@@ -1053,26 +1049,26 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
       tags = (metadata.labels as unknown[]).map(String).slice(0, 10);
     }
 
-    db.prepare(`
+    await db.run(`
       INSERT INTO anton_tasks (id, user_id, title, description, status, source, source_ref, priority, tags)
       VALUES (?, ?, ?, ?, 'intake', ?, ?, ?, ?)
-    `).run(id, userId, title.trim(), description.trim(), source, source_ref ?? null, priority ?? 'normal', JSON.stringify(tags));
+    `, id, userId, title.trim(), description.trim(), source, source_ref ?? null, priority ?? 'normal', JSON.stringify(tags));
 
     res.status(201).json({ task_id: id, message: 'Task ingested successfully' });
   });
 
   // ── GET /api/task-agent/stats — task queue stats ─────────────────────
-  router.get('/stats', (req: Request, res: Response) => {
+  router.get('/stats', async (req: Request, res: Response) => {
     const userId = getUserId(req);
     try {
-      const byStatus = db.prepare(`
+      const byStatus = await db.all(`
         SELECT status, COUNT(*) as count FROM anton_tasks WHERE user_id=? GROUP BY status
-      `).all(userId) as Array<{ status: string; count: number }>;
+      `, userId) as Array<{ status: string; count: number }>;
 
-      const recent = db.prepare(`
+      const recent = await db.all(`
         SELECT id, title, status, priority, source, created_at FROM anton_tasks
         WHERE user_id=? ORDER BY created_at DESC LIMIT 5
-      `).all(userId) as Array<Partial<TaskRow>>;
+      `, userId) as Array<Partial<TaskRow>>;
 
       const total = byStatus.reduce((sum, r) => sum + r.count, 0);
       const open = byStatus.filter((r) => !['completed', 'cancelled', 'failed'].includes(r.status))

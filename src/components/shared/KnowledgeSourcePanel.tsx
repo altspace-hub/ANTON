@@ -27,7 +27,17 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
     onChange(newConfig);
   };
 
-  const { claudeKnowledge, onlineReference, localFolder, combinedMode } = config.modes;
+  const modes = config.modes ?? {} as KnowledgeSourceConfig['modes'];
+  const claudeKnowledge = modes.claudeKnowledge ?? { enabled: true, webSearch: false };
+  const onlineReference = modes.onlineReference ?? { enabled: false, urls: [] };
+  const localFolder = {
+    enabled: false,
+    folderPaths: [] as string[],
+    recursive: false,
+    ...modes.localFolder,
+    folderPaths: Array.isArray(modes.localFolder?.folderPaths) ? modes.localFolder.folderPaths : [],
+  };
+  const combinedMode = modes.combinedMode ?? { enabled: false, priority: 'local-first' as const };
 
   useEffect(() => {
     if (localFolder.enabled) {

@@ -660,7 +660,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   // Auto-send first message when a brand-new intake task loads — kicks off ANTON's approach proposals
   useEffect(() => {
     if (!task || autoStarted || loading) return;
-    if (task.status === 'intake' && task.conversation.length === 0) {
+    if (task.status === 'intake' && (task.conversation?.length ?? 0) === 0) {
       setAutoStarted(true);
       sendFirstMessage(task.description);
     }
@@ -1008,7 +1008,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
 
       {/* Conversation */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-4">
-        {task.conversation.length === 0 && !streaming && (
+        {(task.conversation?.length ?? 0) === 0 && !streaming && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Bot className="h-10 w-10 text-adv-teal/40 mb-3" />
             <p className="text-sm text-adv-gray max-w-xs">
@@ -1017,7 +1017,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           </div>
         )}
 
-        {task.conversation.map((msg, i) => (
+        {task.conversation?.map((msg, i) => (
           <ConversationBubble key={i} msg={msg} />
         ))}
 
@@ -1034,7 +1034,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
         )}
 
         {/* Intake complete — ready to run first step */}
-        {task.intake_ready === 1 && task.execution_results.length === 0 && !executingStep && (
+        {task.intake_ready === 1 && (task.execution_results?.length ?? 0) === 0 && !executingStep && (
           <div className="mx-1 rounded-xl border border-adv-teal/30 bg-adv-teal-soft px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -1055,7 +1055,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
         )}
 
         {/* Intake complete — ready to run next step (after some steps done) */}
-        {task.intake_ready === 1 && task.execution_results.length > 0 && !executingStep && (
+        {task.intake_ready === 1 && (task.execution_results?.length ?? 0) > 0 && !executingStep && (
           <div className="mx-1 rounded-xl border border-adv-gold/30 bg-adv-gold/5 px-4 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -1125,9 +1125,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
       )}
 
       {/* Execution Results Panel */}
-      {(task.execution_results.length > 0 || executingStep) && (
+      {((task.execution_results?.length ?? 0) > 0 || executingStep) && (
         <ExecutionResultPanel
-          results={task.execution_results.map((r, i) => ({
+          results={(task.execution_results ?? []).map((r, i) => ({
             ...r,
             description: task.execution_steps?.[r.step]?.description,
           }))}
@@ -1178,9 +1178,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               >
                 <BookOpen className="h-3 w-3" />
                 Knowledge packs
-                {task.active_knowledge_packs.length > 0 && (
+                {(task.active_knowledge_packs?.length ?? 0) > 0 && (
                   <span className="rounded-full bg-adv-teal px-1.5 text-adv-dark font-bold">
-                    {task.active_knowledge_packs.length}
+                    {(task.active_knowledge_packs?.length ?? 0)}
                   </span>
                 )}
               </button>
@@ -1197,7 +1197,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
                       <p className="px-3 py-4 text-xs text-adv-gray">No knowledge packs installed. Install packs via Knowledge Base.</p>
                     ) : (
                       knowledgePacks.map((pack) => {
-                        const isActive = task.active_knowledge_packs.includes(pack.id);
+                        const isActive = (task.active_knowledge_packs ?? []).includes(pack.id);
                         const isInstalled = pack.status === 'active' || pack.status === 'installed';
                         return (
                           <button
@@ -1234,7 +1234,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             ))}
 
             {/* Active pack chips */}
-            {task.active_knowledge_packs.map((id) => {
+            {(task.active_knowledge_packs ?? []).map((id) => {
               const pack = knowledgePacks.find((p) => p.id === id);
               return (
                 <span key={id} className="flex items-center gap-1 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-xs text-adv-teal">

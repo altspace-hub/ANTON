@@ -5,23 +5,23 @@
  */
 
 import { Router } from 'express';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createConnectionManager } from '../services/connection-manager.js';
 import { requireAdminOrSolo } from '../middleware/auth.js';
 
-export function createConnectionsRoutes(db: Database) {
+export async function createConnectionsRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const manager = createConnectionManager(db);
+  const manager = await createConnectionManager(db);
 
   // ── Connections ──────────────────────────────────────────────
 
   // GET /api/connections — list connections
   // Admin sees all; analyst/viewer sees only active ones
-  router.get('/connections', (req, res) => {
+  router.get('/connections', async (req, res) => {
     try {
       const userId = req.user?.id ?? 'unknown';
       const role = req.user?.role ?? 'viewer';
-      const connections = manager.list(userId, role);
+      const connections = await manager.list(userId, role);
       res.json(connections);
     } catch (err) {
       console.error('[connections] list error:', err);
@@ -30,9 +30,9 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // GET /api/connections/:id — get single connection
-  router.get('/connections/:id', (req, res) => {
+  router.get('/connections/:id', async (req, res) => {
     try {
-      const conn = manager.get(String(req.params.id));
+      const conn = await manager.get(String(req.params.id));
       if (!conn) { res.status(404).json({ error: 'Connection not found' }); return; }
 
       // Non-admins can only see active connections
@@ -49,7 +49,7 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // POST /api/connections — create connection (admin only)
-  router.post('/connections', requireAdminOrSolo, (req, res) => {
+  router.post('/connections', requireAdminOrSolo, async (req, res) => {
     try {
       const { display_name, type, config, permissions } = req.body as {
         display_name?: string;
@@ -69,7 +69,7 @@ export function createConnectionsRoutes(db: Database) {
         return;
       }
 
-      const conn = manager.create(
+      const conn = await manager.create(
         {
           display_name,
           type: type as Parameters<typeof manager.create>[0]['type'],
@@ -86,9 +86,9 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // PUT /api/connections/:id — update connection (admin only)
-  router.put('/connections/:id', requireAdminOrSolo, (req, res) => {
+  router.put('/connections/:id', requireAdminOrSolo, async (req, res) => {
     try {
-      const updated = manager.update(String(req.params.id), req.body as Parameters<typeof manager.update>[1]);
+      const updated = await manager.update(String(req.params.id), req.body as Parameters<typeof manager.update>[1]);
       if (!updated) { res.status(404).json({ error: 'Connection not found' }); return; }
       res.json(updated);
     } catch (err) {
@@ -98,11 +98,11 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // DELETE /api/connections/:id — soft-delete connection (admin only)
-  router.delete('/connections/:id', requireAdminOrSolo, (req, res) => {
+  router.delete('/connections/:id', requireAdminOrSolo, async (req, res) => {
     try {
-      const conn = manager.get(String(req.params.id));
+      const conn = await manager.get(String(req.params.id));
       if (!conn) { res.status(404).json({ error: 'Connection not found' }); return; }
-      manager.delete(String(req.params.id));
+      await manager.delete(String(req.params.id));
       res.json({ success: true });
     } catch (err) {
       console.error('[connections] delete error:', err);
@@ -113,12 +113,12 @@ export function createConnectionsRoutes(db: Database) {
   // POST /api/connections/:id/test — test connectivity
   router.post('/connections/:id/test', requireAdminOrSolo, async (req, res) => {
     try {
-      const conn = manager.get(String(req.params.id));
+      const conn = await manager.get(String(req.params.id));
       if (!conn) { res.status(404).json({ error: 'Connection not found' }); return; }
 
       const result = await manager.test(String(req.params.id));
 
-      manager.logAction(
+      await manager.logAction(
         String(req.params.id),
         null,
         'test',
@@ -135,18 +135,18 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // POST /api/connections/:id/approve — approve pending connection (admin only)
-  router.post('/connections/:id/approve', requireAdminOrSolo, (req, res) => {
+  router.post('/connections/:id/approve', requireAdminOrSolo, async (req, res) => {
     try {
-      const conn = manager.get(String(req.params.id));
+      const conn = await manager.get(String(req.params.id));
       if (!conn) { res.status(404).json({ error: 'Connection not found' }); return; }
       if (conn.status !== 'pending') {
         res.status(400).json({ error: `Connection is already "${conn.status}", not pending` });
         return;
       }
 
-      const approved = manager.approve(String(req.params.id), req.user!.id);
+      const approved = await manager.approve(String(req.params.id), req.user!.id);
 
-      manager.logAction(
+      await manager.logAction(
         String(req.params.id),
         null,
         'approve',
@@ -163,13 +163,13 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // GET /api/connections/:id/audit — get audit log for a connection (admin only)
-  router.get('/connections/:id/audit', requireAdminOrSolo, (req, res) => {
+  router.get('/connections/:id/audit', requireAdminOrSolo, async (req, res) => {
     try {
-      const conn = manager.get(String(req.params.id));
+      const conn = await manager.get(String(req.params.id));
       if (!conn) { res.status(404).json({ error: 'Connection not found' }); return; }
 
       const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10), 200);
-      const log = manager.getAuditLog(String(req.params.id), limit);
+      const log = await manager.getAuditLog(String(req.params.id), limit);
       res.json(log);
     } catch (err) {
       console.error('[connections] audit error:', err);
@@ -180,7 +180,7 @@ export function createConnectionsRoutes(db: Database) {
   // ── Scripts ──────────────────────────────────────────────────
 
   // GET /api/connections/scripts — list approved scripts
-  router.get('/connections/scripts', (req, res) => {
+  router.get('/connections/scripts', async (req, res) => {
     try {
       res.json(manager.listScripts());
     } catch (err) {
@@ -190,7 +190,7 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // POST /api/connections/scripts — create/register a new script (admin only)
-  router.post('/connections/scripts', requireAdminOrSolo, (req, res) => {
+  router.post('/connections/scripts', requireAdminOrSolo, async (req, res) => {
     try {
       const {
         display_name,
@@ -231,7 +231,7 @@ export function createConnectionsRoutes(db: Database) {
         return;
       }
 
-      const script = manager.createScript({
+      const script = await manager.createScript({
         display_name,
         description,
         language: language as Parameters<typeof manager.createScript>[0]['language'],
@@ -255,9 +255,9 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // PUT /api/connections/scripts/:id — update a script (admin only)
-  router.put('/connections/scripts/:id', requireAdminOrSolo, (req, res) => {
+  router.put('/connections/scripts/:id', requireAdminOrSolo, async (req, res) => {
     try {
-      const updated = manager.updateScript(
+      const updated = await manager.updateScript(
         String(req.params.id),
         req.body as Parameters<typeof manager.updateScript>[1]
       );
@@ -270,11 +270,11 @@ export function createConnectionsRoutes(db: Database) {
   });
 
   // DELETE /api/connections/scripts/:id — soft-delete a script (admin only)
-  router.delete('/connections/scripts/:id', requireAdminOrSolo, (req, res) => {
+  router.delete('/connections/scripts/:id', requireAdminOrSolo, async (req, res) => {
     try {
-      const script = manager.getScript(String(req.params.id));
+      const script = await manager.getScript(String(req.params.id));
       if (!script) { res.status(404).json({ error: 'Script not found' }); return; }
-      manager.deleteScript(String(req.params.id));
+      await manager.deleteScript(String(req.params.id));
       res.json({ success: true });
     } catch (err) {
       console.error('[connections] script delete error:', err);

@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { requireAuth } from '../middleware/auth.js';
 
-export function createQualityRoutes(db: Database.Database, anthropic?: any) {
+export async function createQualityRoutes(db: DatabaseAdapter, anthropic?: any) {
   const router = Router();
-  const ratchet = createQualityRatchet(db);
+  const ratchet = await createQualityRatchet(db);
 
   // POST /api/quality/score — score an output
   router.post('/quality/score', requireAuth, async (req, res) => {
@@ -23,7 +23,7 @@ export function createQualityRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // GET /api/quality/trend/:moduleId — quality trend for a module
-  router.get('/quality/trend/:moduleId', requireAuth, (req, res) => {
+  router.get('/quality/trend/:moduleId', requireAuth, async (req, res) => {
     try {
       res.json(ratchet.getModuleQualityTrend(req.params.moduleId as string));
     } catch (error) {
@@ -33,7 +33,7 @@ export function createQualityRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // GET /api/quality/leaderboard — top scoring modules
-  router.get('/quality/leaderboard', requireAuth, (req, res) => {
+  router.get('/quality/leaderboard', requireAuth, async (req, res) => {
     try {
       res.json(ratchet.getQualityLeaderboard());
     } catch (error) {
@@ -43,7 +43,7 @@ export function createQualityRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // POST /api/quality/feedback — submit a user star rating for an output
-  router.post('/quality/feedback', requireAuth, (req, res) => {
+  router.post('/quality/feedback', requireAuth, async (req, res) => {
     try {
       const { moduleId, rating, sessionId, qualityScoreId, areaId, comment } = req.body;
       if (!moduleId) return res.status(400).json({ error: 'moduleId required' });
@@ -59,7 +59,7 @@ export function createQualityRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // GET /api/quality/feedback/stats/:moduleId — user feedback stats for a module
-  router.get('/quality/feedback/stats/:moduleId', requireAuth, (req, res) => {
+  router.get('/quality/feedback/stats/:moduleId', requireAuth, async (req, res) => {
     try {
       res.json(ratchet.getFeedbackStats(req.params.moduleId as string));
     } catch (error) {
@@ -69,11 +69,11 @@ export function createQualityRoutes(db: Database.Database, anthropic?: any) {
   });
 
   // GET /api/quality/by-session/:sessionId — most recent quality score for a session
-  router.get('/quality/by-session/:sessionId', requireAuth, (req, res) => {
+  router.get('/quality/by-session/:sessionId', requireAuth, async (req, res) => {
     try {
-      const row = db.prepare(
+      const row = await db.get(
         `SELECT * FROM quality_scores WHERE session_id = ? ORDER BY scored_at DESC LIMIT 1`
-      ).get(req.params.sessionId) as Record<string, unknown> | undefined;
+      , req.params.sessionId) as Record<string, unknown> | undefined;
       if (!row) return res.json(null);
       let reasoning: { strengths?: string[]; weaknesses?: string[]; improvementSuggestion?: string } | null = null;
       try { if (row.score_reasoning) reasoning = JSON.parse(row.score_reasoning as string); } catch { /* ignore */ }

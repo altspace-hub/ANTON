@@ -1,5 +1,6 @@
 import { queryCollection } from './chroma-client.js';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
+
 
 export interface SearchQuery {
   query: string;
@@ -33,7 +34,7 @@ export interface SearchResult {
  * Tries ChromaDB vector similarity first; falls back to SQLite keyword search
  * automatically when ChromaDB is unavailable (no OPENAI_API_KEY / no server).
  */
-export async function semanticSearch(db: Database.Database, query: SearchQuery): Promise<SearchResult[]> {
+export async function semanticSearch(db: DatabaseAdapter, query: SearchQuery): Promise<SearchResult[]> {
   const topK = query.topK || 10;
   const allResults: SearchResult[] = [];
 
@@ -48,19 +49,13 @@ export async function semanticSearch(db: Database.Database, query: SearchQuery):
         const metadata = results.metadatas[0][i] || {};
         const distance = results.distances[0][i];
 
-        const chunk = db
-          .prepare('SELECT document_id, chunk_index FROM rag_chunks WHERE chroma_id = ?')
-          .get(chromaId) as any;
+        const chunk = await db.get('SELECT document_id, chunk_index FROM rag_chunks WHERE chroma_id = ?', chromaId) as any;
         if (!chunk) continue;
 
-        const doc = db
-          .prepare('SELECT filename, file_type, collection_id FROM rag_documents WHERE id = ?')
-          .get(chunk.document_id) as any;
+        const doc = await db.get('SELECT filename, file_type, collection_id FROM rag_documents WHERE id = ?', chunk.document_id) as any;
         if (!doc) continue;
 
-        const collection = db
-          .prepare('SELECT display_name FROM knowledge_collections WHERE id = ?')
-          .get(doc.collection_id) as any;
+        const collection = await db.get('SELECT display_name FROM knowledge_collections WHERE id = ?', doc.collection_id) as any;
 
         allResults.push({
           chunkId: chromaId,
@@ -168,8 +163,8 @@ const STOP_WORDS = new Set([
  * selected collections by how many of those terms appear in the content.
  * Returns topK chunks ranked by match density (matched terms / total terms).
  */
-export function keywordSearch(
-  db: Database.Database,
+export async function keywordSearch(
+  db: DatabaseAdapter,
   query: string,
   collectionIds: string[],
   limit: number = 10
@@ -186,7 +181,7 @@ export function keywordSearch(
 
   // Load all indexed chunks from the selected collections
   const collectionPlaceholders = collectionIds.map(() => '?').join(',');
-  const rows = db.prepare(`
+  const rows = await db.all(`
     SELECT
       c.chroma_id  AS chunk_id,
       c.document_id,
@@ -202,7 +197,7 @@ export function keywordSearch(
     JOIN knowledge_collections col ON d.collection_id = col.id
     WHERE d.collection_id IN (${collectionPlaceholders})
       AND d.index_status = 'indexed'
-  `).all(...collectionIds) as any[];
+  `, ...collectionIds) as any[];
 
   // Score each chunk by proportion of query terms it contains
   const scored = rows
@@ -240,21 +235,18 @@ export function keywordSearch(
  * @param chunkId - The target chunk ID
  * @param contextSize - Number of chunks to retrieve before and after (default: 2)
  */
-export function getChunkContext(
-  db: Database.Database,
+export async function getChunkContext(
+  db: DatabaseAdapter,
   chunkId: string,
   contextSize: number = 2
-): SearchResult[] {
-  const chunk = db
-    .prepare('SELECT document_id, chunk_index FROM rag_chunks WHERE chroma_id = ?')
-    .get(chunkId) as any;
+): Promise<SearchResult[]> {
+  const chunk = await db.get('SELECT document_id, chunk_index FROM rag_chunks WHERE chroma_id = ?', chunkId) as any;
   if (!chunk) return [];
 
   const startIdx = Math.max(0, chunk.chunk_index - contextSize);
   const endIdx = chunk.chunk_index + contextSize;
 
-  const chunks = db
-    .prepare(
+  const chunks = await db.all(
       `
     SELECT
       c.chroma_id,
@@ -273,8 +265,7 @@ export function getChunkContext(
     AND c.chunk_index BETWEEN ? AND ?
     ORDER BY c.chunk_index
   `
-    )
-    .all(chunk.document_id, startIdx, endIdx) as any[];
+    , chunk.document_id, startIdx, endIdx) as any[];
 
   return chunks.map((c) => ({
     chunkId: c.chroma_id,
@@ -299,7 +290,7 @@ export function getChunkContext(
  * Merges both result sets and re-ranks by relevance score.
  */
 export async function hybridSearch(
-  db: Database.Database,
+  db: DatabaseAdapter,
   query: SearchQuery
 ): Promise<SearchResult[]> {
   const topK = query.topK || 10;

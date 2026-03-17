@@ -1,4 +1,4 @@
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 
 export interface BudgetStatus {
   userId: string;
@@ -13,17 +13,17 @@ export interface BudgetStatus {
   isNearLimit: boolean;
 }
 
-export function getUserBudgetStatus(db: Database, userId: string): BudgetStatus {
-  const user = db.prepare('SELECT username, monthly_token_budget FROM users WHERE id = ?').get(userId) as { username: string; monthly_token_budget: number } | undefined;
+export async function getUserBudgetStatus(db: Database, userId: string): BudgetStatus {
+  const user = await db.get('SELECT username, monthly_token_budget FROM users WHERE id = ?', userId) as { username: string; monthly_token_budget: number } | undefined;
 
   if (!user) {
     throw new Error('User not found');
   }
 
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-  const usage = db.prepare(
+  const usage = await db.get(
     'SELECT input_tokens, output_tokens FROM user_monthly_usage WHERE user_id = ? AND year_month = ?'
-  ).get(userId, currentMonth) as { input_tokens: number; output_tokens: number } | undefined;
+  , userId, currentMonth) as { input_tokens: number; output_tokens: number } | undefined;
 
   const budget = user.monthly_token_budget || 0;
   const used = (usage?.input_tokens || 0) + (usage?.output_tokens || 0);
@@ -73,7 +73,7 @@ export function checkBudgetBeforeApiCall(
   return { allowed: true };
 }
 
-export function updateUserBudget(
+export async function updateUserBudget(
   db: Database,
   userId: string,
   monthlyTokenBudget: number,
@@ -81,7 +81,7 @@ export function updateUserBudget(
 ): boolean {
   try {
     // Only update budget; alert threshold is currently hardcoded but column is ready for future use
-    db.prepare('UPDATE users SET monthly_token_budget = ? WHERE id = ?').run(monthlyTokenBudget, userId);
+    await db.run('UPDATE users SET monthly_token_budget = ? WHERE id = ?', monthlyTokenBudget, userId);
     return true;
   } catch (err) {
     console.error('[budget-manager] Failed to update user budget:', err);
@@ -89,15 +89,15 @@ export function updateUserBudget(
   }
 }
 
-export function getAllUserBudgets(db: Database): BudgetStatus[] {
-  const users = db.prepare('SELECT id FROM users').all() as { id: string }[];
+export async function getAllUserBudgets(db: DatabaseAdapter): BudgetStatus[] {
+  const users = await db.all('SELECT id FROM users') as { id: string }[];
   return users.map((u) => getUserBudgetStatus(db, u.id));
 }
 
-export function resetMonthlyUsage(db: Database, userId: string): boolean {
+export async function resetMonthlyUsage(db: Database, userId: string): boolean {
   try {
     const currentMonth = new Date().toISOString().slice(0, 7);
-    db.prepare('DELETE FROM user_monthly_usage WHERE user_id = ? AND year_month = ?').run(userId, currentMonth);
+    await db.run('DELETE FROM user_monthly_usage WHERE user_id = ? AND year_month = ?', userId, currentMonth);
     return true;
   } catch (err) {
     console.error('[budget-manager] Failed to reset usage:', err);

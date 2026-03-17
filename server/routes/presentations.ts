@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import fs from 'fs-extra';
@@ -18,7 +18,7 @@ function loadExpertPrompt(): string {
   }
 }
 
-export function createPresentationsRoutes(db: Database.Database): Router {
+export async function createPresentationsRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // POST /api/presentations/consult — streaming expert consultation turn
@@ -54,16 +54,14 @@ export function createPresentationsRoutes(db: Database.Database): Router {
   });
 
   // GET /api/presentations — list all presentations (most recent first)
-  router.get('/presentations', (_req, res) => {
+  router.get('/presentations', async (_req, res) => {
     try {
-      const rows = db
-        .prepare(
+      const rows = await db.all(
           `SELECT id, title, purpose, audience, style, slide_count, status, filename, created_at
            FROM presentations
            ORDER BY created_at DESC
            LIMIT 50`
-        )
-        .all();
+        );
       res.json(rows);
     } catch {
       res.json([]);
@@ -71,7 +69,7 @@ export function createPresentationsRoutes(db: Database.Database): Router {
   });
 
   // POST /api/presentations — save a new presentation record
-  router.post('/presentations', (req, res) => {
+  router.post('/presentations', async (req, res) => {
     const { title, purpose, audience, style, slideCount, brief, conversation } = req.body as {
       title?: string;
       purpose?: string;
@@ -84,20 +82,18 @@ export function createPresentationsRoutes(db: Database.Database): Router {
 
     const id = randomUUID();
     try {
-      db.prepare(
+      await db.run(
         `INSERT INTO presentations (id, title, purpose, audience, style, slide_count, brief, conversation, status, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', datetime('now'), datetime('now'))`
-      ).run(
-        id,
+      , id,
         title || 'Untitled Presentation',
         purpose || '',
         audience || '',
         style || 'dark-professional',
         slideCount || 8,
         JSON.stringify(brief || {}),
-        JSON.stringify(conversation || [])
-      );
-      const row = db.prepare('SELECT * FROM presentations WHERE id = ?').get(id);
+        JSON.stringify(conversation || []));
+      const row = await db.get('SELECT * FROM presentations WHERE id = ?', id);
       res.json(row);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Save failed' });
@@ -105,7 +101,7 @@ export function createPresentationsRoutes(db: Database.Database): Router {
   });
 
   // PATCH /api/presentations/:id — update fields on an existing presentation
-  router.patch('/presentations/:id', (req, res) => {
+  router.patch('/presentations/:id', async (req, res) => {
     const { id } = req.params;
     const { title, purpose, audience, style, slideCount, brief, conversation, status, filePath, filename } =
       req.body as {
@@ -122,8 +118,7 @@ export function createPresentationsRoutes(db: Database.Database): Router {
       };
 
     try {
-      db.prepare(
-        `UPDATE presentations SET
+      await db.run(`UPDATE presentations SET
            title        = COALESCE(?, title),
            purpose      = COALESCE(?, purpose),
            audience     = COALESCE(?, audience),
@@ -136,7 +131,7 @@ export function createPresentationsRoutes(db: Database.Database): Router {
            filename     = COALESCE(?, filename),
            updated_at   = datetime('now')
          WHERE id = ?`
-      ).run(
+      , 
         title ?? null,
         purpose ?? null,
         audience ?? null,
@@ -149,7 +144,7 @@ export function createPresentationsRoutes(db: Database.Database): Router {
         filename ?? null,
         id
       );
-      const row = db.prepare('SELECT * FROM presentations WHERE id = ?').get(id);
+      const row = await db.get('SELECT * FROM presentations WHERE id = ?', id);
       if (!row) { res.status(404).json({ error: 'Not found' }); return; }
       res.json(row);
     } catch (error) {
@@ -158,18 +153,16 @@ export function createPresentationsRoutes(db: Database.Database): Router {
   });
 
   // DELETE /api/presentations/:id — delete record and file
-  router.delete('/presentations/:id', (req, res) => {
+  router.delete('/presentations/:id', async (req, res) => {
     const { id } = req.params;
     try {
-      const row = db
-        .prepare('SELECT file_path FROM presentations WHERE id = ?')
-        .get(id) as { file_path?: string } | undefined;
+      const row = await db.get('SELECT file_path FROM presentations WHERE id = ?', id) as { file_path?: string } | undefined;
 
       if (row?.file_path) {
         try { fs.removeSync(row.file_path); } catch { /* non-fatal */ }
       }
 
-      db.prepare('DELETE FROM presentations WHERE id = ?').run(id);
+      await db.run('DELETE FROM presentations WHERE id = ?', id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Delete failed' });
@@ -207,7 +200,7 @@ export function createPresentationsRoutes(db: Database.Database): Router {
 
     if (id) {
       try {
-        db.prepare(`UPDATE presentations SET status = 'generating', updated_at = datetime('now') WHERE id = ?`).run(id);
+        await db.run(`UPDATE presentations SET status = 'generating', updated_at = datetime('now') WHERE id = ?`, id);
       } catch { /* non-fatal */ }
     }
 
@@ -347,9 +340,7 @@ FORMATTING RULES:
       });
 
       // Read brand settings from the user profile (graceful fallback to defaults)
-      const profileRow = db
-        .prepare('SELECT organisation, brand_config FROM user_profiles WHERE id = ?')
-        .get('default') as { organisation: string | null; brand_config: string | null } | undefined;
+      const profileRow = await db.get('SELECT organisation, brand_config FROM user_profiles WHERE id = ?', 'default') as { organisation: string | null; brand_config: string | null } | undefined;
 
       const brandOverride: Partial<PresentationBrand> = {};
       if (profileRow?.organisation?.trim()) {
@@ -383,16 +374,16 @@ FORMATTING RULES:
       await fs.outputFile(filePath, pptxBuffer);
 
       if (id) {
-        db.prepare(
+        await db.run(
           `UPDATE presentations SET status = 'ready', file_path = ?, filename = ?, updated_at = datetime('now') WHERE id = ?`
-        ).run(filePath, filename, id);
+        , filePath, filename, id);
       }
 
       res.json({ success: true, filename, filePath });
     } catch (error) {
       if (id) {
         try {
-          db.prepare(`UPDATE presentations SET status = 'failed', updated_at = datetime('now') WHERE id = ?`).run(id);
+          await db.run(`UPDATE presentations SET status = 'failed', updated_at = datetime('now') WHERE id = ?`, id);
         } catch { /* non-fatal */ }
       }
       res.status(500).json({ error: error instanceof Error ? error.message : 'Generation failed' });
@@ -400,7 +391,7 @@ FORMATTING RULES:
   });
 
   // GET /api/presentations/download/:filename — serve the generated .pptx
-  router.get('/presentations/download/:filename', (req, res) => {
+  router.get('/presentations/download/:filename', async (req, res) => {
     const { filename } = req.params;
     // Security: only allow safe filenames
     if (!/^[\w\-]+\.pptx$/.test(filename)) {

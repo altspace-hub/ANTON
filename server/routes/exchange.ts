@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import type { Database } from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { exportModuleToAnton } from '../services/antonExport.js';
 import {
   bundleModuleToAnton,
@@ -14,7 +14,7 @@ import { importAntonFile } from '../services/anton-importer.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
-export function createExchangeRoutes(db: Database) {
+export async function createExchangeRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   // Export a module as .anton

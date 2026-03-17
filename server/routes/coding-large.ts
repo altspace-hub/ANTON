@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import Database from 'better-sqlite3';
+import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { createCodingIntegration } from '../services/coding-integration.js';
 
@@ -1736,13 +1736,13 @@ Be thorough within the scope, but do not expand beyond it. If you identify issue
   return message;
 }
 
-export function createCodingLargeRoutes(db: Database.Database): Router {
+export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
   // ── Project CRUD ─────────────────────────────────────────────────────────
 
   // POST /api/coding/projects — Create project
-  router.post('/coding/projects', (req, res) => {
+  router.post('/coding/projects', async (req, res) => {
     try {
       const { name, description, tier = 'large', project_id, directory_path } = req.body;
       if (!name) return res.status(400).json({ error: 'name is required' });
@@ -1751,17 +1751,17 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       let parentProjectId = project_id;
       if (!parentProjectId) {
         parentProjectId = randomUUID();
-        db.prepare(`
+        await db.run(`
           INSERT INTO projects (id, name, description, status, created_at, updated_at)
           VALUES (?, ?, ?, 'active', datetime('now'), datetime('now'))
-        `).run(parentProjectId, name, description || '');
+        `, parentProjectId, name, description || '');
       }
 
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO coding_projects (id, project_id, name, description, tier, directory_path, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(id, parentProjectId, name, description || '', tier, directory_path || null, (req as any).userId || 'system');
+      `, id, parentProjectId, name, description || '', tier, directory_path || null, (req as any).userId || 'system');
 
       res.json({ id, project_id: parentProjectId, name, tier, status: 'discovery' });
     } catch (error) {
@@ -1771,7 +1771,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/projects — List coding projects
-  router.get('/coding/projects', (req, res) => {
+  router.get('/coding/projects', async (req, res) => {
     try {
       const status = req.query.status as string;
       const tier = req.query.tier as string;
@@ -1788,7 +1788,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       sql += ' ORDER BY cp.updated_at DESC LIMIT ?';
       params.push(limit);
 
-      const projects = db.prepare(sql).all(...params);
+      const projects = await db.run(sql, ...params);
       res.json(projects.map(parseProject));
     } catch (error) {
       console.error('[coding-large] List projects error:', error);
@@ -1797,29 +1797,29 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
   });
 
   // GET /api/coding/projects/:id — Get project with full state
-  router.get('/coding/projects/:id', (req, res) => {
+  router.get('/coding/projects/:id', async (req, res) => {
     try {
-      const row = db.prepare(`
+      const row = await db.get(`
         SELECT cp.*, p.name as parent_project_name
         FROM coding_projects cp
         LEFT JOIN projects p ON cp.project_id = p.id
         WHERE cp.id = ?
-      `).get(req.params.id);
+      `, req.params.id);
       if (!row) return res.status(404).json({ error: 'Project not found' });
 
       const project = parseProject(row);
 
       // Load releases
-      const releases = db.prepare('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number').all(req.params.id);
+      const releases = await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id);
 
       // Load recent tasks
-      const tasks = db.prepare('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order LIMIT 50').all(req.params.id);
+      const tasks = await db.all('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order LIMIT 50', req.params.id);
 
       // Load reviews
-      const reviews = db.prepare('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at DESC LIMIT 20').all(req.params.id);
+      const reviews = await db.all('SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at DESC LIMIT 20', req.params.id);
 
       // Load tech debt
-      const techDebt = db.prepare("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC").all(req.params.id);
+      const techDebt = await db.all("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC", req.params.id);
 
       res.json({
         ...project,
@@ -1835,7 +1835,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
   });
 
   // PATCH /api/coding/projects/:id — Update project
-  router.patch('/coding/projects/:id', (req, res) => {
+  router.patch('/coding/projects/:id', async (req, res) => {
     try {
       const updates: string[] = [];
       const params: any[] = [];
@@ -1857,7 +1857,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       updates.push("updated_at = datetime('now')");
       params.push(req.params.id);
 
-      db.prepare(`UPDATE coding_projects SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+      await db.run(`UPDATE coding_projects SET ${updates.join(', ')} WHERE id = ?`, ...params);
       res.json({ id: req.params.id, updated: true });
     } catch (error) {
       console.error('[coding-large] Update project error:', error);
@@ -1869,12 +1869,12 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/baseline', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { code, files, source_path } = req.body;
 
-      db.prepare("UPDATE coding_projects SET status = 'onboarding', current_phase = 0, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'onboarding', current_phase = 0, updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildBaselineSystemPrompt(project.name);
       const baselinePrompt = buildBaselineUserMessage(project.name, { code, files, source_path });
@@ -1896,18 +1896,17 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
   // POST /api/coding/projects/:id/baseline/save — Save baseline assessment from AI
   router.post('/coding/projects/:id/baseline/save', async (req, res) => {
     try {
-      const project = db.prepare('SELECT id FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { baseline_summary } = req.body;
       if (!baseline_summary) return res.status(400).json({ error: 'baseline_summary is required' });
 
-      db.prepare("UPDATE coding_projects SET baseline_summary = ?, status = 'discovery', current_phase = 1, updated_at = datetime('now') WHERE id = ?")
-        .run(baseline_summary, req.params.id);
+      await db.run("UPDATE coding_projects SET baseline_summary = ?, status = 'discovery', current_phase = 1, updated_at = datetime('now') WHERE id = ?", baseline_summary, req.params.id);
 
       // Fire-and-forget version tracking
       try {
-        const integration = createCodingIntegration(db);
+        const integration = await createCodingIntegration(db);
         integration.saveVersion('coding-baseline', req.params.id, baseline_summary, 'Baseline assessment');
       } catch { /* version tracking failure should not break the main flow */ }
 
@@ -1918,9 +1917,9 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.get('/coding/projects/:id/baseline', (req, res) => {
+  router.get('/coding/projects/:id/baseline', async (req, res) => {
     try {
-      const project = db.prepare('SELECT baseline_summary FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+
       if (!project) return res.status(404).json({ error: 'Project not found' });
       res.json({ baseline_summary: project.baseline_summary });
     } catch (error) {
@@ -1933,12 +1932,12 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/discovery', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { context, goals, stakeholders, constraints } = req.body;
 
-      db.prepare("UPDATE coding_projects SET status = 'discovery', current_phase = 1, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'discovery', current_phase = 1, updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildDiscoverySystemPrompt(project.name, project.baseline_summary || undefined);
       const discoveryPrompt = buildDiscoveryUserMessage(project.name, { context, goals, stakeholders, constraints });
@@ -1959,15 +1958,15 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/discovery/finalize', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { summary } = req.body;
-      db.prepare("UPDATE coding_projects SET discovery_summary = ?, status = 'architecture', current_phase = 2, updated_at = datetime('now') WHERE id = ?").run(summary || '', req.params.id);
+      await db.run("UPDATE coding_projects SET discovery_summary = ?, status = 'architecture', current_phase = 2, updated_at = datetime('now') WHERE id = ?", summary || '', req.params.id);
 
       // Fire-and-forget version tracking
       try {
-        const integration = createCodingIntegration(db);
+        const integration = await createCodingIntegration(db);
         integration.saveVersion('coding-discovery', req.params.id, summary || '', 'Discovery finalized');
       } catch { /* version tracking failure should not break the main flow */ }
 
@@ -1991,7 +1990,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/architecture', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { discovery_summary, tech_stack_preferences, constraints } = req.body;
@@ -2000,7 +1999,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       const discoverySummary = discovery_summary || project.discovery_summary || undefined;
       const baselineSummary = project.baseline_summary || undefined;
 
-      db.prepare("UPDATE coding_projects SET status = 'architecture', current_phase = 2, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'architecture', current_phase = 2, updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildArchitectureSystemPrompt(project.name, discoverySummary, baselineSummary);
       const architecturePrompt = buildArchitectureUserMessage(project.name, { tech_stack_preferences, constraints });
@@ -2021,7 +2020,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/architecture/review', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { architecture_summary, personas = ['security', 'compliance', 'product'] } = req.body;
@@ -2031,12 +2030,12 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
         return res.status(400).json({ error: 'architecture_summary is required (provide it or save it to the project first)' });
       }
 
-      const reviews = personas.map((persona: string) => {
+      const reviews = personas.map(async (persona: string) => {
         const id = randomUUID();
-        db.prepare(`
+        await db.run(`
           INSERT INTO coding_reviews (id, coding_project_id, reviewer_persona_id, review_type, is_mandatory)
           VALUES (?, ?, ?, 'architecture', 1)
-        `).run(id, req.params.id, persona);
+        `, id, req.params.id, persona);
         return { id, persona, status: 'pending' };
       });
 
@@ -2054,14 +2053,14 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.patch('/coding/projects/:id/architecture', (req, res) => {
+  router.patch('/coding/projects/:id/architecture', async (req, res) => {
     try {
       const { summary } = req.body;
-      db.prepare("UPDATE coding_projects SET architecture_summary = ?, updated_at = datetime('now') WHERE id = ?").run(summary || '', req.params.id);
+      await db.run("UPDATE coding_projects SET architecture_summary = ?, updated_at = datetime('now') WHERE id = ?", summary || '', req.params.id);
 
       // Fire-and-forget version tracking
       try {
-        const integration = createCodingIntegration(db);
+        const integration = await createCodingIntegration(db);
         integration.saveVersion('coding-architecture', req.params.id, summary || '', 'Architecture updated');
       } catch { /* version tracking failure should not break the main flow */ }
 
@@ -2076,18 +2075,16 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/estimate', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { estimate, architecture_summary, discovery_summary } = req.body;
 
       // If a raw estimate object is provided, save it directly (backwards-compatible)
       if (estimate) {
-        db.prepare("UPDATE coding_projects SET cost_estimate = ?, status = 'estimation', updated_at = datetime('now') WHERE id = ?")
-          .run(JSON.stringify(estimate), req.params.id);
+        await db.run("UPDATE coding_projects SET cost_estimate = ?, status = 'estimation', updated_at = datetime('now') WHERE id = ?", JSON.stringify(estimate), req.params.id);
       } else {
-        db.prepare("UPDATE coding_projects SET status = 'estimation', updated_at = datetime('now') WHERE id = ?")
-          .run(req.params.id);
+        await db.run("UPDATE coding_projects SET status = 'estimation', updated_at = datetime('now') WHERE id = ?", req.params.id);
       }
 
       // Use provided summaries or load from project
@@ -2113,9 +2110,9 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   // ── Release Management ───────────────────────────────────────────────────
 
-  router.get('/coding/projects/:id/releases', (req, res) => {
+  router.get('/coding/projects/:id/releases', async (req, res) => {
     try {
-      const releases = db.prepare('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number').all(req.params.id);
+
       res.json(releases.map(parseRelease));
     } catch (error) {
       console.error('[coding-large] List releases error:', error);
@@ -2123,21 +2120,21 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.post('/coding/projects/:id/releases', (req, res) => {
+  router.post('/coding/projects/:id/releases', async (req, res) => {
     try {
       const { name, description, scope, acceptance_criteria = [], milestone_date, git_branch } = req.body;
       if (!name) return res.status(400).json({ error: 'name is required' });
 
-      const maxRelease = db.prepare('SELECT MAX(release_number) as max FROM coding_releases WHERE coding_project_id = ?').get(req.params.id) as any;
+      const maxRelease = await db.get('SELECT MAX(release_number) as max FROM coding_releases WHERE coding_project_id = ?', req.params.id) as any;
       const releaseNumber = (maxRelease?.max || 0) + 1;
 
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO coding_releases (id, coding_project_id, release_number, name, description, scope, acceptance_criteria, milestone_date, git_branch)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, req.params.id, releaseNumber, name, description || '', scope || '', JSON.stringify(acceptance_criteria), milestone_date || null, git_branch || null);
+      `, id, req.params.id, releaseNumber, name, description || '', scope || '', JSON.stringify(acceptance_criteria), milestone_date || null, git_branch || null);
 
-      db.prepare("UPDATE coding_projects SET status = 'planning', current_phase = 4, current_release_id = ?, updated_at = datetime('now') WHERE id = ?").run(id, req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'planning', current_phase = 4, current_release_id = ?, updated_at = datetime('now') WHERE id = ?", id, req.params.id);
 
       res.json({ id, release_number: releaseNumber, name, status: 'planned' });
     } catch (error) {
@@ -2146,12 +2143,12 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.get('/coding/projects/:id/releases/:rid', (req, res) => {
+  router.get('/coding/projects/:id/releases/:rid', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM coding_releases WHERE id = ? AND coding_project_id = ?').get(req.params.rid, req.params.id);
+      const row = await db.get('SELECT * FROM coding_releases WHERE id = ? AND coding_project_id = ?', req.params.rid, req.params.id);
       if (!row) return res.status(404).json({ error: 'Release not found' });
 
-      const tasks = db.prepare('SELECT * FROM coding_tasks WHERE coding_release_id = ? ORDER BY sort_order').all(req.params.rid);
+      const tasks = await db.all('SELECT * FROM coding_tasks WHERE coding_release_id = ? ORDER BY sort_order', req.params.rid);
 
       res.json({ ...parseRelease(row), tasks: tasks.map(parseTask) });
     } catch (error) {
@@ -2160,7 +2157,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.patch('/coding/projects/:id/releases/:rid', (req, res) => {
+  router.patch('/coding/projects/:id/releases/:rid', async (req, res) => {
     try {
       const updates: string[] = [];
       const params: any[] = [];
@@ -2178,7 +2175,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       updates.push("updated_at = datetime('now')");
       params.push(req.params.rid, req.params.id);
 
-      db.prepare(`UPDATE coding_releases SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`).run(...params);
+      await db.run(`UPDATE coding_releases SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`, ...params);
       res.json({ id: req.params.rid, updated: true });
     } catch (error) {
       console.error('[coding-large] Update release error:', error);
@@ -2189,10 +2186,10 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
   // POST /api/coding/projects/:id/releases/:rid/plan — Generate task breakdown for a release
   router.post('/coding/projects/:id/releases/:rid/plan', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const releaseRow = db.prepare('SELECT * FROM coding_releases WHERE id = ? AND coding_project_id = ?').get(req.params.rid, req.params.id);
+      const releaseRow = await db.get('SELECT * FROM coding_releases WHERE id = ? AND coding_project_id = ?', req.params.rid, req.params.id);
       if (!releaseRow) return res.status(404).json({ error: 'Release not found' });
 
       const release = parseRelease(releaseRow);
@@ -2229,7 +2226,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   // ── Task Management ──────────────────────────────────────────────────────
 
-  router.get('/coding/projects/:id/tasks', (req, res) => {
+  router.get('/coding/projects/:id/tasks', async (req, res) => {
     try {
       const releaseId = req.query.release_id as string;
       const status = req.query.status as string;
@@ -2241,26 +2238,26 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       if (status) { sql += ' AND status = ?'; params.push(status); }
       sql += ' ORDER BY sort_order';
 
-      res.json(db.prepare(sql).all(...params).map(parseTask));
+      res.json((await db.all(sql, ...params)).map(parseTask));
     } catch (error) {
       console.error('[coding-large] List tasks error:', error);
       res.status(500).json({ error: 'Failed to list tasks' });
     }
   });
 
-  router.post('/coding/projects/:id/tasks', (req, res) => {
+  router.post('/coding/projects/:id/tasks', async (req, res) => {
     try {
       const { coding_release_id, title, description, complexity_band = 'medium', acceptance_criteria = [], depends_on = [] } = req.body;
       if (!coding_release_id || !title) return res.status(400).json({ error: 'coding_release_id and title are required' });
 
-      const maxTask = db.prepare('SELECT COUNT(*) as c FROM coding_tasks WHERE coding_release_id = ?').get(coding_release_id) as any;
+      const maxTask = await db.get('SELECT COUNT(*) as c FROM coding_tasks WHERE coding_release_id = ?', coding_release_id) as any;
       const taskNumber = `T${(maxTask?.c || 0) + 1}`;
 
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO coding_tasks (id, coding_release_id, coding_project_id, task_number, title, description, complexity_band, acceptance_criteria, depends_on, sort_order)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, coding_release_id, req.params.id, taskNumber, title, description || '', complexity_band, JSON.stringify(acceptance_criteria), JSON.stringify(depends_on), (maxTask?.c || 0));
+      `, id, coding_release_id, req.params.id, taskNumber, title, description || '', complexity_band, JSON.stringify(acceptance_criteria), JSON.stringify(depends_on), (maxTask?.c || 0));
 
       res.json({ id, task_number: taskNumber, title, status: 'pending' });
     } catch (error) {
@@ -2269,9 +2266,9 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.get('/coding/projects/:id/tasks/:tid', (req, res) => {
+  router.get('/coding/projects/:id/tasks/:tid', async (req, res) => {
     try {
-      const row = db.prepare('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?').get(req.params.tid, req.params.id);
+      const row = await db.get('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id);
       if (!row) return res.status(404).json({ error: 'Task not found' });
       res.json(parseTask(row));
     } catch (error) {
@@ -2280,7 +2277,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.patch('/coding/projects/:id/tasks/:tid', (req, res) => {
+  router.patch('/coding/projects/:id/tasks/:tid', async (req, res) => {
     try {
       const updates: string[] = [];
       const params: any[] = [];
@@ -2301,7 +2298,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       updates.push("updated_at = datetime('now')");
       params.push(req.params.tid, req.params.id);
 
-      db.prepare(`UPDATE coding_tasks SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`).run(...params);
+      await db.run(`UPDATE coding_tasks SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`, ...params);
       res.json({ id: req.params.tid, updated: true });
     } catch (error) {
       console.error('[coding-large] Update task error:', error);
@@ -2311,10 +2308,10 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/tasks/:tid/plan', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const task = db.prepare('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?').get(req.params.tid, req.params.id) as any;
+      const task = await db.get('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id) as any;
       if (!task) return res.status(404).json({ error: 'Task not found' });
 
       const parsedTask = parseTask(task);
@@ -2322,7 +2319,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       // Load the release for context
       let release: any = null;
       if (task.coding_release_id) {
-        const releaseRow = db.prepare('SELECT * FROM coding_releases WHERE id = ?').get(task.coding_release_id);
+        const releaseRow = await db.get('SELECT * FROM coding_releases WHERE id = ?', task.coding_release_id);
         if (releaseRow) release = parseRelease(releaseRow);
       }
 
@@ -2340,7 +2337,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       const systemPromptOverride = buildTaskPlanSystemPrompt(project.name, task.title, releaseContext);
       const taskPlanPrompt = buildTaskPlanUserMessage(parsedTask, release, parsedProject);
 
-      db.prepare("UPDATE coding_tasks SET status = 'planning', updated_at = datetime('now') WHERE id = ?").run(req.params.tid);
+      await db.run("UPDATE coding_tasks SET status = 'planning', updated_at = datetime('now') WHERE id = ?", req.params.tid);
 
       res.json({
         taskPlanPrompt,
@@ -2358,10 +2355,10 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/tasks/:tid/execute', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const task = db.prepare('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?').get(req.params.tid, req.params.id) as any;
+      const task = await db.get('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id) as any;
       if (!task) return res.status(404).json({ error: 'Task not found' });
 
       const parsedTask = parseTask(task);
@@ -2378,8 +2375,8 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       const systemPromptOverride = buildTaskExecuteSystemPrompt(project.name, task.title, executionPlanStr);
       const executePrompt = buildTaskExecuteUserMessage(parsedTask, parsedTask.execution_plan);
 
-      db.prepare("UPDATE coding_tasks SET status = 'in_progress', started_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(req.params.tid);
-      db.prepare("UPDATE coding_projects SET status = 'implementation', current_phase = 5, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+      await db.run("UPDATE coding_tasks SET status = 'in_progress', started_at = datetime('now'), updated_at = datetime('now') WHERE id = ?", req.params.tid);
+      await db.run("UPDATE coding_projects SET status = 'implementation', current_phase = 5, updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       res.json({
         executePrompt,
@@ -2399,10 +2396,10 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/tasks/:tid/complete', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const task = db.prepare('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?').get(req.params.tid, req.params.id) as any;
+      const task = await db.get('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id) as any;
       if (!task) return res.status(404).json({ error: 'Task not found' });
 
       const { completion_record, completion_notes } = req.body;
@@ -2411,7 +2408,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       const completionRecordStr = typeof completion_record === 'string' ? completion_record : JSON.stringify(completion_record);
 
       // Update task to completed
-      db.prepare(`
+      await db.run(`
         UPDATE coding_tasks
         SET status = 'completed',
             completion_record = ?,
@@ -2419,23 +2416,23 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
             completed_at = datetime('now'),
             updated_at = datetime('now')
         WHERE id = ? AND coding_project_id = ?
-      `).run(completionRecordStr, completion_notes || null, req.params.tid, req.params.id);
+      `, completionRecordStr, completion_notes || null, req.params.tid, req.params.id);
 
       // Check if all tasks in the release are completed
       let releaseUpdated = false;
       if (task.coding_release_id) {
-        const pendingTasks = db.prepare(`
+        const pendingTasks = await db.get(`
           SELECT COUNT(*) as count FROM coding_tasks
           WHERE coding_release_id = ? AND status != 'completed'
-        `).get(task.coding_release_id) as any;
+        `, task.coding_release_id) as any;
 
         if (pendingTasks.count === 0) {
-          db.prepare(`
+          await db.run(`
             UPDATE coding_releases
             SET status = 'review',
                 updated_at = datetime('now')
             WHERE id = ?
-          `).run(task.coding_release_id);
+          `, task.coding_release_id);
           releaseUpdated = true;
         }
       }
@@ -2456,9 +2453,9 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   // ── Test Runs ────────────────────────────────────────────────────────────
 
-  router.get('/coding/projects/:id/tests', (req, res) => {
+  router.get('/coding/projects/:id/tests', async (req, res) => {
     try {
-      const tests = db.prepare('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50').all(req.params.id);
+      const tests = await db.all('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50', req.params.id);
       res.json(tests.map((t: any) => ({ ...t, results: JSON.parse(t.results || '{}') })));
     } catch (error) {
       console.error('[coding-large] List tests error:', error);
@@ -2466,16 +2463,16 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.post('/coding/projects/:id/tests', (req, res) => {
+  router.post('/coding/projects/:id/tests', async (req, res) => {
     try {
       const { test_type, test_suite_name, results = {}, pass_count = 0, fail_count = 0, skip_count = 0, duration_ms, coding_release_id, coding_task_id } = req.body;
       if (!test_type) return res.status(400).json({ error: 'test_type is required' });
 
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO coding_test_runs (id, coding_project_id, coding_release_id, coding_task_id, test_type, test_suite_name, results, pass_count, fail_count, skip_count, total_count, duration_ms)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, req.params.id, coding_release_id || null, coding_task_id || null, test_type, test_suite_name || null, JSON.stringify(results), pass_count, fail_count, skip_count, pass_count + fail_count + skip_count, duration_ms || null);
+      `, id, req.params.id, coding_release_id || null, coding_task_id || null, test_type, test_suite_name || null, JSON.stringify(results), pass_count, fail_count, skip_count, pass_count + fail_count + skip_count, duration_ms || null);
 
       res.json({ id, test_type, pass_count, fail_count });
     } catch (error) {
@@ -2486,30 +2483,30 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   // ── Tech Debt ────────────────────────────────────────────────────────────
 
-  router.get('/coding/projects/:id/tech-debt', (req, res) => {
+  router.get('/coding/projects/:id/tech-debt', async (req, res) => {
     try {
       const status = req.query.status as string;
       let sql = 'SELECT * FROM coding_tech_debt WHERE coding_project_id = ?';
       const params: any[] = [req.params.id];
       if (status) { sql += ' AND status = ?'; params.push(status); }
       sql += ' ORDER BY CASE severity WHEN \'critical\' THEN 0 WHEN \'high\' THEN 1 WHEN \'medium\' THEN 2 ELSE 3 END';
-      res.json(db.prepare(sql).all(...params));
+      res.json(await db.run(sql, ...params));
     } catch (error) {
       console.error('[coding-large] List tech debt error:', error);
       res.status(500).json({ error: 'Failed to list tech debt' });
     }
   });
 
-  router.post('/coding/projects/:id/tech-debt', (req, res) => {
+  router.post('/coding/projects/:id/tech-debt', async (req, res) => {
     try {
       const { title, description, rationale, severity = 'medium', owner, target_release_id, source = 'manual', source_task_id } = req.body;
       if (!title) return res.status(400).json({ error: 'title is required' });
 
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO coding_tech_debt (id, coding_project_id, title, description, rationale, severity, owner, target_release_id, source, source_task_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, req.params.id, title, description || '', rationale || '', severity, owner || null, target_release_id || null, source, source_task_id || null);
+      `, id, req.params.id, title, description || '', rationale || '', severity, owner || null, target_release_id || null, source, source_task_id || null);
 
       res.json({ id, title, severity, status: 'open' });
     } catch (error) {
@@ -2518,7 +2515,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.patch('/coding/projects/:id/tech-debt/:tdid', (req, res) => {
+  router.patch('/coding/projects/:id/tech-debt/:tdid', async (req, res) => {
     try {
       const { status, resolution_notes, owner, target_release_id, severity } = req.body;
       const updates: string[] = [];
@@ -2534,7 +2531,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       updates.push("updated_at = datetime('now')");
       params.push(req.params.tdid, req.params.id);
 
-      db.prepare(`UPDATE coding_tech_debt SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`).run(...params);
+      await db.run(`UPDATE coding_tech_debt SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`, ...params);
       res.json({ id: req.params.tdid, updated: true });
     } catch (error) {
       console.error('[coding-large] Update tech debt error:', error);
@@ -2544,9 +2541,9 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   // ── Changes ──────────────────────────────────────────────────────────────
 
-  router.get('/coding/projects/:id/changes', (req, res) => {
+  router.get('/coding/projects/:id/changes', async (req, res) => {
     try {
-      const changes = db.prepare('SELECT * FROM coding_changes WHERE coding_project_id = ? ORDER BY created_at DESC').all(req.params.id);
+      const changes = await db.all('SELECT * FROM coding_changes WHERE coding_project_id = ? ORDER BY created_at DESC', req.params.id);
       res.json(changes.map((c: any) => ({
         ...c,
         original_state: JSON.parse(c.original_state || '{}'),
@@ -2561,16 +2558,16 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.post('/coding/projects/:id/changes', (req, res) => {
+  router.post('/coding/projects/:id/changes', async (req, res) => {
     try {
       const { change_type, change_level, title, rationale, original_state = {}, revised_state = {}, affected_release_ids = [], affected_task_ids = [] } = req.body;
       if (!change_type || !change_level || !title) return res.status(400).json({ error: 'change_type, change_level, and title are required' });
 
       const id = randomUUID();
-      db.prepare(`
+      await db.run(`
         INSERT INTO coding_changes (id, coding_project_id, change_type, change_level, title, rationale, initiated_by, original_state, revised_state, affected_release_ids, affected_task_ids)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, req.params.id, change_type, change_level, title, rationale || '', (req as any).userId || 'system', JSON.stringify(original_state), JSON.stringify(revised_state), JSON.stringify(affected_release_ids), JSON.stringify(affected_task_ids));
+      `, id, req.params.id, change_type, change_level, title, rationale || '', (req as any).userId || 'system', JSON.stringify(original_state), JSON.stringify(revised_state), JSON.stringify(affected_release_ids), JSON.stringify(affected_task_ids));
 
       res.json({ id, title, status: 'proposed' });
     } catch (error) {
@@ -2581,10 +2578,10 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/changes/:cid/impact', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
-      const changeRow = db.prepare('SELECT * FROM coding_changes WHERE id = ? AND coding_project_id = ?').get(req.params.cid, req.params.id) as any;
+      const changeRow = await db.get('SELECT * FROM coding_changes WHERE id = ? AND coding_project_id = ?', req.params.cid, req.params.id) as any;
       if (!changeRow) return res.status(404).json({ error: 'Change not found' });
 
       const change = {
@@ -2598,7 +2595,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
       const parsedProject = parseProject(project);
 
       // Load releases
-      const releases = db.prepare('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number').all(req.params.id).map(parseRelease);
+      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id)).map(parseRelease);
 
       const systemPromptOverride = buildImpactAnalysisSystemPrompt(project.name);
       const impactPrompt = buildImpactAnalysisUserMessage(change, parsedProject, releases);
@@ -2615,12 +2612,11 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
     }
   });
 
-  router.patch('/coding/projects/:id/changes/:cid', (req, res) => {
+  router.patch('/coding/projects/:id/changes/:cid', async (req, res) => {
     try {
       const { status } = req.body;
       if (!status) return res.status(400).json({ error: 'status is required' });
-      db.prepare("UPDATE coding_changes SET status = ?, approved_at = CASE WHEN ? = 'approved' THEN datetime('now') ELSE approved_at END, updated_at = datetime('now') WHERE id = ? AND coding_project_id = ?")
-        .run(status, status, req.params.cid, req.params.id);
+      await db.run("UPDATE coding_changes SET status = ?, approved_at = CASE WHEN ? = 'approved' THEN datetime('now') ELSE approved_at END, updated_at = datetime('now') WHERE id = ? AND coding_project_id = ?", status, status, req.params.cid, req.params.id);
       res.json({ id: req.params.cid, status });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update change' });
@@ -2629,9 +2625,9 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   // ── Cost Tracking ────────────────────────────────────────────────────────
 
-  router.get('/coding/projects/:id/cost', (req, res) => {
+  router.get('/coding/projects/:id/cost', async (req, res) => {
     try {
-      const project = db.prepare('SELECT cost_estimate, cost_actual FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+
       if (!project) return res.status(404).json({ error: 'Project not found' });
       res.json({
         estimate: JSON.parse(project.cost_estimate || '{}'),
@@ -2644,10 +2640,10 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   // ── Activity Feed ────────────────────────────────────────────────────────
 
-  router.get('/coding/projects/:id/activity', (req, res) => {
+  router.get('/coding/projects/:id/activity', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 30;
-      const activity = db.prepare(`
+      const activity = await db.get(`
         SELECT 'task' as type, id, title, status, updated_at as timestamp FROM coding_tasks WHERE coding_project_id = ?
         UNION ALL
         SELECT 'review' as type, id, reviewer_persona_id as title, status, created_at as timestamp FROM coding_reviews WHERE coding_project_id = ?
@@ -2656,7 +2652,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
         UNION ALL
         SELECT 'test' as type, id, test_suite_name as title, CAST(pass_count as TEXT) as status, run_at as timestamp FROM coding_test_runs WHERE coding_project_id = ?
         ORDER BY timestamp DESC LIMIT ?
-      `).all(req.params.id, req.params.id, req.params.id, req.params.id, limit);
+      `, req.params.id, req.params.id, req.params.id, req.params.id, limit);
       res.json(activity);
     } catch (error) {
       res.status(500).json({ error: 'Failed to get activity' });
@@ -2667,19 +2663,19 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/alignment-check', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const parsedProject = parseProject(project);
 
       // Load tech debt
-      const techDebt = db.prepare("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC").all(req.params.id);
+      const techDebt = await db.all("SELECT * FROM coding_tech_debt WHERE coding_project_id = ? AND status != 'resolved' ORDER BY severity DESC", req.params.id);
 
       // Load releases
-      const releases = db.prepare('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number').all(req.params.id).map(parseRelease);
+      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id)).map(parseRelease);
 
       // Load tasks
-      const tasks = db.prepare('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order').all(req.params.id).map(parseTask);
+      const tasks = (await db.all('SELECT * FROM coding_tasks WHERE coding_project_id = ? ORDER BY sort_order', req.params.id)).map(parseTask);
 
       const systemPromptOverride = buildAlignmentCheckSystemPrompt(
         project.name,
@@ -2704,18 +2700,18 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/operational-readiness', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const parsedProject = parseProject(project);
 
       // Load releases
-      const releases = db.prepare('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number').all(req.params.id).map(parseRelease);
+      const releases = (await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number', req.params.id)).map(parseRelease);
 
       // Load test results
-      const testResults = db.prepare('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50').all(req.params.id);
+      const testResults = await db.all('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50', req.params.id);
 
-      db.prepare("UPDATE coding_projects SET status = 'operational_readiness', current_phase = 7, updated_at = datetime('now') WHERE id = ?").run(req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'operational_readiness', current_phase = 7, updated_at = datetime('now') WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildOperationalReadinessSystemPrompt(
         project.name,
@@ -2739,7 +2735,7 @@ export function createCodingLargeRoutes(db: Database.Database): Router {
 
   router.post('/coding/projects/:id/rediscovery', async (req, res) => {
     try {
-      const project = db.prepare('SELECT * FROM coding_projects WHERE id = ?').get(req.params.id) as any;
+
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { scope } = req.body;
