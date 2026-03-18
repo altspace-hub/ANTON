@@ -87,7 +87,26 @@ export async function createMarketWorkflowOrchestrator(
     systemPrompt: string,
     userMessage: string,
     thinking?: string,
+    useWebSearch?: boolean,
   ): Promise<string> {
+    if (useWebSearch && anthropicApiKey) {
+      // Use Claude directly with web search tool for real-time market data
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const client = new Anthropic({ apiKey: anthropicApiKey });
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-5-20250514',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Anthropic.Messages.Tool[],
+      });
+      let text = '';
+      for (const block of response.content) {
+        if (block.type === 'text') text += block.text;
+      }
+      return text;
+    }
+    // Fall back to existing callChat (provider-agnostic)
     const { callChat } = await import('./provider-router.js');
     const result = await callChat({
       model: 'claude-haiku-4-5-20251001',
@@ -233,7 +252,7 @@ export async function createMarketWorkflowOrchestrator(
         );
         const context = recentAtoms.map(a => `[${a.atom_type}|${a.category}|${a.sentiment}|conf:${a.confidence}] ${a.content}`).join('\n');
         const llmResult = await withTimeout(
-          callLLM(prompt, `Recent market atoms (${recentAtoms.length} signals):\n${context}`, 'think'),
+          callLLM(prompt, `Recent market atoms (${recentAtoms.length} signals):\n${context}`, 'think', true),
           LLM_TIMEOUT, 'Signal Scanner'
         );
         stepResults.push({ step: 'Signal Scanner', status: 'success', output: { summary: llmResult.slice(0, 500) } });
@@ -273,7 +292,7 @@ export async function createMarketWorkflowOrchestrator(
         const prompt = readPrompt('market-macro-brief');
         const signalSummary = stepResults.find(s => s.step === 'Signal Scanner')?.output;
         const llmResult = await withTimeout(
-          callLLM(prompt, `Signal scan results:\n${JSON.stringify(signalSummary).slice(0, 4000)}`, 'think_hard'),
+          callLLM(prompt, `Signal scan results:\n${JSON.stringify(signalSummary).slice(0, 4000)}`, 'think_hard', true),
           LLM_TIMEOUT, 'AI Macro Brief'
         );
         stepResults.push({ step: 'AI Macro Brief', status: 'success', output: { summary: llmResult.slice(0, 500) } });

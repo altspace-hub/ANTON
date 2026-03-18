@@ -228,6 +228,7 @@ export async function createMarketComputationService(db: DatabaseAdapter) {
     templateName: string,
     inputParams: Record<string, unknown>,
     triggeredBy = 'manual',
+    options?: { saveAsAtoms?: boolean },
   ): Promise<{ logId: string; success: boolean; output: unknown; error?: string; durationMs: number }> {
     // Validate template exists
     const template = AVAILABLE_TEMPLATES.find(t => t.name === templateName);
@@ -281,6 +282,15 @@ ${scriptContent}
           WHERE id = ?
         `, JSON.stringify(output), result.durationMs, logId);
 
+        // Auto-convert to atoms if requested
+        if (options?.saveAsAtoms) {
+          try {
+            await computationToAtoms(logId);
+          } catch (err) {
+            console.error('[market-computation] Auto-atom conversion failed:', err);
+          }
+        }
+
         return { logId, success: true, output, durationMs: result.durationMs };
       } else {
         const errorMsg = result.stderr || `Exit code: ${result.exitCode}`;
@@ -330,11 +340,33 @@ ${scriptContent}
     }>('SELECT id, template_name, status, execution_time_ms, triggered_by, created_at FROM market_computation_log ORDER BY created_at DESC LIMIT ?', limit);
   }
 
+  /**
+   * Convert computation results into market atoms using Claude.
+   * This closes the loop: scripts run -> results become knowledge -> feed predictions.
+   */
+  async function computationToAtoms(logId: string): Promise<string[]> {
+    // Get the computation log entry
+    const log = await db.get<{ template_name: string; input_params: string; output_data: string; status: string }>(
+      'SELECT template_name, input_params, output_data, status FROM market_computation_log WHERE id = ?', logId
+    );
+    if (!log || log.status !== 'success' || !log.output_data) return [];
+
+    // Use the atom service to extract atoms from the computation output
+    const atomService = (await import('./market-atom-service.js'));
+    const svc = await atomService.createMarketAtomService(db);
+
+    const content = `Computation template: ${log.template_name}\nInput: ${log.input_params?.slice(0, 500)}\nOutput: ${log.output_data.slice(0, 4000)}`;
+    const atomIds = await svc.extractAtomsFromRawData(logId, content, 'computation');
+
+    return atomIds;
+  }
+
   return {
     listTemplates,
     runTemplate,
     getLog,
     getRecentLogs,
+    computationToAtoms,
   };
 }
 

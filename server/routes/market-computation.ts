@@ -50,6 +50,18 @@ export async function createMarketComputationRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── Convert computation log to market atoms ──────────────────────────
+
+  router.post('/markets/compute/logs/:id/to-atoms', async (req, res) => {
+    try {
+      const atomIds = await computeService.computationToAtoms(req.params.id);
+      res.json({ atomIds, count: atomIds.length });
+    } catch (err) {
+      console.error('[market-computation] To-atoms error:', err);
+      res.status(500).json({ error: 'Failed to convert computation to atoms' });
+    }
+  });
+
   // ── List recent computation logs ───────────────────────────────────────
 
   router.get('/markets/compute/logs', async (req, res) => {
