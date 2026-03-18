@@ -64,8 +64,8 @@ export async function generateSuggestions(
          FROM deadlines
          WHERE status != 'completed'
            AND due_date IS NOT NULL
-           AND date(due_date) BETWEEN date('now') AND date('now', '+7 days')
-         ORDER BY date(due_date) ASC
+           AND due_date::date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days'
+         ORDER BY due_date::date ASC
          LIMIT 3`
       ) as DeadlineRow[];
 

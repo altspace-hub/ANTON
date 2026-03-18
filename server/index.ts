@@ -116,6 +116,30 @@ import { initOrchestratorHeartbeat } from './services/orchestrator-heartbeat.js'
 import { createContinuityRoutes } from './routes/continuity.js';
 import { createHumanOversightRoutes } from './routes/human-oversight.js';
 import { createPostMarketMonitoringRoutes } from './routes/post-market-monitoring.js';
+import { createMarketsRoutes } from './routes/markets.js';
+import { createMarketComputationRoutes } from './routes/market-computation.js';
+import { createMarketDataService } from './services/market-data-service.js';
+import { createMarketAtomService } from './services/market-atom-service.js';
+import { createMarketThesesRoutes } from './routes/market-theses.js';
+import { createMarketEntitiesRoutes } from './routes/market-entities.js';
+import { createMarketPatternsRoutes } from './routes/market-patterns.js';
+import { createMarketIndexesRoutes } from './routes/market-indexes.js';
+import { createMarketLearningRoutes } from './routes/market-learning.js';
+import { createMarketInvestigationsRoutes } from './routes/market-investigations.js';
+import { createMarketWhyChainsRoutes } from './routes/market-why-chains.js';
+import { createMarketCrossPillarRoutes } from './routes/market-cross-pillar.js';
+import { createMarketEventCalendarRoutes } from './routes/market-event-calendar.js';
+import { createMarketRCIRoutes } from './routes/market-rci.js';
+import { createPgNotifyService } from './services/pg-notify-service.js';
+import { createPartitionManager } from './services/pg-partition-manager.js';
+import { createMarketComputationService } from './services/market-computation-service.js';
+import { createMarketRCIService } from './services/market-rci-service.js';
+import { createMarketEventTriggerService } from './services/market-event-trigger-service.js';
+import { setAtomNotifyService } from './services/market-atom-service.js';
+import { setThesisNotifyService } from './services/market-thesis-service.js';
+import { setRebalanceNotifyService } from './services/market-index-rebalance-service.js';
+import { createMarketNavEngine } from './services/market-nav-engine.js';
+import { createMarketWorkflowRoutes } from './routes/market-workflows.js';
 import { createOpenApiRouter } from './routes/openapi.js';
 import { csrfTokenRoute, csrfProtection, pruneExpiredCsrfTokens } from './middleware/csrf.js';
 import { createWebhookListener } from './services/webhook-listener.js';
@@ -479,6 +503,25 @@ app.use('/api', await createBenchmarkRoutes(db));
 app.use('/api', await createConnectorTemplatesRoutes());
 app.use('/api', await createIntegrationsRoutes(db));
 
+// Markets Pillar — financial intelligence
+app.use('/api', await createMarketsRoutes(db, anthropic));
+app.use('/api', await createMarketComputationRoutes(db));
+app.use('/api', await createMarketThesesRoutes(db, anthropic));
+app.use('/api', await createMarketEntitiesRoutes(db));
+app.use('/api', await createMarketPatternsRoutes(db));
+app.use('/api', await createMarketIndexesRoutes(db));
+app.use('/api', await createMarketLearningRoutes(db));
+app.use('/api', await createMarketInvestigationsRoutes(db));
+app.use('/api', await createMarketWhyChainsRoutes(db));
+app.use('/api', await createMarketCrossPillarRoutes(db));
+app.use('/api', await createMarketEventCalendarRoutes(db));
+app.use('/api', await createMarketWorkflowRoutes(db));
+
+// RCI service — needs computation service + anthropic client
+const marketComputationSvc = await createMarketComputationService(db);
+const marketRCIService = await createMarketRCIService(db, marketComputationSvc, anthropic);
+app.use('/api', await createMarketRCIRoutes(marketRCIService));
+
 // Serve static React build in production
 const clientDist = path.join(__dirname, '..', 'dist', 'client');
 app.use(express.static(clientDist));
@@ -565,6 +608,8 @@ communityNS.on('connection', (socket) => {
   });
 });
 
+let pgNotifyService: Awaited<ReturnType<typeof createPgNotifyService>> | null = null;
+
 httpServer.listen(PORT, async () => {
   logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
 
@@ -593,6 +638,157 @@ httpServer.listen(PORT, async () => {
     initOrchestratorHeartbeat(db, anthropic);
   } catch (err) {
     console.error('[orchestrator-heartbeat] Failed to start:', err);
+  }
+
+  // ── PG-specific: NOTIFY/LISTEN, partitions, materialized views ────────
+  if (db.dialect === 'postgresql') {
+    try {
+      const notifySvc = await createPgNotifyService(db);
+      pgNotifyService = notifySvc;
+      setAtomNotifyService(pgNotifyService);
+      setThesisNotifyService(pgNotifyService);
+      setRebalanceNotifyService(pgNotifyService);
+    } catch (err) {
+      console.error('[pg-notify] Failed to start:', err);
+    }
+
+    try {
+      const partMgr = createPartitionManager(db);
+      await partMgr.ensureFuturePartitions(12);
+      console.log('[pg-partitions] Future partitions ensured');
+
+      // Weekly cron to create future partitions
+      if (cron.validate('0 2 * * 0')) {
+        cron.schedule('0 2 * * 0', async () => {
+          try {
+            const result = await partMgr.ensureFuturePartitions(12);
+            console.log(`[pg-partitions] Created ${result.created.length} partitions`);
+          } catch (err) {
+            console.error('[pg-partitions] Failed:', err);
+          }
+        });
+      }
+    } catch (err) {
+      console.error('[pg-partitions] Failed to initialize:', err);
+    }
+
+    // Daily materialized view refresh at 4 AM
+    if (cron.validate('0 4 * * *')) {
+      cron.schedule('0 4 * * *', async () => {
+        console.log('[markets-cron] Refreshing materialized views...');
+        try {
+          await db.run('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_prediction_track_record');
+          await db.run('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_index_stats');
+          await db.run('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_index_leaderboard_ranked');
+          console.log('[markets-cron] Materialized views refreshed');
+        } catch (err) {
+          console.error('[markets-cron] Materialized view refresh failed:', err);
+        }
+      });
+      console.log('[markets-cron] Scheduled daily materialized view refresh at 4 AM');
+    }
+  }
+
+  // ── Markets Pillar scheduled jobs ───────────────────────────────────────
+  try {
+    const marketDataService = await createMarketDataService(db);
+    const marketAtomService = await createMarketAtomService(db, anthropic);
+
+    // Fetch market data every 6 hours
+    if (cron.validate('0 */6 * * *')) {
+      cron.schedule('0 */6 * * *', async () => {
+        console.log('[markets-cron] Starting scheduled data fetch...');
+        try {
+          const result = await marketDataService.fetchAllSources();
+          const total = result.results.reduce((sum, r) => sum + r.itemsIngested, 0);
+          console.log(`[markets-cron] Data fetch complete: ${total} items from ${result.results.length} sources`);
+        } catch (err) {
+          console.error('[markets-cron] Data fetch failed:', err);
+        }
+      });
+      console.log('[markets-cron] Scheduled data fetch every 6 hours');
+    }
+
+    // Apply atom decay daily at 3 AM
+    if (cron.validate('0 3 * * *')) {
+      cron.schedule('0 3 * * *', async () => {
+        console.log('[markets-cron] Starting atom decay...');
+        try {
+          const result = await marketAtomService.applyAtomDecay();
+          console.log(`[markets-cron] Atom decay complete: ${result.expired} expired, ${result.deactivated} deactivated`);
+        } catch (err) {
+          console.error('[markets-cron] Atom decay failed:', err);
+        }
+      });
+      console.log('[markets-cron] Scheduled atom decay daily at 3 AM');
+    }
+
+    // Check market event triggers every hour
+    const eventTriggerService = await createMarketEventTriggerService(db);
+    if (cron.validate('0 * * * *')) {
+      cron.schedule('0 * * * *', async () => {
+        try {
+          const result = await eventTriggerService.checkAndFireTriggers();
+          if (result.fired > 0) {
+            console.log(`[markets-cron] Event triggers: ${result.fired} fired, ${result.errors} errors`);
+          }
+        } catch (err) {
+          console.error('[markets-cron] Event trigger check failed:', err);
+        }
+      });
+      console.log('[markets-cron] Scheduled hourly event trigger check');
+    }
+    // NAV engine: update all active index NAVs and leaderboard daily at 9 PM
+    const navEngine = await createMarketNavEngine(db);
+    if (cron.validate('0 21 * * *')) {
+      cron.schedule('0 21 * * *', async () => {
+        console.log('[markets-cron] Starting NAV engine update...');
+        try {
+          const navResult = await navEngine.updateAllActiveIndexes();
+          console.log(`[markets-cron] NAV update: ${navResult.updated} indexes updated`);
+          const lbResult = await navEngine.updateLeaderboard();
+          console.log(`[markets-cron] Leaderboard update: ${lbResult.updated} indexes scored`);
+        } catch (err) {
+          console.error('[markets-cron] NAV engine failed:', err);
+        }
+      });
+      console.log('[markets-cron] Scheduled daily NAV engine at 9 PM');
+    }
+
+    // Market workflow orchestrator: daily intelligence + weekly prediction validation
+    const { createMarketWorkflowOrchestrator: createOrch } = await import('./services/market-workflow-orchestrator.js');
+    const marketComputationSvcCron = await createMarketComputationService(db);
+    const workflowOrchestrator = await createOrch(db, marketComputationSvcCron, marketDataService);
+
+    // Daily intelligence cycle: weekdays at 6 AM
+    if (cron.validate('0 6 * * 1-5')) {
+      cron.schedule('0 6 * * 1-5', async () => {
+        console.log('[markets-cron] Starting daily intelligence cycle...');
+        try {
+          const result = await workflowOrchestrator.runDailyIntelligence();
+          console.log(`[markets-cron] Daily intelligence: ${result.stepsCompleted} steps completed (${result.status})`);
+        } catch (err) {
+          console.error('[markets-cron] Daily intelligence failed:', err);
+        }
+      });
+      console.log('[markets-cron] Scheduled daily intelligence cycle at 6 AM weekdays');
+    }
+
+    // Prediction validation: Fridays at 8 PM
+    if (cron.validate('0 20 * * 5')) {
+      cron.schedule('0 20 * * 5', async () => {
+        console.log('[markets-cron] Starting prediction validation...');
+        try {
+          const result = await workflowOrchestrator.runPredictionValidation();
+          console.log(`[markets-cron] Prediction validation: ${result.stepsCompleted} steps completed (${result.status})`);
+        } catch (err) {
+          console.error('[markets-cron] Prediction validation failed:', err);
+        }
+      });
+      console.log('[markets-cron] Scheduled prediction validation Fridays at 8 PM');
+    }
+  } catch (err) {
+    console.error('[markets-cron] Failed to start market scheduled jobs:', err);
   }
 
   // Initialize radar background scanning from DB settings
@@ -638,11 +834,15 @@ function shutdown(signal: string): void {
   logger.info({ signal }, 'Graceful shutdown initiated');
 
   // Stop accepting new connections
-  httpServer.close((closeErr) => {
+  httpServer.close(async (closeErr) => {
     if (closeErr) {
       logger.error({ err: closeErr }, 'Error closing HTTP server');
     } else {
       logger.info('HTTP server closed');
+    }
+    // Shut down PG notify listener if active
+    if (pgNotifyService) {
+      await pgNotifyService.shutdown().catch(() => {});
     }
     flushAuditQueue(); // RATE-04: drain pending audit entries before closing
     db.close().catch(() => {}).finally(() => {

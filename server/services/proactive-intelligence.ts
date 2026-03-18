@@ -132,7 +132,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
       params.push(options.areaId);
     }
     // Filter expired insights
-    conditions.push("(expires_at IS NULL OR expires_at > datetime('now'))");
+    conditions.push("(expires_at IS NULL OR expires_at::timestamptz > NOW())");
 
     const where = conditions.join(' AND ');
     const limit = options.limit ?? 50;
@@ -157,7 +157,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
     const row = await db.get(`
       SELECT COUNT(*) as count FROM proactive_insights
       WHERE user_id = ? AND read = 0 AND dismissed = 0
-        AND (expires_at IS NULL OR expires_at > datetime('now'))
+        AND (expires_at IS NULL OR expires_at::timestamptz > NOW())
     `, userId) as { count: number };
     return row.count;
   }
@@ -167,7 +167,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
    */
   async function markRead(insightId: string): Promise<void> {
     await db.run(`
-      UPDATE proactive_insights SET read = 1, read_at = datetime('now') WHERE id = ?
+      UPDATE proactive_insights SET read = 1, read_at = NOW() WHERE id = ?
     `, insightId);
   }
 
@@ -177,7 +177,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
   async function dismissInsight(insightId: string, actionTaken?: string): Promise<void> {
     await db.run(`
       UPDATE proactive_insights
-      SET dismissed = 1, dismissed_at = datetime('now'), action_taken = ?
+      SET dismissed = 1, dismissed_at = NOW(), action_taken = ?
       WHERE id = ?
     `, actionTaken ?? null, insightId);
   }
@@ -200,7 +200,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
         AND ka1.source_session_id != ka2.source_session_id
       WHERE ka1.is_active = 1 AND ka2.is_active = 1
         AND ka1.atom_type = 'conclusion' AND ka2.atom_type = 'conclusion'
-        AND ka1.created_at >= datetime('now', '-14 days')
+        AND ka1.created_at >= NOW() - INTERVAL '14 days'
       LIMIT 5
     `) as Array<{
       atom1_id: string; atom2_id: string;
@@ -214,7 +214,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
         SELECT id FROM proactive_insights
         WHERE user_id = ? AND insight_type = 'conflict'
           AND source_atom_ids LIKE ? AND dismissed = 0
-          AND created_at > datetime('now', '-7 days')
+          AND created_at > NOW() - INTERVAL '7 days'
       `, userId, `%${conflict.atom1_id}%`) as { id: string } | undefined;
 
       if (!existing) {
@@ -237,7 +237,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
       SELECT area_id, MAX(updated_at) as last_active, COUNT(*) as session_count
       FROM sessions
       WHERE user_id = ? AND area_id IS NOT NULL
-        AND updated_at < datetime('now', '-14 days')
+        AND updated_at < NOW() - INTERVAL '14 days'
       GROUP BY area_id
       HAVING COUNT(*) >= 3
       LIMIT 3
@@ -248,7 +248,7 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
         SELECT id FROM proactive_insights
         WHERE user_id = ? AND insight_type = 'gap'
           AND area_id = ? AND dismissed = 0
-          AND created_at > datetime('now', '-7 days')
+          AND created_at > NOW() - INTERVAL '7 days'
       `, userId, area.area_id) as { id: string } | undefined;
 
       if (!existing) {

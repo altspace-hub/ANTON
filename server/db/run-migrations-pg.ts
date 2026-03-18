@@ -31,6 +31,12 @@ function isSqliteOnly(sql: string): boolean {
   // pragma_table_info is SQLite-only
   if (/\bpragma_table_info\b/i.test(sql)) return true;
 
+  // INSERT OR IGNORE is SQLite-only (PostgreSQL uses ON CONFLICT DO NOTHING)
+  if (/\bINSERT\s+OR\s+IGNORE\b/i.test(sql)) return true;
+
+  // datetime('now') is SQLite-only (PostgreSQL uses NOW())
+  if (/\bdatetime\s*\(\s*'now'\s*\)/i.test(sql)) return true;
+
   return false;
 }
 

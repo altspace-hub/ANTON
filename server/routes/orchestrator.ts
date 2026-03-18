@@ -171,7 +171,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
         UPDATE orchestrator_proposals SET
           human_rating = COALESCE(?, human_rating),
           human_feedback = COALESCE(?, human_feedback),
-          decided_at = COALESCE(decided_at, datetime('now')),
+          decided_at = COALESCE(decided_at, NOW()),
           decided_by = COALESCE(decided_by, 'solo')
         WHERE id = ?
       `, human_rating ?? null, human_feedback ?? null, req.params.id);
@@ -185,7 +185,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
             proposals_rated = proposals_rated + 1,
             proposals_good_or_relevant = proposals_good_or_relevant + ?,
             proposals_irrelevant_or_wrong = proposals_irrelevant_or_wrong + ?,
-            updated_at = datetime('now')
+            updated_at = NOW()
           WHERE id = 'default'
         `, isPositive ? 1 : 0, isNegative ? 1 : 0);
       }
@@ -275,7 +275,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
       await db.run(`
         UPDATE orchestrator_config SET
-          orchestrator_paused = 1, paused_at = datetime('now'), paused_by = ?, updated_at = datetime('now')
+          orchestrator_paused = 1, paused_at = NOW(), paused_by = ?, updated_at = NOW()
         WHERE id = 'default'
       `, user);
       res.json({ ok: true, paused: true });
@@ -289,7 +289,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
     try {
       await db.run(`
         UPDATE orchestrator_config SET
-          orchestrator_paused = 0, paused_at = NULL, paused_by = NULL, updated_at = datetime('now')
+          orchestrator_paused = 0, paused_at = NULL, paused_by = NULL, updated_at = NOW()
         WHERE id = 'default'
       `);
       res.json({ ok: true, paused: false });
@@ -313,16 +313,16 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
         UPDATE orchestrator_config SET
           orchestrator_paused = 1,
           fully_disabled = 1,
-          paused_at = datetime('now'),
+          paused_at = NOW(),
           paused_by = ?,
-          updated_at = datetime('now')
+          updated_at = NOW()
         WHERE id = 'default'
       `, by);
 
       // Log the disable event
       await db.run(`
         INSERT INTO orchestrator_heartbeats (ran_at, trigger_type, action, signals_evaluated, error_message)
-        VALUES (datetime('now'), 'system', 'fully_disabled', 0, ?)
+        VALUES (NOW(), 'system', 'fully_disabled', 0, ?)
       `, `Orchestrator fully disabled by ${by}. Reason: ${reason ?? 'Not provided'}`);
 
       console.warn(`[orchestrator] ⛔ FULLY DISABLED by ${by}. Reason: ${reason ?? 'none'}`);
@@ -407,13 +407,13 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       await db.run(`
         INSERT INTO orchestrator_executions
           (id, proposal_id, workflow_run_id, org_id, initiated_by, initiated_at, human_notes)
-        VALUES (?, ?, ?, ?, 'human_approved', datetime('now'), ?)
+        VALUES (?, ?, ?, ?, 'human_approved', NOW(), ?)
       `, executionId, proposal.id, workflow_run_id ?? workflowRunId, null, notes ?? null);
 
       // Update proposal status to approved
       await db.run(`
         UPDATE orchestrator_proposals SET
-          status = 'approved', decided_at = datetime('now'), decided_by = ?
+          status = 'approved', decided_at = NOW(), decided_by = ?
         WHERE id = ?
       `, user, proposal.id);
 
@@ -449,7 +449,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       await db.run(`
         UPDATE orchestrator_proposals SET
           status = 'rejected', human_rating = 'wrong',
-          human_feedback = ?, decided_at = datetime('now'), decided_by = ?
+          human_feedback = ?, decided_at = NOW(), decided_by = ?
         WHERE id = ?
       `, reason ?? null, user, proposal.id);
 
@@ -460,7 +460,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
           UPDATE orchestrator_stage SET
             proposals_rated = proposals_rated + 1,
             proposals_irrelevant_or_wrong = proposals_irrelevant_or_wrong + 1,
-            updated_at = datetime('now')
+            updated_at = NOW()
           WHERE id = 'default'
         `);
       }
@@ -506,7 +506,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
           status = 'modified',
           human_feedback = ?,
           proposed_action = COALESCE(?, proposed_action),
-          decided_at = datetime('now'),
+          decided_at = NOW(),
           decided_by = ?
         WHERE id = ?
       `, modification_notes ?? null, modified_action ?? null, user, proposal.id);
@@ -517,7 +517,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
           plans_modified = plans_modified + 1,
           proposals_rated = proposals_rated + 1,
           proposals_good_or_relevant = proposals_good_or_relevant + 1,
-          updated_at = datetime('now')
+          updated_at = NOW()
         WHERE id = 'default'
       `);
 
@@ -603,7 +603,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
           quality_assessment = COALESCE(?, quality_assessment),
           human_satisfaction = COALESCE(?, human_satisfaction),
           human_notes = COALESCE(?, human_notes),
-          completed_at = CASE WHEN ? IS NOT NULL THEN datetime('now') ELSE completed_at END
+          completed_at = CASE WHEN ? IS NOT NULL THEN NOW() ELSE completed_at END
         WHERE id = ?
       `, 
         outcome ?? null,
@@ -743,7 +743,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       await db.run(`
         UPDATE orchestrator_patterns SET
           auto_execute = ?,
-          updated_at = datetime('now')
+          updated_at = NOW()
         WHERE id = ?
       `, auto_execute ? 1 : 0, req.params.id);
 

@@ -220,9 +220,14 @@ export async function createPatternScheduler(db: DatabaseAdapter) {
   async function saveConfig(config: ScheduleConfig) {
     try {
       await db.run(`
-        INSERT OR REPLACE INTO pattern_scheduler_config (id, enabled, cron_expression, detector_types, updated_at)
+        INSERT INTO pattern_scheduler_config (id, enabled, cron_expression, detector_types, updated_at)
         VALUES (1, ?, ?, ?, ?)
-      `, 
+        ON CONFLICT (id) DO UPDATE SET
+          enabled = EXCLUDED.enabled,
+          cron_expression = EXCLUDED.cron_expression,
+          detector_types = EXCLUDED.detector_types,
+          updated_at = EXCLUDED.updated_at
+      `,
         config.enabled ? 1 : 0,
         config.cronExpression,
         config.detectorTypes ? JSON.stringify(config.detectorTypes) : null,

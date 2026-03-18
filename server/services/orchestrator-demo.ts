@@ -166,7 +166,7 @@ export async function getDemoState(db: DatabaseAdapter): DemoState {
 
 async function saveDemoState(db: DatabaseAdapter, state: DemoState): void {
   try {
-    await db.run("UPDATE orchestrator_config SET demo_state = ?, updated_at = datetime('now') WHERE id = 'default'", JSON.stringify(state));
+    await db.run("UPDATE orchestrator_config SET demo_state = ?, updated_at = NOW() WHERE id = 'default'", JSON.stringify(state));
   } catch { /* column may not exist */ }
 }
 
@@ -195,10 +195,11 @@ export async function activateDemoMode(db: DatabaseAdapter, mode: DemoState['mod
     if (sig.source === 'radar') {
       try {
         await db.run(`
-          INSERT OR IGNORE INTO radar_items
+          INSERT INTO radar_items
             (id, title, urgency_score, relevance_score, item_type, status, summary, created_at, published_date)
-          VALUES (?, ?, ?, ?, 'regulatory_update', 'new', ?, datetime('now'), date('now'))
-        `, 
+          VALUES (?, ?, ?, ?, 'regulatory_update', 'new', ?, NOW(), CURRENT_DATE)
+          ON CONFLICT DO NOTHING
+        `,
           `demo-${sig.scenario_tag}-${randomUUID().substring(0, 8)}`,
           `[DEMO] ${sig.summary.substring(0, 120)}`,
           sig.urgency,
@@ -213,10 +214,11 @@ export async function activateDemoMode(db: DatabaseAdapter, mode: DemoState['mod
       try {
         const dueOffset = sig.urgency > 0.85 ? -45 : sig.urgency > 0.7 ? 8 : 21;
         await db.run(`
-          INSERT OR IGNORE INTO deadlines
+          INSERT INTO deadlines
             (id, title, due_date, category, priority, status, created_at)
-          VALUES (?, ?, date('now', ?), 'compliance', 'high', 'in_progress', datetime('now'))
-        `, 
+          VALUES (?, ?, CURRENT_DATE + ?::INTERVAL, 'compliance', 'high', 'in_progress', NOW())
+          ON CONFLICT DO NOTHING
+        `,
           `demo-${sig.scenario_tag}-${randomUUID().substring(0, 8)}`,
           `[DEMO] ${sig.summary.substring(0, 100)}`,
           `${dueOffset} days`,

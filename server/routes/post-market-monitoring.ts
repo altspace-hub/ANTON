@@ -193,7 +193,7 @@ export async function createPostMarketMonitoringRoutes(db: DatabaseAdapter) {
 
       await db.run(`
         UPDATE post_market_events
-        SET reviewed_by = ?, reviewed_at = datetime('now')
+        SET reviewed_by = ?, reviewed_at = NOW()
         WHERE id = ?
       `, reviewer_name.trim(), id);
 

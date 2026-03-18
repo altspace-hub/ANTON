@@ -65,12 +65,13 @@ export async function createOrgContextService(db: DatabaseAdapter) {
 
     if (existing) return parseOrgContext(existing);
 
-    // Create empty default context — use INSERT OR IGNORE then fetch directly
+    // Create empty default context — use ON CONFLICT DO NOTHING then fetch directly
     // (no recursion: another process may have already inserted between our SELECT and INSERT)
     const now = new Date().toISOString();
     await db.run(`
-      INSERT OR IGNORE INTO org_context (id, user_id, updated_at)
+      INSERT INTO org_context (id, user_id, updated_at)
       VALUES (?, ?, ?)
+      ON CONFLICT DO NOTHING
     `, CONTEXT_ID, userId, now);
 
     const created = await db.get('SELECT * FROM org_context WHERE id = ?', CONTEXT_ID) as RawOrgContextRow | undefined;

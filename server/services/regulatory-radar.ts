@@ -76,7 +76,7 @@ export async function createRegulatoryRadar(db: DatabaseAdapter) {
 
     // Recent high-relevance items (last 7 days)
     const recent = await db.all(
-      "SELECT title, relevance_score, item_type, source_id, published_at FROM radar_items WHERE relevance_score >= 0.7 AND fetched_at >= datetime('now', '-7 days') ORDER BY relevance_score DESC LIMIT 5"
+      "SELECT title, relevance_score, item_type, source_id, published_at FROM radar_items WHERE relevance_score >= 0.7 AND fetched_at >= NOW() - INTERVAL '7 days' ORDER BY relevance_score DESC LIMIT 5"
     ) as Array<{ title: string; relevance_score: number; item_type: string; source_id: string; published_at: string }>;
 
     // Per-category counts
@@ -129,9 +129,10 @@ export async function createRegulatoryRadar(db: DatabaseAdapter) {
     const id = `ri_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
     const extId = `manual_${Date.now()}`;
     await db.run(`
-      INSERT OR IGNORE INTO radar_items
+      INSERT INTO radar_items
         (id, source_id, external_id, title, summary, url, item_type, published_at, relevance_score)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.7)
+      ON CONFLICT DO NOTHING
     `, id, params.sourceId, extId, params.title, params.summary,
            params.url ?? null, params.itemType ?? 'publication',
            params.publishedAt ?? new Date().toISOString());

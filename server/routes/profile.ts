@@ -85,7 +85,7 @@ export async function createProfileRoutes(db: DatabaseAdapter) {
 
       await db.run(`
         INSERT INTO user_profiles (id, name, role, company, industry, expertise, experience_level, communication_preferences, team_context, current_focus, display_name, role_title, organisation, jurisdiction, output_language, org_size, focus_areas, hourly_rate_eur, brand_config, updated_at)
-        VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        VALUES ('default', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ON CONFLICT(id) DO UPDATE SET
           name = excluded.name,
           role = excluded.role,
@@ -105,7 +105,7 @@ export async function createProfileRoutes(db: DatabaseAdapter) {
           focus_areas = excluded.focus_areas,
           hourly_rate_eur = excluded.hourly_rate_eur,
           brand_config = excluded.brand_config,
-          updated_at = datetime('now')
+          updated_at = NOW()
       `, name || null,
         role || null,
         company || null,

@@ -54,7 +54,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Router {
       const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : null;
       await db.run(`
         INSERT INTO entity_screens (id, session_id, entity_name, org_number, connector, result, risk_score, hit_count, cached_until)
-        VALUES (?, ?, ?, ?, 'roaring', ?, ?, ?, datetime('now', '+24 hours'))
+        VALUES (?, ?, ?, ?, 'roaring', ?, ?, ?, NOW() + INTERVAL '24 hours')
       `, id, sessionId, req.params.orgNumber, req.params.orgNumber, JSON.stringify(result), result.hitCount > 0 ? 'HIGH' : 'CLEAR', result.hitCount);
 
       res.json({ result, mode: getConnectorStatus().mode });
@@ -88,7 +88,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Router {
       // Check DB cache (24h TTL)
       const cached = await db.all(`
         SELECT result FROM entity_screens
-        WHERE org_number=? AND connector='roaring' AND datetime(cached_until) > datetime('now')
+        WHERE org_number=? AND connector='roaring' AND cached_until > NOW()
         ORDER BY screened_at DESC LIMIT 1
       `, orgNumber) as { result: string } | undefined;
 
@@ -107,12 +107,12 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Router {
       const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : null;
       await db.run(`
         INSERT INTO entity_screens (id, session_id, entity_name, org_number, connector, result, risk_score, hit_count, cached_until)
-        VALUES (?, ?, ?, ?, 'roaring', ?, ?, ?, datetime('now', '+24 hours'))
+        VALUES (?, ?, ?, ?, 'roaring', ?, ?, ?, NOW() + INTERVAL '24 hours')
       `, id, sessionId, profile.company.name, orgNumber, JSON.stringify(profile), profile.riskScore >= 70 ? 'HIGH' : profile.riskScore >= 30 ? 'MEDIUM' : 'LOW', profile.sanctions.hitCount);
 
       // Update connector stats
       await db.run(`
-        UPDATE data_connectors SET total_calls=total_calls+1, last_successful_call=datetime('now'),
+        UPDATE data_connectors SET total_calls=total_calls+1, last_successful_call=NOW(),
         status=?, api_key_set=? WHERE connector_type='roaring'
       `, profile.source === 'live' ? 'live' : 'mock', profile.source === 'live' ? 1 : 0);
 

@@ -44,7 +44,8 @@ export async function indexFolder(
 
   // Mark as indexing
   await db.run(
-    `INSERT OR REPLACE INTO indexed_folders (folder_path, status) VALUES (?, 'indexing')`,
+    `INSERT INTO indexed_folders (folder_path, status) VALUES (?, 'indexing')
+     ON CONFLICT (folder_path) DO UPDATE SET status = EXCLUDED.status`,
     folderPath
   );
 
@@ -73,7 +74,8 @@ export async function indexFolder(
         const tf = computeTermFrequencies(tokens);
         for (const [term, freq] of Object.entries(tf)) {
           await db.run(
-            `INSERT OR REPLACE INTO chunk_terms (chunk_id, term, freq) VALUES (?, ?, ?)`,
+            `INSERT INTO chunk_terms (chunk_id, term, freq) VALUES (?, ?, ?)
+             ON CONFLICT (chunk_id, term) DO UPDATE SET freq = EXCLUDED.freq`,
             chunkId, term, freq
           );
         }
@@ -85,8 +87,13 @@ export async function indexFolder(
   }
 
   await db.run(
-    `INSERT OR REPLACE INTO indexed_folders (folder_path, document_count, chunk_count, last_indexed, status)
-     VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'ready')`,
+    `INSERT INTO indexed_folders (folder_path, document_count, chunk_count, last_indexed, status)
+     VALUES (?, ?, ?, NOW(), 'ready')
+     ON CONFLICT (folder_path) DO UPDATE SET
+       document_count = EXCLUDED.document_count,
+       chunk_count = EXCLUDED.chunk_count,
+       last_indexed = EXCLUDED.last_indexed,
+       status = EXCLUDED.status`,
     folderPath, files.length, totalChunks
   );
 

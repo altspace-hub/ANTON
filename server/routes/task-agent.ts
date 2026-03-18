@@ -535,7 +535,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       await db.run(`
         UPDATE anton_tasks
         SET conversation=?, proposals=?, clarifying_questions=?, status=?,
-            intake_answers=?, intake_ready=?, updated_at=datetime('now')
+            intake_answers=?, intake_ready=?, updated_at=NOW()
         WHERE id=?
       `,
         JSON.stringify(history),
@@ -569,7 +569,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     await db.run(`
       UPDATE anton_tasks
       SET chosen_approach_id=?, chosen_approach_config=?, status='clarifying',
-          intake_answers='{}', intake_ready=0, current_step=0, updated_at=datetime('now')
+          intake_answers='{}', intake_ready=0, current_step=0, updated_at=NOW()
       WHERE id=?
     `, approach_id, JSON.stringify(config), task.id);
 
@@ -617,7 +617,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     };
 
     existingFiles.push(fileEntry);
-    await db.run("UPDATE anton_tasks SET task_files=?, updated_at=datetime('now') WHERE id=?", JSON.stringify(existingFiles), task.id);
+    await db.run("UPDATE anton_tasks SET task_files=?, updated_at=NOW() WHERE id=?", JSON.stringify(existingFiles), task.id);
 
     res.json({ file: { id: fileEntry.id, name: fileEntry.name, size: fileEntry.size, uploaded_at: fileEntry.uploaded_at } });
   });
@@ -628,7 +628,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const files = parseJson<TaskFile[]>(task.task_files ?? '[]', []).filter((f) => f.id !== req.params.fileId);
-    await db.run("UPDATE anton_tasks SET task_files=?, updated_at=datetime('now') WHERE id=?", JSON.stringify(files), task.id);
+    await db.run("UPDATE anton_tasks SET task_files=?, updated_at=NOW() WHERE id=?", JSON.stringify(files), task.id);
     res.json({ success: true });
   });
 
@@ -639,7 +639,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     if (!task) return res.status(404).json({ error: 'Task not found' });
     const { pack_ids } = req.body as { pack_ids: string[] };
     if (!Array.isArray(pack_ids)) return res.status(400).json({ error: 'pack_ids must be an array' });
-    await db.run("UPDATE anton_tasks SET active_knowledge_packs=?, updated_at=datetime('now') WHERE id=?", JSON.stringify(pack_ids), task.id);
+    await db.run("UPDATE anton_tasks SET active_knowledge_packs=?, updated_at=NOW() WHERE id=?", JSON.stringify(pack_ids), task.id);
     res.json({ active_knowledge_packs: pack_ids });
   });
 
@@ -859,7 +859,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
       if (newStatus === 'completed') {
         await db.run(`
           UPDATE anton_tasks SET execution_results=?, current_step=?, intake_ready=0,
-            status='completed', completed_at=datetime('now'), conversation=?, updated_at=datetime('now')
+            status='completed', completed_at=NOW(), conversation=?, updated_at=NOW()
           WHERE id=?
         `, JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
         await db.run('UPDATE anton_approaches SET times_completed=times_completed+1 WHERE id=?', approach.id);
@@ -888,7 +888,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
         // The user can still chat / attach docs before clicking "Run Step N".
         await db.run(`
           UPDATE anton_tasks SET execution_results=?, current_step=?, intake_ready=1,
-            status='clarifying', conversation=?, updated_at=datetime('now')
+            status='clarifying', conversation=?, updated_at=NOW()
           WHERE id=?
         `, JSON.stringify(existingResults), nextStepIdx, JSON.stringify(conversation), task.id);
       }
@@ -925,7 +925,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
     await db.run(`
       UPDATE anton_tasks
-      SET status='completed', execution_summary=?, execution_run_ids=?, completed_at=datetime('now'), updated_at=datetime('now')
+      SET status='completed', execution_summary=?, execution_run_ids=?, completed_at=NOW(), updated_at=NOW()
       WHERE id=?
     `, summary ?? null, JSON.stringify(run_ids), task.id);
 
@@ -967,7 +967,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
     if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
-    updates.push("updated_at=datetime('now')");
+    updates.push("updated_at=NOW()");
     values.push(task.id);
     await db.run(`UPDATE anton_tasks SET ${updates.join(', ')} WHERE id=?`, ...values);
 

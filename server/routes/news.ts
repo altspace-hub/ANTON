@@ -82,7 +82,7 @@ export async function createNewsRoutes(db: DatabaseAdapter, anthropic?: Anthropi
   // Seed default news sources if empty
   const sourceCount = (await db.get('SELECT COUNT(*) as cnt FROM news_sources') as { cnt: number })?.cnt ?? 0;
   if (sourceCount === 0) {
-    const INSERT_SOURCE_SQL = `INSERT OR IGNORE INTO news_sources (id, name, url, rss_url, country, language, bias_rating, factuality_score, category) VALUES (?,?,?,?,?,?,?,?,?)`;
+    const INSERT_SOURCE_SQL = `INSERT INTO news_sources (id, name, url, rss_url, country, language, bias_rating, factuality_score, category) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`;
     const defaultSources: [string, string, string, string, string, string, string, number, string][] = [
       ['reuters',     'Reuters',            'https://reuters.com',    'https://feeds.reuters.com/reuters/topNews',    'global', 'en', 'center',       90, 'general'],
       ['bbc-news',    'BBC News',           'https://bbc.com/news',   'http://feeds.bbci.co.uk/news/rss.xml',         'gb',     'en', 'center_left',  85, 'general'],
@@ -196,7 +196,7 @@ Respond with:
       try { parsed = JSON.parse(text.replace(/```json\n?|\n?```/g, '')); } catch { /* keep empty */ }
 
       const id = `tc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      await db.run(`INSERT OR REPLACE INTO truth_checks (id, story_id, claim, verdict, confidence, explanation, sources_checked) VALUES (?,?,?,?,?,?,?)`
+      await db.run(`INSERT INTO truth_checks (id, story_id, claim, verdict, confidence, explanation, sources_checked) VALUES (?,?,?,?,?,?,?) ON CONFLICT (id) DO UPDATE SET story_id = EXCLUDED.story_id, claim = EXCLUDED.claim, verdict = EXCLUDED.verdict, confidence = EXCLUDED.confidence, explanation = EXCLUDED.explanation, sources_checked = EXCLUDED.sources_checked`
       , 
         id, story_id ?? null, claim,
         (parsed.verdict as string) || 'unverifiable',
@@ -238,7 +238,7 @@ Respond with:
       const existing = await db.get("SELECT * FROM news_user_preferences WHERE user_id = 'default'") as Record<string, unknown> | undefined;
       const body = req.body as Record<string, unknown>;
       const id = existing ? (existing.id as string) : `np_${Date.now()}`;
-      await db.run(`INSERT OR REPLACE INTO news_user_preferences (id, user_id, preferred_topics, preferred_sources, blocked_sources, language_filter, bias_range, bias_profile) VALUES (?,?,?,?,?,?,?,?)`
+      await db.run(`INSERT INTO news_user_preferences (id, user_id, preferred_topics, preferred_sources, blocked_sources, language_filter, bias_range, bias_profile) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT (user_id) DO UPDATE SET preferred_topics = EXCLUDED.preferred_topics, preferred_sources = EXCLUDED.preferred_sources, blocked_sources = EXCLUDED.blocked_sources, language_filter = EXCLUDED.language_filter, bias_range = EXCLUDED.bias_range, bias_profile = EXCLUDED.bias_profile`
       , 
         id, 'default',
         JSON.stringify(body.preferred_topics || (existing ? JSON.parse((existing.preferred_topics as string) || '[]') : [])),

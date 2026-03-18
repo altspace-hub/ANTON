@@ -257,19 +257,19 @@ Return ONLY valid JSON (no markdown, no extra text):
 
 
       if (autoScanEnabled !== undefined) {
-        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'auto_scan_enabled', autoScanEnabled ? '1' : '0');
+        await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'auto_scan_enabled', autoScanEnabled ? '1' : '0');
       }
       if (autoScanIntervalHours !== undefined) {
-        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'auto_scan_interval_hours', String(autoScanIntervalHours));
+        await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'auto_scan_interval_hours', String(autoScanIntervalHours));
       }
       if (autoScanCron !== undefined) {
         if (autoScanCron && !cron.validate(autoScanCron)) {
           return res.status(400).json({ error: 'Invalid cron expression' });
         }
-        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'auto_scan_cron', autoScanCron || '');
+        await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'auto_scan_cron', autoScanCron || '');
       }
       if (pevcScoringCriteria !== undefined) {
-        await db.run('INSERT OR REPLACE INTO radar_settings (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))', 'pevc_scoring_criteria', pevcScoringCriteria.trim());
+        await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'pevc_scoring_criteria', pevcScoringCriteria.trim());
       }
 
       // Apply schedule changes to the fetcher

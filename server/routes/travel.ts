@@ -212,7 +212,7 @@ export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthro
       try {
         const parsed = JSON.parse(fullText.replace(/```json\n?|\n?```/g, '').trim()) as Record<string, unknown>;
         const id = `ci_${code}_${Date.now()}`;
-        await db.run(`INSERT OR REPLACE INTO travel_country_intel (id, country_code, country_name, culture_notes, safety_level, safety_notes, visa_info, currency_info, language_tips, transport_info, food_guide, scam_alerts, best_months, budget_estimate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        await db.run(`INSERT INTO travel_country_intel (id, country_code, country_name, culture_notes, safety_level, safety_notes, visa_info, currency_info, language_tips, transport_info, food_guide, scam_alerts, best_months, budget_estimate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (id) DO UPDATE SET country_code = EXCLUDED.country_code, country_name = EXCLUDED.country_name, culture_notes = EXCLUDED.culture_notes, safety_level = EXCLUDED.safety_level, safety_notes = EXCLUDED.safety_notes, visa_info = EXCLUDED.visa_info, currency_info = EXCLUDED.currency_info, language_tips = EXCLUDED.language_tips, transport_info = EXCLUDED.transport_info, food_guide = EXCLUDED.food_guide, scam_alerts = EXCLUDED.scam_alerts, best_months = EXCLUDED.best_months, budget_estimate = EXCLUDED.budget_estimate`
         , 
           id, code, country_name || code,
           parsed.culture_notes,  parsed.safety_level,   parsed.safety_notes,

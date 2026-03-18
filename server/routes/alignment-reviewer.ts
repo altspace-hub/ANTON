@@ -89,7 +89,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Router
       if (source_type === 'local-directory' && dirPath) {
         const projectState = await ingestLocalProject(dirPath);
 
-        await db.run("UPDATE alignment_reviews SET project_state_summary = ?, status = 'ingesting', updated_at = datetime('now') WHERE id = ?"
+        await db.run("UPDATE alignment_reviews SET project_state_summary = ?, status = 'ingesting', updated_at = NOW() WHERE id = ?"
         , JSON.stringify(projectState), req.params.id);
 
         res.json({ projectState });
@@ -128,7 +128,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Router
           discovery_notes: safeJsonParse(ibProject.discovery_notes, {}),
         };
 
-        await db.run("UPDATE alignment_reviews SET instruction_builder_project_id = ?, updated_at = datetime('now') WHERE id = ?", instruction_builder_project_id, req.params.id);
+        await db.run("UPDATE alignment_reviews SET instruction_builder_project_id = ?, updated_at = NOW() WHERE id = ?", instruction_builder_project_id, req.params.id);
       } else if (goals) {
         goalsRef = { source: 'manual', goals };
       } else {
@@ -136,7 +136,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Router
         return;
       }
 
-      await db.run("UPDATE alignment_reviews SET goals_reference = ?, status = 'goals-set', updated_at = datetime('now') WHERE id = ?"
+      await db.run("UPDATE alignment_reviews SET goals_reference = ?, status = 'goals-set', updated_at = NOW() WHERE id = ?"
       , JSON.stringify(goalsRef), req.params.id);
 
       res.json({ goals_reference: goalsRef });
@@ -163,7 +163,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Router
       }
 
       // Update status
-      await db.run("UPDATE alignment_reviews SET status = 'analysing', updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE alignment_reviews SET status = 'analysing', updated_at = NOW() WHERE id = ?", req.params.id);
 
       // Analyse each dimension
       const dimensionResults: any[] = [];
@@ -220,7 +220,7 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
       };
 
       await db.run(
-        "UPDATE alignment_reviews SET alignment_report = ?, overall_status = ?, status = 'reviewed', updated_at = datetime('now') WHERE id = ?"
+        "UPDATE alignment_reviews SET alignment_report = ?, overall_status = ?, status = 'reviewed', updated_at = NOW() WHERE id = ?"
       , JSON.stringify(alignmentReport), overallStatus, req.params.id);
 
       res.json(alignmentReport);
@@ -316,7 +316,7 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
       }
 
       // Update status
-      await db.run("UPDATE alignment_reviews SET status = 'steering-generated', target_tool = ?, updated_at = datetime('now') WHERE id = ?", targetTool, req.params.id);
+      await db.run("UPDATE alignment_reviews SET status = 'steering-generated', target_tool = ?, updated_at = NOW() WHERE id = ?", targetTool, req.params.id);
 
       res.json({ files: generatedFiles });
     } catch (error) {

@@ -16,7 +16,7 @@ export async function logSecurityEvent(db: Database, event: SecurityEvent): void
   try {
     await db.run(`
       INSERT INTO security_events (event_type, user_id, ip_address, details, severity, created_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, ?, ?, NOW())
     `, event.eventType,
       event.userId || null,
       event.ipAddress || null,

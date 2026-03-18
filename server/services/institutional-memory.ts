@@ -87,7 +87,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
   async function addFeedback(checkpointId: string, feedback: 1 | -1) {
     await db.run(`
       UPDATE checkpoint_decisions
-      SET user_feedback = ?, feedback_at = datetime('now')
+      SET user_feedback = ?, feedback_at = NOW()
       WHERE id = ?
     `, feedback, checkpointId);
   }

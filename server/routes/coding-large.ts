@@ -1753,7 +1753,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
         parentProjectId = randomUUID();
         await db.run(`
           INSERT INTO projects (id, name, description, status, created_at, updated_at)
-          VALUES (?, ?, ?, 'active', datetime('now'), datetime('now'))
+          VALUES (?, ?, ?, 'active', NOW(), NOW())
         `, parentProjectId, name, description || '');
       }
 
@@ -1854,7 +1854,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
 
       if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
-      updates.push("updated_at = datetime('now')");
+      updates.push("updated_at = NOW()");
       params.push(req.params.id);
 
       await db.run(`UPDATE coding_projects SET ${updates.join(', ')} WHERE id = ?`, ...params);
@@ -1874,7 +1874,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
 
       const { code, files, source_path } = req.body;
 
-      await db.run("UPDATE coding_projects SET status = 'onboarding', current_phase = 0, updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'onboarding', current_phase = 0, updated_at = NOW() WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildBaselineSystemPrompt(project.name);
       const baselinePrompt = buildBaselineUserMessage(project.name, { code, files, source_path });
@@ -1902,7 +1902,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       const { baseline_summary } = req.body;
       if (!baseline_summary) return res.status(400).json({ error: 'baseline_summary is required' });
 
-      await db.run("UPDATE coding_projects SET baseline_summary = ?, status = 'discovery', current_phase = 1, updated_at = datetime('now') WHERE id = ?", baseline_summary, req.params.id);
+      await db.run("UPDATE coding_projects SET baseline_summary = ?, status = 'discovery', current_phase = 1, updated_at = NOW() WHERE id = ?", baseline_summary, req.params.id);
 
       // Fire-and-forget version tracking
       try {
@@ -1937,7 +1937,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
 
       const { context, goals, stakeholders, constraints } = req.body;
 
-      await db.run("UPDATE coding_projects SET status = 'discovery', current_phase = 1, updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'discovery', current_phase = 1, updated_at = NOW() WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildDiscoverySystemPrompt(project.name, project.baseline_summary || undefined);
       const discoveryPrompt = buildDiscoveryUserMessage(project.name, { context, goals, stakeholders, constraints });
@@ -1962,7 +1962,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
       const { summary } = req.body;
-      await db.run("UPDATE coding_projects SET discovery_summary = ?, status = 'architecture', current_phase = 2, updated_at = datetime('now') WHERE id = ?", summary || '', req.params.id);
+      await db.run("UPDATE coding_projects SET discovery_summary = ?, status = 'architecture', current_phase = 2, updated_at = NOW() WHERE id = ?", summary || '', req.params.id);
 
       // Fire-and-forget version tracking
       try {
@@ -1999,7 +1999,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       const discoverySummary = discovery_summary || project.discovery_summary || undefined;
       const baselineSummary = project.baseline_summary || undefined;
 
-      await db.run("UPDATE coding_projects SET status = 'architecture', current_phase = 2, updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'architecture', current_phase = 2, updated_at = NOW() WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildArchitectureSystemPrompt(project.name, discoverySummary, baselineSummary);
       const architecturePrompt = buildArchitectureUserMessage(project.name, { tech_stack_preferences, constraints });
@@ -2056,7 +2056,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
   router.patch('/coding/projects/:id/architecture', async (req, res) => {
     try {
       const { summary } = req.body;
-      await db.run("UPDATE coding_projects SET architecture_summary = ?, updated_at = datetime('now') WHERE id = ?", summary || '', req.params.id);
+      await db.run("UPDATE coding_projects SET architecture_summary = ?, updated_at = NOW() WHERE id = ?", summary || '', req.params.id);
 
       // Fire-and-forget version tracking
       try {
@@ -2082,9 +2082,9 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
 
       // If a raw estimate object is provided, save it directly (backwards-compatible)
       if (estimate) {
-        await db.run("UPDATE coding_projects SET cost_estimate = ?, status = 'estimation', updated_at = datetime('now') WHERE id = ?", JSON.stringify(estimate), req.params.id);
+        await db.run("UPDATE coding_projects SET cost_estimate = ?, status = 'estimation', updated_at = NOW() WHERE id = ?", JSON.stringify(estimate), req.params.id);
       } else {
-        await db.run("UPDATE coding_projects SET status = 'estimation', updated_at = datetime('now') WHERE id = ?", req.params.id);
+        await db.run("UPDATE coding_projects SET status = 'estimation', updated_at = NOW() WHERE id = ?", req.params.id);
       }
 
       // Use provided summaries or load from project
@@ -2134,7 +2134,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, id, req.params.id, releaseNumber, name, description || '', scope || '', JSON.stringify(acceptance_criteria), milestone_date || null, git_branch || null);
 
-      await db.run("UPDATE coding_projects SET status = 'planning', current_phase = 4, current_release_id = ?, updated_at = datetime('now') WHERE id = ?", id, req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'planning', current_phase = 4, current_release_id = ?, updated_at = NOW() WHERE id = ?", id, req.params.id);
 
       res.json({ id, release_number: releaseNumber, name, status: 'planned' });
     } catch (error) {
@@ -2172,7 +2172,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       }
       if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
-      updates.push("updated_at = datetime('now')");
+      updates.push("updated_at = NOW()");
       params.push(req.params.rid, req.params.id);
 
       await db.run(`UPDATE coding_releases SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`, ...params);
@@ -2295,7 +2295,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       }
       if (updates.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
-      updates.push("updated_at = datetime('now')");
+      updates.push("updated_at = NOW()");
       params.push(req.params.tid, req.params.id);
 
       await db.run(`UPDATE coding_tasks SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`, ...params);
@@ -2337,7 +2337,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       const systemPromptOverride = buildTaskPlanSystemPrompt(project.name, task.title, releaseContext);
       const taskPlanPrompt = buildTaskPlanUserMessage(parsedTask, release, parsedProject);
 
-      await db.run("UPDATE coding_tasks SET status = 'planning', updated_at = datetime('now') WHERE id = ?", req.params.tid);
+      await db.run("UPDATE coding_tasks SET status = 'planning', updated_at = NOW() WHERE id = ?", req.params.tid);
 
       res.json({
         taskPlanPrompt,
@@ -2375,8 +2375,8 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       const systemPromptOverride = buildTaskExecuteSystemPrompt(project.name, task.title, executionPlanStr);
       const executePrompt = buildTaskExecuteUserMessage(parsedTask, parsedTask.execution_plan);
 
-      await db.run("UPDATE coding_tasks SET status = 'in_progress', started_at = datetime('now'), updated_at = datetime('now') WHERE id = ?", req.params.tid);
-      await db.run("UPDATE coding_projects SET status = 'implementation', current_phase = 5, updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE coding_tasks SET status = 'in_progress', started_at = NOW(), updated_at = NOW() WHERE id = ?", req.params.tid);
+      await db.run("UPDATE coding_projects SET status = 'implementation', current_phase = 5, updated_at = NOW() WHERE id = ?", req.params.id);
 
       res.json({
         executePrompt,
@@ -2413,8 +2413,8 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
         SET status = 'completed',
             completion_record = ?,
             completion_notes = ?,
-            completed_at = datetime('now'),
-            updated_at = datetime('now')
+            completed_at = NOW(),
+            updated_at = NOW()
         WHERE id = ? AND coding_project_id = ?
       `, completionRecordStr, completion_notes || null, req.params.tid, req.params.id);
 
@@ -2430,7 +2430,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
           await db.run(`
             UPDATE coding_releases
             SET status = 'review',
-                updated_at = datetime('now')
+                updated_at = NOW()
             WHERE id = ?
           `, task.coding_release_id);
           releaseUpdated = true;
@@ -2526,9 +2526,9 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       if (owner !== undefined) { updates.push('owner = ?'); params.push(owner); }
       if (target_release_id !== undefined) { updates.push('target_release_id = ?'); params.push(target_release_id); }
       if (severity) { updates.push('severity = ?'); params.push(severity); }
-      if (status === 'resolved') { updates.push("resolved_at = datetime('now')"); }
+      if (status === 'resolved') { updates.push("resolved_at = NOW()"); }
 
-      updates.push("updated_at = datetime('now')");
+      updates.push("updated_at = NOW()");
       params.push(req.params.tdid, req.params.id);
 
       await db.run(`UPDATE coding_tech_debt SET ${updates.join(', ')} WHERE id = ? AND coding_project_id = ?`, ...params);
@@ -2616,7 +2616,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
     try {
       const { status } = req.body;
       if (!status) return res.status(400).json({ error: 'status is required' });
-      await db.run("UPDATE coding_changes SET status = ?, approved_at = CASE WHEN ? = 'approved' THEN datetime('now') ELSE approved_at END, updated_at = datetime('now') WHERE id = ? AND coding_project_id = ?", status, status, req.params.cid, req.params.id);
+      await db.run("UPDATE coding_changes SET status = ?, approved_at = CASE WHEN ? = 'approved' THEN NOW() ELSE approved_at END, updated_at = NOW() WHERE id = ? AND coding_project_id = ?", status, status, req.params.cid, req.params.id);
       res.json({ id: req.params.cid, status });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update change' });
@@ -2711,7 +2711,7 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Router {
       // Load test results
       const testResults = await db.all('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50', req.params.id);
 
-      await db.run("UPDATE coding_projects SET status = 'operational_readiness', current_phase = 7, updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE coding_projects SET status = 'operational_readiness', current_phase = 7, updated_at = NOW() WHERE id = ?", req.params.id);
 
       const systemPromptOverride = buildOperationalReadinessSystemPrompt(
         project.name,

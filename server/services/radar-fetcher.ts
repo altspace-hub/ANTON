@@ -124,9 +124,10 @@ export async function createRadarFetcher(db: DatabaseAdapter, anthropic: Anthrop
   // ── SQL templates (inlined at call sites via adapter) ───────
 
   const INSERT_ITEM_SQL = `
-    INSERT OR IGNORE INTO radar_items
+    INSERT INTO radar_items
       (id, source_id, external_id, title, summary, url, item_type, published_at, relevance_score, category, subcategory)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.5, ?, ?)
+    ON CONFLICT DO NOTHING
   `;
 
   const UPDATE_SOURCE_STATUS_SQL = `

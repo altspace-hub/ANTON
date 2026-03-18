@@ -64,8 +64,13 @@ export async function createCollaborativeCanvas(db: DatabaseAdapter) {
   }) {
     const id = `pr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await db.run(`
-      INSERT OR REPLACE INTO parallel_reviews (id, execution_id, step_index, reviewer, required_for_consensus)
+      INSERT INTO parallel_reviews (id, execution_id, step_index, reviewer, required_for_consensus)
       VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT (id) DO UPDATE SET
+        execution_id = EXCLUDED.execution_id,
+        step_index = EXCLUDED.step_index,
+        reviewer = EXCLUDED.reviewer,
+        required_for_consensus = EXCLUDED.required_for_consensus
     `, id, params.executionId, params.stepIndex, params.reviewer, params.requiredForConsensus ? 1 : 0);
     return id;
   }

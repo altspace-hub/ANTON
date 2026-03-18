@@ -196,6 +196,28 @@ const CommunityMailPage = lazy(() => import('./pages/community/CommunityMailPage
 const CommunityCalendarPage = lazy(() => import('./pages/community/CommunityCalendarPage'));
 const CommunityEventPage = lazy(() => import('./pages/community/CommunityEventPage'));
 
+// Markets Pillar pages
+const MarketsPage = lazy(() => import('./pages/markets/MarketsPage'));
+const MarketDataSourcesPage = lazy(() => import('./pages/markets/MarketDataSourcesPage'));
+const MarketThesesPage = lazy(() => import('./pages/markets/MarketThesesPage'));
+const MarketPredictionsPage = lazy(() => import('./pages/markets/MarketPredictionsPage'));
+const MarketEntitiesPage = lazy(() => import('./pages/markets/MarketEntitiesPage'));
+const MarketIndexesPage = lazy(() => import('./pages/markets/MarketIndexesPage'));
+const MarketIndexDetailPage = lazy(() => import('./pages/markets/MarketIndexDetailPage'));
+const MarketThesisDetailPage = lazy(() => import('./pages/markets/MarketThesisDetailPage'));
+const MarketIndexCreatePage = lazy(() => import('./pages/markets/MarketIndexCreatePage'));
+const MarketLearningPage = lazy(() => import('./pages/markets/MarketLearningPage'));
+const MarketInvestigationPage = lazy(() => import('./pages/markets/MarketInvestigationPage'));
+const MarketWorkflowsPage = lazy(() => import('./pages/markets/MarketWorkflowsPage'));
+const MarketComputationPage = lazy(() => import('./pages/markets/MarketComputationPage'));
+const MarketAtomsPage = lazy(() => import('./pages/markets/MarketAtomsPage'));
+const MarketWhyChainsPage = lazy(() => import('./pages/markets/MarketWhyChainsPage'));
+const MarketWhyChainDetailPage = lazy(() => import('./pages/markets/MarketWhyChainDetailPage'));
+const MarketPatternsPage = lazy(() => import('./pages/markets/MarketPatternsPage'));
+const MarketWatchlistPage = lazy(() => import('./pages/markets/MarketWatchlistPage'));
+const MarketEventCalendarPage = lazy(() => import('./pages/markets/MarketEventCalendarPage'));
+const MarketRCIPage = lazy(() => import('./pages/markets/MarketRCIPage'));
+
 // School Mode pages
 const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
 const SchoolChatPage = lazy(() => import('./pages/school/SchoolChatPage'));
@@ -467,6 +489,27 @@ export default function App() {
           <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/org-context" element={<Navigate to="/settings?tab=org-context" replace />} />
+          {/* Markets Pillar */}
+          <Route path="/markets" element={<MarketsPage />} />
+          <Route path="/markets/sources" element={<MarketDataSourcesPage />} />
+          <Route path="/markets/theses" element={<MarketThesesPage />} />
+          <Route path="/markets/theses/:id" element={<MarketThesisDetailPage />} />
+          <Route path="/markets/predictions" element={<MarketPredictionsPage />} />
+          <Route path="/markets/entities" element={<MarketEntitiesPage />} />
+          <Route path="/markets/indexes" element={<MarketIndexesPage />} />
+          <Route path="/markets/indexes/create" element={<MarketIndexCreatePage />} />
+          <Route path="/markets/indexes/:id" element={<MarketIndexDetailPage />} />
+          <Route path="/markets/learning" element={<MarketLearningPage />} />
+          <Route path="/markets/investigations" element={<MarketInvestigationPage />} />
+          <Route path="/markets/workflows" element={<MarketWorkflowsPage />} />
+          <Route path="/markets/computation" element={<MarketComputationPage />} />
+          <Route path="/markets/atoms" element={<MarketAtomsPage />} />
+          <Route path="/markets/why-chains" element={<MarketWhyChainsPage />} />
+          <Route path="/markets/why-chains/:id" element={<MarketWhyChainDetailPage />} />
+          <Route path="/markets/patterns" element={<MarketPatternsPage />} />
+          <Route path="/markets/watchlist" element={<MarketWatchlistPage />} />
+          <Route path="/markets/events" element={<MarketEventCalendarPage />} />
+          <Route path="/markets/rci" element={<MarketRCIPage />} />
         </Route>
 
         {/* School Mode login — public, no auth required */}

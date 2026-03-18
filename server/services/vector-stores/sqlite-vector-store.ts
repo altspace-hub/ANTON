@@ -49,11 +49,11 @@ export class SQLiteVectorStore {
     const id = randomUUID();
     await this.db.run(`
       INSERT INTO embeddings (id, content_type, content_id, content_text, embedding, embedding_model, embedding_dimension, metadata, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
       ON CONFLICT(content_type, content_id, embedding_model) DO UPDATE SET
         content_text = excluded.content_text,
         embedding = excluded.embedding,
-        updated_at = datetime('now')
+        updated_at = NOW()
     `,
       id,
       params.contentType,

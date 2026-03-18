@@ -56,7 +56,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const weeks = parseInt(req.query.weeks as string) || 12;
       const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
       const results = await db.all(`
-        SELECT strftime('%Y-W%W', first_detected) as week, COUNT(*) as count
+        SELECT TO_CHAR(first_detected, 'IYYY-"W"IW') as week, COUNT(*) as count
         FROM detected_patterns
         WHERE first_detected >= ?
         GROUP BY week
@@ -75,7 +75,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const weeks = parseInt(req.query.weeks as string) || 12;
       const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
       const results = await db.all(`
-        SELECT strftime('%Y-W%W', created_at) as week, COUNT(DISTINCT entity_type || ':' || entity_id) as entity_count
+        SELECT TO_CHAR(created_at, 'IYYY-"W"IW') as week, COUNT(DISTINCT entity_type || ':' || entity_id) as entity_count
         FROM knowledge_entity_refs
         JOIN knowledge_atoms ON knowledge_entity_refs.atom_id = knowledge_atoms.id
         WHERE knowledge_atoms.created_at >= ?
@@ -96,7 +96,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
       // knowledge_atoms has no quality_score column — use confidence as proxy
       const results = await db.all(`
-        SELECT strftime('%Y-W%W', created_at) as week, AVG(confidence) as avg_quality
+        SELECT TO_CHAR(created_at, 'IYYY-"W"IW') as week, AVG(confidence) as avg_quality
         FROM knowledge_atoms
         WHERE confidence IS NOT NULL
           AND is_active = 1
@@ -187,7 +187,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
           month: '30 days',
           all: '365 days',
         };
-        query += ` AND created_at >= datetime('now', '-${timeMap[timeRange as keyof typeof timeMap]}')`;
+        query += ` AND created_at >= NOW() - INTERVAL '${timeMap[timeRange as keyof typeof timeMap]}'`;
       }
 
       if (category) {

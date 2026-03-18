@@ -144,7 +144,7 @@ export async function createBridgePublicRoutes(db: Database, _anthropic?: Anthro
         SELECT COUNT(*) as count
         FROM connection_audit_log
         WHERE connection_id = ? AND action = 'query'
-          AND executed_at > datetime('now', '-1 minute')
+          AND executed_at > NOW() - INTERVAL '1 minute'
       `, bridgeId) as { count: number };
 
       if (recentCount >= rateLimitRpm) {

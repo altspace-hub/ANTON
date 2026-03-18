@@ -391,7 +391,7 @@ export async function createComplianceRulesService(db: DatabaseAdapter) {
         result,
         COUNT(*) as count
       FROM rule_executions
-      WHERE executed_at >= datetime('now', '-7 days')
+      WHERE executed_at >= NOW() - INTERVAL '7 days'
       GROUP BY result
     `);
 

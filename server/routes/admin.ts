@@ -14,7 +14,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
       `SELECT u.id, u.username, u.role, u.display_name, u.monthly_token_budget, u.last_login,
        COALESCE(SUM(m.input_tokens + m.output_tokens), 0) as tokens_this_month
        FROM users u
-       LEFT JOIN user_monthly_usage m ON u.id = m.user_id AND m.year_month = strftime('%Y-%m', 'now')
+       LEFT JOIN user_monthly_usage m ON u.id = m.user_id AND m.year_month = TO_CHAR(NOW(), 'YYYY-MM')
        GROUP BY u.id`
     );
     res.json(users);

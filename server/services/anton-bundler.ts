@@ -44,7 +44,14 @@ export type AntonBundleType =
   | 'lesson-plan'
   | 'study-pack'
   | 'assessment-bank'
-  | 'regulatory-knowledge-pack';
+  | 'regulatory-knowledge-pack'
+  | 'market-index'
+  | 'market-thesis'
+  | 'market-intelligence-model'
+  | 'market-investigation'
+  | 'market-data-source-config'
+  | 'market-atom-collection'
+  | 'market-strategy-pack';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -77,6 +84,13 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'study-pack':                   { label: 'Study Pack',                 description: 'Student study material bundle with review cards',    contentsKey: 'study_packs',          primaryContentDir: 'study-packs' },
   'assessment-bank':              { label: 'Assessment Bank',            description: 'Question bank for School Mode assessments',          contentsKey: 'assessment_banks',     primaryContentDir: 'assessment-banks' },
   'regulatory-knowledge-pack':   { label: 'Regulatory Knowledge Pack',  description: 'Pre-structured regulatory entity graph for FCP modules', contentsKey: 'knowledge_packs',    primaryContentDir: 'knowledge-packs' },
+  'market-index':                { label: 'Market Index',               description: 'Custom index definition with holdings and NAV history',   contentsKey: 'market_indexes',               primaryContentDir: 'market-indexes' },
+  'market-thesis':               { label: 'Market Thesis',              description: 'Investment thesis with evidence atoms and predictions',    contentsKey: 'market_theses',                primaryContentDir: 'market-theses' },
+  'market-intelligence-model':   { label: 'Market Intelligence Model',  description: 'Signal weights, calibration, and consul performance data', contentsKey: 'market_intelligence_models',   primaryContentDir: 'market-intelligence-models' },
+  'market-investigation':        { label: 'Market Investigation',       description: 'Investigation with 5 Whys analysis and findings',         contentsKey: 'market_investigations',        primaryContentDir: 'market-investigations' },
+  'market-data-source-config':   { label: 'Market Data Source Config',  description: 'Data source configurations (API keys stripped)',           contentsKey: 'market_data_source_configs',   primaryContentDir: 'market-data-source-configs' },
+  'market-atom-collection':      { label: 'Market Atom Collection',     description: 'Curated atoms with relationships and tags',               contentsKey: 'market_atom_collections',      primaryContentDir: 'market-atom-collections' },
+  'market-strategy-pack':        { label: 'Market Strategy Pack',       description: 'Composite bundle: index templates, thesis frameworks, signal weights', contentsKey: 'market_strategy_packs', primaryContentDir: 'market-strategy-packs' },
 };
 
 interface ModuleExportData {
@@ -1156,6 +1170,417 @@ export async function bundleAudienceProfile(params: {
 
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created audience-profile bundle "${params.name}" (${buffer.length} bytes)`);
+  return buffer;
+}
+
+// ── Market Bundle Types ──────────────────────────────────────────────────────
+
+/**
+ * Bundle a market index definition with holdings, NAV history, and rebalances.
+ */
+export async function bundleMarketIndex(
+  db: DatabaseAdapter,
+  indexId: string,
+  options: { author?: string } = {}
+): Promise<Buffer> {
+  const index = await db.get('SELECT * FROM market_indexes WHERE id = ?', indexId) as any;
+  if (!index) throw new Error(`Market index not found: ${indexId}`);
+
+  const holdings = await db.all(
+    'SELECT * FROM market_index_holdings WHERE index_id = ? AND removed_at IS NULL ORDER BY weight DESC', indexId
+  ) as any[];
+  const navHistory = await db.all(
+    'SELECT * FROM market_index_nav_history WHERE index_id = ? ORDER BY nav_date DESC LIMIT 365', indexId
+  ) as any[];
+  const rebalances = await db.all(
+    'SELECT * FROM market_index_rebalances WHERE index_id = ? ORDER BY executed_at DESC', indexId
+  ) as any[];
+
+  const bundleId = `market-index-${indexId}-${Date.now()}`;
+  const specManifest = buildSpecManifest({
+    bundleType: 'market-index',
+    id: bundleId,
+    name: index.name,
+    description: index.description,
+    author: options.author,
+    contentsCount: { market_indexes: 1 },
+  });
+
+  const payload = {
+    bundle_type: 'market-index',
+    index: { ...index, universe: safeJsonParse(index.universe, []), holdings, nav_history: navHistory, rebalances },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(`contents/market-indexes/${bundleId}.json`, Buffer.from(JSON.stringify(payload, null, 2), 'utf-8'));
+  zip.addFile('README.md', Buffer.from(
+    `# ${index.name}\n\n${index.description || ''}\n\n## Holdings (${holdings.length})\n\n` +
+    holdings.map((h: any) => `- **${h.symbol}**: ${(h.weight * 100).toFixed(1)}%`).join('\n') +
+    `\n\n## NAV History: ${navHistory.length} data points\n## Rebalances: ${rebalances.length}\n\n---\n**Exported via ANTON**\n`, 'utf-8'
+  ));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created market-index bundle "${index.name}" (${holdings.length} holdings, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle a market thesis with evidence atoms, predictions, and why chains.
+ */
+export async function bundleMarketThesis(
+  db: DatabaseAdapter,
+  thesisId: string,
+  options: { author?: string } = {}
+): Promise<Buffer> {
+  const thesis = await db.get('SELECT * FROM market_theses WHERE id = ?', thesisId) as any;
+  if (!thesis) throw new Error(`Market thesis not found: ${thesisId}`);
+
+  const thesisAtoms = await db.all(
+    `SELECT mta.role, mta.weight, ma.id, ma.content, ma.atom_type, ma.confidence, ma.category
+     FROM market_thesis_atoms mta JOIN market_atoms ma ON ma.id = mta.atom_id
+     WHERE mta.thesis_id = ? ORDER BY mta.weight DESC`, thesisId
+  ) as any[];
+  const predictions = await db.all(
+    'SELECT * FROM market_predictions WHERE thesis_id = ? ORDER BY created_at DESC', thesisId
+  ) as any[];
+  const whyChains = await db.all(
+    'SELECT * FROM market_why_chains WHERE prediction_id IN (SELECT id FROM market_predictions WHERE thesis_id = ?)', thesisId
+  ) as any[];
+  const chainLevels = whyChains.length > 0
+    ? await db.all(
+        `SELECT * FROM market_why_chain_levels WHERE chain_id IN (${whyChains.map(() => '?').join(',')}) ORDER BY chain_id, level_number`,
+        ...whyChains.map((c: any) => c.id)
+      ) as any[]
+    : [];
+
+  const bundleId = `market-thesis-${thesisId}-${Date.now()}`;
+  const specManifest = buildSpecManifest({
+    bundleType: 'market-thesis',
+    id: bundleId,
+    name: thesis.title,
+    description: thesis.description,
+    author: options.author,
+    contentsCount: { market_theses: 1 },
+  });
+
+  const payload = {
+    bundle_type: 'market-thesis',
+    thesis: {
+      ...thesis,
+      key_assumptions: safeJsonParse(thesis.key_assumptions, []),
+      risk_factors: safeJsonParse(thesis.risk_factors, []),
+      success_criteria: safeJsonParse(thesis.success_criteria, []),
+      target_entities: safeJsonParse(thesis.target_entities, []),
+      atoms: thesisAtoms,
+      predictions: predictions.map((p: any) => ({ ...p, key_assumptions: safeJsonParse(p.key_assumptions, []) })),
+      why_chains: whyChains.map((c: any) => ({
+        ...c,
+        evidence: safeJsonParse(c.evidence, []),
+        levels: chainLevels.filter((l: any) => l.chain_id === c.id),
+      })),
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(`contents/market-theses/${bundleId}.json`, Buffer.from(JSON.stringify(payload, null, 2), 'utf-8'));
+  zip.addFile('README.md', Buffer.from(
+    `# ${thesis.title}\n\n${thesis.description || ''}\n\n**Status:** ${thesis.status} | **Confidence:** ${thesis.confidence}\n\n## Evidence Atoms (${thesisAtoms.length})\n\n` +
+    thesisAtoms.map((a: any) => `- [${a.role}] ${a.content.substring(0, 100)}`).join('\n') +
+    `\n\n## Predictions (${predictions.length})\n\n` +
+    predictions.map((p: any) => `- **${p.title}** (${p.status}): ${p.predicted_outcome}`).join('\n') +
+    '\n\n---\n**Exported via ANTON**\n', 'utf-8'
+  ));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created market-thesis bundle "${thesis.title}" (${thesisAtoms.length} atoms, ${predictions.length} predictions, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle market intelligence model: signal weights, calibration, consul performance, regime history, meta learning.
+ */
+export async function bundleMarketIntelligenceModel(
+  db: DatabaseAdapter,
+  options: { name?: string; author?: string } = {}
+): Promise<Buffer> {
+  const signalWeights = await db.all('SELECT * FROM market_signal_weights ORDER BY signal_type, category') as any[];
+  const calibration = await db.all('SELECT * FROM market_confidence_calibration ORDER BY bucket_low') as any[];
+  const consulPerf = await db.all('SELECT * FROM market_consul_performance ORDER BY accuracy DESC') as any[];
+  const regimeHistory = await db.all('SELECT * FROM market_regime_history ORDER BY started_at DESC LIMIT 50') as any[];
+  const metaLearning = await db.all('SELECT * FROM market_meta_learning ORDER BY created_at DESC LIMIT 100') as any[];
+
+  const bundleName = options.name || 'Market Intelligence Model';
+  const bundleId = `market-intelligence-model-${Date.now()}`;
+  const specManifest = buildSpecManifest({
+    bundleType: 'market-intelligence-model',
+    id: bundleId,
+    name: bundleName,
+    description: `Signal weights, calibration data, and performance metrics`,
+    author: options.author,
+    contentsCount: { market_intelligence_models: 1 },
+  });
+
+  const payload = {
+    bundle_type: 'market-intelligence-model',
+    model: { id: bundleId, name: bundleName, signal_weights: signalWeights, confidence_calibration: calibration, consul_performance: consulPerf, regime_history: regimeHistory, meta_learning: metaLearning },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(`contents/market-intelligence-models/${bundleId}.json`, Buffer.from(JSON.stringify(payload, null, 2), 'utf-8'));
+  zip.addFile('README.md', Buffer.from(
+    `# ${bundleName}\n\n## Signal Weights (${signalWeights.length})\n## Calibration Buckets (${calibration.length})\n## Consul Performance (${consulPerf.length})\n## Regime History (${regimeHistory.length})\n## Meta Learning (${metaLearning.length})\n\n---\n**Exported via ANTON**\n`, 'utf-8'
+  ));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created market-intelligence-model bundle "${bundleName}" (${signalWeights.length} weights, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle a market investigation with 5 Whys chains and findings.
+ */
+export async function bundleMarketInvestigation(
+  db: DatabaseAdapter,
+  investigationId: string,
+  options: { author?: string } = {}
+): Promise<Buffer> {
+  const investigation = await db.get('SELECT * FROM market_investigation_tasks WHERE id = ?', investigationId) as any;
+  if (!investigation) throw new Error(`Market investigation not found: ${investigationId}`);
+
+  const whyChains = await db.all(
+    'SELECT * FROM market_why_chains WHERE investigation_id = ?', investigationId
+  ) as any[];
+  const chainLevels = whyChains.length > 0
+    ? await db.all(
+        `SELECT * FROM market_why_chain_levels WHERE chain_id IN (${whyChains.map(() => '?').join(',')}) ORDER BY chain_id, level_number`,
+        ...whyChains.map((c: any) => c.id)
+      ) as any[]
+    : [];
+
+  const bundleId = `market-investigation-${investigationId}-${Date.now()}`;
+  const specManifest = buildSpecManifest({
+    bundleType: 'market-investigation',
+    id: bundleId,
+    name: investigation.title,
+    description: investigation.question,
+    author: options.author,
+    contentsCount: { market_investigations: 1 },
+  });
+
+  const payload = {
+    bundle_type: 'market-investigation',
+    investigation: {
+      ...investigation,
+      findings: safeJsonParse(investigation.findings, []),
+      atoms_created: safeJsonParse(investigation.atoms_created, []),
+      process_improvements: safeJsonParse(investigation.process_improvements, []),
+      why_chains: whyChains.map((c: any) => ({
+        ...c,
+        levels: chainLevels.filter((l: any) => l.chain_id === c.id),
+      })),
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(`contents/market-investigations/${bundleId}.json`, Buffer.from(JSON.stringify(payload, null, 2), 'utf-8'));
+  zip.addFile('README.md', Buffer.from(
+    `# ${investigation.title}\n\n## Question\n${investigation.question}\n\n**Status:** ${investigation.status}\n\n## Root Cause\n${investigation.root_cause || 'Pending'}\n\n## Why Chains (${whyChains.length})\n\n` +
+    whyChains.map((c: any) => {
+      const levels = chainLevels.filter((l: any) => l.chain_id === c.id);
+      return `### ${c.title}\n` + levels.map((l: any) => `${l.level_number}. **Why?** ${l.question}\n   ${l.answer}`).join('\n');
+    }).join('\n\n') +
+    '\n\n---\n**Exported via ANTON**\n', 'utf-8'
+  ));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created market-investigation bundle "${investigation.title}" (${whyChains.length} why chains, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle market data source configurations. API keys are stripped for security.
+ */
+export async function bundleMarketDataSourceConfig(
+  db: DatabaseAdapter,
+  options: { name?: string; sourceIds?: string[]; author?: string } = {}
+): Promise<Buffer> {
+  const whereClause = options.sourceIds && options.sourceIds.length > 0
+    ? `WHERE id IN (${options.sourceIds.map(() => '?').join(',')})`
+    : '';
+  const params = options.sourceIds && options.sourceIds.length > 0 ? options.sourceIds : [];
+
+  const sources = await db.all(
+    `SELECT id, name, source_type, provider, config, fetch_interval_hours, is_active, quality_score, created_at
+     FROM market_data_sources ${whereClause} ORDER BY name`, ...params
+  ) as any[];
+
+  // Strip API keys and secrets from config for security
+  const sanitizedSources = sources.map((s: any) => {
+    const config = safeJsonParse(s.config, {});
+    delete config.api_key;
+    delete config.apiKey;
+    delete config.secret;
+    delete config.token;
+    return { ...s, config };
+  });
+
+  const bundleName = options.name || 'Market Data Source Config';
+  const bundleId = `market-data-source-config-${Date.now()}`;
+  const specManifest = buildSpecManifest({
+    bundleType: 'market-data-source-config',
+    id: bundleId,
+    name: bundleName,
+    description: `${sanitizedSources.length} data source configurations (API keys stripped)`,
+    author: options.author,
+    contentsCount: { market_data_source_configs: 1 },
+  });
+
+  const payload = { bundle_type: 'market-data-source-config', data_sources: sanitizedSources };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(`contents/market-data-source-configs/${bundleId}.json`, Buffer.from(JSON.stringify(payload, null, 2), 'utf-8'));
+  zip.addFile('README.md', Buffer.from(
+    `# ${bundleName}\n\n## Data Sources (${sanitizedSources.length})\n\n` +
+    sanitizedSources.map((s: any) => `- **${s.name}** (${s.provider}/${s.source_type}) — fetch every ${s.fetch_interval_hours}h`).join('\n') +
+    '\n\n> **Note:** API keys and secrets have been stripped from all configurations.\n\n---\n**Exported via ANTON**\n', 'utf-8'
+  ));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created market-data-source-config bundle "${bundleName}" (${sanitizedSources.length} sources, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle a curated collection of market atoms with relationships and tags.
+ */
+export async function bundleMarketAtomCollection(
+  db: DatabaseAdapter,
+  options: { name?: string; atomIds?: string[]; category?: string; author?: string } = {}
+): Promise<Buffer> {
+  let atoms: any[];
+  if (options.atomIds && options.atomIds.length > 0) {
+    atoms = await db.all(
+      `SELECT * FROM market_atoms WHERE id IN (${options.atomIds.map(() => '?').join(',')}) AND is_active = 1 ORDER BY created_at DESC`,
+      ...options.atomIds
+    ) as any[];
+  } else if (options.category) {
+    atoms = await db.all(
+      'SELECT * FROM market_atoms WHERE category = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 500', options.category
+    ) as any[];
+  } else {
+    atoms = await db.all('SELECT * FROM market_atoms WHERE is_active = 1 ORDER BY created_at DESC LIMIT 500') as any[];
+  }
+
+  const atomIds = atoms.map((a: any) => a.id);
+  const tags = atomIds.length > 0
+    ? await db.all(`SELECT * FROM market_atom_tags WHERE atom_id IN (${atomIds.map(() => '?').join(',')})`, ...atomIds) as any[]
+    : [];
+  const relationships = atomIds.length > 0
+    ? await db.all(
+        `SELECT * FROM market_atom_relationships WHERE source_atom_id IN (${atomIds.map(() => '?').join(',')}) OR target_atom_id IN (${atomIds.map(() => '?').join(',')})`,
+        ...atomIds, ...atomIds
+      ) as any[]
+    : [];
+
+  const bundleName = options.name || 'Market Atom Collection';
+  const bundleId = `market-atom-collection-${Date.now()}`;
+  const specManifest = buildSpecManifest({
+    bundleType: 'market-atom-collection',
+    id: bundleId,
+    name: bundleName,
+    description: `${atoms.length} curated market atoms`,
+    author: options.author,
+    contentsCount: { market_atom_collections: 1 },
+  });
+
+  const payload = {
+    bundle_type: 'market-atom-collection',
+    collection: {
+      id: bundleId,
+      name: bundleName,
+      atoms: atoms.map((a: any) => ({ ...a, entities: safeJsonParse(a.entities, []) })),
+      tags,
+      relationships,
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(`contents/market-atom-collections/${bundleId}.json`, Buffer.from(JSON.stringify(payload, null, 2), 'utf-8'));
+  zip.addFile('README.md', Buffer.from(
+    `# ${bundleName}\n\n## Atoms (${atoms.length})\n## Tags (${tags.length})\n## Relationships (${relationships.length})\n\n### Atom Types\n` +
+    [...new Set(atoms.map((a: any) => a.atom_type))].map(t => `- ${t}`).join('\n') +
+    '\n\n---\n**Exported via ANTON**\n', 'utf-8'
+  ));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created market-atom-collection bundle "${bundleName}" (${atoms.length} atoms, ${relationships.length} relationships, ${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle a composite market strategy pack: indexes, theses, signal weights, and narratives.
+ */
+export async function bundleMarketStrategyPack(
+  db: DatabaseAdapter,
+  options: { name?: string; indexIds?: string[]; thesisIds?: string[]; author?: string } = {}
+): Promise<Buffer> {
+  const indexes = options.indexIds && options.indexIds.length > 0
+    ? await db.all(`SELECT * FROM market_indexes WHERE id IN (${options.indexIds.map(() => '?').join(',')})`, ...options.indexIds) as any[]
+    : await db.all('SELECT * FROM market_indexes WHERE status != ? ORDER BY created_at DESC LIMIT 10', 'archived') as any[];
+  const theses = options.thesisIds && options.thesisIds.length > 0
+    ? await db.all(`SELECT * FROM market_theses WHERE id IN (${options.thesisIds.map(() => '?').join(',')})`, ...options.thesisIds) as any[]
+    : await db.all('SELECT * FROM market_theses WHERE status != ? ORDER BY created_at DESC LIMIT 20', 'archived') as any[];
+  const signalWeights = await db.all('SELECT * FROM market_signal_weights ORDER BY signal_type') as any[];
+  const narratives = await db.all('SELECT * FROM market_narratives ORDER BY strength DESC LIMIT 20') as any[];
+
+  const bundleName = options.name || 'Market Strategy Pack';
+  const bundleId = `market-strategy-pack-${Date.now()}`;
+  const specManifest = buildSpecManifest({
+    bundleType: 'market-strategy-pack',
+    id: bundleId,
+    name: bundleName,
+    description: `Composite strategy pack: ${indexes.length} indexes, ${theses.length} theses, ${signalWeights.length} signal weights`,
+    author: options.author,
+    contentsCount: { market_strategy_packs: 1 },
+  });
+
+  const payload = {
+    bundle_type: 'market-strategy-pack',
+    strategy_pack: {
+      id: bundleId,
+      name: bundleName,
+      indexes: indexes.map((i: any) => ({ ...i, universe: safeJsonParse(i.universe, []) })),
+      theses: theses.map((t: any) => ({
+        ...t,
+        key_assumptions: safeJsonParse(t.key_assumptions, []),
+        risk_factors: safeJsonParse(t.risk_factors, []),
+        success_criteria: safeJsonParse(t.success_criteria, []),
+        target_entities: safeJsonParse(t.target_entities, []),
+      })),
+      signal_weights: signalWeights,
+      narratives,
+    },
+  };
+
+  const zip = new AdmZip();
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile(`contents/market-strategy-packs/${bundleId}.json`, Buffer.from(JSON.stringify(payload, null, 2), 'utf-8'));
+  zip.addFile('README.md', Buffer.from(
+    `# ${bundleName}\n\n## Indexes (${indexes.length})\n\n` +
+    indexes.map((i: any) => `- **${i.name}**: ${i.description?.substring(0, 80) || ''}`).join('\n') +
+    `\n\n## Theses (${theses.length})\n\n` +
+    theses.map((t: any) => `- **${t.title}** (${t.status}): ${t.description?.substring(0, 80) || ''}`).join('\n') +
+    `\n\n## Signal Weights (${signalWeights.length})\n## Narratives (${narratives.length})\n\n---\n**Exported via ANTON**\n`, 'utf-8'
+  ));
+
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created market-strategy-pack bundle "${bundleName}" (${indexes.length} indexes, ${theses.length} theses, ${buffer.length} bytes)`);
   return buffer;
 }
 

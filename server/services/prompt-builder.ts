@@ -495,7 +495,7 @@ async function buildAtomLayerFallback(
   areaId?: string | null,
 ): Promise<string> {
   try {
-    const conditions = ['ka.is_active = 1', "ka.created_at >= datetime('now', '-30 days')", 'ka.confidence >= 0.7'];
+    const conditions = ['ka.is_active = 1', "ka.created_at >= NOW() - INTERVAL '30 days'", 'ka.confidence >= 0.7'];
     const params: unknown[] = [];
 
     if (areaId) {

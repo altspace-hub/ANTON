@@ -41,14 +41,14 @@ async function detectQualityDropPatterns(db: DatabaseAdapter): DetectedPattern[]
   try {
     const rows = await db.all(`
       SELECT qs.module_id,
-             AVG(CASE WHEN qs.scored_at >= datetime('now', '-7 days') THEN qs.score_overall END) as recent_avg,
-             AVG(CASE WHEN qs.scored_at < datetime('now', '-7 days') AND qs.scored_at >= datetime('now', '-21 days') THEN qs.score_overall END) as prior_avg,
+             AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END) as recent_avg,
+             AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) as prior_avg,
              COUNT(*) as total_scores
       FROM quality_scores qs
-      WHERE qs.scored_at >= datetime('now', '-21 days')
+      WHERE qs.scored_at >= NOW() - INTERVAL '21 days'
       GROUP BY qs.module_id
-      HAVING AVG(CASE WHEN qs.scored_at >= datetime('now', '-7 days') THEN qs.score_overall END) IS NOT NULL AND AVG(CASE WHEN qs.scored_at < datetime('now', '-7 days') AND qs.scored_at >= datetime('now', '-21 days') THEN qs.score_overall END) IS NOT NULL
-        AND AVG(CASE WHEN qs.scored_at < datetime('now', '-7 days') AND qs.scored_at >= datetime('now', '-21 days') THEN qs.score_overall END) - AVG(CASE WHEN qs.scored_at >= datetime('now', '-7 days') THEN qs.score_overall END) >= 1.5
+      HAVING AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END) IS NOT NULL AND AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) IS NOT NULL
+        AND AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) - AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END) >= 1.5
         AND COUNT(*) >= 4
       ORDER BY (prior_avg - recent_avg) DESC
       LIMIT 5
@@ -81,7 +81,7 @@ async function detectWorkflowRecurrencePatterns(db: DatabaseAdapter): DetectedPa
              MIN(started_at) as first_run, MAX(started_at) as last_run,
              AVG(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as success_rate
       FROM workflow_runs
-      WHERE started_at >= datetime('now', '-30 days')
+      WHERE started_at >= NOW() - INTERVAL '30 days'
       GROUP BY workflow_id
       HAVING COUNT(*) >= 3
       ORDER BY run_count DESC
@@ -117,7 +117,7 @@ async function detectSignalClusterPatterns(db: DatabaseAdapter): DetectedPattern
     const radarClusters = await db.all(`
       SELECT item_type, COUNT(*) as count, AVG(urgency_score) as avg_urgency
       FROM radar_items
-      WHERE fetched_at >= datetime('now', '-3 days')
+      WHERE fetched_at >= NOW() - INTERVAL '3 days'
         AND urgency_score >= 0.6
       GROUP BY item_type
       HAVING COUNT(*) >= 3
@@ -145,11 +145,11 @@ async function detectDeadlineClusterPatterns(db: DatabaseAdapter): DetectedPatte
   try {
     const result = await db.all(`
       SELECT COUNT(*) as count,
-             GROUP_CONCAT(title, ' | ') as titles,
+             STRING_AGG(title, ' | ') as titles,
              MIN(due_date) as earliest
       FROM deadlines
       WHERE status NOT IN ('completed','cancelled')
-        AND julianday(due_date) - julianday('now') BETWEEN 0 AND 14
+        AND due_date::date - CURRENT_DATE BETWEEN 0 AND 14
     `) as { count: number; titles: string | null; earliest: string | null } | undefined;
 
     if (result && result.count >= 3) {
@@ -182,7 +182,7 @@ export async function shouldAutoPause(db: DatabaseAdapter): { pause: boolean; re
         SUM(CASE WHEN human_rating IN ('wrong', 'irrelevant') THEN 1 ELSE 0 END) as bad,
         COUNT(*) as total
       FROM orchestrator_proposals
-      WHERE decided_at >= datetime('now', '-7 days')
+      WHERE decided_at >= NOW() - INTERVAL '7 days'
         AND human_rating IS NOT NULL
     `) as { bad: number; total: number } | undefined;
 
@@ -214,7 +214,7 @@ export async function detectPatterns(db: DatabaseAdapter): DetectedPattern[] {
   const recentIds = new Set<string>();
   try {
     const recent = await db.get(
-      "SELECT signal_data FROM orchestrator_pattern_detections WHERE detected_at >= datetime('now', '-24 hours')"
+      "SELECT signal_data FROM orchestrator_pattern_detections WHERE detected_at >= NOW() - INTERVAL '24 hours'"
     ) as Array<{ signal_data: string | null }>;
     for (const r of recent) {
       if (r.signal_data) {
@@ -248,7 +248,7 @@ export async function recordPatternDetection(
       await db.run(`
         INSERT INTO orchestrator_patterns
           (id, pattern_type, name, description, suggested_action, auto_execute, executions_count, last_detected_at)
-        VALUES (?, ?, ?, ?, ?, ?, 0, datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, 0, NOW())
       `, 
         pattern.pattern_id, pattern.pattern_type, pattern.name,
         pattern.description, pattern.suggested_action,
@@ -258,8 +258,8 @@ export async function recordPatternDetection(
       await db.run(`
         UPDATE orchestrator_patterns SET
           executions_count = executions_count + 1,
-          last_detected_at = datetime('now'),
-          updated_at = datetime('now')
+          last_detected_at = NOW(),
+          updated_at = NOW()
         WHERE id = ?
       `, pattern.pattern_id);
     }

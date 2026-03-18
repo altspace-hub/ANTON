@@ -13,7 +13,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { encryptConfig, decryptConfig } from './credential-vault.js';
 
-export type TriggerType = 'webhook' | 'git_push' | 'slack_event' | 'teams_event' | 'mcp_event' | 'internal';
+export type TriggerType = 'webhook' | 'git_push' | 'slack_event' | 'teams_event' | 'mcp_event' | 'internal' | 'market_event';
 export type EventStatus = 'received' | 'validated' | 'filtered_out' | 'rate_limited' | 'deduplicated' | 'triggered' | 'failed';
 export type AuthMethod = 'hmac_sha256' | 'signing_secret' | 'bearer_token' | 'none';
 
@@ -186,7 +186,7 @@ export async function createWebhookListener(db: DatabaseAdapter) {
    * Update trigger status (active/paused).
    */
   async function setTriggerStatus(triggerId: string, status: 'active' | 'paused'): Promise<void> {
-    await db.run(`UPDATE webhook_triggers SET status = ?, updated_at = datetime('now') WHERE id = ?`, status, triggerId);
+    await db.run(`UPDATE webhook_triggers SET status = ?, updated_at = NOW() WHERE id = ?`, status, triggerId);
   }
 
   /**
@@ -418,7 +418,7 @@ export async function createWebhookListener(db: DatabaseAdapter) {
       INSERT INTO webhook_events
         (id, trigger_id, received_at, status, payload, mapped_variables,
          dedup_signature, workflow_run_id, error_message, processing_ms)
-      VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?)
     `,
       eventId, triggerId, status,
       payload ? JSON.stringify(payload) : null,
@@ -461,7 +461,7 @@ export async function createWebhookListener(db: DatabaseAdapter) {
     await db.run(`
       INSERT INTO workflow_runs
         (id, workflow_id, trigger_source, status, current_step, user_id, started_at)
-      VALUES (?, ?, 'event', 'pending', 0, ?, datetime('now'))
+      VALUES (?, ?, 'event', 'pending', 0, ?, NOW())
     `, runId, workflowId, userId);
 
     // Store trigger context in run for executor to pick up

@@ -46,7 +46,7 @@ export async function createInsightsGenerator(db: DatabaseAdapter, client: Anthr
         month: '30 days',
         all: '365 days',
       };
-      query += ` AND created_at >= datetime('now', '-${timeMap[params.timeRange]}')`;
+      query += ` AND created_at >= NOW() - INTERVAL '${timeMap[params.timeRange]}'`;
     }
 
     if (params.category) {
@@ -169,7 +169,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
         month: '30 days',
         all: '365 days',
       };
-      query += ` AND created_at >= datetime('now', '-${timeMap[params.timeRange]}')`;
+      query += ` AND created_at >= NOW() - INTERVAL '${timeMap[params.timeRange]}'`;
     }
 
     query += ' GROUP BY category';

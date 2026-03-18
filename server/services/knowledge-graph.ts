@@ -32,8 +32,12 @@ export async function createKnowledgeGraph(db: DatabaseAdapter) {
     for (const e of entities) {
       try {
         await db.run(`
-          INSERT OR REPLACE INTO entity_nodes (id, entity_type, entity_id, canonical_name, interaction_count, last_seen)
+          INSERT INTO entity_nodes (id, entity_type, entity_id, canonical_name, interaction_count, last_seen)
           VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT (entity_type, entity_id) DO UPDATE SET
+            canonical_name = EXCLUDED.canonical_name,
+            interaction_count = EXCLUDED.interaction_count,
+            last_seen = EXCLUDED.last_seen
         `, `en_${e.entity_type}_${e.entity_id}`, e.entity_type, e.entity_id, e.entity_name, e.ref_count, new Date().toISOString());
         nodesCreated++;
       } catch (err) {
@@ -183,8 +187,9 @@ export async function createKnowledgeGraph(db: DatabaseAdapter) {
 
     // Update entity aliases
     await db.run(`
-      INSERT OR IGNORE INTO entity_aliases (entity_type, primary_id, alias_id, alias_source)
+      INSERT INTO entity_aliases (entity_type, primary_id, alias_id, alias_source)
       VALUES (?, ?, ?, 'merge')
+      ON CONFLICT DO NOTHING
     `, params.entityType, params.intoId, params.fromId);
 
     // Remove old node

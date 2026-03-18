@@ -63,7 +63,7 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Router {
 
       await db.run(`
         INSERT INTO sessions (id, module_id, title, config, created_at)
-        VALUES (?, ?, ?, ?, datetime('now'))
+        VALUES (?, ?, ?, ?, NOW())
       `, sessionId, 'script-lite', title, JSON.stringify(config));
 
       res.json({
@@ -117,7 +117,7 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Router {
       };
 
       await db.run(`
-        UPDATE sessions SET config = ?, updated_at = datetime('now')
+        UPDATE sessions SET config = ?, updated_at = NOW()
         WHERE id = ?
       `, JSON.stringify(config), id);
 
@@ -219,7 +219,7 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Router {
 
       await db.run(`
         INSERT INTO sessions (id, module_id, title, config, created_at)
-        VALUES (?, ?, ?, ?, datetime('now'))
+        VALUES (?, ?, ?, ?, NOW())
       `, sessionId, 'script-medium', title, JSON.stringify(config));
 
       res.json({
@@ -342,7 +342,7 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Router {
       config.saved_at = new Date().toISOString();
 
       await db.run(`
-        UPDATE sessions SET config = ?, updated_at = datetime('now')
+        UPDATE sessions SET config = ?, updated_at = NOW()
         WHERE id = ?
       `, JSON.stringify(config), id);
 

@@ -1067,7 +1067,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
     await db.run(`
       INSERT INTO discovery_sessions (id, user_id, tier, state, status, started_at, last_active_at)
-      VALUES (?, ?, ?, ?, 'active', datetime('now'), datetime('now'))
+      VALUES (?, ?, ?, ?, 'active', NOW(), NOW())
     `, id, userId || null, tier, JSON.stringify(state));
 
     return { id, state };
@@ -1112,13 +1112,13 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   async function updateSessionState(id: string, state: DiscoveryState): void {
     await db.run(`
       UPDATE discovery_sessions
-      SET state = ?, last_active_at = datetime('now'), autosave_version = autosave_version + 1
+      SET state = ?, last_active_at = NOW(), autosave_version = autosave_version + 1
       WHERE id = ?
     `, JSON.stringify(state), id);
   }
 
   async function updateSessionStatus(id: string, status: DiscoveryStatus): void {
-    const extra = status === 'completed' ? ", completed_at = datetime('now')" : '';
+    const extra = status === 'completed' ? ", completed_at = NOW()" : '';
     await db.run(`UPDATE discovery_sessions SET status = ?${extra} WHERE id = ?`, status, id);
   }
 
@@ -1486,7 +1486,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     const outputId = randomUUID();
     await db.run(`
       INSERT INTO discovery_outputs (id, session_id, tier, title, content_md, module_matches, action_plan, metrics, non_ai_findings, executive_briefing, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `, 
       outputId, sessionId, session.tier,
       `AI ${session.tier === 'lite' ? 'Starter Map' : session.tier === 'standard' ? 'Opportunity Report' : session.tier === 'professional' ? 'Adoption Roadmap' : 'Transformation Plan'}`,
@@ -1495,7 +1495,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     );
 
     // Link output to session and mark complete
-    await db.run("UPDATE discovery_sessions SET output_id = ?, status = ?, completed_at = datetime('now') WHERE id = ?", outputId, 'completed', sessionId);
+    await db.run("UPDATE discovery_sessions SET output_id = ?, status = ?, completed_at = NOW() WHERE id = ?", outputId, 'completed', sessionId);
 
     return { outputId, contentMd, moduleMatches, actionPlan, metrics, nonAiFindings, executiveBriefing };
   }

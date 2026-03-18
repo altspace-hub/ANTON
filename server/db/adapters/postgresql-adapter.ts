@@ -200,6 +200,11 @@ export class PostgresAdapter implements DatabaseAdapter {
     });
   }
 
+  /** Expose the underlying pg.Pool for PG-specific features (e.g. LISTEN/NOTIFY) */
+  getPool(): pg.Pool {
+    return this.pool;
+  }
+
   /** Prepare SQL: translate + convert placeholders */
   private prepareSql(sql: string): string {
     return convertPlaceholders(translateSql(sql));

@@ -48,12 +48,12 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Router {
       const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : null;
       await db.run(`
         INSERT INTO entity_screens (id, session_id, entity_name, connector, result, risk_score, hit_count, cached_until)
-        VALUES (?, ?, ?, 'dowjones', ?, ?, ?, datetime('now', '+12 hours'))
+        VALUES (?, ?, ?, 'dowjones', ?, ?, ?, NOW() + INTERVAL '12 hours')
       `, id, sessionId, params.name, JSON.stringify(result), result.riskScore, result.hits.length);
 
       // Update connector stats
       await db.run(`
-        UPDATE data_connectors SET total_calls=total_calls+1, last_successful_call=datetime('now'),
+        UPDATE data_connectors SET total_calls=total_calls+1, last_successful_call=NOW(),
         status=?, api_key_set=? WHERE connector_type='dowjones'
       `, result.source === 'live' ? 'live' : 'mock', result.source === 'live' ? 1 : 0);
 
@@ -133,8 +133,9 @@ export async function createDowJonesRoutes(db: DatabaseAdapter): Router {
 
       // Persist in DB
       await db.run(`
-        INSERT OR IGNORE INTO entity_monitoring (id, entity_id, entity_name, connector)
+        INSERT INTO entity_monitoring (id, entity_id, entity_name, connector)
         VALUES (?, ?, ?, 'dowjones')
+        ON CONFLICT DO NOTHING
       `, registration.id, entityId, entityName);
 
       res.json({ registration });

@@ -150,7 +150,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
       // Update access tracking
       await db.run(`
         UPDATE datasets
-        SET last_accessed_at = datetime('now'), access_count = access_count + 1
+        SET last_accessed_at = NOW(), access_count = access_count + 1
         WHERE id = ?
       `, id);
 
@@ -174,7 +174,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
       let query = `
         SELECT * FROM datasets
         WHERE created_by = ?
-          AND (expires_at IS NULL OR expires_at > datetime('now'))
+          AND (expires_at IS NULL OR expires_at > NOW())
       `;
 
       const params: unknown[] = [userId];
@@ -217,7 +217,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
     async cleanupExpired(): Promise<number> {
       const expired = await db.all(`
         SELECT id, storage_path FROM datasets
-        WHERE expires_at IS NOT NULL AND CAST(expires_at AS TIMESTAMP) < datetime('now')
+        WHERE expires_at IS NOT NULL AND CAST(expires_at AS TIMESTAMP) < NOW()
       `) as Array<{ id: string; storage_path: string }>;
 
       let deleted = 0;

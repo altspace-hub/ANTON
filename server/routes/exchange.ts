@@ -8,9 +8,25 @@ import {
   bundleReviewPanel,
   bundleQualityBaseline,
   bundleAudienceProfile,
+  bundleMarketIndex,
+  bundleMarketThesis,
+  bundleMarketIntelligenceModel,
+  bundleMarketInvestigation,
+  bundleMarketDataSourceConfig,
+  bundleMarketAtomCollection,
+  bundleMarketStrategyPack,
 } from '../services/anton-bundler.js';
 import { validateAntonFile } from '../services/anton-validator.js';
 import { importAntonFile } from '../services/anton-importer.js';
+import {
+  importMarketIndex,
+  importMarketThesis,
+  importMarketAtomCollection,
+  importMarketStrategyPack,
+  importMarketInvestigation,
+  importMarketDataSourceConfig,
+  importMarketIntelligenceModel,
+} from '../services/market-bundle-importer.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
@@ -134,6 +150,109 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── Market bundle type exports ────────────────────────────────
+
+  // POST /api/exchange/export-bundle/market-index
+  router.post('/exchange/export-bundle/market-index', async (req, res) => {
+    try {
+      const { indexId, author } = req.body as { indexId: string; author?: string };
+      if (!indexId) { res.status(400).json({ error: 'indexId is required' }); return; }
+      const buffer = await bundleMarketIndex(db, indexId, { author });
+      const filename = `market-index-${indexId}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/market-thesis
+  router.post('/exchange/export-bundle/market-thesis', async (req, res) => {
+    try {
+      const { thesisId, author } = req.body as { thesisId: string; author?: string };
+      if (!thesisId) { res.status(400).json({ error: 'thesisId is required' }); return; }
+      const buffer = await bundleMarketThesis(db, thesisId, { author });
+      const filename = `market-thesis-${thesisId}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/market-intelligence-model
+  router.post('/exchange/export-bundle/market-intelligence-model', async (req, res) => {
+    try {
+      const { name, author } = req.body as { name?: string; author?: string };
+      const buffer = await bundleMarketIntelligenceModel(db, { name, author });
+      const filename = `market-intelligence-model-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/market-investigation
+  router.post('/exchange/export-bundle/market-investigation', async (req, res) => {
+    try {
+      const { investigationId, author } = req.body as { investigationId: string; author?: string };
+      if (!investigationId) { res.status(400).json({ error: 'investigationId is required' }); return; }
+      const buffer = await bundleMarketInvestigation(db, investigationId, { author });
+      const filename = `market-investigation-${investigationId}-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/market-data-source-config
+  router.post('/exchange/export-bundle/market-data-source-config', async (req, res) => {
+    try {
+      const { name, sourceIds, author } = req.body as { name?: string; sourceIds?: string[]; author?: string };
+      const buffer = await bundleMarketDataSourceConfig(db, { name, sourceIds, author });
+      const filename = `market-data-source-config-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/market-atom-collection
+  router.post('/exchange/export-bundle/market-atom-collection', async (req, res) => {
+    try {
+      const { name, atomIds, category, author } = req.body as { name?: string; atomIds?: string[]; category?: string; author?: string };
+      const buffer = await bundleMarketAtomCollection(db, { name, atomIds, category, author });
+      const filename = `market-atom-collection-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
+  // POST /api/exchange/export-bundle/market-strategy-pack
+  router.post('/exchange/export-bundle/market-strategy-pack', async (req, res) => {
+    try {
+      const { name, indexIds, thesisIds, author } = req.body as { name?: string; indexIds?: string[]; thesisIds?: string[]; author?: string };
+      const buffer = await bundleMarketStrategyPack(db, { name, indexIds, thesisIds, author });
+      const filename = `market-strategy-pack-${Date.now()}.anton`;
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Export failed' });
+    }
+  });
+
   // Import a .anton file to user's custom modules (works in solo and authenticated mode)
   router.post('/exchange/import', upload.single('file'), async (req, res) => {
     if (!req.file) {
@@ -147,6 +266,51 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : 'Import failed' });
     }
+  });
+
+  // ── Market bundle imports ──────────────────────────────────────
+
+  async function handleMarketImport(
+    req: import('express').Request,
+    res: import('express').Response,
+    importFn: (db: DatabaseAdapter, payload: Record<string, unknown>) => Promise<{ success: boolean; bundleType: string; imported: Record<string, number>; errors?: string[] }>,
+  ) {
+    if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
+    try {
+      const AdmZip = (await import('adm-zip')).default;
+      const zip = new AdmZip(req.file.buffer);
+      const entries = zip.getEntries();
+      // Find the main content JSON in contents/
+      const contentEntry = entries.find(e => e.entryName.startsWith('contents/') && e.entryName.endsWith('.json'));
+      if (!contentEntry) { res.status(400).json({ error: 'Invalid .anton bundle — no content JSON found' }); return; }
+      const payload = JSON.parse(contentEntry.getData().toString('utf-8'));
+      const result = await importFn(db, payload);
+      res.json(result);
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : 'Import failed' });
+    }
+  }
+
+  router.post('/exchange/import-bundle/market-index', upload.single('file'), (req, res) => {
+    handleMarketImport(req, res, importMarketIndex);
+  });
+  router.post('/exchange/import-bundle/market-thesis', upload.single('file'), (req, res) => {
+    handleMarketImport(req, res, importMarketThesis);
+  });
+  router.post('/exchange/import-bundle/market-atom-collection', upload.single('file'), (req, res) => {
+    handleMarketImport(req, res, importMarketAtomCollection);
+  });
+  router.post('/exchange/import-bundle/market-strategy-pack', upload.single('file'), (req, res) => {
+    handleMarketImport(req, res, importMarketStrategyPack);
+  });
+  router.post('/exchange/import-bundle/market-investigation', upload.single('file'), (req, res) => {
+    handleMarketImport(req, res, importMarketInvestigation);
+  });
+  router.post('/exchange/import-bundle/market-data-source-config', upload.single('file'), (req, res) => {
+    handleMarketImport(req, res, importMarketDataSourceConfig);
+  });
+  router.post('/exchange/import-bundle/market-intelligence-model', upload.single('file'), (req, res) => {
+    handleMarketImport(req, res, importMarketIntelligenceModel);
   });
 
   return router;

@@ -356,7 +356,7 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
       await db.run(`
         INSERT INTO entity_nodes
           (id, entity_type, entity_id, canonical_name, metadata, source, pack_id)
-        VALUES (lower(hex(randomblob(8))), ?, ?, ?, ?, 'pack', ?)
+        VALUES (lower(encode(gen_random_bytes(8), 'hex')), ?, ?, ?, ?, 'pack', ?)
         ON CONFLICT(entity_type, entity_id) DO UPDATE SET
           canonical_name = excluded.canonical_name,
           metadata = COALESCE(excluded.metadata, entity_nodes.metadata),
@@ -403,9 +403,10 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
     for (const [key, data] of seenRels) {
       const [sourceType, sourceId, targetType, targetId, relType] = key.split('|');
       await db.run(`
-        INSERT OR IGNORE INTO entity_relationships
+        INSERT INTO entity_relationships
           (id, source_type, source_id, target_type, target_id, relationship_type, strength, description, metadata, source, pack_id)
-        VALUES (lower(hex(randomblob(8))), ?, ?, ?, ?, ?, ?, ?, ?, 'pack', ?)
+        VALUES (lower(encode(gen_random_bytes(8), 'hex')), ?, ?, ?, ?, ?, ?, ?, ?, 'pack', ?)
+        ON CONFLICT DO NOTHING
       `,
         sourceType, sourceId, targetType, targetId, relType,
         data.strength,
@@ -423,9 +424,10 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
       if (!ref) continue;
       for (const alias of a.aliases) {
         await db.run(`
-          INSERT OR IGNORE INTO entity_aliases
+          INSERT INTO entity_aliases
             (entity_type, primary_id, alias_id, alias_source, pack_id)
           VALUES (?, ?, ?, 'pack', ?)
+          ON CONFLICT DO NOTHING
         `, ref.entity_type, ref.entity_id, alias, packId);
         aliasCount++;
       }
@@ -469,7 +471,7 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
     if (!pack) throw new Error('Pack not found');
     if (pack.status === 'active') return;
     await db.run(
-      `UPDATE knowledge_packs SET status='active', activated_at=datetime('now'), deactivated_at=NULL WHERE id=?`,
+      `UPDATE knowledge_packs SET status='active', activated_at=NOW(), deactivated_at=NULL WHERE id=?`,
       id
     );
   }
@@ -478,7 +480,7 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
     const pack = await getPack(id);
     if (!pack) throw new Error('Pack not found');
     await db.run(
-      `UPDATE knowledge_packs SET status='deactivated', deactivated_at=datetime('now') WHERE id=?`,
+      `UPDATE knowledge_packs SET status='deactivated', deactivated_at=NOW() WHERE id=?`,
       id
     );
   }

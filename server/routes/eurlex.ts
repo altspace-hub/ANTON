@@ -229,7 +229,7 @@ ${eurLexText ? `OFFICIAL EUR-LEX TEXT (first 40,000 chars):\n${eurLexText.slice(
       try {
         await db.run(`
           UPDATE knowledge_packs
-          SET description = description || ' [Validated vs EUR-Lex ' || date('now') || ']'
+          SET description = description || ' [Validated vs EUR-Lex ' || CURRENT_DATE::TEXT || ']'
           WHERE id = ?
         `, packId);
       } catch { /* non-critical */ }

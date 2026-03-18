@@ -921,3 +921,130 @@ export async function exportTrustCertificate(sessionId: string): Promise<Blob> {
   if (!res.ok) throw new Error('Failed to generate trust certificate');
   return res.blob();
 }
+
+// ── Markets Pillar Export API ─────────────────────────────────
+
+/** Download a market index as a .anton bundle */
+export async function exportMarketIndexAnton(indexId: string, author?: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/market-index`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ indexId, author }),
+  });
+  if (!res.ok) throw new Error('Failed to export market index');
+  return res.blob();
+}
+
+/** Download a market thesis as a .anton bundle */
+export async function exportMarketThesisAnton(thesisId: string, author?: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/market-thesis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ thesisId, author }),
+  });
+  if (!res.ok) throw new Error('Failed to export market thesis');
+  return res.blob();
+}
+
+/** Download the market intelligence model as a .anton bundle */
+export async function exportMarketIntelligenceModelAnton(author?: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/market-intelligence-model`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ author }),
+  });
+  if (!res.ok) throw new Error('Failed to export market intelligence model');
+  return res.blob();
+}
+
+/** Download a market investigation as a .anton bundle */
+export async function exportMarketInvestigationAnton(investigationId: string, author?: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/market-investigation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ investigationId, author }),
+  });
+  if (!res.ok) throw new Error('Failed to export market investigation');
+  return res.blob();
+}
+
+/** Download market data source configuration as a .anton bundle */
+export async function exportMarketDataSourceConfigAnton(author?: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/market-data-source-config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ author }),
+  });
+  if (!res.ok) throw new Error('Failed to export market data source config');
+  return res.blob();
+}
+
+/** Download market atom collection as a .anton bundle */
+export async function exportMarketAtomCollectionAnton(author?: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/market-atom-collection`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ author }),
+  });
+  if (!res.ok) throw new Error('Failed to export market atom collection');
+  return res.blob();
+}
+
+/** Download market strategy pack as a .anton bundle */
+export async function exportMarketStrategyPackAnton(author?: string): Promise<Blob> {
+  const res = await fetchWithAuth(`${API_BASE}/exchange/export-bundle/market-strategy-pack`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ author }),
+  });
+  if (!res.ok) throw new Error('Failed to export market strategy pack');
+  return res.blob();
+}
+
+// ── Markets Pillar Import API ─────────────────────────────────
+
+async function importMarketBundle(endpoint: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetchWithAuth(`${API_BASE}/exchange/import-bundle/${endpoint}`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Import failed' }));
+    throw new Error(err.error || 'Import failed');
+  }
+  return res.json();
+}
+
+export function importMarketIndexAnton(file: File) { return importMarketBundle('market-index', file); }
+export function importMarketThesisAnton(file: File) { return importMarketBundle('market-thesis', file); }
+export function importMarketAtomCollectionAnton(file: File) { return importMarketBundle('market-atom-collection', file); }
+export function importMarketStrategyPackAnton(file: File) { return importMarketBundle('market-strategy-pack', file); }
+export function importMarketInvestigationAnton(file: File) { return importMarketBundle('market-investigation', file); }
+export function importMarketDataSourceConfigAnton(file: File) { return importMarketBundle('market-data-source-config', file); }
+export function importMarketIntelligenceModelAnton(file: File) { return importMarketBundle('market-intelligence-model', file); }
+
+// ── Markets Pillar RCI API ────────────────────────────────────
+
+/** Run the full Reason → Compute → Interpret pipeline */
+export async function runMarketRCI(question: string, context?: string) {
+  const res = await fetchWithAuth(`${API_BASE}/markets/rci`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, context }),
+  });
+  if (!res.ok) throw new Error('RCI pipeline failed');
+  return res.json();
+}
+
+/** Get template suggestions for a question (REASON phase only) */
+export async function suggestMarketTemplates(question: string) {
+  const res = await fetchWithAuth(`${API_BASE}/markets/rci/suggest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) throw new Error('Template suggestion failed');
+  return res.json();
+}

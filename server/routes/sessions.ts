@@ -113,13 +113,13 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       // Sprint 5: Additional stats
       const thisWeekRow = await db.get(`
         SELECT COUNT(*) as count FROM sessions
-        WHERE created_at >= datetime('now', '-7 days')
+        WHERE created_at >= NOW() - INTERVAL '7 days'
         ${userRole === 'admin' ? '' : 'AND user_id = ?'}
       `, ...userParams) as { count: number } | undefined;
 
       const thisMonthRow = await db.get(`
         SELECT COUNT(*) as count FROM sessions
-        WHERE created_at >= datetime('now', '-30 days')
+        WHERE created_at >= NOW() - INTERVAL '30 days'
         ${userRole === 'admin' ? '' : 'AND user_id = ?'}
       `, ...userParams) as { count: number } | undefined;
 

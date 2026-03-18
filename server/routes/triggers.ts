@@ -139,7 +139,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Router {
 
       if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
 
-      updates.push("updated_at = datetime('now')");
+      updates.push("updated_at = NOW()");
       values.push(String(req.params.id));
 
       await db.run(`UPDATE webhook_triggers SET ${updates.join(', ')} WHERE id = ?`, ...values);

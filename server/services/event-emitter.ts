@@ -10,7 +10,7 @@
  */
 
 type InternalEventPayload = Record<string, unknown>;
-type InternalSource = 'regulatory_radar' | 'compliance_rules' | 'file_watcher';
+type InternalSource = 'regulatory_radar' | 'compliance_rules' | 'file_watcher' | 'market_signal' | 'market_event';
 
 type EmitFunction = (source: InternalSource, payload: InternalEventPayload) => Promise<unknown>;
 

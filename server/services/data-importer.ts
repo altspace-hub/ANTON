@@ -375,11 +375,14 @@ async function exportToDatabase(dataset: Dataset, config: ExportConfig): Promise
     let sql: string;
     if (insertMode === 'insert') {
       sql = `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
-    } else if (insertMode === 'replace') {
-      sql = `REPLACE INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+    } else if (insertMode === 'replace' || insertMode === 'upsert') {
+      // Upsert: insert or update all columns on conflict with the first column (assumed primary key)
+      const updateCols = columns.slice(1).map(c => `${c} = EXCLUDED.${c}`).join(', ');
+      sql = updateCols
+        ? `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${columns[0]}) DO UPDATE SET ${updateCols}`
+        : `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${columns[0]}) DO NOTHING`;
     } else {
-      // Upsert - use INSERT OR REPLACE for SQLite
-      sql = `INSERT OR REPLACE INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+      sql = `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
     }
 
     // Insert rows

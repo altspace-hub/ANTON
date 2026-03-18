@@ -32,6 +32,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'council', label: 'AI Council', category: 'interaction' },
 
   { id: 'presentations', label: 'Presentations', category: 'interaction' },
+  { id: 'markets', label: 'Markets Intelligence', category: 'intelligence' },
   { id: 'school', label: 'ANTON School', category: 'tools' },
 
   // Life Platform Tabs

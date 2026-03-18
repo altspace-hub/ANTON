@@ -1165,7 +1165,7 @@ async function persistSearch(db: DatabaseAdapter, result: SearchResult, userId: 
 
   // Update thread timestamp if in a thread
   if (threadId) {
-    await db.run('UPDATE pathfinder_threads SET updated_at = datetime(\'now\') WHERE id = ?', threadId);
+    await db.run('UPDATE pathfinder_threads SET updated_at = NOW() WHERE id = ?', threadId);
   }
 }
 

@@ -84,7 +84,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Router {
     try {
       await db.run(
         `INSERT INTO presentations (id, title, purpose, audience, style, slide_count, brief, conversation, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', datetime('now'), datetime('now'))`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', NOW(), NOW())`
       , id,
         title || 'Untitled Presentation',
         purpose || '',
@@ -129,7 +129,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Router {
            status       = COALESCE(?, status),
            file_path    = COALESCE(?, file_path),
            filename     = COALESCE(?, filename),
-           updated_at   = datetime('now')
+           updated_at   = NOW()
          WHERE id = ?`
       , 
         title ?? null,
@@ -200,7 +200,7 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Router {
 
     if (id) {
       try {
-        await db.run(`UPDATE presentations SET status = 'generating', updated_at = datetime('now') WHERE id = ?`, id);
+        await db.run(`UPDATE presentations SET status = 'generating', updated_at = NOW() WHERE id = ?`, id);
       } catch { /* non-fatal */ }
     }
 
@@ -375,7 +375,7 @@ FORMATTING RULES:
 
       if (id) {
         await db.run(
-          `UPDATE presentations SET status = 'ready', file_path = ?, filename = ?, updated_at = datetime('now') WHERE id = ?`
+          `UPDATE presentations SET status = 'ready', file_path = ?, filename = ?, updated_at = NOW() WHERE id = ?`
         , filePath, filename, id);
       }
 
@@ -383,7 +383,7 @@ FORMATTING RULES:
     } catch (error) {
       if (id) {
         try {
-          await db.run(`UPDATE presentations SET status = 'failed', updated_at = datetime('now') WHERE id = ?`, id);
+          await db.run(`UPDATE presentations SET status = 'failed', updated_at = NOW() WHERE id = ?`, id);
         } catch { /* non-fatal */ }
       }
       res.status(500).json({ error: error instanceof Error ? error.message : 'Generation failed' });

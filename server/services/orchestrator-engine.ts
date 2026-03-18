@@ -32,7 +32,8 @@ import { callChat, mapModelToProvider } from './provider-router.js';
 export type SignalSource =
   | 'radar' | 'deadline' | 'quality' | 'pattern' | 'workflow'
   | 'assignment' | 'compliance' | 'apprentice' | 'knowledge_graph' | 'proactive'
-  | 'task_agent';
+  | 'task_agent'
+  | 'market';
 
 export type ActionType =
   | 'workflow_trigger' | 'workflow_chain' | 'quality_intervention'
@@ -160,10 +161,10 @@ async function readRadarSignals(db: DatabaseAdapter, threshold: number, since: D
 async function readDeadlineSignals(db: DatabaseAdapter, alertDays: number): Promise<PlatformSignal[]> {
   const rows = await db.all(`
     SELECT id, title, due_date, category, priority, status,
-           julianday(due_date) - julianday('now') as days_remaining
+           EXTRACT(EPOCH FROM due_date::timestamp - NOW()) / 86400.0 as days_remaining
     FROM deadlines
     WHERE status NOT IN ('completed','cancelled')
-      AND julianday(due_date) - julianday('now') <= ?
+      AND EXTRACT(EPOCH FROM due_date::timestamp - NOW()) / 86400.0 <= ?
     ORDER BY due_date ASC
     LIMIT 15
   `, alertDays) as Array<{
@@ -200,7 +201,7 @@ async function readQualitySignals(db: DatabaseAdapter, declineThreshold: number)
            COUNT(*) as sample_count
     FROM quality_scores qs
     JOIN quality_baselines qb ON qb.module_id = qs.module_id
-    WHERE qs.scored_at >= datetime('now', '-14 days')
+    WHERE qs.scored_at >= NOW() - INTERVAL '14 days'
     GROUP BY qs.module_id
     HAVING qb.baseline_score - AVG(qs.score_overall) >= ? AND COUNT(*) >= 2
     ORDER BY decline DESC
@@ -277,11 +278,11 @@ async function readComplianceSignals(db: DatabaseAdapter): Promise<PlatformSigna
 async function readAssignmentSignals(db: DatabaseAdapter): Promise<PlatformSignal[]> {
   const rows = await db.all(`
     SELECT id, assigned_to, execution_id, due_at, notes,
-           julianday('now') - julianday(due_at) as days_overdue
+           EXTRACT(EPOCH FROM NOW() - due_at::timestamp) / 86400.0 as days_overdue
     FROM step_assignments
     WHERE status = 'pending'
       AND due_at IS NOT NULL
-      AND due_at < datetime('now')
+      AND due_at < NOW()
     ORDER BY due_at ASC
     LIMIT 10
   `) as Array<{
@@ -378,7 +379,7 @@ async function readKnowledgeGraphSignals(db: DatabaseAdapter): Promise<PlatformS
              )) as relationship_count
       FROM entity_nodes en
       WHERE en.interaction_count >= 5
-        AND en.last_seen >= datetime('now', '-7 days')
+        AND en.last_seen >= NOW() - INTERVAL '7 days'
       ORDER BY en.interaction_count DESC
       LIMIT 5
     `) as Array<{
@@ -456,6 +457,80 @@ async function readTaskAgentSignals(db: DatabaseAdapter, since: Date): Promise<P
   }
 }
 
+/** Read market signals: high-severity patterns, expired predictions, regime changes */
+async function readMarketSignals(db: DatabaseAdapter, since: Date): Promise<PlatformSignal[]> {
+  const signals: PlatformSignal[] = [];
+
+  // 1. High-severity pattern detections
+  const patterns = await db.all(`
+    SELECT id, pattern_type, title, description, severity, confidence, detected_at
+    FROM market_pattern_detections
+    WHERE status = 'new' AND severity IN ('high', 'critical') AND detected_at >= ?
+    ORDER BY detected_at DESC LIMIT 8
+  `, since.toISOString()) as Array<{
+    id: string; pattern_type: string; title: string; description: string;
+    severity: string; confidence: number; detected_at: string;
+  }>;
+
+  for (const p of patterns) {
+    signals.push({
+      source: 'market',
+      signal_id: p.id,
+      summary: `Market pattern detected (${p.severity}): ${p.title} — ${p.description.substring(0, 120)}`,
+      urgency: p.severity === 'critical' ? 0.8 : 0.5 + (p.confidence * 0.3),
+      relevance: 0.7,
+      detected_at: p.detected_at,
+      raw_data: { type: 'pattern', pattern_type: p.pattern_type, severity: p.severity, confidence: p.confidence },
+    });
+  }
+
+  // 2. Predictions expired unvalidated
+  const expired = await db.all(`
+    SELECT id, title, predicted_outcome, confidence, deadline
+    FROM market_predictions
+    WHERE status = 'active' AND deadline < ?
+    ORDER BY deadline DESC LIMIT 8
+  `, new Date().toISOString()) as Array<{
+    id: string; title: string; predicted_outcome: string; confidence: number; deadline: string;
+  }>;
+
+  for (const e of expired) {
+    signals.push({
+      source: 'market',
+      signal_id: e.id,
+      summary: `Market prediction expired unvalidated: "${e.title}" — predicted: ${e.predicted_outcome} (deadline: ${e.deadline})`,
+      urgency: 0.4 + (e.confidence * 0.2),
+      relevance: 0.6,
+      detected_at: e.deadline,
+      raw_data: { type: 'expired_prediction', prediction_id: e.id, confidence: e.confidence },
+    });
+  }
+
+  // 3. Recent regime changes (no ended_at = still active)
+  const regimes = await db.all(`
+    SELECT id, regime_type, confidence, impact_description, started_at
+    FROM market_regime_history
+    WHERE ended_at IS NULL AND started_at >= ?
+    ORDER BY started_at DESC LIMIT 5
+  `, since.toISOString()) as Array<{
+    id: string; regime_type: string; confidence: number; impact_description: string | null; started_at: string;
+  }>;
+
+  for (const r of regimes) {
+    signals.push({
+      source: 'market',
+      signal_id: r.id,
+      summary: `Market regime change detected: ${r.regime_type}${r.impact_description ? ` — ${r.impact_description.substring(0, 100)}` : ''}`,
+      urgency: 0.7,
+      relevance: 0.8,
+      detected_at: r.started_at,
+      raw_data: { type: 'regime_change', regime_type: r.regime_type, confidence: r.confidence },
+    });
+  }
+
+  return signals;
+}
+
 // ── Signal Aggregation ────────────────────────────────────────────────────────
 
 export async function aggregateSignals(
@@ -481,6 +556,7 @@ export async function aggregateSignals(
     safeRead(() => readProactiveSignals(db)),
     safeRead(() => readKnowledgeGraphSignals(db)),
     safeRead(() => readTaskAgentSignals(db, since)),
+    safeRead(() => readMarketSignals(db, since)),
   ]);
 
   const allSignals: PlatformSignal[] = results.flat();
@@ -589,7 +665,7 @@ export async function generateBriefing(
         FROM knowledge_atoms ka
         LEFT JOIN workflow_outputs wo ON wo.id = ka.source_output_id
         WHERE ka.is_active = 1
-          AND ka.created_at >= datetime('now', '-14 days')
+          AND ka.created_at >= NOW() - INTERVAL '14 days'
           AND ka.confidence >= 0.6
         ORDER BY ka.confidence DESC, ka.created_at DESC
         LIMIT 25
@@ -708,7 +784,7 @@ export async function saveBriefing(
     UPDATE orchestrator_stage SET
       total_briefings = total_briefings + 1,
       total_proposals = total_proposals + ?,
-      updated_at = datetime('now')
+      updated_at = NOW()
     WHERE id = 'default'
   `, cappedProposals.length);
 
@@ -1179,9 +1255,9 @@ export async function logTrailToAuditLog(
     if (!tableExists) return;
 
     await db.run(`
-      INSERT OR IGNORE INTO audit_log
+      INSERT INTO audit_log
         (id, timestamp, module_id, response_status, knowledge_sources_used)
-      VALUES (?, datetime('now'), 'orchestrator', ?, ?)
+      VALUES (?, NOW(), 'orchestrator', ?, ?)
     `,
       randomUUID(),
       trail.status === 'completed' ? 'completed' : 'error',
@@ -1480,21 +1556,21 @@ export async function runHeartbeatCycle(
             await db.run(`
               INSERT INTO orchestrator_executions
                 (id, proposal_id, status, outcome, started_at)
-              VALUES (?, ?, 'completed', 'auto_executed', datetime('now'))
+              VALUES (?, ?, 'completed', 'auto_executed', NOW())
             `, execId, ap.id);
 
             // Mark detection as auto-executed
             await db.run(`
               UPDATE orchestrator_pattern_detections SET auto_executed = 1
               WHERE pattern_id = ? AND auto_executed = 0
-                AND detected_at >= datetime('now', '-1 day')
+                AND detected_at >= NOW() - INTERVAL '1 day'
             `, ap.id);
 
             // Increment auto_executions counter
             await db.run(`
               UPDATE orchestrator_stage SET
                 auto_executions = auto_executions + 1,
-                updated_at = datetime('now')
+                updated_at = NOW()
               WHERE id = 'default'
             `);
 
@@ -1510,7 +1586,7 @@ export async function runHeartbeatCycle(
       if (pause) {
         await db.run(`
           UPDATE orchestrator_config SET
-            orchestrator_paused = 1, paused_at = datetime('now'), paused_by = 'auto_quality_check', updated_at = datetime('now')
+            orchestrator_paused = 1, paused_at = NOW(), paused_by = 'auto_quality_check', updated_at = NOW()
           WHERE id = 'default'
         `);
         console.warn(`[orchestrator] AUTO-PAUSED: ${reason}`);

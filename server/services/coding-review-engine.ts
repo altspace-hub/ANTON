@@ -107,7 +107,7 @@ export async function createCodingReviewEngine(db: DatabaseAdapter) {
   async function updateFindings(sessionId: string, findings: Record<string, unknown>, tokensConsumed: { input: number; output: number; cost_usd: number }) {
     await db.run(`
       UPDATE code_review_sessions
-      SET findings_summary = ?, tokens_consumed = ?, updated_at = datetime('now')
+      SET findings_summary = ?, tokens_consumed = ?, updated_at = NOW()
       WHERE id = ?
     `, JSON.stringify(findings), JSON.stringify(tokensConsumed), sessionId);
   }

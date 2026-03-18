@@ -81,7 +81,7 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Route
         return;
       }
 
-      updates.push("updated_at = datetime('now')");
+      updates.push("updated_at = NOW()");
       values.push(req.params.id);
 
       await db.run(`UPDATE instruction_builder_projects SET ${updates.join(', ')} WHERE id = ?`, ...values);
@@ -132,10 +132,10 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Route
         try {
           const structured = JSON.parse(structuredMatch[1]);
           if (structured.vision_goals) {
-            await db.run("UPDATE instruction_builder_projects SET vision_goals = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify({ ...existingGoals, ...structured.vision_goals }), req.params.id);
+            await db.run("UPDATE instruction_builder_projects SET vision_goals = ?, updated_at = NOW() WHERE id = ?", JSON.stringify({ ...existingGoals, ...structured.vision_goals }), req.params.id);
           }
           if (structured.discovery_notes) {
-            await db.run("UPDATE instruction_builder_projects SET discovery_notes = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify({ ...existingNotes, ...structured.discovery_notes }), req.params.id);
+            await db.run("UPDATE instruction_builder_projects SET discovery_notes = ?, updated_at = NOW() WHERE id = ?", JSON.stringify({ ...existingNotes, ...structured.discovery_notes }), req.params.id);
           }
         } catch { /* ignore parse failures */ }
       }
@@ -190,7 +190,7 @@ Format as well-structured Markdown. Be specific and actionable.`,
       });
 
       // Save architecture proposal
-      await db.run("UPDATE instruction_builder_projects SET architecture_proposal = ?, status = 'architecture', updated_at = datetime('now') WHERE id = ?", result.text, req.params.id);
+      await db.run("UPDATE instruction_builder_projects SET architecture_proposal = ?, status = 'architecture', updated_at = NOW() WHERE id = ?", result.text, req.params.id);
 
       res.json({
         proposal: result.text,
@@ -257,7 +257,7 @@ Format your response as:
 
         // Save to coding_reviews table
         await db.run(`INSERT INTO coding_reviews (id, coding_project_id, reviewer_persona_id, review_type, verdict, findings, recommendations, status, review_completed_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', datetime('now'))`
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', NOW())`
         , 
           reviewId,
           project.coding_project_id || project.id,
@@ -279,7 +279,7 @@ Format your response as:
       }
 
       // Update project status
-      await db.run("UPDATE instruction_builder_projects SET status = 'review', review_cycle_count = review_cycle_count + 1, updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE instruction_builder_projects SET status = 'review', review_cycle_count = review_cycle_count + 1, updated_at = NOW() WHERE id = ?", req.params.id);
 
       res.json({ reviews });
     } catch (error) {
@@ -378,7 +378,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
       }
 
       // Update project status
-      await db.run("UPDATE instruction_builder_projects SET status = 'generated', updated_at = datetime('now') WHERE id = ?", req.params.id);
+      await db.run("UPDATE instruction_builder_projects SET status = 'generated', updated_at = NOW() WHERE id = ?", req.params.id);
 
       // Fetch all files
 
@@ -437,7 +437,7 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
         return;
       }
 
-      updates.push("updated_at = datetime('now')");
+      updates.push("updated_at = NOW()");
       values.push(req.params.id);
 
       await db.run(`UPDATE tool_profiles SET ${updates.join(', ')} WHERE id = ?`, ...values);

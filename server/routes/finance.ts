@@ -72,7 +72,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
       const { symbol, name, asset_type, currency, target_price, notes } = req.body as Record<string, unknown>;
       const id = `fw_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       await db.run(
-        `INSERT OR IGNORE INTO finance_watchlist (id, user_id, symbol, name, asset_type, currency, target_price, notes) VALUES (?,?,?,?,?,?,?,?)`
+        `INSERT INTO finance_watchlist (id, user_id, symbol, name, asset_type, currency, target_price, notes) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`
       , id, 'default',
         String(symbol || '').toUpperCase(),
         name   ?? null,
@@ -162,7 +162,7 @@ export async function createFinanceRoutes(db: DatabaseAdapter, anthropic?: Anthr
       const completedUnits: string[] = existing ? JSON.parse((existing.completed_units as string) || '[]') : [];
       if (completed_unit && !completedUnits.includes(completed_unit)) completedUnits.push(completed_unit);
       const id = existing ? (existing.id as string) : `flp_${Date.now()}`;
-      await db.run(`INSERT OR REPLACE INTO finance_learning_progress (id, user_id, topic_id, completed_units, score) VALUES (?,?,?,?,?)`
+      await db.run(`INSERT INTO finance_learning_progress (id, user_id, topic_id, completed_units, score) VALUES (?,?,?,?,?) ON CONFLICT (id) DO UPDATE SET completed_units = EXCLUDED.completed_units, score = EXCLUDED.score`
       , 
         id, 'default', topic_id,
         JSON.stringify(completedUnits),

@@ -32,12 +32,12 @@ export async function getUnreadCount(db: DatabaseAdapter, userId: string = 'solo
 }
 
 export async function markRead(db: DatabaseAdapter, notificationId: string): Promise<void> {
-  await db.run("UPDATE notifications SET read_at = datetime('now') WHERE id = ?"
+  await db.run("UPDATE notifications SET read_at = NOW() WHERE id = ?"
   , notificationId);
 }
 
 export async function markAllRead(db: DatabaseAdapter, userId: string = 'solo'): Promise<void> {
   await db.run(
-    "UPDATE notifications SET read_at = datetime('now') WHERE user_id = ? AND read_at IS NULL"
+    "UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL"
   , userId);
 }

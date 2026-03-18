@@ -95,7 +95,7 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
 
       const userId = getUserId(req);
       await db.run(
-        'INSERT OR REPLACE INTO registered_folders (path, label, file_count, last_indexed, user_id) VALUES (?, ?, ?, datetime("now"), ?)'
+        'INSERT INTO registered_folders (path, label, file_count, last_indexed, user_id) VALUES (?, ?, ?, NOW(), ?) ON CONFLICT(path, user_id) DO UPDATE SET label = EXCLUDED.label, file_count = EXCLUDED.file_count, last_indexed = NOW()'
       , folderPath, label || path.basename(folderPath), fileCount, userId);
 
       const folder = await db.get('SELECT * FROM registered_folders WHERE path = ? AND user_id = ?', folderPath, userId);

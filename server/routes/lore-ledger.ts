@@ -318,8 +318,9 @@ Please analyse the text for consistency with the lore ledger above.`;
       for (const entry of entries) {
         if (!entry.name?.trim()) continue;
         await db.run(
-          `INSERT OR IGNORE INTO lore_ledger_entries (id, user_id, session_id, project_id, entry_type, name, summary, properties, tags, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO lore_ledger_entries (id, user_id, session_id, project_id, entry_type, name, summary, properties, tags, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT DO NOTHING`
         , crypto.randomUUID(), userId,
           entry.session_id ?? null,
           project_id ?? entry.project_id ?? null,

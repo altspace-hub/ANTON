@@ -154,7 +154,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
     try {
       const invitation = await db.all(`
         SELECT * FROM project_invitations
-        WHERE token = ? AND status = 'pending' AND expires_at > datetime('now')
+        WHERE token = ? AND status = 'pending' AND expires_at > NOW()
       `, req.params.token) as {
         id: string;
         project_id: string;

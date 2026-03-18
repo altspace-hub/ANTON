@@ -453,7 +453,7 @@ async function checkAndAwardAchievements(
       if (earned.has(id)) return;
       earned.add(id);
       try {
-        await db.run('INSERT OR IGNORE INTO student_achievements (id, student_user_id, achievement_id, earned_at) VALUES (?, ?, ?, ?)', crypto.randomUUID(), userId, id, now);
+        await db.run('INSERT INTO student_achievements (id, student_user_id, achievement_id, earned_at) VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING', crypto.randomUUID(), userId, id, now);
       } catch { /* ignore */ }
     }
 
@@ -581,7 +581,7 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
         { id: 'season-summer-2027', name: 'Summer Quest',   emoji: '☀️', start: '2027-06-01', end: '2027-08-31', mult: 1.25, desc: 'Keep learning through summer — 25% XP boost to stay sharp!' },
       ];
       for (const s of seasons) {
-        await db.run(`INSERT OR IGNORE INTO xp_seasons (id, name, emoji, start_date, end_date, xp_multiplier, description, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+        await db.run(`INSERT INTO xp_seasons (id, name, emoji, start_date, end_date, xp_multiplier, description, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1) ON CONFLICT DO NOTHING`,
           s.id, s.name, s.emoji, s.start, s.end, s.mult, s.desc);
       }
     }
@@ -976,7 +976,7 @@ Provide a structured evaluation with these exact sections:
          FROM teacher_assignments ta
          JOIN school_classes sc ON sc.id = ta.class_id
          JOIN class_enrollments ce ON ce.class_id = ta.class_id
-         WHERE ce.student_user_id = ? AND (ta.due_date IS NULL OR ta.due_date >= DATE('now'))
+         WHERE ce.student_user_id = ? AND (ta.due_date IS NULL OR ta.due_date >= CURRENT_DATE)
          ORDER BY ta.due_date ASC
          LIMIT 5`
       , userId) as Record<string, unknown>[];
@@ -1495,10 +1495,11 @@ Provide a structured evaluation with these exact sections:
       if (!existingA) {
         try {
           await db.run(
-            `INSERT OR IGNORE INTO teacher_assignments
+            `INSERT INTO teacher_assignments
                (id, teacher_user_id, class_id, title, description, assignment_type, subject_id,
                 questions, total_marks, assistance_level_override, due_date, content, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT DO NOTHING`
           ,
             assignmentId, 'imported',
             (bundle.classConfig?.classId as string) || '',
@@ -1518,9 +1519,10 @@ Provide a structured evaluation with these exact sections:
 
       const submissionId = crypto.randomUUID();
       await db.run(
-        `INSERT OR IGNORE INTO assignment_submissions
+        `INSERT INTO assignment_submissions
            (id, assignment_id, student_user_id, answers, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 'draft', ?, ?)`
+         VALUES (?, ?, ?, ?, 'draft', ?, ?)
+         ON CONFLICT DO NOTHING`
       , submissionId, assignmentId, userId, '{}', now, now);
 
       res.status(201).json({ submissionId, assignmentId, assignment: bundle.assignment, classConfig: bundle.classConfig });
@@ -2433,7 +2435,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
       const id = crypto.randomUUID();
       try {
         await db.run(
-          `INSERT OR IGNORE INTO student_daily_quests (id, student_user_id, quest_type, quest_date, target, progress, completed, xp_reward, created_at) VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)`
+          `INSERT INTO student_daily_quests (id, student_user_id, quest_type, quest_date, target, progress, completed, xp_reward, created_at) VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?) ON CONFLICT DO NOTHING`
         , id, userId, def.quest_type, today, def.target, def.xp_reward, now);
       } catch {}
       quests.push({ id, quest_type: def.quest_type, target: def.target, progress: 0, completed: 0, xp_reward: def.xp_reward });
@@ -2992,8 +2994,9 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
 
         for (const card of cards) {
           if (!card.front || !card.back) continue;
-          await db.run(`INSERT OR IGNORE INTO review_cards (id, student_user_id, subject_id, front, back, source, due_date, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          await db.run(`INSERT INTO review_cards (id, student_user_id, subject_id, front, back, source, due_date, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT DO NOTHING`
           , crypto.randomUUID(), userId, card.subject_id ?? 'mixed', card.front, card.back, card.source ?? 'imported', today, now);
           imported.count++;
         }
@@ -3218,7 +3221,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       if (body.completed_block && !completed.includes(body.completed_block)) completed.push(body.completed_block);
       const id = existing ? (existing.id as string) : `lp_${Date.now()}`;
       const status = body.status || (existing?.status as string) || 'in_progress';
-      await db.run(`INSERT OR REPLACE INTO school_lesson_progress (id, lesson_id, student_user_id, status, completed_blocks, score, time_spent_seconds, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?)`, 
+      await db.run(`INSERT INTO school_lesson_progress (id, lesson_id, student_user_id, status, completed_blocks, score, time_spent_seconds, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, completed_blocks = EXCLUDED.completed_blocks, score = EXCLUDED.score, time_spent_seconds = EXCLUDED.time_spent_seconds, completed_at = EXCLUDED.completed_at`, 
         id, req.params.id, studentId, status, JSON.stringify(completed),
         body.score ?? (existing?.score as number ?? null),
         (body.time_spent_seconds ?? 0) + ((existing?.time_spent_seconds as number) ?? 0),

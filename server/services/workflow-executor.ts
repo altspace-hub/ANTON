@@ -34,6 +34,10 @@ const HEADLESS_STEP_TYPES = new Set([
   'notification',
   'email_send',
   'messaging_notification',
+  'script',
+  'llm',
+  'parallel',
+  'approval',
 ]);
 
 // Step types that require frontend/user interaction
@@ -119,8 +123,49 @@ export async function executeScheduledWorkflow(
         continue;
       }
 
+      // Approval gate: pause execution and wait for external approval
+      if (stepType === 'approval') {
+        console.log(`[workflow-executor] Pausing at approval step ${stepIndex}: ${step.label}`);
+        updateRun(db, runId, 'awaiting_approval', `Paused at step ${stepIndex} (${step.label}) — awaiting approval`);
+        // Store step index so we can resume from here
+        try {
+          await db.run(
+            "UPDATE workflow_runs SET error_message = ? WHERE id = ?",
+            JSON.stringify({ awaitingStep: stepIndex, stepLabel: step.label }),
+            runId
+          );
+        } catch { /* non-fatal */ }
+        return { success: true, runId, stepsCompleted, stepsSkipped };
+      }
+
       try {
-        const { output, skippedToStepId } = await executeHeadlessStep(step, context, db, runId);
+        // Retry with exponential backoff for transient errors
+        let lastErr: Error | null = null;
+        let output: Record<string, unknown> = {};
+        let skippedToStepId: string | undefined;
+        const maxRetries = 3;
+        const retryDelays = [2000, 4000, 8000];
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            const result = await executeHeadlessStep(step, context, db, runId);
+            output = result.output;
+            skippedToStepId = result.skippedToStepId;
+            lastErr = null;
+            break;
+          } catch (retryErr) {
+            lastErr = retryErr instanceof Error ? retryErr : new Error(String(retryErr));
+            // Only retry on transient errors (network/rate-limit/server errors)
+            const msg = lastErr.message.toLowerCase();
+            const isTransient = msg.includes('timeout') || msg.includes('econnreset') ||
+              msg.includes('429') || msg.includes('503') || msg.includes('502') ||
+              msg.includes('network') || msg.includes('abort');
+            if (!isTransient || attempt === maxRetries - 1) throw lastErr;
+            console.warn(`[workflow-executor] Step ${stepIndex} attempt ${attempt + 1} failed (transient), retrying in ${retryDelays[attempt]}ms...`);
+            await new Promise(r => setTimeout(r, retryDelays[attempt]));
+          }
+        }
+        if (lastErr) throw lastErr;
 
         // Merge output into context
         const outputVar = step.config?.outputVariable;
@@ -147,7 +192,7 @@ export async function executeScheduledWorkflow(
             }
             await db.run(`
               INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
-              VALUES (?, ?, ?, 'pending', ?, datetime('now'))
+              VALUES (?, ?, ?, 'pending', ?, NOW())
             `, newRunId,
               trigger.workflowId,
               JSON.stringify({ type: 'event', source: 'step_complete', triggeredBy: runId, stepId: step.id, label: trigger.label || '', variables: triggerVars }),
@@ -512,6 +557,120 @@ async function executeHeadlessStep(
       }
     }
 
+    case 'script': {
+      const cfg = step.config as Record<string, unknown>;
+      const outputVar = (cfg.outputVariable as string) || 'script_result';
+
+      if (cfg.template) {
+        // Run a computation template
+        const { createMarketComputationService } = await import('./market-computation-service.js');
+        const computationService = await createMarketComputationService(db);
+        const params = (cfg.params as Record<string, unknown>) || {};
+        // Merge context vars into params
+        const mergedParams: Record<string, unknown> = { ...params };
+        for (const [k, v] of Object.entries(mergedParams)) {
+          if (typeof v === 'string' && v.startsWith('{{')) {
+            mergedParams[k] = resolveTemplate(v, context);
+          }
+        }
+        const result = await computationService.runTemplate(
+          cfg.template as string,
+          mergedParams,
+          'workflow'
+        );
+        return { output: { [outputVar]: result.output, success: result.success, error: result.error } };
+      } else if (cfg.endpoint) {
+        // Make internal HTTP POST to local endpoint
+        const port = process.env.PORT || 3001;
+        const url = `http://localhost:${port}${cfg.endpoint}`;
+        const method = (cfg.method as string || 'POST').toUpperCase();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 60000);
+        try {
+          const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: method !== 'GET' ? JSON.stringify(cfg.body || {}) : undefined,
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          const data = await response.json().catch(() => ({}));
+          return { output: { [outputVar]: data, status: response.status, ok: response.ok } };
+        } catch (err) {
+          clearTimeout(timeout);
+          throw new Error(`Script endpoint call failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      } else {
+        throw new Error('Script step requires either "template" or "endpoint" in config');
+      }
+    }
+
+    case 'llm': {
+      const cfg = step.config as Record<string, unknown>;
+      const outputVar = (cfg.outputVariable as string) || 'llm_result';
+      const promptName = cfg.prompt as string;
+      if (!promptName) throw new Error('LLM step requires "prompt" in config');
+
+      // Read system prompt file
+      const promptPath = path.join(__dirname, '..', 'prompts', `${promptName}.md`);
+      let systemPrompt: string;
+      try {
+        systemPrompt = fs.readFileSync(promptPath, 'utf-8');
+      } catch {
+        systemPrompt = `You are an expert market analyst. Task: ${promptName}`;
+      }
+
+      // Build user message from context
+      const userMessage = cfg.userMessage
+        ? resolveTemplate(cfg.userMessage as string, context)
+        : `Analyze the following context and provide insights:\n\n${JSON.stringify(context, null, 2).slice(0, 8000)}`;
+
+      // Use cost-efficient model for headless LLM calls
+      const { callChat } = await import('./provider-router.js');
+      const result = await callChat({
+        model: (cfg.model as string) || 'claude-haiku-4-5-20251001',
+        systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+        maxTokens: (cfg.maxTokens as number) || 4096,
+        thinkingLevel: (cfg.thinking as string) || undefined,
+      });
+
+      return { output: { [outputVar]: result.text, model: result.model } };
+    }
+
+    case 'parallel': {
+      const cfg = step.config as Record<string, unknown>;
+      const templates = (cfg.templates as string[]) || [];
+      const outputVar = (cfg.outputVariable as string) || 'parallel_results';
+
+      if (templates.length === 0) {
+        return { output: { [outputVar]: [], note: 'No templates specified' } };
+      }
+
+      const { createMarketComputationService } = await import('./market-computation-service.js');
+      const computationService = await createMarketComputationService(db);
+      const params = (cfg.params as Record<string, unknown>) || {};
+
+      const results = await Promise.allSettled(
+        templates.map(templateName =>
+          computationService.runTemplate(templateName, params, 'workflow')
+        )
+      );
+
+      const outputs = results.map((r, i) => ({
+        template: templates[i],
+        success: r.status === 'fulfilled' ? r.value.success : false,
+        output: r.status === 'fulfilled' ? r.value.output : null,
+        error: r.status === 'fulfilled' ? r.value.error : (r.reason instanceof Error ? r.reason.message : String(r.reason)),
+      }));
+
+      return { output: { [outputVar]: outputs } };
+    }
+
+    case 'approval':
+      // This shouldn't be reached since we handle it above, but provide fallback
+      return { output: { status: 'awaiting_approval', step: step.label } };
+
     default:
       return { output: { status: 'unsupported_step_type', type: step.type } };
   }
@@ -546,7 +705,7 @@ async function updateRun(
 ): void {
   try {
     await db.run(`
-      UPDATE workflow_runs SET status = ?, completed_at = datetime('now'), error_message = ? WHERE id = ?
+      UPDATE workflow_runs SET status = ?, completed_at = NOW(), error_message = ? WHERE id = ?
     `, status, errorMessage || null, runId);
   } catch {
     console.warn(`[workflow-executor] Could not update run ${runId}`);

@@ -81,7 +81,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     // Check for too many recent failed attempts (account lockout)
     const recentFails = await db.get(`
       SELECT COUNT(*) as count FROM login_attempts
-      WHERE username = ? AND success = 0 AND attempted_at > datetime('now', '-15 minutes')
+      WHERE username = ? AND success = 0 AND attempted_at > NOW() - INTERVAL '15 minutes'
     `, username) as { count: number };
 
     if (recentFails.count >= 5) {
@@ -193,7 +193,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
   router.post('/auth/reset-password', validate(ResetPasswordSchema), async (req, res) => {
     const { token, newPassword } = req.body as { token: string; newPassword: string };
 
-    const record = await db.get(`SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')`
+    const record = await db.get(`SELECT * FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > NOW()`
     , token) as Record<string, unknown> | undefined;
 
     if (!record) {
@@ -235,7 +235,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
     const session = await db.get(`SELECT u.id, u.username, u.role, u.display_name FROM user_sessions s
        JOIN users u ON s.user_id = u.id
-       WHERE s.token = ? AND s.expires_at > datetime('now')`
+       WHERE s.token = ? AND s.expires_at > NOW()`
     , token) as Record<string, unknown> | undefined;
     if (!session) { res.status(401).json({ error: 'Session expired' }); return; }
     res.json(session);
@@ -253,7 +253,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     const session = await db.get(
       `SELECT u.id FROM user_sessions s
        JOIN users u ON s.user_id = u.id
-       WHERE s.token = ? AND s.expires_at > datetime('now')`
+       WHERE s.token = ? AND s.expires_at > NOW()`
     , token) as { id: string } | undefined;
 
     if (!session) { res.status(401).json({ error: 'Session expired' }); return; }
@@ -545,7 +545,8 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
 
       // Store pending secret (not active until confirmed)
       await db.run(`
-        INSERT OR REPLACE INTO mfa_pending (user_id, secret) VALUES (?, ?)
+        INSERT INTO mfa_pending (user_id, secret) VALUES (?, ?)
+        ON CONFLICT (user_id) DO UPDATE SET secret = EXCLUDED.secret
       `, userId, secret.base32);
 
       const otpAuthUrl = secret.otpauth_url!;
@@ -664,7 +665,7 @@ async function acceptPendingInvitations(db: Database, userId: string, email: str
   try {
     const pending = await db.get(`
       SELECT * FROM project_invitations
-      WHERE email = ? AND status = 'pending' AND expires_at > datetime('now')
+      WHERE email = ? AND status = 'pending' AND expires_at > NOW()
     `, email) as Array<{ id: string; project_id: string; role: string; invited_by: string }>;
 
     for (const inv of pending) {

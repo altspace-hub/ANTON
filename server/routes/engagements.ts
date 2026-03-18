@@ -197,7 +197,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
       const userRole = getUserRole(req);
       if (!canEdit(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
-      const updates: string[] = ['updated_at = datetime(\'now\')'];
+      const updates: string[] = ['updated_at = NOW()'];
       const values: unknown[] = [];
       if (status !== undefined) { updates.push('status = ?'); values.push(status); }
       if (title !== undefined) { updates.push('title = ?'); values.push(title); }
@@ -230,7 +230,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
       const userRole = getUserRole(req);
       if (!canEdit(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
-      await db.run("UPDATE engagements SET status = 'archived', updated_at = datetime('now') WHERE id = ?", String(req.params.id));
+      await db.run("UPDATE engagements SET status = 'archived', updated_at = NOW() WHERE id = ?", String(req.params.id));
       res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -253,7 +253,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
         const project = await db.get('SELECT id FROM projects WHERE id = ?', project_id);
         if (!project) return res.status(404).json({ error: 'Project not found' });
       }
-      await db.run("UPDATE engagements SET project_id = ?, updated_at = datetime('now') WHERE id = ?", project_id || null, String(req.params.id));
+      await db.run("UPDATE engagements SET project_id = ?, updated_at = NOW() WHERE id = ?", project_id || null, String(req.params.id));
       logChange(String(req.params.id), 'setup', project_id ? 'project_linked' : 'project_unlinked',
         project_id ? `Linked to project ${project_id}` : 'Unlinked from project');
       const updated = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id));
@@ -273,7 +273,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
       const id = randomUUID();
       await db.run(`INSERT INTO engagement_documents (id, engagement_id, document_type, file_path, file_name)
         VALUES (?, ?, ?, ?, ?)`, id, String(req.params.id), document_type, req.file.path, req.file.originalname);
-      await db.run("UPDATE engagements SET updated_at = datetime('now') WHERE id = ?", String(req.params.id));
+      await db.run("UPDATE engagements SET updated_at = NOW() WHERE id = ?", String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'document_uploaded', `Uploaded ${document_type}: ${req.file.originalname}`);
       const doc = await db.get('SELECT * FROM engagement_documents WHERE id = ?', id);
       res.json(doc);
@@ -470,11 +470,11 @@ Return ONLY valid JSON, no explanation.`;
             }
           }
           // Update engagement_brief
-          await db.run("UPDATE engagements SET engagement_brief = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
+          await db.run("UPDATE engagements SET engagement_brief = ?, updated_at = NOW() WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
         }
         // For good_example: update quality_blueprint
         if (doc.document_type === 'good_example') {
-          await db.run("UPDATE engagements SET quality_blueprint = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
+          await db.run("UPDATE engagements SET quality_blueprint = ?, updated_at = NOW() WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
         }
         logChange(String(req.params.id), 'setup', 'document_extracted', `Extracted ${doc.document_type}: ${doc.file_name}`);
         res.json({ ok: true, extracted });
@@ -543,7 +543,7 @@ Return ONLY valid JSON, no explanation.`;
         isTextNote ? 'reviewed' : 'uploaded',
         isTextNote ? String(text_content).slice(0, 50000) : null
       );
-      await db.run("UPDATE engagements SET updated_at = datetime('now') WHERE id = ?", String(req.params.id));
+      await db.run("UPDATE engagements SET updated_at = NOW() WHERE id = ?", String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'resource_added', `Added ${category} resource: ${resourceTitle}`);
       // Auto-extract text if file uploaded
       if (req.file) {
@@ -582,7 +582,7 @@ Return ONLY valid JSON, no explanation.`;
       const { category, workstream_id, status, notes } = req.body;
       const existing = await db.get('SELECT * FROM engagement_resource_categories WHERE engagement_id = ? AND category = ?', String(req.params.id), category);
       if (existing) {
-        await db.run("UPDATE engagement_resource_categories SET status = ?, notes = ?, updated_at = datetime('now') WHERE engagement_id = ? AND category = ?", status, notes || null, String(req.params.id), category);
+        await db.run("UPDATE engagement_resource_categories SET status = ?, notes = ?, updated_at = NOW() WHERE engagement_id = ? AND category = ?", status, notes || null, String(req.params.id), category);
       } else {
         await db.run(`INSERT INTO engagement_resource_categories (id, engagement_id, workstream_id, category, status, notes)
           VALUES (?, ?, ?, ?, ?, ?)`, randomUUID(), String(req.params.id), workstream_id || null, category, status, notes || null);
@@ -615,7 +615,7 @@ Return ONLY valid JSON, no explanation.`;
       }
 
       const result = await indexFolder(db, normalised);
-      await db.run(`UPDATE engagements SET rag_directory_path = ?, updated_at = datetime('now') WHERE id = ?`, normalised, String(req.params.id));
+      await db.run(`UPDATE engagements SET rag_directory_path = ?, updated_at = NOW() WHERE id = ?`, normalised, String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_set', `RAG directory: ${normalised}`);
       res.json({ ok: true, folderPath: normalised, ...result });
     } catch (e) {
@@ -626,7 +626,7 @@ Return ONLY valid JSON, no explanation.`;
   // DELETE /:id/rag-directory — remove RAG directory from this engagement
   router.delete('/:id/rag-directory', async (req: Request, res: Response) => {
     try {
-      await db.run(`UPDATE engagements SET rag_directory_path = NULL, updated_at = datetime('now') WHERE id = ?`, String(req.params.id));
+      await db.run(`UPDATE engagements SET rag_directory_path = NULL, updated_at = NOW() WHERE id = ?`, String(req.params.id));
       logChange(String(req.params.id), 'resource_collection', 'rag_directory_removed', 'RAG directory removed');
       res.json({ ok: true });
     } catch (e) {
@@ -661,7 +661,7 @@ Return ONLY valid JSON, no explanation.`;
           scale_indicators = ?, regulatory_supervisors = ?, recent_regulatory_history = ?,
           peer_comparators = ?, business_model_description = ?, technology_landscape = ?,
           organisational_context = ?, engagement_trigger = ?, client_maturity_signal = ?,
-          sensitivities = ?, online_research_authorised = ?, source_channels = ?, updated_at = datetime('now')
+          sensitivities = ?, online_research_authorised = ?, source_channels = ?, updated_at = NOW()
           WHERE engagement_id = ?`, 
           data.client_name, data.division_department, data.region_jurisdiction,
           JSON.stringify(data.products_in_scope || []), JSON.stringify(data.scale_indicators || {}),
@@ -917,7 +917,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
         iterationId, String(req.params.id), workstream_id || null, iterationNumber + 1,
         fullContent, fullThinking || null, JSON.stringify(resources.map(r => r.id))
       );
-      await db.run("UPDATE engagements SET status = 'review', updated_at = datetime('now') WHERE id = ?", String(req.params.id));
+      await db.run("UPDATE engagements SET status = 'review', updated_at = NOW() WHERE id = ?", String(req.params.id));
       if (workstream_id) {
         await db.run("UPDATE engagement_workstreams SET execution_status = 'review' WHERE id = ?", workstream_id);
       }
@@ -1475,7 +1475,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
         overallScore, releaseReady ? 1 : 0,
         JSON.stringify(blockers)
       );
-      await db.run("UPDATE engagements SET status = 'quality_gate', updated_at = datetime('now') WHERE id = ?", String(req.params.id));
+      await db.run("UPDATE engagements SET status = 'quality_gate', updated_at = NOW() WHERE id = ?", String(req.params.id));
       logChange(String(req.params.id), 'quality_gate', 'quality_gate_run', `Quality gate completed. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`);
 
       res.write(`data: ${JSON.stringify({ type: 'done', quality_gate_id: qgId, overall_score: overallScore, release_ready: releaseReady, blockers })}\n\n`);

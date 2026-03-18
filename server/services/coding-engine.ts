@@ -894,7 +894,7 @@ Do NOT include any other commentary outside the file blocks and the change summa
       actual.by_phase[phase].output += outputTokens;
       actual.by_phase[phase].cost_usd += costUsd;
 
-      await db.run("UPDATE coding_projects SET cost_actual = ?, updated_at = datetime('now') WHERE id = ?", JSON.stringify(actual), projectId);
+      await db.run("UPDATE coding_projects SET cost_actual = ?, updated_at = NOW() WHERE id = ?", JSON.stringify(actual), projectId);
     } catch (error) {
       console.error('[coding-engine] Token tracking error:', error);
     }

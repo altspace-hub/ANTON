@@ -29,7 +29,7 @@ export async function createDeadlineReminderService(db: DatabaseAdapter) {
       JOIN deadlines d ON r.deadline_id = d.id
       WHERE r.sent_at IS NULL
         AND d.status NOT IN ('completed')
-        AND datetime(d.due_date, '-' || r.remind_days_before || ' days') <= datetime(?)
+        AND d.due_date - (r.remind_days_before || ' days')::INTERVAL <= ?::timestamptz
     `, now.toISOString()) as Array<DeadlineReminder & DeadlineRow>;
 
     let sentCount = 0;

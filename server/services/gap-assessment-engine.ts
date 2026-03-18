@@ -615,9 +615,17 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
     const insertMany = db.transaction(async (items: ArticleFinding[]) => {
       for (const f of items) {
         await db.run(
-      `INSERT OR REPLACE INTO gap_findings
+      `INSERT INTO gap_findings
        (assessment_id, framework, article_id, article_title, requirement, current_state, score, numeric_score, priority, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (assessment_id, framework, article_id) DO UPDATE SET
+         article_title = EXCLUDED.article_title,
+         requirement = EXCLUDED.requirement,
+         current_state = EXCLUDED.current_state,
+         score = EXCLUDED.score,
+         numeric_score = EXCLUDED.numeric_score,
+         priority = EXCLUDED.priority,
+         notes = EXCLUDED.notes`
     , assessmentId, framework, f.articleId, f.articleTitle, f.requirement, f.currentState, f.score, f.numericScore ?? 0, f.priority, f.notes);
       }
     });

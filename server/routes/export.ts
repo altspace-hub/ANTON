@@ -83,10 +83,10 @@ export async function createExportRouter(db: DatabaseAdapter): Router {
 
           // Ensure table exists (idempotent)
           await db.exec(`CREATE TABLE IF NOT EXISTS session_exports (
-            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
             session_id TEXT NOT NULL, module_id TEXT, format TEXT NOT NULL,
             version INTEGER NOT NULL DEFAULT 1, content_hash TEXT NOT NULL,
-            exported_at TEXT NOT NULL DEFAULT (datetime('now')), exported_by TEXT
+            exported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), exported_by TEXT
           )`);
 
           // Look up prior exports for this session

@@ -249,7 +249,7 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       }
       const id = `conn_${Date.now()}`;
       await db.run(
-        `INSERT OR IGNORE INTO community_connections (id, owner_user_id, contact_hash, display_name, public_key, status) VALUES (?,?,?,?,?,?)`
+        `INSERT INTO community_connections (id, owner_user_id, contact_hash, display_name, public_key, status) VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING`
       , id, 'default', contact_hash, display_name || 'Anonymous', public_key, 'active');
       return res.json({ id, ok: true });
     } catch (e) { return res.status(500).json({ error: String(e) }); }

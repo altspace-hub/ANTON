@@ -166,7 +166,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         if (globalCap > 0) {
           const capMonth = new Date().toISOString().slice(0, 7);
           const capSpentRow = await db.get(
-            `SELECT COALESCE(SUM(cost), 0) as total FROM messages WHERE strftime('%Y-%m', created_at) = ?`
+            `SELECT COALESCE(SUM(cost), 0) as total FROM messages WHERE TO_CHAR(created_at, 'YYYY-MM') = ?`
           , capMonth) as { total: number };
           const capSpent = capSpentRow.total ?? 0;
           if (capSpent >= globalCap) {
@@ -180,8 +180,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       if (sessionId && userMessage) {
         try {
           await db.run(
-            `INSERT OR IGNORE INTO messages (id, session_id, role, content, created_at)
-             VALUES (?, ?, 'user', ?, ?)`
+            `INSERT INTO messages (id, session_id, role, content, created_at)
+             VALUES (?, ?, 'user', ?, ?)
+             ON CONFLICT DO NOTHING`
           , crypto.randomUUID(), sessionId, userMessage, new Date().toISOString());
 
           // Update session timestamp
@@ -717,7 +718,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 const uid = req.user?.id || 'default';
                 const p = await db.get('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?', uid, moduleId) as any;
                 if (!p) {
-                  await db.run('INSERT OR IGNORE INTO apprentice_profiles (user_id,module_id,area_id,sessions_completed,last_session) VALUES (?,?,?,1,?)', uid, moduleId, areaId || null, new Date().toISOString());
+                  await db.run('INSERT INTO apprentice_profiles (user_id,module_id,area_id,sessions_completed,last_session) VALUES (?,?,?,1,?) ON CONFLICT DO NOTHING', uid, moduleId, areaId || null, new Date().toISOString());
                 } else {
                   const newCount = p.sessions_completed + 1;
                   await db.run('UPDATE apprentice_profiles SET sessions_completed=?,last_session=? WHERE id=?', newCount, new Date().toISOString(), p.id);
@@ -1512,8 +1513,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             ? `[Deliberation — ${meta.confidence} confidence, ${meta.agreementLevel} agreement]\n\n${userMessage}`
             : userMessage;
           await db.run(
-            `INSERT OR IGNORE INTO messages (id, session_id, role, content, created_at)
-             VALUES (?, ?, 'user', ?, ?)`
+            `INSERT INTO messages (id, session_id, role, content, created_at)
+             VALUES (?, ?, 'user', ?, ?)
+             ON CONFLICT DO NOTHING`
           , crypto.randomUUID(), sessionId, synthesisText, new Date().toISOString());
         } catch { /* non-fatal */ }
       }

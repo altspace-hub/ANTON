@@ -393,19 +393,19 @@ export async function createAuditRoutes(db: DatabaseAdapter) {
     try {
       const period = (req.query.period as string) || 'daily'; // daily, weekly, monthly
 
-      let dateFormat = '%Y-%m-%d';
-      if (period === 'weekly') dateFormat = '%Y-W%W';
-      if (period === 'monthly') dateFormat = '%Y-%m';
+      let dateFormat = 'YYYY-MM-DD';
+      if (period === 'weekly') dateFormat = 'IYYY-"W"IW';
+      if (period === 'monthly') dateFormat = 'YYYY-MM';
 
       const query = `
         SELECT
-          strftime('${dateFormat}', timestamp) as period,
+          TO_CHAR(timestamp, '${dateFormat}') as period,
           COUNT(*) as calls,
           SUM(estimated_cost_usd) as total_cost,
           SUM(input_token_count) as total_input_tokens,
           SUM(output_token_count) as total_output_tokens
         FROM audit_log
-        WHERE timestamp >= date('now', '-30 days')
+        WHERE timestamp >= CURRENT_DATE - INTERVAL '30 days'
         GROUP BY period
         ORDER BY period DESC
       `;

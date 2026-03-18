@@ -36,6 +36,9 @@ const HEADLESS_STEP_TYPES = new Set([
   'notification',
   'email_send',
   'messaging_notification',
+  'script',
+  'llm',
+  'parallel',
 ]);
 
 // ── Poll loop ──────────────────────────────────────────────────────────────
@@ -75,7 +78,7 @@ export async function processPendingEventRuns(db: DatabaseAdapter): Promise<void
       console.error(`[event-processor] Run ${run.id} failed:`, err);
       try {
         await db.run(`
-          UPDATE workflow_runs SET status = 'failed', error_message = ?, completed_at = datetime('now') WHERE id = ?
+          UPDATE workflow_runs SET status = 'failed', error_message = ?, completed_at = NOW() WHERE id = ?
         `, String(err instanceof Error ? err.message : err), run.id);
       } catch { /* non-fatal */ }
     }
@@ -98,7 +101,7 @@ async function executeEventRun(db: DatabaseAdapter, run: PendingEventRun): Promi
 
   if (!defRow) {
     await db.run(`
-      UPDATE workflow_runs SET status = 'failed', error_message = 'Workflow definition not found', completed_at = datetime('now') WHERE id = ?
+      UPDATE workflow_runs SET status = 'failed', error_message = 'Workflow definition not found', completed_at = NOW() WHERE id = ?
     `, run.id);
     console.warn(`[event-processor] Workflow ${run.workflow_id} not found for run ${run.id}`);
     return;
@@ -157,7 +160,7 @@ async function executeEventRun(db: DatabaseAdapter, run: PendingEventRun): Promi
           }
           await db.run(`
             INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, started_at)
-            VALUES (?, ?, ?, 'pending', ?, datetime('now'))
+            VALUES (?, ?, ?, 'pending', ?, NOW())
           `, 
             newRunId,
             trigger.workflowId,
@@ -181,7 +184,7 @@ async function executeEventRun(db: DatabaseAdapter, run: PendingEventRun): Promi
 
   await db.run(`
     UPDATE workflow_runs
-    SET status = 'completed', completed_at = datetime('now'), current_step = ?
+    SET status = 'completed', completed_at = NOW(), current_step = ?
     WHERE id = ?
   `, steps.length, run.id);
 
@@ -238,6 +241,110 @@ async function executeHeadlessStep(
     case 'decision_gate':
     case 'conditional': {
       // Decision gates are treated as pass-through in event mode
+      break;
+    }
+
+    case 'script': {
+      // Run computation template or internal endpoint
+      if (cfg['template']) {
+        try {
+          const { createMarketComputationService } = await import('./market-computation-service.js');
+          const computationService = await createMarketComputationService(db);
+          const params = (cfg['params'] as Record<string, unknown>) || {};
+          const result = await computationService.runTemplate(
+            cfg['template'] as string,
+            params,
+            'event-workflow'
+          );
+          const outputVar = (cfg['outputVariable'] as string) || 'script_result';
+          context[outputVar] = result.output;
+          console.log(`[event-processor] Run ${runId}: script template ${cfg['template']} — ${result.success ? 'success' : result.error}`);
+        } catch (err) {
+          console.warn(`[event-processor] Run ${runId}: script template failed:`, err);
+        }
+      } else if (cfg['endpoint']) {
+        const port = process.env.PORT || 3001;
+        const url = `http://localhost:${port}${cfg['endpoint']}`;
+        const method = (cfg['method'] as string || 'POST').toUpperCase();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+        try {
+          const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: method !== 'GET' ? JSON.stringify(cfg['body'] || {}) : undefined,
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          const data = await response.json().catch(() => ({}));
+          const outputVar = (cfg['outputVariable'] as string) || 'script_result';
+          context[outputVar] = data;
+        } catch (err) {
+          clearTimeout(timeout);
+          console.warn(`[event-processor] Run ${runId}: script endpoint failed:`, err);
+        }
+      }
+      break;
+    }
+
+    case 'llm': {
+      const promptName = cfg['prompt'] as string;
+      if (!promptName) break;
+
+      try {
+        const { readFileSync } = await import('fs');
+        const { join, dirname } = await import('path');
+        const { fileURLToPath } = await import('url');
+        const __dir = dirname(fileURLToPath(import.meta.url));
+        const promptPath = join(__dir, '..', 'prompts', `${promptName}.md`);
+        let systemPrompt: string;
+        try { systemPrompt = readFileSync(promptPath, 'utf-8'); } catch { systemPrompt = `Market analysis: ${promptName}`; }
+
+        const userMessage = cfg['userMessage']
+          ? resolveTemplate(cfg['userMessage'] as string, context)
+          : `Analyze:\n${JSON.stringify(context, null, 2).slice(0, 4000)}`;
+
+        const { callChat } = await import('./provider-router.js');
+        const result = await callChat({
+          model: (cfg['model'] as string) || 'claude-haiku-4-5-20251001',
+          systemPrompt,
+          messages: [{ role: 'user', content: userMessage }],
+          maxTokens: (cfg['maxTokens'] as number) || 2048,
+          thinkingLevel: (cfg['thinking'] as string) || undefined,
+        });
+
+        const outputVar = (cfg['outputVariable'] as string) || 'llm_result';
+        context[outputVar] = result.text;
+        console.log(`[event-processor] Run ${runId}: llm step ${promptName} completed`);
+      } catch (err) {
+        console.warn(`[event-processor] Run ${runId}: llm step failed:`, err);
+      }
+      break;
+    }
+
+    case 'parallel': {
+      const templates = (cfg['templates'] as string[]) || [];
+      if (templates.length === 0) break;
+
+      try {
+        const { createMarketComputationService } = await import('./market-computation-service.js');
+        const computationService = await createMarketComputationService(db);
+        const params = (cfg['params'] as Record<string, unknown>) || {};
+
+        const results = await Promise.allSettled(
+          templates.map(t => computationService.runTemplate(t, params, 'event-workflow'))
+        );
+
+        const outputVar = (cfg['outputVariable'] as string) || 'parallel_results';
+        context[outputVar] = results.map((r, i) => ({
+          template: templates[i],
+          success: r.status === 'fulfilled' ? r.value.success : false,
+          output: r.status === 'fulfilled' ? r.value.output : null,
+        }));
+        console.log(`[event-processor] Run ${runId}: parallel step completed ${templates.length} templates`);
+      } catch (err) {
+        console.warn(`[event-processor] Run ${runId}: parallel step failed:`, err);
+      }
       break;
     }
 

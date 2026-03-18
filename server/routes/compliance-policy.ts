@@ -57,13 +57,13 @@ export async function createCompliancePolicyRoutes(db: DatabaseAdapter): Router 
     try {
       await db.run(`
         INSERT INTO compliance_policy (module_id, enforce_model, enforce_thinking, enforce_creativity, note, created_by, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, NOW())
         ON CONFLICT(module_id) DO UPDATE SET
           enforce_model      = excluded.enforce_model,
           enforce_thinking   = excluded.enforce_thinking,
           enforce_creativity = excluded.enforce_creativity,
           note               = excluded.note,
-          updated_at         = datetime('now')
+          updated_at         = NOW()
       `, moduleId,
         enforce_model ?? null,
         enforce_thinking ?? null,
@@ -102,7 +102,7 @@ export async function createCompliancePolicyRoutes(db: DatabaseAdapter): Router 
     const { userId, modelId } = req.body as z.infer<typeof AllowlistAddSchema>;
     const createdBy = (req as any).user?.id || 'admin'; // eslint-disable-line @typescript-eslint/no-explicit-any
     try {
-      await db.run('INSERT OR IGNORE INTO model_allowed (user_id, model_id, created_by) VALUES (?, ?, ?)'
+      await db.run('INSERT INTO model_allowed (user_id, model_id, created_by) VALUES (?, ?, ?) ON CONFLICT DO NOTHING'
       , userId ?? null, modelId, createdBy);
       res.json({ ok: true });
     } catch {

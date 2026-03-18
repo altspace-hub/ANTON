@@ -158,7 +158,7 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
     try {
       const { cap } = req.body as { cap?: number };
       const value = typeof cap === 'number' && cap >= 0 ? cap : 0;
-      await db.run("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('monthly_budget_cap', ?)", String(value));
+      await db.run("INSERT INTO app_settings (key, value) VALUES ('monthly_budget_cap', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", String(value));
       res.json({ success: true, cap: value });
     } catch (err) {
       console.error('[analytics/budget-cap]', err);

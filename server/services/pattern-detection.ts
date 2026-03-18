@@ -62,12 +62,12 @@ export async function createPatternDetection(db: DatabaseAdapter) {
         er.entity_type, er.entity_id, er.entity_name,
         COUNT(DISTINCT wo.workflow_id) as workflow_count,
         COUNT(DISTINCT wo.area_id) as area_count,
-        GROUP_CONCAT(DISTINCT wo.area_id) as areas
+        STRING_AGG(DISTINCT wo.area_id, ',') as areas
       FROM knowledge_entity_refs er
       JOIN knowledge_atoms ka ON er.atom_id = ka.id
       JOIN workflow_outputs wo ON ka.source_output_id = wo.id
       WHERE wo.created_at > ?
-      GROUP BY er.entity_type, er.entity_id
+      GROUP BY er.entity_type, er.entity_id, er.entity_name
       HAVING COUNT(DISTINCT wo.workflow_id) >= ?
     `, since, minWorkflows) as any[];
 
@@ -123,7 +123,7 @@ export async function createPatternDetection(db: DatabaseAdapter) {
     const modules = await db.all(`
       SELECT module_id, AVG(score_overall) as avg_score, COUNT(*) as n
       FROM quality_scores
-      WHERE scored_at > datetime('now', '-30 days')
+      WHERE scored_at > NOW() - INTERVAL '30 days'
       GROUP BY module_id
       HAVING COUNT(*) >= 5
     `) as any[];
@@ -159,7 +159,7 @@ export async function createPatternDetection(db: DatabaseAdapter) {
       SELECT area_id, COUNT(*) as output_count,
              MAX(created_at) as last_activity
       FROM workflow_outputs
-      WHERE created_at > datetime('now', '-30 days')
+      WHERE created_at > NOW() - INTERVAL '30 days'
       GROUP BY area_id
     `) as any[];
 
@@ -220,8 +220,9 @@ export async function createPatternDetection(db: DatabaseAdapter) {
 
     // Update detector state
     await db.run(`
-      INSERT OR REPLACE INTO pattern_detectors_state (detector_id, last_run, next_run, run_count)
-      VALUES ('all', ?, datetime('now', '+1 hour'), COALESCE((SELECT run_count FROM pattern_detectors_state WHERE detector_id = 'all'), 0) + 1)
+      INSERT INTO pattern_detectors_state (detector_id, last_run, next_run, run_count)
+      VALUES ('all', ?, NOW() + INTERVAL '1 hour', COALESCE((SELECT run_count FROM pattern_detectors_state WHERE detector_id = 'all'), 0) + 1)
+      ON CONFLICT (detector_id) DO UPDATE SET last_run = EXCLUDED.last_run, next_run = EXCLUDED.next_run, run_count = EXCLUDED.run_count
     `, new Date().toISOString());
 
     return { patternsDetected: patterns.length, patternsStored: patterns.length };

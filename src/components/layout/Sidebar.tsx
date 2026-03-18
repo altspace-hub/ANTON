@@ -31,6 +31,8 @@ import {
   ScanText,
   Brain,
   Database as DatabaseIcon,
+  Eye,
+  Calculator,
   // Mobile close button
   X as XIcon,
   // Community sub-nav
@@ -222,6 +224,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { pathname } = useLocation();
   const isLifeMode = ['/life', '/news', '/finance', '/travel', '/community'].some(r => pathname.startsWith(r));
   const isPathfinderMode = pathname.startsWith('/pathfinder');
+  const isMarketsMode = pathname.startsWith('/markets');
   const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
   // RESP-01: force icon-only at md breakpoint (768-1024px) regardless of user toggle
   const [isForcedMini, setIsForcedMini] = useState(() => window.innerWidth >= 768 && window.innerWidth < 1024);
@@ -586,8 +589,197 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </>
         )}
 
-        {/* ── Work sidebar (hidden while on Life Platform routes) ─────── */}
-        {!isLifeMode && !isPathfinderMode && (<>
+        {/* ── Markets Intelligence sidebar ───────────────────────────── */}
+        {isMarketsMode && (
+          <>
+            {!sidebarCollapsed ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Markets Intelligence</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Dashboard */}
+            <NavLink
+              to="/markets"
+              end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Dashboard' : undefined}
+            >
+              <TrendingUp className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Dashboard'}
+            </NavLink>
+
+            {/* Data & Atoms */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Data & Atoms
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/markets/sources"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Data Sources' : undefined}
+            >
+              <Database className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Data Sources'}
+            </NavLink>
+            <NavLink
+              to="/markets/entities"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Entity Graph' : undefined}
+            >
+              <Network className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Entity Graph'}
+            </NavLink>
+            <NavLink
+              to="/markets/atoms"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Atoms' : undefined}
+            >
+              <Zap className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Atoms'}
+            </NavLink>
+            <NavLink
+              to="/markets/watchlist"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Watchlist' : undefined}
+            >
+              <Eye className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Watchlist'}
+            </NavLink>
+
+            {/* Analysis */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Analysis
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/markets/theses"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Theses' : undefined}
+            >
+              <Target className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Theses'}
+            </NavLink>
+            <NavLink
+              to="/markets/predictions"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Predictions' : undefined}
+            >
+              <Crosshair className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Predictions'}
+            </NavLink>
+            <NavLink
+              to="/markets/investigations"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Investigations' : undefined}
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Investigations'}
+            </NavLink>
+            <NavLink
+              to="/markets/why-chains"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Why Chains' : undefined}
+            >
+              <GitBranch className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Why Chains'}
+            </NavLink>
+            <NavLink
+              to="/markets/patterns"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Patterns' : undefined}
+            >
+              <Activity className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Patterns'}
+            </NavLink>
+
+            {/* Indexes & Learning */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Indexes & Learning
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/markets/indexes"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Indexes' : undefined}
+            >
+              <BarChart className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Indexes'}
+            </NavLink>
+            <NavLink
+              to="/markets/learning"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Learning' : undefined}
+            >
+              <Brain className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Learning'}
+            </NavLink>
+
+            {/* Operations */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Operations
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/markets/workflows"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Workflows' : undefined}
+            >
+              <RefreshCw className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Workflows'}
+            </NavLink>
+            <NavLink
+              to="/markets/events"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Events' : undefined}
+            >
+              <Calendar className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Events'}
+            </NavLink>
+            <NavLink
+              to="/markets/rci"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'RCI' : undefined}
+            >
+              <Calculator className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'RCI'}
+            </NavLink>
+            <NavLink
+              to="/markets/computation"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Computation' : undefined}
+            >
+              <Cpu className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Computation'}
+            </NavLink>
+          </>
+        )}
+
+        {/* ── Work sidebar (hidden while on Life/Pathfinder/Markets routes) */}
+        {!isLifeMode && !isPathfinderMode && !isMarketsMode && (<>
         {/* Favorites section — only show if there are favorited items and sidebar is expanded */}
         {!sidebarCollapsed && favoriteNavItems.size > 0 && (
           <>
@@ -674,6 +866,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'ngo': { to: '/ngo', icon: Globe, label: 'NGO & Social Impact' },
                 'trades': { to: '/trades', icon: Wrench, label: 'Trades & Service Workers' },
                 'pe-vc': { to: '/pe-vc', icon: TrendingUp, label: 'PE/VC Hub' },
+                'markets': { to: '/markets', icon: TrendingUp, label: 'Markets Intelligence' },
                 'school': { to: '/school', icon: GraduationCap, label: 'ANTON School' },
                 'innovation-radar': { to: '/innovation-radar', icon: Radar, label: 'Innovation Radar' },
                 'versions': { to: '/versions', icon: GitBranch, label: 'Version History' },

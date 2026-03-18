@@ -83,7 +83,7 @@ export async function createAtomExtractor(db: DatabaseAdapter, client: Anthropic
       (id, source_output_id, source_workflow_id, source_execution_id, source_area_id, source_module_id,
        content, atom_type, confidence, category, subcategory, sentiment, temporal_type,
        entities, tags, valid_until, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
   `;
 
   // ── Extract atoms from a stored workflow output ───────────────────────────
@@ -206,8 +206,9 @@ Rules:
           for (const ent of raw.entities) {
             if (!ent.type || !ent.id) continue;
             await db.run(`
-    INSERT OR IGNORE INTO knowledge_entity_refs (atom_id, entity_type, entity_id, entity_name, relationship)
+    INSERT INTO knowledge_entity_refs (atom_id, entity_type, entity_id, entity_name, relationship)
     VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT DO NOTHING
   `,
               atomId,
               ent.type,
