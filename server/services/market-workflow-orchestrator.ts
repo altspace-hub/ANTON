@@ -12,6 +12,7 @@ import { createMarketInvestigationService } from './market-investigation-service
 import { createMarketWhyChainsService } from './market-why-chains-service.js';
 import { createMarketIntelligenceService } from './market-intelligence-service.js';
 import { createMarketThesisService } from './market-thesis-service.js';
+import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import path from 'path';
@@ -51,12 +52,13 @@ export async function createMarketWorkflowOrchestrator(
   dataService: MarketDataService,
   anthropicApiKey?: string,
 ) {
-  // Initialize investigation + why-chains + learning + thesis services
+  // Initialize investigation + why-chains + learning + thesis + rebalance services
   const investigationService = await createMarketInvestigationService(db);
   const whyChainsService = await createMarketWhyChainsService(db);
   const learningService = await createMarketIntelligenceService(db);
   const anthropicClient = anthropicApiKey ? new (await import('@anthropic-ai/sdk')).default({ apiKey: anthropicApiKey }) : undefined;
   const thesisService = await createMarketThesisService(db, anthropicClient);
+  const rebalanceService = await createMarketIndexRebalanceService(db);
 
   // Helper: insert dead letter on permanent step failure
   async function insertDeadLetter(runId: string, stepName: string, error: string, inputData?: unknown): Promise<void> {
@@ -468,6 +470,40 @@ Return ONLY the JSON array, no other text.`;
       stepResults.push({ step: 'Pattern Check', status: 'success', output: { patternsDetected, action: patternsDetected > 3 ? 'spawn_investigation' : 'skip' } });
       stepsCompleted++;
 
+      // Step 11: Prediction-driven rebalance check
+      try {
+        const activeIndexes = await db.all<{ id: string; name: string; last_rebalance_at: string | null }>(
+          "SELECT id, name, last_rebalance_at FROM market_indexes WHERE status = 'active'"
+        );
+
+        const rebalanceActions: Array<{ indexId: string; name: string; triggered: boolean; reason: string }> = [];
+
+        for (const idx of activeIndexes) {
+          const { signals, macroAdjustment } = await rebalanceService.computePredictionSignalScores(idx.id);
+
+          // Check trigger conditions
+          const strongSignals = signals.filter(s => Math.abs(s.score) > 0.6 && s.confidence > 0.7);
+          const needsRebalance = strongSignals.length > 0 || Math.abs(macroAdjustment) > 0.4;
+
+          if (needsRebalance) {
+            try {
+              await runIndexRebalance(idx.id);
+              rebalanceActions.push({ indexId: idx.id, name: idx.name, triggered: true, reason: `${strongSignals.length} strong signals, macro: ${macroAdjustment.toFixed(2)}` });
+            } catch (rebalErr) {
+              rebalanceActions.push({ indexId: idx.id, name: idx.name, triggered: false, reason: (rebalErr as Error).message });
+            }
+          } else {
+            rebalanceActions.push({ indexId: idx.id, name: idx.name, triggered: false, reason: 'No strong signals' });
+          }
+        }
+
+        stepResults.push({ step: 'Prediction Rebalance Check', status: 'success', output: { indexes: rebalanceActions } });
+        stepsCompleted++;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        stepResults.push({ step: 'Prediction Rebalance Check', status: 'error', error: errMsg });
+      }
+
       await updateRun(runId, 'completed');
       return { runId, status: 'completed', stepsCompleted, stepResults };
     } catch (err) {
@@ -615,6 +651,37 @@ Return ONLY the JSON array, no other text.`;
       });
       stepsCompleted++;
 
+      // Step 7: Auto-execute rebalance (paper trades)
+      try {
+        const proposal = stepResults.find(s => s.step === 'Consul Rebalance Proposal')?.output as { proposal?: string } | undefined;
+        if (proposal?.proposal) {
+          // Parse the consul's proposed changes from the text and apply conviction weights
+          const predictionResult = await rebalanceService.computePredictionSignalScores(indexId);
+          const convictionProposal = await rebalanceService.generateConvictionRebalanceProposal(indexId);
+
+          if (convictionProposal.changes.filter(c => c.action !== 'hold').length > 0) {
+            const execChanges = convictionProposal.changes
+              .filter(c => c.action !== 'hold')
+              .map(c => ({ symbol: c.symbol, action: c.action, newWeight: c.proposedWeight }));
+            await rebalanceService.executeRebalance(indexId, { changes: execChanges });
+            stepResults.push({
+              step: 'Execute Rebalance', status: 'success',
+              output: {
+                tradesExecuted: convictionProposal.changes.filter(c => c.action !== 'hold').length,
+                predictionSignals: predictionResult.signals.length,
+                changes: convictionProposal.changes,
+              },
+            });
+          } else {
+            stepResults.push({ step: 'Execute Rebalance', status: 'success', output: { message: 'No actionable changes' } });
+          }
+          stepsCompleted++;
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        stepResults.push({ step: 'Execute Rebalance', status: 'error', error: errMsg });
+      }
+
       await updateRun(runId, 'completed');
       return { runId, status: 'completed', stepsCompleted, stepResults };
     } catch (err) {
@@ -721,6 +788,26 @@ Return ONLY the JSON array, no other text.`;
         const errMsg = err instanceof Error ? err.message : String(err);
         stepResults.push({ step: 'Signal Weight Optimizer', status: 'skipped', error: errMsg });
         await insertDeadLetter(runId, 'Signal Weight Optimizer', errMsg);
+      }
+
+      // Step 5.5: Apply signal calibration to thesis confidence
+      try {
+        // Update thesis confidence from validated predictions
+        const activeTheses = await db.all<{ id: string }>(
+          "SELECT id FROM market_theses WHERE status IN ('active', 'monitoring')"
+        );
+        let thesesUpdated = 0;
+        for (const t of activeTheses) {
+          try {
+            await thesisService.updateThesisConfidenceFromPredictions(t.id);
+            thesesUpdated++;
+          } catch { /* skip individual failures */ }
+        }
+        stepResults.push({ step: 'Signal Calibration', status: 'success', output: { thesesUpdated } });
+        stepsCompleted++;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        stepResults.push({ step: 'Signal Calibration', status: 'error', error: errMsg });
       }
 
       // Step 6: Learning summary (LLM)

@@ -533,6 +533,158 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     return { checked: activeIndexes.length, rebalanced };
   }
 
+  // ── Compute Prediction Signal Scores ──────────────────────────────────────
+
+  async function computePredictionSignalScores(indexId: string) {
+    // Get active holdings
+    const holdings = await db.all<{ symbol: string; weight: number }>(
+      "SELECT symbol, weight FROM market_index_holdings WHERE index_id = ? AND removed_at IS NULL",
+      indexId
+    );
+
+    // Get all active predictions
+    const predictions = await db.all<{
+      id: string; title: string; target_symbol: string | null;
+      predicted_direction: string | null; confidence: number;
+      prediction_type: string; thesis_id: string | null;
+    }>(
+      `SELECT mp.id, mp.title, mp.target_symbol, mp.predicted_direction, mp.confidence,
+              mp.prediction_type, mp.thesis_id
+       FROM market_predictions mp
+       WHERE mp.status = 'active' AND (mp.deadline IS NULL OR mp.deadline::timestamptz > NOW())`
+    );
+
+    // Get signal weight calibration
+    const signalWeights = await db.all<{ signal_type: string; category: string; weight: number }>(
+      "SELECT signal_type, category, weight FROM market_signal_weights"
+    );
+    const weightMap = new Map(signalWeights.map(sw => [`${sw.signal_type}:${sw.category}`, sw.weight]));
+
+    // Compute per-symbol scores
+    const signals: Record<string, {
+      symbol: string; score: number; direction: string;
+      confidence: number; predictionCount: number; predictions: string[];
+    }> = {};
+
+    // Initialize all held symbols
+    for (const h of holdings) {
+      signals[h.symbol] = { symbol: h.symbol, score: 0, direction: 'neutral', confidence: 0, predictionCount: 0, predictions: [] };
+    }
+
+    // Aggregate micro-level predictions (targeting specific symbols)
+    for (const p of predictions) {
+      if (!p.target_symbol || !signals[p.target_symbol]) continue;
+      const dirMultiplier = p.predicted_direction === 'up' ? 1 : p.predicted_direction === 'down' ? -1 : 0;
+      const calibrationWeight = weightMap.get(`${p.prediction_type}:equity`) ?? 1.0;
+      const signalContribution = dirMultiplier * p.confidence * calibrationWeight;
+
+      signals[p.target_symbol].score += signalContribution;
+      signals[p.target_symbol].predictionCount++;
+      signals[p.target_symbol].predictions.push(p.id);
+    }
+
+    // Compute macro adjustment from non-symbol predictions
+    let macroAdjustment = 0;
+    let macroCount = 0;
+    for (const p of predictions) {
+      if (p.target_symbol) continue; // skip micro predictions
+      const dirMultiplier = p.predicted_direction === 'up' ? 1 : p.predicted_direction === 'down' ? -1 : 0;
+      macroAdjustment += dirMultiplier * p.confidence * 0.3; // dampened
+      macroCount++;
+    }
+    if (macroCount > 0) macroAdjustment /= macroCount;
+
+    // Normalize scores to [-1, 1] range
+    for (const sym of Object.keys(signals)) {
+      const s = signals[sym];
+      if (s.predictionCount > 0) {
+        s.score = Math.max(-1, Math.min(1, s.score / s.predictionCount));
+        s.confidence = s.score !== 0 ? Math.abs(s.score) : 0;
+      }
+      s.score += macroAdjustment;
+      s.score = Math.max(-1, Math.min(1, s.score));
+      s.direction = s.score > 0.1 ? 'bullish' : s.score < -0.1 ? 'bearish' : 'neutral';
+    }
+
+    // Get current regime
+    const regime = await db.get<{ regime_type: string; confidence: number }>(
+      "SELECT regime_type, confidence FROM market_regime_history WHERE ended_at IS NULL ORDER BY started_at DESC LIMIT 1"
+    );
+
+    return {
+      signals: Object.values(signals),
+      macroAdjustment,
+      regime: regime ?? { regime_type: 'unknown', confidence: 0 },
+    };
+  }
+
+  // ── Generate Conviction Rebalance Proposal ────────────────────────────────
+
+  async function generateConvictionRebalanceProposal(indexId: string) {
+    const { signals, macroAdjustment, regime } = await computePredictionSignalScores(indexId);
+
+    const holdings = await db.all<{ symbol: string; weight: number; entry_price: number; current_price: number }>(
+      "SELECT symbol, weight, entry_price, current_price FROM market_index_holdings WHERE index_id = ? AND removed_at IS NULL",
+      indexId
+    );
+
+    if (holdings.length === 0) return { changes: [], predictionSignals: signals, regime };
+
+    const baseWeight = 1.0 / holdings.length;
+    const signalMap = new Map(signals.map(s => [s.symbol, s]));
+
+    // Apply conviction adjustments
+    const rawWeights: Array<{ symbol: string; weight: number; reason: string }> = [];
+
+    for (const h of holdings) {
+      const signal = signalMap.get(h.symbol);
+      let adjusted = baseWeight;
+      let reason = 'equal weight baseline';
+
+      if (signal && signal.predictionCount > 0) {
+        // Score range is -1 to +1, scale weight by 0.5x to 1.5x
+        adjusted = baseWeight * (1 + signal.score * 0.5);
+        reason = `${signal.direction} signal (score: ${signal.score.toFixed(2)}, ${signal.predictionCount} predictions)`;
+      }
+
+      // Apply macro overlay
+      if (macroAdjustment < -0.3) {
+        adjusted *= 0.85; // reduce all in bearish macro
+        reason += ' + bearish macro overlay';
+      } else if (macroAdjustment > 0.3) {
+        adjusted *= 1.1;
+        reason += ' + bullish macro overlay';
+      }
+
+      // Clamp: 2% to 15%
+      adjusted = Math.max(0.02, Math.min(0.15, adjusted));
+      rawWeights.push({ symbol: h.symbol, weight: adjusted, reason });
+    }
+
+    // Normalize to sum to 1.0
+    const totalRaw = rawWeights.reduce((sum, w) => sum + w.weight, 0);
+    for (const w of rawWeights) {
+      w.weight = w.weight / totalRaw;
+    }
+
+    // Build ProposedChange array
+    const changes = rawWeights.map(w => {
+      const current = holdings.find(h => h.symbol === w.symbol);
+      const currentWeight = current?.weight ?? 0;
+      const diff = w.weight - currentWeight;
+      const action = Math.abs(diff) < 0.005 ? 'hold' : diff > 0 ? 'increase' : 'decrease';
+      return {
+        symbol: w.symbol,
+        action: action as 'hold' | 'increase' | 'decrease',
+        currentWeight,
+        proposedWeight: w.weight,
+        reason: w.reason,
+      };
+    });
+
+    return { changes, predictionSignals: signals, regime };
+  }
+
   return {
     shouldRebalance,
     generateRebalanceProposal,
@@ -542,6 +694,8 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     executeRebalance,
     validatePreviousRebalance,
     runScheduledRebalances,
+    computePredictionSignalScores,
+    generateConvictionRebalanceProposal,
   };
 }
 

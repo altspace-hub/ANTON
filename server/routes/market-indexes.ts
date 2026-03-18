@@ -405,5 +405,17 @@ export async function createMarketIndexesRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── Prediction Signals (Closed-Loop) ─────────────────────────────────
+
+  router.get('/markets/indexes/:id/prediction-signals', async (req, res) => {
+    try {
+      const result = await rebalanceService.computePredictionSignalScores(req.params.id);
+      res.json(result);
+    } catch (err) {
+      console.error('[market-indexes] Prediction signals error:', err);
+      res.status(500).json({ error: 'Failed to compute prediction signals' });
+    }
+  });
+
   return router;
 }
