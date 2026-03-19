@@ -343,6 +343,9 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         case 'rss':
           itemsIngested = await fetchMarketRSS(sourceId, config);
           break;
+        case 'quiver':
+          itemsIngested = await fetchQuiverQuant(sourceId, config);
+          break;
         default:
           return { itemsIngested: 0, error: `Unknown provider: ${source.provider}` };
       }
@@ -829,6 +832,40 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       ingested++;
     }
 
+    return ingested;
+  }
+
+  // ── Quiver Quantitative (Congress Trading) ─────────────────────────────
+
+  async function fetchQuiverQuant(sourceId: string, config: Record<string, unknown>): Promise<number> {
+    const url = config.url as string;
+    if (!url) throw new Error('Quiver Quant URL not configured');
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Quiver Quant HTTP ${response.status}`);
+    const trades = await response.json() as Array<{
+      Representative: string; Ticker: string; Transaction: string;
+      Range: string; House: string; ReportDate: string;
+      TransactionDate: string; Party: string; Amount: string;
+    }>;
+
+    let ingested = 0;
+    for (const trade of (trades ?? []).slice(0, 50)) {
+      if (!trade.Ticker || trade.Ticker === '--') continue;
+      const title = `${trade.Representative} (${trade.Party}-${trade.House}) ${trade.Transaction} ${trade.Ticker} (${trade.Range})`;
+      await ingestRawData({
+        sourceId, dataType: 'congress_trading', symbol: trade.Ticker,
+        title,
+        content: JSON.stringify(trade),
+        publishedAt: trade.ReportDate ?? trade.TransactionDate,
+        metadata: {
+          provider: 'quiver', representative: trade.Representative,
+          party: trade.Party, house: trade.House,
+          transaction: trade.Transaction, range: trade.Range,
+        },
+      });
+      ingested++;
+    }
     return ingested;
   }
 
