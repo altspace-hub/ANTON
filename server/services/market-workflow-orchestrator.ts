@@ -30,8 +30,9 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, stepName: string)
   ]);
 }
 
-const COMPUTATION_TIMEOUT = 30_000; // 30s for computation steps
-const LLM_TIMEOUT = 60_000;         // 60s for LLM/AI steps
+const COMPUTATION_TIMEOUT = 60_000;  // 60s for computation steps
+const LLM_TIMEOUT = 120_000;        // 120s for LLM/AI steps
+const FETCH_TIMEOUT = 120_000;      // 120s for data fetching (17 sources)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -170,7 +171,7 @@ export async function createMarketWorkflowOrchestrator(
     try {
       // Step 1: Fetch all data sources
       try {
-        const fetchResult = await withTimeout(dataService.fetchAllSources(), COMPUTATION_TIMEOUT, 'Fetch Market Data');
+        const fetchResult = await withTimeout(dataService.fetchAllSources(), FETCH_TIMEOUT, 'Fetch Market Data');
         const totalItems = fetchResult.results.reduce((s, r) => s + r.itemsIngested, 0);
         stepResults.push({ step: 'Fetch Market Data', status: 'success', output: { totalItems, sources: fetchResult.results.length } });
         stepsCompleted++;
@@ -595,7 +596,7 @@ Return ONLY the JSON array, no other text.`;
 
       // Step 2: Fetch universe data
       try {
-        const fetchResult = await withTimeout(dataService.fetchAllSources(), COMPUTATION_TIMEOUT, 'Fetch Universe Data');
+        const fetchResult = await withTimeout(dataService.fetchAllSources(), FETCH_TIMEOUT, 'Fetch Universe Data');
         stepResults.push({ step: 'Fetch Universe Data', status: 'success', output: { sources: fetchResult.results.length } });
         stepsCompleted++;
       } catch (err) {
@@ -781,7 +782,7 @@ Return ONLY the JSON array, no other text.`;
     try {
       // Step 1: Fetch outcome data
       try {
-        const fetchResult = await withTimeout(dataService.fetchAllSources(), COMPUTATION_TIMEOUT, 'Fetch Outcome Data');
+        const fetchResult = await withTimeout(dataService.fetchAllSources(), FETCH_TIMEOUT, 'Fetch Outcome Data');
         stepResults.push({ step: 'Fetch Outcome Data', status: 'success', output: { sources: fetchResult.results.length } });
         stepsCompleted++;
       } catch (err) {
@@ -834,7 +835,7 @@ Return ONLY the JSON array, no other text.`;
         const prompt = readPrompt('market-investigation');
         const accuracyOutput = stepResults.find(s => s.step === 'Prediction Accuracy Stats')?.output;
         const llmResult = await withTimeout(
-          callLLM(prompt, `Analyze prediction failures using 5-Whys methodology:\n${JSON.stringify(accuracyOutput).slice(0, 4000)}`, 'investigate'),
+          callLLM(prompt, `Analyze prediction failures using 5-Whys methodology:\n${JSON.stringify(accuracyOutput).slice(0, 4000)}`, 'think_hard'),
           LLM_TIMEOUT, '5-Whys Analysis'
         );
         stepResults.push({ step: '5-Whys Analysis', status: 'success', output: { analysis: llmResult.slice(0, 500) } });
@@ -973,14 +974,15 @@ Return ONLY the JSON array, no other text.`;
         const dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }> = [];
 
         for (const pred of validatedPredictions) {
-          const highConfWrong = pred.confidence > 0.7 && pred.was_correct === 0;
-          const lowConfRight = pred.confidence < 0.4 && pred.was_correct === 1;
+          const conf = Number(pred.confidence) || 0;
+          const highConfWrong = conf > 0.7 && pred.was_correct === 0;
+          const lowConfRight = conf < 0.4 && pred.was_correct === 1;
 
           if (highConfWrong || lowConfRight) {
             const anomalyType = highConfWrong ? 'unexpected_failure' : 'unexpected_success';
             const anomalyLabel = highConfWrong
-              ? `High-confidence prediction failed (conf=${pred.confidence.toFixed(2)})`
-              : `Low-confidence prediction succeeded (conf=${pred.confidence.toFixed(2)})`;
+              ? `High-confidence prediction failed (conf=${conf.toFixed(2)})`
+              : `Low-confidence prediction succeeded (conf=${conf.toFixed(2)})`;
 
             // Create investigation
             const invId = await investigationService.createInvestigation({
@@ -988,8 +990,8 @@ Return ONLY the JSON array, no other text.`;
               triggerReference: pred.id,
               title: `Auto-investigation: ${anomalyLabel}`,
               question: highConfWrong
-                ? `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${pred.confidence.toFixed(2)}) fail despite high confidence?`
-                : `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${pred.confidence.toFixed(2)}) succeed despite low confidence?`,
+                ? `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) fail despite high confidence?`
+                : `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) succeed despite low confidence?`,
               assignedConsul: 'risk-assessor',
             });
 
