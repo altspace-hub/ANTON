@@ -185,6 +185,7 @@ export async function createMarketAtomService(db: DatabaseAdapter, client?: Anth
     extractionMethod?: string;
     extractionModel?: string;
     importanceScore?: number;
+    horizon?: string;
   }) {
     const id = `matom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -198,14 +199,14 @@ export async function createMarketAtomService(db: DatabaseAdapter, client?: Anth
     await db.run(`
       INSERT INTO market_atoms (id, content, atom_type, confidence, category, subcategory, sentiment,
                                 temporal_type, entities, valid_until, decay_rate,
-                                importance_score, importance_source)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                importance_score, importance_source, horizon)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, id, params.content, params.atomType, params.confidence ?? 0.5,
        params.category ?? 'general', params.subcategory ?? null,
        params.sentiment ?? null, params.temporalType ?? 'point',
        JSON.stringify(params.entities ?? []),
        params.validUntil ?? null, params.decayRate ?? 0.05,
-       importance, importanceSource);
+       importance, importanceSource, params.horizon ?? null);
 
     // Link to raw data source
     if (params.rawDataId) {
