@@ -219,6 +219,7 @@ const MarketEventCalendarPage = lazy(() => import('./pages/markets/MarketEventCa
 const MarketRCIPage = lazy(() => import('./pages/markets/MarketRCIPage'));
 const MarketGoalsProfilePage = lazy(() => import('./pages/markets/MarketGoalsProfilePage'));
 const MarketBacktestsPage = lazy(() => import('./pages/markets/MarketBacktestsPage'));
+const MarketOnboardingPage = lazy(() => import('./pages/markets/MarketOnboardingPage'));
 
 // School Mode pages
 const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
@@ -514,6 +515,7 @@ export default function App() {
           <Route path="/markets/rci" element={<MarketRCIPage />} />
           <Route path="/markets/goals" element={<MarketGoalsProfilePage />} />
           <Route path="/markets/backtests" element={<MarketBacktestsPage />} />
+          <Route path="/markets/onboarding" element={<MarketOnboardingPage />} />
         </Route>
 
         {/* School Mode login — public, no auth required */}

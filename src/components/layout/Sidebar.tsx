@@ -744,6 +744,14 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             )}
             {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
             <NavLink
+              to="/markets/onboarding"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Setup Wizard' : undefined}
+            >
+              <Rocket className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Setup Wizard'}
+            </NavLink>
+            <NavLink
               to="/markets/goals"
               className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
               title={sidebarCollapsed ? 'Goals & Values' : undefined}

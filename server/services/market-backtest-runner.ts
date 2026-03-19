@@ -17,7 +17,8 @@ interface BacktestResult {
   totalDays: number; completedDays: number; finalNav: number;
   totalReturn: number; annualizedReturn: number; sharpeRatio: number;
   maxDrawdown: number; totalPredictions: number; correctPredictions: number;
-  predictionAccuracy: number; error?: string;
+  predictionAccuracy: number; benchmarkReturn: number; benchmarkSharpe: number;
+  alpha: number; error?: string;
 }
 interface PriceAtom {
   content: string; atomType: string; category: string;
@@ -273,6 +274,14 @@ Return ONLY the JSON array.` }],
     let prevPriceMap = new Map<string, number>();
     const recentAtoms: PriceAtom[] = [];
     const initW = 1.0 / universe.length;
+    // R1: Buy-and-hold benchmark
+    let benchmarkHoldings: Record<string, number> = {};
+    let benchmarkNav = bt.initial_capital;
+    let benchmarkPeakNav = bt.initial_capital;
+    const benchmarkNavHistory: Array<{ date: string; nav: number; dailyReturn: number }> = [];
+    // R2: Drawdown circuit breaker
+    let cashBalance = 0;
+    let circuitBreakerLevel: 'none' | 'tier1' | 'tier2' = 'none';
 
     try {
       for (const simDate of tradingDays) {
@@ -287,8 +296,15 @@ Return ONLY the JSON array.` }],
         if (Object.keys(holdings).length === 0) {
           const per = nav * initW;
           for (const s of universe) { const px = priceMap.get(s); if (px && px > 0) holdings[s] = { shares: per / px, weight: initW, entryPrice: px }; }
+          // R1: Initialize benchmark buy-and-hold (equal-weight, never rebalanced)
+          const perStock = bt.initial_capital / universe.length;
+          for (const symbol of universe) {
+            const price = priceMap.get(symbol);
+            if (price && price > 0) benchmarkHoldings[symbol] = perStock / price;
+          }
         }
-        nav = 0;
+        // R2: NAV includes cash from circuit breaker
+        nav = cashBalance;
         for (const [s, h] of Object.entries(holdings)) nav += h.shares * (priceMap.get(s) ?? h.entryPrice);
         // Step 3: Generate atoms (rolling 7-day window)
         if (prevPriceMap.size > 0) { recentAtoms.push(...generatePriceAtoms(universe, priceMap, prevPriceMap)); while (recentAtoms.length > 35) recentAtoms.shift(); }
@@ -315,11 +331,60 @@ Return ONLY the JSON array.` }],
         }
         // Step 7: Track drawdown
         if (nav > peakNav) peakNav = nav;
-        const dd = (peakNav - nav) / peakNav;
-        if (dd > maxDrawdown) maxDrawdown = dd;
+        const drawdown = peakNav > 0 ? (peakNav - nav) / peakNav : 0;
+        if (drawdown > maxDrawdown) maxDrawdown = drawdown;
         const dailyRet = prevNav > 0 ? (nav - prevNav) / prevNav : 0;
         const cumRet = bt.initial_capital > 0 ? (nav - bt.initial_capital) / bt.initial_capital : 0;
         navHistory.push({ date: simDate, nav, dailyReturn: dailyRet });
+        // R1: Benchmark NAV (buy-and-hold, no rebalancing)
+        const prevBenchmarkNav = benchmarkNav;
+        benchmarkNav = 0;
+        for (const [sym, shares] of Object.entries(benchmarkHoldings)) {
+          benchmarkNav += shares * (priceMap.get(sym) ?? 0);
+        }
+        if (benchmarkNav > benchmarkPeakNav) benchmarkPeakNav = benchmarkNav;
+        const benchmarkDailyReturn = prevBenchmarkNav > 0 ? (benchmarkNav - prevBenchmarkNav) / prevBenchmarkNav : 0;
+        benchmarkNavHistory.push({ date: simDate, nav: benchmarkNav, dailyReturn: benchmarkDailyReturn });
+        // R2: Circuit breaker check
+        const prevLevel = circuitBreakerLevel;
+        if (drawdown >= 0.25 && circuitBreakerLevel !== 'tier2') {
+          const targetCash = 0.80;
+          const sellFraction = targetCash - (cashBalance / (nav > 0 ? nav : 1));
+          if (sellFraction > 0) {
+            for (const [sym, h] of Object.entries(holdings)) {
+              const price = priceMap.get(sym) ?? h.entryPrice;
+              const sellShares = h.shares * sellFraction;
+              cashBalance += sellShares * price;
+              h.shares -= sellShares;
+            }
+          }
+          circuitBreakerLevel = 'tier2';
+        } else if (drawdown >= 0.15 && circuitBreakerLevel === 'none') {
+          const targetCash = 0.50;
+          for (const [sym, h] of Object.entries(holdings)) {
+            const price = priceMap.get(sym) ?? h.entryPrice;
+            const sellShares = h.shares * targetCash;
+            cashBalance += sellShares * price;
+            h.shares -= sellShares;
+          }
+          circuitBreakerLevel = 'tier1';
+        } else if (drawdown < 0.10 && circuitBreakerLevel !== 'none') {
+          const totalHoldingValue = Object.entries(holdings).reduce((s, [sym, h]) => s + h.shares * (priceMap.get(sym) ?? h.entryPrice), 0);
+          const totalValue = totalHoldingValue + cashBalance;
+          const weight = 1.0 / Object.keys(holdings).length;
+          for (const [sym, h] of Object.entries(holdings)) {
+            const price = priceMap.get(sym) ?? h.entryPrice;
+            if (price > 0) h.shares = (totalValue * weight) / price;
+          }
+          cashBalance = 0;
+          circuitBreakerLevel = 'none';
+        }
+        if (prevLevel !== circuitBreakerLevel) {
+          console.log(`[backtest] Circuit breaker: ${prevLevel} → ${circuitBreakerLevel} (drawdown: ${(drawdown * 100).toFixed(1)}%)`);
+        }
+        // Recalculate NAV after circuit breaker adjustments
+        nav = cashBalance;
+        for (const [s, h] of Object.entries(holdings)) nav += h.shares * (priceMap.get(s) ?? h.entryPrice);
         // Step 8: Rebalance
         let rebalanced = false;
         const shouldReb = config.rebalanceFrequency === 'daily' || (config.rebalanceFrequency === 'weekly' && dayNumber - lastRebalanceDay >= 5) || (config.rebalanceFrequency === 'monthly' && dayNumber - lastRebalanceDay >= 21);
@@ -334,17 +399,20 @@ Return ONLY the JSON array.` }],
             const eq = avail.length > 0 ? 1.0 / avail.length : 0;
             tw = {}; for (const s of avail) tw[s] = eq;
           }
-          for (const [s, w] of Object.entries(tw)) { const px = priceMap.get(s); if (px && px > 0) holdings[s] = { shares: (nav * w) / px, weight: w, entryPrice: px }; }
+          const equityPortion = nav - cashBalance; // Only rebalance the equity portion
+          for (const [s, w] of Object.entries(tw)) { const px = priceMap.get(s); if (px && px > 0) holdings[s] = { shares: (equityPortion * w) / px, weight: w, entryPrice: px }; }
           lastRebalanceDay = dayNumber; rebalanced = true;
-          nav = 0; for (const [s, h] of Object.entries(holdings)) nav += h.shares * (priceMap.get(s) ?? h.entryPrice);
+          nav = cashBalance; for (const [s, h] of Object.entries(holdings)) nav += h.shares * (priceMap.get(s) ?? h.entryPrice);
         }
         // Step 9: Record daily snapshot
+        const cashAllocation = cashBalance / (nav > 0 ? nav : 1);
         await db.run(
-          `INSERT INTO market_backtest_days (backtest_id,sim_date,day_number,nav,daily_return,cumulative_return,holdings,atoms_created,theses_active,predictions_made,predictions_validated,predictions_correct,rebalance_executed) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-           ON CONFLICT (backtest_id,sim_date) DO UPDATE SET nav=EXCLUDED.nav,daily_return=EXCLUDED.daily_return,cumulative_return=EXCLUDED.cumulative_return,holdings=EXCLUDED.holdings,atoms_created=EXCLUDED.atoms_created,theses_active=EXCLUDED.theses_active,predictions_made=EXCLUDED.predictions_made`,
+          `INSERT INTO market_backtest_days (backtest_id,sim_date,day_number,nav,daily_return,cumulative_return,holdings,atoms_created,theses_active,predictions_made,predictions_validated,predictions_correct,rebalance_executed,benchmark_nav,benchmark_daily_return,cash_allocation,circuit_breaker_level) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+           ON CONFLICT (backtest_id,sim_date) DO UPDATE SET nav=EXCLUDED.nav,daily_return=EXCLUDED.daily_return,cumulative_return=EXCLUDED.cumulative_return,holdings=EXCLUDED.holdings,atoms_created=EXCLUDED.atoms_created,theses_active=EXCLUDED.theses_active,predictions_made=EXCLUDED.predictions_made,benchmark_nav=EXCLUDED.benchmark_nav,benchmark_daily_return=EXCLUDED.benchmark_daily_return,cash_allocation=EXCLUDED.cash_allocation,circuit_breaker_level=EXCLUDED.circuit_breaker_level`,
           backtestId, simDate, dayNumber, nav, dailyRet, cumRet,
           JSON.stringify(Object.entries(holdings).map(([s, h]) => ({ symbol: s, ...h }))),
-          recentAtoms.length, thesesCreated, predsMade, val.validated, val.correct, rebalanced);
+          recentAtoms.length, thesesCreated, predsMade, val.validated, val.correct, rebalanced,
+          benchmarkNav, benchmarkDailyReturn, cashAllocation, circuitBreakerLevel);
         // Step 10: Progress
         await db.run("UPDATE market_backtests SET current_sim_date=?,completed_days=? WHERE id=?", simDate, dayNumber, backtestId);
         if (dayNumber % 50 === 0) console.log(`[backtest] ${bt.name}: Day ${dayNumber}/${tradingDays.length}, NAV: ${nav.toFixed(0)}, Return: ${(cumRet*100).toFixed(2)}%, Preds: ${totalPreds}`);
@@ -358,17 +426,25 @@ Return ONLY the JSON array.` }],
       const std = Math.sqrt(dRets.reduce((s, r) => s + Math.pow(r - avg, 2), 0) / dRets.length);
       const sharpe = std > 0 ? (avg / std) * Math.sqrt(252) : 0;
       const predAcc = totalPreds > 0 ? correctPreds / totalPreds : 0;
+      // R1: Benchmark final metrics and alpha
+      const benchmarkReturn = (benchmarkNav - bt.initial_capital) / bt.initial_capital;
+      const benchmarkDailyReturns = benchmarkNavHistory.map(n => n.dailyReturn);
+      const benchmarkAvgReturn = benchmarkDailyReturns.length > 0 ? benchmarkDailyReturns.reduce((s, r) => s + r, 0) / benchmarkDailyReturns.length : 0;
+      const benchmarkStdReturn = benchmarkDailyReturns.length > 0 ? Math.sqrt(benchmarkDailyReturns.reduce((s, r) => s + Math.pow(r - benchmarkAvgReturn, 2), 0) / benchmarkDailyReturns.length) : 0;
+      const benchmarkSharpe = benchmarkStdReturn > 0 ? (benchmarkAvgReturn / benchmarkStdReturn) * Math.sqrt(252) : 0;
+      const alpha = totRet - benchmarkReturn;
       await db.run(
-        `UPDATE market_backtests SET status='completed',completed_at=NOW(),final_nav=?,total_return=?,annualized_return=?,sharpe_ratio=?,max_drawdown=?,total_predictions=?,correct_predictions=?,prediction_accuracy=?,results=? WHERE id=?`,
+        `UPDATE market_backtests SET status='completed',completed_at=NOW(),final_nav=?,total_return=?,annualized_return=?,sharpe_ratio=?,max_drawdown=?,total_predictions=?,correct_predictions=?,prediction_accuracy=?,benchmark_return=?,benchmark_sharpe=?,alpha=?,results=? WHERE id=?`,
         nav, totRet, annRet, sharpe, maxDrawdown, totalPreds, correctPreds, predAcc,
-        JSON.stringify({ navHistory: navHistory.slice(-30), dailyReturns: dRets.slice(-30) }), backtestId);
-      console.log(`[backtest] ${bt.name}: COMPLETED — Return: ${(totRet*100).toFixed(2)}%, Sharpe: ${sharpe.toFixed(2)}, MaxDD: ${(maxDrawdown*100).toFixed(1)}%, Predictions: ${correctPreds}/${totalPreds}`);
-      return { backtestId, status: 'completed', totalDays: tradingDays.length, completedDays: dayNumber, finalNav: nav, totalReturn: totRet, annualizedReturn: annRet, sharpeRatio: sharpe, maxDrawdown, totalPredictions: totalPreds, correctPredictions: correctPreds, predictionAccuracy: predAcc };
+        benchmarkReturn, benchmarkSharpe, alpha,
+        JSON.stringify({ navHistory: navHistory.slice(-30), dailyReturns: dRets.slice(-30), benchmarkNavHistory: benchmarkNavHistory.slice(-30) }), backtestId);
+      console.log(`[backtest] ${bt.name}: COMPLETED — Return: ${(totRet*100).toFixed(2)}%, Benchmark: ${(benchmarkReturn*100).toFixed(2)}%, Alpha: ${(alpha*100).toFixed(2)}%, Sharpe: ${sharpe.toFixed(2)}, MaxDD: ${(maxDrawdown*100).toFixed(1)}%, Preds: ${correctPreds}/${totalPreds}`);
+      return { backtestId, status: 'completed', totalDays: tradingDays.length, completedDays: dayNumber, finalNav: nav, totalReturn: totRet, annualizedReturn: annRet, sharpeRatio: sharpe, maxDrawdown, totalPredictions: totalPreds, correctPredictions: correctPreds, predictionAccuracy: predAcc, benchmarkReturn, benchmarkSharpe, alpha };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       await db.run("UPDATE market_backtests SET status='failed',error_message=? WHERE id=?", msg, backtestId);
       console.error(`[backtest] ${bt.name}: FAILED —`, msg);
-      return { backtestId, status: 'failed', totalDays: tradingDays.length, completedDays: dayNumber, finalNav: nav, totalReturn: 0, annualizedReturn: 0, sharpeRatio: 0, maxDrawdown, totalPredictions: totalPreds, correctPredictions: correctPreds, predictionAccuracy: 0, error: msg };
+      return { backtestId, status: 'failed', totalDays: tradingDays.length, completedDays: dayNumber, finalNav: nav, totalReturn: 0, annualizedReturn: 0, sharpeRatio: 0, maxDrawdown, totalPredictions: totalPreds, correctPredictions: correctPreds, predictionAccuracy: 0, benchmarkReturn: 0, benchmarkSharpe: 0, alpha: 0, error: msg };
     }
   }
 
