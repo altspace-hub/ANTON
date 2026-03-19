@@ -113,21 +113,71 @@ export async function createMarketBacktestRunner(db: DatabaseAdapter) {
 
   async function generateAIPredictions(
     backtestId: string, simDate: string, tradingDays: string[], dayNumber: number,
-    recentAtoms: PriceAtom[], _signalWeights: Map<string, number>
+    recentAtoms: PriceAtom[], _signalWeights: Map<string, number>,
+    aiMode: string
   ): Promise<{ predictions: number; theses: number }> {
-    const ctx = recentAtoms.slice(-30).map(a => `[${a.atomType}|${a.category}|${a.sentiment}|imp:${a.importance}] ${a.content}`).join('\n');
-    const prompt = `Based on these market signals from the last week, generate 2-3 investment theses with testable predictions.\n\nSIGNALS:\n${ctx.slice(0, 3000)}\n\nReturn JSON array: [{"title":"...","description":"...","thesis_type":"investment|macro|sector","confidence":0.5-0.9,"predictions":[{"title":"...","target_symbol":"...","predicted_direction":"up|down","confidence":0.4-0.9,"time_horizon_days":5}]}]\nReturn ONLY the JSON array.`;
+    const atomContext = recentAtoms.slice(-30).map(a => `[${a.atomType}|${a.category}|${a.sentiment}|imp:${a.importance}] ${a.content}`).join('\n');
+
+    type GeneratedThesis = { title: string; description?: string; thesis_type?: string; confidence?: number; predictions?: Array<{ title?: string; target_symbol?: string; predicted_direction?: string; confidence?: number; time_horizon_days?: number }> };
+
+    let generated: GeneratedThesis[] | null = null;
+
+    // In full mode, use Claude with web search for historical news context
+    if (aiMode === 'full') {
+      try {
+        const Anthropic = (await import('@anthropic-ai/sdk')).default;
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const response = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2048,
+          system: 'You are an investment analyst. Search for what happened in markets on the given date, then generate investment theses with testable predictions. Output only valid JSON.',
+          messages: [{ role: 'user', content: `Today is ${simDate}. Search for stock market news and events from this date.
+
+Based on what you find AND these price movements:
+${atomContext.slice(0, 2000)}
+
+Generate 2-4 investment theses. Return JSON array: [{"title":"...","description":"...","thesis_type":"investment|macro|sector","confidence":0.5-0.9,"predictions":[{"title":"...","target_symbol":"...","predicted_direction":"up|down","confidence":0.4-0.9,"time_horizon_days":5}]}]
+Return ONLY the JSON array.` }],
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }] as unknown as Anthropic.Messages.Tool[],
+        });
+
+        let text = '';
+        for (const block of response.content) {
+          if (block.type === 'text') text += block.text;
+        }
+        const cleaned = text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+        generated = JSON.parse(cleaned) as GeneratedThesis[];
+        // Small delay after web search to avoid rate limiting
+        await new Promise(r => setTimeout(r, 500));
+      } catch (err) {
+        console.error('[backtest] Web search prediction failed, falling back to standard:', err);
+        // Fall through to standard callChat below
+      }
+    }
+
+    // Standard mode (or full mode fallback)
+    if (!generated) {
+      const prompt = `Based on these market signals from the last week, generate 2-3 investment theses with testable predictions.\n\nSIGNALS:\n${atomContext.slice(0, 3000)}\n\nReturn JSON array: [{"title":"...","description":"...","thesis_type":"investment|macro|sector","confidence":0.5-0.9,"predictions":[{"title":"...","target_symbol":"...","predicted_direction":"up|down","confidence":0.4-0.9,"time_horizon_days":5}]}]\nReturn ONLY the JSON array.`;
+      try {
+        const { callChat } = await import('./provider-router.js');
+        const result = await callChat({
+          model: 'claude-haiku-4-5-20251001',
+          system: 'You are an investment analyst generating testable predictions from market signals. Output only valid JSON.',
+          messages: [{ role: 'user', content: prompt }], maxTokens: 2048,
+        });
+        const cleaned = result.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+        generated = JSON.parse(cleaned) as GeneratedThesis[];
+      } catch (err) {
+        console.error('[backtest] AI prediction generation failed:', err);
+        return { predictions: 0, theses: 0 };
+      }
+    }
+
+    // Persist theses and predictions
     try {
-      const { callChat } = await import('./provider-router.js');
-      const result = await callChat({
-        model: 'claude-haiku-4-5-20251001',
-        system: 'You are an investment analyst generating testable predictions from market signals. Output only valid JSON.',
-        messages: [{ role: 'user', content: prompt }], maxTokens: 2048,
-      });
-      const cleaned = result.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-      const generated = JSON.parse(cleaned) as Array<{ title: string; description?: string; thesis_type?: string; confidence?: number; predictions?: Array<{ title?: string; target_symbol?: string; predicted_direction?: string; confidence?: number; time_horizon_days?: number }> }>;
       let predictions = 0, theses = 0;
-      for (const t of generated.slice(0, 3)) {
+      const signalSource = aiMode === 'full' ? 'ai-websearch' : 'ai';
+      for (const t of generated.slice(0, aiMode === 'full' ? 4 : 3)) {
         const thId = `btth_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         await db.run(`INSERT INTO market_backtest_theses (id,backtest_id,sim_date_created,title,description,thesis_type,confidence,status) VALUES (?,?,?,?,?,?,?,'active')`,
           thId, backtestId, simDate, t.title, t.description ?? '', t.thesis_type ?? 'investment', t.confidence ?? 0.6);
@@ -135,15 +185,15 @@ export async function createMarketBacktestRunner(db: DatabaseAdapter) {
         for (const p of (t.predictions ?? []).slice(0, 2)) {
           const dIdx = Math.min(dayNumber + (p.time_horizon_days ?? 5) - 1, tradingDays.length - 1);
           const pId = `btpr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-          await db.run(`INSERT INTO market_backtest_predictions (id,backtest_id,sim_date_created,sim_date_deadline,title,prediction_type,target_symbol,predicted_direction,confidence,status,thesis_id,signal_source) VALUES (?,?,?,?,?,'directional',?,?,?,'active',?,'ai')`,
+          await db.run(`INSERT INTO market_backtest_predictions (id,backtest_id,sim_date_created,sim_date_deadline,title,prediction_type,target_symbol,predicted_direction,confidence,status,thesis_id,signal_source) VALUES (?,?,?,?,?,'directional',?,?,?,'active',?,?)`,
             pId, backtestId, simDate, tradingDays[dIdx], p.title ?? `${p.target_symbol} ${p.predicted_direction}`,
-            p.target_symbol ?? null, p.predicted_direction ?? null, p.confidence ?? 0.5, thId);
+            p.target_symbol ?? null, p.predicted_direction ?? null, p.confidence ?? 0.5, thId, signalSource);
           predictions++;
         }
       }
       return { predictions, theses };
     } catch (err) {
-      console.error('[backtest] AI prediction generation failed:', err);
+      console.error('[backtest] AI prediction persistence failed:', err);
       return { predictions: 0, theses: 0 };
     }
   }
@@ -252,7 +302,7 @@ export async function createMarketBacktestRunner(db: DatabaseAdapter) {
         }
         const runAI = (aiMode === 'standard' && dayNumber % 10 === 1 && dayNumber > 5) || (aiMode === 'full' && dayNumber % 5 === 3 && dayNumber > 5);
         if (runAI && recentAtoms.length >= 5) {
-          const r = await generateAIPredictions(backtestId, simDate, tradingDays, dayNumber, recentAtoms, sw);
+          const r = await generateAIPredictions(backtestId, simDate, tradingDays, dayNumber, recentAtoms, sw, aiMode);
           predsMade += r.predictions; thesesCreated += r.theses; totalPreds += r.predictions;
         }
         // Step 5: Validate overdue predictions
