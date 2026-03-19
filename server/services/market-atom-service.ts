@@ -270,6 +270,78 @@ Return ONLY the JSON array, no other text.`;
     }
   }
 
+  // ── Fundamental Data → Atoms Pipeline ───────────────────────────────────
+
+  /**
+   * Extract atoms from fundamental data (income statements, ratios, metrics).
+   * Fundamental atoms have slower decay rates than news-derived atoms.
+   */
+  async function extractAtomsFromFundamentals(symbol: string, dataType: string, data: unknown): Promise<string[]> {
+    if (!client) return [];
+
+    const prompt = `Extract market knowledge atoms from this ${dataType} data for ${symbol}.
+
+Focus on:
+- Revenue/earnings trends (growth/decline)
+- Margin changes (expanding/contracting)
+- Valuation ratios vs historical (cheap/expensive)
+- Balance sheet health (debt levels, cash position)
+- Key ratio changes that signal improving/deteriorating fundamentals
+
+Each atom should be a durable fundamental fact, not a short-term signal.
+Set decay_rate very low (0.01-0.05) since fundamental data is long-lasting.
+Set temporal_type to "range" or "ongoing" for most items.
+
+Data:
+${JSON.stringify(data).slice(0, 6000)}
+
+Return a JSON array of atoms with: content, atom_type, confidence, category, subcategory, sentiment, temporal_type, entities, valid_until, decay_rate, tags
+
+Return ONLY the JSON array.`;
+
+    try {
+      const message = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 4096,
+        system: 'You are an expert financial analyst extracting fundamental insights into structured market atoms. Output only valid JSON.',
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      let responseText = '';
+      for (const block of message.content) {
+        if (block.type === 'text') responseText += block.text;
+      }
+
+      const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      const atoms = JSON.parse(cleaned) as RawAtomExtraction[];
+      const createdIds: string[] = [];
+
+      for (const raw of atoms) {
+        const id = await createAtom({
+          content: raw.content,
+          atomType: raw.atom_type,
+          confidence: raw.confidence,
+          category: raw.category || 'equity',
+          subcategory: raw.subcategory,
+          sentiment: raw.sentiment,
+          temporalType: raw.temporal_type || 'range',
+          entities: raw.entities || [{ type: 'company', id: symbol, name: symbol }],
+          validUntil: raw.valid_until ?? undefined,
+          decayRate: raw.decay_rate ?? 0.02,
+          tags: raw.tags || ['fundamental'],
+          extractionMethod: 'ai',
+          extractionModel: 'claude-haiku-4-5-20251001',
+        });
+        createdIds.push(id);
+      }
+
+      return createdIds;
+    } catch (err) {
+      console.error(`[market-atoms] Fundamental extraction failed for ${symbol}:`, err);
+      return [];
+    }
+  }
+
   // ── Atom Decay ───────────────────────────────────────────────────────────
   // Reduces confidence of active atoms using per-type half-life formula.
   // Formula: new_confidence = confidence * 0.5^(age_days / half_life)
@@ -355,6 +427,7 @@ Return ONLY the JSON array, no other text.`;
     addRelationship,
     getRelationships,
     extractAtomsFromRawData,
+    extractAtomsFromFundamentals,
     applyAtomDecay,
     getRecentAtoms,
     getAtomsByCategory,

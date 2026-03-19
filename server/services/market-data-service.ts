@@ -553,21 +553,68 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         }
       }
     } else if (dataType === 'news') {
+      // General market news
       await waitForFmpSlot();
-      const url = `https://financialmodelingprep.com/stable/news?page=0&apikey=${apiKey}`;
-      const response = await fetch(url);
-      await incrementFmpCount();
-      if (!response.ok) throw new Error(`FMP news HTTP ${response.status}`);
-      const items = await response.json() as Array<{ title: string; text: string; publishedDate: string; site: string; symbol: string; url: string }>;
-      for (const item of items) {
-        await ingestRawData({
-          sourceId, dataType: 'news', symbol: item.symbol || null,
-          title: item.title,
-          content: JSON.stringify(item),
-          publishedAt: item.publishedDate,
-          metadata: { provider: 'fmp', source: item.site },
-        });
-        ingested++;
+      try {
+        const url = `https://financialmodelingprep.com/stable/news/general-latest?page=0&limit=50&apikey=${apiKey}`;
+        const response = await fetch(url);
+        await incrementFmpCount();
+        if (response.ok) {
+          const items = await response.json() as Array<{ title: string; text: string; publishedDate: string; site: string; symbol: string | null; url: string }>;
+          for (const item of items) {
+            await ingestRawData({
+              sourceId, dataType: 'news', symbol: item.symbol || null,
+              title: item.title,
+              content: JSON.stringify(item),
+              publishedAt: item.publishedDate,
+              metadata: { provider: 'fmp', source: item.site, newsType: 'general' },
+            });
+            ingested++;
+          }
+        }
+      } catch { /* skip */ }
+
+      // Stock-specific news
+      await waitForFmpSlot();
+      try {
+        const url = `https://financialmodelingprep.com/stable/news/stock-latest?page=0&limit=50&apikey=${apiKey}`;
+        const response = await fetch(url);
+        await incrementFmpCount();
+        if (response.ok) {
+          const items = await response.json() as Array<{ title: string; text: string; publishedDate: string; site: string; symbol: string; url: string }>;
+          for (const item of items) {
+            await ingestRawData({
+              sourceId, dataType: 'news', symbol: item.symbol || null,
+              title: item.title,
+              content: JSON.stringify(item),
+              publishedAt: item.publishedDate,
+              metadata: { provider: 'fmp', source: item.site, newsType: 'stock' },
+            });
+            ingested++;
+          }
+        }
+      } catch { /* skip */ }
+    } else if (dataType === 'stock_news') {
+      for (const symbol of symbols) {
+        await waitForFmpSlot();
+        try {
+          const url = `https://financialmodelingprep.com/stable/news/stock?symbols=${encodeURIComponent(symbol)}&page=0&limit=10&apikey=${apiKey}`;
+          const resp = await fetch(url);
+          await incrementFmpCount();
+          if (resp.ok) {
+            const items = await resp.json() as Array<{ title: string; text: string; publishedDate: string; site: string; symbol: string; url: string }>;
+            for (const item of items) {
+              await ingestRawData({
+                sourceId, dataType: 'news', symbol: item.symbol || symbol,
+                title: item.title,
+                content: JSON.stringify(item),
+                publishedAt: item.publishedDate,
+                metadata: { provider: 'fmp', source: item.site, newsType: 'stock_specific' },
+              });
+              ingested++;
+            }
+          }
+        } catch { /* skip */ }
       }
     } else if (dataType === 'event') {
       await waitForFmpSlot();

@@ -689,106 +689,128 @@ httpServer.listen(PORT, async () => {
     }
   }
 
-  // ── Markets Pillar scheduled jobs ───────────────────────────────────────
+  // ── Markets Pillar: CET-aligned Trading Day Schedule ─────────────────────
   try {
     const marketDataService = await createMarketDataService(db);
     const marketAtomService = await createMarketAtomService(db, anthropic);
-
-    // Fetch market data every 6 hours
-    if (cron.validate('0 */6 * * *')) {
-      cron.schedule('0 */6 * * *', async () => {
-        console.log('[markets-cron] Starting scheduled data fetch...');
-        try {
-          const result = await marketDataService.fetchAllSources();
-          const total = result.results.reduce((sum, r) => sum + r.itemsIngested, 0);
-          console.log(`[markets-cron] Data fetch complete: ${total} items from ${result.results.length} sources`);
-        } catch (err) {
-          console.error('[markets-cron] Data fetch failed:', err);
-        }
-      });
-      console.log('[markets-cron] Scheduled data fetch every 6 hours');
-    }
-
-    // Apply atom decay daily at 3 AM
-    if (cron.validate('0 3 * * *')) {
-      cron.schedule('0 3 * * *', async () => {
-        console.log('[markets-cron] Starting atom decay...');
-        try {
-          const result = await marketAtomService.applyAtomDecay();
-          console.log(`[markets-cron] Atom decay complete: ${result.expired} expired, ${result.deactivated} deactivated`);
-        } catch (err) {
-          console.error('[markets-cron] Atom decay failed:', err);
-        }
-      });
-      console.log('[markets-cron] Scheduled atom decay daily at 3 AM');
-    }
-
-    // Check market event triggers every hour
     const eventTriggerService = await createMarketEventTriggerService(db);
-    if (cron.validate('0 * * * *')) {
-      cron.schedule('0 * * * *', async () => {
-        try {
-          const result = await eventTriggerService.checkAndFireTriggers();
-          if (result.fired > 0) {
-            console.log(`[markets-cron] Event triggers: ${result.fired} fired, ${result.errors} errors`);
-          }
-        } catch (err) {
-          console.error('[markets-cron] Event trigger check failed:', err);
-        }
-      });
-      console.log('[markets-cron] Scheduled hourly event trigger check');
-    }
-    // NAV engine: update all active index NAVs and leaderboard daily at 9 PM
     const navEngine = await createMarketNavEngine(db);
-    if (cron.validate('0 21 * * *')) {
-      cron.schedule('0 21 * * *', async () => {
-        console.log('[markets-cron] Starting NAV engine update...');
-        try {
-          const navResult = await navEngine.updateAllActiveIndexes();
-          console.log(`[markets-cron] NAV update: ${navResult.updated} indexes updated`);
-          const lbResult = await navEngine.updateLeaderboard();
-          console.log(`[markets-cron] Leaderboard update: ${lbResult.updated} indexes scored`);
-        } catch (err) {
-          console.error('[markets-cron] NAV engine failed:', err);
-        }
-      });
-      console.log('[markets-cron] Scheduled daily NAV engine at 9 PM');
-    }
-
-    // Market workflow orchestrator: daily intelligence + weekly prediction validation
     const { createMarketWorkflowOrchestrator: createOrch } = await import('./services/market-workflow-orchestrator.js');
     const marketComputationSvcCron = await createMarketComputationService(db);
     const workflowOrchestrator = await createOrch(db, marketComputationSvcCron, marketDataService);
 
-    // Daily intelligence cycle: weekdays at 6 AM
-    if (cron.validate('0 6 * * 1-5')) {
-      cron.schedule('0 6 * * 1-5', async () => {
-        console.log('[markets-cron] Starting daily intelligence cycle...');
-        try {
-          const result = await workflowOrchestrator.runDailyIntelligence();
-          console.log(`[markets-cron] Daily intelligence: ${result.stepsCompleted} steps completed (${result.status})`);
-        } catch (err) {
-          console.error('[markets-cron] Daily intelligence failed:', err);
-        }
-      });
-      console.log('[markets-cron] Scheduled daily intelligence cycle at 6 AM weekdays');
-    }
+    const MARKET_TZ = { timezone: 'Europe/Stockholm' };
 
-    // Prediction validation: Fridays at 8 PM
-    if (cron.validate('0 20 * * 5')) {
-      cron.schedule('0 20 * * 5', async () => {
-        console.log('[markets-cron] Starting prediction validation...');
-        try {
-          const result = await workflowOrchestrator.runPredictionValidation();
-          console.log(`[markets-cron] Prediction validation: ${result.stepsCompleted} steps completed (${result.status})`);
-        } catch (err) {
-          console.error('[markets-cron] Prediction validation failed:', err);
+    // Phase 1: Morning Intelligence (07:00 CET) — overnight review, atom decay, calendar
+    cron.schedule('0 7 * * 1-5', async () => {
+      console.log('[markets-schedule] Phase 1: Morning Intelligence');
+      try {
+        // Fetch overnight news
+        await marketDataService.fetchAllSources();
+        // Apply atom decay
+        await marketAtomService.applyAtomDecay();
+        // Extract atoms from new data
+        const unprocessed = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
+          "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type != 'price' LIMIT 50"
+        );
+        for (const row of unprocessed) {
+          try {
+            const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
+            await marketAtomService.extractAtomsFromRawData(row.id, text, row.data_type);
+            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+          } catch { await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id); }
         }
-      });
-      console.log('[markets-cron] Scheduled prediction validation Fridays at 8 PM');
-    }
+        console.log('[markets-schedule] Phase 1 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 1 error:', err); }
+    }, MARKET_TZ);
+
+    // Phase 2: Pre-Open Signal Scan (14:30 CET) — final prep before US open
+    cron.schedule('30 14 * * 1-5', async () => {
+      console.log('[markets-schedule] Phase 2: Pre-Open Signal Scan');
+      try {
+        await marketDataService.fetchAllSources();
+        console.log('[markets-schedule] Phase 2 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 2 error:', err); }
+    }, MARKET_TZ);
+
+    // Phase 3: Market Open Capture (15:45 CET) — opening data 15 min after US open
+    cron.schedule('45 15 * * 1-5', async () => {
+      console.log('[markets-schedule] Phase 3: Market Open Capture');
+      try {
+        await marketDataService.fetchAllSources();
+        console.log('[markets-schedule] Phase 3 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 3 error:', err); }
+    }, MARKET_TZ);
+
+    // Phase 4: Mid-Day Intelligence (18:00 CET) — full intelligence cycle
+    cron.schedule('0 18 * * 1-5', async () => {
+      console.log('[markets-schedule] Phase 4: Mid-Day Intelligence');
+      try {
+        await marketDataService.fetchAllSources();
+        await workflowOrchestrator.runDailyIntelligence();
+        console.log('[markets-schedule] Phase 4 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 4 error:', err); }
+    }, MARKET_TZ);
+
+    // Phase 5: Market Close (22:15 CET) — EOD data, NAV calculation
+    cron.schedule('15 22 * * 1-5', async () => {
+      console.log('[markets-schedule] Phase 5: Market Close');
+      try {
+        await marketDataService.fetchAllSources();
+        await navEngine.updateAllActiveIndexes();
+        await navEngine.updateLeaderboard();
+        console.log('[markets-schedule] Phase 5 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
+    }, MARKET_TZ);
+
+    // Phase 6: Post-Market Learning (23:00 CET) — validation, learning, next-day prep
+    cron.schedule('0 23 * * 1-5', async () => {
+      console.log('[markets-schedule] Phase 6: Post-Market Learning');
+      try {
+        // Extract atoms from any remaining unprocessed data
+        const remaining = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
+          "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type != 'price' LIMIT 30"
+        );
+        for (const row of remaining) {
+          try {
+            const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
+            await marketAtomService.extractAtomsFromRawData(row.id, text, row.data_type);
+            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+          } catch { await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id); }
+        }
+        console.log('[markets-schedule] Phase 6 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 6 error:', err); }
+    }, MARKET_TZ);
+
+    // Phase 7: Weekend Deep Dive (Saturday 10:00 CET)
+    cron.schedule('0 10 * * 6', async () => {
+      console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
+      try {
+        await workflowOrchestrator.runPredictionValidation();
+        console.log('[markets-schedule] Phase 7 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
+    }, MARKET_TZ);
+
+    // Keep hourly event trigger check
+    cron.schedule('0 * * * *', async () => {
+      try {
+        const result = await eventTriggerService.checkAndFireTriggers();
+        if (result.fired > 0) {
+          console.log(`[markets-schedule] Event triggers: ${result.fired} fired, ${result.errors} errors`);
+        }
+      } catch { /* silent */ }
+    }, MARKET_TZ);
+
+    // Keep daily materialized view refresh (4 AM CET)
+    cron.schedule('0 4 * * *', async () => {
+      try {
+        await db.run("REFRESH MATERIALIZED VIEW CONCURRENTLY IF EXISTS mv_index_leaderboard_ranked");
+      } catch { /* silent */ }
+    }, MARKET_TZ);
+
+    console.log('[markets-schedule] CET-aligned trading day schedule active (7 phases + hourly triggers + 4AM MV refresh)');
   } catch (err) {
-    console.error('[markets-cron] Failed to start market scheduled jobs:', err);
+    console.error('[markets-schedule] Failed to start market scheduled jobs:', err);
   }
 
   // Initialize radar background scanning from DB settings
