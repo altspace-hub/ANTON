@@ -736,6 +736,30 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               {!sidebarCollapsed && 'Learning'}
             </NavLink>
 
+            {/* Strategy & Backtesting */}
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
+                Strategy
+              </div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink
+              to="/markets/goals"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Goals & Values' : undefined}
+            >
+              <Target className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Goals & Values'}
+            </NavLink>
+            <NavLink
+              to="/markets/backtests"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Backtesting' : undefined}
+            >
+              <Clock className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Backtesting'}
+            </NavLink>
+
             {/* Operations */}
             {!sidebarCollapsed && (
               <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">
