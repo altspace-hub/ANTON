@@ -67,18 +67,20 @@ export async function createMarketThesisService(db: DatabaseAdapter, client?: An
     keyAssumptions?: string[];
     riskFactors?: string[];
     targetEntities?: string[];
+    status?: string;
   }) {
     const id = `mth_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await db.run(`
       INSERT INTO market_theses (id, title, description, thesis_type, confidence, time_horizon,
-                                  success_criteria, key_assumptions, risk_factors, target_entities)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                  success_criteria, key_assumptions, risk_factors, target_entities, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, id, params.title, params.description, params.thesisType ?? 'investment',
        params.confidence ?? 0.5, params.timeHorizon ?? 'medium',
        JSON.stringify(params.successCriteria ?? []),
        JSON.stringify(params.keyAssumptions ?? []),
        JSON.stringify(params.riskFactors ?? []),
-       JSON.stringify(params.targetEntities ?? []));
+       JSON.stringify(params.targetEntities ?? []),
+       params.status ?? 'active');
     return id;
   }
 
