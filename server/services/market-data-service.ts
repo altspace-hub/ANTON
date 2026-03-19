@@ -49,6 +49,23 @@ interface WatchlistRow {
 
 export async function createMarketDataService(db: DatabaseAdapter) {
 
+  // ── FMP Rate Limiter (per-minute sliding window) ──────────────────────────
+  const fmpCallTimestamps: number[] = [];
+  const FMP_RATE_LIMIT = 280; // Leave margin under 300/min
+  const FMP_WINDOW_MS = 60_000;
+
+  async function waitForFmpSlot(): Promise<void> {
+    const now = Date.now();
+    while (fmpCallTimestamps.length > 0 && fmpCallTimestamps[0]! < now - FMP_WINDOW_MS) {
+      fmpCallTimestamps.shift();
+    }
+    if (fmpCallTimestamps.length >= FMP_RATE_LIMIT) {
+      const waitMs = fmpCallTimestamps[0]! + FMP_WINDOW_MS - now + 100;
+      await new Promise(r => setTimeout(r, waitMs));
+    }
+    fmpCallTimestamps.push(Date.now());
+  }
+
   // ── Data Sources CRUD ────────────────────────────────────────────────────
 
   async function getSources(activeOnly = true) {
@@ -517,8 +534,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
 
     if (dataType === 'price') {
       for (const symbol of symbols) {
-        const currentCount = await getFmpDailyCount();
-        if (currentCount >= 245) { console.warn('[market-data] FMP daily limit approaching, skipping remaining'); break; }
+        await waitForFmpSlot();
         const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
@@ -537,7 +553,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         }
       }
     } else if (dataType === 'news') {
-      if (await getFmpDailyCount() >= 245) throw new Error('FMP daily limit reached');
+      await waitForFmpSlot();
       const url = `https://financialmodelingprep.com/stable/news?page=0&apikey=${apiKey}`;
       const response = await fetch(url);
       await incrementFmpCount();
@@ -554,7 +570,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         ingested++;
       }
     } else if (dataType === 'event') {
-      if (await getFmpDailyCount() >= 245) throw new Error('FMP daily limit reached');
+      await waitForFmpSlot();
       const url = `https://financialmodelingprep.com/stable/economic-calendar?apikey=${apiKey}`;
       const response = await fetch(url);
       await incrementFmpCount();
@@ -572,7 +588,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       }
     } else if (dataType === 'fundamental') {
       for (const symbol of symbols) {
-        if (await getFmpDailyCount() >= 245) break;
+        await waitForFmpSlot();
         const url = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
@@ -588,6 +604,85 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           });
           ingested++;
         }
+      }
+    } else if (dataType === 'fundamental_full') {
+      for (const symbol of symbols) {
+        await waitForFmpSlot();
+        // Income statement
+        try {
+          const incUrl = `https://financialmodelingprep.com/stable/income-statement?symbol=${encodeURIComponent(symbol)}&period=annual&apikey=${apiKey}`;
+          const incResp = await fetch(incUrl);
+          await incrementFmpCount();
+          if (incResp.ok) {
+            const data = await incResp.json();
+            await ingestRawData({
+              sourceId, dataType: 'income_statement', symbol,
+              title: `${symbol} income statement`,
+              content: JSON.stringify(data),
+              publishedAt: new Date().toISOString(),
+              metadata: { provider: 'fmp', period: 'annual' },
+            });
+            ingested++;
+          }
+        } catch { /* skip */ }
+
+        await waitForFmpSlot();
+        // Financial ratios
+        try {
+          const ratUrl = `https://financialmodelingprep.com/stable/ratios?symbol=${encodeURIComponent(symbol)}&period=annual&apikey=${apiKey}`;
+          const ratResp = await fetch(ratUrl);
+          await incrementFmpCount();
+          if (ratResp.ok) {
+            const data = await ratResp.json();
+            await ingestRawData({
+              sourceId, dataType: 'ratios', symbol,
+              title: `${symbol} financial ratios`,
+              content: JSON.stringify(data),
+              publishedAt: new Date().toISOString(),
+              metadata: { provider: 'fmp', period: 'annual' },
+            });
+            ingested++;
+          }
+        } catch { /* skip */ }
+
+        await waitForFmpSlot();
+        // Key metrics
+        try {
+          const metUrl = `https://financialmodelingprep.com/stable/key-metrics?symbol=${encodeURIComponent(symbol)}&period=annual&apikey=${apiKey}`;
+          const metResp = await fetch(metUrl);
+          await incrementFmpCount();
+          if (metResp.ok) {
+            const data = await metResp.json();
+            await ingestRawData({
+              sourceId, dataType: 'key_metrics', symbol,
+              title: `${symbol} key metrics`,
+              content: JSON.stringify(data),
+              publishedAt: new Date().toISOString(),
+              metadata: { provider: 'fmp', period: 'annual' },
+            });
+            ingested++;
+          }
+        } catch { /* skip */ }
+      }
+    } else if (dataType === 'analyst_estimates') {
+      for (const symbol of symbols) {
+        await waitForFmpSlot();
+        try {
+          const url = `https://financialmodelingprep.com/stable/analyst-estimates?symbol=${encodeURIComponent(symbol)}&period=annual&apikey=${apiKey}`;
+          const resp = await fetch(url);
+          await incrementFmpCount();
+          if (resp.ok) {
+            const data = await resp.json();
+            await ingestRawData({
+              sourceId, dataType: 'analyst_estimates', symbol,
+              title: `${symbol} analyst estimates`,
+              content: JSON.stringify(data),
+              publishedAt: new Date().toISOString(),
+              metadata: { provider: 'fmp', period: 'annual' },
+            });
+            ingested++;
+          }
+        } catch { /* skip */ }
       }
     }
 
@@ -690,6 +785,39 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     return ingested;
   }
 
+  // ── Fetch Historical Price Range (for backtesting) ─────────────────────
+
+  async function fetchHistoricalRange(symbols: string[], from: string, to: string): Promise<number> {
+    const apiKey = process.env.FMP_API_KEY;
+    if (!apiKey) throw new Error('FMP_API_KEY not set');
+    let ingested = 0;
+
+    for (const symbol of symbols) {
+      await waitForFmpSlot();
+      try {
+        const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}&apikey=${apiKey}`;
+        const resp = await fetch(url);
+        await incrementFmpCount();
+        if (!resp.ok) continue;
+        const data = await resp.json() as Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }>;
+        const rows = Array.isArray(data) ? data : [];
+
+        for (const day of rows) {
+          await db.run(`
+            INSERT INTO market_historical_prices (symbol, price_date, open, high, low, close, volume, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'fmp')
+            ON CONFLICT (symbol, price_date, source) DO NOTHING
+          `, symbol, day.date, day.open, day.high, day.low, day.close, day.volume);
+          ingested++;
+        }
+      } catch (err) {
+        console.error(`[market-data] Historical fetch failed for ${symbol}:`, err);
+      }
+    }
+
+    return ingested;
+  }
+
   // ── Fetch All Active Sources ─────────────────────────────────────────────
 
   async function fetchAllSources(): Promise<{ results: Array<{ sourceId: string; itemsIngested: number; error?: string }> }> {
@@ -749,6 +877,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     // Fetching
     fetchFromSource,
     fetchAllSources,
+    fetchHistoricalRange,
     // Dashboard
     getDashboardStats,
   };
