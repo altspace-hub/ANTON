@@ -799,12 +799,40 @@ httpServer.listen(PORT, async () => {
       } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
     }, MARKET_TZ);
 
-    // Keep hourly event trigger check
-    cron.schedule('0 * * * *', async () => {
+    // Hourly market-hours data fetch (13:00-23:00 CET, Mon-Fri)
+    // Staggers: :00 = prices, :15 = news, :30 = event triggers
+    cron.schedule('0 13-23 * * 1-5', async () => {
+      const hour = new Date().getHours();
+      console.log(`[markets-hourly] Fetching prices (${hour}:00 CET)`);
+      try {
+        // Fetch price sources only (FMP prices, sector ETFs, indices)
+        const priceSources = await db.all<{ id: string }>(
+          "SELECT id FROM market_data_sources WHERE is_active = 1 AND provider = 'fmp' AND config::text LIKE '%price%'"
+        );
+        for (const src of priceSources) {
+          try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
+        }
+      } catch (err) { console.error('[markets-hourly] Price fetch error:', err); }
+    }, MARKET_TZ);
+
+    cron.schedule('15 13-23 * * 1-5', async () => {
+      console.log('[markets-hourly] Fetching news');
+      try {
+        // Fetch news sources (FMP news, stock news, RSS)
+        const newsSources = await db.all<{ id: string }>(
+          "SELECT id FROM market_data_sources WHERE is_active = 1 AND (config::text LIKE '%news%' OR provider = 'rss')"
+        );
+        for (const src of newsSources) {
+          try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
+        }
+      } catch (err) { console.error('[markets-hourly] News fetch error:', err); }
+    }, MARKET_TZ);
+
+    cron.schedule('30 13-23 * * 1-5', async () => {
       try {
         const result = await eventTriggerService.checkAndFireTriggers();
         if (result.fired > 0) {
-          console.log(`[markets-schedule] Event triggers: ${result.fired} fired, ${result.errors} errors`);
+          console.log(`[markets-hourly] Event triggers: ${result.fired} fired`);
         }
       } catch { /* silent */ }
     }, MARKET_TZ);
@@ -816,7 +844,7 @@ httpServer.listen(PORT, async () => {
       } catch { /* silent */ }
     }, MARKET_TZ);
 
-    console.log('[markets-schedule] CET-aligned trading day schedule active (7 phases + hourly triggers + 4AM MV refresh)');
+    console.log('[markets-schedule] CET-aligned trading day schedule active (7 phases + hourly market-hours fetch 13:00-23:00 + 4AM MV refresh)');
   } catch (err) {
     console.error('[markets-schedule] Failed to start market scheduled jobs:', err);
   }

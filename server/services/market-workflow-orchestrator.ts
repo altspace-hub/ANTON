@@ -180,23 +180,29 @@ export async function createMarketWorkflowOrchestrator(
         await insertDeadLetter(runId, 'Fetch Market Data', errMsg);
       }
 
-      // Step 2: Extract atoms (via internal endpoint if available, else skip)
+      // Step 2: Extract atoms from unprocessed news/fundamentals
       try {
-        const port = process.env.PORT || 3001;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
-        const resp = await fetch(`http://localhost:${port}/api/markets/atoms/extract`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: '{}',
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        const data = await resp.json().catch(() => ({}));
-        stepResults.push({ step: 'Extract Atoms', status: resp.ok ? 'success' : 'warning', output: data });
+        const { createMarketAtomService } = await import('./market-atom-service.js');
+        const atomSvc = await createMarketAtomService(db);
+        const unprocessed = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
+          "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type NOT IN ('price') ORDER BY fetched_at ASC LIMIT 40"
+        );
+        let atomsCreated = 0;
+        for (const row of unprocessed) {
+          try {
+            const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
+            const ids = await atomSvc.extractAtomsFromRawData(row.id, text, row.data_type);
+            atomsCreated += ids.length;
+            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+          } catch {
+            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+          }
+        }
+        stepResults.push({ step: 'Extract Atoms', status: 'success', output: { processed: unprocessed.length, atomsCreated } });
         stepsCompleted++;
       } catch (err) {
-        stepResults.push({ step: 'Extract Atoms', status: 'skipped', error: 'Atom extraction endpoint not available' });
+        const errMsg = err instanceof Error ? err.message : String(err);
+        stepResults.push({ step: 'Extract Atoms', status: 'warning', output: { error: errMsg } });
       }
 
       // Step 3: Refresh correlation map
