@@ -13,6 +13,7 @@ import { createMarketWhyChainsService } from './market-why-chains-service.js';
 import { createMarketIntelligenceService } from './market-intelligence-service.js';
 import { createMarketThesisService } from './market-thesis-service.js';
 import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
+import type { TemporalReasoningService } from './temporal-reasoning.js';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import path from 'path';
@@ -51,6 +52,7 @@ export async function createMarketWorkflowOrchestrator(
   computationService: MarketComputationService,
   dataService: MarketDataService,
   anthropicApiKey?: string,
+  temporalService?: TemporalReasoningService | null,
 ) {
   // Initialize investigation + why-chains + learning + thesis + rebalance services
   const investigationService = await createMarketInvestigationService(db);
@@ -309,10 +311,19 @@ export async function createMarketWorkflowOrchestrator(
         const signalScanOutput = stepResults.find(s => s.step === 'Signal Scanner')?.output;
         const macroBriefOutput = stepResults.find(s => s.step === 'AI Macro Brief')?.output;
 
+        // Build goals context if temporal service is available
+        let goalsContext = '';
+        if (temporalService) {
+          try {
+            goalsContext = await temporalService.buildGoalsValuesLayer('default', 'finance');
+          } catch { /* non-fatal — goals context is optional enrichment */ }
+        }
+
         const consulContext = JSON.stringify({
           signals: signalScanOutput,
           macroBrief: macroBriefOutput,
           date: new Date().toISOString().slice(0, 10),
+          goalsAndValues: goalsContext || undefined,
         }).slice(0, 4000);
 
         const consulResults: Array<{ consul: string; status: string; summary?: string }> = [];
@@ -455,6 +466,13 @@ Return ONLY the JSON array, no other text.`;
 
           // Create predictions linked to this thesis
           for (const p of (t.predictions ?? []).slice(0, 2)) {
+            // Determine horizon from time_horizon_days
+            const horizonDays = p.time_horizon_days ?? 30;
+            const horizon = horizonDays <= 7 ? 'this_week'
+              : horizonDays <= 30 ? 'this_month'
+              : horizonDays <= 365 ? 'this_year'
+              : 'this_decade';
+
             const predId = await thesisService.createPrediction({
               thesisId,
               title: p.title,
@@ -467,6 +485,7 @@ Return ONLY the JSON array, no other text.`;
               timeHorizonDays: p.time_horizon_days ?? 30,
               deadline: p.deadline,
               keyAssumptions: p.key_assumptions ?? [],
+              horizon,
             });
             createdPredictions.push(predId);
           }
@@ -679,6 +698,40 @@ Return ONLY the JSON array, no other text.`;
           const convictionProposal = await rebalanceService.generateConvictionRebalanceProposal(indexId);
 
           if (convictionProposal.changes.filter(c => c.action !== 'hold').length > 0) {
+            // Temporal consequence check before execution
+            if (temporalService) {
+              const changeDescriptions = convictionProposal.changes
+                .filter((c: { action: string }) => c.action !== 'hold')
+                .map((c: { action: string; symbol: string; proposedWeight: number }) => `${c.action} ${c.symbol} to ${(c.proposedWeight * 100).toFixed(1)}%`)
+                .join(', ');
+
+              const temporalCheck = await temporalService.checkTemporalConsequences(
+                `Rebalance ${indexId}: ${changeDescriptions}`,
+                `Index rebalance with ${convictionProposal.changes.filter((c: { action: string }) => c.action !== 'hold').length} changes`,
+                'default', 'finance'
+              );
+
+              // Block on hard values violations
+              if (temporalCheck.valuesViolations.length > 0) {
+                stepResults.push({
+                  step: 'Execute Rebalance', status: 'blocked',
+                  output: { reason: 'Values constraint violated', violations: temporalCheck.valuesViolations },
+                });
+                stepsCompleted++;
+                // Skip execution — jump to end
+                await updateRun(runId, 'completed');
+                return { runId, status: 'completed', stepsCompleted, stepResults };
+              }
+
+              // Log high-severity conflicts but proceed
+              if (temporalCheck.conflicts.some((c: { severity: string }) => c.severity === 'high')) {
+                stepResults.push({
+                  step: 'Temporal Check', status: 'warning',
+                  output: { conflicts: temporalCheck.conflicts, recommendation: temporalCheck.recommendation },
+                });
+              }
+            }
+
             const execChanges = convictionProposal.changes
               .filter(c => c.action !== 'hold')
               .map(c => ({ symbol: c.symbol, action: c.action, newWeight: c.proposedWeight }));
@@ -827,6 +880,25 @@ Return ONLY the JSON array, no other text.`;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         stepResults.push({ step: 'Signal Calibration', status: 'error', error: errMsg });
+      }
+
+      // Step 5.6: Temporal Learning — create calibration atoms from validated predictions
+      if (temporalService) {
+        try {
+          const validatedPreds = await db.all<{ id: string }>(
+            "SELECT id FROM market_predictions WHERE status = 'validated' AND validated_at > NOW() - INTERVAL '7 days'"
+          );
+          let patternsCreated = 0;
+          for (const pred of validatedPreds.slice(0, 20)) {
+            const atomId = await temporalService.processTemporalLearning(pred.id);
+            if (atomId) patternsCreated++;
+          }
+          stepResults.push({ step: 'Temporal Learning', status: 'success', output: { patternsCreated } });
+          stepsCompleted++;
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          stepResults.push({ step: 'Temporal Learning', status: 'error', error: errMsg });
+        }
       }
 
       // Step 6: Learning summary (LLM)

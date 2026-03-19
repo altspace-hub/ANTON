@@ -141,6 +141,7 @@ import { setRebalanceNotifyService } from './services/market-index-rebalance-ser
 import { createMarketNavEngine } from './services/market-nav-engine.js';
 import { createMarketWorkflowRoutes } from './routes/market-workflows.js';
 import { createMarketBacktestRoutes } from './routes/market-backtests.js';
+import { createTemporalReasoningRoutes } from './routes/temporal-reasoning.js';
 import { createOpenApiRouter } from './routes/openapi.js';
 import { csrfTokenRoute, csrfProtection, pruneExpiredCsrfTokens } from './middleware/csrf.js';
 import { createWebhookListener } from './services/webhook-listener.js';
@@ -519,6 +520,9 @@ app.use('/api', await createMarketEventCalendarRoutes(db));
 app.use('/api', await createMarketWorkflowRoutes(db));
 app.use('/api', await createMarketBacktestRoutes(db));
 
+// Temporal Reasoning — goals, values, strategy, consequence checking
+app.use('/api', await createTemporalReasoningRoutes(db));
+
 // RCI service — needs computation service + anthropic client
 const marketComputationSvc = await createMarketComputationService(db);
 const marketRCIService = await createMarketRCIService(db, marketComputationSvc, anthropic);
@@ -699,7 +703,9 @@ httpServer.listen(PORT, async () => {
     const navEngine = await createMarketNavEngine(db);
     const { createMarketWorkflowOrchestrator: createOrch } = await import('./services/market-workflow-orchestrator.js');
     const marketComputationSvcCron = await createMarketComputationService(db);
-    const workflowOrchestrator = await createOrch(db, marketComputationSvcCron, marketDataService);
+    const { createTemporalReasoningService } = await import('./services/temporal-reasoning.js');
+    const temporalReasoning = await createTemporalReasoningService(db);
+    const workflowOrchestrator = await createOrch(db, marketComputationSvcCron, marketDataService, undefined, temporalReasoning);
 
     const MARKET_TZ = { timezone: 'Europe/Stockholm' };
 

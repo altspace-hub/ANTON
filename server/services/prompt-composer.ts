@@ -154,6 +154,8 @@ export interface PromptComposerConfig {
   atomLayerPrompt?: string;
   /** Layer 4a: Session resume context (snapshot summary, decisions, next steps) — built by buildResumeContextLayer() */
   resumeContextPrompt?: string;
+  /** Layer 4.5: Goals & Values Context — temporal horizons, strategy, values constraints */
+  goalsValuesPrompt?: string;
 }
 
 // ── Main Compose Function ──────────────────────────────────
@@ -374,6 +376,11 @@ export async function composeSystemPrompt(config: PromptComposerConfig): Promise
   // Layer 4a: Session Resume Context — restores paused-session state after module prompt
   if (typeof config.resumeContextPrompt === 'string' && config.resumeContextPrompt.trim()) parts.push(config.resumeContextPrompt.trim());
 
+  // Layer 4.5: Goals & Values Context
+  if (typeof config.goalsValuesPrompt === 'string' && config.goalsValuesPrompt.trim()) {
+    parts.push(config.goalsValuesPrompt.trim());
+  }
+
   // Layer 5: Expert Personas (single or multi-select)
   // Personas run before Skills so the character/role shapes how skills are applied.
   if (config.selectedPersonas && config.selectedPersonas.length > 0) {
@@ -502,6 +509,11 @@ export async function composeSystemPromptSplit(config: PromptComposerConfig): Pr
 
   // Layer 4a: Session Resume Context
   if (typeof config.resumeContextPrompt === 'string' && config.resumeContextPrompt.trim()) staticParts.push(config.resumeContextPrompt.trim());
+
+  // Layer 4.5: Goals & Values Context
+  if (typeof config.goalsValuesPrompt === 'string' && config.goalsValuesPrompt.trim()) {
+    staticParts.push(config.goalsValuesPrompt.trim());
+  }
 
   const staticPart = staticParts.filter(Boolean).join(SEP);
 

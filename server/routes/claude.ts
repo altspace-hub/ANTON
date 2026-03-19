@@ -31,6 +31,7 @@ import { acquireStream, releaseStream } from '../services/stream-limiter.js';
 import { isCircuitOpen, recordSuccess, recordFailure } from '../services/circuit-breaker.js';
 import { enqueueAudit } from '../services/audit-queue.js';
 import { buildCompactionConfig, buildContextManagementParam } from '../services/compaction-manager.js';
+import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -38,6 +39,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   const router = Router();
   const checkBudget = await createBudgetMiddleware(db);
   const ratchet = await createQualityRatchet(db);
+  const temporalReasoning = await createTemporalReasoningService(db);
 
   // Lazy knowledge pipeline instances — shared across requests, initialised on first use
   let _atomExtractor: Awaited<ReturnType<typeof createAtomExtractor>> | null = null;
@@ -523,6 +525,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
       const knowledgePackPrompt = await buildKnowledgePackLayer(db);
       const atomLayerPrompt = atomInjectionEnabled !== false ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null) : '';
+      const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
+        (req as any).user?.id || 'default',
+        areaId || 'finance'
+      );
 
       const promptComposerConfig = {
         moduleId,
@@ -552,6 +558,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         knowledgePackPrompt: knowledgePackPrompt || undefined,
         atomLayerPrompt: atomLayerPrompt || undefined,
         resumeContextPrompt: resumeContextPrompt || undefined,
+        goalsValuesPrompt: goalsValuesPrompt || undefined,
       } as const;
 
       // Use the split composer for Anthropic models (supports caching); plain for others.

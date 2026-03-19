@@ -210,6 +210,7 @@ export default function MarketsPage() {
           { to: '/markets/watchlist', icon: Eye, label: 'Watchlist', color: 'text-adv-gold' },
           { to: '/markets/events', icon: Calendar, label: 'Events', color: 'text-adv-blue' },
           { to: '/markets/rci', icon: Calculator, label: 'RCI', color: 'text-purple-400' },
+          { to: '/markets/goals', icon: Target, label: 'Goals & Values', color: 'text-adv-teal' },
         ].map((nav) => (
           <button key={nav.to} onClick={() => navigate(nav.to)}
             className="flex items-center gap-2 rounded-lg border border-adv-card bg-adv-card px-4 py-2 text-sm text-adv-off-white hover:border-adv-teal transition-colors">

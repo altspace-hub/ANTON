@@ -233,21 +233,23 @@ Predictions: ${thesis.predictions.length}`,
     timeHorizonDays?: number;
     deadline?: string;
     keyAssumptions?: string[];
+    horizon?: string;
   }) {
     const id = `mpred_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await db.run(`
       INSERT INTO market_predictions (id, thesis_id, title, description, prediction_type,
                                        target_entity, target_symbol, predicted_outcome,
                                        predicted_value, predicted_direction, confidence,
-                                       time_horizon_days, deadline, key_assumptions)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       time_horizon_days, deadline, key_assumptions, horizon)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, id, params.thesisId ?? null, params.title, params.description,
        params.predictionType ?? 'directional',
        params.targetEntity ?? null, params.targetSymbol ?? null,
        params.predictedOutcome, params.predictedValue ?? null,
        params.predictedDirection ?? null, params.confidence ?? 0.5,
        params.timeHorizonDays ?? null, params.deadline ?? null,
-       JSON.stringify(params.keyAssumptions ?? []));
+       JSON.stringify(params.keyAssumptions ?? []),
+       params.horizon ?? 'this_month');
     return id;
   }
 
