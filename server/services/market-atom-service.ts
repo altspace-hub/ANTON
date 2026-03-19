@@ -40,6 +40,7 @@ interface RawAtomExtraction {
   valid_until?: string | null;
   decay_rate?: number;
   tags?: string[];
+  importance_score?: number;
 }
 
 // ── Market Atom Taxonomy ────────────────────────────────────────────────────
@@ -75,6 +76,97 @@ Return JSON array of atoms.`;
 
 export async function createMarketAtomService(db: DatabaseAdapter, client?: Anthropic) {
 
+  // ── Importance Scoring ──────────────────────────────────────────────────
+
+  function computeImportancePreWeight(
+    content: string, atomType: string, category: string,
+    subcategory?: string | null, sentiment?: string | null,
+    entities?: Array<{ type: string; id: string; name?: string }>
+  ): number {
+    // Base importance from category + type
+    let base = 50;
+    if (category === 'macro') {
+      if (atomType === 'event') base = 70;
+      else if (atomType === 'signal' || atomType === 'insight') base = 65;
+      else base = 60;
+    } else if (category === 'equity') {
+      if (atomType === 'event') base = 55;
+      else if (atomType === 'signal') base = 55;
+      else base = 40;
+    } else if (category === 'sector') {
+      if (atomType === 'event') base = 70;
+      else base = 60;
+    } else if (category === 'commodity') {
+      base = atomType === 'event' ? 65 : 55;
+    }
+
+    // Keyword boosters
+    const cl = content.toLowerCase();
+    let boost = 0;
+    if (/\b(war|conflict|military|invasion|missile|nuclear|escalat|attack|strike)/i.test(cl)) boost += 25;
+    if (/\b(fed|ecb|boj|fomc|rate decision|monetary policy|central bank)\b/i.test(cl)) boost += 20;
+    if (/\b(rate (hike|cut)|basis points|bp (cut|hike)|interest rate (change|decision))\b/i.test(cl)) boost += 20;
+    if (/\b(miss|beat|surprise).{0,20}(earning|eps|revenue)/i.test(cl) || /\b(earning|eps|revenue).{0,20}(miss|beat|surprise)/i.test(cl)) boost += 15;
+    if (/\b(tariff|trade war|sanction|embargo)\b/i.test(cl)) boost += 12;
+    if (/\b(recession|depression|crisis|crash|panic|collapse)\b/i.test(cl)) boost += 15;
+    if (/\b(ipo|merger|acquisition|takeover|buyout)\b/i.test(cl)) boost += 10;
+
+    // Entity count: broader impact = higher importance
+    const entityCount = entities?.length ?? 0;
+    if (entityCount >= 5) boost += 8;
+    else if (entityCount >= 3) boost += 4;
+
+    // Prediction type atoms are inherently important
+    if (atomType === 'prediction') boost += 10;
+    if (atomType === 'outcome') boost += 15;
+
+    return Math.max(0, Math.min(100, base + boost));
+  }
+
+  // ── Entity Graph Auto-Population ──────────────────────────────────────
+
+  async function linkAtomToEntities(
+    atomId: string, entities: Array<{ type: string; id: string; name?: string }>
+  ): Promise<void> {
+    if (!entities || entities.length === 0) return;
+
+    for (const ent of entities) {
+      // Find or create entity in market_entities
+      let entityRow = await db.get<{ id: string }>(
+        "SELECT id FROM market_entities WHERE symbol = ? OR name = ? LIMIT 1",
+        ent.id, ent.name ?? ent.id
+      );
+
+      if (!entityRow) {
+        const newId = `ment_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        try {
+          await db.run(
+            "INSERT INTO market_entities (id, name, entity_type, symbol, atom_count) VALUES (?, ?, ?, ?, 1)",
+            newId, ent.name ?? ent.id, ent.type ?? 'company', ent.id
+          );
+          entityRow = { id: newId };
+        } catch {
+          // Entity might have been created by concurrent atom, retry lookup
+          entityRow = await db.get<{ id: string }>(
+            "SELECT id FROM market_entities WHERE symbol = ? OR name = ? LIMIT 1",
+            ent.id, ent.name ?? ent.id
+          );
+          if (!entityRow) continue;
+        }
+      } else {
+        await db.run("UPDATE market_entities SET atom_count = COALESCE(atom_count, 0) + 1, updated_at = NOW() WHERE id = ?", entityRow.id);
+      }
+
+      // Link atom to entity
+      try {
+        await db.run(
+          "INSERT INTO market_atom_entity_links (atom_id, entity_id) VALUES (?, ?) ON CONFLICT (atom_id, entity_id) DO NOTHING",
+          atomId, entityRow.id
+        );
+      } catch { /* ignore dups */ }
+    }
+  }
+
   // ── Atom CRUD ────────────────────────────────────────────────────────────
 
   async function createAtom(params: {
@@ -92,18 +184,28 @@ export async function createMarketAtomService(db: DatabaseAdapter, client?: Anth
     rawDataId?: string;
     extractionMethod?: string;
     extractionModel?: string;
+    importanceScore?: number;
   }) {
     const id = `matom_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+    // Compute importance score
+    const importance = params.importanceScore ?? computeImportancePreWeight(
+      params.content, params.atomType, params.category ?? 'general',
+      params.subcategory, params.sentiment, params.entities
+    );
+    const importanceSource = params.importanceScore ? 'manual' : 'rule';
+
     await db.run(`
       INSERT INTO market_atoms (id, content, atom_type, confidence, category, subcategory, sentiment,
-                                temporal_type, entities, valid_until, decay_rate)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                temporal_type, entities, valid_until, decay_rate,
+                                importance_score, importance_source)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, id, params.content, params.atomType, params.confidence ?? 0.5,
        params.category ?? 'general', params.subcategory ?? null,
        params.sentiment ?? null, params.temporalType ?? 'point',
        JSON.stringify(params.entities ?? []),
-       params.validUntil ?? null, params.decayRate ?? 0.05);
+       params.validUntil ?? null, params.decayRate ?? 0.05,
+       importance, importanceSource);
 
     // Link to raw data source
     if (params.rawDataId) {
@@ -119,6 +221,9 @@ export async function createMarketAtomService(db: DatabaseAdapter, client?: Anth
         await db.run('INSERT INTO market_atom_tags (atom_id, tag) VALUES (?, ?)', id, tag);
       }
     }
+
+    // Auto-populate entity graph
+    await linkAtomToEntities(id, params.entities ?? []);
 
     // Notify (PG LISTEN/NOTIFY — no-op on SQLite)
     if (_pgNotify) {
@@ -222,6 +327,7 @@ Return a JSON array of atoms with these fields:
 - valid_until (string or null): ISO date when this becomes stale
 - decay_rate (number): daily confidence decay (0.01-0.2)
 - tags (string array): relevant tags
+- importance_score (integer 0-100): market impact importance. 90-100: war/nuclear/systemic. 80-90: central bank rate decisions. 70-80: major earnings surprises, trade war. 60-70: sector events. 50-60: company events. 40-50: routine data. 30-40: commentary. 20-30: minor announcements.
 
 Return ONLY the JSON array, no other text.`;
 
@@ -259,6 +365,7 @@ Return ONLY the JSON array, no other text.`;
           rawDataId,
           extractionMethod: 'ai',
           extractionModel: 'claude-haiku-4-5-20251001',
+          importanceScore: raw.importance_score,
         });
         createdIds.push(id);
       }
@@ -331,6 +438,7 @@ Return ONLY the JSON array.`;
           tags: raw.tags || ['fundamental'],
           extractionMethod: 'ai',
           extractionModel: 'claude-haiku-4-5-20251001',
+          importanceScore: raw.importance_score,
         });
         createdIds.push(id);
       }

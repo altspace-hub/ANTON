@@ -137,7 +137,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     await db.run(`
       INSERT INTO market_data_raw (id, source_id, data_type, symbol, title, content, published_at, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT DO NOTHING
+      ON CONFLICT (source_id, symbol, data_type, published_at) DO NOTHING
     `, id, params.sourceId, params.dataType,
        params.symbol ?? null, params.title ?? null, params.content,
        params.publishedAt ?? null, JSON.stringify(params.metadata ?? {}));
@@ -164,7 +164,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       await db.run(`
         INSERT INTO market_price_normalized (id, symbol, price_date, open, high, low, close, adjusted_close, volume, source_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT DO NOTHING
+        ON CONFLICT (symbol, price_date, source_id) DO NOTHING
       `, normId, symbol, priceDate, open, high, low, close, adjustedClose, volume, sourceId);
     } catch {
       // Non-fatal: price normalization is best-effort

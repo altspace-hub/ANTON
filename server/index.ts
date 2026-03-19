@@ -140,6 +140,7 @@ import { setThesisNotifyService } from './services/market-thesis-service.js';
 import { setRebalanceNotifyService } from './services/market-index-rebalance-service.js';
 import { createMarketNavEngine } from './services/market-nav-engine.js';
 import { createMarketWorkflowRoutes } from './routes/market-workflows.js';
+import { createMarketBacktestRoutes } from './routes/market-backtests.js';
 import { createOpenApiRouter } from './routes/openapi.js';
 import { csrfTokenRoute, csrfProtection, pruneExpiredCsrfTokens } from './middleware/csrf.js';
 import { createWebhookListener } from './services/webhook-listener.js';
@@ -516,6 +517,7 @@ app.use('/api', await createMarketWhyChainsRoutes(db));
 app.use('/api', await createMarketCrossPillarRoutes(db));
 app.use('/api', await createMarketEventCalendarRoutes(db));
 app.use('/api', await createMarketWorkflowRoutes(db));
+app.use('/api', await createMarketBacktestRoutes(db));
 
 // RCI service — needs computation service + anthropic client
 const marketComputationSvc = await createMarketComputationService(db);
