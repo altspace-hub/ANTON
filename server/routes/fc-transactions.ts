@@ -41,5 +41,28 @@ export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Ro
     } catch (err) { res.status(500).json({ error: 'Failed to submit transaction' }); }
   });
 
+  // Auto-fill creditor info from contact's payment details
+  router.get('/futurechain/transactions/autofill/:contactHash', async (req, res) => {
+    try {
+      const conn = await db.get(
+        `SELECT payment_address, payment_name, payment_country, payment_street, payment_city, payment_postal_code,
+                agent_wallet_address, agent_wallet_name, display_name
+         FROM community_connections WHERE contact_hash = ? AND status = 'accepted'`,
+        req.params.contactHash
+      );
+      if (!conn) return res.status(404).json({ error: 'Contact not found' });
+      res.json({
+        toAddress: conn.payment_address ?? conn.agent_wallet_address ?? '',
+        creditorName: conn.payment_name ?? conn.display_name ?? '',
+        creditorCountry: conn.payment_country ?? '',
+        creditorStreet: conn.payment_street ?? '',
+        creditorCity: conn.payment_city ?? '',
+        creditorPostalCode: conn.payment_postal_code ?? '',
+        agentWalletAddress: conn.agent_wallet_address ?? '',
+        agentWalletName: conn.agent_wallet_name ?? '',
+      });
+    } catch (err) { res.status(500).json({ error: 'Failed to get contact payment info' }); }
+  });
+
   return router;
 }

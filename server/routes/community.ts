@@ -788,6 +788,39 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── Contact Payment Info ─────────────────────────────────────────────
+
+  router.patch('/community/connections/:id/payment', async (req, res) => {
+    try {
+      const allowed = ['payment_address', 'payment_name', 'payment_country', 'payment_street', 'payment_city', 'payment_postal_code', 'agent_wallet_address', 'agent_wallet_name'];
+      const sets: string[] = [];
+      const vals: unknown[] = [];
+      for (const [k, v] of Object.entries(req.body)) {
+        if (allowed.includes(k)) { sets.push(`${k} = ?`); vals.push(v); }
+      }
+      if (sets.length > 0) {
+        vals.push(req.params.id);
+        await db.run(`UPDATE community_connections SET ${sets.join(', ')} WHERE id = ?`, ...vals);
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[community] Payment info update error:', err);
+      res.status(500).json({ error: 'Failed to update payment info' });
+    }
+  });
+
+  router.get('/community/connections/:contactHash/payment', async (req, res) => {
+    try {
+      const conn = await db.get(
+        "SELECT payment_address, payment_name, payment_country, payment_street, payment_city, payment_postal_code, agent_wallet_address, agent_wallet_name FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+        req.params.contactHash
+      );
+      res.json(conn ?? {});
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to get payment info' });
+    }
+  });
+
   // ── C1: Knowledge Atom Sharing ────────────────────────────────────────
 
   router.post('/community/share/atom/:atomId/:contactHash', async (req, res) => {
