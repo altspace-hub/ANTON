@@ -831,23 +831,76 @@ httpServer.listen(PORT, async () => {
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 6: Post-Market (23:00 CET) — heavy processing, catch up on backlog
+    // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis
     cron.schedule('0 23 * * 1-5', async () => {
-      console.log('[markets-schedule] Phase 6: Post-Market Processing');
+      console.log('[markets-schedule] Phase 6: Post-Market Processing + Fundamental Analysis');
       try {
         const processed = await processBacklog(60);
-        console.log(`[markets-schedule] Phase 6 complete — processed ${processed} articles`);
+
+        // Rotating fundamental analysis: 3 companies per night
+        // Cycles through all followed companies over ~2 weeks
+        try {
+          const { createMarketFundamentalAnalysisService } = await import('./services/market-fundamental-analysis-service.js');
+          const analysisService = await createMarketFundamentalAnalysisService(db);
+
+          // Get all symbols we follow (portfolios + fundamentals source)
+          const allSymbols = await db.all<{ symbol: string }>(
+            `SELECT DISTINCT symbol FROM (
+              SELECT DISTINCT symbol FROM market_index_holdings WHERE removed_at IS NULL AND symbol IS NOT NULL
+              UNION
+              SELECT DISTINCT symbol FROM market_data_raw WHERE data_type = 'income_statement' AND symbol IS NOT NULL
+            ) s ORDER BY symbol`
+          );
+
+          // Find symbols not analyzed recently (or never analyzed)
+          const staleSymbols = [];
+          for (const { symbol } of allSymbols) {
+            const lastNote = await db.get<{ created_at: string }>(
+              'SELECT created_at FROM market_analyst_notes WHERE symbol = ? ORDER BY created_at DESC LIMIT 1', symbol
+            );
+            // Analyze if never done or older than 14 days
+            if (!lastNote || (Date.now() - new Date(lastNote.created_at).getTime()) > 14 * 86400000) {
+              staleSymbols.push(symbol);
+            }
+          }
+
+          // Analyze up to 3 per night (sustainable pace)
+          const toAnalyze = staleSymbols.slice(0, 3);
+          let analyzed = 0;
+          for (const symbol of toAnalyze) {
+            try {
+              const result = await analysisService.analyzeCompany(symbol);
+              if (result) {
+                console.log(`[markets-schedule] Analyzed ${symbol}: "${result.headline}" (rating: ${result.rating}/5, ${result.atomsCreated} atoms)`);
+                analyzed++;
+              }
+            } catch (err) { console.error(`[markets-schedule] Failed to analyze ${symbol}:`, err); }
+          }
+
+          console.log(`[markets-schedule] Phase 6 complete — processed ${processed} articles, analyzed ${analyzed}/${toAnalyze.length} companies (${staleSymbols.length} remaining)`);
+        } catch (err) {
+          console.error('[markets-schedule] Fundamental analysis error:', err);
+          console.log(`[markets-schedule] Phase 6 complete — processed ${processed} articles (analysis skipped)`);
+        }
       } catch (err) { console.error('[markets-schedule] Phase 6 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 7: Weekend Deep Dive (Saturday 10:00 CET)
+    // Phase 7: Weekend Deep Dive (Saturday 10:00 CET) — validation + bigger analysis batch
     cron.schedule('0 10 * * 6', async () => {
       console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
       try {
         await workflowOrchestrator.runPredictionValidation();
-        // Big backlog catch-up on weekends
         const processed = await processBacklog(100);
-        console.log(`[markets-schedule] Phase 7 complete — validated predictions, processed ${processed} articles`);
+
+        // Weekend: analyze up to 8 companies (bigger batch)
+        try {
+          const { createMarketFundamentalAnalysisService } = await import('./services/market-fundamental-analysis-service.js');
+          const analysisService = await createMarketFundamentalAnalysisService(db);
+          const result = await analysisService.runBatchAnalysis(8);
+          console.log(`[markets-schedule] Phase 7 complete — validated predictions, processed ${processed} articles, analyzed ${result.analyzed} companies`);
+        } catch {
+          console.log(`[markets-schedule] Phase 7 complete — validated predictions, processed ${processed} articles`);
+        }
       } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
     }, MARKET_TZ);
 
