@@ -499,7 +499,10 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       apiParams.thinking = { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens };
     }
 
-    const response = await client.messages.create(apiParams as unknown as Anthropic.MessageCreateParamsNonStreaming) as Anthropic.Message;
+    // Use streaming internally to avoid "Streaming is required for operations
+    // that may take longer than 10 minutes" SDK error on large requests
+    const stream = client.messages.stream(apiParams as unknown as Anthropic.MessageCreateParamsStreaming);
+    const response = await stream.finalMessage();
 
     let text = '';
     let thinking = '';
