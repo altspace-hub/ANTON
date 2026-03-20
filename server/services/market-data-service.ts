@@ -713,6 +713,44 @@ export async function createMarketDataService(db: DatabaseAdapter) {
             ingested++;
           }
         } catch { /* skip */ }
+
+        // Balance sheet
+        await waitForFmpSlot();
+        try {
+          const bsUrl = `https://financialmodelingprep.com/stable/balance-sheet-statement?symbol=${encodeURIComponent(symbol)}&period=annual&apikey=${apiKey}`;
+          const bsResp = await fetch(bsUrl);
+          await incrementFmpCount();
+          if (bsResp.ok) {
+            const data = await bsResp.json();
+            await ingestRawData({
+              sourceId, dataType: 'balance_sheet', symbol,
+              title: `${symbol} balance sheet`,
+              content: JSON.stringify(data),
+              publishedAt: new Date().toISOString(),
+              metadata: { provider: 'fmp', period: 'annual' },
+            });
+            ingested++;
+          }
+        } catch { /* skip */ }
+
+        // Cash flow statement
+        await waitForFmpSlot();
+        try {
+          const cfUrl = `https://financialmodelingprep.com/stable/cash-flow-statement?symbol=${encodeURIComponent(symbol)}&period=annual&apikey=${apiKey}`;
+          const cfResp = await fetch(cfUrl);
+          await incrementFmpCount();
+          if (cfResp.ok) {
+            const data = await cfResp.json();
+            await ingestRawData({
+              sourceId, dataType: 'cash_flow', symbol,
+              title: `${symbol} cash flow statement`,
+              content: JSON.stringify(data),
+              publishedAt: new Date().toISOString(),
+              metadata: { provider: 'fmp', period: 'annual' },
+            });
+            ingested++;
+          }
+        } catch { /* skip */ }
       }
     } else if (dataType === 'analyst_estimates') {
       for (const symbol of symbols) {
@@ -734,6 +772,28 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           }
         } catch { /* skip */ }
       }
+    } else if (dataType === 'earnings_calendar') {
+      await waitForFmpSlot();
+      try {
+        const from = new Date().toISOString().slice(0, 10);
+        const toDate = new Date(Date.now() + 28 * 86400000).toISOString().slice(0, 10);
+        const url = `https://financialmodelingprep.com/stable/earning-calendar?from=${from}&to=${toDate}&apikey=${apiKey}`;
+        const resp = await fetch(url);
+        await incrementFmpCount();
+        if (resp.ok) {
+          const events = await resp.json() as Array<{ symbol: string; date: string; eps: number; epsEstimated: number; revenue: number; revenueEstimated: number }>;
+          for (const evt of (events ?? []).slice(0, 50)) {
+            await ingestRawData({
+              sourceId, dataType: 'earnings_calendar', symbol: evt.symbol,
+              title: `${evt.symbol} earnings ${evt.date}`,
+              content: JSON.stringify(evt),
+              publishedAt: evt.date,
+              metadata: { provider: 'fmp' },
+            });
+            ingested++;
+          }
+        }
+      } catch { /* skip */ }
     }
 
     return ingested;

@@ -316,6 +316,32 @@ export async function createMarketWorkflowOrchestrator(
         } else {
           stepResults.push({ step: 'Fundamental Scoring', status: 'skipped', output: { reason: 'No holdings' } });
         }
+
+        // After computing scores, extract atoms from unprocessed fundamental data
+        try {
+          const { createMarketAtomService } = await import('./market-atom-service.js');
+          const atomSvc = await createMarketAtomService(db);
+          const fundamentalRows = await db.all<{ id: string; data_type: string; symbol: string; content: string }>(
+            "SELECT id, data_type, symbol, content FROM market_data_raw WHERE is_processed = 0 AND data_type IN ('income_statement', 'ratios', 'key_metrics') LIMIT 15"
+          );
+          let fundamentalAtoms = 0;
+          for (const row of fundamentalRows) {
+            try {
+              const data = JSON.parse(row.content);
+              const atomIds = await atomSvc.extractAtomsFromFundamentals(row.symbol, row.data_type, data);
+              fundamentalAtoms += atomIds.length;
+              await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+            } catch { await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id); }
+          }
+          // Update step output to include fundamental atoms
+          const existingOutput = stepResults[stepResults.length - 1]?.output as Record<string, unknown> ?? {};
+          stepResults[stepResults.length - 1] = {
+            ...stepResults[stepResults.length - 1],
+            output: { ...existingOutput, fundamentalAtomsCreated: fundamentalAtoms, fundamentalRowsProcessed: fundamentalRows.length },
+          };
+        } catch (atomErr) {
+          console.warn('[market-orchestrator] Fundamental atom extraction warning:', atomErr instanceof Error ? atomErr.message : String(atomErr));
+        }
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         stepResults.push({ step: 'Fundamental Scoring', status: 'warning', error: errMsg });

@@ -161,5 +161,48 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
     }
   });
 
+  // ── Fundamental Analysis ────────────────────────────────────────────────
+
+  // POST /markets/workflows/fundamental-analysis — Batch analysis
+  router.post('/markets/workflows/fundamental-analysis', async (_req, res) => {
+    try {
+      const { createMarketFundamentalAnalysisService } = await import('../services/market-fundamental-analysis-service.js');
+      const analysisService = await createMarketFundamentalAnalysisService(db);
+      const result = await analysisService.runBatchAnalysis(5);
+      res.json(result);
+    } catch (err) {
+      console.error('[market-workflows] Fundamental analysis error:', err);
+      res.status(500).json({ error: 'Failed to run fundamental analysis' });
+    }
+  });
+
+  // POST /markets/workflows/fundamental-analysis/:symbol — Single symbol analysis
+  router.post('/markets/workflows/fundamental-analysis/:symbol', async (req, res) => {
+    try {
+      const { createMarketFundamentalAnalysisService } = await import('../services/market-fundamental-analysis-service.js');
+      const analysisService = await createMarketFundamentalAnalysisService(db);
+      const result = await analysisService.analyzeCompany(req.params.symbol);
+      if (!result) return res.status(404).json({ error: 'No fundamental data available for this symbol' });
+      res.json(result);
+    } catch (err) {
+      console.error('[market-workflows] Symbol analysis error:', err);
+      res.status(500).json({ error: 'Failed to analyze symbol' });
+    }
+  });
+
+  // GET /markets/analyst-notes — Retrieve analyst notes
+  router.get('/markets/analyst-notes', async (req, res) => {
+    try {
+      const { createMarketFundamentalAnalysisService } = await import('../services/market-fundamental-analysis-service.js');
+      const analysisService = await createMarketFundamentalAnalysisService(db);
+      const symbol = req.query.symbol as string | undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+      const notes = await analysisService.getAnalystNotes(symbol, limit);
+      res.json(notes);
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to get analyst notes' });
+    }
+  });
+
   return router;
 }
