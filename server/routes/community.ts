@@ -433,6 +433,19 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
+  // GET /api/community/mail/queue/status  ← must be before /mail/:id
+  router.get('/community/mail/queue/status', async (_req, res) => {
+    try {
+      const { createMessageQueueService } = await import('../services/message-queue-service.js');
+      const queueService = await createMessageQueueService(db);
+      const status = await queueService.getQueueStatus();
+      res.json(status);
+    } catch (err) {
+      console.error('[community] Queue status error:', err);
+      res.status(500).json({ error: 'Failed to get queue status' });
+    }
+  });
+
   // GET /api/community/mail
   router.get('/community/mail', async (req, res) => {
     try {
@@ -722,6 +735,57 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       res.setHeader('Content-Disposition', `attachment; filename="event-${event.id}.ics"`);
       return res.send(icsBody);
     } catch (e) { return res.status(500).json({ error: String(e) }); }
+  });
+
+  // ── PHASE B: CAPABILITY CARDS, IMPORT POLICY, MESSAGE QUEUE ─────────────
+
+  // ── Capability Cards ──────────────────────────────────────────────────
+
+  router.get('/community/capability-card', async (_req, res) => {
+    try {
+      const { createCapabilityCardGenerator } = await import('../services/capability-card-generator.js');
+      const generator = await createCapabilityCardGenerator(db);
+      const card = await generator.getOrRefreshCard();
+      res.json(card);
+    } catch (err) {
+      console.error('[community] Capability card error:', err);
+      res.status(500).json({ error: 'Failed to get capability card' });
+    }
+  });
+
+  router.post('/community/capability-card/refresh', async (_req, res) => {
+    try {
+      const { createCapabilityCardGenerator } = await import('../services/capability-card-generator.js');
+      const generator = await createCapabilityCardGenerator(db);
+      const card = await generator.generateCapabilityCard();
+      res.json(card);
+    } catch (err) {
+      console.error('[community] Capability card refresh error:', err);
+      res.status(500).json({ error: 'Failed to refresh capability card' });
+    }
+  });
+
+  // ── Import Policy ─────────────────────────────────────────────────────
+
+  router.patch('/community/connections/:id/policy', async (req, res) => {
+    try {
+      const { importPolicy, autoAcceptTypes } = req.body;
+      if (importPolicy && !['auto_accept', 'ask_first', 'block'].includes(importPolicy)) {
+        return res.status(400).json({ error: 'Invalid import policy' });
+      }
+      const sets: string[] = [];
+      const vals: unknown[] = [];
+      if (importPolicy) { sets.push('import_policy = ?'); vals.push(importPolicy); }
+      if (autoAcceptTypes) { sets.push('auto_accept_types = ?'); vals.push(JSON.stringify(autoAcceptTypes)); }
+      if (sets.length > 0) {
+        vals.push(req.params.id);
+        await db.run(`UPDATE community_connections SET ${sets.join(', ')} WHERE id = ?`, ...vals);
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[community] Policy update error:', err);
+      res.status(500).json({ error: 'Failed to update policy' });
+    }
   });
 
   return router;
