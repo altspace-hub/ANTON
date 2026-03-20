@@ -452,6 +452,9 @@ app.use('/api', await createNewsRoutes(db, anthropic));
 app.use('/api', await createFinanceRoutes(db, anthropic));
 app.use('/api', await createTravelRoutes(db, anthropic));
 app.use('/api', await createCommunityRoutes(db));
+// Task Delegation — community task exchange between ANTON instances
+const { createTaskDelegationRoutes } = await import('./routes/task-delegation.js');
+app.use('/api', await createTaskDelegationRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
 const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton

@@ -1,12 +1,12 @@
 import type { DatabaseAdapter } from '../db/database.js';
 
 interface StructuredMessage {
-  messageType: 'text' | 'knowledge_share' | 'bundle_push' | 'bundle_request' | 'capability_exchange';
+  messageType: 'text' | 'knowledge_share' | 'bundle_push' | 'bundle_request' | 'capability_exchange' | 'task_request' | 'task_response';
   payload: Record<string, unknown>;
   metadata?: Record<string, unknown>;
 }
 
-const VALID_TYPES = new Set(['text', 'knowledge_share', 'bundle_push', 'bundle_request', 'capability_exchange']);
+const VALID_TYPES = new Set(['text', 'knowledge_share', 'bundle_push', 'bundle_request', 'capability_exchange', 'task_request', 'task_response']);
 
 export async function createStructuredMessageHandler(db: DatabaseAdapter) {
 
@@ -33,6 +33,14 @@ export async function createStructuredMessageHandler(db: DatabaseAdapter) {
       case 'capability_exchange':
         if (!msg.payload.capabilityCard)
           return { valid: false, error: 'capability_exchange requires capabilityCard' };
+        break;
+      case 'task_request':
+        if (!msg.payload.title || !msg.payload.description)
+          return { valid: false, error: 'task_request requires title and description' };
+        break;
+      case 'task_response':
+        if (!msg.payload.taskId || !msg.payload.status)
+          return { valid: false, error: 'task_response requires taskId and status' };
         break;
     }
     return { valid: true };
