@@ -207,6 +207,7 @@ const FCWalletsPage = lazy(() => import('./pages/futurechain/FCWalletsPage'));
 const FCTransactionsPage = lazy(() => import('./pages/futurechain/FCTransactionsPage'));
 const FCBudgetPage = lazy(() => import('./pages/futurechain/FCBudgetPage'));
 const FCMarketplacePage = lazy(() => import('./pages/futurechain/FCMarketplacePage'));
+const FCSettingsPage = lazy(() => import('./pages/futurechain/FCSettingsPage'));
 
 // Markets Pillar pages
 const MarketsPage = lazy(() => import('./pages/markets/MarketsPage'));
@@ -489,6 +490,7 @@ export default function App() {
           <Route path="/futurechain/transactions" element={<FCTransactionsPage />} />
           <Route path="/futurechain/budget" element={<FCBudgetPage />} />
           <Route path="/futurechain/marketplace" element={<FCMarketplacePage />} />
+          <Route path="/futurechain/settings" element={<FCSettingsPage />} />
           {/* NGO & Social Impact Hub */}
           <Route path="/ngo" element={<NGOHubPage />} />
           {/* Trades & Service Workers Hub */}
