@@ -461,6 +461,17 @@ app.use('/api', await createCommunitySigningRoutes(db));
 // D6: Delegation compliance rules engine
 const { createDelegationComplianceRoutes } = await import('./routes/delegation-compliance.js');
 app.use('/api', await createDelegationComplianceRoutes(db));
+// FutureChain preparation scaffold
+const { createFCSettingsRoutes } = await import('./routes/fc-settings.js');
+app.use('/api', await createFCSettingsRoutes(db));
+const { createFCWalletRoutes } = await import('./routes/fc-wallets.js');
+app.use('/api', await createFCWalletRoutes(db));
+const { createFCTransactionRoutes } = await import('./routes/fc-transactions.js');
+app.use('/api', await createFCTransactionRoutes(db));
+const { createFCBudgetRoutes } = await import('./routes/fc-budget.js');
+app.use('/api', await createFCBudgetRoutes(db));
+const { createFCMarketplaceRoutes } = await import('./routes/fc-marketplace.js');
+app.use('/api', await createFCMarketplaceRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
 const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton
