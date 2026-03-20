@@ -199,6 +199,7 @@ const CommunitySharedKnowledgePage = lazy(() => import('./pages/community/Commun
 const CommunityTasksPage = lazy(() => import('./pages/community/CommunityTasksPage'));
 const CommunityProjectsPage = lazy(() => import('./pages/community/CommunityProjectsPage'));
 const CommunityProjectDetailPage = lazy(() => import('./pages/community/CommunityProjectDetailPage'));
+const CommunityCapabilityCardPage = lazy(() => import('./pages/community/CommunityCapabilityCardPage'));
 
 // FutureChain / Payments pages
 const FCDashboardPage = lazy(() => import('./pages/futurechain/FCDashboardPage'));
@@ -483,6 +484,7 @@ export default function App() {
           <Route path="/community/tasks" element={<CommunityTasksPage />} />
           <Route path="/community/projects" element={<CommunityProjectsPage />} />
           <Route path="/community/projects/:id" element={<CommunityProjectDetailPage />} />
+          <Route path="/community/capability-card" element={<CommunityCapabilityCardPage />} />
           {/* FutureChain / Payments */}
           <Route path="/futurechain" element={<FCDashboardPage />} />
           <Route path="/futurechain/kyc" element={<FCKycPage />} />
