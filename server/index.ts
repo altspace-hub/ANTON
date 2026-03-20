@@ -455,6 +455,12 @@ app.use('/api', await createCommunityRoutes(db));
 // Task Delegation — community task exchange between ANTON instances
 const { createTaskDelegationRoutes } = await import('./routes/task-delegation.js');
 app.use('/api', await createTaskDelegationRoutes(db));
+// D3: Signed reasoning trails for task delegation
+const { createCommunitySigningRoutes } = await import('./routes/community-signing.js');
+app.use('/api', await createCommunitySigningRoutes(db));
+// D6: Delegation compliance rules engine
+const { createDelegationComplianceRoutes } = await import('./routes/delegation-compliance.js');
+app.use('/api', await createDelegationComplianceRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
 const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton

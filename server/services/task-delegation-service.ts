@@ -2,10 +2,27 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 export async function createTaskDelegationService(db: DatabaseAdapter) {
 
+  // D3: Signed reasoning trails (best-effort)
+  const { createSigningService } = await import('./community-signing-service.js');
+  const signingService = await createSigningService(db);
+
+  // D6: Delegation compliance engine
+  const { createDelegationComplianceService } = await import('./delegation-compliance-service.js');
+  const complianceService = await createDelegationComplianceService(db);
+
   async function createTaskRequest(params: {
     providerHash: string; title: string; description: string;
     requiredModules?: string[]; context?: string; urgency?: string; deadline?: string;
   }): Promise<{ taskId: string; mailId: string }> {
+    // D6: Compliance check — blocks task creation if rules violated
+    const complianceResult = await complianceService.evaluateCompliance('outbound', {
+      title: params.title, description: params.description,
+      contactHash: params.providerHash, requiredModules: params.requiredModules,
+    });
+    if (!complianceResult.allowed) {
+      throw new Error(`Delegation blocked by compliance rules: ${complianceResult.blockedBy.join(', ')}`);
+    }
+
     const identity = await db.get<{ contact_hash: string; display_name: string }>(
       'SELECT contact_hash, display_name FROM community_identity LIMIT 1'
     );
@@ -53,6 +70,11 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
     // Increment counter
     await db.run("UPDATE community_connections SET tasks_delegated = COALESCE(tasks_delegated, 0) + 1 WHERE contact_hash = ?", params.providerHash);
 
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'task_created', content: `Task created: ${params.title}`, metadata: { providerHash: params.providerHash, urgency: params.urgency } });
+    } catch { /* trail signing is best-effort */ }
+
     return { taskId, mailId };
   }
 
@@ -61,6 +83,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
       "UPDATE community_delegated_tasks SET status = 'accepted', accepted_at = NOW(), updated_at = NOW() WHERE id = ?", taskId
     );
     await addTaskMessage(taskId, 'status_change', 'Task accepted');
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'task_accepted', content: 'Task accepted by provider' });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function declineTask(taskId: string, reason?: string): Promise<void> {
@@ -68,6 +94,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
       "UPDATE community_delegated_tasks SET status = 'declined', updated_at = NOW() WHERE id = ?", taskId
     );
     await addTaskMessage(taskId, 'status_change', reason ?? 'Task declined');
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'task_declined', content: reason ?? 'Task declined' });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function startTask(taskId: string): Promise<void> {
@@ -75,6 +105,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
       "UPDATE community_delegated_tasks SET status = 'in_progress', started_at = NOW(), updated_at = NOW() WHERE id = ?", taskId
     );
     await addTaskMessage(taskId, 'status_change', 'Work started');
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'task_started', content: 'Work started on task' });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function updateProgress(taskId: string, percent: number, currentStep?: string): Promise<void> {
@@ -83,6 +117,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
       percent, currentStep ?? null, taskId
     );
     await addTaskMessage(taskId, 'progress_update', `Progress: ${percent}%${currentStep ? ` — ${currentStep}` : ''}`);
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'progress_update', content: `Progress: ${percent}%${currentStep ? ` — ${currentStep}` : ''}`, metadata: { percent, currentStep } });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function requestClarification(taskId: string, question: string): Promise<void> {
@@ -90,6 +128,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
       "UPDATE community_delegated_tasks SET status = 'clarification_needed', updated_at = NOW() WHERE id = ?", taskId
     );
     await addTaskMessage(taskId, 'clarification_request', question);
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'clarification_requested', content: question });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function respondToClarification(taskId: string, answer: string): Promise<void> {
@@ -97,6 +139,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
       "UPDATE community_delegated_tasks SET status = 'in_progress', updated_at = NOW() WHERE id = ?", taskId
     );
     await addTaskMessage(taskId, 'clarification_response', answer);
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'clarification_responded', content: answer });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function completeTask(taskId: string, result: { content: string; artifacts?: Array<{ type: string; name: string; content: string }> }): Promise<void> {
@@ -119,6 +165,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
     }
 
     await addTaskMessage(taskId, 'status_change', 'Task completed');
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'task_completed', content: 'Task completed', metadata: { hasArtifacts: (result.artifacts ?? []).length > 0 } });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function rateTask(taskId: string, qualityScore: number): Promise<void> {
@@ -150,6 +200,10 @@ export async function createTaskDelegationService(db: DatabaseAdapter) {
       "UPDATE community_delegated_tasks SET status = 'cancelled', updated_at = NOW() WHERE id = ?", taskId
     );
     await addTaskMessage(taskId, 'status_change', reason ?? 'Task cancelled');
+    // D3: Trail entry — best-effort
+    try {
+      await signingService.createTrailEntry({ taskId, entryType: 'task_cancelled', content: reason ?? 'Task cancelled' });
+    } catch { /* trail signing is best-effort */ }
   }
 
   async function getTask(taskId: string) {
