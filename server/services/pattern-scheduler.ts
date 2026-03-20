@@ -61,7 +61,7 @@ export async function createPatternScheduler(db: DatabaseAdapter) {
         // Log to detection history
         logDetectionRun({
           run_time: new Date().toISOString(),
-          patterns_detected: result.patternsDetected,
+          patterns_detected: result.patternsDetected ?? 0,
           duration_ms: duration,
           status: 'success',
         });
