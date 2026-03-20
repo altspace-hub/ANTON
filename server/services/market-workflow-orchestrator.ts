@@ -13,6 +13,8 @@ import { createMarketWhyChainsService } from './market-why-chains-service.js';
 import { createMarketIntelligenceService } from './market-intelligence-service.js';
 import { createMarketThesisService } from './market-thesis-service.js';
 import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
+import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
+import { createConditionalAccuracyService } from './market-conditional-accuracy-service.js';
 import type { TemporalReasoningService } from './temporal-reasoning.js';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
@@ -62,6 +64,8 @@ export async function createMarketWorkflowOrchestrator(
   const anthropicClient = anthropicApiKey ? new (await import('@anthropic-ai/sdk')).default({ apiKey: anthropicApiKey }) : undefined;
   const thesisService = await createMarketThesisService(db, anthropicClient);
   const rebalanceService = await createMarketIndexRebalanceService(db);
+  const fundamentalScoringService = await createMarketFundamentalScoringService(db);
+  const conditionalAccuracyService = await createConditionalAccuracyService(db);
 
   // Helper: insert dead letter on permanent step failure
   async function insertDeadLetter(runId: string, stepName: string, error: string, inputData?: unknown): Promise<void> {
@@ -296,6 +300,27 @@ export async function createMarketWorkflowOrchestrator(
         await insertDeadLetter(runId, 'Compute Indicators', errMsg);
       }
 
+      // Step 6.5: Fundamental Scoring
+      try {
+        const holdingSymbols = await db.all<{ symbol: string }>(
+          "SELECT DISTINCT symbol FROM market_index_holdings WHERE removed_at IS NULL"
+        );
+        const symbols = holdingSymbols.map(h => h.symbol);
+        if (symbols.length > 0) {
+          const scores = await withTimeout(
+            fundamentalScoringService.computeScoresForUniverse(symbols),
+            COMPUTATION_TIMEOUT, 'Fundamental Scoring'
+          );
+          stepResults.push({ step: 'Fundamental Scoring', status: 'success', output: { scored: scores.length } });
+          stepsCompleted++;
+        } else {
+          stepResults.push({ step: 'Fundamental Scoring', status: 'skipped', output: { reason: 'No holdings' } });
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        stepResults.push({ step: 'Fundamental Scoring', status: 'warning', error: errMsg });
+      }
+
       // Step 7: AI macro brief (LLM)
       try {
         const prompt = readPrompt('market-macro-brief');
@@ -495,6 +520,15 @@ Return ONLY the JSON array, no other text.`;
               horizon,
             });
             createdPredictions.push(predId);
+
+            // Capture prediction features for conditional accuracy
+            try {
+              await conditionalAccuracyService.capturePredictionFeatures(predId, {
+                signal_type: 'ai',
+                sector: p.target_symbol ? 'equity' : 'macro',
+                momentum_direction: p.predicted_direction ?? 'unknown',
+              }, false);
+            } catch { /* non-fatal */ }
           }
         }
 
@@ -906,6 +940,27 @@ Return ONLY the JSON array, no other text.`;
           const errMsg = err instanceof Error ? err.message : String(err);
           stepResults.push({ step: 'Temporal Learning', status: 'error', error: errMsg });
         }
+      }
+
+      // Step 5.7: Conditional Accuracy Update
+      try {
+        const recentValidated = await db.all<{ id: string; was_correct: number; brier_score: number }>(
+          "SELECT id, was_correct, brier_score FROM market_predictions WHERE status = 'validated' AND validated_at > NOW() - INTERVAL '7 days'"
+        );
+        let updated = 0;
+        for (const pred of recentValidated) {
+          try {
+            await conditionalAccuracyService.updateConditionalAccuracy(
+              pred.id, pred.was_correct === 1, Number(pred.brier_score) || 0, false
+            );
+            updated++;
+          } catch { /* skip individual failures */ }
+        }
+        stepResults.push({ step: 'Conditional Accuracy Update', status: 'success', output: { updated } });
+        stepsCompleted++;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        stepResults.push({ step: 'Conditional Accuracy Update', status: 'error', error: errMsg });
       }
 
       // Step 6: Learning summary (LLM)

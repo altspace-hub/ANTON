@@ -661,6 +661,21 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
       rawWeights.push({ symbol: h.symbol, weight: adjusted, reason });
     }
 
+    // Apply fundamental score overlay
+    try {
+      const { createMarketFundamentalScoringService } = await import('./market-fundamental-scoring-service.js');
+      const fundService = await createMarketFundamentalScoringService(db);
+      const fundScores = await fundService.getFundamentalScores(holdings.map(h => h.symbol));
+      for (const w of rawWeights) {
+        const score = fundScores.find(f => f.symbol === w.symbol);
+        if (score) {
+          const fundMultiplier = 0.9 + (Number(score.composite_score) / 100) * 0.2; // 0.9 to 1.1
+          w.weight *= fundMultiplier;
+          w.reason += ` + fundamental score ${Number(score.composite_score).toFixed(0)}/100`;
+        }
+      }
+    } catch { /* fundamental scoring is best-effort */ }
+
     // Normalize to sum to 1.0
     const totalRaw = rawWeights.reduce((sum, w) => sum + w.weight, 0);
     for (const w of rawWeights) {

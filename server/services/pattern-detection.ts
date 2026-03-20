@@ -22,7 +22,7 @@ export async function createPatternDetection(db: DatabaseAdapter) {
       WHERE a1.id < a2.id
         AND a1.category != a2.category
         AND a1.created_at > ?
-        AND ABS(JULIANDAY(a1.created_at) - JULIANDAY(a2.created_at)) * 24 <= ?
+        AND ABS(EXTRACT(EPOCH FROM a1.created_at::timestamptz - a2.created_at::timestamptz) / 3600.0) <= ?
     `, since, windowHours) as any[];
 
     // Group by category pairs
@@ -97,8 +97,8 @@ export async function createPatternDetection(db: DatabaseAdapter) {
       JOIN checkpoint_decisions cd3 ON cd3.decided_at > cd2.decided_at
       WHERE cd1.workflow_id != cd2.workflow_id
         AND cd2.workflow_id != cd3.workflow_id
-        AND ABS(JULIANDAY(cd2.decided_at) - JULIANDAY(cd1.decided_at)) * 24 <= ?
-        AND ABS(JULIANDAY(cd3.decided_at) - JULIANDAY(cd2.decided_at)) * 24 <= ?
+        AND ABS(EXTRACT(EPOCH FROM cd2.decided_at::timestamptz - cd1.decided_at::timestamptz) / 3600.0) <= ?
+        AND ABS(EXTRACT(EPOCH FROM cd3.decided_at::timestamptz - cd2.decided_at::timestamptz) / 3600.0) <= ?
       LIMIT 20
     `, maxHoursBetween, maxHoursBetween) as any[];
 
