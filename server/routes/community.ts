@@ -788,5 +788,118 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── C1: Knowledge Atom Sharing ────────────────────────────────────────
+
+  router.post('/community/share/atom/:atomId/:contactHash', async (req, res) => {
+    try {
+      const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');
+      const service = await createKnowledgeSharingService(db);
+      const result = await service.shareAtom(req.params.atomId, req.params.contactHash);
+      res.json(result);
+    } catch (err) {
+      console.error('[community] Share atom error:', err);
+      res.status(500).json({ error: 'Failed to share atom' });
+    }
+  });
+
+  router.post('/community/share/atom/:mailId/accept', async (req, res) => {
+    try {
+      const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');
+      const service = await createKnowledgeSharingService(db);
+      const result = await service.receiveSharedAtom(req.params.mailId);
+      res.json(result);
+    } catch (err) {
+      console.error('[community] Accept shared atom error:', err);
+      res.status(500).json({ error: 'Failed to accept shared atom' });
+    }
+  });
+
+  router.post('/community/share/atom/:sharedAtomId/resolve', async (req, res) => {
+    try {
+      const { decision } = req.body;
+      if (!decision || !['accept', 'reject'].includes(decision)) {
+        return res.status(400).json({ error: 'decision must be accept or reject' });
+      }
+      const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');
+      const service = await createKnowledgeSharingService(db);
+      const result = await service.resolveSharedAtom(req.params.sharedAtomId, decision);
+      res.json(result);
+    } catch (err) {
+      console.error('[community] Resolve shared atom error:', err);
+      res.status(500).json({ error: 'Failed to resolve shared atom' });
+    }
+  });
+
+  // ── C2: Bundle Push/Pull ──────────────────────────────────────────────
+
+  router.post('/community/share/bundle', async (req, res) => {
+    try {
+      const { bundleType, contactHash, name } = req.body;
+      if (!bundleType || !contactHash) return res.status(400).json({ error: 'bundleType and contactHash required' });
+      const { createBundleSharingService } = await import('../services/bundle-sharing-service.js');
+      const service = await createBundleSharingService(db);
+      const result = await service.pushBundle(bundleType, contactHash, { name });
+      res.json(result);
+    } catch (err) {
+      console.error('[community] Bundle push error:', err);
+      res.status(500).json({ error: 'Failed to push bundle' });
+    }
+  });
+
+  router.get('/community/share/bundle/:mailId/preview', async (req, res) => {
+    try {
+      const { createBundleSharingService } = await import('../services/bundle-sharing-service.js');
+      const service = await createBundleSharingService(db);
+      const result = await service.previewPushedBundle(req.params.mailId);
+      res.json(result);
+    } catch (err) {
+      console.error('[community] Bundle preview error:', err);
+      res.status(500).json({ error: 'Failed to preview bundle' });
+    }
+  });
+
+  // ── C3: Shared Knowledge View ─────────────────────────────────────────
+
+  router.get('/community/shared-knowledge', async (req, res) => {
+    try {
+      const { createKnowledgeSharingService } = await import('../services/knowledge-sharing-service.js');
+      const service = await createKnowledgeSharingService(db);
+
+      const atomHistory = await service.getSharedAtomHistory({
+        contactHash: req.query.contactHash as string | undefined,
+        direction: req.query.direction as string | undefined,
+        status: req.query.status as string | undefined,
+        limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 50,
+      });
+
+      // Also get bundle exchanges
+      const bundleExchanges = await db.all(
+        `SELECT id, from_hash, to_hashes, subject, message_type, payload, delivery_status, sent_at
+         FROM community_mail WHERE message_type IN ('bundle_push', 'capability_exchange')
+         ORDER BY sent_at DESC LIMIT ?`,
+        req.query.limit ? parseInt(req.query.limit as string, 10) : 50
+      );
+
+      res.json({ atoms: atomHistory, bundles: bundleExchanges });
+    } catch (err) {
+      console.error('[community] Shared knowledge error:', err);
+      res.status(500).json({ error: 'Failed to get shared knowledge' });
+    }
+  });
+
+  // ── C4: Message Queue Retry ───────────────────────────────────────────
+
+  router.post('/community/mail/queue/:queueId/retry', async (req, res) => {
+    try {
+      const { createMessageQueueService } = await import('../services/message-queue-service.js');
+      const queueService = await createMessageQueueService(db);
+      await queueService.retryFailed(req.params.queueId);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[community] Queue retry error:', err);
+      res.status(500).json({ error: 'Failed to retry message' });
+    }
+  });
+
   return router;
 }

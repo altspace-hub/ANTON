@@ -885,6 +885,18 @@ httpServer.listen(PORT, async () => {
   }
 });
 
+// Community message queue processing — every 30 seconds
+setInterval(async () => {
+  try {
+    const { createMessageQueueService } = await import('./services/message-queue-service.js');
+    const queueService = await createMessageQueueService(db);
+    const result = await queueService.processQueue();
+    if (result.sent > 0 || result.failed > 0) {
+      console.log(`[community-queue] Processed: ${result.sent} sent, ${result.failed} failed`);
+    }
+  } catch { /* silent */ }
+}, 30_000);
+
 // OBS-05: Graceful shutdown — drain in-flight requests (30s), then close
 const DRAIN_TIMEOUT_MS = 30_000;
 
