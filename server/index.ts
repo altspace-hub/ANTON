@@ -348,6 +348,11 @@ app.use('/api', await createAuthRoutes(db));
 // Channel Bridge public query endpoint — uses per-bridge Bearer token, not session auth
 app.use('/api', await createBridgePublicRoutes(db, anthropic));
 
+// Payment Gateway public API (API key auth, no session required)
+const { createFCGatewayRoutes } = await import('./routes/fc-gateway.js');
+const { adminRouter: gwAdmin, publicRouter: gwPublic } = await createFCGatewayRoutes(db);
+app.use('/api/gateway', gwPublic);
+
 // Deployment config endpoint (public — no auth required)
 app.get('/api/config', (req, res) => {
   const deploymentMode = process.env.DEPLOYMENT_MODE || 'solo';
@@ -472,6 +477,8 @@ const { createFCBudgetRoutes } = await import('./routes/fc-budget.js');
 app.use('/api', await createFCBudgetRoutes(db));
 const { createFCMarketplaceRoutes } = await import('./routes/fc-marketplace.js');
 app.use('/api', await createFCMarketplaceRoutes(db));
+// FutureChain Payment Gateway — admin routes (session-protected)
+app.use('/api', gwAdmin);
 // Collaborative Project Workspace
 const { createCommunityProjectRoutes } = await import('./routes/community-projects.js');
 app.use('/api', await createCommunityProjectRoutes(db));

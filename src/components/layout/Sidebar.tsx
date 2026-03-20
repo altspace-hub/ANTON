@@ -606,6 +606,17 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               <Settings className="h-4 w-4 shrink-0" />
               {!sidebarCollapsed && 'Settings'}
             </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Integration</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/futurechain/gateway"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Payment Gateway' : undefined}>
+              <Plug className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Payment Gateway'}
+            </NavLink>
           </>
         )}
 
