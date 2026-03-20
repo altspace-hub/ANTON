@@ -598,6 +598,21 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </>
         )}
 
+        {/* ── FutureChain / Payments sidebar ──────────────────────────── */}
+        {isPaymentsMode && (
+          <>
+            {!sidebarCollapsed && (
+              <div className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">FutureChain</div>
+            )}
+            <NavLink to="/futurechain" end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Dashboard' : undefined}>
+              <Wallet className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Dashboard'}
+            </NavLink>
+          </>
+        )}
+
         {/* ── Markets Intelligence sidebar ───────────────────────────── */}
         {isMarketsMode && (
           <>

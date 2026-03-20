@@ -200,6 +200,9 @@ const CommunityTasksPage = lazy(() => import('./pages/community/CommunityTasksPa
 const CommunityProjectsPage = lazy(() => import('./pages/community/CommunityProjectsPage'));
 const CommunityProjectDetailPage = lazy(() => import('./pages/community/CommunityProjectDetailPage'));
 
+// FutureChain / Payments pages
+const FCDashboardPage = lazy(() => import('./pages/futurechain/FCDashboardPage'));
+
 // Markets Pillar pages
 const MarketsPage = lazy(() => import('./pages/markets/MarketsPage'));
 const MarketDataSourcesPage = lazy(() => import('./pages/markets/MarketDataSourcesPage'));
@@ -474,6 +477,8 @@ export default function App() {
           <Route path="/community/tasks" element={<CommunityTasksPage />} />
           <Route path="/community/projects" element={<CommunityProjectsPage />} />
           <Route path="/community/projects/:id" element={<CommunityProjectDetailPage />} />
+          {/* FutureChain / Payments */}
+          <Route path="/futurechain" element={<FCDashboardPage />} />
           {/* NGO & Social Impact Hub */}
           <Route path="/ngo" element={<NGOHubPage />} />
           {/* Trades & Service Workers Hub */}
