@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Target, Shield, Scale, Calendar, Eye,
-  Plus, Trash2, Check, X, Loader2, Save,
+  Plus, Trash2, Check, X, Loader2, Save, AlertTriangle,
 } from 'lucide-react';
 import { fetchWithAuth } from '../../lib/api';
 import MarketDisclaimer from '../../components/shared/MarketDisclaimer';
@@ -131,6 +131,9 @@ export default function MarketGoalsProfilePage() {
   // Conflict Rules state
   const [conflictRules, setConflictRules] = useState<ConflictRule[]>([]);
 
+  // Pending Conflicts state
+  const [pendingConflicts, setPendingConflicts] = useState<any[]>([]);
+
   // Debounce ref for text saves
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -139,11 +142,12 @@ export default function MarketGoalsProfilePage() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [profileRes, strategiesRes, constraintsRes, rulesRes] = await Promise.all([
+      const [profileRes, strategiesRes, constraintsRes, rulesRes, conflictsRes] = await Promise.all([
         fetchWithAuth('/api/goals-profile'),
         fetchWithAuth('/api/domain-strategies'),
         fetchWithAuth('/api/values-constraints'),
         fetchWithAuth('/api/conflict-rules'),
+        fetchWithAuth('/api/pending-conflicts'),
       ]);
 
       if (profileRes.ok) {
@@ -174,6 +178,11 @@ export default function MarketGoalsProfilePage() {
 
       if (rulesRes.ok) {
         setConflictRules(await rulesRes.json() as ConflictRule[]);
+      }
+
+      if (conflictsRes.ok) {
+        const conflicts = await conflictsRes.json();
+        setPendingConflicts(Array.isArray(conflicts) ? conflicts : []);
       }
     } catch (err) {
       console.error('[GoalsProfile] Fetch error:', err);
@@ -348,6 +357,36 @@ export default function MarketGoalsProfilePage() {
       </div>
 
       <MarketDisclaimer compact />
+
+      {/* Pending Conflicts */}
+      {pendingConflicts.length > 0 && (
+        <div className="rounded-xl border border-adv-gold/30 bg-adv-card p-5">
+          <h2 className="text-lg font-semibold text-adv-gold flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-5 w-5" /> Pending Conflicts ({pendingConflicts.length})
+          </h2>
+          <div className="space-y-3">
+            {pendingConflicts.map(c => (
+              <div key={c.id} className="rounded-lg border border-adv-dark bg-adv-dark-2 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-adv-gray">{c.trigger_type} — {new Date(c.created_at).toLocaleString()}</span>
+                  <span className="text-xs text-adv-gold">{c.conflicts_detected} conflict(s)</span>
+                </div>
+                {c.resolution && <p className="text-sm text-adv-off-white mb-3">{c.resolution}</p>}
+                <div className="flex gap-2">
+                  <button onClick={async () => {
+                    await fetchWithAuth(`/api/temporal-log/${c.id}/resolve`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'accepted' }) });
+                    setPendingConflicts(prev => prev.filter(p => p.id !== c.id));
+                  }} className="rounded px-3 py-1 text-xs bg-adv-green/20 text-adv-green hover:bg-adv-green/30">Accept</button>
+                  <button onClick={async () => {
+                    await fetchWithAuth(`/api/temporal-log/${c.id}/resolve`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'dismissed' }) });
+                    setPendingConflicts(prev => prev.filter(p => p.id !== c.id));
+                  }} className="rounded px-3 py-1 text-xs bg-adv-gray/20 text-adv-gray hover:bg-adv-gray/30">Dismiss</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Section 1: Time Horizons */}
       <div className="rounded-xl border border-adv-card bg-adv-card p-5 space-y-4">

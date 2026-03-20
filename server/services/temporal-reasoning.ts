@@ -520,6 +520,37 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
     return layer;
   }
 
+  // ── Conflict Resolution ──────────────────────────────────────────────
+
+  async function getPendingConflicts(userId = 'default') {
+    return await db.all(
+      `SELECT * FROM temporal_consequence_log
+       WHERE user_id = ? AND resolution_status = 'pending'
+       AND (conflicts_detected > 0 OR values_violated > 0)
+       ORDER BY created_at DESC LIMIT 20`,
+      userId
+    );
+  }
+
+  async function resolveConflict(logId: string, action: string, userAction?: string): Promise<void> {
+    await db.run(
+      `UPDATE temporal_consequence_log
+       SET resolution_status = ?, resolved_at = NOW(), user_action = ?
+       WHERE id = ?`,
+      action, userAction ?? null, logId
+    );
+  }
+
+  async function getPendingConflictCount(userId = 'default'): Promise<number> {
+    const row = await db.get<{ count: number }>(
+      `SELECT COUNT(*) as count FROM temporal_consequence_log
+       WHERE user_id = ? AND resolution_status = 'pending'
+       AND (conflicts_detected > 0 OR values_violated > 0)`,
+      userId
+    );
+    return Number(row?.count) || 0;
+  }
+
   return {
     // CRUD
     getGoalsProfile,
@@ -540,6 +571,10 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
     logTemporalCheck,
     processTemporalLearning,
     buildGoalsValuesLayer,
+    // Conflict Resolution
+    getPendingConflicts,
+    resolveConflict,
+    getPendingConflictCount,
   };
 }
 

@@ -199,6 +199,44 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
     }
   });
 
+  router.get('/markets/watchlist/enriched', async (req, res) => {
+    try {
+      const items = await dataService.getWatchlist();
+      const { createTemporalReasoningService } = await import('../services/temporal-reasoning.js');
+      const temporalService = await createTemporalReasoningService(db);
+      const userId = (req as any).user?.id || 'default';
+
+      const enriched = [];
+      for (const item of items) {
+        // Get recent atoms mentioning this symbol
+        const atoms = await db.all(
+          `SELECT id, content, atom_type, confidence, category, subcategory, sentiment, entities, importance_score
+           FROM market_atoms WHERE is_active = 1
+           AND (entities::text LIKE ? OR affected_symbols::text LIKE ?)
+           AND created_at > NOW() - INTERVAL '7 days'
+           ORDER BY importance_score DESC, created_at DESC LIMIT 10`,
+          `%${item.symbol}%`, `%${item.symbol}%`
+        );
+
+        const { included, excluded, exclusionReasons } = await temporalService.applyValuesFilter(atoms as any[], userId, 'finance');
+        const weighted = await temporalService.applyStrategyWeighting(included as any[], userId, 'finance');
+
+        enriched.push({
+          ...item,
+          atoms: weighted,
+          excludedAtoms: excluded,
+          exclusionReasons: Object.fromEntries(exclusionReasons),
+          atomCount: atoms.length,
+          excludedCount: excluded.length,
+        });
+      }
+      res.json(enriched);
+    } catch (err) {
+      console.error('[markets] Watchlist enriched error:', err);
+      res.status(500).json({ error: 'Failed to enrich watchlist' });
+    }
+  });
+
   router.post('/markets/watchlist', async (req, res) => {
     try {
       const parsed = addToWatchlistSchema.safeParse(req.body);

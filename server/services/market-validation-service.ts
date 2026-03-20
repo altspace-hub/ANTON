@@ -184,11 +184,32 @@ export async function createMarketValidationService(db: DatabaseAdapter) {
     return { updated: signalStats.length };
   }
 
+  // ── Accuracy by Temporal Horizon ─────────────────────────────────────
+
+  async function getAccuracyByTemporalHorizon() {
+    return await db.all<{
+      horizon: string; total: number; correct: number; avg_brier: number; avg_confidence: number;
+    }>(`
+      SELECT COALESCE(horizon, 'unspecified') as horizon,
+             COUNT(*) as total,
+             SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct,
+             ROUND(AVG(brier_score)::numeric, 4) as avg_brier,
+             ROUND(AVG(confidence)::numeric, 4) as avg_confidence
+      FROM market_predictions WHERE status = 'validated'
+      GROUP BY horizon
+      ORDER BY CASE horizon
+        WHEN 'today' THEN 1 WHEN 'this_week' THEN 2 WHEN 'this_month' THEN 3
+        WHEN 'this_year' THEN 4 WHEN 'this_decade' THEN 5 ELSE 6
+      END
+    `);
+  }
+
   return {
     findExpiredPredictions,
     getOverallBrierScore,
     getCalibrationData,
     getAccuracyByHorizon,
+    getAccuracyByTemporalHorizon,
     getAccuracyBySymbol,
     getRecentValidations,
     updateSignalWeights,

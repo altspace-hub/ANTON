@@ -30,6 +30,7 @@ interface TrackRecordData {
   trackRecord: { totalValidated: number; totalCorrect: number; accuracy: number; averageBrierScore: number | null };
   calibration: Array<{ bucket: string; total: number; accuracy: number; avg_confidence: number; calibration_error: number }>;
   byHorizon: Array<{ horizon: string; total: number; correct: number }>;
+  byTemporalHorizon: Array<{ horizon: string; total: number; correct: number; avg_brier: number; avg_confidence: number }>;
   bySymbol: Array<{ symbol: string; total: number; correct: number; accuracy: number }>;
 }
 
@@ -247,6 +248,30 @@ export default function MarketPredictionsPage() {
               <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-adv-green/70" /> Underconfident / Well-calibrated</span>
               <span className="flex items-center gap-1"><span className="inline-block w-3 h-0.5 bg-adv-off-white/60" /> Expected confidence</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accuracy by Temporal Horizon */}
+      {trackRecord && trackRecord.byTemporalHorizon && trackRecord.byTemporalHorizon.length > 0 && (
+        <div className="rounded-xl border border-adv-card bg-adv-card p-5">
+          <h3 className="text-sm font-semibold text-adv-off-white mb-3">Accuracy by Temporal Horizon</h3>
+          <div className="space-y-2">
+            {trackRecord.byTemporalHorizon.map(h => {
+              const acc = Number(h.total) > 0 ? (Number(h.correct) / Number(h.total) * 100) : 0;
+              return (
+                <div key={h.horizon} className="flex items-center justify-between rounded-lg bg-adv-dark-2 px-4 py-2">
+                  <span className="text-sm text-adv-off-white capitalize">{h.horizon.replace('_', ' ')}</span>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-adv-gray">{h.total} predictions</span>
+                    <span className={acc >= 55 ? 'text-adv-green' : acc >= 45 ? 'text-adv-gold' : 'text-adv-red'}>
+                      {acc.toFixed(1)}% accurate
+                    </span>
+                    <span className="text-adv-gray">Brier: {Number(h.avg_brier).toFixed(3)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

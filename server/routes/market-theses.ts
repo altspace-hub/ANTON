@@ -267,8 +267,9 @@ export async function createMarketThesesRoutes(db: DatabaseAdapter, anthropic?: 
       const calibration = await validationService.getCalibrationData();
       const brierScore = await validationService.getOverallBrierScore();
       const byHorizon = await validationService.getAccuracyByHorizon();
+      const byTemporalHorizon = await validationService.getAccuracyByTemporalHorizon();
       const bySymbol = await validationService.getAccuracyBySymbol();
-      res.json({ trackRecord, calibration, brierScore, byHorizon, bySymbol });
+      res.json({ trackRecord, calibration, brierScore, byHorizon, byTemporalHorizon, bySymbol });
     } catch (err) {
       console.error('[market-predictions] Track record error:', err);
       res.status(500).json({ error: 'Failed to get track record' });

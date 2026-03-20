@@ -10,6 +10,7 @@ import {
 import { fetchWithAuth, exportMarketAtomCollectionAnton, exportMarketStrategyPackAnton } from '../../lib/api';
 import MarketDisclaimer from '../../components/shared/MarketDisclaimer';
 import { StatCard, AtomTypeTag, SentimentBadge, ConfidenceMeter } from '../../components/shared/markets';
+import TemporalTimeline from '../../components/shared/markets/TemporalTimeline';
 
 interface DashboardData {
   stats: {
@@ -46,6 +47,7 @@ export default function MarketsPage() {
   const [atomExportState, setAtomExportState] = useState<'idle' | 'loading' | 'done'>('idle');
   const [strategyExportState, setStrategyExportState] = useState<'idle' | 'loading' | 'done'>('idle');
   const [overviewPeriod, setOverviewPeriod] = useState<string>('1d');
+  const [temporalLogs, setTemporalLogs] = useState<any[]>([]);
 
   const handleExportAtomCollection = async () => {
     if (atomExportState !== 'idle') return;
@@ -92,8 +94,15 @@ export default function MarketsPage() {
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchWithAuth('/api/markets/dashboard');
+      const [res, temporalRes] = await Promise.all([
+        fetchWithAuth('/api/markets/dashboard'),
+        fetchWithAuth('/api/temporal-log?limit=8'),
+      ]);
       if (!res.ok) throw new Error('Failed to load dashboard');
+      if (temporalRes.ok) {
+        const tLogs = await temporalRes.json();
+        setTemporalLogs(Array.isArray(tLogs) ? tLogs : []);
+      }
       const json = await res.json() as DashboardData;
       setData({
         ...json,
@@ -297,6 +306,19 @@ export default function MarketsPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Temporal Impact Timeline */}
+      {temporalLogs.length > 0 && (
+        <div className="rounded-xl border border-adv-card bg-adv-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-adv-off-white">Temporal Impact Timeline</h2>
+            <button onClick={() => navigate('/markets/goals')} className="text-xs text-adv-teal hover:text-adv-teal-dark">
+              View Goals →
+            </button>
+          </div>
+          <TemporalTimeline logs={temporalLogs} />
         </div>
       )}
 

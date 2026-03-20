@@ -166,5 +166,43 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
     }
   });
 
+  // ── Pending Conflicts ─────────────────────────────────────────────────
+
+  router.get('/pending-conflicts', async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || 'default';
+      const conflicts = await service.getPendingConflicts(userId);
+      res.json(conflicts);
+    } catch (err) {
+      const message = safeError(err);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  router.get('/pending-conflicts/count', async (req, res) => {
+    try {
+      const userId = (req as any).user?.id || 'default';
+      const count = await service.getPendingConflictCount(userId);
+      res.json({ count });
+    } catch (err) {
+      const message = safeError(err);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  router.put('/temporal-log/:id/resolve', async (req, res) => {
+    try {
+      const { action, userAction } = req.body;
+      if (!action || !['accepted', 'overridden', 'modified', 'dismissed'].includes(action)) {
+        return res.status(400).json({ error: 'action must be accepted, overridden, modified, or dismissed' });
+      }
+      await service.resolveConflict(req.params.id, action, userAction);
+      res.json({ ok: true });
+    } catch (err) {
+      const message = safeError(err);
+      res.status(500).json({ error: message });
+    }
+  });
+
   return router;
 }
