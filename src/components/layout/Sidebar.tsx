@@ -222,7 +222,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isLifeMode = ['/life', '/news', '/finance', '/travel', '/community'].some(r => pathname.startsWith(r));
+  const isLifeMode = ['/life', '/news', '/finance', '/travel'].some(r => pathname.startsWith(r));
+  const isCommunityMode = pathname.startsWith('/community');
+  const isPaymentsMode = pathname.startsWith('/futurechain');
   const isPathfinderMode = pathname.startsWith('/pathfinder');
   const isMarketsMode = pathname.startsWith('/markets');
   const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
@@ -811,7 +813,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         )}
 
         {/* ── Work sidebar (hidden while on Life/Pathfinder/Markets routes) */}
-        {!isLifeMode && !isPathfinderMode && !isMarketsMode && (<>
+        {!isLifeMode && !isPathfinderMode && !isMarketsMode && !isCommunityMode && !isPaymentsMode && (<>
         {/* Favorites section — only show if there are favorited items and sidebar is expanded */}
         {!sidebarCollapsed && favoriteNavItems.size > 0 && (
           <>

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Briefcase, GraduationCap, Globe, Compass, TrendingUp } from 'lucide-react';
+import { Briefcase, GraduationCap, Globe, Compass, TrendingUp, Users, Wallet } from 'lucide-react';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { AppMode } from '@/stores/useSettingsStore';
 
@@ -8,9 +8,11 @@ interface ModeToggleProps {
   className?: string;
 }
 
-const LIFE_ROUTES = ['/life', '/news', '/finance', '/travel', '/community'];
+const LIFE_ROUTES = ['/life', '/news', '/finance', '/travel'];
 const PATHFINDER_ROUTES = ['/pathfinder'];
 const MARKETS_ROUTES = ['/markets'];
+const COMMUNITY_ROUTES = ['/community'];
+const PAYMENTS_ROUTES = ['/futurechain'];
 
 export default function ModeToggle({ className = '' }: ModeToggleProps) {
   const { t } = useTranslation('school');
@@ -21,17 +23,23 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
   // Treat route-based pillars as active visually, regardless of stored mode
   const activeMode: AppMode = MARKETS_ROUTES.some(r => pathname.startsWith(r))
     ? 'markets'
-    : PATHFINDER_ROUTES.some(r => pathname.startsWith(r))
-      ? 'pathfinder'
-      : LIFE_ROUTES.some(r => pathname.startsWith(r))
-        ? 'life'
-        : appMode === 'school'
-          ? 'school'
-          : 'work';
+    : COMMUNITY_ROUTES.some(r => pathname.startsWith(r))
+      ? 'community'
+      : PAYMENTS_ROUTES.some(r => pathname.startsWith(r))
+        ? 'payments'
+        : PATHFINDER_ROUTES.some(r => pathname.startsWith(r))
+          ? 'pathfinder'
+          : LIFE_ROUTES.some(r => pathname.startsWith(r))
+            ? 'life'
+            : appMode === 'school'
+              ? 'school'
+              : 'work';
 
   function handleToggle(mode: AppMode) {
     setAppMode(mode);
     if (mode === 'markets') navigate('/markets');
+    else if (mode === 'community') navigate('/community');
+    else if (mode === 'payments') navigate('/futurechain');
     else if (mode === 'pathfinder') navigate('/pathfinder');
     else if (mode === 'school') navigate('/school');
     else if (mode === 'life') navigate('/life');
@@ -88,6 +96,20 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
 
       <button
         type="button"
+        onClick={() => handleToggle('community')}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
+          activeMode === 'community'
+            ? 'bg-adv-teal text-adv-dark'
+            : 'text-adv-gray hover:text-adv-off-white'
+        }`}
+        aria-pressed={activeMode === 'community'}
+      >
+        <Users className="h-3.5 w-3.5" aria-hidden="true" />
+        Community
+      </button>
+
+      <button
+        type="button"
         onClick={() => handleToggle('markets')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'markets'
@@ -98,6 +120,20 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
       >
         <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
         Markets
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleToggle('payments')}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
+          activeMode === 'payments'
+            ? 'bg-adv-teal text-adv-dark'
+            : 'text-adv-gray hover:text-adv-off-white'
+        }`}
+        aria-pressed={activeMode === 'payments'}
+      >
+        <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
+        Payments
       </button>
 
       <button
