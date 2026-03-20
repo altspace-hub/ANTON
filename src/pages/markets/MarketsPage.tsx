@@ -35,7 +35,7 @@ interface DashboardData {
     unprocessed: number;
     byType: Array<{ data_type: string; count: number }>;
   };
-  marketBenchmarks?: Array<{ symbol: string; price: number; date: string; dailyChange: number }>;
+  marketBenchmarks?: Array<{ symbol: string; price: number; date: string; changes: Record<string, number> }>;
   portfolios?: Array<{ id: string; name: string; current_nav: number; total_return: number; status: string; philosophy: string }>;
 }
 
@@ -45,6 +45,7 @@ export default function MarketsPage() {
   const [loading, setLoading] = useState(true);
   const [atomExportState, setAtomExportState] = useState<'idle' | 'loading' | 'done'>('idle');
   const [strategyExportState, setStrategyExportState] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [overviewPeriod, setOverviewPeriod] = useState<string>('1d');
 
   const handleExportAtomCollection = async () => {
     if (atomExportState !== 'idle') return;
@@ -226,28 +227,47 @@ export default function MarketsPage() {
       {/* Market Overview — Benchmarks vs ANTON Portfolios */}
       {data?.marketBenchmarks && data.marketBenchmarks.length > 0 && (
         <div className="rounded-xl border border-adv-card bg-adv-card p-5">
-          <h2 className="text-lg font-semibold text-adv-off-white mb-4">Market Overview</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-adv-off-white">Market Overview</h2>
+            <div className="flex items-center gap-1">
+              {[
+                { key: '1d', label: '1D' },
+                { key: '1w', label: '1W' },
+                { key: '1m', label: '1M' },
+                { key: '1y', label: '1Y' },
+                { key: '5y', label: '5Y' },
+              ].map(p => (
+                <button key={p.key} onClick={() => setOverviewPeriod(p.key)}
+                  className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${overviewPeriod === p.key ? 'bg-adv-teal text-adv-dark' : 'bg-adv-dark text-adv-gray hover:text-adv-off-white'}`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Market Benchmarks */}
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-adv-gray mb-3">Market Benchmarks</h3>
               <div className="space-y-2">
-                {data.marketBenchmarks.map(b => (
-                  <div key={b.symbol} className="flex items-center justify-between rounded-lg bg-adv-dark-2 px-4 py-3">
-                    <div>
-                      <span className="text-sm font-medium text-adv-off-white">
-                        {b.symbol === 'SPY' ? 'S&P 500' : b.symbol === 'QQQ' ? 'NASDAQ 100' : b.symbol === 'DIA' ? 'Dow Jones' : b.symbol}
-                      </span>
-                      <span className="ml-2 text-xs text-adv-gray">{b.symbol}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-adv-off-white">${b.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                      <div className={`text-xs font-medium ${b.dailyChange >= 0 ? 'text-adv-green' : 'text-adv-red'}`}>
-                        {b.dailyChange >= 0 ? '+' : ''}{b.dailyChange.toFixed(2)}%
+                {data.marketBenchmarks.map(b => {
+                  const change = b.changes?.[overviewPeriod] ?? 0;
+                  return (
+                    <div key={b.symbol} className="flex items-center justify-between rounded-lg bg-adv-dark-2 px-4 py-3">
+                      <div>
+                        <span className="text-sm font-medium text-adv-off-white">
+                          {b.symbol === 'SPY' ? 'S&P 500' : b.symbol === 'QQQ' ? 'NASDAQ 100' : b.symbol === 'DIA' ? 'Dow Jones' : b.symbol}
+                        </span>
+                        <span className="ml-2 text-xs text-adv-gray">{b.symbol}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-adv-off-white">${b.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div className={`text-xs font-medium ${change >= 0 ? 'text-adv-green' : 'text-adv-red'}`}>
+                          {change >= 0 ? '+' : ''}{change.toFixed(2)}%
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             {/* ANTON Portfolios */}

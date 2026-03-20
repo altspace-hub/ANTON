@@ -54,23 +54,36 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
       const atomsByCategory = await atomService.getAtomsByCategory();
       const rawDataStats = await dataService.getRawDataStats();
 
-      // Market benchmarks (SPY, QQQ, DIA) — current + recent performance
+      // Market benchmarks (SPY, QQQ, DIA) — multi-period performance
+      const benchmarkSymbols = ['SPY', 'QQQ', 'DIA'];
+      const periods = [
+        { key: '1d', interval: '1 day' },
+        { key: '1w', interval: '7 days' },
+        { key: '1m', interval: '30 days' },
+        { key: '1y', interval: '365 days' },
+        { key: '5y', interval: '1825 days' },
+      ];
       const benchmarks = await db.all<{ symbol: string; price_date: string; close: number }>(
         `SELECT DISTINCT ON (symbol) symbol, price_date, close
          FROM market_price_normalized WHERE symbol IN ('SPY','QQQ','DIA')
          ORDER BY symbol, price_date DESC`
       );
-      const benchmarkPrev = await db.all<{ symbol: string; close: number }>(
-        `SELECT DISTINCT ON (symbol) symbol, close
-         FROM market_price_normalized WHERE symbol IN ('SPY','QQQ','DIA')
-         AND price_date < (SELECT MAX(price_date) FROM market_price_normalized WHERE symbol = 'SPY')
-         ORDER BY symbol, price_date DESC`
-      );
-      const marketBenchmarks = benchmarks.map(b => {
-        const prev = benchmarkPrev.find(p => p.symbol === b.symbol);
-        const dailyChange = prev ? ((Number(b.close) - Number(prev.close)) / Number(prev.close)) * 100 : 0;
-        return { symbol: b.symbol, price: Number(b.close), date: b.price_date, dailyChange: Number(dailyChange.toFixed(2)) };
-      });
+      const marketBenchmarks = [];
+      for (const b of benchmarks) {
+        const changes: Record<string, number> = {};
+        for (const p of periods) {
+          const prev = await db.get<{ close: number }>(
+            `SELECT close FROM market_price_normalized WHERE symbol = ? AND price_date <= (
+              SELECT MAX(price_date) FROM market_price_normalized WHERE symbol = ? AND price_date <= (
+                (SELECT MAX(price_date) FROM market_price_normalized WHERE symbol = ?)::date - ?::interval
+              )::text
+            ) ORDER BY price_date DESC LIMIT 1`,
+            b.symbol, b.symbol, b.symbol, p.interval
+          );
+          changes[p.key] = prev ? Number(((Number(b.close) - Number(prev.close)) / Number(prev.close) * 100).toFixed(2)) : 0;
+        }
+        marketBenchmarks.push({ symbol: b.symbol, price: Number(b.close), date: b.price_date, changes });
+      }
 
       // ANTON portfolio performance
       const portfolios = await db.all<{ id: string; name: string; current_nav: number; total_return: number; status: string; philosophy: string }>(
