@@ -51,6 +51,152 @@ function formatDate(iso: string): string {
   }
 }
 
+// ── Payment Info Section (pulls from KYC + Wallets) ─────────────────
+
+function PaymentInfoSection({ identity, paymentQrUrl }: { identity: CommunityIdentity | null; paymentQrUrl: string }) {
+  const [kyc, setKyc] = useState<Record<string, unknown> | null>(null);
+  const [wallets, setWallets] = useState<Array<Record<string, unknown>>>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [synced, setSynced] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [kycRes, walletsRes] = await Promise.all([
+          fetchWithAuth('/api/futurechain/kyc'),
+          fetchWithAuth('/api/futurechain/wallets'),
+        ]);
+        if (kycRes.ok) setKyc(await kycRes.json());
+        if (walletsRes.ok) setWallets(await walletsRes.json());
+      } catch {}
+    }
+    load();
+  }, []);
+
+  const handleSyncToIdentity = async () => {
+    if (!kyc) return;
+    setSyncing(true);
+    const humanWallet = wallets.find(w => w.wallet_type === 'human');
+    const agentWallet = wallets.find(w => w.wallet_type === 'agent');
+    await fetchWithAuth('/api/community/identity', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        payment_address: String(humanWallet?.address ?? ''),
+        payment_name: String(kyc.full_legal_name_enc ?? kyc.fullLegalName ?? ''),
+        payment_country: String(kyc.country ?? ''),
+        agent_wallet_address: String(agentWallet?.address ?? ''),
+        agent_wallet_name: String(agentWallet?.name ?? ''),
+      }),
+    });
+    setSyncing(false);
+    setSynced(true);
+    setTimeout(() => setSynced(false), 3000);
+  };
+
+  const humanWallet = wallets.find(w => w.wallet_type === 'human');
+  const agentWallet = wallets.find(w => w.wallet_type === 'agent');
+  const hasKyc = kyc && (kyc.full_legal_name_enc || kyc.country);
+  const hasWallets = wallets.length > 0;
+
+  return (
+    <section className="mb-5 rounded-xl border border-border bg-adv-card p-6">
+      <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-adv-white">
+        <Wallet className="h-4 w-4 text-adv-gold" />
+        Payment Info (ISO 20022)
+      </h2>
+
+      {!hasKyc && !hasWallets ? (
+        <div className="text-center py-6">
+          <Wallet className="h-8 w-8 text-adv-gray mx-auto mb-2" />
+          <p className="text-sm text-adv-gray mb-3">No payment info configured yet.</p>
+          <a href="/futurechain/kyc" className="text-sm text-adv-teal hover:text-adv-teal-dark">
+            Set up KYC Profile →
+          </a>
+          <span className="text-adv-gray mx-2">·</span>
+          <a href="/futurechain/wallets" className="text-sm text-adv-teal hover:text-adv-teal-dark">
+            Create Wallet →
+          </a>
+        </div>
+      ) : (
+        <>
+          <div className="rounded-lg border border-adv-blue/20 bg-adv-blue/5 px-4 py-3 text-xs text-adv-gray mb-4">
+            Payment information is pulled from your <a href="/futurechain/kyc" className="text-adv-teal hover:underline">KYC Profile</a> and <a href="/futurechain/wallets" className="text-adv-teal hover:underline">Wallets</a>. These fields are included in ISO 20022 PACS.008 payment messages sent to contacts.
+          </div>
+
+          <div className="space-y-4">
+            {/* KYC Info */}
+            {hasKyc && (
+              <div>
+                <h3 className="text-xs uppercase tracking-wider text-adv-gray mb-2">ISO 20022 Debtor Information</h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-adv-gray">Name:</span> <span className="text-adv-off-white ml-2">{String(kyc.full_legal_name_enc ?? '—')}</span></div>
+                  <div><span className="text-adv-gray">Country:</span> <span className="text-adv-off-white ml-2">{String(kyc.country ?? '—')}</span></div>
+                  <div><span className="text-adv-gray">City:</span> <span className="text-adv-off-white ml-2">{String(kyc.city_enc ?? '—')}</span></div>
+                  <div><span className="text-adv-gray">Address:</span> <span className="text-adv-off-white ml-2">{String(kyc.street_address_enc ?? '—')}</span></div>
+                </div>
+              </div>
+            )}
+
+            {/* Human Wallet */}
+            {humanWallet && (
+              <div>
+                <h3 className="text-xs uppercase tracking-wider text-adv-gray mb-2">Personal Wallet</h3>
+                <div className="rounded-lg bg-adv-dark-2 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-adv-off-white">{String(humanWallet.name)}</span>
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-adv-blue/10 text-adv-blue">personal</span>
+                    </div>
+                    <span className="text-sm font-bold text-adv-teal">{Number(humanWallet.balance_ftc || 0).toFixed(2)} FTC</span>
+                  </div>
+                  <div className="text-xs text-adv-gray font-mono mt-1">{String(humanWallet.address)}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Agent Wallet */}
+            {agentWallet && (
+              <div>
+                <h3 className="text-xs uppercase tracking-wider text-adv-gray mb-2">ANTON Agent Wallet (UBO: {String(kyc?.full_legal_name_enc ?? identity?.display_name ?? 'Owner')})</h3>
+                <div className="rounded-lg bg-adv-dark-2 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-adv-off-white">{String(agentWallet.name)}</span>
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-adv-teal/10 text-adv-teal">agent</span>
+                    </div>
+                    <span className="text-sm font-bold text-adv-teal">{Number(agentWallet.balance_ftc || 0).toFixed(2)} FTC</span>
+                  </div>
+                  <div className="text-xs text-adv-gray font-mono mt-1">{String(agentWallet.address)}</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sync + QR */}
+          <div className="mt-4 flex items-center gap-3">
+            <button onClick={handleSyncToIdentity} disabled={syncing}
+              className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-semibold text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50">
+              <Save className="h-4 w-4" />
+              {syncing ? 'Syncing...' : 'Sync to Contact Card'}
+            </button>
+            {synced && <span className="flex items-center gap-1 text-sm text-adv-green"><Check className="h-4 w-4" /> Synced</span>}
+            <span className="text-xs text-adv-gray">Updates what contacts see when they receive your payment info</span>
+          </div>
+
+          {paymentQrUrl && (
+            <div className="mt-5 flex flex-col items-center rounded-lg border border-adv-gold/20 bg-adv-dark-2 p-4">
+              <p className="mb-2 text-xs uppercase tracking-wider text-adv-gold">Payment QR</p>
+              <img src={paymentQrUrl} alt="Payment QR code" className="h-[180px] w-[180px] rounded-lg" />
+              <p className="mt-2 text-xs text-adv-gray">Scan to send payment — includes wallet address + ISO 20022 fields</p>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
 function truncateKey(key: string, chars = 32): string {
   if (key.length <= chars * 2 + 3) return key;
   return `${key.slice(0, chars)}...${key.slice(-chars)}`;
@@ -393,86 +539,8 @@ export default function CommunityIdentityPage() {
         )}
       </section>
 
-      {/* ── Payment Info Card ───────────────────────────────────── */}
-      <section className="mb-5 rounded-xl border border-border bg-adv-card p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-adv-white">
-          <Wallet className="h-4 w-4 text-adv-gold" />
-          Payment Info
-        </h2>
-
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-wider text-adv-gray" htmlFor="pay-address">
-              Wallet address
-            </label>
-            <input
-              id="pay-address"
-              type="text"
-              value={paymentAddress}
-              onChange={e => setPaymentAddress(e.target.value)}
-              placeholder="0x... or chain-specific address"
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 font-mono text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-wider text-adv-gray" htmlFor="pay-name">
-              Name on account
-            </label>
-            <input
-              id="pay-name"
-              type="text"
-              value={paymentName}
-              onChange={e => setPaymentName(e.target.value)}
-              placeholder="Your name or alias"
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs uppercase tracking-wider text-adv-gray" htmlFor="pay-country">
-              Country
-            </label>
-            <input
-              id="pay-country"
-              type="text"
-              value={paymentCountry}
-              onChange={e => setPaymentCountry(e.target.value)}
-              placeholder="e.g. Sweden"
-              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            onClick={savePayment}
-            disabled={savingPayment}
-            className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-semibold text-adv-dark transition hover:bg-adv-teal-dark disabled:opacity-50"
-          >
-            <Save className="h-4 w-4" />
-            {savingPayment ? 'Saving...' : 'Save Payment Info'}
-          </button>
-          {paymentSaved && (
-            <span className="flex items-center gap-1 text-sm text-adv-green">
-              <Check className="h-4 w-4" /> Saved
-            </span>
-          )}
-        </div>
-
-        {/* Payment QR */}
-        {paymentQrUrl && (
-          <div className="mt-5 flex flex-col items-center rounded-lg border border-adv-gold/20 bg-adv-dark-2 p-4">
-            <p className="mb-2 text-xs uppercase tracking-wider text-adv-gold">Payment QR</p>
-            <img
-              src={paymentQrUrl}
-              alt="Payment QR code"
-              className="h-[180px] w-[180px] rounded-lg"
-            />
-            <p className="mt-2 text-xs text-adv-gray">Scan to send payment</p>
-          </div>
-        )}
-      </section>
+      {/* ── Payment Info Card (from KYC + Wallets) ───────────────── */}
+      <PaymentInfoSection identity={identity} paymentQrUrl={paymentQrUrl} />
 
       {/* ── Profile Visibility Card ─────────────────────────────── */}
       <section className="mb-5 rounded-xl border border-border bg-adv-card p-6">
