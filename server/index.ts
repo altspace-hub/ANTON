@@ -472,6 +472,9 @@ const { createFCBudgetRoutes } = await import('./routes/fc-budget.js');
 app.use('/api', await createFCBudgetRoutes(db));
 const { createFCMarketplaceRoutes } = await import('./routes/fc-marketplace.js');
 app.use('/api', await createFCMarketplaceRoutes(db));
+// Collaborative Project Workspace
+const { createCommunityProjectRoutes } = await import('./routes/community-projects.js');
+app.use('/api', await createCommunityProjectRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
 const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton

@@ -197,6 +197,8 @@ const CommunityCalendarPage = lazy(() => import('./pages/community/CommunityCale
 const CommunityEventPage = lazy(() => import('./pages/community/CommunityEventPage'));
 const CommunitySharedKnowledgePage = lazy(() => import('./pages/community/CommunitySharedKnowledgePage'));
 const CommunityTasksPage = lazy(() => import('./pages/community/CommunityTasksPage'));
+const CommunityProjectsPage = lazy(() => import('./pages/community/CommunityProjectsPage'));
+const CommunityProjectDetailPage = lazy(() => import('./pages/community/CommunityProjectDetailPage'));
 
 // Markets Pillar pages
 const MarketsPage = lazy(() => import('./pages/markets/MarketsPage'));
@@ -470,6 +472,8 @@ export default function App() {
           <Route path="/community/events/:id" element={<CommunityEventPage />} />
           <Route path="/community/shared-knowledge" element={<CommunitySharedKnowledgePage />} />
           <Route path="/community/tasks" element={<CommunityTasksPage />} />
+          <Route path="/community/projects" element={<CommunityProjectsPage />} />
+          <Route path="/community/projects/:id" element={<CommunityProjectDetailPage />} />
           {/* NGO & Social Impact Hub */}
           <Route path="/ngo" element={<NGOHubPage />} />
           {/* Trades & Service Workers Hub */}

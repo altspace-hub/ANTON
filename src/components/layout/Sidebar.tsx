@@ -586,6 +586,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   <MessageCircle className="h-3.5 w-3.5 shrink-0" />
                   Forum
                 </NavLink>
+                <NavLink
+                  to="/community/projects"
+                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive || pathname.startsWith('/community/projects') ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
+                >
+                  <FolderKanban className="h-3.5 w-3.5 shrink-0" />
+                  Projects
+                </NavLink>
               </div>
             )}
           </>
