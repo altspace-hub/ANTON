@@ -90,7 +90,24 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
         "SELECT id, name, current_nav, total_return, status, philosophy FROM market_indexes WHERE status = 'active' ORDER BY name"
       );
 
-      res.json({ stats, recentAtoms, atomsByCategory, rawDataStats, marketBenchmarks, portfolios });
+      // Track record summary
+      const trackRecord = await db.get<{ total: number; correct: number; accuracy: number; avg_brier: number }>(
+        `SELECT COUNT(*) as total,
+                SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct,
+                CASE WHEN COUNT(*) > 0 THEN ROUND((SUM(CASE WHEN was_correct = 1 THEN 1.0 ELSE 0 END) / COUNT(*) * 100)::numeric, 1) ELSE 0 END as accuracy,
+                ROUND(AVG(brier_score)::numeric, 4) as avg_brier
+         FROM market_predictions WHERE status = 'validated'`
+      );
+
+      // Active intelligence counts
+      const activeIntel = await db.get<{ theses: number; predictions: number; nextDeadline: string | null }>(
+        `SELECT
+          (SELECT COUNT(*) FROM market_theses WHERE status IN ('active', 'monitoring')) as theses,
+          (SELECT COUNT(*) FROM market_predictions WHERE status = 'active') as predictions,
+          (SELECT MIN(deadline) FROM market_predictions WHERE status = 'active' AND deadline IS NOT NULL) as "nextDeadline"`
+      );
+
+      res.json({ stats, recentAtoms, atomsByCategory, rawDataStats, marketBenchmarks, portfolios, trackRecord, activeIntel });
     } catch (err) {
       console.error('[markets] Dashboard error:', err);
       res.status(500).json({ error: 'Failed to load dashboard' });
@@ -405,6 +422,46 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
     } catch (err) {
       console.error('[markets] Batch extract error:', err);
       res.status(500).json({ error: 'Failed to batch extract atoms' });
+    }
+  });
+
+  // ── Bulk AI Extraction (process ALL unprocessed articles with rate limiting) ──
+
+  router.post('/markets/extract-atoms/bulk', async (req, res) => {
+    try {
+      const batchSize = Number(req.body?.batchSize) || 20;
+      const maxBatches = Number(req.body?.maxBatches) || 50;
+      let totalProcessed = 0;
+      let totalAtoms = 0;
+
+      for (let batch = 0; batch < maxBatches; batch++) {
+        const rows = await db.all(
+          "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type NOT IN ('price') ORDER BY fetched_at ASC LIMIT ?",
+          batchSize
+        ) as Array<{ id: string; data_type: string; content: string; title: string }>;
+
+        if (rows.length === 0) break;
+
+        for (const row of rows) {
+          try {
+            const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
+            const atomIds = await atomService.extractAtomsFromRawData(row.id, text, row.data_type);
+            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+            totalAtoms += atomIds.length;
+          } catch {
+            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+          }
+          totalProcessed++;
+        }
+
+        // Rate limit: 500ms pause between batches
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      res.json({ processed: totalProcessed, atomsCreated: totalAtoms });
+    } catch (err) {
+      console.error('[markets] Bulk extract error:', err);
+      res.status(500).json({ error: 'Failed to bulk extract atoms' });
     }
   });
 

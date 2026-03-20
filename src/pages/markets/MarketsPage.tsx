@@ -38,6 +38,8 @@ interface DashboardData {
   };
   marketBenchmarks?: Array<{ symbol: string; price: number; date: string; changes: Record<string, number> }>;
   portfolios?: Array<{ id: string; name: string; current_nav: number; total_return: number; status: string; philosophy: string }>;
+  trackRecord?: { total: number; correct: number; accuracy: number; avg_brier: number | null };
+  activeIntel?: { theses: number; predictions: number; nextDeadline: string | null };
 }
 
 export default function MarketsPage() {
@@ -319,6 +321,54 @@ export default function MarketsPage() {
             </button>
           </div>
           <TemporalTimeline logs={temporalLogs} />
+        </div>
+      )}
+
+      {/* Intelligence Summary */}
+      {(data?.trackRecord || data?.activeIntel) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Track Record */}
+          {data.trackRecord && Number(data.trackRecord.total) > 0 && (
+            <div className="rounded-xl border border-adv-card bg-adv-card p-5">
+              <h3 className="text-sm font-semibold text-adv-off-white mb-3">Prediction Track Record</h3>
+              <div className="flex items-center gap-6">
+                <div>
+                  <div className={`text-3xl font-bold ${Number(data.trackRecord.accuracy) >= 55 ? 'text-adv-green' : Number(data.trackRecord.accuracy) >= 45 ? 'text-adv-gold' : 'text-adv-red'}`}>
+                    {Number(data.trackRecord.accuracy).toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-adv-gray">Accuracy</div>
+                </div>
+                <div className="text-right space-y-1">
+                  <div className="text-xs text-adv-gray">{Number(data.trackRecord.correct)}/{Number(data.trackRecord.total)} correct</div>
+                  {data.trackRecord.avg_brier != null && (
+                    <div className="text-xs text-adv-gray">Brier: {Number(data.trackRecord.avg_brier).toFixed(3)}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Active Intelligence */}
+          {data.activeIntel && (
+            <div className="rounded-xl border border-adv-card bg-adv-card p-5">
+              <h3 className="text-sm font-semibold text-adv-off-white mb-3">Active Intelligence</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-adv-gray">Active Theses</span>
+                  <span className="text-adv-off-white font-medium">{Number(data.activeIntel.theses)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-adv-gray">Active Predictions</span>
+                  <span className="text-adv-off-white font-medium">{Number(data.activeIntel.predictions)}</span>
+                </div>
+                {data.activeIntel.nextDeadline && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-adv-gray">Next Deadline</span>
+                    <span className="text-adv-teal text-xs">{data.activeIntel.nextDeadline}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
