@@ -53,7 +53,31 @@ export async function createMarketsRoutes(db: DatabaseAdapter, anthropic?: Anthr
       const recentAtoms = await atomService.getRecentAtoms(10);
       const atomsByCategory = await atomService.getAtomsByCategory();
       const rawDataStats = await dataService.getRawDataStats();
-      res.json({ stats, recentAtoms, atomsByCategory, rawDataStats });
+
+      // Market benchmarks (SPY, QQQ, DIA) — current + recent performance
+      const benchmarks = await db.all<{ symbol: string; price_date: string; close: number }>(
+        `SELECT DISTINCT ON (symbol) symbol, price_date, close
+         FROM market_price_normalized WHERE symbol IN ('SPY','QQQ','DIA')
+         ORDER BY symbol, price_date DESC`
+      );
+      const benchmarkPrev = await db.all<{ symbol: string; close: number }>(
+        `SELECT DISTINCT ON (symbol) symbol, close
+         FROM market_price_normalized WHERE symbol IN ('SPY','QQQ','DIA')
+         AND price_date < (SELECT MAX(price_date) FROM market_price_normalized WHERE symbol = 'SPY')
+         ORDER BY symbol, price_date DESC`
+      );
+      const marketBenchmarks = benchmarks.map(b => {
+        const prev = benchmarkPrev.find(p => p.symbol === b.symbol);
+        const dailyChange = prev ? ((Number(b.close) - Number(prev.close)) / Number(prev.close)) * 100 : 0;
+        return { symbol: b.symbol, price: Number(b.close), date: b.price_date, dailyChange: Number(dailyChange.toFixed(2)) };
+      });
+
+      // ANTON portfolio performance
+      const portfolios = await db.all<{ id: string; name: string; current_nav: number; total_return: number; status: string; philosophy: string }>(
+        "SELECT id, name, current_nav, total_return, status, philosophy FROM market_indexes WHERE status = 'active' ORDER BY name"
+      );
+
+      res.json({ stats, recentAtoms, atomsByCategory, rawDataStats, marketBenchmarks, portfolios });
     } catch (err) {
       console.error('[markets] Dashboard error:', err);
       res.status(500).json({ error: 'Failed to load dashboard' });
