@@ -202,6 +202,11 @@ const CommunityProjectDetailPage = lazy(() => import('./pages/community/Communit
 
 // FutureChain / Payments pages
 const FCDashboardPage = lazy(() => import('./pages/futurechain/FCDashboardPage'));
+const FCKycPage = lazy(() => import('./pages/futurechain/FCKycPage'));
+const FCWalletsPage = lazy(() => import('./pages/futurechain/FCWalletsPage'));
+const FCTransactionsPage = lazy(() => import('./pages/futurechain/FCTransactionsPage'));
+const FCBudgetPage = lazy(() => import('./pages/futurechain/FCBudgetPage'));
+const FCMarketplacePage = lazy(() => import('./pages/futurechain/FCMarketplacePage'));
 
 // Markets Pillar pages
 const MarketsPage = lazy(() => import('./pages/markets/MarketsPage'));
@@ -479,6 +484,11 @@ export default function App() {
           <Route path="/community/projects/:id" element={<CommunityProjectDetailPage />} />
           {/* FutureChain / Payments */}
           <Route path="/futurechain" element={<FCDashboardPage />} />
+          <Route path="/futurechain/kyc" element={<FCKycPage />} />
+          <Route path="/futurechain/wallets" element={<FCWalletsPage />} />
+          <Route path="/futurechain/transactions" element={<FCTransactionsPage />} />
+          <Route path="/futurechain/budget" element={<FCBudgetPage />} />
+          <Route path="/futurechain/marketplace" element={<FCMarketplacePage />} />
           {/* NGO & Social Impact Hub */}
           <Route path="/ngo" element={<NGOHubPage />} />
           {/* Trades & Service Workers Hub */}

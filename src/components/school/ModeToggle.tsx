@@ -105,7 +105,7 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'community'}
       >
         <Users className="h-3.5 w-3.5" aria-hidden="true" />
-        Community
+        Collaboration
       </button>
 
       <button

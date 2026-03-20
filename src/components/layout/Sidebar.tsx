@@ -540,61 +540,6 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               </div>
             )}
 
-            {/* ── Community ── */}
-            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
-            {!sidebarCollapsed && (
-              <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider" style={{ color: '#9B59B6' }}>
-                Community
-              </div>
-            )}
-            <NavLink
-              to="/community"
-              end
-              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive || pathname.startsWith('/community/')) : linkClass(isActive || pathname.startsWith('/community/'))}
-              title={sidebarCollapsed ? 'Community' : undefined}
-            >
-              <MessageCircle className="h-4 w-4 shrink-0" />
-              {!sidebarCollapsed && 'Hub'}
-            </NavLink>
-            {!sidebarCollapsed && (
-              <div className="mb-2 ml-4 flex flex-col gap-0.5 border-l pl-3" style={{ borderColor: '#9B59B630' }}>
-                <NavLink
-                  to="/community/groups"
-                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive || pathname.startsWith('/community/groups') ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
-                >
-                  <Users2 className="h-3.5 w-3.5 shrink-0" />
-                  Groups
-                </NavLink>
-                <NavLink
-                  to="/community/mail"
-                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
-                >
-                  <Mail className="h-3.5 w-3.5 shrink-0" />
-                  Mail
-                </NavLink>
-                <NavLink
-                  to="/community/calendar"
-                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive || pathname.startsWith('/community/events') ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
-                >
-                  <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                  Calendar
-                </NavLink>
-                <NavLink
-                  to="/community/forum"
-                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
-                >
-                  <MessageCircle className="h-3.5 w-3.5 shrink-0" />
-                  Forum
-                </NavLink>
-                <NavLink
-                  to="/community/projects"
-                  className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs transition ${isActive || pathname.startsWith('/community/projects') ? 'text-[#9B59B6]' : 'text-adv-gray hover:text-adv-off-white'}`}
-                >
-                  <FolderKanban className="h-3.5 w-3.5 shrink-0" />
-                  Projects
-                </NavLink>
-              </div>
-            )}
           </>
         )}
 
@@ -607,8 +552,165 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <NavLink to="/futurechain" end
               className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
               title={sidebarCollapsed ? 'Dashboard' : undefined}>
-              <Wallet className="h-4 w-4 shrink-0" />
+              <LayoutDashboard className="h-4 w-4 shrink-0" />
               {!sidebarCollapsed && 'Dashboard'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Wallets</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/futurechain/wallets"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'My Wallets' : undefined}>
+              <Wallet className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'My Wallets'}
+            </NavLink>
+            <NavLink to="/futurechain/kyc"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'KYC Profile' : undefined}>
+              <Users className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'KYC Profile'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Transactions</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/futurechain/transactions"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Transactions' : undefined}>
+              <CreditCard className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Transactions'}
+            </NavLink>
+            <NavLink to="/futurechain/budget"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Budget & Limits' : undefined}>
+              <Shield className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Budget & Limits'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Marketplace</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/futurechain/marketplace"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Services' : undefined}>
+              <ShoppingBag className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Services'}
+            </NavLink>
+            <NavLink to="/futurechain/settings"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Settings' : undefined}>
+              <Settings className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Settings'}
+            </NavLink>
+          </>
+        )}
+
+        {/* ── Collaboration / Community sidebar ─────────────────────── */}
+        {isCommunityMode && (
+          <>
+            {!sidebarCollapsed && (
+              <div className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Collaboration</div>
+            )}
+            <NavLink to="/community" end
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Hub' : undefined}>
+              <Home className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Hub'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">People</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/community/contacts"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Contacts' : undefined}>
+              <Users className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Contacts'}
+            </NavLink>
+            <NavLink to="/community/groups"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Groups' : undefined}>
+              <Users2 className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Groups'}
+            </NavLink>
+            <NavLink to="/community/identity"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'My Identity' : undefined}>
+              <Star className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'My Identity'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Communication</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/community/mail"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Mail' : undefined}>
+              <Mail className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Mail'}
+            </NavLink>
+            <NavLink to="/community/messages"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Messages' : undefined}>
+              <MessageCircle className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Messages'}
+            </NavLink>
+            <NavLink to="/community/forum"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Forum' : undefined}>
+              <MessageSquare className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Forum'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Projects</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/community/projects"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Projects' : undefined}>
+              <FolderKanban className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Projects'}
+            </NavLink>
+            <NavLink to="/community/tasks"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Task Delegation' : undefined}>
+              <Send className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Task Delegation'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Knowledge</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/community/shared-knowledge"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Shared Knowledge' : undefined}>
+              <Share2 className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Shared Knowledge'}
+            </NavLink>
+            <NavLink to="/community/capability-card"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Capability Card' : undefined}>
+              <Eye className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Capability Card'}
+            </NavLink>
+
+            {!sidebarCollapsed && (
+              <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Events</div>
+            )}
+            {sidebarCollapsed && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/community/calendar"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Calendar' : undefined}>
+              <CalendarDays className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Calendar'}
             </NavLink>
           </>
         )}
