@@ -58,6 +58,11 @@ export async function createFCSettingsRoutes(db: DatabaseAdapter): Promise<Route
         'postal_code_enc', 'address_country', 'id_document_number_enc',
         'id_document_type', 'id_issuing_country', 'date_of_birth_enc',
         'nationality', 'tax_id_number_enc', 'bic_or_lei_enc',
+        'annual_income_range', 'estimated_savings', 'employment_status',
+        'employer_name', 'industry_sector', 'source_of_funds',
+        'source_of_funds_description', 'is_pep', 'is_pep_associate',
+        'pep_description', 'purpose', 'purpose_other',
+        'expected_tx_volume', 'expected_monthly_value',
       ];
       const existing = await db.get('SELECT id FROM fc_kyc_profiles WHERE id = $1', 'default');
       if (existing) {
