@@ -68,27 +68,87 @@ export async function createFCGatewayService(db: DatabaseAdapter) {
     const budgetCheck = await budgetService.checkSpending(params.amount);
     if (budgetCheck.result === 'blocked') throw new Error(budgetCheck.reason);
 
-    // Resolve address from contact if needed
+    // ── Load sender (debtor) ISO 20022 info from KYC profile ──
+    const kyc = await db.get<Record<string, unknown>>(
+      "SELECT full_legal_name_enc, country, street_address_enc, city_enc, postal_code_enc, address_country FROM fc_kyc_profiles WHERE id = 'default'"
+    );
+    const senderName = String(kyc?.full_legal_name_enc ?? 'ANTON Agent');
+    const senderCountry = String(kyc?.country ?? '');
+    const senderStreet = String(kyc?.street_address_enc ?? '');
+    const senderCity = String(kyc?.city_enc ?? '');
+    const senderPostalCode = String(kyc?.postal_code_enc ?? '');
+
+    // ── Load receiver (creditor) ISO 20022 info from contact ──
     let toAddress = params.toAddress ?? '';
-    if (params.contactHash && !toAddress) {
-      const conn = await db.get<{ payment_address: string }>("SELECT payment_address FROM community_connections WHERE contact_hash = ? AND status = 'accepted'", params.contactHash);
-      toAddress = conn?.payment_address ?? '';
+    let receiverName = '';
+    let receiverCountry = '';
+    let receiverStreet = '';
+    let receiverCity = '';
+
+    if (params.contactHash) {
+      const conn = await db.get<Record<string, unknown>>(
+        `SELECT payment_address, payment_name, payment_country, payment_street, payment_city,
+                agent_wallet_address, display_name
+         FROM community_connections WHERE contact_hash = ? AND status = 'accepted'`,
+        params.contactHash
+      );
+      if (conn) {
+        toAddress = toAddress || String(conn.payment_address ?? conn.agent_wallet_address ?? '');
+        receiverName = String(conn.payment_name ?? conn.display_name ?? '');
+        receiverCountry = String(conn.payment_country ?? '');
+        receiverStreet = String(conn.payment_street ?? '');
+        receiverCity = String(conn.payment_city ?? '');
+      }
     }
     if (!toAddress) throw new Error('No recipient address');
 
-    // Get agent wallet
+    // ── Get agent wallet ──
     const { createFCWalletService } = await import('./fc-wallet-service.js');
     const walletService = await createFCWalletService(db);
     const agentWallet = await walletService.getAgentWallet();
     if (!agentWallet) throw new Error('No agent wallet configured');
 
-    // Build and submit transaction
+    // ── Build full PACS.008 transaction with ISO 20022 fields ──
     const { createFCTransactionService } = await import('./fc-transaction-service.js');
     const txService = await createFCTransactionService(db);
+
+    // Build remittance with purpose/nature/goal
+    const remittance = txService.buildRemittance(
+      params.purpose ?? 'OTHR', params.nature ?? 'agent-payment', params.goal ?? 'service'
+    );
+
     const tx = await txService.buildTransaction({
       fromAddress: String(agentWallet.address), toAddress, amountFtc: params.amount,
       walletType: 'agent', purpose: params.purpose, nature: params.nature, goal: params.goal,
     });
+
+    // Enrich the transaction with full ISO 20022 debtor/creditor fields
+    await db.run(`
+      UPDATE fc_transactions SET pacs008_fields = ? WHERE id = ?
+    `, JSON.stringify({
+      // Debtor (sender) — from KYC
+      debtorName: senderName,
+      debtorCountry: senderCountry,
+      debtorStreetName: senderStreet,
+      debtorTownName: senderCity,
+      debtorPostCode: senderPostalCode,
+      debtorAccount: String(agentWallet.address),
+      // Ultimate Debtor (UBO — the human behind the agent)
+      ultimateDebtorName: senderName,
+      ultimateDebtorCountry: senderCountry,
+      // Creditor (receiver) — from contact payment info
+      creditorName: receiverName,
+      creditorCountry: receiverCountry,
+      creditorStreetName: receiverStreet,
+      creditorTownName: receiverCity,
+      creditorAccount: toAddress,
+      // Transaction details
+      amount: params.amount,
+      currency: 'FTC',
+      purposeCode: params.purpose ?? 'OTHR',
+      remittanceInformation: remittance,
+    }), tx.id);
+
     const result = await txService.submitTransaction(tx.id);
 
     // Record spend
@@ -97,7 +157,14 @@ export async function createFCGatewayService(db: DatabaseAdapter) {
     // Update gateway stats
     await db.run("UPDATE fc_gateway_config SET total_requests = total_requests + 1, total_payments_ftc = total_payments_ftc + ? WHERE id = 'default'", params.amount);
 
-    return { ...result, amount: params.amount };
+    return {
+      ...result, amount: params.amount,
+      iso20022: {
+        debtor: { name: senderName, country: senderCountry, account: String(agentWallet.address) },
+        creditor: { name: receiverName, country: receiverCountry, account: toAddress },
+        remittance,
+      },
+    };
   }
 
   async function logAction(action: string, callerIp: string | undefined, requestData: unknown, status: string, amount?: number, error?: string) {
