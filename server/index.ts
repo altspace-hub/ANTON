@@ -739,84 +739,104 @@ httpServer.listen(PORT, async () => {
 
     const MARKET_TZ = { timezone: 'Europe/Stockholm' };
 
-    // Phase 1: Morning Intelligence (07:00 CET) — overnight review, atom decay, calendar
+    // ── Sustainable schedule: fetch less, process more, quality over speed ──
+    // Backlog gate: skip new fetches if too many unprocessed articles
+    async function getBacklogSize(): Promise<number> {
+      const row = await db.get<{ count: number }>("SELECT COUNT(*) as count FROM market_data_raw WHERE is_processed = 0 AND data_type NOT IN ('price')");
+      return Number(row?.count) || 0;
+    }
+
+    async function processBacklog(limit: number) {
+      const unprocessed = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
+        "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type NOT IN ('price') ORDER BY fetched_at ASC LIMIT ?", limit
+      );
+      let processed = 0;
+      for (const row of unprocessed) {
+        try {
+          const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
+          await marketAtomService.extractAtomsFromRawData(row.id, text, row.data_type);
+          processed++;
+        } catch { /* skip */ }
+        await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+      }
+      return processed;
+    }
+
+    // Phase 1: Morning Intelligence (07:00 CET)
     cron.schedule('0 7 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 1: Morning Intelligence');
       try {
-        // Fetch overnight news
-        await marketDataService.fetchAllSources();
-        // Apply atom decay
         await marketAtomService.applyAtomDecay();
-        // Extract atoms from new data
-        const unprocessed = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
-          "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type != 'price' LIMIT 50"
-        );
-        for (const row of unprocessed) {
-          try {
-            const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
-            await marketAtomService.extractAtomsFromRawData(row.id, text, row.data_type);
-            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
-          } catch { await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id); }
+        const backlog = await getBacklogSize();
+        // Only fetch if backlog is manageable (< 500)
+        if (backlog < 500) {
+          await marketDataService.fetchAllSources();
+          console.log(`[markets-schedule] Phase 1: fetched data (backlog was ${backlog})`);
+        } else {
+          console.log(`[markets-schedule] Phase 1: skipping fetch, processing backlog (${backlog} items)`);
         }
-        console.log('[markets-schedule] Phase 1 complete');
+        // Always process — more than we fetch
+        const processed = await processBacklog(40);
+        console.log(`[markets-schedule] Phase 1 complete — processed ${processed} articles`);
       } catch (err) { console.error('[markets-schedule] Phase 1 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 2: Pre-Open Signal Scan (14:30 CET) — final prep before US open
+    // Phase 2: Pre-Open (14:30 CET) — light fetch + process
     cron.schedule('30 14 * * 1-5', async () => {
-      console.log('[markets-schedule] Phase 2: Pre-Open Signal Scan');
+      console.log('[markets-schedule] Phase 2: Pre-Open');
       try {
-        await marketDataService.fetchAllSources();
-        console.log('[markets-schedule] Phase 2 complete');
+        const backlog = await getBacklogSize();
+        if (backlog < 500) await marketDataService.fetchAllSources();
+        const processed = await processBacklog(20);
+        console.log(`[markets-schedule] Phase 2 complete — processed ${processed}, backlog: ${backlog}`);
       } catch (err) { console.error('[markets-schedule] Phase 2 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 3: Market Open Capture (15:45 CET) — opening data 15 min after US open
+    // Phase 3: Market Open (15:45 CET) — prices only (no news to avoid backlog)
     cron.schedule('45 15 * * 1-5', async () => {
-      console.log('[markets-schedule] Phase 3: Market Open Capture');
+      console.log('[markets-schedule] Phase 3: Market Open');
       try {
-        await marketDataService.fetchAllSources();
-        console.log('[markets-schedule] Phase 3 complete');
+        const priceSources = await db.all<{ id: string }>(
+          "SELECT id FROM market_data_sources WHERE is_active = 1 AND provider = 'fmp' AND config::text LIKE '%price%'"
+        );
+        for (const src of priceSources) {
+          try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
+        }
+        console.log('[markets-schedule] Phase 3 complete — prices captured');
       } catch (err) { console.error('[markets-schedule] Phase 3 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 4: Mid-Day Intelligence (18:00 CET) — full intelligence cycle
+    // Phase 4: Mid-Day Intelligence (18:00 CET) — THE main cycle
     cron.schedule('0 18 * * 1-5', async () => {
       console.log('[markets-schedule] Phase 4: Mid-Day Intelligence');
       try {
-        await marketDataService.fetchAllSources();
+        const backlog = await getBacklogSize();
+        if (backlog < 500) await marketDataService.fetchAllSources();
+        // Process a big batch before intelligence
+        const processed = await processBacklog(40);
+        console.log(`[markets-schedule] Phase 4: processed ${processed} articles, running intelligence...`);
         await workflowOrchestrator.runDailyIntelligence();
         console.log('[markets-schedule] Phase 4 complete');
       } catch (err) { console.error('[markets-schedule] Phase 4 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 5: Market Close (22:15 CET) — EOD data, NAV calculation
+    // Phase 5: Market Close (22:15 CET) — EOD prices + NAV
     cron.schedule('15 22 * * 1-5', async () => {
-      console.log('[markets-schedule] Phase 5: Market Close');
+      console.log('[markets-schedule] Phase 5: Market Close + NAV');
       try {
         await marketDataService.fetchAllSources();
         await navEngine.updateAllActiveIndexes();
         await navEngine.updateLeaderboard();
-        console.log('[markets-schedule] Phase 5 complete');
+        console.log('[markets-schedule] Phase 5 complete — NAV calculated');
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
     }, MARKET_TZ);
 
-    // Phase 6: Post-Market Learning (23:00 CET) — validation, learning, next-day prep
+    // Phase 6: Post-Market (23:00 CET) — heavy processing, catch up on backlog
     cron.schedule('0 23 * * 1-5', async () => {
-      console.log('[markets-schedule] Phase 6: Post-Market Learning');
+      console.log('[markets-schedule] Phase 6: Post-Market Processing');
       try {
-        // Extract atoms from any remaining unprocessed data
-        const remaining = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
-          "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type != 'price' LIMIT 30"
-        );
-        for (const row of remaining) {
-          try {
-            const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
-            await marketAtomService.extractAtomsFromRawData(row.id, text, row.data_type);
-            await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
-          } catch { await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id); }
-        }
-        console.log('[markets-schedule] Phase 6 complete');
+        const processed = await processBacklog(60);
+        console.log(`[markets-schedule] Phase 6 complete — processed ${processed} articles`);
       } catch (err) { console.error('[markets-schedule] Phase 6 error:', err); }
     }, MARKET_TZ);
 
@@ -825,56 +845,57 @@ httpServer.listen(PORT, async () => {
       console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
       try {
         await workflowOrchestrator.runPredictionValidation();
-        console.log('[markets-schedule] Phase 7 complete');
+        // Big backlog catch-up on weekends
+        const processed = await processBacklog(100);
+        console.log(`[markets-schedule] Phase 7 complete — validated predictions, processed ${processed} articles`);
       } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
     }, MARKET_TZ);
 
-    // Hourly market-hours data fetch (13:00-23:00 CET, Mon-Fri)
-    // Staggers: :00 = prices, :15 = news, :30 = event triggers
-    cron.schedule('0 13-23 * * 1-5', async () => {
-      const hour = new Date().getHours();
-      console.log(`[markets-hourly] Fetching prices (${hour}:00 CET)`);
+    // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00)
+    cron.schedule('0 14,16,18,20,22 * * 1-5', async () => {
       try {
-        // Fetch price sources only (FMP prices, sector ETFs, indices)
         const priceSources = await db.all<{ id: string }>(
           "SELECT id FROM market_data_sources WHERE is_active = 1 AND provider = 'fmp' AND config::text LIKE '%price%'"
         );
         for (const src of priceSources) {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
-      } catch (err) { console.error('[markets-hourly] Price fetch error:', err); }
+      } catch { /* silent */ }
     }, MARKET_TZ);
 
-    cron.schedule('15 13-23 * * 1-5', async () => {
-      console.log('[markets-hourly] Fetching news');
+    // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00
+    cron.schedule('0 8,15,21 * * 1-5', async () => {
+      const backlog = await getBacklogSize();
+      if (backlog > 1000) {
+        console.log(`[markets-news] Skipping news fetch — backlog too large (${backlog})`);
+        return;
+      }
       try {
-        // Fetch news sources (FMP news, stock news, RSS)
         const newsSources = await db.all<{ id: string }>(
           "SELECT id FROM market_data_sources WHERE is_active = 1 AND (config::text LIKE '%news%' OR provider = 'rss')"
         );
         for (const src of newsSources) {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
-      } catch (err) { console.error('[markets-hourly] News fetch error:', err); }
-    }, MARKET_TZ);
-
-    cron.schedule('30 13-23 * * 1-5', async () => {
-      try {
-        const result = await eventTriggerService.checkAndFireTriggers();
-        if (result.fired > 0) {
-          console.log(`[markets-hourly] Event triggers: ${result.fired} fired`);
-        }
       } catch { /* silent */ }
     }, MARKET_TZ);
 
-    // Keep daily materialized view refresh (4 AM CET)
+    // Event trigger check 3x per day (not hourly)
+    cron.schedule('0 9,16,22 * * 1-5', async () => {
+      try {
+        const result = await eventTriggerService.checkAndFireTriggers();
+        if (result.fired > 0) console.log(`[markets-events] ${result.fired} triggers fired`);
+      } catch { /* silent */ }
+    }, MARKET_TZ);
+
+    // Daily materialized view refresh (4 AM CET)
     cron.schedule('0 4 * * *', async () => {
       try {
         await db.run("REFRESH MATERIALIZED VIEW CONCURRENTLY IF EXISTS mv_index_leaderboard_ranked");
       } catch { /* silent */ }
     }, MARKET_TZ);
 
-    console.log('[markets-schedule] CET-aligned trading day schedule active (7 phases + hourly market-hours fetch 13:00-23:00 + 4AM MV refresh)');
+    console.log('[markets-schedule] Sustainable CET schedule active — quality over speed');
   } catch (err) {
     console.error('[markets-schedule] Failed to start market scheduled jobs:', err);
   }
