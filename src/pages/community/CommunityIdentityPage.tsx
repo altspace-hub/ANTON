@@ -1,18 +1,18 @@
 /**
  * CommunityIdentityPage.tsx
  *
- * Shows the user's community identity details:
- * contact hash, display name, public key (collapsible),
- * and security notes about local key storage.
+ * Full identity management: editable display name, real QR codes,
+ * payment info, profile visibility, contact hash, and public key.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Fingerprint, Copy, Check, ChevronLeft, Lock, Shield,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Pencil, Save, Eye, EyeOff, Globe,
+  Wallet, QrCode,
 } from 'lucide-react';
-import { getAuthHeader } from '../../lib/api';
+import { fetchWithAuth } from '../../lib/api';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -21,6 +21,13 @@ interface CommunityIdentity {
   display_name: string;
   activated_at: string;
   public_key?: string;
+  payment_address?: string;
+  payment_name?: string;
+  payment_country?: string;
+  agent_wallet_address?: string;
+  agent_wallet_name?: string;
+  auto_accept_connections?: number;
+  profile_visibility?: string;
 }
 
 interface CommunityStatus {
@@ -46,7 +53,7 @@ function formatDate(iso: string): string {
 
 function truncateKey(key: string, chars = 32): string {
   if (key.length <= chars * 2 + 3) return key;
-  return `${key.slice(0, chars)}…${key.slice(-chars)}`;
+  return `${key.slice(0, chars)}...${key.slice(-chars)}`;
 }
 
 // ── Main component ───────────────────────────────────────────────────
@@ -56,18 +63,64 @@ export default function CommunityIdentityPage() {
   const [identity, setIdentity] = useState<CommunityIdentity | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Copy states
   const [copiedHash, setCopiedHash] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
+
+  // Edit states
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [savingName, setSavingName] = useState(false);
+
+  // QR states
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [paymentQrUrl, setPaymentQrUrl] = useState<string | null>(null);
+
+  // Payment fields
+  const [paymentAddress, setPaymentAddress] = useState('');
+  const [paymentName, setPaymentName] = useState('');
+  const [paymentCountry, setPaymentCountry] = useState('');
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [paymentSaved, setPaymentSaved] = useState(false);
+
+  // Visibility
+  const [visibility, setVisibility] = useState<string>('private');
+  const [autoAccept, setAutoAccept] = useState(false);
+  const [savingVisibility, setSavingVisibility] = useState(false);
+
+  // Public key
   const [keyExpanded, setKeyExpanded] = useState(false);
 
-  // Retrieve public key from server status; private key note from localStorage
   const localPrivateKey = localStorage.getItem('community-private-key');
   const hasLocalKey = Boolean(localPrivateKey);
+
+  const loadQr = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth('/api/community/identity/qr');
+      if (res.ok) {
+        const data = await res.json();
+        setQrDataUrl(data.qrDataUrl);
+      }
+    } catch { /* QR optional */ }
+  }, []);
+
+  const loadPaymentQr = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth('/api/community/identity/payment-qr');
+      if (res.ok) {
+        const data = await res.json();
+        setPaymentQrUrl(data.qrDataUrl);
+      } else {
+        setPaymentQrUrl(null);
+      }
+    } catch { setPaymentQrUrl(null); }
+  }, []);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/community/status', { headers: getAuthHeader() });
+        const res = await fetchWithAuth('/api/community/status');
         if (!res.ok) throw new Error('Failed to load identity');
         const data: CommunityStatus = await res.json();
         if (!data.activated || !data.identity) {
@@ -75,6 +128,12 @@ export default function CommunityIdentityPage() {
           return;
         }
         setIdentity(data.identity);
+        setNameInput(data.identity.display_name);
+        setPaymentAddress(data.identity.payment_address ?? '');
+        setPaymentName(data.identity.payment_name ?? '');
+        setPaymentCountry(data.identity.payment_country ?? '');
+        setVisibility(data.identity.profile_visibility ?? 'private');
+        setAutoAccept(Boolean(data.identity.auto_accept_connections));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not load identity');
       } finally {
@@ -82,7 +141,11 @@ export default function CommunityIdentityPage() {
       }
     }
     load();
-  }, [navigate]);
+    loadQr();
+    loadPaymentQr();
+  }, [navigate, loadQr, loadPaymentQr]);
+
+  // ── Actions ──────────────────────────────────────────────────────
 
   function copyHash() {
     if (!identity) return;
@@ -97,6 +160,69 @@ export default function CommunityIdentityPage() {
     setCopiedKey(true);
     setTimeout(() => setCopiedKey(false), 2000);
   }
+
+  async function saveName() {
+    if (!nameInput.trim()) return;
+    setSavingName(true);
+    try {
+      const res = await fetchWithAuth('/api/community/identity', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: nameInput.trim() }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setIdentity(prev => prev ? { ...prev, display_name: updated.display_name } : prev);
+        setEditingName(false);
+      }
+    } catch { /* ignore */ }
+    finally { setSavingName(false); }
+  }
+
+  async function savePayment() {
+    setSavingPayment(true);
+    setPaymentSaved(false);
+    try {
+      const res = await fetchWithAuth('/api/community/identity', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          payment_address: paymentAddress.trim(),
+          payment_name: paymentName.trim(),
+          payment_country: paymentCountry.trim(),
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setIdentity(prev => prev ? { ...prev, ...updated } : prev);
+        setPaymentSaved(true);
+        setTimeout(() => setPaymentSaved(false), 2500);
+        loadPaymentQr();
+      }
+    } catch { /* ignore */ }
+    finally { setSavingPayment(false); }
+  }
+
+  async function saveVisibility(newVisibility: string, newAutoAccept: boolean) {
+    setSavingVisibility(true);
+    try {
+      const res = await fetchWithAuth('/api/community/identity', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile_visibility: newVisibility,
+          auto_accept_connections: newAutoAccept ? 1 : 0,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setIdentity(prev => prev ? { ...prev, ...updated } : prev);
+      }
+    } catch { /* ignore */ }
+    finally { setSavingVisibility(false); }
+  }
+
+  // ── Render ───────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -132,103 +258,295 @@ export default function CommunityIdentityPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-adv-teal-dim">
           <Fingerprint className="h-5 w-5 text-adv-teal" />
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-adv-white">Identity Settings</h1>
-          <p className="text-sm text-adv-gray">
-            Activated {formatDate(identity.activated_at)}
-          </p>
-        </div>
+        <h1 className="text-xl font-bold text-adv-white">My Identity</h1>
       </div>
 
-      {/* Contact card */}
+      {/* ── QR Code Card ────────────────────────────────────────── */}
       <section className="mb-5 rounded-xl border border-adv-teal/30 bg-adv-card p-6">
         <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-adv-white">
-          <Fingerprint className="h-4 w-4 text-adv-teal" />
-          Your Contact Card
+          <QrCode className="h-4 w-4 text-adv-teal" />
+          Contact QR
         </h2>
 
-        {/* Display name */}
-        <p className="mb-1 text-xs uppercase tracking-wider text-adv-gray">Display name</p>
-        <p className="mb-4 text-lg font-semibold text-adv-white">{identity.display_name}</p>
-
-        {/* Contact hash — prominent */}
-        <p className="mb-1 text-xs uppercase tracking-wider text-adv-gray">Contact hash</p>
-        <p className="mb-3 break-all font-mono text-2xl font-bold tracking-widest text-adv-teal">
-          {identity.contact_hash}
-        </p>
-
-        <button
-          onClick={copyHash}
-          className="mb-5 flex items-center gap-2 rounded-lg border border-border bg-adv-dark-2 px-4 py-2 text-sm text-adv-off-white transition hover:border-adv-teal/40 hover:text-adv-teal"
-        >
-          {copiedHash ? <Check className="h-4 w-4 text-adv-green" /> : <Copy className="h-4 w-4" />}
-          {copiedHash ? 'Copied!' : 'Copy contact hash'}
-        </button>
-
-        {/* QR code placeholder */}
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-adv-dark-2 px-6 py-8">
-          <div className="mb-3 grid h-20 w-20 grid-cols-4 grid-rows-4 gap-1 opacity-30">
-            {Array.from({ length: 16 }).map((_, i) => (
-              <div
-                key={i}
-                className={`rounded-sm ${Math.random() > 0.4 ? 'bg-adv-teal' : 'bg-adv-gray'}`}
-              />
-            ))}
-          </div>
-          <p className="text-sm font-medium text-adv-gray">QR Code</p>
-          <p className="mt-1 text-center text-xs text-adv-gray">
-            Show this to share your contact hash in person
-          </p>
-          <p className="mt-2 text-center text-xs italic text-adv-gray">
-            Full QR generation coming soon
-          </p>
+        <div className="flex flex-col items-center">
+          {qrDataUrl ? (
+            <img
+              src={qrDataUrl}
+              alt="Contact QR code"
+              className="mb-3 h-[200px] w-[200px] rounded-lg"
+            />
+          ) : (
+            <div className="mb-3 flex h-[200px] w-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-adv-dark-2">
+              <QrCode className="h-12 w-12 text-adv-gray/30" />
+            </div>
+          )}
+          <p className="mb-3 text-sm text-adv-gray">Scan to connect with me</p>
         </div>
 
-        <p className="mt-4 text-center text-sm text-adv-gray">
+        {/* Contact hash */}
+        <p className="mb-1 text-xs uppercase tracking-wider text-adv-gray">Contact hash</p>
+        <div className="mb-3 flex items-center gap-2">
+          <p className="break-all font-mono text-xl font-bold tracking-widest text-adv-teal">
+            {identity.contact_hash}
+          </p>
+          <button
+            onClick={copyHash}
+            className="shrink-0 rounded-lg border border-border bg-adv-dark-2 p-2 text-adv-off-white transition hover:border-adv-teal/40 hover:text-adv-teal"
+            title="Copy contact hash"
+          >
+            {copiedHash ? <Check className="h-4 w-4 text-adv-green" /> : <Copy className="h-4 w-4" />}
+          </button>
+        </div>
+        {copiedHash && <p className="mb-2 text-xs text-adv-green">Copied to clipboard</p>}
+
+        <p className="text-center text-sm text-adv-gray">
           Share your contact hash with people you want to connect with.
-          <br />
-          They will add it to their contacts to message you.
         </p>
       </section>
 
-      {/* Public key section */}
-      {identity.public_key && (
-        <section className="mb-5 rounded-xl border border-border bg-adv-card">
+      {/* ── Identity Card ───────────────────────────────────────── */}
+      <section className="mb-5 rounded-xl border border-border bg-adv-card p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-adv-white">
+          <Fingerprint className="h-4 w-4 text-adv-teal" />
+          Identity
+        </h2>
+
+        {/* Display name — editable */}
+        <p className="mb-1 text-xs uppercase tracking-wider text-adv-gray">Display name</p>
+        {editingName ? (
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              type="text"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              maxLength={50}
+              autoFocus
+              className="flex-1 rounded-lg border border-adv-teal/40 bg-adv-dark-2 px-3 py-2 text-sm text-adv-white focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
+              onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
+            />
+            <button
+              onClick={saveName}
+              disabled={savingName || !nameInput.trim()}
+              className="flex items-center gap-1 rounded-lg bg-adv-teal px-3 py-2 text-sm font-semibold text-adv-dark transition hover:bg-adv-teal-dark disabled:opacity-50"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {savingName ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              onClick={() => { setEditingName(false); setNameInput(identity.display_name); }}
+              className="rounded-lg border border-border px-3 py-2 text-sm text-adv-gray hover:text-adv-off-white"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="mb-4 flex items-center gap-2">
+            <p className="text-lg font-semibold text-adv-white">{identity.display_name}</p>
+            <button
+              onClick={() => setEditingName(true)}
+              className="rounded p-1 text-adv-gray transition hover:text-adv-teal"
+              title="Edit display name"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Activated since */}
+        <p className="mb-1 text-xs uppercase tracking-wider text-adv-gray">Activated since</p>
+        <p className="mb-4 text-sm text-adv-off-white">{formatDate(identity.activated_at)}</p>
+
+        {/* Public key (collapsible) */}
+        {identity.public_key && (
+          <div className="rounded-lg border border-border">
+            <button
+              onClick={() => setKeyExpanded(v => !v)}
+              className="flex w-full items-center justify-between px-4 py-3"
+            >
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-adv-gray" />
+                <span className="text-sm font-medium text-adv-off-white">Public Key</span>
+              </div>
+              {keyExpanded
+                ? <ChevronUp className="h-4 w-4 text-adv-gray" />
+                : <ChevronDown className="h-4 w-4 text-adv-gray" />}
+            </button>
+
+            {keyExpanded && (
+              <div className="border-t border-border px-4 pb-4 pt-3">
+                <p className="mb-3 break-all rounded-lg bg-adv-dark-2 px-3 py-2 font-mono text-xs text-adv-gray">
+                  {truncateKey(identity.public_key)}
+                </p>
+                <button
+                  onClick={copyPublicKey}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-xs text-adv-off-white transition hover:text-adv-teal"
+                >
+                  {copiedKey ? <Check className="h-3.5 w-3.5 text-adv-green" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedKey ? 'Copied!' : 'Copy full key'}
+                </button>
+                <p className="mt-3 text-xs text-adv-gray">
+                  Your public key is used by contacts to encrypt messages only you can read. It is safe to share.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* ── Payment Info Card ───────────────────────────────────── */}
+      <section className="mb-5 rounded-xl border border-border bg-adv-card p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-adv-white">
+          <Wallet className="h-4 w-4 text-adv-gold" />
+          Payment Info
+        </h2>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs uppercase tracking-wider text-adv-gray" htmlFor="pay-address">
+              Wallet address
+            </label>
+            <input
+              id="pay-address"
+              type="text"
+              value={paymentAddress}
+              onChange={e => setPaymentAddress(e.target.value)}
+              placeholder="0x... or chain-specific address"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 font-mono text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs uppercase tracking-wider text-adv-gray" htmlFor="pay-name">
+              Name on account
+            </label>
+            <input
+              id="pay-name"
+              type="text"
+              value={paymentName}
+              onChange={e => setPaymentName(e.target.value)}
+              placeholder="Your name or alias"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs uppercase tracking-wider text-adv-gray" htmlFor="pay-country">
+              Country
+            </label>
+            <input
+              id="pay-country"
+              type="text"
+              value={paymentCountry}
+              onChange={e => setPaymentCountry(e.target.value)}
+              placeholder="e.g. Sweden"
+              className="w-full rounded-lg border border-border bg-adv-dark-2 px-3 py-2 text-sm text-adv-white placeholder-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
           <button
-            onClick={() => setKeyExpanded(v => !v)}
-            className="flex w-full items-center justify-between px-5 py-4"
+            onClick={savePayment}
+            disabled={savingPayment}
+            className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-semibold text-adv-dark transition hover:bg-adv-teal-dark disabled:opacity-50"
           >
-            <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-adv-gray" />
-              <span className="text-sm font-medium text-adv-off-white">My Public Key</span>
-            </div>
-            {keyExpanded
-              ? <ChevronUp className="h-4 w-4 text-adv-gray" />
-              : <ChevronDown className="h-4 w-4 text-adv-gray" />}
+            <Save className="h-4 w-4" />
+            {savingPayment ? 'Saving...' : 'Save Payment Info'}
           </button>
-
-          {keyExpanded && (
-            <div className="border-t border-border px-5 pb-5 pt-4">
-              <p className="mb-3 break-all rounded-lg bg-adv-dark-2 px-3 py-2 font-mono text-xs text-adv-gray">
-                {truncateKey(identity.public_key)}
-              </p>
-              <button
-                onClick={copyPublicKey}
-                className="flex items-center gap-2 rounded-lg border border-border bg-adv-dark-2 px-3 py-1.5 text-xs text-adv-off-white transition hover:text-adv-teal"
-              >
-                {copiedKey ? <Check className="h-3.5 w-3.5 text-adv-green" /> : <Copy className="h-3.5 w-3.5" />}
-                {copiedKey ? 'Copied!' : 'Copy full key'}
-              </button>
-              <p className="mt-3 text-xs text-adv-gray">
-                Your public key is used by contacts to encrypt messages only you can read.
-                It is safe to share.
-              </p>
-            </div>
+          {paymentSaved && (
+            <span className="flex items-center gap-1 text-sm text-adv-green">
+              <Check className="h-4 w-4" /> Saved
+            </span>
           )}
-        </section>
-      )}
+        </div>
 
-      {/* Security notes */}
+        {/* Payment QR */}
+        {paymentQrUrl && (
+          <div className="mt-5 flex flex-col items-center rounded-lg border border-adv-gold/20 bg-adv-dark-2 p-4">
+            <p className="mb-2 text-xs uppercase tracking-wider text-adv-gold">Payment QR</p>
+            <img
+              src={paymentQrUrl}
+              alt="Payment QR code"
+              className="h-[180px] w-[180px] rounded-lg"
+            />
+            <p className="mt-2 text-xs text-adv-gray">Scan to send payment</p>
+          </div>
+        )}
+      </section>
+
+      {/* ── Profile Visibility Card ─────────────────────────────── */}
+      <section className="mb-5 rounded-xl border border-border bg-adv-card p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-adv-white">
+          <Eye className="h-4 w-4 text-adv-blue" />
+          Profile Visibility
+        </h2>
+
+        <div className="space-y-3">
+          {([
+            { value: 'private', label: 'Private', icon: EyeOff, desc: 'Your profile is hidden from the directory. Only people who know your contact hash can find you.' },
+            { value: 'business', label: 'Business', icon: Eye, desc: 'Your display name and contact hash are visible in the business directory. Payment info stays private.' },
+            { value: 'public', label: 'Public', icon: Globe, desc: 'Full profile visible in the public directory, including payment address if configured.' },
+          ] as const).map(opt => (
+            <label
+              key={opt.value}
+              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition ${
+                visibility === opt.value
+                  ? 'border-adv-teal/50 bg-adv-teal/5'
+                  : 'border-border hover:border-adv-teal/20'
+              }`}
+            >
+              <input
+                type="radio"
+                name="visibility"
+                value={opt.value}
+                checked={visibility === opt.value}
+                onChange={() => {
+                  setVisibility(opt.value);
+                  saveVisibility(opt.value, autoAccept);
+                }}
+                disabled={savingVisibility}
+                className="mt-1 accent-[#2DD4A8]"
+              />
+              <div>
+                <div className="flex items-center gap-2">
+                  <opt.icon className="h-4 w-4 text-adv-teal" />
+                  <span className="text-sm font-medium text-adv-white">{opt.label}</span>
+                </div>
+                <p className="mt-0.5 text-xs text-adv-gray">{opt.desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {/* Auto-accept toggle */}
+        <div className="mt-4 flex items-center justify-between rounded-lg border border-border p-3">
+          <div>
+            <p className="text-sm font-medium text-adv-white">Auto-accept connections</p>
+            <p className="text-xs text-adv-gray">Automatically accept incoming connection requests</p>
+          </div>
+          <button
+            onClick={() => {
+              const next = !autoAccept;
+              setAutoAccept(next);
+              saveVisibility(visibility, next);
+            }}
+            disabled={savingVisibility}
+            className={`relative h-6 w-11 rounded-full transition ${
+              autoAccept ? 'bg-adv-teal' : 'bg-adv-dark-2 border border-border'
+            }`}
+            role="switch"
+            aria-checked={autoAccept}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                autoAccept ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+      </section>
+
+      {/* ── Security Notes ──────────────────────────────────────── */}
       <section className="rounded-xl border border-adv-gold/20 bg-adv-gold/5 p-5">
         <div className="mb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-adv-gold" />
@@ -236,21 +554,21 @@ export default function CommunityIdentityPage() {
         </div>
         <ul className="space-y-2 text-sm text-adv-off-white">
           <li className="flex items-start gap-2">
-            <span className="mt-1 text-adv-gold">•</span>
+            <span className="mt-1 text-adv-gold">-</span>
             Your private key is stored locally on this device only. It cannot be recovered if lost.
           </li>
           <li className="flex items-start gap-2">
-            <span className="mt-1 text-adv-gold">•</span>
+            <span className="mt-1 text-adv-gold">-</span>
             {hasLocalKey
               ? 'Private key found in browser storage on this device.'
               : 'No private key detected in this browser. You may have activated on a different device.'}
           </li>
           <li className="flex items-start gap-2">
-            <span className="mt-1 text-adv-gold">•</span>
+            <span className="mt-1 text-adv-gold">-</span>
             Clearing browser storage or using a different device will require re-activation.
           </li>
           <li className="flex items-start gap-2">
-            <span className="mt-1 text-adv-gold">•</span>
+            <span className="mt-1 text-adv-gold">-</span>
             ANTON servers only hold your public key and encrypted message payloads.
           </li>
         </ul>

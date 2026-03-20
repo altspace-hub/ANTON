@@ -9,8 +9,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, ChevronLeft, MessageCircle, Plus, Check, X,
+  Clock, CheckCircle, XCircle,
 } from 'lucide-react';
-import { getAuthHeader } from '../../lib/api';
+import { fetchWithAuth, getAuthHeader } from '../../lib/api';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -243,6 +244,113 @@ function ContactRow({
   );
 }
 
+// ── Pending Connections ──────────────────────────────────────────────
+
+function PendingConnections({ onChanged }: { onChanged: () => void }) {
+  const [pending, setPending] = useState<Connection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionId, setActionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadPending();
+  }, []);
+
+  async function loadPending() {
+    setLoading(true);
+    try {
+      const res = await fetchWithAuth('/api/community/connections/pending');
+      if (res.ok) {
+        const data = await res.json();
+        setPending(Array.isArray(data) ? data : []);
+      }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }
+
+  async function accept(id: string) {
+    setActionId(id);
+    try {
+      const res = await fetchWithAuth(`/api/community/connections/${id}/accept`, { method: 'POST' });
+      if (res.ok) {
+        setPending(prev => prev.filter(c => c.id !== Number(id) && String(c.id) !== id));
+        onChanged();
+      }
+    } catch { /* ignore */ }
+    finally { setActionId(null); }
+  }
+
+  async function decline(id: string) {
+    setActionId(id);
+    try {
+      const res = await fetchWithAuth(`/api/community/connections/${id}/decline`, { method: 'POST' });
+      if (res.ok) {
+        setPending(prev => prev.filter(c => c.id !== Number(id) && String(c.id) !== id));
+        onChanged();
+      }
+    } catch { /* ignore */ }
+    finally { setActionId(null); }
+  }
+
+  if (loading) return null;
+  if (pending.length === 0) return null;
+
+  return (
+    <section className="mb-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Clock className="h-4 w-4 text-adv-gold" />
+        <h2 className="text-sm font-semibold text-adv-gold">
+          Pending Connections
+          <span className="ml-2 rounded-full bg-adv-gold/15 px-2 py-0.5 text-xs font-medium text-adv-gold">
+            {pending.length}
+          </span>
+        </h2>
+      </div>
+      <div className="flex flex-col gap-2">
+        {pending.map(c => {
+          const id = String(c.id);
+          const isActing = actionId === id;
+          return (
+            <div
+              key={id}
+              className="flex items-center justify-between gap-3 rounded-xl border border-adv-gold/20 bg-adv-card px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-adv-gold/10 text-sm font-bold text-adv-gold">
+                  {(c.display_name ?? '?').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-medium text-adv-white">{c.display_name ?? 'Unknown'}</p>
+                  <p className="font-mono text-xs text-adv-gray">{truncateHash(c.contact_hash)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => accept(id)}
+                  disabled={isActing}
+                  className="flex items-center gap-1.5 rounded-lg bg-adv-green/15 border border-adv-green/20 px-3 py-1.5 text-xs font-medium text-adv-green transition hover:bg-adv-green/25 disabled:opacity-50"
+                  title="Accept connection"
+                >
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Accept
+                </button>
+                <button
+                  onClick={() => decline(id)}
+                  disabled={isActing}
+                  className="flex items-center gap-1.5 rounded-lg bg-adv-red/15 border border-adv-red/20 px-3 py-1.5 text-xs font-medium text-adv-red transition hover:bg-adv-red/25 disabled:opacity-50"
+                  title="Decline connection"
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                  Decline
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────
 
 export default function CommunityContactsPage() {
@@ -316,6 +424,9 @@ export default function CommunityContactsPage() {
           <AddContactForm onAdded={handleAdded} onCancel={() => setShowForm(false)} />
         </div>
       )}
+
+      {/* Pending connections */}
+      <PendingConnections onChanged={loadContacts} />
 
       {/* Loading */}
       {loading && (

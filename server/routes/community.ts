@@ -227,6 +227,96 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 
+  // PATCH /api/community/identity — update identity fields (Q1)
+  router.patch('/community/identity', async (req, res) => {
+    try {
+      const allowed = ['display_name', 'payment_address', 'payment_name', 'payment_country', 'agent_wallet_address', 'agent_wallet_name', 'auto_accept_connections', 'profile_visibility'];
+      const sets: string[] = [];
+      const vals: unknown[] = [];
+      for (const [k, v] of Object.entries(req.body)) {
+        if (allowed.includes(k)) { sets.push(`${k} = ?`); vals.push(v); }
+      }
+      if (sets.length > 0) {
+        vals.push('default');
+        await db.run(`UPDATE community_identity SET ${sets.join(', ')} WHERE user_id = ?`, ...vals);
+      }
+      const updated = await db.get("SELECT * FROM community_identity WHERE user_id = 'default'");
+      res.json(updated);
+    } catch (err) {
+      console.error('[community] Identity update error:', err);
+      res.status(500).json({ error: 'Failed to update identity' });
+    }
+  });
+
+  // GET /api/community/identity/qr — QR code for contact hash (Q2)
+  router.get('/community/identity/qr', async (req, res) => {
+    try {
+      const identity = await db.get<{ contact_hash: string }>("SELECT contact_hash FROM community_identity WHERE user_id = 'default'");
+      if (!identity) return res.status(404).json({ error: 'Not activated' });
+      const qrcode = await import('qrcode');
+      const qrDataUrl = await (qrcode as any).default.toDataURL(identity.contact_hash, {
+        width: 300, margin: 2, color: { dark: '#2DD4A8', light: '#0B1426' }
+      });
+      res.json({ qrDataUrl, contactHash: identity.contact_hash });
+    } catch (err) {
+      console.error('[community] QR generation error:', err);
+      res.status(500).json({ error: 'Failed to generate QR code' });
+    }
+  });
+
+  // GET /api/community/identity/payment-qr — payment QR code (Q3)
+  router.get('/community/identity/payment-qr', async (req, res) => {
+    try {
+      const identity = await db.get<{ contact_hash: string; payment_address: string; payment_name: string; payment_country: string }>(
+        "SELECT contact_hash, payment_address, payment_name, payment_country FROM community_identity WHERE user_id = 'default'"
+      );
+      if (!identity?.payment_address) return res.status(404).json({ error: 'No payment info configured' });
+      const uri = `futurechain://pay?address=${encodeURIComponent(identity.payment_address)}&name=${encodeURIComponent(identity.payment_name ?? '')}&country=${encodeURIComponent(identity.payment_country ?? '')}&hash=${encodeURIComponent(identity.contact_hash)}`;
+      const qrcode = await import('qrcode');
+      const qrDataUrl = await (qrcode as any).default.toDataURL(uri, {
+        width: 300, margin: 2, color: { dark: '#F5A623', light: '#0B1426' }
+      });
+      res.json({ qrDataUrl, paymentUri: uri });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to generate payment QR' });
+    }
+  });
+
+  // GET /api/community/connections/pending — pending connection requests (Q4)
+  router.get('/community/connections/pending', async (req, res) => {
+    try {
+      const pending = await db.all("SELECT * FROM community_connections WHERE status = 'pending' AND owner_user_id = 'default' ORDER BY connected_at DESC");
+      res.json(pending);
+    } catch (err) { res.status(500).json({ error: 'Failed to get pending connections' }); }
+  });
+
+  // POST /api/community/connections/:id/accept — accept connection (Q4)
+  router.post('/community/connections/:id/accept', async (req, res) => {
+    try {
+      await db.run("UPDATE community_connections SET status = 'accepted' WHERE id = ?", req.params.id);
+      res.json({ ok: true });
+    } catch (err) { res.status(500).json({ error: 'Failed to accept connection' }); }
+  });
+
+  // POST /api/community/connections/:id/decline — decline connection (Q4)
+  router.post('/community/connections/:id/decline', async (req, res) => {
+    try {
+      await db.run("UPDATE community_connections SET status = 'blocked' WHERE id = ?", req.params.id);
+      res.json({ ok: true });
+    } catch (err) { res.status(500).json({ error: 'Failed to decline connection' }); }
+  });
+
+  // GET /api/community/identity/public-card — public profile card (Q5)
+  router.get('/community/identity/public-card', async (req, res) => {
+    try {
+      const identity = await db.get(
+        "SELECT contact_hash, display_name, profile_visibility, auto_accept_connections, payment_address FROM community_identity WHERE user_id = 'default'"
+      );
+      if (!identity || identity.profile_visibility === 'private') return res.status(404).json({ error: 'Profile is private' });
+      res.json(identity);
+    } catch (err) { res.status(500).json({ error: 'Failed to get public card' }); }
+  });
+
   // GET /api/community/connections
   router.get('/community/connections', async (req, res) => {
     try {
