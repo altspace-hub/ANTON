@@ -15,6 +15,7 @@ import { createMarketThesisService } from './market-thesis-service.js';
 import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
 import { createConditionalAccuracyService } from './market-conditional-accuracy-service.js';
+import { createMarketPatternService } from './market-pattern-service.js';
 import type { TemporalReasoningService } from './temporal-reasoning.js';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
@@ -66,6 +67,7 @@ export async function createMarketWorkflowOrchestrator(
   const rebalanceService = await createMarketIndexRebalanceService(db);
   const fundamentalScoringService = await createMarketFundamentalScoringService(db);
   const conditionalAccuracyService = await createConditionalAccuracyService(db);
+  const patternService = await createMarketPatternService(db);
 
   // Helper: insert dead letter on permanent step failure
   async function insertDeadLetter(runId: string, stepName: string, error: string, inputData?: unknown): Promise<void> {
@@ -570,10 +572,28 @@ Return ONLY the JSON array, no other text.`;
         await insertDeadLetter(runId, 'Auto Thesis Generation', errMsg);
       }
 
-      // Step 10: Conditional pattern check
-      const patternsDetected = stepResults.filter(s => s.status === 'success').length;
-      stepResults.push({ step: 'Pattern Check', status: 'success', output: { patternsDetected, action: patternsDetected > 3 ? 'spawn_investigation' : 'skip' } });
-      stepsCompleted++;
+      // Step 10: Pattern detection — momentum divergence, correlation breaks, regime changes
+      try {
+        const patternResult = await withTimeout(
+          patternService.runAllDetectors(),
+          COMPUTATION_TIMEOUT,
+          'Pattern Detection'
+        );
+        stepResults.push({
+          step: 'Pattern Check',
+          status: 'success',
+          output: {
+            patternsDetected: patternResult.patternsDetected,
+            patterns: patternResult.patterns.map(p => ({ type: p.type, title: p.title, severity: p.severity, confidence: p.confidence })),
+            action: patternResult.patternsDetected > 3 ? 'spawn_investigation' : 'noted',
+          },
+        });
+        stepsCompleted++;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        stepResults.push({ step: 'Pattern Check', status: 'error', error: errMsg });
+        await insertDeadLetter(runId, 'Pattern Check', errMsg);
+      }
 
       // Step 11: Prediction-driven rebalance check
       try {

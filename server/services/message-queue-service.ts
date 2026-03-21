@@ -11,26 +11,141 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
     return id;
   }
 
-  async function processQueue(): Promise<{ sent: number; failed: number }> {
-    const pending = await db.all<{ id: string; mail_id: string; recipient_hash: string; retry_count: number; max_retries: number }>(
-      "SELECT id, mail_id, recipient_hash, retry_count, max_retries FROM community_message_queue WHERE status = 'pending' AND next_retry_at <= NOW() LIMIT 20"
+  /**
+   * Resolve a contact hash to their P2P endpoint URL.
+   * Returns null if no endpoint configured (local-only contact).
+   */
+  async function resolveEndpoint(recipientHash: string): Promise<string | null> {
+    const conn = await db.get<{ endpoint: string | null }>(
+      "SELECT endpoint FROM community_connections WHERE contact_hash = ? AND status = 'accepted'",
+      recipientHash
+    );
+    return conn?.endpoint ?? null;
+  }
+
+  /**
+   * Attempt HTTP delivery of a message to a peer ANTON instance.
+   * The peer exposes POST /api/p2p/receive for inbound messages.
+   */
+  async function deliverViaHttp(
+    endpoint: string,
+    mailId: string,
+    recipientHash: string,
+    encryptedPayload: string | null,
+  ): Promise<{ success: boolean; httpStatus: number }> {
+    const url = `${endpoint.replace(/\/+$/, '')}/api/p2p/receive`;
+    try {
+      // Load the full mail record for delivery
+      const mail = await db.get<Record<string, unknown>>(
+        'SELECT id, from_hash, to_hashes, subject, body, message_type, payload, payload_metadata, thread_id, parent_id FROM community_mail WHERE id = ?',
+        mailId
+      );
+      if (!mail) return { success: false, httpStatus: 0 };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mailId: mail.id,
+          fromHash: mail.from_hash,
+          toHashes: mail.to_hashes,
+          subject: mail.subject,
+          body: mail.body,
+          messageType: mail.message_type,
+          payload: mail.payload,
+          payloadMetadata: mail.payload_metadata,
+          threadId: mail.thread_id,
+          parentId: mail.parent_id,
+          encryptedPayload,
+        }),
+        signal: AbortSignal.timeout(15_000), // 15s timeout
+      });
+
+      return { success: response.ok, httpStatus: response.status };
+    } catch (err) {
+      // Network error, timeout, DNS failure, etc.
+      console.error(`[p2p] HTTP delivery to ${url} failed:`, err instanceof Error ? err.message : err);
+      return { success: false, httpStatus: 0 };
+    }
+  }
+
+  /**
+   * Compute exponential backoff delay for retries.
+   * Retry 1: 1 min, Retry 2: 2 min, Retry 3: 4 min, Retry 4: 8 min, Retry 5: 16 min
+   */
+  function getRetryDelay(retryCount: number): number {
+    return Math.min(Math.pow(2, retryCount), 16) * 60; // seconds, max 16 minutes
+  }
+
+  async function processQueue(): Promise<{ sent: number; failed: number; local: number }> {
+    const pending = await db.all<{
+      id: string; mail_id: string; recipient_hash: string;
+      payload_encrypted: string | null;
+      retry_count: number; max_retries: number;
+    }>(
+      "SELECT id, mail_id, recipient_hash, payload_encrypted, retry_count, max_retries FROM community_message_queue WHERE status = 'pending' AND next_retry_at <= NOW() LIMIT 20"
     );
 
-    let sent = 0, failed = 0;
+    let sent = 0, failed = 0, local = 0;
     for (const msg of pending) {
-      // For now, local-only mode: mark as sent immediately
-      // When P2P or relay transport is added, this is where delivery happens
-      await db.run(
-        "UPDATE community_message_queue SET status = 'sent', updated_at = NOW() WHERE id = ?",
-        msg.id
-      );
-      await db.run(
-        "UPDATE community_mail SET delivery_status = 'sent', delivery_attempts = delivery_attempts + 1, last_delivery_attempt = NOW() WHERE id = ?",
-        msg.mail_id
-      );
-      sent++;
+      const endpoint = await resolveEndpoint(msg.recipient_hash);
+
+      if (!endpoint) {
+        // Local-only contact — mark as delivered locally
+        await db.run(
+          "UPDATE community_message_queue SET status = 'sent', delivery_method = 'local', updated_at = NOW() WHERE id = ?",
+          msg.id
+        );
+        await db.run(
+          "UPDATE community_mail SET delivery_status = 'delivered', delivery_attempts = delivery_attempts + 1, last_delivery_attempt = NOW(), delivered_at = NOW() WHERE id = ?",
+          msg.mail_id
+        );
+        local++;
+        sent++;
+        continue;
+      }
+
+      // Attempt HTTP delivery to peer
+      const result = await deliverViaHttp(endpoint, msg.mail_id, msg.recipient_hash, msg.payload_encrypted);
+
+      if (result.success) {
+        await db.run(
+          "UPDATE community_message_queue SET status = 'sent', delivery_method = 'http', last_http_status = ?, updated_at = NOW() WHERE id = ?",
+          result.httpStatus, msg.id
+        );
+        await db.run(
+          "UPDATE community_mail SET delivery_status = 'delivered', delivery_attempts = delivery_attempts + 1, last_delivery_attempt = NOW(), delivered_at = NOW() WHERE id = ?",
+          msg.mail_id
+        );
+        sent++;
+      } else {
+        // Delivery failed — retry with exponential backoff or mark as failed
+        const newRetryCount = msg.retry_count + 1;
+        if (newRetryCount >= msg.max_retries) {
+          await db.run(
+            "UPDATE community_message_queue SET status = 'failed', retry_count = ?, last_http_status = ?, updated_at = NOW() WHERE id = ?",
+            newRetryCount, result.httpStatus, msg.id
+          );
+          await db.run(
+            "UPDATE community_mail SET delivery_status = 'failed', delivery_attempts = delivery_attempts + 1, last_delivery_attempt = NOW() WHERE id = ?",
+            msg.mail_id
+          );
+          failed++;
+        } else {
+          const delaySec = getRetryDelay(newRetryCount);
+          await db.run(
+            "UPDATE community_message_queue SET retry_count = ?, last_http_status = ?, next_retry_at = NOW() + INTERVAL '1 second' * ?, updated_at = NOW() WHERE id = ?",
+            newRetryCount, result.httpStatus, delaySec, msg.id
+          );
+          await db.run(
+            "UPDATE community_mail SET delivery_attempts = delivery_attempts + 1, last_delivery_attempt = NOW() WHERE id = ?",
+            msg.mail_id
+          );
+          // Not counted as sent or failed yet — will retry
+        }
+      }
     }
-    return { sent, failed };
+    return { sent, failed, local };
   }
 
   async function getQueueStatus(): Promise<{ pending: number; sent: number; failed: number; expired: number }> {
@@ -51,7 +166,7 @@ export async function createMessageQueueService(db: DatabaseAdapter) {
     );
   }
 
-  return { enqueueMessage, processQueue, getQueueStatus, retryFailed };
+  return { enqueueMessage, processQueue, getQueueStatus, retryFailed, resolveEndpoint };
 }
 
 export type MessageQueueService = Awaited<ReturnType<typeof createMessageQueueService>>;

@@ -82,17 +82,20 @@ export async function createTaskDelegationRoutes(db: DatabaseAdapter): Promise<R
   });
 
   router.post('/community/tasks/:id/rate', async (req, res) => {
-    try { await service.rateTask(req.params.id, req.body.qualityScore); res.json({ ok: true }); }
-    catch (err) { res.status(500).json({ error: 'Failed to rate task' }); }
+    try {
+      const result = await service.rateTask(req.params.id, req.body.qualityScore);
+      res.json({ ok: true, ...result });
+    } catch (err) { res.status(500).json({ error: 'Failed to rate task' }); }
   });
 
   router.patch('/community/connections/:id/delegation', async (req, res) => {
     try {
-      const { trustLevel, policy } = req.body;
+      const { trustLevel, policy, endpoint } = req.body;
       const sets: string[] = [];
       const vals: unknown[] = [];
       if (trustLevel) { sets.push('delegation_trust_level = ?'); vals.push(trustLevel); }
       if (policy) { sets.push('delegation_policy = ?'); vals.push(JSON.stringify(policy)); }
+      if (endpoint !== undefined) { sets.push('endpoint = ?'); vals.push(endpoint || null); }
       if (sets.length > 0) { vals.push(req.params.id); await db.run(`UPDATE community_connections SET ${sets.join(', ')} WHERE id = ?`, ...vals); }
       res.json({ ok: true });
     } catch (err) { res.status(500).json({ error: 'Failed to update delegation settings' }); }

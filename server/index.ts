@@ -479,6 +479,9 @@ const { createFCMarketplaceRoutes } = await import('./routes/fc-marketplace.js')
 app.use('/api', await createFCMarketplaceRoutes(db));
 // FutureChain Payment Gateway — admin routes (session-protected)
 app.use('/api', gwAdmin);
+// P2P message transport — public endpoint for ANTON-to-ANTON delivery
+const { createP2PRoutes } = await import('./routes/p2p.js');
+app.use('/api', await createP2PRoutes(db));
 // Collaborative Project Workspace
 const { createCommunityProjectRoutes } = await import('./routes/community-projects.js');
 app.use('/api', await createCommunityProjectRoutes(db));
@@ -949,6 +952,99 @@ httpServer.listen(PORT, async () => {
     }, MARKET_TZ);
 
     console.log('[markets-schedule] Sustainable CET schedule active — quality over speed');
+
+    // ── Startup Catch-Up: recover missed workflows after downtime ──────────
+    setTimeout(async () => {
+      try {
+        console.log('[markets-catchup] Checking for missed workflows...');
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
+        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+        let catchUpActions = 0;
+
+        // 1. Process backlog immediately (always useful after restart)
+        const backlog = await getBacklogSize();
+        if (backlog > 0) {
+          const processed = await processBacklog(Math.min(backlog, 100));
+          console.log(`[markets-catchup] Processed ${processed}/${backlog} backlog items`);
+          catchUpActions++;
+        }
+
+        // 2. Check if daily intelligence ran today (weekdays only)
+        if (isWeekday) {
+          const lastIntel = await db.get<{ started_at: string }>(
+            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_daily_intelligence' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
+          );
+          const hoursSinceIntel = lastIntel
+            ? (now.getTime() - new Date(lastIntel.started_at).getTime()) / 3600000
+            : Infinity;
+
+          if (hoursSinceIntel > 24) {
+            console.log(`[markets-catchup] Daily intelligence last ran ${hoursSinceIntel === Infinity ? 'never' : Math.round(hoursSinceIntel) + 'h ago'} — running now`);
+            try {
+              await marketDataService.fetchAllSources();
+              await workflowOrchestrator.runDailyIntelligence();
+              catchUpActions++;
+              console.log('[markets-catchup] Daily intelligence catch-up complete');
+            } catch (err) { console.error('[markets-catchup] Daily intelligence catch-up failed:', err); }
+          }
+        }
+
+        // 3. Check if NAV was computed today
+        const lastNav = await db.get<{ calculated_at: string }>(
+          "SELECT calculated_at FROM market_index_nav_history ORDER BY calculated_at DESC LIMIT 1"
+        );
+        const hoursSinceNav = lastNav
+          ? (now.getTime() - new Date(lastNav.calculated_at).getTime()) / 3600000
+          : Infinity;
+
+        if (hoursSinceNav > 24 && isWeekday) {
+          console.log(`[markets-catchup] NAV last calculated ${hoursSinceNav === Infinity ? 'never' : Math.round(hoursSinceNav) + 'h ago'} — updating`);
+          try {
+            await navEngine.updateAllActiveIndexes();
+            await navEngine.updateLeaderboard();
+            catchUpActions++;
+            console.log('[markets-catchup] NAV catch-up complete');
+          } catch (err) { console.error('[markets-catchup] NAV catch-up failed:', err); }
+        }
+
+        // 4. Check if prediction validation ran this week (should run Saturday)
+        if (dayOfWeek === 6 || dayOfWeek === 0) {
+          const lastValidation = await db.get<{ started_at: string }>(
+            "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_prediction_validation' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
+          );
+          const daysSinceValidation = lastValidation
+            ? (now.getTime() - new Date(lastValidation.started_at).getTime()) / 86400000
+            : Infinity;
+
+          if (daysSinceValidation > 7) {
+            console.log(`[markets-catchup] Prediction validation last ran ${daysSinceValidation === Infinity ? 'never' : Math.round(daysSinceValidation) + ' days ago'} — running now`);
+            try {
+              await workflowOrchestrator.runPredictionValidation();
+              catchUpActions++;
+              console.log('[markets-catchup] Prediction validation catch-up complete');
+            } catch (err) { console.error('[markets-catchup] Prediction validation catch-up failed:', err); }
+          }
+        }
+
+        // 5. Refresh materialized views (always safe, idempotent)
+        try {
+          await db.run("REFRESH MATERIALIZED VIEW CONCURRENTLY IF EXISTS mv_prediction_track_record");
+          await db.run("REFRESH MATERIALIZED VIEW CONCURRENTLY IF EXISTS mv_index_stats");
+          await db.run("REFRESH MATERIALIZED VIEW CONCURRENTLY IF EXISTS mv_index_leaderboard_ranked");
+          catchUpActions++;
+        } catch { /* MVs may not exist yet */ }
+
+        if (catchUpActions > 0) {
+          console.log(`[markets-catchup] Startup recovery complete — ${catchUpActions} actions taken`);
+        } else {
+          console.log('[markets-catchup] All workflows up to date — nothing to catch up');
+        }
+      } catch (err) {
+        console.error('[markets-catchup] Startup catch-up failed:', err);
+      }
+    }, 10_000); // Run 10 seconds after startup to let everything initialize
+
   } catch (err) {
     console.error('[markets-schedule] Failed to start market scheduled jobs:', err);
   }

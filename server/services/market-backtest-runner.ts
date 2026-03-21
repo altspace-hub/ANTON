@@ -1,6 +1,7 @@
 // Market Backtest Runner — historical simulation with full intelligence pipeline:
 // atoms, theses, predictions, validation, signal weight calibration, NAV tracking.
 import type { DatabaseAdapter } from '../db/database.js';
+import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
 
 interface BacktestConfig {
   name: string; startDate: string; endDate: string;
@@ -62,6 +63,7 @@ function generatePriceAtoms(universe: string[], priceMap: Map<string, number>, p
 }
 
 export async function createMarketBacktestRunner(db: DatabaseAdapter) {
+  const fundScoringService = await createMarketFundamentalScoringService(db);
 
   async function downloadHistoricalData(universe: string[], startDate: string, endDate: string): Promise<number> {
     const { createMarketDataService } = await import('./market-data-service.js');
@@ -394,6 +396,20 @@ Return ONLY the JSON array.` }],
             const ap = await db.all<{ target_symbol: string; predicted_direction: string; confidence: number }>(
               `SELECT target_symbol,predicted_direction,confidence FROM market_backtest_predictions WHERE backtest_id=? AND status='active' AND target_symbol IS NOT NULL`, backtestId);
             tw = computeConvictionWeights(universe, ap, sw);
+            // Apply fundamental scoring overlay (mirrors live pipeline rebalance-service:664-677)
+            try {
+              const fundScores = await fundScoringService.getFundamentalScores(universe);
+              for (const sym of Object.keys(tw)) {
+                const score = fundScores.find(f => f.symbol === sym);
+                if (score) {
+                  const fundMultiplier = 0.9 + (Number(score.composite_score) / 100) * 0.2; // 0.9x to 1.1x
+                  tw[sym] *= fundMultiplier;
+                }
+              }
+              // Re-normalize after fundamental adjustment
+              const tot = Object.values(tw).reduce((s, v) => s + v, 0);
+              if (tot > 0) for (const k of Object.keys(tw)) tw[k] /= tot;
+            } catch { /* fundamental scoring is best-effort in backtest */ }
           } else {
             const avail = universe.filter(s => (priceMap.get(s) ?? 0) > 0);
             const eq = avail.length > 0 ? 1.0 / avail.length : 0;

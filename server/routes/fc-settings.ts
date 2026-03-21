@@ -1,5 +1,13 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { encrypt, decrypt } from '../services/credential-vault.js';
+
+// Fields that must be encrypted at rest (contain PII)
+const ENCRYPTED_FIELDS = [
+  'full_legal_name_enc', 'street_address_enc', 'city_enc',
+  'postal_code_enc', 'id_document_number_enc', 'date_of_birth_enc',
+  'tax_id_number_enc', 'bic_or_lei_enc',
+];
 
 export async function createFCSettingsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -45,8 +53,15 @@ export async function createFCSettingsRoutes(db: DatabaseAdapter): Promise<Route
   // ── KYC Profile ──────────────────────────────────────────────
   router.get('/futurechain/kyc', async (_req, res) => {
     try {
-      const profile = await db.get('SELECT * FROM fc_kyc_profiles WHERE id = $1', 'default');
-      res.json(profile ?? {});
+      const profile = await db.get('SELECT * FROM fc_kyc_profiles WHERE id = $1', 'default') as Record<string, unknown> | undefined;
+      if (!profile) return res.json({});
+      // Decrypt PII fields before returning to client
+      for (const field of ENCRYPTED_FIELDS) {
+        if (profile[field] && typeof profile[field] === 'string') {
+          profile[field] = decrypt(profile[field] as string);
+        }
+      }
+      res.json(profile);
     } catch (err) { res.status(500).json({ error: 'Failed to load KYC profile' }); }
   });
 
@@ -64,6 +79,17 @@ export async function createFCSettingsRoutes(db: DatabaseAdapter): Promise<Route
         'pep_description', 'purpose', 'purpose_other',
         'expected_tx_volume', 'expected_monthly_value',
       ];
+      // Encrypt PII fields before storage
+      for (const field of ENCRYPTED_FIELDS) {
+        if (fields[field] && typeof fields[field] === 'string') {
+          const val = fields[field] as string;
+          // Don't re-encrypt already encrypted values (iv:authTag:encrypted format)
+          if (!/^[0-9a-f]{32}:[0-9a-f]{32}:[0-9a-f]+$/.test(val)) {
+            fields[field] = encrypt(val);
+          }
+        }
+      }
+
       const existing = await db.get('SELECT id FROM fc_kyc_profiles WHERE id = $1', 'default');
       if (existing) {
         const entries = Object.entries(fields).filter(([k]) => allowedCols.includes(k));

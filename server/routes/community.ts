@@ -223,7 +223,17 @@ export async function createCommunityRoutes(db: DatabaseAdapter) {
       await db.run(
         `INSERT INTO community_identity (id, user_id, contact_hash, display_name, public_key) VALUES (?,?,?,?,?)`
       , id, 'default', contact_hash, display_name, public_key);
-      return res.json({ ok: true, id, contact_hash });
+
+      // Generate Ed25519 keypair for signing — store encrypted private key
+      try {
+        const { createSigningService } = await import('../services/community-signing-service.js');
+        const signingService = await createSigningService(db);
+        const realPubKey = await signingService.generateAndStoreKeypair(id);
+        return res.json({ ok: true, id, contact_hash, publicKey: realPubKey });
+      } catch (keyErr) {
+        console.error('[community] Ed25519 keypair generation failed (identity still created):', keyErr);
+        return res.json({ ok: true, id, contact_hash });
+      }
     } catch (e) { return res.status(500).json({ error: String(e) }); }
   });
 

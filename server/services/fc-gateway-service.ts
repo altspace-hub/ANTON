@@ -1,5 +1,6 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomBytes, timingSafeEqual } from 'crypto';
+import { decrypt } from './credential-vault.js';
 
 export async function createFCGatewayService(db: DatabaseAdapter) {
 
@@ -72,11 +73,11 @@ export async function createFCGatewayService(db: DatabaseAdapter) {
     const kyc = await db.get<Record<string, unknown>>(
       "SELECT full_legal_name_enc, country, street_address_enc, city_enc, postal_code_enc, address_country FROM fc_kyc_profiles WHERE id = 'default'"
     );
-    const senderName = String(kyc?.full_legal_name_enc ?? 'ANTON Agent');
+    const senderName = decrypt(String(kyc?.full_legal_name_enc ?? '')) || 'ANTON Agent';
     const senderCountry = String(kyc?.country ?? '');
-    const senderStreet = String(kyc?.street_address_enc ?? '');
-    const senderCity = String(kyc?.city_enc ?? '');
-    const senderPostalCode = String(kyc?.postal_code_enc ?? '');
+    const senderStreet = decrypt(String(kyc?.street_address_enc ?? ''));
+    const senderCity = decrypt(String(kyc?.city_enc ?? ''));
+    const senderPostalCode = decrypt(String(kyc?.postal_code_enc ?? ''));
 
     // ── Load receiver (creditor) ISO 20022 info from contact ──
     let toAddress = params.toAddress ?? '';
