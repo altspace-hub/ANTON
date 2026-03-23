@@ -1122,6 +1122,29 @@ Return ONLY the JSON array, no other text.`;
         });
       }
 
+      // Step 10: Execute pending why-chains (AI "5 Whys" root cause analysis)
+      try {
+        const { createWhyChainExecutor } = await import('./market-why-chain-executor.js');
+        const executor = await createWhyChainExecutor(db);
+        const whyResult = await executor.executeAllPending();
+        stepResults.push({
+          step: 'Why-Chain Root Cause Analysis',
+          status: 'success',
+          output: {
+            executed: whyResult.executed,
+            rootCausesFound: whyResult.results.filter(r => r.summary.includes('Root cause')).length,
+            summaries: whyResult.results.map(r => r.summary),
+          },
+        });
+        stepsCompleted++;
+      } catch (err) {
+        stepResults.push({
+          step: 'Why-Chain Root Cause Analysis',
+          status: 'error',
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+
       await updateRun(runId, 'completed');
       return { runId, status: 'completed', stepsCompleted, stepResults };
     } catch (err) {

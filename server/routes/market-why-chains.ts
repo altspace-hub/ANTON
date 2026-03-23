@@ -124,5 +124,31 @@ export async function createMarketWhyChainsRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── Execute why-chain analysis (AI-powered root cause investigation) ─────
+
+  router.post('/markets/why-chains/execute-all', async (_req, res) => {
+    try {
+      const { createWhyChainExecutor } = await import('../services/market-why-chain-executor.js');
+      const executor = await createWhyChainExecutor(db);
+      const result = await executor.executeAllPending();
+      res.json(result);
+    } catch (err) {
+      console.error('[why-chains] Execute all error:', err);
+      res.status(500).json({ error: 'Failed to execute why chains' });
+    }
+  });
+
+  router.post('/markets/why-chains/:id/execute', async (req, res) => {
+    try {
+      const { createWhyChainExecutor } = await import('../services/market-why-chain-executor.js');
+      const executor = await createWhyChainExecutor(db);
+      const result = await executor.executeChain(req.params.id);
+      res.json(result);
+    } catch (err) {
+      console.error('[why-chains] Execute error:', err);
+      res.status(500).json({ error: 'Failed to execute why chain' });
+    }
+  });
+
   return router;
 }
