@@ -33,6 +33,9 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
   { id: 'presentations', label: 'Presentations', category: 'interaction' },
   { id: 'markets', label: 'Markets Intelligence', category: 'intelligence' },
+  { id: 'procure', label: 'Procure', category: 'intelligence' },
+  { id: 'civic', label: 'Civic', category: 'intelligence' },
+  { id: 'grow', label: 'Grow', category: 'intelligence' },
   { id: 'school', label: 'ANTON School', category: 'tools' },
 
   // Life Platform Tabs
@@ -100,6 +103,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'compliance', label: 'Compliance', category: 'admin' },
   { id: 'compliance-posture', label: 'Compliance Posture', category: 'admin' },
   { id: 'risk-appetite', label: 'Risk Appetite Dashboard', category: 'admin' },
+  { id: 'app-gateway', label: 'App Gateway', category: 'admin' },
 ];
 
 // UX-01: Role-based nav presets — show only relevant items for each persona

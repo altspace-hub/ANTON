@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   ANTON Companion App — 3-theme design system
+   Inherits main ANTON color system: Dark (default), Light, Corporate
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Default (Dark) theme */
+  --color-adv-dark: oklch(0.15 0.02 250);
+  --color-adv-dark-2: oklch(0.18 0.02 250);
+  --color-adv-card: oklch(0.22 0.03 250);
+  --color-adv-teal: oklch(0.78 0.15 170);
+  --color-adv-teal-dark: oklch(0.65 0.13 170);
+  --color-adv-teal-dim: oklch(0.35 0.08 170);
+  --color-adv-off-white: oklch(0.9 0 0);
+  --color-adv-gray: oklch(0.75 0 0);
+  --color-adv-gold: oklch(0.75 0.14 70);
+  --color-adv-red: oklch(0.6 0.2 25);
+  --color-adv-green: oklch(0.65 0.17 145);
+  --color-adv-blue: oklch(0.65 0.13 240);
+  --color-border: oklch(0.3 0.02 250);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Light theme ─────────────────────────────────────────────── */
+html.light {
+  --color-adv-dark: oklch(0.965 0.005 80);
+  --color-adv-dark-2: oklch(0.985 0.003 80);
+  --color-adv-card: oklch(1.0 0 0);
+  --color-adv-teal: oklch(0.47 0.14 175);
+  --color-adv-teal-dark: oklch(0.40 0.12 175);
+  --color-adv-teal-dim: oklch(0.92 0.04 175);
+  --color-adv-off-white: oklch(0.28 0.015 260);
+  --color-adv-gray: oklch(0.45 0.01 260);
+  --color-adv-gold: oklch(0.62 0.16 65);
+  --color-adv-red: oklch(0.52 0.22 25);
+  --color-adv-green: oklch(0.52 0.15 150);
+  --color-adv-blue: oklch(0.52 0.13 245);
+  --color-border: oklch(0.88 0.008 80);
+}
+
+/* ─── Corporate theme ─────────────────────────────────────────── */
+html.corporate {
+  --color-adv-dark: oklch(0.965 0.008 250);
+  --color-adv-dark-2: oklch(0.99 0.003 250);
+  --color-adv-card: oklch(1.0 0 0);
+  --color-adv-teal: oklch(0.50 0.16 250);
+  --color-adv-teal-dark: oklch(0.43 0.14 250);
+  --color-adv-teal-dim: oklch(0.93 0.03 250);
+  --color-adv-off-white: oklch(0.20 0.01 260);
+  --color-adv-gray: oklch(0.44 0.015 255);
+  --color-adv-gold: oklch(0.62 0.16 65);
+  --color-adv-red: oklch(0.52 0.22 25);
+  --color-adv-green: oklch(0.52 0.15 150);
+  --color-adv-blue: oklch(0.52 0.13 245);
+  --color-border: oklch(0.87 0.015 250);
+}
+
+html.corporate h1, html.corporate h2, html.corporate h3 {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  color: oklch(0.25 0.08 265);
+}
+
+/* ─── Base styles ─────────────────────────────────────────────── */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--color-adv-dark);
+  color: var(--color-adv-off-white);
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: contain;
+}
+
+#app { min-height: 100dvh; display: flex; flex-direction: column; }
+
+.safe-top { padding-top: env(safe-area-inset-top, 0); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+
+button { -webkit-user-select: none; user-select: none; }
+
+/* Screen transition — fade in */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+#app > * { animation: fadeSlideIn 0.2s ease-out; }
+
+/* Org branding — override accent when --org-brand-color is set */
+:root { --org-brand-color: var(--color-adv-teal); }
+html[style*="--org-brand-color"] .chat-user { background-color: var(--org-brand-color) !important; }
+
+/* Light/Corporate chat bubbles — user messages need different text color */
+html.light .chat-user, html.corporate .chat-user {
+  color: oklch(0.97 0 0) !important;
+}
+
+/* Markdown prose styling for assistant bubbles */
+.prose-app p { margin: 0.4em 0; }
+.prose-app p:first-child { margin-top: 0; }
+.prose-app p:last-child { margin-bottom: 0; }
+.prose-app h1, .prose-app h2, .prose-app h3, .prose-app h4 {
+  font-weight: 600; margin: 0.8em 0 0.3em; color: var(--color-adv-off-white);
+}
+.prose-app h1 { font-size: 1.1em; }
+.prose-app h2 { font-size: 1.05em; }
+.prose-app h3 { font-size: 1em; }
+.prose-app ul, .prose-app ol { margin: 0.4em 0; padding-left: 1.4em; }
+.prose-app li { margin: 0.15em 0; }
+.prose-app code {
+  background: var(--color-adv-dark); padding: 0.15em 0.4em; border-radius: 4px;
+  font-size: 0.88em; font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.prose-app pre {
+  background: var(--color-adv-dark); padding: 0.8em; border-radius: 8px;
+  overflow-x: auto; margin: 0.5em 0; font-size: 0.85em;
+}
+.prose-app pre code { background: none; padding: 0; }
+.prose-app strong { font-weight: 600; color: var(--color-adv-off-white); }
+.prose-app a { color: var(--color-adv-teal); text-decoration: underline; }
+.prose-app blockquote {
+  border-left: 3px solid var(--color-adv-teal); padding-left: 0.8em;
+  margin: 0.5em 0; color: var(--color-adv-gray);
+}
+.prose-app table { border-collapse: collapse; width: 100%; margin: 0.5em 0; font-size: 0.9em; }
+.prose-app th, .prose-app td { border: 1px solid var(--color-border); padding: 0.3em 0.6em; text-align: left; }
+.prose-app th { font-weight: 600; background: var(--color-adv-dark); }
+.prose-app hr { border: none; border-top: 1px solid var(--color-border); margin: 0.8em 0; }

@@ -1322,6 +1322,25 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Azure OpenAI */}
+      <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg className="h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+            <h2 className="text-sm font-semibold text-adv-white">Azure OpenAI</h2>
+          </div>
+          <a
+            href="/settings/azure-openai"
+            className="rounded-lg bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors"
+          >
+            Configure
+          </a>
+        </div>
+        <p className="mt-1 text-xs text-adv-gray">
+          Connect your Azure OpenAI deployments for enterprise LLM access. Configure endpoints, API keys, and model deployments.
+        </p>
+      </div>
+
       {/* Default Settings */}
       <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
         <h2 className="text-sm font-semibold text-adv-white">{t('settings.defaultSettings')}</h2>

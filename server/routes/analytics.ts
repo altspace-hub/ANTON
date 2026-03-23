@@ -175,12 +175,21 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
       const now = new Date();
       const month = now.toISOString().slice(0, 7); // YYYY-MM
 
-
-
-      const spent = spentRow.total ?? 0;
+      const monthStart = `${month}-01`;
+      const spentRow = await db.get<{ total: number }>(
+        `SELECT COALESCE(SUM(
+          COALESCE(input_token_count, 0) * 0.000003 + COALESCE(output_token_count, 0) * 0.000015
+        ), 0) as total
+        FROM audit_log
+        WHERE created_at >= $1::TIMESTAMPTZ`,
+        monthStart
+      );
+      const spent = parseFloat(String(spentRow?.total ?? 0)) || 0;
 
       // Read cap from app_settings, fall back to env var, then 0 (unlimited)
-
+      const settingRow = await db.get<{ value: string }>(
+        `SELECT value FROM app_settings WHERE key = 'monthly_budget_cap'`
+      );
       const capFromDb = settingRow ? parseFloat(settingRow.value) : NaN;
       const capFromEnv = parseFloat(process.env.MONTHLY_BUDGET_CAP || '0');
       const cap = !isNaN(capFromDb) ? capFromDb : capFromEnv;

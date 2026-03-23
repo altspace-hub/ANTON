@@ -246,6 +246,29 @@ export async function pipeSearchToModule(searchId: string, moduleId?: string, ar
   return res.json() as Promise<{ contextText: string; query: string }>;
 }
 
+// Smart Action Bar — extract actions from synthesis
+export interface SmartAction {
+  type: 'call' | 'directions' | 'website' | 'save_contact' | 'save_org' | 'create_task' | 'start_civic' | 'start_procure' | 'save_knowledge' | 'open_module' | 'task_agent';
+  label: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  data: Record<string, string>;
+}
+
+export async function getSmartActions(
+  synthesis: string,
+  searchMode: string,
+  query: string,
+): Promise<SmartAction[]> {
+  const res = await fetchWithAuth(`${API_BASE}/pathfinder/actions/smart`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ synthesis, searchMode, query }),
+  });
+  const data = await res.json() as { actions: SmartAction[] };
+  return data.actions || [];
+}
+
 // Suggestions
 export async function fetchSuggestions() {
   const res = await fetchWithAuth(`${API_BASE}/pathfinder/suggestions`);

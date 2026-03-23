@@ -16,6 +16,7 @@ import DocumentUploadPanel from '@/components/pathfinder/DocumentUploadPanel';
 import FollowUpInput from '@/components/pathfinder/FollowUpInput';
 import ProactiveSuggestions from '@/components/pathfinder/ProactiveSuggestions';
 import PipeToModuleButton from '@/components/pathfinder/PipeToModuleButton';
+import SmartActionBar from '@/components/pathfinder/SmartActionBar';
 import PathfinderCostDisplay from '@/components/pathfinder/PathfinderCostDisplay';
 import ImproveSearchPanel from '@/components/pathfinder/ImproveSearchPanel';
 import { useSessionStore } from '@/stores/useSessionStore';
@@ -385,10 +386,18 @@ export default function PathfinderPage() {
         error={error}
       />
 
-      {/* Action bar (after complete) */}
+      {/* Smart Action Bar (after complete) */}
       {phase === 'complete' && synthesis && (
-        <div className="flex items-center gap-2">
-          <PipeToModuleButton text={synthesis} searchId={searchId} />
+        <div className="space-y-3">
+          <SmartActionBar
+            synthesis={synthesis}
+            searchMode={searchMode}
+            query={query}
+            searchId={searchId}
+          />
+          <div className="flex items-center gap-2">
+            <PipeToModuleButton text={synthesis} searchId={searchId} />
+          </div>
         </div>
       )}
 

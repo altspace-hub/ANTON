@@ -26,7 +26,7 @@ import {
   Megaphone, Newspaper, Mic, Link, Star, Palette, Code, Heart, Factory, Wallet, Map,
   Package, Terminal,
   // Expansion area icons (Phase 4)
-  Landmark, Smartphone, Sprout, ShoppingBag, HardHat, PiggyBank, Bird, ChefHat, Wrench,
+  Landmark, Smartphone, Sprout, ShoppingBag, HardHat, PiggyBank, Bird, ChefHat, Wrench, ShoppingCart,
   // Feature pages
   ScanText,
   Brain,
@@ -153,6 +153,10 @@ const AREA_COLORS: Record<string, { dot: string; text: string; active: string }>
   'food-business':        { dot: 'bg-adv-gold',    text: 'text-adv-gold',    active: 'bg-adv-gold/10 text-adv-gold' },
   'artisan-craft':        { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
   'livestock-poultry':    { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
+  // New Pillars
+  procure:                { dot: 'bg-adv-blue',    text: 'text-adv-blue',    active: 'bg-adv-blue/10 text-adv-blue' },
+  civic:                  { dot: 'bg-adv-green',   text: 'text-adv-green',   active: 'bg-adv-green/10 text-adv-green' },
+  grow:                   { dot: 'bg-adv-teal',    text: 'text-adv-teal',    active: 'bg-adv-teal-dim text-adv-teal' },
 };
 
 // Fallback color for any area not in AREA_COLORS
@@ -227,6 +231,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const isPaymentsMode = pathname.startsWith('/futurechain');
   const isPathfinderMode = pathname.startsWith('/pathfinder');
   const isMarketsMode = pathname.startsWith('/markets');
+  const isProcureMode = pathname.startsWith('/procure');
+  const isCivicMode = pathname.startsWith('/civic');
+  const isGrowMode = pathname.startsWith('/grow');
   const { sidebarCollapsed, toggleSidebar, setAppMode } = useSettingsStore();
   // RESP-01: force icon-only at md breakpoint (768-1024px) regardless of user toggle
   const [isForcedMini, setIsForcedMini] = useState(() => window.innerWidth >= 768 && window.innerWidth < 1024);
@@ -947,8 +954,114 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </>
         )}
 
-        {/* ── Work sidebar (hidden while on Life/Pathfinder/Markets routes) */}
-        {!isLifeMode && !isPathfinderMode && !isMarketsMode && !isCommunityMode && !isPaymentsMode && (<>
+        {/* ── Procure Pillar sidebar ──────────────────────────────────────── */}
+        {isProcureMode && (
+          <>
+            {!mini ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-blue">Procure</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            <NavLink to="/procure" end className={({ isActive }) => mini ? collapsedLinkClass(isActive) : linkClass(isActive)} title={mini ? 'Dashboard' : undefined}>
+              <ShoppingCart className="h-4 w-4 shrink-0" />
+              {!mini && 'Dashboard'}
+            </NavLink>
+          </>
+        )}
+
+        {/* ── Civic Pillar sidebar ──────────────────────────────────────── */}
+        {isCivicMode && (
+          <>
+            {!mini ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-green">Civic</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            <NavLink to="/civic" end className={({ isActive }) => mini ? collapsedLinkClass(isActive) : linkClass(isActive)} title={mini ? 'Dashboard' : undefined}>
+              <Landmark className="h-4 w-4 shrink-0" />
+              {!mini && 'Dashboard'}
+            </NavLink>
+          </>
+        )}
+
+        {/* ── Grow Pillar sidebar ────────────────────────────────────────── */}
+        {isGrowMode && (
+          <>
+            {!mini ? (
+              <div className="mb-4 px-1">
+                <button
+                  onClick={() => { setAppMode('work'); navigate('/'); }}
+                  className="mb-3 flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  Back to Work
+                </button>
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal">Grow</div>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setAppMode('work'); navigate('/'); }}
+                className={collapsedLinkClass(false)}
+                title="Back to Work"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            <NavLink to="/grow" end className={({ isActive }) => mini ? collapsedLinkClass(isActive) : linkClass(isActive)} title={mini ? 'Dashboard' : undefined}>
+              <TrendingUp className="h-4 w-4 shrink-0" />
+              {!mini && 'Dashboard'}
+            </NavLink>
+            {!mini && <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">People</div>}
+            {mini && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/grow/contacts" className={({ isActive }) => mini ? collapsedLinkClass(isActive) : linkClass(isActive)} title={mini ? 'Contacts' : undefined}>
+              <Users className="h-4 w-4 shrink-0" />
+              {!mini && 'Contacts'}
+            </NavLink>
+            <NavLink to="/grow/organisations" className={({ isActive }) => mini ? collapsedLinkClass(isActive) : linkClass(isActive)} title={mini ? 'Organisations' : undefined}>
+              <Building2 className="h-4 w-4 shrink-0" />
+              {!mini && 'Organisations'}
+            </NavLink>
+            {!mini && <div className="mt-4 mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-adv-teal/70">Pipeline</div>}
+            {mini && <div className="my-1.5 mx-2 h-px bg-border/40" />}
+            <NavLink to="/grow/pipeline" className={({ isActive }) => mini ? collapsedLinkClass(isActive) : linkClass(isActive)} title={mini ? 'Pipeline' : undefined}>
+              <BarChart3 className="h-4 w-4 shrink-0" />
+              {!mini && 'Pipeline'}
+            </NavLink>
+          </>
+        )}
+
+        {/* ── Work sidebar (hidden while on Life/Pathfinder/Markets/Pillar routes) */}
+        {!isLifeMode && !isPathfinderMode && !isMarketsMode && !isCommunityMode && !isPaymentsMode && !isProcureMode && !isCivicMode && !isGrowMode && (<>
         {/* Favorites section — only show if there are favorited items and sidebar is expanded */}
         {!sidebarCollapsed && favoriteNavItems.size > 0 && (
           <>
@@ -1036,6 +1149,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'trades': { to: '/trades', icon: Wrench, label: 'Trades & Service Workers' },
                 'pe-vc': { to: '/pe-vc', icon: TrendingUp, label: 'PE/VC Hub' },
                 'markets': { to: '/markets', icon: TrendingUp, label: 'Markets Intelligence' },
+                'procure': { to: '/procure', icon: ShoppingCart, label: 'Procure' },
+                'civic': { to: '/civic', icon: Landmark, label: 'Civic' },
+                'grow': { to: '/grow', icon: TrendingUp, label: 'Grow' },
                 'school': { to: '/school', icon: GraduationCap, label: 'ANTON School' },
                 'innovation-radar': { to: '/innovation-radar', icon: Radar, label: 'Innovation Radar' },
                 'versions': { to: '/versions', icon: GitBranch, label: 'Version History' },
@@ -1046,6 +1162,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'finance': { to: '/finance', icon: Wallet, label: 'Finance' },
                 'travel': { to: '/travel', icon: Map, label: 'Travel' },
                 'community': { to: '/community', icon: MessageCircle, label: 'Community' },
+                'app-gateway': { to: '/app-gateway', icon: Smartphone, label: 'App Gateway' },
               }[item.id];
 
               if (!navConfig) return null;
@@ -1367,6 +1484,62 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <GraduationCap className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.school', 'ANTON School')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/markets"
+          navId="markets"
+          title={sidebarCollapsed ? 'Markets Intelligence' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('markets')}
+          isHidden={hiddenNavItems.has('markets')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <TrendingUp className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Markets Intelligence'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/procure"
+          navId="procure"
+          title={sidebarCollapsed ? 'Procure' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('procure')}
+          isHidden={hiddenNavItems.has('procure')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <ShoppingCart className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Procure'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/civic"
+          navId="civic"
+          title={sidebarCollapsed ? 'Civic' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('civic')}
+          isHidden={hiddenNavItems.has('civic')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Landmark className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Civic'}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/grow"
+          navId="grow"
+          title={sidebarCollapsed ? 'Grow' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('grow')}
+          isHidden={hiddenNavItems.has('grow')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <TrendingUp className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'Grow'}
         </NavLinkWithStar>
 
         <NavLinkWithStar
@@ -1725,6 +1898,20 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           <ClipboardCheck className="h-4 w-4 shrink-0" />
           {!sidebarCollapsed && t('nav.auditLog')}
+        </NavLinkWithStar>
+
+        <NavLinkWithStar
+          to="/app-gateway"
+          navId="app-gateway"
+          title={sidebarCollapsed ? 'App Gateway' : undefined}
+          className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+          isFavorite={favoriteNavItems.has('app-gateway')}
+          isHidden={hiddenNavItems.has('app-gateway')}
+          onToggleFavorite={toggleNavFavorite}
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          <Smartphone className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && 'App Gateway'}
         </NavLinkWithStar>
 
         {/* Connections */}

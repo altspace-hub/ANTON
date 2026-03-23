@@ -143,6 +143,12 @@ import { createMarketWorkflowRoutes } from './routes/market-workflows.js';
 import { createMarketBacktestRoutes } from './routes/market-backtests.js';
 import { createTemporalReasoningRoutes } from './routes/temporal-reasoning.js';
 import { createOpenApiRouter } from './routes/openapi.js';
+import { createAzureOpenAIRoutes } from './routes/azure-openai.js';
+import { createProcureRoutes } from './routes/procure.js';
+import { createCivicRoutes } from './routes/civic.js';
+import { createGrowRoutes } from './routes/grow.js';
+import { createAppGatewayRoutes } from './routes/app-gateway.js';
+import { setupCompanionNamespace } from './services/app-websocket.js';
 import { csrfTokenRoute, csrfProtection, pruneExpiredCsrfTokens } from './middleware/csrf.js';
 import { createWebhookListener } from './services/webhook-listener.js';
 import { setEventEmitter } from './services/event-emitter.js';
@@ -223,7 +229,8 @@ app.use(
 // ── CORS — localhost only ─────────────────────────────────────
 // In dev, Vite may land on any port (5173, 5174, 5175…) if earlier ports are taken.
 // Allow any http://localhost:<port> origin so the proxy always works.
-const isLocalhostOrigin = (origin: string) => /^http:\/\/localhost(:\d+)?$/.test(origin);
+// Allow localhost + LAN IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) for companion app testing
+const isLocalhostOrigin = (origin: string) => /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin);
 
 app.use(
   cors({
@@ -352,6 +359,25 @@ app.use('/api', await createBridgePublicRoutes(db, anthropic));
 const { createFCGatewayRoutes } = await import('./routes/fc-gateway.js');
 const { adminRouter: gwAdmin, publicRouter: gwPublic } = await createFCGatewayRoutes(db);
 app.use('/api/gateway', gwPublic);
+
+// Companion App Gateway — M9: controlled by APP_GATEWAY_ENABLED (default: enabled)
+const APP_GATEWAY_ENABLED = process.env.APP_GATEWAY_ENABLED !== 'false';
+let appGatewaySvc: Awaited<ReturnType<typeof createAppGatewayRoutes>>['service'] | null = null;
+if (APP_GATEWAY_ENABLED) {
+  // SEC: Rate-limit auth endpoints (brute-force protection)
+  app.use('/api/app/auth', authLimiter);
+  // SEC: General rate limit on all app public routes
+  app.use('/api/app', userLimiter);
+  const { publicRouter: appPublic, adminRouter: appAdmin, service } = await createAppGatewayRoutes(db);
+  appGatewaySvc = service;
+  app.use('/api/app', appPublic);
+  // Admin routes mounted after auth middleware (see below)
+  // Store adminRouter for later mounting
+  (app as unknown as Record<string, unknown>)._appAdminRouter = appAdmin;
+  logger.info('[app-gateway] Companion App Gateway enabled');
+} else {
+  logger.info('[app-gateway] Companion App Gateway disabled (APP_GATEWAY_ENABLED=false)');
+}
 
 // Deployment config endpoint (public — no auth required)
 app.get('/api/config', (req, res) => {
@@ -561,6 +587,31 @@ const marketComputationSvc = await createMarketComputationService(db);
 const marketRCIService = await createMarketRCIService(db, marketComputationSvc, anthropic);
 app.use('/api', await createMarketRCIRoutes(marketRCIService));
 
+// Azure OpenAI — enterprise LLM integration
+app.use('/api', await createAzureOpenAIRoutes(db));
+
+// Procure Pillar — phased procurement pipeline
+app.use('/api', await createProcureRoutes(db));
+
+// Civic Pillar — government & public institution navigator
+app.use('/api', await createCivicRoutes(db));
+
+// Grow Pillar — CRM & business development intelligence
+app.use('/api', await createGrowRoutes(db));
+
+// Companion App Gateway — admin routes (session-protected)
+if (APP_GATEWAY_ENABLED) {
+  const appAdminRouter = (app as unknown as Record<string, unknown>)._appAdminRouter as import('express').Router;
+  app.use('/api/admin/app', appAdminRouter);
+}
+
+// Serve companion app PWA at /app (if built)
+const appDist = path.join(__dirname, '..', 'dist', 'app');
+app.use('/app', express.static(appDist));
+app.get('/app/*', (_req, res) => {
+  res.sendFile(path.join(appDist, 'index.html'));
+});
+
 // Serve static React build in production
 const clientDist = path.join(__dirname, '..', 'dist', 'client');
 app.use(express.static(clientDist));
@@ -573,7 +624,13 @@ const httpServer = createHttpServer(app);
 
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || isLocalhostOrigin(origin) || allowedOrigins.some(a => origin === a)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
   },
   path: '/school-ws',
@@ -647,10 +704,39 @@ communityNS.on('connection', (socket) => {
   });
 });
 
+// Companion App namespace — real-time query streaming for app users
+if (APP_GATEWAY_ENABLED && appGatewaySvc) {
+  const APP_MAX_CONNECTIONS = parseInt(process.env.APP_GATEWAY_MAX_CONNECTIONS || '100', 10);
+  const companionNS = io.of('/companion');
+
+  // M10: Enforce max concurrent WebSocket connections
+  let activeConnections = 0;
+  companionNS.use((socket, next) => {
+    if (activeConnections >= APP_MAX_CONNECTIONS) {
+      return next(new Error('Maximum connections reached'));
+    }
+    activeConnections++;
+    socket.on('disconnect', () => { activeConnections--; });
+    next();
+  });
+
+  setupCompanionNamespace(companionNS, db, appGatewaySvc);
+  logger.info(`[app-gateway] /companion WebSocket namespace active (max ${APP_MAX_CONNECTIONS} connections)`);
+}
+
 let pgNotifyService: Awaited<ReturnType<typeof createPgNotifyService>> | null = null;
 
 httpServer.listen(PORT, async () => {
   logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
+
+  // mDNS advertising for companion app LAN discovery
+  if (APP_GATEWAY_ENABLED) {
+    try {
+      const { createMdnsAdvertiser } = await import('./services/mdns-advertiser.js');
+      const mdns = await createMdnsAdvertiser(parseInt(String(PORT), 10));
+      await mdns.start();
+    } catch {}
+  }
 
   // Start background dataset cleanup (runs every hour)
   await startDatasetCleanup(db);

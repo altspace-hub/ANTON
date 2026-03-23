@@ -236,6 +236,27 @@ const MarketGoalsProfilePage = lazy(() => import('./pages/markets/MarketGoalsPro
 const MarketBacktestsPage = lazy(() => import('./pages/markets/MarketBacktestsPage'));
 const MarketOnboardingPage = lazy(() => import('./pages/markets/MarketOnboardingPage'));
 
+// Azure OpenAI Settings
+const AzureOpenAISettingsPage = lazy(() => import('./pages/settings/AzureOpenAISettingsPage'));
+
+// App Gateway admin
+const AppGatewayPage = lazy(() => import('./pages/AppGatewayPage'));
+
+// Procure Pillar pages
+const ProcurePage = lazy(() => import('./pages/procure/ProcurePage'));
+const ProcureCyclePage = lazy(() => import('./pages/procure/ProcureCyclePage'));
+
+// Civic Pillar pages
+const CivicPage = lazy(() => import('./pages/civic/CivicPage'));
+const CivicEngagementPage = lazy(() => import('./pages/civic/CivicEngagementPage'));
+
+// Grow Pillar pages
+const GrowPage = lazy(() => import('./pages/grow/GrowPage'));
+const GrowContactsPage = lazy(() => import('./pages/grow/GrowContactsPage'));
+const GrowOrganisationsPage = lazy(() => import('./pages/grow/GrowOrganisationsPage'));
+const GrowPipelinePage = lazy(() => import('./pages/grow/GrowPipelinePage'));
+const GrowOpportunityPage = lazy(() => import('./pages/grow/GrowOpportunityPage'));
+
 // School Mode pages
 const SchoolDashboardPage = lazy(() => import('./pages/school/SchoolDashboardPage'));
 const SchoolChatPage = lazy(() => import('./pages/school/SchoolChatPage'));
@@ -520,6 +541,9 @@ export default function App() {
           <Route path="/pathfinder" element={<PathfinderPage />} />
           <Route path="/pathfinder/history" element={<PathfinderHistoryPage />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/azure-openai" element={<AzureOpenAISettingsPage />} />
+          {/* App Gateway admin */}
+          <Route path="/app-gateway" element={<AppGatewayPage />} />
           <Route path="/settings/org-context" element={<Navigate to="/settings?tab=org-context" replace />} />
           {/* Markets Pillar */}
           <Route path="/markets" element={<MarketsPage />} />
@@ -545,6 +569,21 @@ export default function App() {
           <Route path="/markets/goals" element={<MarketGoalsProfilePage />} />
           <Route path="/markets/backtests" element={<MarketBacktestsPage />} />
           <Route path="/markets/onboarding" element={<MarketOnboardingPage />} />
+
+          {/* Procure Pillar — phased procurement pipeline */}
+          <Route path="/procure" element={<ProcurePage />} />
+          <Route path="/procure/cycle/:cycleId" element={<ProcureCyclePage />} />
+
+          {/* Civic Pillar — government & public institution navigator */}
+          <Route path="/civic" element={<CivicPage />} />
+          <Route path="/civic/engagement/:engagementId" element={<CivicEngagementPage />} />
+
+          {/* Grow Pillar — CRM & business development intelligence */}
+          <Route path="/grow" element={<GrowPage />} />
+          <Route path="/grow/contacts" element={<GrowContactsPage />} />
+          <Route path="/grow/organisations" element={<GrowOrganisationsPage />} />
+          <Route path="/grow/pipeline" element={<GrowPipelinePage />} />
+          <Route path="/grow/opportunities/:id" element={<GrowOpportunityPage />} />
         </Route>
 
         {/* School Mode login — public, no auth required */}

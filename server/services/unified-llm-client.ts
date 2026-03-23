@@ -16,6 +16,8 @@ import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createModelAdapter, getProviderFromModelId, getCustomModelConfigs, type UnifiedLLMRequest } from './model-adapter.js';
 import * as claudeClient from './claude-client.js';
+import { decrypt } from './credential-vault.js';
+import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 
 // ── Configuration ──────────────────────────────────────────────
@@ -44,13 +46,45 @@ export interface StreamCompletionData {
 
 // ── Environment Variables ─────────────────────────────────────
 
-const API_KEYS = {
+const API_KEYS: Record<string, string | undefined> = {
   anthropic: process.env.ANTHROPIC_API_KEY,
   openai: process.env.OPENAI_API_KEY,
   google: process.env.GOOGLE_API_KEY,
   mistral: process.env.MISTRAL_API_KEY,
+  azure_openai: undefined, // Loaded from DB per-request
   ollama: undefined, // Ollama runs locally, no API key needed
 };
+
+// ── Azure OpenAI Config Resolution ────────────────────────
+async function resolveAzureConfig(modelId: string, db?: DatabaseAdapter): Promise<AzureOpenAIConfig | null> {
+  if (!db || !modelId.startsWith('azure:')) return null;
+  const deploymentName = modelId.replace('azure:', '');
+
+  const deployment = await db.get<{
+    deployment_name: string;
+    model_name: string;
+    is_reasoning_model: boolean;
+    config_id: string;
+  }>('SELECT deployment_name, model_name, is_reasoning_model, config_id FROM azure_openai_deployments WHERE deployment_name = $1 AND is_active = TRUE', [deploymentName]);
+
+  if (!deployment) return null;
+
+  const config = await db.get<{
+    endpoint: string;
+    api_key_encrypted: string;
+    api_version: string;
+  }>('SELECT endpoint, api_key_encrypted, api_version FROM azure_openai_config WHERE id = $1 AND is_active = TRUE', [deployment.config_id || 'default']);
+
+  if (!config) return null;
+
+  return {
+    endpoint: config.endpoint,
+    apiKey: decrypt(config.api_key_encrypted),
+    apiVersion: config.api_version,
+    deployment: deployment.deployment_name,
+    isReasoningModel: deployment.is_reasoning_model,
+  };
+}
 
 // ── Provider Detection ─────────────────────────────────────────
 
@@ -90,6 +124,11 @@ export function isModelAvailable(modelId: string, db?: DatabaseAdapter): boolean
       return true;
     }
 
+    // Azure models are available if they're in the deployments table (checked at request time)
+    if (provider === 'azure_openai') {
+      return true;
+    }
+
     const apiKey = getApiKeyForModel(modelId, db);
     return !!apiKey;
   } catch {
@@ -126,13 +165,21 @@ export async function streamToResponse(
   }
 
   // For all other providers, use ModelAdapter
-  const apiKey = getApiKeyForModel(config.model, config.db);
+  let azureConfig: AzureOpenAIConfig | null = null;
+  if (provider === 'azure_openai') {
+    azureConfig = await resolveAzureConfig(config.model, config.db);
+    if (!azureConfig) {
+      throw new Error('Azure OpenAI deployment not configured or inactive');
+    }
+  }
 
-  if (!apiKey && provider !== 'ollama') {
+  const apiKey = provider === 'azure_openai' ? undefined : getApiKeyForModel(config.model, config.db);
+
+  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai') {
     throw new Error(`API key not configured for provider: ${provider}`);
   }
 
-  const adapter = createModelAdapter(provider, apiKey);
+  const adapter = createModelAdapter(provider, apiKey, azureConfig ?? undefined);
 
   // Set SSE headers
   res.writeHead(200, {
@@ -232,13 +279,21 @@ export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCo
   // For Anthropic, we could use the existing client, but it's stream-only
   // So we'll use the adapter for consistency in non-streaming mode
 
-  const apiKey = getApiKeyForModel(config.model, config.db);
+  let azureConfigNonStream: AzureOpenAIConfig | null = null;
+  if (provider === 'azure_openai') {
+    azureConfigNonStream = await resolveAzureConfig(config.model, config.db);
+    if (!azureConfigNonStream) {
+      throw new Error('Azure OpenAI deployment not configured or inactive');
+    }
+  }
 
-  if (!apiKey && provider !== 'ollama') {
+  const apiKey = provider === 'azure_openai' ? undefined : getApiKeyForModel(config.model, config.db);
+
+  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai') {
     throw new Error(`API key not configured for provider: ${provider}`);
   }
 
-  const adapter = createModelAdapter(provider, apiKey);
+  const adapter = createModelAdapter(provider, apiKey, azureConfigNonStream ?? undefined);
 
   const unifiedReq: UnifiedLLMRequest = {
     model: config.model,
@@ -268,9 +323,134 @@ export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCo
   };
 }
 
+// ── Callback-based Streaming (for WebSocket delivery) ─────────
+
+export async function streamToHandler(
+  config: UnifiedStreamConfig,
+  onEvent: (event: object) => void,
+  onComplete?: (data: StreamCompletionData) => void
+): Promise<void> {
+  const provider = getProviderFromModelId(config.model, config.db);
+
+  if (provider === 'anthropic') {
+    // Create a mock response to capture SSE events from claude-client
+    // and redirect them to the onEvent callback
+    let mockEventCount = 0;
+    const mockRes = {
+      writeHead: () => mockRes,
+      write: (chunk: string) => {
+        // Parse all SSE data lines from the chunk (may contain multiple events)
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const parsed = JSON.parse(line.slice(6));
+              mockEventCount++;
+              onEvent(parsed);
+            } catch {}
+          }
+        }
+        return true;
+      },
+      end: () => { console.log(`[streamToHandler] mock end, ${mockEventCount} events forwarded`); },
+      end: () => {},
+      on: () => mockRes,
+      once: () => mockRes,
+      emit: () => false,
+      headersSent: false,
+    } as unknown as import('express').Response;
+
+    return claudeClient.streamToResponse(
+      {
+        model: config.model as 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6',
+        thinking: config.thinking,
+        system: config.system,
+        staticSystemPrompt: config.staticSystemPrompt,
+        messages: config.messages,
+        tools: config.tools,
+        maxTokens: config.maxTokens,
+        nativeReasoningEnabled: config.nativeReasoningEnabled,
+      },
+      mockRes,
+      onComplete
+    );
+  }
+
+  // Non-Anthropic providers
+  let azureConfig: AzureOpenAIConfig | null = null;
+  if (provider === 'azure_openai') {
+    azureConfig = await resolveAzureConfig(config.model, config.db);
+    if (!azureConfig) throw new Error('Azure OpenAI deployment not configured or inactive');
+  }
+
+  const apiKey = provider === 'azure_openai' ? undefined : getApiKeyForModel(config.model, config.db);
+  if (!apiKey && provider !== 'ollama' && provider !== 'azure_openai') {
+    throw new Error(`API key not configured for provider: ${provider}`);
+  }
+
+  const adapter = createModelAdapter(provider, apiKey, azureConfig ?? undefined);
+
+  const unifiedReq: UnifiedLLMRequest = {
+    model: config.model,
+    systemPrompt: config.staticSystemPrompt
+      ? `${config.staticSystemPrompt}\n\n${config.system}`
+      : config.system,
+    messages: config.messages.map((m) => ({
+      role: m.role,
+      content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+    })),
+    thinking: config.thinking,
+    creativity: config.creativity || 'balanced',
+    maxTokens: config.maxTokens,
+    seed: config.seed,
+    tools: config.tools,
+    stream: true,
+  };
+
+  let fullText = '';
+
+  try {
+    onEvent({ type: 'message_start' });
+
+    for await (const chunk of adapter.sendStreamRequest(unifiedReq)) {
+      fullText += chunk;
+      onEvent({ type: 'content_block_delta', delta: { type: 'text_delta', text: chunk } });
+    }
+
+    const estimatedInputTokens = Math.ceil(
+      (unifiedReq.systemPrompt.length + JSON.stringify(unifiedReq.messages).length) / 4
+    );
+    const estimatedOutputTokens = Math.ceil(fullText.length / 4);
+
+    onEvent({
+      type: 'message_stop',
+      usage: { input_tokens: estimatedInputTokens, output_tokens: estimatedOutputTokens },
+    });
+    onEvent({ type: 'done' });
+
+    if (onComplete) {
+      onComplete({
+        text: fullText,
+        thinking: '',
+        inputTokens: estimatedInputTokens,
+        outputTokens: estimatedOutputTokens,
+      });
+    }
+  } catch (error) {
+    onEvent({
+      type: 'error',
+      error: {
+        type: 'api_error',
+        message: error instanceof Error ? error.message : 'Unknown streaming error',
+      },
+    });
+    throw error;
+  }
+}
+
 // ── Health Check ───────────────────────────────────────────────
 
-export async function checkProviderHealth(provider: 'anthropic' | 'openai' | 'google' | 'mistral' | 'ollama'): Promise<{
+export async function checkProviderHealth(provider: 'anthropic' | 'openai' | 'azure_openai' | 'google' | 'mistral' | 'ollama'): Promise<{
   available: boolean;
   error?: string;
 }> {

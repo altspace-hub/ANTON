@@ -414,5 +414,23 @@ export function createPathfinderRoutes(
     }
   });
 
+  // ── Smart Action Bar — extract actionable items from synthesis ────────────
+
+  router.post('/pathfinder/actions/smart', async (req: Request, res: Response) => {
+    try {
+      const { synthesis, searchMode, query } = req.body;
+      if (!synthesis || !query) {
+        res.status(400).json({ error: 'synthesis and query are required' });
+        return;
+      }
+      const { analyzeForActions } = await import('../services/smart-actions-analyzer.js');
+      const actions = await analyzeForActions(synthesis, searchMode || 'knowledge', query);
+      res.json({ actions });
+    } catch (err) {
+      console.error('[pathfinder] Smart actions error:', err);
+      res.status(500).json({ error: 'Failed to extract actions' });
+    }
+  });
+
   return router;
 }
