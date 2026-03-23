@@ -871,6 +871,30 @@ Return ONLY the JSON array, no other text.`;
         await insertDeadLetter(runId, 'Fetch Outcome Data', errMsg);
       }
 
+      // Step 1.5: Auto-verify expired predictions against actual market data
+      try {
+        const { createPredictionVerifier } = await import('./market-prediction-verifier.js');
+        const verifier = await createPredictionVerifier(db);
+        const verifyResult = await verifier.runAutoVerification();
+        stepResults.push({
+          step: 'Auto-Verify Expired Predictions',
+          status: 'success',
+          output: {
+            verified: verifyResult.verified,
+            correct: verifyResult.correct,
+            incorrect: verifyResult.incorrect,
+            unverifiable: verifyResult.unverifiable,
+          },
+        });
+        stepsCompleted++;
+      } catch (err) {
+        stepResults.push({
+          step: 'Auto-Verify Expired Predictions',
+          status: 'error',
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+
       // Step 2: Prediction accuracy stats — query validated predictions from DB
       let validatedPredictions: Array<{ id: string; confidence: number; was_correct: number; brier_score: number | null; prediction_type: string }> = [];
       try {

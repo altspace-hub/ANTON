@@ -74,5 +74,19 @@ export async function createMarketLearningRoutes(db: DatabaseAdapter) {
     } catch (err) { console.error('[market-learning] Create backtest error:', err); res.status(500).json({ error: 'Failed' }); }
   });
 
+  // ── Auto-verify expired predictions ──────────────────────────────────────
+
+  router.post('/markets/predictions/auto-verify', async (_req, res) => {
+    try {
+      const { createPredictionVerifier } = await import('../services/market-prediction-verifier.js');
+      const verifier = await createPredictionVerifier(db);
+      const result = await verifier.runAutoVerification();
+      res.json(result);
+    } catch (err) {
+      console.error('[market-learning] Auto-verify error:', err instanceof Error ? err.message : err, err instanceof Error ? err.stack : '');
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Verification failed' });
+    }
+  });
+
   return router;
 }
