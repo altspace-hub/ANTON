@@ -533,6 +533,27 @@ Return ONLY the JSON array, no other text.`;
               : horizonDays <= 365 ? 'this_year'
               : 'this_decade';
 
+            // Step 9b: Cross-metric validation + confidence adjustment
+            let effectiveConfidence = p.confidence ?? 0.5;
+            let validationFlags: string[] = [];
+            try {
+              const { createCrossMetricValidator } = await import('./market-cross-metric-validator.js');
+              const validator = await createCrossMetricValidator(db);
+              const validation = await validator.validatePrediction({
+                targetSymbol: p.target_symbol,
+                predictedDirection: p.predicted_direction,
+                confidence: effectiveConfidence,
+                title: p.title,
+                description: p.description ?? '',
+                predictionType: p.prediction_type,
+              });
+              effectiveConfidence = validation.adjustedConfidence;
+              validationFlags = validation.flags;
+              if (validation.flags.length > 0) {
+                console.log(`[orchestrator] Prediction "${p.title}" validated: coherence=${validation.coherenceScore.toFixed(2)}, confidence ${(p.confidence ?? 0.5).toFixed(2)}→${effectiveConfidence.toFixed(2)}, flags: ${validation.flags.join('; ')}`);
+              }
+            } catch { /* non-fatal */ }
+
             const predId = await thesisService.createPrediction({
               thesisId,
               title: p.title,
@@ -541,10 +562,10 @@ Return ONLY the JSON array, no other text.`;
               targetSymbol: p.target_symbol,
               predictedOutcome: p.predicted_outcome,
               predictedDirection: p.predicted_direction,
-              confidence: p.confidence ?? 0.5,
+              confidence: effectiveConfidence,
               timeHorizonDays: p.time_horizon_days ?? 30,
               deadline: p.deadline,
-              keyAssumptions: p.key_assumptions ?? [],
+              keyAssumptions: [...(p.key_assumptions ?? []), ...(validationFlags.length ? [`[Validation: ${validationFlags.join('; ')}]`] : [])],
               horizon,
             });
             createdPredictions.push(predId);
