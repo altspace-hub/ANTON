@@ -20,6 +20,7 @@ const configSchema = z.object({
   apiKey: z.string().min(1).optional(), // Optional on update — keeps existing key if omitted
   apiVersion: z.string().optional().default('2024-10-21'),
   isActive: z.boolean().optional().default(true),
+  bingSearchApiKey: z.string().optional(), // Bing Web Search API key for web search grounding
 });
 
 const deploymentSchema = z.object({
@@ -68,10 +69,11 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
         api_key_encrypted: string;
         api_version: string;
         is_active: boolean;
+        bing_search_api_key_encrypted: string | null;
         created_at: string;
         updated_at: string;
       }>(
-        "SELECT id, endpoint, api_key_encrypted, api_version, is_active, created_at, updated_at FROM azure_openai_config WHERE id = 'default'"
+        "SELECT id, endpoint, api_key_encrypted, api_version, is_active, bing_search_api_key_encrypted, created_at, updated_at FROM azure_openai_config WHERE id = 'default'"
       );
 
       if (!row) {
@@ -80,6 +82,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
       }
 
       const decryptedKey = decrypt(row.api_key_encrypted);
+      const hasBingKey = !!row.bing_search_api_key_encrypted;
 
       res.json({
         configured: true,
@@ -89,6 +92,8 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           apiKey: maskApiKey(decryptedKey),
           apiVersion: row.api_version,
           isActive: row.is_active,
+          bingSearchConfigured: hasBingKey,
+          bingSearchApiKey: hasBingKey ? maskApiKey(decrypt(row.bing_search_api_key_encrypted!)) : undefined,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
         },
@@ -105,8 +110,8 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
     try {
       const parsed = configSchema.parse(req.body);
 
-      const existing = await db.get<{ id: string; api_key_encrypted: string }>(
-        "SELECT id, api_key_encrypted FROM azure_openai_config WHERE id = 'default'"
+      const existing = await db.get<{ id: string; api_key_encrypted: string; bing_search_api_key_encrypted: string | null }>(
+        "SELECT id, api_key_encrypted, bing_search_api_key_encrypted FROM azure_openai_config WHERE id = 'default'"
       );
 
       // Use new key if provided, otherwise keep existing encrypted key
@@ -119,6 +124,11 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
         return;
       }
 
+      // Handle Bing Search API key — encrypt if provided, keep existing if omitted
+      const encryptedBingKey = parsed.bingSearchApiKey
+        ? encrypt(parsed.bingSearchApiKey)
+        : existing?.bing_search_api_key_encrypted ?? null;
+
       if (existing) {
         await db.run(
           `UPDATE azure_openai_config
@@ -126,21 +136,24 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
                   api_key_encrypted = $2,
                   api_version = $3,
                   is_active = $4,
+                  bing_search_api_key_encrypted = $5,
                   updated_at = NOW()
             WHERE id = 'default'`,
           parsed.endpoint,
           encryptedKey,
           parsed.apiVersion,
-          parsed.isActive
+          parsed.isActive,
+          encryptedBingKey
         );
       } else {
         await db.run(
-          `INSERT INTO azure_openai_config (id, endpoint, api_key_encrypted, api_version, is_active)
-           VALUES ('default', $1, $2, $3, $4)`,
+          `INSERT INTO azure_openai_config (id, endpoint, api_key_encrypted, api_version, is_active, bing_search_api_key_encrypted)
+           VALUES ('default', $1, $2, $3, $4, $5)`,
           parsed.endpoint,
           encryptedKey,
           parsed.apiVersion,
-          parsed.isActive
+          parsed.isActive,
+          encryptedBingKey
         );
       }
 
@@ -153,6 +166,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
           apiKey: displayKey,
           apiVersion: parsed.apiVersion,
           isActive: parsed.isActive,
+          bingSearchConfigured: !!encryptedBingKey,
         },
       });
     } catch (err) {
@@ -390,17 +404,19 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
 
       // If a deployment name is provided, try a tiny completion; otherwise list models
       if (parsed.deploymentName) {
+        // Test with max_completion_tokens (newer models require this)
         const completion = await client.chat.completions.create({
           model: parsed.deploymentName,
-          messages: [{ role: 'user', content: 'Hello' }],
-          max_tokens: 5,
-        });
+          messages: [{ role: 'user', content: 'Say "ok" and nothing else.' }],
+          max_completion_tokens: 10,
+        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
 
         res.json({
           ok: true,
           message: 'Connection successful — deployment responded.',
           model: completion.model,
           usage: completion.usage,
+          response: completion.choices?.[0]?.message?.content,
         });
       } else {
         const models = await client.models.list();
@@ -425,6 +441,97 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
         ok: false,
         error: message,
       });
+    }
+  });
+
+  // ── POST /azure-openai/diagnose — test Azure with different parameter combos
+  router.post('/azure-openai/diagnose', async (req, res) => {
+    try {
+      const config = await db.get<{ endpoint: string; api_key_encrypted: string; api_version: string }>(
+        "SELECT endpoint, api_key_encrypted, api_version FROM azure_openai_config WHERE id = 'default' AND is_active = TRUE"
+      );
+      if (!config) { res.json({ error: 'Azure not configured' }); return; }
+
+      const { deploymentName } = req.body as { deploymentName?: string };
+      if (!deploymentName) { res.json({ error: 'deploymentName required' }); return; }
+
+      const apiKey = decrypt(config.api_key_encrypted);
+      const results: Array<{ test: string; ok: boolean; error?: string; response?: string }> = [];
+
+      // Test 1: Basic non-streaming
+      try {
+        const client = new AzureOpenAI({ endpoint: config.endpoint, apiKey, apiVersion: config.api_version, deployment: deploymentName, timeout: 30_000 });
+        const r = await client.chat.completions.create({
+          model: deploymentName,
+          messages: [{ role: 'user', content: 'Say "test1 ok"' }],
+          max_completion_tokens: 10,
+        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        results.push({ test: 'basic (max_completion_tokens)', ok: true, response: r.choices?.[0]?.message?.content || '' });
+      } catch (e) { results.push({ test: 'basic (max_completion_tokens)', ok: false, error: (e as Error).message }); }
+
+      // Test 2: Streaming
+      try {
+        const client = new AzureOpenAI({ endpoint: config.endpoint, apiKey, apiVersion: config.api_version, deployment: deploymentName, timeout: 30_000 });
+        const stream = await client.chat.completions.create({
+          model: deploymentName,
+          messages: [{ role: 'user', content: 'Say "test2 ok"' }],
+          max_completion_tokens: 10,
+          stream: true,
+        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        let text = '';
+        for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
+        results.push({ test: 'streaming', ok: true, response: text });
+      } catch (e) { results.push({ test: 'streaming', ok: false, error: (e as Error).message }); }
+
+      // Test 3: With reasoning_effort
+      try {
+        const client = new AzureOpenAI({ endpoint: config.endpoint, apiKey, apiVersion: config.api_version, deployment: deploymentName, timeout: 60_000 });
+        const stream = await client.chat.completions.create({
+          model: deploymentName,
+          messages: [{ role: 'user', content: 'Say "test3 ok"' }],
+          max_completion_tokens: 10,
+          stream: true,
+          reasoning_effort: 'low',
+        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        let text = '';
+        for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
+        results.push({ test: 'streaming + reasoning_effort=low', ok: true, response: text });
+      } catch (e) { results.push({ test: 'streaming + reasoning_effort=low', ok: false, error: (e as Error).message }); }
+
+      // Test 4: Larger context
+      try {
+        const client = new AzureOpenAI({ endpoint: config.endpoint, apiKey, apiVersion: config.api_version, deployment: deploymentName, timeout: 60_000 });
+        const bigSystem = 'You are a helpful assistant. '.repeat(500); // ~14K chars
+        const stream = await client.chat.completions.create({
+          model: deploymentName,
+          messages: [{ role: 'system', content: bigSystem }, { role: 'user', content: 'Say "test4 ok"' }],
+          max_completion_tokens: 10,
+          stream: true,
+        } as Record<string, unknown> as Parameters<typeof client.chat.completions.create>[0]);
+        let text = '';
+        for await (const chunk of stream) { text += chunk.choices?.[0]?.delta?.content || ''; }
+        results.push({ test: 'streaming + 14K system prompt', ok: true, response: text });
+      } catch (e) { results.push({ test: 'streaming + 14K system prompt', ok: false, error: (e as Error).message }); }
+
+      // Test 5: 80K system prompt + reasoning_effort=high (matches real gap assessor)
+      try {
+        const client5 = new AzureOpenAI({ endpoint: config.endpoint, apiKey, apiVersion: config.api_version, deployment: deploymentName, timeout: 600_000, maxRetries: 1 });
+        const bigSystem5 = 'You are a compliance expert analyzing AML/CFT regulations for a Nordic credit institution. Assess compliance gaps thoroughly. '.repeat(650);
+        const stream5 = await client5.chat.completions.create({
+          model: deploymentName,
+          messages: [{ role: 'system', content: bigSystem5 }, { role: 'user', content: 'Say "test5 ok"' }],
+          max_completion_tokens: 10,
+          stream: true,
+          reasoning_effort: 'high',
+        } as Record<string, unknown> as Parameters<typeof client5.chat.completions.create>[0]);
+        let text5 = '';
+        for await (const chunk of stream5) { text5 += chunk.choices?.[0]?.delta?.content || ''; }
+        results.push({ test: '80K system + reasoning_effort=high', ok: true, response: text5 });
+      } catch (e) { results.push({ test: '80K system + reasoning_effort=high', ok: false, error: (e as Error).message }); }
+
+      res.json({ results, apiVersion: config.api_version, deployment: deploymentName });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

@@ -19,6 +19,9 @@ import { streamOpenAI } from '../services/adapters/openaiAdapter.js';
 import { streamGemini } from '../services/adapters/geminiAdapter.js';
 import { streamMistral } from '../services/adapters/mistralAdapter.js';
 import { streamOllama, listOllamaModels } from '../services/adapters/ollamaAdapter.js';
+import { streamAzureOpenAI } from '../services/adapters/azureOpenaiAdapter.js';
+import type { AzureOpenAIConfig } from '../services/adapters/azureOpenaiAdapter.js';
+import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
 import { getAutoAttachSkillIds } from '../services/skills-manager.js';
 import { isKnownAudience, getAudiencePrompt } from '../services/audience-adapter.js';
@@ -124,14 +127,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Ollama models are prefixed with 'ollama:' (e.g. 'ollama:llama3.2').
       // They are not in the MODEL_REGISTRY so we detect them by prefix first.
       const isOllamaModel = selectedModel.startsWith('ollama:');
-      const modelConfig = isOllamaModel ? undefined : await getModelConfig(selectedModel);
-      const provider = isOllamaModel ? 'ollama' : (modelConfig?.provider || 'anthropic');
+      const isAzureModel = selectedModel.startsWith('azure:');
+      const modelConfig = (isOllamaModel || isAzureModel) ? undefined : await getModelConfig(selectedModel, db);
+      const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : (modelConfig?.provider || 'anthropic');
 
       if (provider === 'anthropic') {
         if (!isApiKeyConfigured()) {
           res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
           return;
         }
+      } else if (provider === 'azure_openai') {
+        // Azure credentials are stored in DB, not env vars — validated at stream time
       } else if (provider !== 'ollama' && !isApiKeyAvailable(selectedModel)) {
         const keyName = modelConfig?.requiresApiKey || 'API_KEY';
         res.status(500).json({ error: `${keyName} not configured. Add it in Settings or your .env file.` });
@@ -986,6 +992,35 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         const temperature = getTemperature(selectedModel, precisionLevel);
         const maxTokens = modelConfig?.maxOutputTokens || 8192;
 
+        // Strip Claude-specific web search instructions from system prompt —
+        // non-Anthropic models don't have the web_search tool and will hallucinate tool calls
+        const webSearchWasRequested = tools.some(t => t.type === 'web_search_20250305');
+        composedPrompt = composedPrompt
+          .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
+          .replace(/\n{3,}/g, '\n\n');
+
+        // For Azure models: if web search was requested and Bing is configured, pre-search and inject results
+        if (webSearchWasRequested && provider === 'azure_openai') {
+          try {
+            const { getBingSearchApiKey, searchAndFormat, extractSearchQuery } = await import('../services/bing-search.js');
+            const bingKey = await getBingSearchApiKey(db);
+            if (bingKey) {
+              // Get last user message as search query
+              const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+              const queryText = lastUserMsg
+                ? (typeof lastUserMsg.content === 'string' ? lastUserMsg.content : JSON.stringify(lastUserMsg.content))
+                : '';
+              if (queryText) {
+                const searchQuery = extractSearchQuery(queryText);
+                const searchResults = await searchAndFormat(searchQuery, bingKey);
+                composedPrompt += `\n\n${searchResults}`;
+              }
+            }
+          } catch (bingErr) {
+            console.warn('[ANTON] Bing search failed, continuing without web results:', bingErr instanceof Error ? bingErr.message : bingErr);
+          }
+        }
+
         // Abort controller for non-Anthropic providers (timeout + client disconnect)
         const adapterAbort = new AbortController();
         req.on('close', () => adapterAbort.abort());
@@ -1048,6 +1083,36 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               seed: seed !== undefined ? seed : undefined,
               signal: adapterAbort.signal,
             }, res);
+          } else if (provider === 'azure_openai') {
+            // Resolve Azure config from DB
+            const deploymentName = selectedModel.replace(/^azure:/, '');
+            const azureDep = await db.get(
+              'SELECT deployment_name, model_name, is_reasoning_model, config_id FROM azure_openai_deployments WHERE deployment_name = $1 AND is_active = TRUE',
+              deploymentName
+            ) as { deployment_name: string; model_name: string; is_reasoning_model: boolean; config_id: string } | undefined;
+            if (!azureDep) throw new Error(`Azure deployment "${deploymentName}" not found or inactive`);
+            const azureCfg = await db.get(
+              'SELECT endpoint, api_key_encrypted, api_version FROM azure_openai_config WHERE id = $1 AND is_active = TRUE',
+              azureDep.config_id || 'default'
+            ) as { endpoint: string; api_key_encrypted: string; api_version: string } | undefined;
+            if (!azureCfg) throw new Error('Azure OpenAI not configured');
+            const azureConfig: AzureOpenAIConfig = {
+              endpoint: azureCfg.endpoint,
+              apiKey: decrypt(azureCfg.api_key_encrypted),
+              apiVersion: azureCfg.api_version,
+              deployment: azureDep.deployment_name,
+              isReasoningModel: azureDep.is_reasoning_model,
+            };
+            result = await streamAzureOpenAI({
+              model: azureDep.deployment_name,
+              system: composedPrompt,
+              messages: plainMessages,
+              temperature,
+              maxTokens,
+              thinkingLevel: thinking as import('../../src/lib/types.js').ThinkingLevel | undefined,
+              isReasoningModel: azureDep.is_reasoning_model,
+              seed: seed !== undefined ? seed : undefined,
+            }, azureConfig, res);
           } else if (provider === 'ollama') {
             // Strip the 'ollama:' prefix to get the bare Ollama model name
             const ollamaModel = selectedModel.replace(/^ollama:/, '');

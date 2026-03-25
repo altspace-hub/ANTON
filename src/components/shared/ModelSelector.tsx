@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MODELS } from '@/lib/constants';
 import type { ModelId, ModelInfo } from '@/lib/types';
-import { Star, HardDrive, ChevronDown, Check, Sparkles, AlertTriangle } from 'lucide-react';
+import { Star, HardDrive, ChevronDown, Check, Sparkles, AlertTriangle, Cloud } from 'lucide-react';
 
 // MGOV-03: Compute days until a model's EOL date (negative = already past)
 function daysUntilEol(eolDate: string): number {
@@ -43,10 +43,20 @@ interface ModelSelectorProps {
   variant?: 'dropdown' | 'cards';
 }
 
+interface AzureDeployment {
+  id: string;
+  deploymentName: string;
+  modelName: string;
+  displayName: string | null;
+  isReasoningModel: boolean;
+  isActive: boolean;
+}
+
 export default function ModelSelector({ value, onChange, variant = 'dropdown' }: ModelSelectorProps) {
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [ollamaChecked, setOllamaChecked] = useState(false);
   const [customModels, setCustomModels] = useState<ModelInfo[]>([]);
+  const [azureDeployments, setAzureDeployments] = useState<AzureDeployment[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +71,18 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
       })
       .finally(() => {
         setOllamaChecked(true);
+      });
+  }, []);
+
+  // Fetch Azure OpenAI deployments
+  useEffect(() => {
+    fetch('/api/azure-openai/deployments')
+      .then((r) => r.ok ? r.json() : { deployments: [] })
+      .then((data: { deployments?: AzureDeployment[] }) => {
+        setAzureDeployments((data.deployments ?? []).filter(d => d.isActive));
+      })
+      .catch(() => {
+        setAzureDeployments([]);
       });
   }, []);
 
@@ -93,8 +115,14 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
 
   const allModels = [...MODELS, ...customModels];
   const currentModel = allModels.find((m) => m.id === value);
-  const currentLabel = currentModel?.label || (typeof value === 'string' && value.startsWith('ollama:') ? value.replace('ollama:', '') : value);
+  const azureMatch = typeof value === 'string' && value.startsWith('azure:')
+    ? azureDeployments.find(d => d.deploymentName === value.replace('azure:', ''))
+    : null;
+  const currentLabel = currentModel?.label
+    || (azureMatch ? `Azure: ${azureMatch.displayName || azureMatch.deploymentName}` : null)
+    || (typeof value === 'string' && value.startsWith('ollama:') ? value.replace('ollama:', '') : value);
   const isCustomModel = customModels.some((m) => m.id === value);
+  const isAzureModel = !!azureMatch;
 
   // ── Dropdown variant (compact) ───────────────────────────────
   if (variant === 'dropdown') {
@@ -110,6 +138,12 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
             {currentModel?.recommended && (
               <span className="flex shrink-0 items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
                 <Star className="h-2.5 w-2.5" />
+              </span>
+            )}
+            {isAzureModel && (
+              <span className="flex shrink-0 items-center gap-1 rounded bg-blue-500/10 px-1.5 py-0.5 text-xs font-medium text-blue-400">
+                <Cloud className="h-2.5 w-2.5" />
+                Azure
               </span>
             )}
             {isCustomModel && (
@@ -185,6 +219,45 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                 </button>
               );
             })}
+
+            {/* Azure OpenAI section */}
+            {azureDeployments.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 border-t border-border">
+                  <Cloud className="h-3 w-3 text-blue-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-adv-gray">
+                    Azure OpenAI
+                  </span>
+                </div>
+                {azureDeployments.map((deployment) => {
+                  const modelId: ModelId = `azure:${deployment.deploymentName}`;
+                  const isActive = value === modelId;
+                  return (
+                    <button
+                      key={modelId}
+                      onClick={() => { onChange(modelId); setOpen(false); }}
+                      className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                        isActive
+                          ? 'bg-adv-teal-dim text-adv-teal'
+                          : 'hover:bg-adv-dark text-adv-off-white'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : ''}`}>
+                            {deployment.displayName || deployment.deploymentName}
+                          </span>
+                          <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-xs font-medium text-blue-400">
+                            Azure · {deployment.modelName}
+                          </span>
+                        </div>
+                      </div>
+                      {isActive && <Check className="h-4 w-4 shrink-0 text-adv-teal" />}
+                    </button>
+                  );
+                })}
+              </>
+            )}
 
             {/* Custom models section */}
             {customModels.length > 0 && (

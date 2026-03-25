@@ -726,6 +726,10 @@ if (APP_GATEWAY_ENABLED && appGatewaySvc) {
 
 let pgNotifyService: Awaited<ReturnType<typeof createPgNotifyService>> | null = null;
 
+// Allow long-running SSE streams (reasoning models can take 5-10 min)
+httpServer.timeout = 0;              // No socket timeout
+httpServer.keepAliveTimeout = 620_000; // 10 min + 20s buffer
+
 httpServer.listen(PORT, async () => {
   logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
 

@@ -15,23 +15,32 @@ import { callChat, mapModelToProvider } from './provider-router.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Model tier config ────────────────────────────────────────────────────────
-// Two tiers: 'sonnet' (fast, cheaper) or 'opus' (deep reasoning, higher quality)
-export type GapModelTier = 'sonnet' | 'opus';
+// Supports Claude tiers + any custom model ID (Azure, Mistral, OpenAI, etc.)
+export type GapModelTier = 'sonnet' | 'opus' | string;
 
 function getModelConfig(tier: GapModelTier) {
   if (tier === 'opus') {
     return {
-      model: 'claude-opus-4-6' as const,
-      thinkingLevel: 'investigate' as const,
+      model: 'claude-opus-4-6' as string,
+      thinkingLevel: 'investigate' as string,
       maxTokensBatch: 16000,
       maxTokensSynthesis: 128_000,
     };
   }
+  if (tier === 'sonnet') {
+    return {
+      model: 'claude-sonnet-4-6' as string,
+      thinkingLevel: 'investigate' as string,
+      maxTokensBatch: 40000,
+      maxTokensSynthesis: 64000,
+    };
+  }
+  // Custom model ID (Azure, Mistral, OpenAI, etc.)
   return {
-    model: 'claude-sonnet-4-6' as const,
-    thinkingLevel: 'investigate' as const,
-    maxTokensBatch: 40000,
-    maxTokensSynthesis: 64000,
+    model: tier,
+    thinkingLevel: 'think_hard' as string,
+    maxTokensBatch: 16384,
+    maxTokensSynthesis: 32768,
   };
 }
 
@@ -282,7 +291,8 @@ export async function runAssessmentBatch(
   batchIndex: number,
   totalBatches: number,
   extraSystemContext?: string,
-  modelTier: GapModelTier = 'sonnet'
+  modelTier: GapModelTier = 'sonnet',
+  db?: DatabaseAdapter
 ): Promise<AssessmentBatchResult> {
   const framework = loadFramework(frameworkId);
   if (!framework) throw new Error(`Framework ${frameworkId} not found`);
@@ -311,12 +321,15 @@ export async function runAssessmentBatch(
   const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
 
   const mc = getModelConfig(modelTier);
+  // For custom model IDs (azure:*, gpt-*, mistral-*), use directly; for Claude tiers, map via provider
+  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
   const result = await callChat({
-    model: mapModelToProvider(mc.model),
+    model: isCustomModel ? mc.model : mapModelToProvider(mc.model),
     system: systemPrompt,
     messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework) }],
     maxTokens: mc.maxTokensBatch,
     thinkingLevel: mc.thinkingLevel,
+    db,
   });
 
   const findings = JSON.parse(extractJson(result.text, 'array')) as ArticleFinding[];
@@ -328,7 +341,8 @@ export async function synthesiseCapabilityView(
   anthropic: Anthropic,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
-  modelTier: GapModelTier = 'sonnet'
+  modelTier: GapModelTier = 'sonnet',
+  db?: DatabaseAdapter
 ): Promise<{ json: string; reasoning: string }> {
   const findingsSummary = Object.entries(allFindings).map(([fw, findings]) => {
     const summary = findings.map(f => `${f.articleId}: ${f.score} (${f.priority}) — ${f.notes}`).join('\n');
@@ -340,10 +354,12 @@ export async function synthesiseCapabilityView(
   const criticalCount = Object.values(allFindings).flat().filter(f => f.priority === 'critical').length;
 
   const mc = getModelConfig(modelTier);
+  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
   const result = await callChat({
-    model: mapModelToProvider(mc.model),
+    model: isCustomModel ? mc.model : mapModelToProvider(mc.model),
     maxTokens: mc.maxTokensSynthesis,
     thinkingLevel: mc.thinkingLevel,
+    db,
     system: `You are a senior compliance transformation advisor with 20+ years of experience in AML/CFT regulatory implementation across Nordic and European financial institutions.
 
 Synthesise the article-level gap findings below into 8-12 cross-cutting capability themes. Each theme spans one or more regulatory articles and reflects a real organisational capability (not just a regulation grouping).
@@ -405,7 +421,8 @@ export async function generateBoardSummary(
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
-  modelTier: GapModelTier = 'sonnet'
+  modelTier: GapModelTier = 'sonnet',
+  db?: DatabaseAdapter
 ): Promise<{ summary: string; reasoning: string }> {
   const allFlat = Object.values(allFindings).flat();
   const redCount = allFlat.filter(f => f.score === 'red').length;
@@ -428,10 +445,12 @@ export async function generateBoardSummary(
   const frameworkNames = Object.keys(allFindings).join(', ');
 
   const mcBoard = getModelConfig(modelTier);
+  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
   const result = await callChat({
-    model: mapModelToProvider(mcBoard.model),
+    model: isCustomModel ? mcBoard.model : mapModelToProvider(mcBoard.model),
     maxTokens: mcBoard.maxTokensSynthesis,
     thinkingLevel: mcBoard.thinkingLevel,
+    db,
     system: `You are a senior compliance advisor with deep experience presenting to boards of Nordic and European financial institutions. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
 
 Structure:
@@ -503,7 +522,8 @@ export async function generateRoadmap(
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
-  modelTier: GapModelTier = 'sonnet'
+  modelTier: GapModelTier = 'sonnet',
+  db?: DatabaseAdapter
 ): Promise<{ json: string; reasoning: string }> {
   const criticalFindings = Object.entries(allFindings).flatMap(([fw, findings]) =>
     findings.filter(f => f.priority === 'critical' || f.priority === 'high')
@@ -515,10 +535,12 @@ export async function generateRoadmap(
   ).join('\n');
 
   const mcRoad = getModelConfig(modelTier);
+  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
   const result = await callChat({
-    model: mapModelToProvider(mcRoad.model),
+    model: isCustomModel ? mcRoad.model : mapModelToProvider(mcRoad.model),
     maxTokens: mcRoad.maxTokensSynthesis,
     thinkingLevel: mcRoad.thinkingLevel,
+    db,
     system: `You are a compliance transformation programme manager with extensive experience delivering AML/CFT remediation programmes for Nordic and European financial institutions. Build a detailed, phased remediation roadmap.
 
 Return a JSON object:

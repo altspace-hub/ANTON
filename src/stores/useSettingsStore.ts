@@ -25,13 +25,9 @@ function getInitialSidebarCollapsed(): boolean {
 export function getStoredDefaultModel(): ModelId {
   if (typeof window !== 'undefined') {
     const saved = safeStorage.getItem('openexpert-default-model');
-    if (
-      saved === 'claude-opus-4-6' ||
-      saved === 'claude-sonnet-4-6' ||
-      saved === 'claude-sonnet-4-5-20250929' ||
-      saved === 'claude-haiku-4-5-20251001'
-    ) {
-      return saved;
+    if (saved && saved.length > 0) {
+      // Accept any stored model ID — Claude, OpenAI, Azure, Mistral, Gemini, Ollama, custom
+      return saved as ModelId;
     }
   }
   return 'claude-opus-4-6';

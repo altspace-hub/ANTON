@@ -194,12 +194,40 @@ export async function streamToResponse(
   };
 
   try {
+    // Strip Claude-specific web search instructions for non-Anthropic providers
+    const webSearchWasRequested = config.system?.includes('WEB SEARCH ENABLED');
+    const cleanSystem = (s: string) => s
+      .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
+      .replace(/\n{3,}/g, '\n\n');
+
+    let systemPrompt = config.staticSystemPrompt
+      ? cleanSystem(`${config.staticSystemPrompt}\n\n${config.system}`)
+      : cleanSystem(config.system);
+
+    // For Azure models: if web search was requested and Bing is configured, pre-search
+    if (webSearchWasRequested && provider === 'azure_openai' && config.db) {
+      try {
+        const { getBingSearchApiKey, searchAndFormat, extractSearchQuery } = await import('./bing-search.js');
+        const bingKey = await getBingSearchApiKey(config.db);
+        if (bingKey) {
+          const lastUserMsg = [...config.messages].reverse().find(m => m.role === 'user');
+          const queryText = lastUserMsg
+            ? (typeof lastUserMsg.content === 'string' ? lastUserMsg.content : JSON.stringify(lastUserMsg.content))
+            : '';
+          if (queryText) {
+            const searchResults = await searchAndFormat(extractSearchQuery(queryText), bingKey);
+            systemPrompt += `\n\n${searchResults}`;
+          }
+        }
+      } catch (bingErr) {
+        console.warn('[ANTON] Bing search failed:', bingErr instanceof Error ? bingErr.message : bingErr);
+      }
+    }
+
     // Build unified request
     const unifiedReq: UnifiedLLMRequest = {
       model: config.model,
-      systemPrompt: config.staticSystemPrompt
-        ? `${config.staticSystemPrompt}\n\n${config.system}`
-        : config.system,
+      systemPrompt,
       messages: config.messages.map((m) => ({
         role: m.role,
         content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),

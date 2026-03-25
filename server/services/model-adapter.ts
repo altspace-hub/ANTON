@@ -9,7 +9,7 @@
  *
  * Supported Providers:
  * - Anthropic (Claude Opus, Sonnet, Haiku)
- * - OpenAI (GPT-4o, GPT-4o Mini)
+ * - OpenAI (GPT-5.4, GPT-4o, GPT-4o Mini)
  * - Google (Gemini 2.0 Flash)
  * - Mistral (Mistral Large)
  * - Ollama (local models: Llama, Mistral, Qwen, etc.)
@@ -25,6 +25,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import type { ModelProvider, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 import type { CustomModelConfig } from '../routes/settings.js';
+import { AzureOpenAIAdapter, type AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 
 // ── Unified Request Interface ──────────────────────────────────
 
@@ -549,7 +550,8 @@ class OllamaAdapter extends BaseAdapter {
 
 export function createModelAdapter(
   provider: ModelProvider,
-  apiKey?: string
+  apiKey?: string,
+  azureConfig?: AzureOpenAIConfig
 ): BaseAdapter {
   switch (provider) {
     case 'anthropic':
@@ -559,6 +561,10 @@ export function createModelAdapter(
     case 'openai':
       if (!apiKey) throw new Error('OpenAI API key required');
       return new OpenAIAdapter(apiKey);
+
+    case 'azure_openai':
+      if (!azureConfig) throw new Error('Azure OpenAI config required (endpoint, apiKey, apiVersion, deployment)');
+      return new AzureOpenAIAdapter(azureConfig) as unknown as BaseAdapter;
 
     case 'google':
       if (!apiKey) throw new Error('Google API key required');
@@ -601,6 +607,7 @@ export async function getCustomModelConfigs(db: DatabaseAdapter): CustomModelCon
 
 export function getProviderFromModelId(modelId: string, db?: DatabaseAdapter): ModelProvider {
   if (modelId.startsWith('claude-')) return 'anthropic';
+  if (modelId.startsWith('azure:')) return 'azure_openai';
   if (modelId.startsWith('gpt-')) return 'openai';
   if (modelId.startsWith('gemini-')) return 'google';
   if (modelId.startsWith('mistral-') || modelId.startsWith('magistral-')) return 'mistral';

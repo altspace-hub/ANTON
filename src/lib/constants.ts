@@ -3343,6 +3343,32 @@ export const AREAS = [
   },
 
   // Area 37 (Insurance & Reinsurance Compliance) merged into 'insurance' area above
+
+  // ── Pillar Areas (top-level navigation pillars with dedicated UIs) ──────────
+  {
+    id: 'procure',
+    label: 'Procure',
+    shortLabel: 'Procure',
+    icon: 'ShoppingCart',
+    color: 'adv-blue',
+    moduleIds: [],
+  },
+  {
+    id: 'civic',
+    label: 'Civic',
+    shortLabel: 'Civic',
+    icon: 'Landmark',
+    color: 'adv-green',
+    moduleIds: [],
+  },
+  {
+    id: 'grow',
+    label: 'Grow',
+    shortLabel: 'Grow',
+    icon: 'TrendingUp',
+    color: 'adv-teal',
+    moduleIds: [],
+  },
 ] as const;
 
 export const MODELS: ModelInfo[] = [
@@ -3397,9 +3423,22 @@ export const MODELS: ModelInfo[] = [
   },
   // ── OpenAI ────────────────────────────────────────────────
   {
+    id: 'gpt-5.4',
+    label: 'GPT-5.4',
+    description: 'OpenAI latest flagship. Advanced reasoning, coding, and instruction following.',
+    inputCostPer1M: 5,
+    outputCostPer1M: 15,
+    maxOutput: 32768,
+    provider: 'openai',
+    contextWindow: 256000,
+    costTier: 3,
+    supportsSeed: true,
+    recommended: true,
+  },
+  {
     id: 'gpt-4o',
     label: 'GPT-4o',
-    description: 'OpenAI flagship. Strong general reasoning and instruction following.',
+    description: 'OpenAI previous flagship. Strong general reasoning and instruction following.',
     inputCostPer1M: 2.5,
     outputCostPer1M: 10,
     maxOutput: 16384,

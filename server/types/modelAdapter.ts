@@ -2,7 +2,7 @@
 // Multi-LLM Model Adapter — Type definitions & registry
 // ═══════════════════════════════════════════════════════════
 
-export type ModelProvider = 'anthropic' | 'openai' | 'google' | 'mistral';
+export type ModelProvider = 'anthropic' | 'openai' | 'azure_openai' | 'google' | 'mistral';
 export type PrecisionLevel = 'strict' | 'precise' | 'balanced' | 'creative' | 'exploratory';
 
 export interface ModelConfig {
@@ -93,6 +93,23 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = {
     supportsNativeReasoning: false,
   },
   // ── OpenAI ─────────────────────────────────────────────────
+  'gpt-5.4': {
+    provider: 'openai',
+    modelId: 'gpt-5.4',
+    displayName: 'GPT-5.4',
+    contextWindow: 256000,
+    maxOutputTokens: 32768,
+    supportsThinking: false,
+    supportsJsonMode: true,
+    supportsPromptCaching: false,
+    supportsSeed: true,
+    temperatureRange: [0, 2],
+    costPer1MInput: 5,
+    costPer1MOutput: 15,
+    requiresApiKey: 'OPENAI_API_KEY',
+    costTier: 3,
+    supportsNativeReasoning: false,
+  },
   'gpt-4.1': {
     provider: 'openai',
     modelId: 'gpt-4.1',
@@ -286,10 +303,11 @@ export const MODEL_REGISTRY: Record<string, ModelConfig> = {
 };
 
 export const TEMPERATURE_MAP: Record<ModelProvider, Record<PrecisionLevel, number>> = {
-  anthropic: { strict: 0.0, precise: 0.2, balanced: 0.5, creative: 0.7, exploratory: 0.9 },
-  openai:    { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
-  google:    { strict: 0.5, precise: 0.7, balanced: 1.0, creative: 1.0, exploratory: 1.2 },
-  mistral:   { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
+  anthropic:     { strict: 0.0, precise: 0.2, balanced: 0.5, creative: 0.7, exploratory: 0.9 },
+  openai:        { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
+  azure_openai:  { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
+  google:        { strict: 0.5, precise: 0.7, balanced: 1.0, creative: 1.0, exploratory: 1.2 },
+  mistral:       { strict: 0.0, precise: 0.3, balanced: 0.7, creative: 1.2, exploratory: 1.6 },
 };
 
 export function getTemperature(modelId: string, precision: PrecisionLevel): number {
@@ -346,10 +364,44 @@ export async function getModelConfig(modelId: string, db?: import('../db/databas
     }
   }
 
+  // Fallback: check Azure deployments
+  if (db && modelId.startsWith('azure:')) {
+    const deploymentName = modelId.replace('azure:', '');
+    try {
+      const dep = await db.get(
+        'SELECT deployment_name, model_name, is_reasoning_model FROM azure_openai_deployments WHERE deployment_name = $1 AND is_active = TRUE',
+        deploymentName
+      ) as { deployment_name: string; model_name: string; is_reasoning_model: boolean } | undefined;
+      if (dep) {
+        return {
+          provider: 'azure_openai' as ModelProvider,
+          modelId,
+          displayName: `Azure: ${dep.deployment_name}`,
+          contextWindow: 128000,
+          maxOutputTokens: 16384,
+          supportsThinking: false,
+          supportsJsonMode: true,
+          supportsPromptCaching: false,
+          supportsSeed: true,
+          temperatureRange: [0, 2],
+          costPer1MInput: 0,
+          costPer1MOutput: 0,
+          requiresApiKey: 'AZURE_OPENAI',
+          costTier: 2,
+          supportsNativeReasoning: dep.is_reasoning_model,
+        };
+      }
+    } catch {
+      // Skip
+    }
+  }
+
   return undefined;
 }
 
 export function isApiKeyAvailable(modelId: string): boolean {
+  // Azure models use DB-stored credentials, not env vars
+  if (modelId.startsWith('azure:')) return true;
   const config = MODEL_REGISTRY[modelId];
   if (!config) return false;
   return !!process.env[config.requiresApiKey];

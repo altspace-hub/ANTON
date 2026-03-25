@@ -11,6 +11,7 @@ export type ModelId =
   | 'claude-sonnet-4-5-20250929'
   | 'claude-haiku-4-5-20251001'
   // OpenAI
+  | 'gpt-5.4'
   | 'gpt-4.1'
   | 'gpt-4o'
   | 'gpt-4o-mini'
@@ -29,7 +30,7 @@ export type ModelId =
   | `ollama:${string}`
   | (string & {}); // allows additional model IDs without breaking type narrowing
 
-export type ModelProvider = 'anthropic' | 'openai' | 'google' | 'mistral' | 'ollama';
+export type ModelProvider = 'anthropic' | 'openai' | 'azure_openai' | 'google' | 'mistral' | 'ollama';
 
 export type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 

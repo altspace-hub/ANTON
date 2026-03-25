@@ -310,8 +310,37 @@ function GapAssessmentWizardInner() {
     maturity: 3,
     concerns: '',
     documents: '',
-    modelTier: 'sonnet' as 'sonnet' | 'opus',
+    modelTier: 'sonnet' as string,
   });
+
+  // Fetch available non-Claude models for the model selector
+  const [extraModels, setExtraModels] = useState<Array<{ id: string; label: string; provider: string }>>([]);
+  useEffect(() => {
+    // Azure deployments
+    fetch('/api/azure-openai/deployments')
+      .then(r => r.ok ? r.json() : { deployments: [] })
+      .then((data: { deployments?: Array<{ deploymentName: string; displayName: string | null; modelName: string; isActive: boolean }> }) => {
+        const models: Array<{ id: string; label: string; provider: string }> = [];
+        for (const d of (data.deployments ?? []).filter(d => d.isActive !== false)) {
+          models.push({ id: `azure:${d.deploymentName}`, label: d.displayName || d.deploymentName, provider: 'Azure' });
+        }
+        // Check provider status for Mistral/OpenAI
+        fetch('/api/settings/provider-status')
+          .then(r => r.json())
+          .then((status: Record<string, boolean>) => {
+            if (status.MISTRAL_API_KEY) {
+              models.push({ id: 'mistral-large-latest', label: 'Mistral Large 3', provider: 'Mistral' });
+            }
+            if (status.OPENAI_API_KEY) {
+              models.push({ id: 'gpt-5.4', label: 'GPT-5.4', provider: 'OpenAI' });
+              models.push({ id: 'gpt-4o', label: 'GPT-4o', provider: 'OpenAI' });
+            }
+            setExtraModels(models);
+          })
+          .catch(() => setExtraModels(models));
+      })
+      .catch(() => {});
+  }, []);
   const [scopeConfig, setScopeConfig] = useState<{ selectedThemes: string[] }>({ selectedThemes: [] });
   const [progressEvents, setProgressEvents] = useState<ProgressEvent[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -1090,6 +1119,21 @@ function GapAssessmentWizardInner() {
                   </div>
                   <p className="text-[11px] text-adv-gray leading-snug">Maximum reasoning depth. Adaptive thinking at full effort. Best for critical, company-shaping assessments.</p>
                 </button>
+                {extraModels.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setContextConfig(c => ({ ...c, modelTier: m.id }))}
+                    className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === m.id ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === m.id ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
+                      <span className="text-sm font-medium text-adv-off-white">{m.label}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium">{m.provider}</span>
+                    </div>
+                    <p className="text-[11px] text-adv-gray leading-snug">{m.provider} model. Good for multi-provider comparison or when Claude is unavailable.</p>
+                  </button>
+                ))}
               </div>
             </div>
 

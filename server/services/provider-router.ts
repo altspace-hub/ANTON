@@ -21,6 +21,8 @@ import { streamMistral, type MistralStreamParams } from './adapters/mistralAdapt
 import { streamOpenAI } from './adapters/openaiAdapter.js';
 import { streamGemini } from './adapters/geminiAdapter.js';
 import { streamOllama } from './adapters/ollamaAdapter.js';
+import { streamAzureOpenAI } from './adapters/azureOpenaiAdapter.js';
+import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { MODEL_CAPABILITIES, getThinkingConfig } from '../config/model-capabilities.js';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -46,6 +48,8 @@ export interface StreamChatConfig {
   tools?: Array<{ type: string; name?: string; [key: string]: unknown }>;
   /** Seed for reproducible outputs */
   seed?: number;
+  /** Database adapter — required for Azure OpenAI config resolution */
+  db?: import('../db/database.js').DatabaseAdapter;
 }
 
 export interface ChatResult {
@@ -219,6 +223,14 @@ export async function streamChat(
     return streamChatAnthropic(modelId, config, temperature, maxTokens, res);
   }
 
+  // Strip Claude-specific web search instructions for non-Anthropic providers
+  config = {
+    ...config,
+    system: config.system
+      .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
+      .replace(/\n{3,}/g, '\n\n'),
+  };
+
   // ── Mistral ──
   if (provider === 'mistral') {
     return streamChatMistral(modelId, config, temperature, maxTokens, res);
@@ -246,6 +258,41 @@ export async function streamChat(
       temperature,
       maxTokens,
     }, res);
+    return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+  }
+
+  // ── Azure OpenAI ──
+  if (provider === 'azure_openai') {
+    if (!config.db) throw new Error('Database adapter required for Azure OpenAI');
+    const deploymentName = modelId.replace('azure:', '');
+    const { decrypt } = await import('./credential-vault.js');
+    const dep = await config.db.get(
+      'SELECT deployment_name, model_name, is_reasoning_model, config_id FROM azure_openai_deployments WHERE deployment_name = $1 AND is_active = TRUE',
+      deploymentName
+    ) as { deployment_name: string; model_name: string; is_reasoning_model: boolean; config_id: string } | undefined;
+    if (!dep) throw new Error(`Azure deployment "${deploymentName}" not found or inactive`);
+    const cfg = await config.db.get(
+      'SELECT endpoint, api_key_encrypted, api_version FROM azure_openai_config WHERE id = $1 AND is_active = TRUE',
+      dep.config_id || 'default'
+    ) as { endpoint: string; api_key_encrypted: string; api_version: string } | undefined;
+    if (!cfg) throw new Error('Azure OpenAI not configured');
+    const azureConfig: AzureOpenAIConfig = {
+      endpoint: cfg.endpoint,
+      apiKey: decrypt(cfg.api_key_encrypted),
+      apiVersion: cfg.api_version,
+      deployment: dep.deployment_name,
+      isReasoningModel: dep.is_reasoning_model,
+    };
+    const result = await streamAzureOpenAI({
+      model: dep.deployment_name,
+      system: config.system,
+      messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+      temperature,
+      maxTokens,
+      thinkingLevel: config.thinkingLevel as import('../../src/lib/types.js').ThinkingLevel | undefined,
+      isReasoningModel: dep.is_reasoning_model,
+      seed: config.seed,
+    }, azureConfig, res);
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }
 
@@ -607,6 +654,47 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       thinking: '',
       inputTokens: data.usage?.prompt_tokens || 0,
       outputTokens: data.usage?.completion_tokens || 0,
+    };
+  }
+
+  // ── Azure OpenAI (non-streaming) ──
+  if (provider === 'azure_openai') {
+    if (!config.db) throw new Error('Database adapter required for Azure OpenAI');
+    const deploymentName = modelId.replace('azure:', '');
+    const { decrypt } = await import('./credential-vault.js');
+    const dep = await config.db.get(
+      'SELECT deployment_name, model_name, is_reasoning_model, config_id FROM azure_openai_deployments WHERE deployment_name = $1 AND is_active = TRUE',
+      deploymentName
+    ) as { deployment_name: string; model_name: string; is_reasoning_model: boolean; config_id: string } | undefined;
+    if (!dep) throw new Error(`Azure deployment "${deploymentName}" not found or inactive`);
+    const cfg = await config.db.get(
+      'SELECT endpoint, api_key_encrypted, api_version FROM azure_openai_config WHERE id = $1 AND is_active = TRUE',
+      dep.config_id || 'default'
+    ) as { endpoint: string; api_key_encrypted: string; api_version: string } | undefined;
+    if (!cfg) throw new Error('Azure OpenAI not configured');
+
+    const { AzureOpenAIAdapter } = await import('./adapters/azureOpenaiAdapter.js');
+    const adapter = new AzureOpenAIAdapter({
+      endpoint: cfg.endpoint,
+      apiKey: decrypt(cfg.api_key_encrypted),
+      apiVersion: cfg.api_version,
+      deployment: dep.deployment_name,
+      isReasoningModel: dep.is_reasoning_model,
+    });
+    const result = await adapter.sendRequest({
+      model: dep.deployment_name,
+      systemPrompt: config.system,
+      messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+      thinking: config.thinkingLevel as import('../../src/lib/types.js').ThinkingLevel | undefined,
+      creativity: 'balanced',
+      maxTokens,
+      seed: config.seed,
+    });
+    return {
+      text: result.content,
+      thinking: '',
+      inputTokens: result.usage.inputTokens,
+      outputTokens: result.usage.outputTokens,
     };
   }
 
