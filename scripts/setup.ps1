@@ -5,7 +5,7 @@ Set-Location $RepoRoot
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-function Write-Step($n, $msg) { Write-Host "  [$n/6] $msg" -ForegroundColor Cyan }
+function Write-Step($n, $msg) { Write-Host "  [$n/7] $msg" -ForegroundColor Cyan }
 function Write-OK($msg)       { Write-Host "    OK  $msg" -ForegroundColor Green }
 function Write-Fail($msg)     { Write-Host "  FAIL  $msg" -ForegroundColor Red }
 function Write-Info($msg)     { Write-Host "        $msg" -ForegroundColor DarkGray }
@@ -114,10 +114,61 @@ if ($hasPlaceholder) {
     Write-OK "API key already set in .env"
 }
 
-# ── Step 4: Install dependencies ──────────────────────────────────────────────
+# ── Step 4: Database choice (PostgreSQL or SQLite) ────────────────────────────
 
 Write-Blank
-Write-Step 4 "Installing dependencies  (1-2 min on first run)..."
+Write-Step 4 "Configuring database..."
+
+$envContent = Get-Content $envFile -Raw
+$hasDbUrl = $envContent -match '^\s*DATABASE_URL\s*=' -and $envContent -notmatch '^\s*#\s*DATABASE_URL'
+
+if ($hasDbUrl) {
+    Write-OK "PostgreSQL already configured in .env"
+} else {
+    Write-Host ""
+    Write-Host "  ANTON supports two database modes:" -ForegroundColor Cyan
+    Write-Host "    [1] PostgreSQL  (recommended — required for team mode & Azure OpenAI)" -ForegroundColor White
+    Write-Host "    [2] SQLite      (simple local mode — no setup needed)" -ForegroundColor DarkGray
+    Write-Host ""
+    $dbChoice = Read-Host "  Choose database [1/2] (default: 1)"
+
+    if ($dbChoice -eq '2') {
+        Write-OK "Using SQLite (local mode)"
+    } else {
+        Write-Host ""
+        Write-Host "  PostgreSQL connection string format:" -ForegroundColor DarkCyan
+        Write-Host "    postgresql://username:password@localhost:5432/database_name" -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "  If PostgreSQL is not installed yet:" -ForegroundColor DarkCyan
+        Write-Host "    1. Download from https://www.postgresql.org/download/" -ForegroundColor DarkGray
+        Write-Host "    2. During install, set a password for the 'postgres' user" -ForegroundColor DarkGray
+        Write-Host "    3. Open pgAdmin or psql and run:" -ForegroundColor DarkGray
+        Write-Host "       CREATE USER anton WITH PASSWORD 'your_password';" -ForegroundColor Yellow
+        Write-Host "       CREATE DATABASE anton OWNER anton;" -ForegroundColor Yellow
+        Write-Host ""
+        $dbUrl = Read-Host "  Paste your PostgreSQL connection string"
+        $dbUrl = $dbUrl.Trim()
+
+        if ($dbUrl -match '^postgres') {
+            # Add DATABASE_URL to .env (uncomment or append)
+            if ($envContent -match '#\s*DATABASE_URL=') {
+                $envContent = $envContent -replace '#\s*DATABASE_URL=.*', "DATABASE_URL=$dbUrl"
+            } else {
+                $envContent += "`nDATABASE_URL=$dbUrl`n"
+            }
+            Set-Content -Path $envFile -Value $envContent -NoNewline
+            Write-OK "PostgreSQL connection saved to .env"
+        } else {
+            Write-Host "    >>  Doesn't look like a PostgreSQL URL. Falling back to SQLite." -ForegroundColor Yellow
+            Write-Host "        You can add DATABASE_URL to .env manually later." -ForegroundColor DarkGray
+        }
+    }
+}
+
+# ── Step 5: Install dependencies ──────────────────────────────────────────────
+
+Write-Blank
+Write-Step 5 "Installing dependencies  (1-2 min on first run)..."
 & pnpm install
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Dependency installation failed."
@@ -128,10 +179,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-OK "Dependencies installed"
 
-# ── Step 5: Database ──────────────────────────────────────────────────────────
+# ── Step 6: Database initialization ───────────────────────────────────────────
 
 Write-Blank
-Write-Step 5 "Setting up database..."
+Write-Step 6 "Setting up database..."
 & pnpm run db:init
 if ($LASTEXITCODE -ne 0) {
     Write-Fail "Database setup failed."
@@ -142,10 +193,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-OK "Database ready"
 
-# ── Step 6: Build ─────────────────────────────────────────────────────────────
+# ── Step 7: Build ─────────────────────────────────────────────────────────────
 
 Write-Blank
-Write-Step 6 "Building ANTON  (~30 seconds)..."
+Write-Step 7 "Building ANTON  (~30 seconds)..."
 $env:ANTHROPIC_API_KEY = if ($apiKey -and $apiKey -match '^sk-ant-') { $apiKey } else { "sk-ant-placeholder-for-build" }
 & pnpm run build
 if ($LASTEXITCODE -ne 0) {
