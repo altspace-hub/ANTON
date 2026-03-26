@@ -11,6 +11,32 @@ function Write-Fail($msg)     { Write-Host "  FAIL  $msg" -ForegroundColor Red }
 function Write-Info($msg)     { Write-Host "        $msg" -ForegroundColor DarkGray }
 function Write-Blank          { Write-Host "" }
 
+# ── Find psql on Windows ─────────────────────────────────────────────────────
+
+function Find-Psql {
+    # Check PATH first
+    $inPath = Get-Command psql -ErrorAction SilentlyContinue
+    if ($inPath) { return $inPath.Source }
+
+    # Check common PostgreSQL install locations
+    $pgDirs = @(
+        "C:\Program Files\PostgreSQL",
+        "C:\Program Files (x86)\PostgreSQL",
+        "$env:ProgramFiles\PostgreSQL"
+    )
+    foreach ($base in $pgDirs) {
+        if (Test-Path $base) {
+            # Find the highest version
+            $versions = Get-ChildItem $base -Directory | Sort-Object Name -Descending
+            foreach ($ver in $versions) {
+                $psqlPath = Join-Path $ver.FullName "bin\psql.exe"
+                if (Test-Path $psqlPath) { return $psqlPath }
+            }
+        }
+    }
+    return $null
+}
+
 # ── Banner ────────────────────────────────────────────────────────────────────
 
 Clear-Host
@@ -114,54 +140,95 @@ if ($hasPlaceholder) {
     Write-OK "API key already set in .env"
 }
 
-# ── Step 4: Database choice (PostgreSQL or SQLite) ────────────────────────────
+# ── Step 4: PostgreSQL — auto-detect and configure ────────────────────────────
 
 Write-Blank
-Write-Step 4 "Configuring database..."
+Write-Step 4 "Setting up PostgreSQL..."
 
+# Re-read .env in case step 3 changed it
 $envContent = Get-Content $envFile -Raw
-$hasDbUrl = $envContent -match '^\s*DATABASE_URL\s*=' -and $envContent -notmatch '^\s*#\s*DATABASE_URL'
+$hasDbUrl = ($envContent -match '(?m)^\s*DATABASE_URL\s*=') -and ($envContent -notmatch '(?m)^\s*#\s*DATABASE_URL')
 
 if ($hasDbUrl) {
     Write-OK "PostgreSQL already configured in .env"
 } else {
-    Write-Host ""
-    Write-Host "  ANTON supports two database modes:" -ForegroundColor Cyan
-    Write-Host "    [1] PostgreSQL  (recommended — required for team mode & Azure OpenAI)" -ForegroundColor White
-    Write-Host "    [2] SQLite      (simple local mode — no setup needed)" -ForegroundColor DarkGray
-    Write-Host ""
-    $dbChoice = Read-Host "  Choose database [1/2] (default: 1)"
+    $psqlPath = Find-Psql
 
-    if ($dbChoice -eq '2') {
-        Write-OK "Using SQLite (local mode)"
-    } else {
-        Write-Host ""
-        Write-Host "  PostgreSQL connection string format:" -ForegroundColor DarkCyan
-        Write-Host "    postgresql://username:password@localhost:5432/database_name" -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  If PostgreSQL is not installed yet:" -ForegroundColor DarkCyan
-        Write-Host "    1. Download from https://www.postgresql.org/download/" -ForegroundColor DarkGray
-        Write-Host "    2. During install, set a password for the 'postgres' user" -ForegroundColor DarkGray
-        Write-Host "    3. Open pgAdmin or psql and run:" -ForegroundColor DarkGray
-        Write-Host "       CREATE USER anton WITH PASSWORD 'your_password';" -ForegroundColor Yellow
-        Write-Host "       CREATE DATABASE anton OWNER anton;" -ForegroundColor Yellow
-        Write-Host ""
-        $dbUrl = Read-Host "  Paste your PostgreSQL connection string"
-        $dbUrl = $dbUrl.Trim()
+    if (-not $psqlPath) {
+        Write-Fail "PostgreSQL not found."
+        Write-Blank
+        Write-Host "  ANTON requires PostgreSQL. Install it:" -ForegroundColor White
+        Write-Host "    1. Download from https://www.postgresql.org/download/windows/" -ForegroundColor DarkCyan
+        Write-Host "    2. Run the installer (use default port 5432)" -ForegroundColor DarkCyan
+        Write-Host "    3. Set a password for the 'postgres' user when prompted" -ForegroundColor DarkCyan
+        Write-Host "    4. Re-run this setup script after installation" -ForegroundColor DarkCyan
+        Write-Blank
+        Write-Info "Or install via:  winget install PostgreSQL.PostgreSQL"
+        Write-Blank
+        Read-Host "  Press Enter to close"
+        exit 1
+    }
 
-        if ($dbUrl -match '^postgres') {
-            # Add DATABASE_URL to .env (uncomment or append)
-            if ($envContent -match '#\s*DATABASE_URL=') {
-                $envContent = $envContent -replace '#\s*DATABASE_URL=.*', "DATABASE_URL=$dbUrl"
-            } else {
-                $envContent += "`nDATABASE_URL=$dbUrl`n"
-            }
-            Set-Content -Path $envFile -Value $envContent -NoNewline
-            Write-OK "PostgreSQL connection saved to .env"
-        } else {
-            Write-Host "    >>  Doesn't look like a PostgreSQL URL. Falling back to SQLite." -ForegroundColor Yellow
-            Write-Host "        You can add DATABASE_URL to .env manually later." -ForegroundColor DarkGray
+    Write-Info "Found psql at: $psqlPath"
+
+    # Default credentials for the ANTON database
+    $pgUser     = "anton"
+    $pgPassword = "anton"
+    $pgDatabase = "anton"
+    $pgHost     = "localhost"
+    $pgPort     = "5432"
+
+    # Ask for postgres superuser password to create the anton user/database
+    Write-Blank
+    Write-Host "  PostgreSQL found. Creating the ANTON database automatically." -ForegroundColor White
+    Write-Host "  Enter the password for the 'postgres' superuser" -ForegroundColor DarkCyan
+    Write-Host "  (the one you set when installing PostgreSQL):" -ForegroundColor DarkCyan
+    Write-Blank
+    $pgAdminPassword = Read-Host "  postgres password"
+    $pgAdminPassword = $pgAdminPassword.Trim()
+
+    # Set PGPASSWORD for non-interactive psql
+    $env:PGPASSWORD = $pgAdminPassword
+
+    # Create user (ignore error if already exists)
+    Write-Info "Creating user '$pgUser'..."
+    $createUserSql = "DO `$`$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$pgUser') THEN CREATE ROLE $pgUser WITH LOGIN PASSWORD '$pgPassword' CREATEDB; END IF; END `$`$;"
+    & $psqlPath -h $pgHost -p $pgPort -U postgres -c $createUserSql 2>&1 | Out-Null
+
+    # Create database (ignore error if already exists)
+    Write-Info "Creating database '$pgDatabase'..."
+    & $psqlPath -h $pgHost -p $pgPort -U postgres -c "SELECT 1 FROM pg_database WHERE datname = '$pgDatabase'" -t 2>&1 | Out-String | ForEach-Object {
+        if ($_.Trim() -ne "1") {
+            & $psqlPath -h $pgHost -p $pgPort -U postgres -c "CREATE DATABASE $pgDatabase OWNER $pgUser" 2>&1 | Out-Null
         }
+    }
+
+    # Clear admin password from environment
+    Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+
+    # Test connection with the anton user
+    $env:PGPASSWORD = $pgPassword
+    $testResult = & $psqlPath -h $pgHost -p $pgPort -U $pgUser -d $pgDatabase -c "SELECT 1" -t 2>&1
+    Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+
+    if ($testResult -match "1") {
+        # Save DATABASE_URL to .env
+        $dbUrl = "postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}"
+        if ($envContent -match '#\s*DATABASE_URL=') {
+            $envContent = $envContent -replace '(?m)#\s*DATABASE_URL=.*', "DATABASE_URL=$dbUrl"
+        } else {
+            $envContent += "`nDATABASE_URL=$dbUrl`n"
+        }
+        Set-Content -Path $envFile -Value $envContent -NoNewline
+        Write-OK "PostgreSQL database ready (anton@localhost:5432/anton)"
+    } else {
+        Write-Fail "Could not connect to PostgreSQL."
+        Write-Info "Check that PostgreSQL is running and the postgres password is correct."
+        Write-Info "You can add DATABASE_URL to .env manually:"
+        Write-Info "  DATABASE_URL=postgresql://anton:anton@localhost:5432/anton"
+        Write-Blank
+        Read-Host "  Press Enter to close"
+        exit 1
     }
 }
 
@@ -179,34 +246,34 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-OK "Dependencies installed"
 
-# ── Step 6: Database initialization ───────────────────────────────────────────
+# ── Step 6: Ollama (embedding model) ─────────────────────────────────────────
 
 Write-Blank
-Write-Step 6 "Setting up database..."
+Write-Step 6 "Checking Ollama (for knowledge memory)..."
+$ollamaVersion = & ollama --version 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-OK "Ollama $ollamaVersion"
+    Write-Info "Pulling embedding model (nomic-embed-text)..."
+    & ollama pull nomic-embed-text 2>&1 | Out-Null
+    Write-OK "Embedding model ready"
+} else {
+    Write-Host "    >>  Ollama not found (optional — knowledge memory won't work)" -ForegroundColor Yellow
+    Write-Info "Install from https://ollama.com then run: ollama pull nomic-embed-text"
+}
+
+# ── Step 7: Initialize database schema ────────────────────────────────────────
+
+Write-Blank
+Write-Step 7 "Initializing database schema..."
 & pnpm run db:init
 if ($LASTEXITCODE -ne 0) {
-    Write-Fail "Database setup failed."
+    Write-Fail "Database initialization failed."
     Write-Info "Try running  pnpm run db:init  manually to see the full error."
     Write-Blank
     Read-Host "  Press Enter to close"
     exit 1
 }
-Write-OK "Database ready"
-
-# ── Step 7: Build ─────────────────────────────────────────────────────────────
-
-Write-Blank
-Write-Step 7 "Building ANTON  (~30 seconds)..."
-$env:ANTHROPIC_API_KEY = if ($apiKey -and $apiKey -match '^sk-ant-') { $apiKey } else { "sk-ant-placeholder-for-build" }
-& pnpm run build
-if ($LASTEXITCODE -ne 0) {
-    Write-Fail "Build failed."
-    Write-Info "Run  pnpm run build  manually to see the full error."
-    Write-Blank
-    Read-Host "  Press Enter to close"
-    exit 1
-}
-Write-OK "Build complete"
+Write-OK "Database schema ready"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
@@ -217,7 +284,10 @@ Write-Host "  |   Setup complete! ANTON is ready.       |" -ForegroundColor Gree
 Write-Host "  |                                         |" -ForegroundColor Green
 Write-Host "  +-----------------------------------------+" -ForegroundColor Green
 Write-Blank
-Write-Host "  To start ANTON:  double-click  start-anton.bat" -ForegroundColor White
-Write-Host "  Then open:       http://localhost:3001" -ForegroundColor DarkCyan
+Write-Host "  To start ANTON:" -ForegroundColor White
+Write-Host "    pnpm run dev            (development)" -ForegroundColor DarkCyan
+Write-Host "    start-anton.bat         (production)" -ForegroundColor DarkCyan
+Write-Blank
+Write-Host "  Then open:  http://localhost:3001" -ForegroundColor DarkCyan
 Write-Blank
 Read-Host "  Press Enter to close"
