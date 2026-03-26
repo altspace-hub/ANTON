@@ -257,7 +257,7 @@ if ($LASTEXITCODE -eq 0) {
     & ollama pull nomic-embed-text 2>&1 | Out-Null
     Write-OK "Embedding model ready"
 } else {
-    Write-Host "    >>  Ollama not found (optional — knowledge memory won't work)" -ForegroundColor Yellow
+    Write-Host "    >>  Ollama not found (optional — knowledge memory will not work)" -ForegroundColor Yellow
     Write-Info "Install from https://ollama.com then run: ollama pull nomic-embed-text"
 }
 
