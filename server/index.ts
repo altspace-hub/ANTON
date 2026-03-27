@@ -1081,11 +1081,11 @@ httpServer.listen(PORT, async () => {
         }
 
         // 3. Check if NAV was computed today
-        const lastNav = await db.get<{ calculated_at: string }>(
-          "SELECT calculated_at FROM market_index_nav_history ORDER BY calculated_at DESC LIMIT 1"
+        const lastNav = await db.get<{ nav_date: string }>(
+          "SELECT nav_date FROM market_index_nav_history ORDER BY nav_date DESC LIMIT 1"
         );
         const hoursSinceNav = lastNav
-          ? (now.getTime() - new Date(lastNav.calculated_at).getTime()) / 3600000
+          ? (now.getTime() - new Date(lastNav.nav_date).getTime()) / 3600000
           : Infinity;
 
         if (hoursSinceNav > 24 && isWeekday) {

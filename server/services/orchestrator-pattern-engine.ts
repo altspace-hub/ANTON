@@ -213,7 +213,7 @@ export async function detectPatterns(db: DatabaseAdapter): Promise<DetectedPatte
   // Dedup: skip if same pattern_id was detected in last 24h
   const recentIds = new Set<string>();
   try {
-    const recent = await db.get(
+    const recent = await db.all(
       "SELECT signal_data FROM orchestrator_pattern_detections WHERE detected_at >= NOW() - INTERVAL '24 hours'"
     ) as Array<{ signal_data: string | null }>;
     for (const r of recent) {

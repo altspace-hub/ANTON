@@ -633,10 +633,9 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
   }
 
   async function saveFindings(assessmentId: string, framework: string, findings: ArticleFinding[]) {
-
-    const insertMany = db.transaction(async (items: ArticleFinding[]) => {
-      for (const f of items) {
-        await db.run(
+    await db.transaction(async (txDb) => {
+      for (const f of findings) {
+        await txDb.run(
       `INSERT INTO gap_findings
        (assessment_id, framework, article_id, article_title, requirement, current_state, score, numeric_score, priority, notes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -651,11 +650,10 @@ export async function createGapAssessmentEngine(db: DatabaseAdapter) {
     , assessmentId, framework, f.articleId, f.articleTitle, f.requirement, f.currentState, f.score, f.numericScore ?? 0, f.priority, f.notes);
       }
     });
-    insertMany(findings);
   }
 
   async function updateArticleScores(assessmentId: string, framework: string, findings: ArticleFinding[]) {
-    const assessment = getAssessment(assessmentId);
+    const assessment = await getAssessment(assessmentId);
     if (!assessment) return;
 
     const existing = JSON.parse(assessment.article_scores || '{}') as Record<string, ArticleFinding[]>;
