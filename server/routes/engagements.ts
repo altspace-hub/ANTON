@@ -134,7 +134,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
   // NOTE: This route must be defined BEFORE /:id routes to avoid conflict
   router.get('/peer-library', async (req: Request, res: Response) => {
     try {
-      const completed = await db.get(`
+      const completed = await db.all(`
         SELECT e.id, e.title, e.your_organisation, e.domain_areas, e.updated_at,
           qg.overall_score, qg.scope_completeness, qg.status as qg_status
         FROM engagements e
@@ -167,7 +167,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
       if (!engagement) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
       const userRole = getUserRole(req);
-      if (!canView(db, String(req.params.id), userId, userRole))
+      if (!await canView(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
       const documents = await db.all('SELECT * FROM engagement_documents WHERE engagement_id = ? ORDER BY uploaded_at', String(req.params.id));
       const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? ORDER BY sort_order', String(req.params.id));
@@ -179,7 +179,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
       const iterations = await db.all('SELECT * FROM engagement_iterations WHERE engagement_id = ? ORDER BY iteration_number DESC', String(req.params.id));
       const stakeholders = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ?', String(req.params.id));
       const peer_benchmarks = await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id));
-      const quality_gate = await db.all('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
+      const quality_gate = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
       res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate });
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -195,7 +195,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
       if (!existing) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
       const userRole = getUserRole(req);
-      if (!canEdit(db, String(req.params.id), userId, userRole))
+      if (!await canEdit(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
       const updates: string[] = ['updated_at = NOW()'];
       const values: unknown[] = [];
@@ -228,7 +228,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Router {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
-      if (!canEdit(db, String(req.params.id), userId, userRole))
+      if (!await canEdit(db, String(req.params.id), userId, userRole))
         return res.status(403).json({ error: 'Access denied' });
       await db.run("UPDATE engagements SET status = 'archived', updated_at = NOW() WHERE id = ?", String(req.params.id));
       res.json({ ok: true });
@@ -403,7 +403,7 @@ Return ONLY valid JSON, no explanation.`;
         if ((doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') && extracted && typeof extracted === 'object') {
           const ex = extracted as Record<string, unknown>;
 
-          const existing = await db.all('SELECT id FROM engagement_scope_items WHERE engagement_id = $1', String(req.params.id)) as unknown[];
+          const existing = await db.all('SELECT id FROM engagement_scope_items WHERE engagement_id = ?', String(req.params.id)) as unknown[];
           if (existing.length === 0 && Array.isArray(ex.scope_items)) {
             const scopeItems = ex.scope_items as Array<Record<string, unknown>>;
             for (let idx = 0; idx < scopeItems.length; idx++) {
@@ -417,7 +417,7 @@ Return ONLY valid JSON, no explanation.`;
             }
           }
           if (Array.isArray(ex.workstreams)) {
-            const existingWs = await db.all('SELECT id FROM engagement_workstreams WHERE engagement_id = $1', String(req.params.id)) as unknown[];
+            const existingWs = await db.all('SELECT id FROM engagement_workstreams WHERE engagement_id = ?', String(req.params.id)) as unknown[];
             if (existingWs.length === 0) {
               const workstreams = ex.workstreams as Array<Record<string, unknown>>;
               for (let idx = 0; idx < workstreams.length; idx++) {
@@ -431,7 +431,7 @@ Return ONLY valid JSON, no explanation.`;
             }
           }
           if (Array.isArray(ex.deliverables)) {
-            const existingDel = await db.all('SELECT id FROM engagement_deliverables WHERE engagement_id = $1', String(req.params.id)) as unknown[];
+            const existingDel = await db.all('SELECT id FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id)) as unknown[];
             if (existingDel.length === 0) {
               const deliverables = ex.deliverables as Array<Record<string, unknown>>;
               for (const d of deliverables) {
@@ -457,8 +457,8 @@ Return ONLY valid JSON, no explanation.`;
             }
           }
           // Auto-populate stakeholders from parties.contacts (only if none exist yet)
-          const existingTeam = await db.get('SELECT id FROM engagement_stakeholders WHERE engagement_id = ?', String(req.params.id));
-          if (existingTeam.length === 0 && ex.parties && typeof ex.parties === 'object') {
+          const existingTeam = await db.get('SELECT id FROM engagement_stakeholders WHERE engagement_id = ? LIMIT 1', String(req.params.id));
+          if (!existingTeam && ex.parties && typeof ex.parties === 'object') {
             const parties = ex.parties as Record<string, unknown>;
             const contacts = Array.isArray(parties.contacts) ? parties.contacts as Array<Record<string, unknown>> : [];
             for (const c of contacts) {
@@ -656,6 +656,7 @@ Return ONLY valid JSON, no explanation.`;
     try {
 
       const data = req.body;
+      const existing = await db.get('SELECT id FROM engagement_client_intelligence WHERE engagement_id = ? LIMIT 1', String(req.params.id));
       if (existing) {
         await db.run(`UPDATE engagement_client_intelligence SET
           client_name = ?, division_department = ?, region_jurisdiction = ?, products_in_scope = ?,
@@ -1277,7 +1278,7 @@ Return ONLY valid JSON.`,
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const label = `Peer Institution ${letters[existingCount] || existingCount + 1}`;
 
-      const domainAreas = async (() => { try { return JSON.parse(String(sourceEng.domain_areas || '[]')).join(', '); } catch { return ''; } })();
+      const domainAreas = (() => { try { return JSON.parse(String(sourceEng.domain_areas || '[]')).join(', '); } catch { return ''; } })();
 
       // Extract key findings from quality gate if available
       let keyFindings: string[] = [];
@@ -1312,7 +1313,7 @@ Return ONLY valid JSON.`,
   // GET /api/engagements/:id/peer-benchmarks
   router.get('/:id/peer-benchmarks', async (req: Request, res: Response) => {
     try {
-      res.json(await db.get('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id)));
+      res.json(await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id)));
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }
@@ -1490,7 +1491,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
   // GET /api/engagements/:id/quality-gate/latest
   router.get('/:id/quality-gate/latest', async (req: Request, res: Response) => {
     try {
-
+      const qg = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id));
       res.json(qg || null);
     } catch (e) {
       res.status(500).json({ error: String(e) });
@@ -1573,7 +1574,7 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
 
   router.get('/:id/changelog', async (req: Request, res: Response) => {
     try {
-
+      const changes = await db.all('SELECT * FROM engagement_changelog WHERE engagement_id = ? ORDER BY created_at DESC', String(req.params.id));
       res.json(changes);
     } catch (e) {
       res.status(500).json({ error: String(e) });

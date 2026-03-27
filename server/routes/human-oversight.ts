@@ -129,9 +129,7 @@ export async function createHumanOversightRoutes(db: DatabaseAdapter) {
     try {
       const userId = getUserId(req);
       const { sessionId } = req.params;
-
-
-
+      const review = await db.get('SELECT * FROM human_oversight_reviews WHERE session_id = ? AND reviewer_id = ? ORDER BY created_at DESC LIMIT 1', sessionId, userId);
       res.json({ review: review ?? null });
     } catch (err) {
       console.error('[oversight] GET session review error:', err);
