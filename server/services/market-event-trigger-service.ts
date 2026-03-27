@@ -90,7 +90,7 @@ export async function createMarketEventTriggerService(db: DatabaseAdapter) {
     return await db.all<MarketEvent>(`
       SELECT * FROM market_event_calendar
       WHERE status IN ('pending', 'pre_event')
-        AND scheduled_at <= NOW() + (? || ' hours')::INTERVAL
+        AND scheduled_at <= NOW() + MAKE_INTERVAL(hours => CAST(? AS INTEGER))
       ORDER BY scheduled_at ASC
     `, horizonHours);
   }
@@ -103,7 +103,7 @@ export async function createMarketEventTriggerService(db: DatabaseAdapter) {
     const preEvents = await db.all<MarketEvent>(`
       SELECT * FROM market_event_calendar
       WHERE status = 'pending'
-        AND scheduled_at - (pre_event_hours || ' hours')::INTERVAL <= NOW()
+        AND scheduled_at - MAKE_INTERVAL(hours => pre_event_hours) <= NOW()
     `);
 
     for (const evt of preEvents) {

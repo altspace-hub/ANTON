@@ -334,7 +334,7 @@ Return ONLY the JSON array, no other text.`;
 
       const message = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: EXTRACTION_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
       });
@@ -344,8 +344,16 @@ Return ONLY the JSON array, no other text.`;
         if (block.type === 'text') responseText += block.text;
       }
 
-      // Parse JSON (strip markdown fences if present)
-      const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      // Parse JSON (strip markdown fences, handle truncated responses)
+      let cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      // If JSON was truncated mid-array, try to close it
+      if (cleaned.startsWith('[') && !cleaned.endsWith(']')) {
+        // Find the last complete object (ends with })
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace > 0) {
+          cleaned = cleaned.slice(0, lastBrace + 1) + ']';
+        }
+      }
       const atoms = JSON.parse(cleaned) as RawAtomExtraction[];
 
       const createdIds: string[] = [];
@@ -410,7 +418,7 @@ Return ONLY the JSON array.`;
     try {
       const message = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: 'You are an expert financial analyst extracting fundamental insights into structured market atoms. Output only valid JSON.',
         messages: [{ role: 'user', content: prompt }],
       });
@@ -420,7 +428,12 @@ Return ONLY the JSON array.`;
         if (block.type === 'text') responseText += block.text;
       }
 
-      const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      let cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      // Handle truncated JSON arrays
+      if (cleaned.startsWith('[') && !cleaned.endsWith(']')) {
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace > 0) cleaned = cleaned.slice(0, lastBrace + 1) + ']';
+      }
       const atoms = JSON.parse(cleaned) as RawAtomExtraction[];
       const createdIds: string[] = [];
 
