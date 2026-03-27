@@ -50,7 +50,7 @@ async function detectQualityDropPatterns(db: DatabaseAdapter): DetectedPattern[]
       HAVING AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END) IS NOT NULL AND AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) IS NOT NULL
         AND AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) - AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END) >= 1.5
         AND COUNT(*) >= 4
-      ORDER BY (prior_avg - recent_avg) DESC
+      ORDER BY (AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) - AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END)) DESC
       LIMIT 5
     `) as Array<{ module_id: string; recent_avg: number; prior_avg: number; total_scores: number }>;
 
@@ -202,12 +202,12 @@ export async function shouldAutoPause(db: DatabaseAdapter): { pause: boolean; re
  * Run all pattern detectors and return unique detected patterns.
  * Deduplicates against recently detected patterns (same pattern_id in last 24h).
  */
-export async function detectPatterns(db: DatabaseAdapter): DetectedPattern[] {
+export async function detectPatterns(db: DatabaseAdapter): Promise<DetectedPattern[]> {
   const allPatterns: DetectedPattern[] = [
-    ...detectQualityDropPatterns(db),
-    ...detectWorkflowRecurrencePatterns(db),
-    ...detectSignalClusterPatterns(db),
-    ...detectDeadlineClusterPatterns(db),
+    ...(await detectQualityDropPatterns(db)),
+    ...(await detectWorkflowRecurrencePatterns(db)),
+    ...(await detectSignalClusterPatterns(db)),
+    ...(await detectDeadlineClusterPatterns(db)),
   ];
 
   // Dedup: skip if same pattern_id was detected in last 24h

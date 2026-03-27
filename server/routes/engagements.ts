@@ -403,6 +403,7 @@ Return ONLY valid JSON, no explanation.`;
         if ((doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') && extracted && typeof extracted === 'object') {
           const ex = extracted as Record<string, unknown>;
 
+          const existing = await db.all('SELECT id FROM engagement_scope_items WHERE engagement_id = $1', String(req.params.id)) as unknown[];
           if (existing.length === 0 && Array.isArray(ex.scope_items)) {
             const scopeItems = ex.scope_items as Array<Record<string, unknown>>;
             for (let idx = 0; idx < scopeItems.length; idx++) {
@@ -416,7 +417,7 @@ Return ONLY valid JSON, no explanation.`;
             }
           }
           if (Array.isArray(ex.workstreams)) {
-            const existingWs = await db.get('SELECT id FROM engagement_workstreams WHERE engagement_id = ?', String(req.params.id));
+            const existingWs = await db.all('SELECT id FROM engagement_workstreams WHERE engagement_id = $1', String(req.params.id)) as unknown[];
             if (existingWs.length === 0) {
               const workstreams = ex.workstreams as Array<Record<string, unknown>>;
               for (let idx = 0; idx < workstreams.length; idx++) {
@@ -430,7 +431,7 @@ Return ONLY valid JSON, no explanation.`;
             }
           }
           if (Array.isArray(ex.deliverables)) {
-            const existingDel = await db.get('SELECT id FROM engagement_deliverables WHERE engagement_id = ?', String(req.params.id));
+            const existingDel = await db.all('SELECT id FROM engagement_deliverables WHERE engagement_id = $1', String(req.params.id)) as unknown[];
             if (existingDel.length === 0) {
               const deliverables = ex.deliverables as Array<Record<string, unknown>>;
               for (const d of deliverables) {
