@@ -98,7 +98,8 @@ export async function createWhyChainInsightsAggregator(db: DatabaseAdapter) {
       FROM market_predictions
       WHERE was_correct = 0 AND status = 'validated'
         AND target_symbol IS NOT NULL AND target_symbol != ''
-        AND validated_at >= NOW() - INTERVAL '${lookbackDays} days'
+        AND validated_at IS NOT NULL
+        AND validated_at::timestamptz >= NOW() - INTERVAL '${lookbackDays} days'
     `);
 
     // 4. Aggregate why-chain insights

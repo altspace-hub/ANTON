@@ -1266,8 +1266,8 @@ Return ONLY the JSON array, no other text.`;
         SELECT LEFT(title, 60) as title, target_symbol, predicted_direction, confidence,
                was_correct, brier_score, actual_outcome
         FROM market_predictions
-        WHERE status = 'validated'
-        ORDER BY validated_at DESC
+        WHERE status = 'validated' AND validated_at IS NOT NULL
+        ORDER BY validated_at::timestamptz DESC
         LIMIT 20
       `) as Array<Record<string, unknown>>;
 
