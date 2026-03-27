@@ -56,6 +56,22 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
   }
 
   /**
+   * Find predictions expiring within the next N days (for visibility/logging).
+   */
+  async function findNearExpiry(daysAhead = 2): Promise<ExpiredPrediction[]> {
+    const today = new Date().toISOString().split('T')[0];
+    const future = new Date(Date.now() + daysAhead * 86400000).toISOString().split('T')[0];
+    return db.all<ExpiredPrediction>(`
+      SELECT id, title, prediction_type, target_symbol, predicted_direction,
+             predicted_outcome, predicted_value, confidence, deadline, created_at, thesis_id
+      FROM market_predictions
+      WHERE status = 'active' AND deadline IS NOT NULL
+        AND deadline >= $1 AND deadline <= $2
+      ORDER BY deadline ASC
+    `, today, future);
+  }
+
+  /**
    * Get price at a specific date (or closest available).
    */
   async function getPriceAtDate(symbol: string, date: string): Promise<number | null> {
@@ -336,5 +352,5 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     return { verified, unverifiable, correct, incorrect, results };
   }
 
-  return { findExpired, verifyPrediction, runAutoVerification };
+  return { findExpired, findNearExpiry, verifyPrediction, runAutoVerification };
 }

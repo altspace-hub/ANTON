@@ -997,6 +997,27 @@ httpServer.listen(PORT, async () => {
       } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
     }, MARKET_TZ);
 
+    // Phase 8: Weekly Pulse — short-term directional predictions (Monday + Thursday 09:00 CET)
+    cron.schedule('0 9 * * 1,4', async () => {
+      console.log('[markets-schedule] Phase 8: Weekly Pulse Predictions');
+      try {
+        await workflowOrchestrator.runWeeklyPulse();
+        console.log('[markets-schedule] Phase 8 complete');
+      } catch (err) { console.error('[markets-schedule] Phase 8 error:', err); }
+    }, MARKET_TZ);
+
+    // Daily auto-verification of expired predictions (12:00 CET weekdays)
+    cron.schedule('0 12 * * 1-5', async () => {
+      try {
+        const { createPredictionVerifier } = await import('./services/market-prediction-verifier.js');
+        const verifier = await createPredictionVerifier(db);
+        const result = await verifier.runAutoVerification();
+        if (result.verified > 0) {
+          console.log(`[markets-verify] Daily: verified ${result.verified} (${result.correct} correct, ${result.incorrect} wrong)`);
+        }
+      } catch (err) { console.error('[markets-verify] Daily verification error:', err); }
+    }, MARKET_TZ);
+
     // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00)
     cron.schedule('0 14,16,18,20,22 * * 1-5', async () => {
       try {
@@ -1117,7 +1138,23 @@ httpServer.listen(PORT, async () => {
           }
         }
 
-        // 5. Refresh materialized views (always safe, idempotent)
+        // 5. Check if weekly pulse ran recently
+        const lastPulse = await db.get<{ started_at: string }>(
+          "SELECT started_at FROM workflow_runs WHERE workflow_id = 'wf_markets_weekly_pulse' AND status = 'success' ORDER BY started_at DESC LIMIT 1"
+        );
+        const daysSincePulse = lastPulse
+          ? (now.getTime() - new Date(lastPulse.started_at).getTime()) / 86400000
+          : Infinity;
+        if (daysSincePulse > 4 && isWeekday) {
+          console.log(`[markets-catchup] Weekly pulse last ran ${daysSincePulse === Infinity ? 'never' : Math.round(daysSincePulse) + ' days ago'} — running now`);
+          try {
+            await workflowOrchestrator.runWeeklyPulse();
+            catchUpActions++;
+            console.log('[markets-catchup] Weekly pulse catch-up complete');
+          } catch (err) { console.error('[markets-catchup] Weekly pulse catch-up failed:', err); }
+        }
+
+        // 6. Refresh materialized views (always safe, idempotent)
         try {
           await db.run("REFRESH MATERIALIZED VIEW CONCURRENTLY IF EXISTS mv_prediction_track_record");
           await db.run("REFRESH MATERIALIZED VIEW CONCURRENTLY IF EXISTS mv_index_stats");

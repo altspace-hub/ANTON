@@ -54,6 +54,18 @@ export async function createMarketWorkflowRoutes(db: DatabaseAdapter): Promise<R
     }
   });
 
+  // POST /markets/workflows/weekly-pulse — Manual trigger for short-term predictions
+  router.post('/markets/workflows/weekly-pulse', async (_req, res) => {
+    try {
+      console.log('[market-workflows] Weekly pulse triggered manually');
+      const result = await orchestrator.runWeeklyPulse();
+      res.json(result);
+    } catch (err) {
+      const { status, message } = safeError(err);
+      res.status(status).json({ error: message });
+    }
+  });
+
   // GET /markets/workflows/runs — List recent workflow runs
   router.get('/markets/workflows/runs', async (req, res) => {
     try {

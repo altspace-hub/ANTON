@@ -486,7 +486,15 @@ Also for each thesis, include a "predictions" array with 1-2 testable prediction
 - predicted_direction (string, optional): "up" | "down" | "flat"
 - confidence (number 0-1): prediction confidence
 - time_horizon_days (number): days until testable
-- deadline (string): ISO date when this should be checked
+- deadline (string): ISO date YYYY-MM-DD when this should be checked
+
+TIME HORIZON RULES (important for learning speed):
+- For "macro" or "sector" theses: PREFER short horizons (7-30 days) with near-term predictions
+- For "investment" (company-specific): use natural horizons (30-180 days, aligned to earnings)
+- For "event" theses: deadline must match the event date
+- For "contrarian" theses: medium horizon (30-90 days) to allow the thesis to play out
+- PREFER predictions with time_horizon_days <= 30 when evidence supports short-term resolution
+- Today is ${new Date().toISOString().split('T')[0]}
 
 Return ONLY the JSON array, no other text.`;
 
@@ -1199,10 +1207,139 @@ Return ONLY the JSON array, no other text.`;
     }
   }
 
+  // ── Weekly Pulse: Short-term directional predictions for fast learning ─────
+
+  async function runWeeklyPulse(): Promise<WorkflowRunResult> {
+    const runId = `wfrun_pulse_${Date.now()}`;
+    const stepsCompleted: string[] = [];
+    const stepResults: Record<string, unknown> = {};
+
+    try {
+      await recordRun(runId, 'wf_markets_weekly_pulse', 'running');
+
+      // 1. Load the pulse prompt
+      const fs = await import('fs-extra');
+      const path = await import('path');
+      const { fileURLToPath } = await import('url');
+      const __dirname = path.dirname(fileURLToPath(import.meta.url));
+      const promptPath = path.join(__dirname, '..', 'prompts', 'market-weekly-pulse.md');
+      const pulseSystemPrompt = fs.existsSync(promptPath)
+        ? fs.readFileSync(promptPath, 'utf-8')
+        : 'You are a short-term market pulse analyst. Generate 10-15 directional predictions on liquid ETFs with 7-14 day deadlines. Return a JSON array.';
+
+      stepsCompleted.push('prompt_loaded');
+
+      // 2. Gather context: recent atoms + track record
+      const recentAtoms = await db.all(`
+        SELECT content, atom_type, category, sentiment, confidence
+        FROM market_atoms
+        WHERE created_at >= NOW() - INTERVAL '3 days' AND status = 'active'
+        ORDER BY importance_score DESC NULLS LAST
+        LIMIT 30
+      `) as Array<{ content: string; atom_type: string; category: string; sentiment: string; confidence: number }>;
+
+      const trackRecord = await db.all(`
+        SELECT LEFT(title, 60) as title, target_symbol, predicted_direction, confidence,
+               was_correct, brier_score, actual_outcome
+        FROM market_predictions
+        WHERE status = 'validated'
+        ORDER BY validated_at DESC
+        LIMIT 20
+      `) as Array<Record<string, unknown>>;
+
+      const atomContext = recentAtoms.map(a => `[${a.atom_type}|${a.category}|${a.sentiment}|${a.confidence}] ${a.content}`).join('\n');
+      const trackContext = trackRecord.length > 0
+        ? `\n\nYOUR TRACK RECORD (last ${trackRecord.length} predictions):\n` +
+          trackRecord.map(t => `${t.target_symbol || '?'} ${t.predicted_direction || '?'} conf=${t.confidence} → ${t.was_correct ? 'CORRECT' : 'WRONG'} (brier=${t.brier_score})`).join('\n') +
+          `\nOverall accuracy: ${trackRecord.filter(t => t.was_correct).length}/${trackRecord.length} = ${Math.round(trackRecord.filter(t => t.was_correct).length / trackRecord.length * 100)}%`
+        : '';
+
+      const today = new Date().toISOString().split('T')[0];
+      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
+
+      const userMessage = `Today is ${dayName}, ${today}.
+
+RECENT MARKET INTELLIGENCE (${recentAtoms.length} atoms):
+${atomContext.slice(0, 3000)}
+${trackContext}
+
+Generate 10-15 short-term directional predictions on liquid ETFs/indices with 7-14 day deadlines.
+All deadlines must be between ${new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]} and ${new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]}.
+
+Return ONLY a JSON array.`;
+
+      stepsCompleted.push('context_gathered');
+
+      // 3. Call LLM with web search for real-time data
+      const llmResult = await withTimeout(
+        callLLM(pulseSystemPrompt, userMessage, 'think', true),
+        LLM_TIMEOUT * 2, 'Weekly Pulse Generation'
+      );
+
+      stepsCompleted.push('llm_complete');
+
+      // 4. Parse and create predictions
+      let cleaned = llmResult.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      if (cleaned.startsWith('[') && !cleaned.endsWith(']')) {
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace > 0) cleaned = cleaned.slice(0, lastBrace + 1) + ']';
+      }
+
+      const predictions = JSON.parse(cleaned) as Array<{
+        title: string; description: string; target_symbol: string;
+        predicted_direction: string; confidence: number;
+        time_horizon_days: number; key_assumptions?: string[];
+      }>;
+
+      let created = 0;
+      for (const p of predictions) {
+        if (!p.title || !p.target_symbol || !p.predicted_direction) continue;
+
+        const horizonDays = Math.max(7, Math.min(14, p.time_horizon_days || 10));
+        const deadline = new Date(Date.now() + horizonDays * 86400000).toISOString().split('T')[0];
+        const confidence = Math.max(0.3, Math.min(0.8, p.confidence || 0.55));
+
+        try {
+          await thesisService.createPrediction({
+            title: p.title,
+            description: p.description || p.title,
+            predictionType: 'directional',
+            targetSymbol: p.target_symbol,
+            predictedOutcome: `${p.target_symbol} moves ${p.predicted_direction} within ${horizonDays} days`,
+            predictedDirection: p.predicted_direction,
+            confidence,
+            timeHorizonDays: horizonDays,
+            deadline,
+            keyAssumptions: [...(p.key_assumptions || []), '[source:weekly_pulse]'],
+            horizon: horizonDays <= 7 ? 'this_week' : 'this_month',
+          });
+          created++;
+        } catch (err) {
+          console.warn(`[weekly-pulse] Failed to create prediction "${p.title}":`, (err as Error).message);
+        }
+      }
+
+      stepResults.predictions_created = created;
+      stepResults.predictions_parsed = predictions.length;
+      stepsCompleted.push('predictions_created');
+
+      console.log(`[weekly-pulse] Created ${created}/${predictions.length} predictions with 7-14 day horizons`);
+
+      await recordRun(runId, 'wf_markets_weekly_pulse', 'completed');
+      return { runId, status: 'completed', stepsCompleted, stepResults };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('[weekly-pulse] Failed:', message);
+      try { await recordRun(runId, 'wf_markets_weekly_pulse', 'failed', message); } catch { /* ignore */ }
+      return { runId, status: 'failed', stepsCompleted, stepResults, error: message };
+    }
+  }
+
   return {
     runDailyIntelligence,
     runIndexRebalance,
     runPredictionValidation,
+    runWeeklyPulse,
   };
 }
 
