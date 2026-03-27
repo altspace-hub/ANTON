@@ -25,6 +25,7 @@ import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createWhyChainInsightsAggregator } from './market-why-chain-insights.js';
 
 // ── Step Timeout ────────────────────────────────────────────────────────────────
 
@@ -459,6 +460,10 @@ export async function createMarketWorkflowOrchestrator(
         );
         const atomContext = topAtoms.map(a => `[${a.atom_type}|${a.category}|${a.sentiment}|${a.confidence}] ${a.content}`).join('\n');
 
+        // Fetch why-chain insights to avoid repeating past mistakes
+        const insightsAggregator = await createWhyChainInsightsAggregator(db);
+        const insights = await insightsAggregator.getInsights(30);
+
         const thesisPrompt = `You are ANTON's thesis generation engine. Based on the market intelligence below, generate 2-4 investment theses.
 
 CONSUL ANALYSIS:
@@ -466,6 +471,7 @@ ${consulSummaries.slice(0, 3000)}
 
 SIGNAL SUMMARY:
 ${JSON.stringify(signalOutput).slice(0, 1500)}
+${insights.promptContext}
 
 HIGH-CONFIDENCE ATOMS:
 ${atomContext.slice(0, 2000)}
@@ -984,6 +990,7 @@ Return ONLY the JSON array, no other text.`;
       }
 
       // Step 5: Signal weight optimizer — query atoms + predictions for signal/outcome pairs
+      // Now enhanced with why-chain root cause awareness
       try {
         const atomSignals = await db.all<{ id: string; content: string; atom_type: string; confidence: number }>(
           "SELECT id, content, atom_type, confidence FROM market_atoms WHERE is_active = 1 LIMIT 500"
@@ -998,6 +1005,22 @@ Return ONLY the JSON array, no other text.`;
           computationService.runTemplate('signal_weight_optimizer', { signals: signalData, outcomes: outcomeData, method: 'ridge' }, 'prediction-validation'),
           COMPUTATION_TIMEOUT, 'Signal Weight Optimizer'
         );
+
+        // Apply why-chain root cause adjustments on top of computed weights
+        try {
+          const insightsAgg = await createWhyChainInsightsAggregator(db);
+          const whyInsights = await insightsAgg.getInsights(30);
+          for (const adj of whyInsights.signalAdjustments) {
+            await db.run(`
+              UPDATE market_signal_weights SET weight = GREATEST(0.3, weight * ?)
+              WHERE signal_source = ? AND updated_at < NOW() - INTERVAL '1 day'
+            `, adj.reliabilityMultiplier, adj.signalType);
+          }
+          if (whyInsights.signalAdjustments.length > 0) {
+            console.log(`[prediction-validation] Applied ${whyInsights.signalAdjustments.length} why-chain signal adjustments`);
+          }
+        } catch { /* non-fatal */ }
+
         stepResults.push({ step: 'Signal Weight Optimizer', status: result.success ? 'success' : 'warning', output: result.output });
         stepsCompleted++;
       } catch (err) {
@@ -1255,6 +1278,10 @@ Return ONLY the JSON array, no other text.`;
           `\nOverall accuracy: ${trackRecord.filter(t => t.was_correct).length}/${trackRecord.length} = ${Math.round(trackRecord.filter(t => t.was_correct).length / trackRecord.length * 100)}%`
         : '';
 
+      // Fetch why-chain insights for learning loop
+      const insightsAggregator = await createWhyChainInsightsAggregator(db);
+      const pulseInsights = await insightsAggregator.getInsights(30);
+
       const today = new Date().toISOString().split('T')[0];
       const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
 
@@ -1263,6 +1290,7 @@ Return ONLY the JSON array, no other text.`;
 RECENT MARKET INTELLIGENCE (${recentAtoms.length} atoms):
 ${atomContext.slice(0, 3000)}
 ${trackContext}
+${pulseInsights.promptContext}
 
 Generate 10-15 short-term directional predictions on liquid ETFs/indices with 7-14 day deadlines.
 All deadlines must be between ${new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]} and ${new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]}.

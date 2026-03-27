@@ -633,6 +633,18 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     const baseWeight = 1.0 / holdings.length;
     const signalMap = new Map(signals.map(s => [s.symbol, s]));
 
+    // Load why-chain risk insights for symbols in this index
+    let riskySymbols = new Set<string>();
+    try {
+      const { createWhyChainInsightsAggregator } = await import('./market-why-chain-insights.js');
+      const insightsAgg = await createWhyChainInsightsAggregator(db);
+      const insights = await insightsAgg.getInsights(14);
+      riskySymbols = new Set(insights.symbolRisks.filter(s => s.riskLevel === 'high').map(s => s.symbol));
+      if (riskySymbols.size > 0) {
+        console.log(`[rebalance] Risk-flagged symbols from why-chains: ${Array.from(riskySymbols).join(', ')}`);
+      }
+    } catch { /* non-fatal */ }
+
     // Apply conviction adjustments
     const rawWeights: Array<{ symbol: string; weight: number; reason: string }> = [];
 
@@ -645,6 +657,12 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
         // Score range is -1 to +1, scale weight by 0.5x to 1.5x
         adjusted = baseWeight * (1 + signal.score * 0.5);
         reason = `${signal.direction} signal (score: ${signal.score.toFixed(2)}, ${signal.predictionCount} predictions)`;
+      }
+
+      // Cap weight increases on symbols flagged by why-chain analysis
+      if (riskySymbols.has(h.symbol) && adjusted > baseWeight) {
+        adjusted = baseWeight; // Don't increase weight on risky symbols
+        reason += ' [CAPPED: why-chain risk flag]';
       }
 
       // Apply macro overlay
