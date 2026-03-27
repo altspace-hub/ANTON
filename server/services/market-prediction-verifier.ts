@@ -34,6 +34,7 @@ interface VerificationResult {
   method: 'auto_price' | 'auto_llm' | 'unverifiable';
   verificationConfidence: number;
   explanation: string;
+  gradedScore?: number; // 0.0-1.0 grading curve (partial credit for close predictions)
 }
 
 export async function createPredictionVerifier(db: DatabaseAdapter) {
@@ -97,15 +98,51 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     }
 
     const pctChange = ((endPrice - startPrice) / startPrice) * 100;
-    const flatThreshold = 3; // ±3% considered "flat"
+    const absPctChange = Math.abs(pctChange);
+    const flatThreshold = 1.5; // ±1.5% considered "flat" (was 3% — too aggressive)
 
     let actualDirection: string;
     if (pctChange > flatThreshold) actualDirection = 'up';
     else if (pctChange < -flatThreshold) actualDirection = 'down';
     else actualDirection = 'flat';
 
-    const wasCorrect = pred.predicted_direction === actualDirection;
-    const explanation = `${pred.target_symbol}: ${startPrice.toFixed(2)} → ${endPrice.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%). Predicted: ${pred.predicted_direction}, Actual: ${actualDirection}.`;
+    // Grading curve: directional predictions get partial/full credit
+    // instead of binary correct/wrong
+    let wasCorrect: boolean;
+    let gradedScore: number; // 0.0 to 1.0
+
+    if (pred.predicted_direction === 'flat') {
+      // Flat prediction: correct if within threshold
+      wasCorrect = actualDirection === 'flat';
+      gradedScore = wasCorrect ? 1.0 : (absPctChange < 3 ? 0.5 : 0.0);
+    } else {
+      // Directional prediction (up/down)
+      const directionCorrect = (pred.predicted_direction === 'up' && pctChange > 0)
+                            || (pred.predicted_direction === 'down' && pctChange < 0);
+      const strongMove = absPctChange > flatThreshold;
+
+      if (directionCorrect && strongMove) {
+        // Clear correct direction + beyond threshold
+        wasCorrect = true;
+        gradedScore = 1.0;
+      } else if (directionCorrect && !strongMove) {
+        // Correct direction but small move (within flat zone)
+        // Partial credit — direction was right, magnitude was weak
+        wasCorrect = true;
+        gradedScore = 0.7;
+      } else if (!directionCorrect && absPctChange <= flatThreshold) {
+        // Wrong direction but move was negligible (essentially flat)
+        // Slight penalty — call was wrong but barely
+        wasCorrect = false;
+        gradedScore = 0.3;
+      } else {
+        // Wrong direction with clear move
+        wasCorrect = false;
+        gradedScore = 0.0;
+      }
+    }
+
+    const explanation = `${pred.target_symbol}: ${startPrice.toFixed(2)} → ${endPrice.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%). Predicted: ${pred.predicted_direction}, Actual: ${actualDirection}. Grade: ${(gradedScore * 100).toFixed(0)}%`;
 
     return {
       predictionId: pred.id,
@@ -113,8 +150,9 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       actualOutcome: `${actualDirection} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%)`,
       actualValue: endPrice,
       method: 'auto_price',
-      verificationConfidence: 0.9, // Price data is reliable
+      verificationConfidence: 0.9,
       explanation,
+      gradedScore, // Used for Brier score calculation
     };
   }
 
@@ -264,9 +302,9 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
         continue;
       }
 
-      // Apply the verification — update directly to avoid service init complexity
+      // Apply the verification — use graded score for better calibration
       const predicted = pred.confidence;
-      const actual = result.wasCorrect ? 1 : 0;
+      const actual = result.gradedScore ?? (result.wasCorrect ? 1 : 0);
       const brierScore = (predicted - actual) ** 2;
 
       await db.run(`
