@@ -5,6 +5,10 @@
 // multi-step automated workflows.
 // ═══════════════════════════════════════════════════════════
 
+import fs from 'fs-extra';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import type { DatabaseAdapter } from '../db/database.js';
 import type { MarketComputationService } from './market-computation-service.js';
 import type { MarketDataService } from './market-data-service.js';
@@ -1218,11 +1222,8 @@ Return ONLY the JSON array, no other text.`;
       await recordRun(runId, 'wf_markets_weekly_pulse', 'running');
 
       // 1. Load the pulse prompt
-      const fs = await import('fs-extra');
-      const path = await import('path');
-      const { fileURLToPath } = await import('url');
-      const __dirname = path.dirname(fileURLToPath(import.meta.url));
-      const promptPath = path.join(__dirname, '..', 'prompts', 'market-weekly-pulse.md');
+      const __pulseDir = path.dirname(fileURLToPath(import.meta.url));
+      const promptPath = path.join(__pulseDir, '..', 'prompts', 'market-weekly-pulse.md');
       const pulseSystemPrompt = fs.existsSync(promptPath)
         ? fs.readFileSync(promptPath, 'utf-8')
         : 'You are a short-term market pulse analyst. Generate 10-15 directional predictions on liquid ETFs with 7-14 day deadlines. Return a JSON array.';
@@ -1285,42 +1286,69 @@ Return ONLY a JSON array.`;
         if (lastBrace > 0) cleaned = cleaned.slice(0, lastBrace + 1) + ']';
       }
 
-      const predictions = JSON.parse(cleaned) as Array<{
-        title: string; description: string; target_symbol: string;
-        predicted_direction: string; confidence: number;
-        time_horizon_days: number; key_assumptions?: string[];
-      }>;
+      const predictions = JSON.parse(cleaned) as Array<Record<string, unknown>>;
+
+      // Debug: log first prediction's fields to understand LLM output format
+      if (predictions.length > 0) {
+        console.log(`[weekly-pulse] Sample prediction fields: ${Object.keys(predictions[0]).join(', ')}`);
+        console.log(`[weekly-pulse] Sample:`, JSON.stringify(predictions[0]).slice(0, 300));
+      }
 
       let created = 0;
+      let skipped = 0;
       for (const p of predictions) {
-        if (!p.title || !p.target_symbol || !p.predicted_direction) continue;
+        // Flexible field mapping — LLMs return varying field names
+        const symbol = (p.target_symbol || p.symbol || p.ticker || '') as string;
+        let direction = (p.predicted_direction || p.direction || '') as string;
+        const desc = (p.description || p.rationale || p.reasoning || '') as string;
+        const title = (p.title || p.name || (symbol && direction ? `${symbol} ${direction} — ${desc.slice(0, 60)}` : '')) as string;
+        const conf = Number(p.confidence || 0.55);
+        const horizon = Number(p.time_horizon_days || p.horizon_days || p.days || 10);
+        const assumptions = Array.isArray(p.key_assumptions) ? p.key_assumptions as string[] : [];
 
-        const horizonDays = Math.max(7, Math.min(14, p.time_horizon_days || 10));
-        const deadline = new Date(Date.now() + horizonDays * 86400000).toISOString().split('T')[0];
-        const confidence = Math.max(0.3, Math.min(0.8, p.confidence || 0.55));
+        // Normalize direction values (LLMs may return bullish/bearish/sideways)
+        if (['bullish', 'positive', 'higher', 'long'].includes(direction.toLowerCase())) direction = 'up';
+        else if (['bearish', 'negative', 'lower', 'short'].includes(direction.toLowerCase())) direction = 'down';
+        else if (['sideways', 'range', 'neutral', 'range-bound'].includes(direction.toLowerCase())) direction = 'flat';
+
+        if (!title || !symbol || !direction || direction === 'undefined') {
+          skipped++;
+          console.log(`[weekly-pulse] Skipped: "${(title || 'untitled').slice(0, 40)}" — symbol=${symbol || 'NONE'} direction=${direction || 'NONE'} | fields: ${Object.keys(p).join(',')}`);
+          continue;
+        }
+
+        const horizonDays = Math.max(7, Math.min(14, horizon));
+        const deadlineDate = new Date(Date.now() + horizonDays * 86400000).toISOString().split('T')[0];
+        const clampedConf = Math.max(0.3, Math.min(0.8, conf));
 
         try {
           await thesisService.createPrediction({
-            title: p.title,
-            description: p.description || p.title,
+            title,
+            description: desc,
             predictionType: 'directional',
-            targetSymbol: p.target_symbol,
-            predictedOutcome: `${p.target_symbol} moves ${p.predicted_direction} within ${horizonDays} days`,
-            predictedDirection: p.predicted_direction,
-            confidence,
+            targetSymbol: symbol,
+            predictedOutcome: `${symbol} moves ${direction} within ${horizonDays} days`,
+            predictedDirection: direction,
+            confidence: clampedConf,
             timeHorizonDays: horizonDays,
-            deadline,
-            keyAssumptions: [...(p.key_assumptions || []), '[source:weekly_pulse]'],
+            deadline: deadlineDate,
+            keyAssumptions: [...assumptions, '[source:weekly_pulse]'],
             horizon: horizonDays <= 7 ? 'this_week' : 'this_month',
           });
           created++;
         } catch (err) {
-          console.warn(`[weekly-pulse] Failed to create prediction "${p.title}":`, (err as Error).message);
+          console.warn(`[weekly-pulse] Failed to create prediction "${title}":`, (err as Error).message);
         }
       }
 
       stepResults.predictions_created = created;
       stepResults.predictions_parsed = predictions.length;
+      stepResults.predictions_skipped = skipped;
+      // Include sample for debugging
+      if (predictions.length > 0 && created === 0) {
+        stepResults.debug_sample = predictions[0];
+        stepResults.debug_fields = Object.keys(predictions[0]);
+      }
       stepsCompleted.push('predictions_created');
 
       console.log(`[weekly-pulse] Created ${created}/${predictions.length} predictions with 7-14 day horizons`);
