@@ -97,9 +97,25 @@ function extractJson(text: string, type: 'array' | 'object'): string {
   // Find the start of the JSON
   const startIdx = stripped.indexOf(opener);
   if (startIdx === -1) {
+    // Fallback: check original text
     const fallbackIdx = text.indexOf(opener);
-    if (fallbackIdx === -1) throw new Error(`No JSON ${type} found in Claude response`);
-    return repairJson(text.slice(fallbackIdx), type);
+    if (fallbackIdx !== -1) return repairJson(text.slice(fallbackIdx), type);
+
+    // Last resort: if looking for object but got array (or vice versa), try the other
+    const altOpener = type === 'array' ? '{' : '[';
+    const altIdx = stripped.indexOf(altOpener);
+    if (altIdx !== -1) {
+      console.warn(`[gap-engine] Expected JSON ${type} but found ${type === 'array' ? 'object' : 'array'} — adapting`);
+      if (type === 'object' && stripped.indexOf('[') !== -1) {
+        // Wrap array in an object
+        return `{"items": ${extractJson(text, 'array')}}`;
+      }
+      return repairJson(stripped.slice(altIdx), type === 'array' ? 'object' : 'array');
+    }
+
+    // Log what we actually got
+    console.error(`[gap-engine] No JSON ${type} found. Response starts with: ${stripped.slice(0, 300)}`);
+    throw new Error(`No JSON ${type} found in Claude response`);
   }
   const raw = stripped.slice(startIdx);
 
